@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { Field } from '../components/ui'
+import { LegalLinks } from './Legal'
 
 export default function SignIn() {
   const { signInWithGoogle, signInWithEmail } = useAuth()
@@ -65,6 +66,12 @@ export default function SignIn() {
             )}
           </>
         )}
+
+        {/* Reachable before signing up, not after — you cannot agree to terms
+            you were not allowed to read. */}
+        <div className="pt-6">
+          <LegalLinks />
+        </div>
       </div>
     </main>
   )

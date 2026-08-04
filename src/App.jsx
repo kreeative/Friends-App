@@ -11,6 +11,7 @@ import Checkin from './pages/Checkin'
 import Goals from './pages/Goals'
 import Me from './pages/Me'
 import Settings from './pages/Settings'
+import Legal from './pages/Legal'
 
 function Splash({ children }) {
   return (
@@ -33,6 +34,7 @@ function Gate() {
 
   return (
     <Routes>
+      <Route path="legal/:slug" element={<Legal />} />
       <Route element={<AppShell />}>
         <Route index element={<Board />} />
         <Route path="checkin" element={<Checkin />} />
@@ -59,7 +61,14 @@ export default function App() {
       <I18nProvider>
         <AuthProvider>
           <GroupProvider>
-            <Gate />
+            {/**
+             * The legal routes sit above the auth gate: nobody can be asked to
+             * accept terms they are not allowed to read until after signing up.
+             */}
+            <Routes>
+              <Route path="/legal/:slug" element={<Legal />} />
+              <Route path="*" element={<Gate />} />
+            </Routes>
           </GroupProvider>
         </AuthProvider>
       </I18nProvider>

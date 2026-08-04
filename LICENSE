@@ -1,0 +1,31 @@
+Copyright © 2026 Anne-Kelly Kouyaté. All rights reserved.
+
+PROPRIETARY SOFTWARE — NOT OPEN SOURCE
+
+This repository and everything in it — the source code, the database schema
+and policies, the interface design, the layouts, the wording, and the name and
+wordmark "Rich & Friends" — are the exclusive property of Anne-Kelly Kouyaté.
+
+No licence is granted, expressly or by implication. In particular, no
+permission is given to any person to:
+
+  - copy, reproduce, or republish this software in whole or in part;
+  - modify it, translate it, or create derivative works from it;
+  - distribute, sell, sublicense, rent, or otherwise transfer it;
+  - deploy it, host it, or operate it as a service, whether or not for
+    payment;
+  - use the name "Rich & Friends", the wordmark, or any confusingly similar
+    sign to identify a product or service.
+
+The absence of a technical restriction is not a permission. This repository
+being readable does not make its contents free to use.
+
+Viewing the source is permitted for the sole purpose of evaluating it with the
+owner's knowledge. Any other use requires prior written authorisation from the
+owner.
+
+Third-party dependencies listed in package.json are covered by their own
+licences and are not affected by this notice.
+
+Contact for permissions and licensing enquiries: see the legal notice
+published in the application.

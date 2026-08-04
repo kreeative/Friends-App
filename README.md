@@ -1,7 +1,12 @@
-# Friends
+# Rich & Friends
 
 A small-group accountability app for 2–6 people, built around one shared weekly
 check-in instead of a wall of goals.
+
+© 2026 Anne-Kelly Kouyaté. All rights reserved. This is proprietary software —
+see [LICENSE](./LICENSE). The published legal texts live in
+[`src/legal/content.js`](./src/legal/content.js) and are served at `/legal/terms`,
+`/legal/privacy` and `/legal/notice`.
 
 v1 worked and went quiet after nine days. v2 is built against the specific
 reasons accountability apps die — vague goals, no response to silence, no
