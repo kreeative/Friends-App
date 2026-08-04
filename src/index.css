@@ -1,0 +1,52 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    background: #000;
+    color: #fff;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    @apply bg-black text-white font-body antialiased;
+    /* Respect the notch; this app lives full-bleed on a phone. */
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  h1, h2, h3 {
+    @apply font-display tracking-tight;
+  }
+  /* Sharp corners everywhere — no rounded anything. */
+  * { border-radius: 0 !important; }
+  input, textarea, select, button { @apply bg-transparent; font: inherit; }
+  input:focus, textarea:focus, select:focus { @apply outline-none; }
+  ::placeholder { color: rgba(255, 255, 255, 0.3); }
+}
+
+@layer components {
+  .hair { @apply border border-white/[0.14]; }
+  .hair-t { @apply border-t border-white/[0.14]; }
+  .hair-b { @apply border-b border-white/[0.14]; }
+
+  .label {
+    @apply font-mono text-[10px] uppercase tracking-[0.18em] text-white/40;
+  }
+  .field {
+    @apply w-full hair px-3 py-3 text-[15px] text-white placeholder-white/25
+           focus:border-white/40 transition-colors;
+  }
+  .btn {
+    @apply w-full hair px-4 py-3.5 font-mono text-[11px] uppercase tracking-[0.18em]
+           transition-colors active:bg-white/10 disabled:opacity-30;
+  }
+  .btn-solid {
+    @apply w-full bg-white px-4 py-3.5 font-mono text-[11px] uppercase
+           tracking-[0.18em] text-black transition-opacity active:opacity-70
+           disabled:opacity-30;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}

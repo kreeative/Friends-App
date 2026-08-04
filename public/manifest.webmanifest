@@ -1,0 +1,9 @@
+{
+  "name": "Friends",
+  "short_name": "Friends",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "description": "A small-group accountability app built around a weekly ritual."
+}
