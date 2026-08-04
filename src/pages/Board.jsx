@@ -56,11 +56,11 @@ export default function Board() {
   const meAway = awayIds.has(user?.id)
 
   const status = useMemo(() => {
-    if (!currentCycle) return 'Setting up'
-    if (phase === 'open') return `Closes ${untilLabel(currentCycle.closes_at, { prefix: 'in ' })}`
-    if (phase === 'upcoming') return `Opens ${untilLabel(currentCycle.opens_at, { prefix: 'in ' })}`
-    if (nextCycle) return `Next opens ${untilLabel(nextCycle.opens_at, { prefix: 'in ' })}`
-    return 'Closed'
+    if (!currentCycle) return 'Getting things ready'
+    if (phase === 'open') return `Open for another ${untilLabel(currentCycle.closes_at)}`
+    if (phase === 'upcoming') return `Opens in ${untilLabel(currentCycle.opens_at)}`
+    if (nextCycle) return `Next one opens in ${untilLabel(nextCycle.opens_at)}`
+    return 'Closed for now'
   }, [currentCycle?.id, phase, nextCycle?.id])
 
   if (!group) return null
@@ -72,44 +72,59 @@ export default function Board() {
       <NudgeBanner />
 
       {phase === 'open' && !iHaveChecked && !meAway && (
-        <div className="px-4 pt-4">
-          <Link to="/checkin" className="btn-solid block text-center">
-            Check in — 60 seconds
+        <div className="pt-8">
+          <Link to="/checkin" className="btn-primary">
+            Check in
           </Link>
+          <p className="mt-3 text-center text-small text-muted">Takes about a minute.</p>
         </div>
       )}
 
-      <Section title={revealed ? 'This cycle' : `In so far — ${submittedIds.size} of ${expected.length}`}>
-        <div className="divide-y divide-white/[0.14] hair">
+      <Section
+        title={
+          revealed
+            ? 'This week'
+            : `${submittedIds.size} of ${expected.length} ${submittedIds.size === 1 ? 'has' : 'have'} checked in`
+        }
+      >
+        <div className="list">
           {members.map((m) => {
             const ck = checkins.find((c) => c.user_id === m.user_id)
             const isAway = awayIds.has(m.user_id)
             const mine = m.user_id === user?.id
 
             return (
-              <div key={m.user_id} className="p-4">
-                <div className="flex items-center gap-3">
+              <div key={m.user_id} className="py-5">
+                <div className="flex items-center gap-4">
                   <Avatar profile={m.profile} />
-                  <span className="flex-1 font-display text-[15px]">
+                  <span className="flex-1 text-body text-ink">
                     {m.profile?.display_name}
-                    {mine && <span className="text-white/30"> · you</span>}
+                    {mine && <span className="text-muted"> · you</span>}
                   </span>
-                  <span className="label">
-                    {isAway ? 'Away' : ck ? 'In' : phase === 'closed' ? 'Quiet' : 'Waiting'}
+                  <span
+                    className={`text-small ${
+                      ck ? 'text-positive' : isAway ? 'text-muted' : 'text-muted/70'
+                    }`}
+                  >
+                    {isAway
+                      ? 'Away this week'
+                      : ck
+                        ? 'Checked in'
+                        : phase === 'closed'
+                          ? "Didn't check in"
+                          : 'Not yet'}
                   </span>
                 </div>
 
                 {revealed && ck && (
-                  <div className="mt-3 space-y-1.5 pl-10">
+                  <div className="mt-4 space-y-2 pl-[3.5rem]">
                     {items
                       .filter((i) => i.checkin_id === ck.id)
                       .map((i) => (
                         <ItemLine key={i.id} item={i} />
                       ))}
                     {ck.next_commitment && (
-                      <p className="pt-1 text-[13px] leading-snug text-white/55">
-                        Next: {ck.next_commitment}
-                      </p>
+                      <p className="pt-1 text-small text-muted">Next: {ck.next_commitment}</p>
                     )}
                   </div>
                 )}
@@ -121,7 +136,7 @@ export default function Board() {
 
       {groupGoals.length > 0 && (
         <Section title="Together">
-          <div className="space-y-2">
+          <div className="space-y-4">
             {groupGoals.map((g) => (
               <GoalCard
                 key={g.id}
@@ -138,10 +153,13 @@ export default function Board() {
       )}
 
       {members.length === 1 && (
-        <Section title="Invite">
-          <Empty>
-            Share the code <span className="font-mono text-white">{group.invite_code}</span> — this
-            works with two to six people.
+        <Section title="Invite someone">
+          <Empty
+            action={
+              <p className="font-display text-h1 tracking-[0.12em] text-ink">{group.invite_code}</p>
+            }
+          >
+            It's just you so far. Send this code to a friend — two to six people works best.
           </Empty>
         </Section>
       )}
@@ -150,12 +168,20 @@ export default function Board() {
 }
 
 function ItemLine({ item }) {
-  const mark = item.outcome === 'done' ? '●' : item.outcome === 'partial' ? '◐' : '○'
+  const tone =
+    item.outcome === 'done' ? 'text-positive' : item.outcome === 'partial' ? 'text-caution' : 'text-muted/70'
+
   return (
-    <p className="flex items-baseline gap-2 text-[13px] text-white/60">
-      <span className="font-mono text-white/40">{mark}</span>
-      <span className="flex-1">{item.evidence || item.outcome}</span>
-      {item.count_done > 0 && <span className="font-mono text-[11px] text-white/35">{item.count_done}</span>}
+    <p className="flex items-baseline gap-3 text-small">
+      <span className={`text-[0.6rem] leading-[1.8] ${tone}`}>●</span>
+      <span className="flex-1 text-muted">{item.evidence || labelFor(item.outcome)}</span>
+      {item.count_done > 0 && <span className="text-muted/70">{item.count_done}</span>}
     </p>
   )
+}
+
+function labelFor(outcome) {
+  if (outcome === 'done') return 'Did it'
+  if (outcome === 'partial') return 'Got part of the way'
+  return 'Not this week'
 }

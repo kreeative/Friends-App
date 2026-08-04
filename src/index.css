@@ -2,51 +2,164 @@
 @tailwind components;
 @tailwind utilities;
 
+/**
+ * Tokens.
+ *
+ * Everything is warm. The backgrounds carry a little yellow rather than a
+ * little blue, and the text is a soft near-black — pure #000 on pure #FFF is
+ * the exact contrast that makes an interface feel clinical.
+ *
+ * Values are RGB channels so Tailwind's alpha modifier keeps working.
+ */
 @layer base {
+  :root {
+    --c-bg: 247 244 239; /* #F7F4EF bone */
+    --c-surface: 253 251 247; /* #FDFBF7 warm white */
+    --c-ink: 28 26 23; /* #1C1A17 soft near-black */
+    --c-muted: 122 115 106; /* #7A736A warm grey */
+    --c-hairline: 229 223 214; /* #E5DFD6 */
+    --c-accent: 194 90 30; /* #C25A1E burnt orange — the only accent */
+    --c-accent-ink: 253 251 247;
+
+    /* Semantic states, desaturated to sit inside the warm palette rather
+       than shouting in system red/green. */
+    --c-positive: 95 122 91; /* muted sage */
+    --c-caution: 168 118 62; /* dusty amber */
+    --c-negative: 168 84 64; /* clay, not alarm red */
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --c-bg: 20 18 15; /* warm near-black, no blue */
+      --c-surface: 29 26 22;
+      --c-ink: 242 237 228;
+      --c-muted: 154 144 134;
+      --c-hairline: 46 42 36;
+      --c-accent: 224 122 62; /* lifted so it holds contrast on dark */
+      --c-accent-ink: 24 20 16;
+      --c-positive: 138 163 133;
+      --c-caution: 199 152 96;
+      --c-negative: 201 118 96;
+    }
+  }
+
   html {
-    background: #000;
-    color: #fff;
+    background-color: rgb(var(--c-bg));
     -webkit-font-smoothing: antialiased;
     -webkit-tap-highlight-color: transparent;
   }
+
   body {
-    @apply bg-black text-white font-body antialiased;
-    /* Respect the notch; this app lives full-bleed on a phone. */
+    @apply bg-bg font-sans text-body text-ink;
     padding-bottom: env(safe-area-inset-bottom);
   }
-  h1, h2, h3 {
-    @apply font-display tracking-tight;
+
+  h1,
+  h2,
+  h3 {
+    @apply text-ink;
+    font-weight: 500; /* scale creates hierarchy, not weight */
   }
-  /* Sharp corners everywhere — no rounded anything. */
-  * { border-radius: 0 !important; }
-  input, textarea, select, button { @apply bg-transparent; font: inherit; }
-  input:focus, textarea:focus, select:focus { @apply outline-none; }
-  ::placeholder { color: rgba(255, 255, 255, 0.3); }
+
+  ::placeholder {
+    @apply text-muted/60;
+  }
+
+  input,
+  textarea,
+  select,
+  button {
+    font: inherit;
+    color: inherit;
+    background: transparent;
+  }
+
+  input:focus,
+  textarea:focus,
+  select:focus {
+    outline: none;
+  }
+
+  /* Visible only for keyboard users — the accent ring would otherwise fire
+     on every tap. */
+  :focus-visible {
+    outline: 2px solid rgb(var(--c-accent) / 0.55);
+    outline-offset: 2px;
+  }
 }
 
 @layer components {
-  .hair { @apply border border-white/[0.14]; }
-  .hair-t { @apply border-t border-white/[0.14]; }
-  .hair-b { @apply border-b border-white/[0.14]; }
+  /* --- surfaces ------------------------------------------------------- */
+  /* A card gets a hairline OR a shadow. Never both, never heavy. */
+  .card {
+    @apply rounded-card bg-surface p-6 shadow-soft;
+  }
+  .card-quiet {
+    @apply rounded-card border border-hairline bg-surface p-6;
+  }
+  .rule {
+    @apply border-hairline;
+  }
 
-  .label {
-    @apply font-mono text-[10px] uppercase tracking-[0.18em] text-white/40;
+  /* --- type ----------------------------------------------------------- */
+  .eyebrow {
+    @apply text-label uppercase tracking-[0.1em] text-muted;
   }
-  .field {
-    @apply w-full hair px-3 py-3 text-[15px] text-white placeholder-white/25
-           focus:border-white/40 transition-colors;
+  .lede {
+    @apply text-body text-muted;
   }
+
+  /* --- controls ------------------------------------------------------- */
   .btn {
-    @apply w-full hair px-4 py-3.5 font-mono text-[11px] uppercase tracking-[0.18em]
-           transition-colors active:bg-white/10 disabled:opacity-30;
+    @apply inline-flex min-h-[3rem] w-full items-center justify-center gap-2
+           rounded-pill px-6 py-3 text-body font-medium
+           transition-all duration-200 ease-settle
+           disabled:pointer-events-none disabled:opacity-40;
   }
-  .btn-solid {
-    @apply w-full bg-white px-4 py-3.5 font-mono text-[11px] uppercase
-           tracking-[0.18em] text-black transition-opacity active:opacity-70
-           disabled:opacity-30;
+  .btn-primary {
+    @apply btn bg-accent text-accent-ink hover:opacity-90 active:scale-[0.985];
+  }
+  /* Secondary is quiet by default and only borrows a wash on press. */
+  .btn-ghost {
+    @apply btn text-ink hover:bg-ink/[0.04] active:bg-ink/[0.07];
+  }
+  .btn-quiet {
+    @apply btn text-muted hover:text-ink;
+  }
+
+  /* Inputs are a line, not a box. */
+  .field {
+    @apply w-full border-0 border-b border-hairline bg-transparent px-0 pb-2.5 pt-1
+           text-body text-ink transition-colors duration-200 ease-settle
+           focus:border-accent;
+  }
+  .field-soft {
+    @apply w-full rounded-field border-0 bg-ink/[0.035] px-4 py-3 text-body text-ink
+           transition-colors duration-200 ease-settle focus:bg-ink/[0.06];
+  }
+  .field-label {
+    @apply mb-1 block text-small text-muted;
+  }
+
+  /* Lists are separated by hairlines, never by nested cards. */
+  .list {
+    @apply divide-y divide-hairline;
+  }
+  .list-row {
+    @apply flex items-center gap-4 py-5;
+  }
+
+  .shell {
+    @apply mx-auto w-full max-w-content px-6;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  * { animation: none !important; transition: none !important; }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

@@ -11,58 +11,65 @@ export default function GoalCard({ goal, owner, showControls = false, progress =
     await reloadGroup()
   }
 
+  const cadence =
+    goal.cadence === 'recurring'
+      ? `${goal.target_per_cycle} ${goal.target_per_cycle === 1 ? 'time' : 'times'} a week`
+      : `by ${shortDate(goal.due_on)}`
+
   return (
-    <article className={`hair p-4 ${paused ? 'opacity-50' : ''}`}>
-      <div className="flex items-start justify-between gap-3">
-        <h3 className="font-display text-[16px] leading-tight">{goal.commitment}</h3>
-        <span className="label shrink-0 pt-1">
-          {goal.cadence === 'recurring' ? `${goal.target_per_cycle}×` : shortDate(goal.due_on)}
-        </span>
-      </div>
+    <article
+      className={`card transition-opacity duration-200 ease-settle ${paused ? 'opacity-55' : ''}`}
+    >
+      <h3 className="text-h2 text-ink">{goal.commitment}</h3>
+
+      <p className="mt-1.5 text-small text-muted">
+        {cadence}
+        {paused && ' · paused'}
+      </p>
 
       {(goal.trigger_when || goal.trigger_where) && (
-        <p className="mt-2 text-[13px] leading-snug text-white/45">
-          {[goal.trigger_when, goal.trigger_where].filter(Boolean).join(' · ')}
+        <p className="mt-4 text-small text-muted">
+          {[goal.trigger_when, goal.trigger_where].filter(Boolean).join(', ')}
         </p>
       )}
 
       {goal.evidence_def && (
-        <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.14em] text-white/25">
-          Proof: {goal.evidence_def}
-        </p>
+        <p className="mt-1 text-small text-muted/75">Proof: {goal.evidence_def}</p>
       )}
 
       {progress && (
-        <div className="mt-3">
-          <div className="hair h-2 w-full">
-            <div className="h-full bg-white" style={{ width: `${progress.pct}%` }} />
+        <div className="mt-6">
+          <div className="h-1.5 w-full overflow-hidden rounded-pill bg-ink/[0.07]">
+            <div
+              className="h-full rounded-pill bg-accent transition-[width] duration-300 ease-settle"
+              style={{ width: `${progress.pct}%` }}
+            />
           </div>
-          <p className="mt-1.5 font-mono text-[10px] tracking-[0.14em] text-white/40">
-            {progress.actual} / {progress.target} this cycle
+          <p className="mt-2.5 text-small text-muted">
+            {progress.actual} of {progress.target} so far this week
           </p>
         </div>
       )}
 
-      <div className="mt-3 flex items-center justify-between gap-3">
-        <span className="label">
+      <div className="mt-6 flex items-center justify-between gap-4">
+        <span className="text-small text-muted">
           {owner ? owner.display_name : 'Everyone'}
-          {paused && ' · paused'}
           {goal.stake_text && ` · ${goal.stake_text}`}
         </span>
 
         {showControls && (
-          <div className="flex gap-2">
+          <div className="-mr-2 flex gap-1">
             <button
               onClick={() => setStatus(paused ? 'active' : 'paused')}
-              className="label px-2 py-1 hover:text-white"
+              className="rounded-pill px-3 py-1.5 text-small text-muted transition-colors duration-200 ease-settle hover:bg-ink/[0.05] hover:text-ink"
             >
-              {paused ? 'Resume' : 'Pause'}
+              {paused ? 'Pick it back up' : 'Pause'}
             </button>
             <button
               onClick={() => setStatus('completed')}
-              className="label px-2 py-1 hover:text-white"
+              className="rounded-pill px-3 py-1.5 text-small text-muted transition-colors duration-200 ease-settle hover:bg-ink/[0.05] hover:text-ink"
             >
-              Done
+              Mark done
             </button>
           </div>
         )}

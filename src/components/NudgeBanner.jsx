@@ -34,41 +34,43 @@ export default function NudgeBanner() {
 
   async function close(id) {
     setBusy(id)
-    await supabase.from('nudges').update({ state: 'done', closed_at: new Date().toISOString() }).eq('id', id)
+    await supabase
+      .from('nudges')
+      .update({ state: 'done', closed_at: new Date().toISOString() })
+      .eq('id', id)
     await reloadGroup()
     setBusy(null)
   }
 
   return (
-    <div className="space-y-2 px-4 pt-4">
+    <div className="space-y-4 pt-8">
       {visible.map((n) => {
         const claimedByMe = n.claimed_by === user?.id
         const assignedToMe = n.assigned_to === user?.id && n.state === 'pending'
 
         return (
-          <div key={n.id} className="border border-white/40 p-4">
-            <p className="label">Quiet for two cycles</p>
-            <h3 className="mt-1.5 font-display text-[17px] leading-tight">
-              {nameOf(n.subject_id)} hasn't checked in.
+          <div key={n.id} className="animate-rise rounded-card bg-accent/[0.08] p-6">
+            <h3 className="text-h2 text-ink">
+              {nameOf(n.subject_id)} has been quiet for a couple of weeks.
             </h3>
-            <p className="mt-2 text-[13px] leading-snug text-white/55">
+            <p className="lede mt-3">
               {n.state === 'claimed'
                 ? claimedByMe
-                  ? "You're reaching out. Send a message — not about the app."
-                  : `${nameOf(n.claimed_by)} is reaching out.`
+                  ? "You've got this one. Send them a message — about them, not about the app."
+                  : `${nameOf(n.claimed_by)} is checking in on them.`
                 : assignedToMe
-                  ? 'Nobody volunteered, so this one came to you. A text does it.'
-                  : 'Someone should message them directly. Not here — wherever you actually talk.'}
+                  ? 'Nobody picked this one up, so it came to you. A text is plenty.'
+                  : 'Someone should say hello — wherever you actually talk, not in here.'}
             </p>
 
             {n.state === 'pending' && (
-              <button onClick={() => claim(n.id)} disabled={busy === n.id} className="btn mt-3">
-                {busy === n.id ? '…' : "I'll check on them"}
+              <button onClick={() => claim(n.id)} disabled={busy === n.id} className="btn-primary mt-6">
+                {busy === n.id ? 'One moment' : "I'll check on them"}
               </button>
             )}
             {claimedByMe && (
-              <button onClick={() => close(n.id)} disabled={busy === n.id} className="btn mt-3">
-                {busy === n.id ? '…' : 'Done — I spoke to them'}
+              <button onClick={() => close(n.id)} disabled={busy === n.id} className="btn-ghost mt-6">
+                {busy === n.id ? 'One moment' : 'Done — we spoke'}
               </button>
             )}
           </div>

@@ -1,25 +1,33 @@
 export function Screen({ children, className = '' }) {
-  return <div className={`min-h-dvh bg-black pb-24 ${className}`}>{children}</div>
+  return (
+    <div className={`min-h-dvh bg-bg pb-28 ${className}`}>
+      <div className="shell animate-rise">{children}</div>
+    </div>
+  )
 }
 
+/**
+ * No sticky bar, no bottom rule. The heading just sits at the top of the page
+ * with room around it — one confident thing, which is the whole point.
+ */
 export function TopBar({ title, right, sub }) {
   return (
-    <header className="hair-b sticky top-0 z-20 bg-black/95 backdrop-blur px-4 pb-3 pt-5">
-      <div className="flex items-baseline justify-between gap-3">
-        <h1 className="font-display text-[22px] font-bold uppercase tracking-tight">{title}</h1>
-        {right}
+    <header className="flex items-start justify-between gap-4 pb-2 pt-14">
+      <div>
+        <h1 className="text-h1 text-ink">{title}</h1>
+        {sub && <p className="lede mt-2">{sub}</p>}
       </div>
-      {sub && <p className="label mt-1.5">{sub}</p>}
+      {right && <div className="pt-1">{right}</div>}
     </header>
   )
 }
 
 export function Section({ title, children, action }) {
   return (
-    <section className="px-4 pt-7">
+    <section className="pt-section">
       {(title || action) && (
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="label">{title}</h2>
+        <div className="mb-5 flex items-baseline justify-between gap-4">
+          {title && <h2 className="eyebrow">{title}</h2>}
           {action}
         </div>
       )}
@@ -28,16 +36,22 @@ export function Section({ title, children, action }) {
   )
 }
 
-export function Empty({ children }) {
-  return <p className="hair px-4 py-6 text-center text-[13px] text-white/40">{children}</p>
+export function Empty({ children, action }) {
+  return (
+    <div className="py-10 text-center">
+      <p className="lede mx-auto max-w-[28ch]">{children}</p>
+      {action && <div className="mt-6">{action}</div>}
+    </div>
+  )
 }
 
+/** A number and its name. No box — the scale does the work. */
 export function Stat({ value, label, hint }) {
   return (
-    <div className="hair flex-1 px-3 py-4">
-      <div className="font-display text-[26px] leading-none">{value}</div>
-      <div className="label mt-2">{label}</div>
-      {hint && <div className="mt-1 font-mono text-[10px] text-white/25">{hint}</div>}
+    <div className="flex-1">
+      <div className="font-display text-metric text-ink">{value}</div>
+      <div className="mt-2 text-small text-muted">{label}</div>
+      {hint && <div className="text-small text-muted/70">{hint}</div>}
     </div>
   )
 }
@@ -45,14 +59,14 @@ export function Stat({ value, label, hint }) {
 export function Field({ label, hint, children }) {
   return (
     <label className="block">
-      <span className="label mb-1.5 block">{label}</span>
+      {label && <span className="field-label">{label}</span>}
       {children}
-      {hint && <span className="mt-1.5 block text-[12px] leading-snug text-white/35">{hint}</span>}
+      {hint && <span className="mt-2 block text-small text-muted">{hint}</span>}
     </label>
   )
 }
 
-export function Avatar({ profile, size = 28 }) {
+export function Avatar({ profile, size = 40 }) {
   const initials = (profile?.display_name ?? '?')
     .split(' ')
     .map((w) => w[0])
@@ -62,7 +76,7 @@ export function Avatar({ profile, size = 28 }) {
 
   return (
     <div
-      className="hair flex shrink-0 items-center justify-center font-mono text-[10px] text-white/70"
+      className="flex shrink-0 items-center justify-center rounded-pill bg-ink/[0.06] text-small text-muted"
       style={{ width: size, height: size }}
     >
       {initials}
@@ -70,22 +84,26 @@ export function Avatar({ profile, size = 28 }) {
   )
 }
 
-/** Bottom sheet — the reachable place for a control on a phone. */
 export function Sheet({ open, onClose, title, children }) {
   if (!open) return null
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/70" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex flex-col justify-end bg-ink/25 backdrop-blur-[2px]"
+      onClick={onClose}
+    >
       <div
-        className="hair-t max-h-[88dvh] overflow-y-auto bg-black px-4 pb-8 pt-5"
+        className="max-h-[88dvh] animate-rise overflow-y-auto rounded-t-[1.75rem] bg-surface px-6 pb-12 pt-8"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mb-5 flex items-center justify-between">
-          <h2 className="font-display text-[18px] uppercase tracking-tight">{title}</h2>
-          <button onClick={onClose} className="label px-2 py-1">
-            Close
-          </button>
+        <div className="mx-auto w-full max-w-content">
+          <div className="mb-8 flex items-baseline justify-between gap-4">
+            <h2 className="text-h2">{title}</h2>
+            <button onClick={onClose} className="text-small text-muted transition-colors hover:text-ink">
+              Close
+            </button>
+          </div>
+          {children}
         </div>
-        {children}
       </div>
     </div>
   )
