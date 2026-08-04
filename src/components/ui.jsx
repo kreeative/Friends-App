@@ -1,3 +1,5 @@
+import { useT } from '../lib/i18n'
+
 export function Screen({ children, className = '' }) {
   // Extra bottom room: the tab bar floats clear of the edge, so content has
   // to clear the bar plus its inset.
@@ -51,8 +53,10 @@ export function Empty({ children, action }) {
 export function Stat({ value, label, hint }) {
   return (
     <div className="flex-1">
-      {/* The metric is gold's other job, alongside progress. */}
-      <div className="font-display text-metric text-gold">{value}</div>
+      {/* Yellow cannot be type — 1.4:1 on white — so the metric stays ink and
+          the yellow arrives as a rule underneath it. */}
+      <div className="font-display text-metric text-ink">{value}</div>
+      <div className="mt-2 h-1 w-10 rounded-pill bg-yellow" />
       <div className="mt-2 text-small text-muted">{label}</div>
       {hint && <div className="text-small text-muted/70">{hint}</div>}
     </div>
@@ -88,6 +92,7 @@ export function Avatar({ profile, size = 40 }) {
 }
 
 export function Sheet({ open, onClose, title, children }) {
+  const { t } = useT()
   if (!open) return null
   return (
     <div
@@ -102,7 +107,7 @@ export function Sheet({ open, onClose, title, children }) {
           <div className="mb-8 flex items-baseline justify-between gap-4">
             <h2 className="text-h2">{title}</h2>
             <button onClick={onClose} className="text-small text-muted transition-colors hover:text-ink">
-              Close
+              {t('ui.close')}
             </button>
           </div>
           {children}

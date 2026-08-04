@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useGroup } from '../context/GroupContext'
+import { useT } from '../lib/i18n'
 
 /**
  * The response to silence.
@@ -17,6 +18,7 @@ import { useGroup } from '../context/GroupContext'
 export default function NudgeBanner() {
   const { user } = useAuth()
   const { nudges, members, reloadGroup } = useGroup()
+  const { t } = useT()
   const [busy, setBusy] = useState(null)
 
   const visible = nudges.filter((n) => n.subject_id !== user?.id)
@@ -52,27 +54,25 @@ export default function NudgeBanner() {
           // A raised surface rather than a pink wash: this is not something
           // you tap, and pink here would spend the accent on decoration.
           <div key={n.id} className="animate-rise rounded-card bg-surface p-6 shadow-raised">
-            <h3 className="text-h2 text-ink">
-              {nameOf(n.subject_id)} has been quiet for a couple of weeks.
-            </h3>
+            <h3 className="text-h2 text-ink">{t('nudge.quiet', { name: nameOf(n.subject_id) })}</h3>
             <p className="lede mt-3">
               {n.state === 'claimed'
                 ? claimedByMe
-                  ? "You've got this one. Send them a message — about them, not about the app."
-                  : `${nameOf(n.claimed_by)} is checking in on them.`
+                  ? t('nudge.claimed_by_me')
+                  : t('nudge.claimed_by_other', { name: nameOf(n.claimed_by) })
                 : assignedToMe
-                  ? 'Nobody picked this one up, so it came to you. A text is plenty.'
-                  : 'Someone should say hello — wherever you actually talk, not in here.'}
+                  ? t('nudge.assigned')
+                  : t('nudge.open')}
             </p>
 
             {n.state === 'pending' && (
               <button onClick={() => claim(n.id)} disabled={busy === n.id} className="btn-primary mt-6">
-                {busy === n.id ? 'One moment' : "I'll check on them"}
+                {busy === n.id ? t('nudge.busy') : t('nudge.claim')}
               </button>
             )}
             {claimedByMe && (
               <button onClick={() => close(n.id)} disabled={busy === n.id} className="btn-ghost mt-6">
-                {busy === n.id ? 'One moment' : 'Done — we spoke'}
+                {busy === n.id ? t('nudge.busy') : t('nudge.close')}
               </button>
             )}
           </div>

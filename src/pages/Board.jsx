@@ -5,12 +5,14 @@ import { useAuth } from '../context/AuthContext'
 import { useGroup } from '../context/GroupContext'
 import { cyclePhase, untilLabel } from '../lib/time'
 import { groupGoalProgress } from '../lib/stats'
+import { useT } from '../lib/i18n'
 import { Avatar, Empty, Screen, Section, TopBar } from '../components/ui'
 import NudgeBanner from '../components/NudgeBanner'
 import GoalCard from '../components/GoalCard'
 
 export default function Board() {
   const { user } = useAuth()
+  const { t } = useT()
   const { group, members, currentCycle, nextCycle, groupGoals, myGoals, statuses } = useGroup()
   const [checkins, setCheckins] = useState([])
   const [items, setItems] = useState([])
@@ -57,12 +59,12 @@ export default function Board() {
   const openCount = [...myGoals, ...groupGoals].filter((g) => g.status === 'active').length
 
   const status = useMemo(() => {
-    if (!currentCycle) return 'Getting things ready'
-    if (phase === 'open') return `Open for another ${untilLabel(currentCycle.closes_at)}`
-    if (phase === 'upcoming') return `Opens in ${untilLabel(currentCycle.opens_at)}`
-    if (nextCycle) return `Next one opens in ${untilLabel(nextCycle.opens_at)}`
-    return 'Closed for now'
-  }, [currentCycle?.id, phase, nextCycle?.id])
+    if (!currentCycle) return t('board.getting_ready')
+    if (phase === 'open') return t('board.open_for', { t: untilLabel(currentCycle.closes_at) })
+    if (phase === 'upcoming') return t('board.opens_in', { t: untilLabel(currentCycle.opens_at) })
+    if (nextCycle) return t('board.next_opens_in', { t: untilLabel(nextCycle.opens_at) })
+    return t('board.closed')
+  }, [currentCycle?.id, phase, nextCycle?.id, t])
 
   if (!group) return null
 
@@ -79,14 +81,14 @@ export default function Board() {
        */}
       {phase === 'open' && !iHaveChecked && !meAway && (
         <div className="glass mt-8 rounded-card p-6">
-          <h2 className="text-h2 text-ink">Ready when you are</h2>
+          <h2 className="text-h2 text-ink">{t('board.ready')}</h2>
           <p className="mt-2 text-body text-ink/70">
             {openCount === 0
-              ? 'Nothing on your list yet — add something first.'
-              : `${openCount} ${openCount === 1 ? 'thing' : 'things'} to look at. Takes about a minute.`}
+              ? t('board.nothing_listed')
+              : t('board.things_to_look_at', { n: openCount })}
           </p>
           <Link to="/checkin" className="btn-primary press mt-6">
-            Check in
+            {t('board.check_in')}
           </Link>
         </div>
       )}
@@ -94,8 +96,8 @@ export default function Board() {
       <Section
         title={
           revealed
-            ? 'This week'
-            : `${submittedIds.size} of ${expected.length} ${submittedIds.size === 1 ? 'has' : 'have'} checked in`
+            ? t('board.this_week')
+            : t('board.checked_in_count', { n: submittedIds.size, total: expected.length })
         }
       >
         <div className="list">
@@ -110,20 +112,18 @@ export default function Board() {
                   <Avatar profile={m.profile} />
                   <span className="flex-1 text-body text-ink">
                     {m.profile?.display_name}
-                    {mine && <span className="text-muted"> · you</span>}
+                    {mine && <span className="text-muted"> · {t('board.you')}</span>}
                   </span>
-                  <span
-                    className={`text-small ${
-                      ck ? 'text-positive' : isAway ? 'text-muted' : 'text-muted/70'
-                    }`}
-                  >
+                  {/* A filled chip, not coloured text: green at full saturation
+                      cannot pass contrast as type, and the block reads louder. */}
+                  <span className={ck ? 'chip-green' : 'chip-quiet'}>
                     {isAway
-                      ? 'Away this week'
+                      ? t('board.state_away')
                       : ck
-                        ? 'Checked in'
+                        ? t('board.state_in')
                         : phase === 'closed'
-                          ? "Didn't check in"
-                          : 'Not yet'}
+                          ? t('board.state_quiet')
+                          : t('board.state_waiting')}
                   </span>
                 </div>
 
@@ -135,7 +135,9 @@ export default function Board() {
                         <ItemLine key={i.id} item={i} />
                       ))}
                     {ck.next_commitment && (
-                      <p className="pt-1 text-small text-muted">Next: {ck.next_commitment}</p>
+                      <p className="pt-1 text-small text-muted">
+                        {t('board.next', { text: ck.next_commitment })}
+                      </p>
                     )}
                   </div>
                 )}
@@ -146,7 +148,7 @@ export default function Board() {
       </Section>
 
       {groupGoals.length > 0 && (
-        <Section title="Together">
+        <Section title={t('board.together')}>
           <div className="space-y-4">
             {groupGoals.map((g) => (
               <GoalCard
@@ -164,13 +166,13 @@ export default function Board() {
       )}
 
       {members.length === 1 && (
-        <Section title="Invite someone">
+        <Section title={t('board.invite')}>
           <Empty
             action={
               <p className="font-display text-h1 tracking-[0.12em] text-ink">{group.invite_code}</p>
             }
           >
-            It's just you so far. Send this code to a friend — two to six people works best.
+            {t('board.invite_body')}
           </Empty>
         </Section>
       )}
@@ -179,20 +181,27 @@ export default function Board() {
 }
 
 function ItemLine({ item }) {
+  const { t } = useT()
+  // A dot is not text, so it can carry the saturated hue directly.
   const tone =
-    item.outcome === 'done' ? 'text-positive' : item.outcome === 'partial' ? 'text-caution' : 'text-muted/70'
+    item.outcome === 'done'
+      ? 'bg-green'
+      : item.outcome === 'partial'
+        ? 'bg-yellow'
+        : 'bg-muted/40'
+
+  const label =
+    item.outcome === 'done'
+      ? t('board.did_it')
+      : item.outcome === 'partial'
+        ? t('board.partly')
+        : t('board.not_this_week')
 
   return (
-    <p className="flex items-baseline gap-3 text-small">
-      <span className={`text-[0.6rem] leading-[1.8] ${tone}`}>●</span>
-      <span className="flex-1 text-muted">{item.evidence || labelFor(item.outcome)}</span>
+    <p className="flex items-center gap-3 text-small">
+      <span className={`h-2 w-2 shrink-0 rounded-pill ${tone}`} />
+      <span className="flex-1 text-muted">{item.evidence || label}</span>
       {item.count_done > 0 && <span className="text-muted/70">{item.count_done}</span>}
     </p>
   )
-}
-
-function labelFor(outcome) {
-  if (outcome === 'done') return 'Did it'
-  if (outcome === 'partial') return 'Got part of the way'
-  return 'Not this week'
 }

@@ -2,18 +2,20 @@ import { NavLink, Outlet } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { onPendingChange, pendingCount, startAutoFlush } from '../lib/queue'
 import { useGroup } from '../context/GroupContext'
+import { useT } from '../lib/i18n'
 
 const TABS = [
-  { to: '/', label: 'Home', end: true },
-  { to: '/goals', label: 'Goals' },
-  { to: '/me', label: 'You' },
-  { to: '/settings', label: 'Group' },
+  { to: '/', key: 'nav.home', end: true },
+  { to: '/goals', key: 'nav.goals' },
+  { to: '/me', key: 'nav.you' },
+  { to: '/settings', key: 'nav.group' },
 ]
 
 function SyncBadge() {
   const [pending, setPending] = useState(pendingCount())
   const [online, setOnline] = useState(navigator.onLine)
   const { reloadGroup } = useGroup()
+  const { t } = useT()
 
   useEffect(() => {
     const stop = startAutoFlush()
@@ -37,14 +39,14 @@ function SyncBadge() {
 
   return (
     <div className="animate-rise border-b border-hairline bg-surface px-6 py-2.5 text-center text-small text-ink">
-      {pending > 0
-        ? `Saved. ${pending === 1 ? 'It' : 'They'} will send as soon as you're back online.`
-        : "You're offline — anything you write will send itself later."}
+      {pending > 0 ? t('sync.queued', { n: pending }) : t('sync.offline')}
     </div>
   )
 }
 
 export default function AppShell() {
+  const { t } = useT()
+
   return (
     <div className="relative min-h-dvh bg-bg">
       <div className="ambient" aria-hidden="true" />
@@ -64,11 +66,11 @@ export default function AppShell() {
         style={{ marginBottom: 'env(safe-area-inset-bottom)' }}
       >
         <div className="flex">
-          {TABS.map((t) => (
+          {TABS.map((tab) => (
             <NavLink
-              key={t.to}
-              to={t.to}
-              end={t.end}
+              key={tab.to}
+              to={tab.to}
+              end={tab.end}
               // Inactive labels are dimmed ink rather than the muted token:
               // muted over glass drops to 2.5:1 when the accent button passes
               // underneath. ink/70 holds above 4.5:1 in the worst case.
@@ -78,7 +80,7 @@ export default function AppShell() {
                 }`
               }
             >
-              {t.label}
+              {t(tab.key)}
             </NavLink>
           ))}
         </div>

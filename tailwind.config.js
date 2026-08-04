@@ -18,14 +18,13 @@ export default {
         muted: c('muted'),
         hairline: c('hairline'),
 
-        // Two accents, two jobs. Pink is only ever something you tap; gold is
-        // only ever something achieved. Neither is available as decoration.
-        pink: c('pink'),
+        // Three pops, three jobs, no overlap. Each is a fill only — none of
+        // them is available as a text colour or as decoration.
+        pink: c('pink'), // action
         'pink-pressed': c('pink-pressed'),
-        'on-pink': c('on-pink'),
-        gold: c('gold'),
-        'gold-light': c('gold-light'),
-        green: c('green'),
+        green: c('green'), // this week's state
+        yellow: c('yellow'), // what accumulates
+        'on-pop': c('on-pop'), // the dark text every pop carries
 
         positive: c('positive'),
         caution: c('caution'),

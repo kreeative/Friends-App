@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { GroupProvider, useGroup } from './context/GroupContext'
+import { I18nProvider } from './lib/i18n'
 import { configured } from './lib/supabase'
 import AppShell from './components/AppShell'
 import SignIn from './pages/SignIn'
@@ -55,11 +56,13 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <GroupProvider>
-          <Gate />
-        </GroupProvider>
-      </AuthProvider>
+      <I18nProvider>
+        <AuthProvider>
+          <GroupProvider>
+            <Gate />
+          </GroupProvider>
+        </AuthProvider>
+      </I18nProvider>
     </BrowserRouter>
   )
 }

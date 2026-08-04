@@ -24,8 +24,8 @@ export function untilLabel(iso, { prefix = '' } = {}) {
   return ms >= 0 ? `${prefix}${value}`.trim() : `${value} ago`
 }
 
-export function shortDate(iso) {
-  return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+export function shortDate(iso, locale) {
+  return new Date(iso).toLocaleDateString(locale, { month: 'short', day: 'numeric' })
 }
 
 /** Where a cycle sits relative to now, independent of the stored state column. */
