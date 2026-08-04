@@ -125,6 +125,51 @@ Buy at cost from Cloudflare Registrar or Porkbun — neither marks up renewals,
 which is where cheap registrars make their money back. If you are a student,
 the GitHub Student Developer Pack includes a free `.me` for a year.
 
+**Genuinely free, if you can wait:** `eu.org` hands out real subdomains such as
+`richandfriends.eu.org` at no cost and has done since 1996. Approval is manual
+and can take days or weeks. It works, but it reads as a hobby address rather
+than a brand.
+
+### Getting "netlify" out of the address bar
+
+Nothing else has to change: Netlify does not put a badge, a banner or any
+branding on the page itself, on any plan. The subdomain is the only place the
+name appears.
+
+Once you own a domain:
+
+1. **Netlify → Domain management → Add a domain.** Enter the domain without
+   `https://`. Netlify checks that you own it and then shows you the DNS
+   records to create.
+
+2. **Point the DNS.** Two ways, and Netlify will offer both:
+
+   *Netlify DNS* — change the nameservers at your registrar to the four
+   Netlify gives you. Simplest, and apex domains work without special record
+   types.
+
+   *Keep your registrar's DNS* — add the records exactly as Netlify displays
+   them: a CNAME for `www` pointing at your `*.netlify.app` hostname, and for
+   the apex either an `ALIAS`/`ANAME` record if your registrar supports one
+   (Cloudflare and Porkbun both do) or the A record Netlify shows. Use the
+   values on screen rather than any written down elsewhere — Netlify's
+   addresses change occasionally.
+
+3. **Wait.** Usually minutes, occasionally a few hours. Netlify issues a
+   Let's Encrypt certificate automatically once DNS resolves; there is nothing
+   to buy or upload.
+
+4. **Set the primary domain** under Domain management, and turn on *Force
+   HTTPS*. Requests to the `.netlify.app` address will then redirect to your
+   domain, so the old one stops appearing.
+
+Then, and this order matters:
+
+- add the new URL to Supabase → Authentication → URL Configuration, or
+  sign-in breaks the moment the domain becomes primary;
+- verify the domain in Resend so `MAIL_FROM` can use it;
+- fill the domain into the `[BRACKETS]` in `src/legal/content.js`.
+
 **Connecting it:** Netlify → Domain management → Add a domain, then point your
 registrar's nameservers at Netlify, or add the CNAME it gives you. HTTPS is
 issued automatically within a few minutes.
