@@ -146,3 +146,10 @@ than confronting them with a backlog.
   editing.
 - Changing a group's check-in day affects future cycles only. This is
   deliberate: history should not move.
+
+
+---
+
+## Deployment
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for instructions to finish Supabase and Netlify setup, environment variables to set, and redeploy steps. 
