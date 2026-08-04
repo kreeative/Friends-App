@@ -25,6 +25,7 @@ export default {
         'on-pink': c('on-pink'),
         gold: c('gold'),
         'gold-light': c('gold-light'),
+        green: c('green'),
 
         positive: c('positive'),
         caution: c('caution'),

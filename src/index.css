@@ -5,11 +5,17 @@
 /**
  * Tokens.
  *
- * Black, pink and gold, and the split between the two accents is the whole
- * system: pink is action (anything you tap), gold is achievement (progress,
- * completion, metrics), black is everything else. A colour appearing outside
- * its job is a bug, not a style choice — that discipline is the difference
- * between a designed palette and a nightclub flyer.
+ * Black, pink, gold and green. The job split is the whole system, and it is
+ * what keeps three accents from turning into decoration:
+ *
+ *   pink   anything you tap — buttons, focus, links. Nothing else, ever.
+ *   green  this week's state — checked in, did it.
+ *   gold   what accumulates — the progress bar, the completion rate.
+ *   black  everything else: structure, surfaces, text.
+ *
+ * Green and gold are deliberately split by time rather than by meaning. Green
+ * is frequent and small, gold is rare and larger, so the two almost never sit
+ * on screen together — which is what stops the palette reading as a flyer.
  *
  * Dark is the primary mode and is authored here on :root. Light is the
  * variant, overridden below.
@@ -34,13 +40,19 @@
        outright, while the background colour lands at 6.0:1. */
     --c-on-pink: 12 10 14;
 
-    --c-gold: 208 168 92; /* #D0A85C — progress, completion, metrics */
+    --c-gold: 208 168 92; /* #D0A85C — accumulated achievement */
     --c-gold-light: 232 200 126; /* #E8C87E */
+
+    /* Green earns its place by taking a job off gold rather than sharing one.
+       Green is the ordinary weekly state — checked in, did it. Gold is what
+       builds up over time — the progress bar, the completion rate. Different
+       jobs at very different frequencies, so they rarely appear together. */
+    --c-green: 92 191 142; /* #5CBF8E */
 
     /* Semantic states, mapped onto the palette so nothing imports a system
        red or green. Kept as separate names so meaning and hue stay
        independently adjustable. */
-    --c-positive: 208 168 92; /* gold — done / on track */
+    --c-positive: 92 191 142; /* green — done / on track this cycle */
     --c-caution: 184 122 150; /* #B87A96 muted rose — partway */
     --c-negative: 217 112 120; /* lifted from #C2555C, which read 3.8:1 on a
                                   raised surface and failed AA */
@@ -90,7 +102,9 @@
       --c-gold: 133 98 38; /* #856226 */
       --c-gold-light: 168 129 58; /* #A8813A works as a fill, not as text */
 
-      --c-positive: 133 98 38;
+      --c-green: 36 128 90; /* #24805A deepened to clear AA on white */
+
+      --c-positive: 36 128 90;
       --c-caution: 154 88 120; /* #9A5878 */
       --c-negative: 176 74 81; /* #B04A51 */
 
@@ -123,6 +137,9 @@
 
   body {
     @apply bg-bg font-sans text-body text-ink;
+    /* Medium rather than regular. DM Sans at 400 goes thin at small sizes,
+       and the secondary greys were the worst of it. */
+    font-weight: 500;
     padding-bottom: env(safe-area-inset-bottom);
   }
 
@@ -130,7 +147,7 @@
   h2,
   h3 {
     @apply text-ink;
-    font-weight: 500; /* scale creates hierarchy, not weight */
+    font-weight: 700;
   }
 
   ::placeholder {
@@ -242,7 +259,7 @@
 
   /* --- type ----------------------------------------------------------- */
   .eyebrow {
-    @apply text-label uppercase tracking-[0.1em] text-muted;
+    @apply text-label font-semibold uppercase tracking-[0.1em] text-muted;
   }
   .lede {
     @apply text-body text-muted;
@@ -251,7 +268,7 @@
   /* --- controls ------------------------------------------------------- */
   .btn {
     @apply inline-flex min-h-[3rem] w-full items-center justify-center gap-2
-           rounded-pill px-6 py-3 text-body font-medium
+           rounded-pill px-6 py-3 text-body font-bold
            transition-all duration-200 ease-settle
            disabled:pointer-events-none disabled:opacity-40;
   }
@@ -277,7 +294,7 @@
            transition-colors duration-200 ease-settle focus:bg-ink/[0.06];
   }
   .field-label {
-    @apply mb-1 block text-small text-muted;
+    @apply mb-1 block text-small font-semibold text-muted;
   }
 
   /* Lists are separated by hairlines, never by nested cards. */
