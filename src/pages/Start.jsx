@@ -3,9 +3,12 @@ import { supabase } from '../lib/supabase'
 import { useGroup } from '../context/GroupContext'
 import { DAYS, localTimezone } from '../lib/time'
 import { Field } from '../components/ui'
+import Wordmark from '../components/Wordmark'
+import { useT } from '../lib/i18n'
 
 export default function Start() {
   const { reload, setActiveGroup } = useGroup()
+  const { t, locale } = useT()
   const [mode, setMode] = useState('create')
   const [name, setName] = useState('')
   const [dow, setDow] = useState(0)
@@ -13,6 +16,11 @@ export default function Start() {
   const [code, setCode] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
+
+  const dayNames =
+    locale === 'fr'
+      ? ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi']
+      : DAYS
 
   async function create(e) {
     e.preventDefault()
@@ -46,88 +54,88 @@ export default function Start() {
   }
 
   return (
-    <main className="min-h-dvh bg-black px-5 py-12">
-      <h1 className="font-display text-[30px] font-bold uppercase leading-none tracking-tight">
-        Start
-      </h1>
+    <div className="relative min-h-dvh bg-bg">
+      <div className="ambient" aria-hidden="true" />
 
-      <div className="mt-7 grid grid-cols-2 gap-2">
-        {[
-          ['create', 'New group'],
-          ['join', 'Join one'],
-        ].map(([v, l]) => (
-          <button
-            key={v}
-            onClick={() => setMode(v)}
-            className={`hair py-3 font-mono text-[11px] uppercase tracking-[0.18em] ${
-              mode === v ? 'bg-white text-black' : 'text-white/50'
-            }`}
-          >
-            {l}
-          </button>
-        ))}
-      </div>
+      <main className="relative z-10 mx-auto w-full max-w-content animate-rise px-6 pb-20 pt-14">
+        <Wordmark width={200} />
 
-      {mode === 'create' ? (
-        <form onSubmit={create} className="mt-8 space-y-6">
-          <Field label="Group name">
-            <input
-              className="field"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Sunday Four"
-              maxLength={60}
-            />
-          </Field>
+        <div className="mt-10 flex gap-2">
+          {[
+            ['create', t('start.new_group')],
+            ['join', t('start.join_one')],
+          ].map(([v, label]) => (
+            <button
+              key={v}
+              onClick={() => setMode(v)}
+              className={mode === v ? 'chip-pink press' : 'chip-quiet press'}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
 
-          <Field
-            label="Check-in opens"
-            hint="Everyone checks in inside the same window. The shared moment is the part that keeps a group alive — staggered check-ins are just a form that's always open."
-          >
-            <div className="grid grid-cols-2 gap-3">
-              <select className="field" value={dow} onChange={(e) => setDow(e.target.value)}>
-                {DAYS.map((d, i) => (
-                  <option key={d} value={i} className="bg-black">
-                    {d}
-                  </option>
-                ))}
-              </select>
-              <select className="field" value={hour} onChange={(e) => setHour(e.target.value)}>
-                {Array.from({ length: 24 }, (_, h) => (
-                  <option key={h} value={h} className="bg-black">
-                    {String(h).padStart(2, '0')}:00
-                  </option>
-                ))}
-              </select>
-            </div>
-          </Field>
+        {mode === 'create' ? (
+          <form onSubmit={create} className="mt-10 space-y-8">
+            <Field label={t('start.group_name')}>
+              <input
+                className="field"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder={t('start.group_name_ph')}
+                maxLength={60}
+              />
+            </Field>
 
-          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-white/25">
-            Window stays open 30 hours · {localTimezone()}
-          </p>
+            <Field label={t('start.checkin_opens')} hint={t('start.checkin_hint')}>
+              <div className="grid grid-cols-2 gap-4">
+                <select className="field-soft" value={dow} onChange={(e) => setDow(e.target.value)}>
+                  {dayNames.map((d, i) => (
+                    <option key={d} value={i}>
+                      {d}
+                    </option>
+                  ))}
+                </select>
+                <select className="field-soft" value={hour} onChange={(e) => setHour(e.target.value)}>
+                  {Array.from({ length: 24 }, (_, h) => (
+                    <option key={h} value={h}>
+                      {String(h).padStart(2, '0')}:00
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </Field>
 
-          {error && <p className="hair p-3 text-[13px] text-white/70">{error}</p>}
-          <button className="btn-solid" disabled={busy || name.trim().length < 2}>
-            {busy ? 'Creating' : 'Create group'}
-          </button>
-        </form>
-      ) : (
-        <form onSubmit={join} className="mt-8 space-y-6">
-          <Field label="Invite code" hint="Six characters, from whoever set the group up.">
-            <input
-              className="field font-mono uppercase tracking-[0.3em]"
-              value={code}
-              onChange={(e) => setCode(e.target.value.toUpperCase())}
-              placeholder="A1B2C3"
-              maxLength={6}
-            />
-          </Field>
-          {error && <p className="hair p-3 text-[13px] text-white/70">{error}</p>}
-          <button className="btn-solid" disabled={busy || code.trim().length < 4}>
-            {busy ? 'Joining' : 'Join'}
-          </button>
-        </form>
-      )}
-    </main>
+            <p className="text-small text-muted">
+              {t('start.window_note', { tz: localTimezone() })}
+            </p>
+
+            {error && <p className="card text-small text-negative">{error}</p>}
+
+            <button className="btn-primary press" disabled={busy || name.trim().length < 2}>
+              {busy ? t('start.creating') : t('start.create')}
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={join} className="mt-10 space-y-8">
+            <Field label={t('start.invite_code')} hint={t('start.invite_hint')}>
+              <input
+                className="field text-center text-h2 uppercase tracking-[0.3em]"
+                value={code}
+                onChange={(e) => setCode(e.target.value.toUpperCase())}
+                placeholder="A1B2C3"
+                maxLength={6}
+              />
+            </Field>
+
+            {error && <p className="card text-small text-negative">{error}</p>}
+
+            <button className="btn-primary press" disabled={busy || code.trim().length < 4}>
+              {busy ? t('start.joining') : t('start.join')}
+            </button>
+          </form>
+        )}
+      </main>
+    </div>
   )
 }

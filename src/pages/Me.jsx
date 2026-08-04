@@ -3,13 +3,15 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useGroup } from '../context/GroupContext'
 import { completionRate, consecutiveMisses } from '../lib/stats'
+import { useT } from '../lib/i18n'
 import { Screen, Section, Sheet, Stat, TopBar } from '../components/ui'
-import HistoryStrip from '../components/HistoryStrip'
+import HistoryStrip, { HistoryLegend } from '../components/HistoryStrip'
 import GoalForm from '../components/GoalForm'
 
 export default function Me() {
   const { user, profile, signOut } = useAuth()
   const { statusesFor, myGoals, reloadGroup } = useGroup()
+  const { t } = useT()
   const [resetOpen, setResetOpen] = useState(false)
   const [busy, setBusy] = useState(false)
 
@@ -39,55 +41,49 @@ export default function Me() {
 
   return (
     <Screen>
-      <TopBar title={profile?.display_name ?? 'You'} sub="Your consistency" />
+      <TopBar title={profile?.display_name ?? t('nav.you')} sub={t('me.consistency')} />
 
       {quiet >= 2 && (
-        <div className="px-4 pt-4">
-          <div className="border border-white/40 p-4">
-            <p className="label">Been a couple of cycles</p>
-            <h3 className="mt-1.5 font-display text-[17px] leading-tight">Still in?</h3>
-            <p className="mt-2 text-[13px] leading-snug text-white/55">
-              Park what's there and pick one thing. No catching up, no backlog.
-            </p>
-            <button onClick={restart} disabled={busy} className="btn mt-3">
-              {busy ? '…' : "I'm still in — reset me"}
+        <div className="pt-8">
+          <div className="card">
+            <p className="eyebrow">{t('me.quiet_label')}</p>
+            <h3 className="mt-2 text-h2 text-ink">{t('me.still_in')}</h3>
+            <p className="mt-2 text-body text-muted">{t('me.still_in_body')}</p>
+            <button onClick={restart} disabled={busy} className="btn-primary press mt-6">
+              {busy ? '…' : t('me.reset')}
             </button>
           </div>
         </div>
       )}
 
-      <Section title="Last 14 cycles">
-        <div className="flex gap-2">
+      <Section title={t('me.last14')}>
+        <div className="flex gap-6">
           <Stat
             value={rate.total ? `${rate.done}/${rate.total}` : '—'}
-            label="Checked in"
-            hint={rate.pct !== null ? `${rate.pct}%` : 'No cycles yet'}
+            label={t('me.checked_in')}
+            hint={rate.pct !== null ? `${rate.pct}%` : t('me.no_cycles')}
           />
-          <Stat value={myGoals.filter((g) => g.status === 'active').length} label="Live goals" />
-          <Stat value={rate.away} label="Away" hint="Not counted" />
+          <Stat
+            value={myGoals.filter((g) => g.status === 'active').length}
+            label={t('me.live_goals')}
+          />
+          <Stat value={rate.away} label={t('me.away')} hint={t('me.not_counted')} />
         </div>
-        <p className="mt-3 text-[12px] leading-snug text-white/30">
-          A rate, not a streak. A bad cycle moves this a few points — it never resets anything to
-          zero.
-        </p>
+        <p className="mt-6 text-small text-muted">{t('me.rate_note')}</p>
       </Section>
 
-      <Section title="Last 12 cycles">
+      <Section title={t('me.last12')}>
         <HistoryStrip rows={rows} count={12} />
-        <div className="mt-2 flex gap-4 font-mono text-[10px] uppercase tracking-[0.14em] text-white/25">
-          <span>█ In</span>
-          <span>▨ Away</span>
-          <span>□ Missed</span>
-        </div>
+        <HistoryLegend />
       </Section>
 
       <Section>
-        <button onClick={signOut} className="btn">
-          Sign out
+        <button onClick={signOut} className="btn-ghost press">
+          {t('me.sign_out')}
         </button>
       </Section>
 
-      <Sheet open={resetOpen} onClose={() => setResetOpen(false)} title="One thing">
+      <Sheet open={resetOpen} onClose={() => setResetOpen(false)} title={t('me.one_thing')}>
         <GoalForm onDone={() => setResetOpen(false)} />
       </Sheet>
     </Screen>

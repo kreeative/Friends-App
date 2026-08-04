@@ -15,10 +15,8 @@ import Legal from './pages/Legal'
 
 function Splash({ children }) {
   return (
-    <main className="flex min-h-dvh items-center justify-center bg-black px-8">
-      <p className="max-w-sm text-center font-mono text-[11px] uppercase leading-relaxed tracking-[0.16em] text-white/40">
-        {children}
-      </p>
+    <main className="flex min-h-dvh items-center justify-center bg-bg px-8">
+      <p className="max-w-sm text-center text-body text-muted">{children}</p>
     </main>
   )
 }

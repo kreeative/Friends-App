@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useGroup } from '../context/GroupContext'
+import { useT } from '../lib/i18n'
 import { Field } from './ui'
 
 /**
@@ -14,10 +15,11 @@ import { Field } from './ui'
  * the filter, and some outcome goals are genuinely what someone wants to track.
  */
 const OUTCOME_HINTS = [
-  /\b\d[\d,.]*\s*(k|m)?\s*(followers?|subs?|subscribers?|users?|customers?|clients?|downloads?|sales?|revenue|mrr|views?|likes?)\b/i,
-  /\b(reach|hit|get to|grow to|earn|make)\b.*\b\d/i,
+  /\b\d[\d,.]*\s*(k|m)?\s*(followers?|subs?|subscribers?|users?|customers?|clients?|downloads?|sales?|revenue|mrr|views?|likes?|abonn[ée]s?|vues?)\b/i,
+  /\b(reach|hit|get to|grow to|earn|make|atteindre|gagner)\b.*\b\d/i,
   /\blose\b.*\b\d+\s*(kg|lbs?|pounds?)\b/i,
-  /\b(get|be|become)\s+(fit|rich|healthy|famous|better)\b/i,
+  /\bperdre\b.*\b\d+\s*kg\b/i,
+  /\b(get|be|become|devenir|être)\s+(fit|rich|healthy|famous|better|riche|mince|c[ée]l[èe]bre)\b/i,
 ]
 
 function looksLikeOutcome(text) {
@@ -27,6 +29,7 @@ function looksLikeOutcome(text) {
 export default function GoalForm({ onDone, initial = null }) {
   const { user } = useAuth()
   const { group, reloadGroup } = useGroup()
+  const { t } = useT()
 
   const [kind, setKind] = useState(initial?.kind ?? 'personal')
   const [commitment, setCommitment] = useState(initial?.commitment ?? '')
@@ -91,88 +94,83 @@ export default function GoalForm({ onDone, initial = null }) {
     onDone?.()
   }
 
-  return (
-    <form onSubmit={save} className="space-y-6">
-      <div className="grid grid-cols-2 gap-2">
-        {['personal', 'group'].map((k) => (
-          <button
-            key={k}
-            type="button"
-            onClick={() => setKind(k)}
-            className={`hair py-3 font-mono text-[11px] uppercase tracking-[0.18em] ${
-              kind === k ? 'bg-white text-black' : 'text-white/50'
-            }`}
-          >
-            {k === 'personal' ? 'Mine' : 'Whole group'}
-          </button>
-        ))}
-      </div>
+  const Toggle = ({ options, value, onChange }) => (
+    <div className="flex gap-2">
+      {options.map(([v, label]) => (
+        <button
+          key={v}
+          type="button"
+          onClick={() => onChange(v)}
+          className={value === v ? 'chip-pink press' : 'chip-quiet press'}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  )
 
-      <Field
-        label="The commitment"
-        hint="What specifically gets done. Not the result you want — the thing you do."
-      >
+  return (
+    <form onSubmit={save} className="space-y-8">
+      <Toggle
+        value={kind}
+        onChange={setKind}
+        options={[
+          ['personal', t('form.mine')],
+          ['group', t('form.whole_group')],
+        ]}
+      />
+
+      <Field label={t('form.commitment')} hint={t('form.commitment_hint')}>
         <input
           className="field"
           value={commitment}
           onChange={(e) => setCommitment(e.target.value)}
-          placeholder="Post 3 videos"
+          placeholder={t('form.commitment_ph')}
           maxLength={200}
         />
       </Field>
 
       {showOutcomeHint && (
-        <div className="hair space-y-3 p-3">
-          <p className="text-[13px] leading-snug text-white/70">
-            That reads like a result rather than an action. Results depend on things you don't
-            control, so a bad week looks like failure even when you did the work.
-          </p>
-          <p className="text-[13px] leading-snug text-white/70">
-            What would you <em>do</em> each week to get there? Track that instead.
-          </p>
-          <div className="grid grid-cols-2 gap-2">
+        <div className="card space-y-4">
+          <p className="text-body text-muted">{t('form.outcome_1')}</p>
+          <p className="text-body text-muted">{t('form.outcome_2')}</p>
+          <div className="flex gap-2">
             <button
               type="button"
-              className="btn"
+              className="chip-quiet press"
               onClick={() => {
                 setDismissedHint(true)
                 setGoalType('outcome')
               }}
-              disabled={saving}
             >
-              Keep as is
+              {t('form.keep_as_is')}
             </button>
-            <button type="button" className="btn" onClick={() => setDismissedHint(true)}>
-              Let me rewrite
+            <button
+              type="button"
+              className="chip-pink press"
+              onClick={() => setDismissedHint(true)}
+            >
+              {t('form.rewrite')}
             </button>
           </div>
         </div>
       )}
 
       <div>
-        <span className="label mb-1.5 block">Cadence</span>
-        <div className="grid grid-cols-2 gap-2">
-          {[
-            ['recurring', 'Every cycle'],
-            ['once', 'One-off'],
-          ].map(([v, l]) => (
-            <button
-              key={v}
-              type="button"
-              onClick={() => setCadence(v)}
-              className={`hair py-3 font-mono text-[11px] uppercase tracking-[0.18em] ${
-                cadence === v ? 'bg-white text-black' : 'text-white/50'
-              }`}
-            >
-              {l}
-            </button>
-          ))}
-        </div>
+        <span className="field-label">{t('form.cadence')}</span>
+        <Toggle
+          value={cadence}
+          onChange={setCadence}
+          options={[
+            ['recurring', t('form.every_cycle')],
+            ['once', t('form.one_off')],
+          ]}
+        />
       </div>
 
       {cadence === 'recurring' ? (
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Times per cycle">
+        <div className="grid grid-cols-2 gap-4">
+          <Field label={t('form.times_per_cycle')}>
             <input
               type="number"
               min={1}
@@ -182,7 +180,7 @@ export default function GoalForm({ onDone, initial = null }) {
               onChange={(e) => setTarget(e.target.value)}
             />
           </Field>
-          <Field label="Until (optional)">
+          <Field label={t('form.until')}>
             <input
               type="date"
               className="field"
@@ -192,7 +190,7 @@ export default function GoalForm({ onDone, initial = null }) {
           </Field>
         </div>
       ) : (
-        <Field label="Due by">
+        <Field label={t('form.due_by')}>
           <input
             type="date"
             className="field"
@@ -202,55 +200,48 @@ export default function GoalForm({ onDone, initial = null }) {
         </Field>
       )}
 
-      <Field
-        label="The trigger — when"
-        hint="Naming when and where roughly doubles follow-through versus stating the intention alone."
-      >
+      <Field label={t('form.when')} hint={t('form.when_hint')}>
         <input
           className="field"
           value={when}
           onChange={(e) => setWhen(e.target.value)}
-          placeholder="After my Tuesday lecture"
+          placeholder={t('form.when_ph')}
         />
       </Field>
 
-      <Field label="The trigger — where">
+      <Field label={t('form.where')}>
         <input
           className="field"
           value={where}
           onChange={(e) => setWhere(e.target.value)}
-          placeholder="At the library, third floor"
+          placeholder={t('form.where_ph')}
         />
       </Field>
 
-      <Field label="The evidence" hint="What you'll show at check-in that proves it happened.">
+      <Field label={t('form.evidence')} hint={t('form.evidence_hint')}>
         <input
           className="field"
           value={evidence}
           onChange={(e) => setEvidence(e.target.value)}
-          placeholder="Links to the posted videos"
+          placeholder={t('form.evidence_ph')}
         />
       </Field>
 
-      <Field label="Stake (optional)" hint="Settled between you — the app only remembers it.">
+      <Field label={t('form.stake')} hint={t('form.stake_hint')}>
         <input
           className="field"
           value={stake}
           onChange={(e) => setStake(e.target.value)}
-          placeholder="Coffee for whoever asks"
+          placeholder={t('form.stake_ph')}
         />
       </Field>
 
-      {error && <p className="hair p-3 text-[13px] text-white/70">{error}</p>}
+      {error && <p className="card text-small text-negative">{error}</p>}
 
-      <button className="btn-solid" disabled={!canSave || saving}>
-        {saving ? 'Saving' : initial ? 'Save changes' : 'Add goal'}
+      <button className="btn-primary press" disabled={!canSave || saving}>
+        {saving ? t('form.saving') : initial ? t('form.save_changes') : t('form.add_goal')}
       </button>
-      {!canSave && (
-        <p className="text-center font-mono text-[10px] uppercase tracking-[0.16em] text-white/25">
-          Commitment, trigger and evidence required
-        </p>
-      )}
+      {!canSave && <p className="text-center text-small text-muted">{t('form.required')}</p>}
     </form>
   )
 }
