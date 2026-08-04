@@ -42,10 +42,15 @@ export default {
         section: '2.5rem',
       },
       maxWidth: { content: '40rem' },
-      borderRadius: { card: '1.125rem', field: '0.75rem', pill: '999px' },
+      // Layered radii: outer containers are rounder than what nests inside
+      // them. Matching radii read as flat.
+      borderRadius: { card: '1.375rem', inner: '0.8125rem', field: '0.8125rem', pill: '999px' },
       boxShadow: {
-        // One soft lift, used instead of a border — never alongside one.
-        soft: '0 1px 2px rgb(28 26 23 / 0.04), 0 8px 24px -12px rgb(28 26 23 / 0.10)',
+        // Three levels, no exceptions. Values live in index.css so dark mode
+        // can swap warm ink for true black — a light-tinted shadow on a dark
+        // ground reads as a glow.
+        raised: 'var(--e-raised)',
+        float: 'var(--e-float)',
       },
       transitionTimingFunction: { settle: 'cubic-bezier(0.22, 0.61, 0.36, 1)' },
       keyframes: {

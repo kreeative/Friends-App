@@ -46,23 +46,37 @@ function SyncBadge() {
 
 export default function AppShell() {
   return (
-    <div className="min-h-dvh bg-bg">
-      <SyncBadge />
-      <Outlet />
+    <div className="relative min-h-dvh bg-bg">
+      <div className="ambient" aria-hidden="true" />
 
-      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-hairline bg-bg/85 backdrop-blur-md">
-        <div className="mx-auto flex w-full max-w-content">
+      <div className="relative z-10">
+        <SyncBadge />
+        <Outlet />
+      </div>
+
+      {/**
+       * Floating rather than edge-to-edge, so the page visibly runs underneath
+       * it. That gap is what makes the blur legible as glass instead of just
+       * reading as a lighter strip.
+       */}
+      <nav
+        className="glass-strong fixed inset-x-4 bottom-4 z-30 mx-auto max-w-content rounded-card"
+        style={{ marginBottom: 'env(safe-area-inset-bottom)' }}
+      >
+        <div className="flex">
           {TABS.map((t) => (
             <NavLink
               key={t.to}
               to={t.to}
               end={t.end}
+              // Inactive labels are dimmed ink rather than the muted token:
+              // muted over glass drops to 2.5:1 when the accent button passes
+              // underneath. ink/70 holds above 4.5:1 in the worst case.
               className={({ isActive }) =>
-                `flex-1 py-4 text-center text-small transition-colors duration-200 ease-settle ${
-                  isActive ? 'text-ink' : 'text-muted'
+                `press flex-1 rounded-card py-4 text-center text-small transition-colors duration-200 ease-settle ${
+                  isActive ? 'text-ink' : 'text-ink/70'
                 }`
               }
-              style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
             >
               {t.label}
             </NavLink>

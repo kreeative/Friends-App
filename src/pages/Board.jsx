@@ -11,7 +11,7 @@ import GoalCard from '../components/GoalCard'
 
 export default function Board() {
   const { user } = useAuth()
-  const { group, members, currentCycle, nextCycle, groupGoals, statuses } = useGroup()
+  const { group, members, currentCycle, nextCycle, groupGoals, myGoals, statuses } = useGroup()
   const [checkins, setCheckins] = useState([])
   const [items, setItems] = useState([])
 
@@ -54,6 +54,7 @@ export default function Board() {
 
   const iHaveChecked = submittedIds.has(user?.id)
   const meAway = awayIds.has(user?.id)
+  const openCount = [...myGoals, ...groupGoals].filter((g) => g.status === 'active').length
 
   const status = useMemo(() => {
     if (!currentCycle) return 'Getting things ready'
@@ -71,12 +72,22 @@ export default function Board() {
 
       <NudgeBanner />
 
+      {/**
+       * The one hero surface on this screen, and the only glass in the page
+       * body. Everything below it stays solid — a second floating card here
+       * would flatten the hierarchy this is buying.
+       */}
       {phase === 'open' && !iHaveChecked && !meAway && (
-        <div className="pt-8">
-          <Link to="/checkin" className="btn-primary">
+        <div className="glass mt-8 rounded-card p-6">
+          <h2 className="text-h2 text-ink">Ready when you are</h2>
+          <p className="mt-2 text-body text-ink/70">
+            {openCount === 0
+              ? 'Nothing on your list yet — add something first.'
+              : `${openCount} ${openCount === 1 ? 'thing' : 'things'} to look at. Takes about a minute.`}
+          </p>
+          <Link to="/checkin" className="btn-primary press mt-6">
             Check in
           </Link>
-          <p className="mt-3 text-center text-small text-muted">Takes about a minute.</p>
         </div>
       )}
 

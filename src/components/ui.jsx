@@ -1,6 +1,8 @@
 export function Screen({ children, className = '' }) {
+  // Extra bottom room: the tab bar floats clear of the edge, so content has
+  // to clear the bar plus its inset.
   return (
-    <div className={`min-h-dvh bg-bg pb-28 ${className}`}>
+    <div className={`min-h-dvh pb-36 ${className}`}>
       <div className="shell animate-rise">{children}</div>
     </div>
   )
