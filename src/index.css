@@ -23,45 +23,50 @@
 @layer base {
   :root {
     /* Dark dark. */
-    --c-bg: 11 10 13; /* #0B0A0D */
-    --c-surface: 22 21 26; /* #16151A */
-    --c-raised: 32 31 38; /* #201F26 */
+    /* Pure black, matching the ground the wordmark is drawn on. */
+    --c-bg: 0 0 0;
+    --c-surface: 20 18 22; /* #141216 */
+    --c-raised: 31 28 34; /* #1F1C22 */
     --c-ink: 255 255 255; /* white white */
     --c-muted: 154 153 162; /* #9A99A2 */
     --c-hairline: 42 41 48; /* #2A2930 */
 
     /* The three pops, at full strength in both modes — a saturated hue that
        gets muddied for light mode stops being a pop. */
-    --c-pink: 255 61 139; /* #FF3D8B — action */
-    --c-green: 0 197 106; /* #00C56A — this week's state */
+    /* Taken from the wordmark itself, not approximated. */
+    --c-pink: 222 53 120; /* #DE3578 — action */
+    --c-green: 25 162 73; /* #19A249 — this week's state */
     --c-yellow: 255 212 0; /* #FFD400 — what accumulates */
 
-    /* Every pop carries dark text, in both modes. None of the three can be a
-       text colour itself: on white they measure 3.3, 2.3 and 1.4 to 1. As
-       fills with this on top they measure 5.9, 8.7 and 13.8. */
-    --c-on-pop: 11 10 13;
+    /* Every pop carries black text, in both modes — the same black the logo
+       sits on. None of the three can be a text colour itself: on white the
+       brand pink measures 4.3:1 and the brand green 3.3:1. As fills with
+       black on top they measure 4.9, 6.3 and 13.8. */
+    --c-on-pop: 0 0 0;
 
-    --c-pink-pressed: 224 46 120; /* #E02E78 */
+    --c-pink-pressed: 232 90 147; /* #E85A93 — lighter, not darker: the brand pink
+                                     sits at 4.9:1 against its own black label,
+                                     so darkening the press state fails AA. */
 
     /* Semantic states. Nothing here is a system colour, and nothing relies on
        hue alone — every state ships a word next to it. */
-    --c-positive: 0 197 106; /* green — done this cycle */
+    --c-positive: 25 162 73; /* green — done this cycle */
     --c-caution: 255 212 0; /* yellow — partway */
     --c-negative: 255 90 100; /* #FF5A64 — trouble, still not a system red */
 
     /* Elevation. Three levels and nothing else — flat, raised, floating. */
-    --e-raised: 0 2px 8px rgb(0 0 0 / 0.5);
-    --e-float: 0 12px 36px rgb(0 0 0 / 0.62);
+    --e-raised: 0 2px 8px rgb(0 0 0 / 0.6);
+    --e-float: 0 12px 36px rgb(0 0 0 / 0.72);
 
-    --glass-tint: 32 31 38;
+    --glass-tint: 31 28 34;
     --glass-alpha: 0.6;
     /* Denser variant for chrome floating over arbitrary content. */
     --glass-alpha-strong: 0.82;
     --glass-edge: rgb(255 255 255 / 0.1);
     --glass-sheen: rgb(255 212 0 / 0.14);
 
-    --amb-pink: rgb(255 61 139 / 0.05);
-    --amb-yellow: rgb(255 212 0 / 0.035);
+    --amb-pink: rgb(222 53 120 / 0.06);
+    --amb-yellow: rgb(25 162 73 / 0.05);
   }
 
   @media (prefers-color-scheme: light) {
@@ -71,33 +76,33 @@
       --c-bg: 255 255 255;
       --c-surface: 255 255 255;
       --c-raised: 244 244 245; /* #F4F4F5 for inset and nested elements */
-      --c-ink: 11 10 13; /* dark dark */
+      --c-ink: 0 0 0; /* dark dark */
       --c-muted: 107 107 112; /* #6B6B70 */
       --c-hairline: 231 231 234; /* #E7E7EA */
 
       /* Unchanged from dark — these are the point of the palette. */
-      --c-pink: 255 61 139;
-      --c-green: 0 197 106;
+      --c-pink: 222 53 120;
+      --c-green: 25 162 73;
       --c-yellow: 255 212 0;
-      --c-on-pop: 11 10 13;
-      --c-pink-pressed: 224 46 120;
+      --c-on-pop: 0 0 0;
+      --c-pink-pressed: 232 90 147;
 
-      --c-positive: 0 197 106;
+      --c-positive: 25 162 73;
       --c-caution: 255 212 0;
       --c-negative: 255 90 100;
 
-      --e-raised: 0 2px 8px rgb(11 10 13 / 0.07);
-      --e-float: 0 8px 32px rgb(11 10 13 / 0.11);
+      --e-raised: 0 2px 8px rgb(0 0 0 / 0.07);
+      --e-float: 0 8px 32px rgb(0 0 0 / 0.11);
 
       --glass-tint: 255 255 255;
       --glass-alpha: 0.55;
       --glass-alpha-strong: 0.78;
-      --glass-edge: rgb(11 10 13 / 0.08);
+      --glass-edge: rgb(0 0 0 / 0.08);
       --glass-sheen: rgb(255 212 0 / 0.3);
 
       /* Barely there — any more and the ground stops reading as white. */
-      --amb-pink: rgb(255 61 139 / 0.022);
-      --amb-yellow: rgb(255 212 0 / 0.018);
+      --amb-pink: rgb(222 53 120 / 0.025);
+      --amb-yellow: rgb(25 162 73 / 0.02);
     }
   }
 

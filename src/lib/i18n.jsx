@@ -68,6 +68,16 @@ const STRINGS = {
     'nudge.close': 'Done — we spoke',
     'nudge.busy': 'One moment',
 
+    'signin.pitch':
+      'One check-in a week, at the same time, with the same people. Sixty seconds. That’s the whole thing.',
+    'signin.google': 'Continue with Google',
+    'signin.use_email': 'Use email instead',
+    'signin.email': 'Email',
+    'signin.send_link': 'Send me a link',
+    'signin.sending': 'Sending',
+    'signin.link_sent':
+      'Link sent to {email}. Open it on this device — if it opens in a different browser you’ll need to sign in again there.',
+
     'ui.close': 'Close',
   },
 
@@ -128,6 +138,16 @@ const STRINGS = {
     'nudge.claim': 'Je m’en occupe',
     'nudge.close': 'C’est fait — on s’est parlé',
     'nudge.busy': 'Un instant',
+
+    'signin.pitch':
+      'Un point par semaine, au même moment, avec les mêmes personnes. Une minute. C’est tout.',
+    'signin.google': 'Continuer avec Google',
+    'signin.use_email': 'Utiliser mon e-mail',
+    'signin.email': 'E-mail',
+    'signin.send_link': 'Envoyez-moi un lien',
+    'signin.sending': 'Envoi',
+    'signin.link_sent':
+      'Lien envoyé à {email}. Ouvrez-le sur cet appareil — s’il s’ouvre dans un autre navigateur, il faudra vous reconnecter là-bas.',
 
     'ui.close': 'Fermer',
   },

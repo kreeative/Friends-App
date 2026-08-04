@@ -1,9 +1,14 @@
 {
-  "name": "Friends",
-  "short_name": "Friends",
+  "name": "Rich & Friends",
+  "short_name": "Rich & Friends",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0C0A0E",
-  "theme_color": "#0C0A0E",
-  "description": "A small-group accountability app built around a weekly ritual."
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "description": "A weekly check-in with a few people who know what you're working on.",
+  "icons": [
+    { "src": "/icon-192.png", "type": "image/png", "sizes": "192x192" },
+    { "src": "/icon-512.png", "type": "image/png", "sizes": "512x512" },
+    { "src": "/icon-512.png", "type": "image/png", "sizes": "512x512", "purpose": "maskable" }
+  ]
 }
