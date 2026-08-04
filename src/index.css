@@ -5,82 +5,102 @@
 /**
  * Tokens.
  *
- * Everything is warm. The backgrounds carry a little yellow rather than a
- * little blue, and the text is a soft near-black — pure #000 on pure #FFF is
- * the exact contrast that makes an interface feel clinical.
+ * Black, pink and gold, and the split between the two accents is the whole
+ * system: pink is action (anything you tap), gold is achievement (progress,
+ * completion, metrics), black is everything else. A colour appearing outside
+ * its job is a bug, not a style choice — that discipline is the difference
+ * between a designed palette and a nightclub flyer.
+ *
+ * Dark is the primary mode and is authored here on :root. Light is the
+ * variant, overridden below.
  *
  * Values are RGB channels so Tailwind's alpha modifier keeps working.
  */
 @layer base {
   :root {
-    --c-bg: 247 244 239; /* #F7F4EF bone */
-    --c-surface: 253 251 247; /* #FDFBF7 warm white */
-    --c-ink: 28 26 23; /* #1C1A17 soft near-black */
-    --c-muted: 122 115 106; /* #7A736A warm grey */
-    --c-hairline: 229 223 214; /* #E5DFD6 */
-    --c-accent: 194 90 30; /* #C25A1E burnt orange — the only accent */
-    --c-accent-ink: 253 251 247;
+    --c-bg: 12 10 14; /* #0C0A0E near-black, faint plum cast */
+    --c-surface: 23 20 27; /* #17141B */
+    --c-raised: 33 28 39; /* #211C27 nested or elevated */
+    --c-ink: 244 239 242; /* #F4EFF2 faintly warm, never pure white */
+    --c-muted: 161 151 168; /* #A197A8 */
+    --c-hairline: 46 40 51; /* #2E2833 */
 
-    /* Semantic states, desaturated to sit inside the warm palette rather
-       than shouting in system red/green. */
-    --c-positive: 95 122 91; /* muted sage */
-    --c-caution: 168 118 62; /* dusty amber */
-    --c-negative: 168 84 64; /* clay, not alarm red */
+    --c-pink: 232 92 147; /* #E85C93 — actions, and nothing else */
+    /* #C4457A as specified put the button's own label at 4.2:1 during the
+       press. Lightened just enough to clear AA while staying visibly darker
+       than the resting pink. */
+    --c-pink-pressed: 206 76 130; /* #CE4C82 */
+    /* Text on a pink fill is near-black: ink on this pink is 2.9:1 and fails
+       outright, while the background colour lands at 6.0:1. */
+    --c-on-pink: 12 10 14;
+
+    --c-gold: 208 168 92; /* #D0A85C — progress, completion, metrics */
+    --c-gold-light: 232 200 126; /* #E8C87E */
+
+    /* Semantic states, mapped onto the palette so nothing imports a system
+       red or green. Kept as separate names so meaning and hue stay
+       independently adjustable. */
+    --c-positive: 208 168 92; /* gold — done / on track */
+    --c-caution: 184 122 150; /* #B87A96 muted rose — partway */
+    --c-negative: 217 112 120; /* lifted from #C2555C, which read 3.8:1 on a
+                                  raised surface and failed AA */
 
     /* Elevation. Three levels and nothing else — flat, raised, floating.
-       Tinted with the ink colour rather than neutral black so shadows stay
-       inside the warm system. */
-    --e-raised: 0 2px 8px rgb(28 26 23 / 0.04);
-    --e-float: 0 8px 32px rgb(28 26 23 / 0.06);
+       Derived from the background, so the shadow belongs to this palette. */
+    --e-raised: 0 2px 8px rgb(12 10 14 / 0.5);
+    --e-float: 0 12px 36px rgb(12 10 14 / 0.62);
 
-    /* Glass. The tint is the surface colour, never white — white glass over a
-       warm palette turns grey and cold and breaks everything around it. The
-       sheen is the top-edge highlight that actually sells it as material. */
-    --glass-tint: 253 251 247;
-    --glass-alpha: 0.55;
-    /* Denser variant for chrome that floats over arbitrary content. Measured,
-       not guessed: at 0.55 a label sitting over the accent button as it
-       scrolls underneath lands at 2.5:1. See .glass-strong below. */
-    --glass-alpha-strong: 0.72;
-    --glass-edge: rgb(255 255 255 / 0.6);
-    --glass-sheen: rgb(255 255 255 / 0.75);
+    /* Glass, tinted with the raised surface rather than white. The top edge
+       catches a little gold — that highlight is what reads as material. */
+    --glass-tint: 33 28 39;
+    --glass-alpha: 0.6;
+    /* Denser variant for chrome floating over arbitrary content. Measured:
+       at 0.6 a nav label over the pink button drops below AA. */
+    --glass-alpha-strong: 0.82;
+    --glass-edge: rgb(244 239 242 / 0.08);
+    --glass-sheen: rgb(232 200 126 / 0.12);
 
-    /* Ambient wash. backdrop-filter over a flat colour does nothing, so the
-       background needs something to pick up. Kept below the threshold where
-       it reads as "a gradient" rather than as depth. */
-    --amb-accent: rgb(194 90 30 / 0.09);
-    --amb-sand: rgb(206 178 138 / 0.12);
-    --amb-clay: rgb(168 120 96 / 0.08);
+    /* Ambient wash — one pink, one gold. These read far stronger on black
+       than the warm blobs did on bone, so they sit at the bottom of the
+       allowed range. */
+    --amb-pink: rgb(232 92 147 / 0.035);
+    --amb-gold: rgb(208 168 92 / 0.028);
   }
 
-  @media (prefers-color-scheme: dark) {
+  @media (prefers-color-scheme: light) {
     :root {
-      --c-bg: 20 18 15; /* warm near-black, no blue */
-      --c-surface: 29 26 22;
-      --c-ink: 242 237 228;
-      --c-muted: 154 144 134;
-      --c-hairline: 46 42 36;
-      --c-accent: 224 122 62; /* lifted so it holds contrast on dark */
-      --c-accent-ink: 24 20 16;
-      --c-positive: 138 163 133;
-      --c-caution: 199 152 96;
-      --c-negative: 201 118 96;
+      --c-bg: 247 243 244; /* #F7F3F4 ivory, faint pink cast */
+      --c-surface: 253 250 251; /* #FDFAFB */
+      --c-raised: 255 255 255;
+      --c-ink: 20 17 26; /* #14111A */
+      --c-muted: 110 100 112; /* #6E6470 */
+      --c-hairline: 228 221 226; /* #E4DDE2 */
 
-      /* True black on dark — an ink-tinted shadow here would glow. */
-      --e-raised: 0 2px 8px rgb(0 0 0 / 0.35);
-      --e-float: 0 12px 36px rgb(0 0 0 / 0.5);
+      /* Deepened past the suggested #D14A80 and #A8813A, both of which fail
+         AA on ivory — see the note in DECISIONS. These are the shallowest
+         values that clear 4.5:1 as text. */
+      --c-pink: 185 58 108; /* #B93A6C */
+      --c-pink-pressed: 158 46 90;
+      --c-on-pink: 255 255 255; /* white on this pink is 5.4:1 */
 
-      /* Denser glass and a much dimmer edge. Bright borders on dark glass
-         are the single thing that makes it look cheap. */
-      --glass-tint: 29 26 22;
-      --glass-alpha: 0.6;
+      --c-gold: 133 98 38; /* #856226 */
+      --c-gold-light: 168 129 58; /* #A8813A works as a fill, not as text */
+
+      --c-positive: 133 98 38;
+      --c-caution: 154 88 120; /* #9A5878 */
+      --c-negative: 176 74 81; /* #B04A51 */
+
+      --e-raised: 0 2px 8px rgb(20 17 26 / 0.05);
+      --e-float: 0 8px 32px rgb(20 17 26 / 0.08);
+
+      --glass-tint: 253 250 251;
+      --glass-alpha: 0.55;
       --glass-alpha-strong: 0.75;
-      --glass-edge: rgb(255 255 255 / 0.08);
-      --glass-sheen: rgb(255 255 255 / 0.06);
+      --glass-edge: rgb(255 255 255 / 0.7);
+      --glass-sheen: rgb(232 200 126 / 0.3);
 
-      --amb-accent: rgb(224 122 62 / 0.1);
-      --amb-sand: rgb(168 140 104 / 0.09);
-      --amb-clay: rgb(150 96 74 / 0.1);
+      --amb-pink: rgb(185 58 108 / 0.07);
+      --amb-gold: rgb(168 129 58 / 0.06);
     }
   }
 
@@ -121,10 +141,10 @@
     outline: none;
   }
 
-  /* Visible only for keyboard users — the accent ring would otherwise fire
-     on every tap. */
+  /* Pink, because a focus ring marks the thing you are about to act on.
+     Visible only for keyboard users — it would otherwise fire on every tap. */
   :focus-visible {
-    outline: 2px solid rgb(var(--c-accent) / 0.55);
+    outline: 2px solid rgb(var(--c-pink) / 0.7);
     outline-offset: 2px;
   }
 }
@@ -139,9 +159,8 @@
   .ambient {
     @apply pointer-events-none fixed inset-0 z-0;
     background:
-      radial-gradient(44rem 44rem at 8% 2%, var(--amb-accent), transparent 62%),
-      radial-gradient(38rem 38rem at 96% 20%, var(--amb-sand), transparent 60%),
-      radial-gradient(48rem 48rem at 62% 98%, var(--amb-clay), transparent 64%);
+      radial-gradient(46rem 46rem at 4% 0%, var(--amb-pink), transparent 60%),
+      radial-gradient(42rem 42rem at 98% 92%, var(--amb-gold), transparent 62%);
   }
 
   /* --- glass ----------------------------------------------------------- */
@@ -226,7 +245,7 @@
            disabled:pointer-events-none disabled:opacity-40;
   }
   .btn-primary {
-    @apply btn bg-accent text-accent-ink hover:opacity-90 active:scale-[0.985];
+    @apply btn bg-pink text-on-pink hover:opacity-90 active:bg-pink-pressed active:scale-[0.985];
   }
   /* Secondary is quiet by default and only borrows a wash on press. */
   .btn-ghost {
@@ -240,7 +259,7 @@
   .field {
     @apply w-full border-0 border-b border-hairline bg-transparent px-0 pb-2.5 pt-1
            text-body text-ink transition-colors duration-200 ease-settle
-           focus:border-accent;
+           focus:border-pink;
   }
   .field-soft {
     @apply w-full rounded-field border-0 bg-ink/[0.035] px-4 py-3 text-body text-ink

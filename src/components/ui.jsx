@@ -51,7 +51,8 @@ export function Empty({ children, action }) {
 export function Stat({ value, label, hint }) {
   return (
     <div className="flex-1">
-      <div className="font-display text-metric text-ink">{value}</div>
+      {/* The metric is gold's other job, alongside progress. */}
+      <div className="font-display text-metric text-gold">{value}</div>
       <div className="mt-2 text-small text-muted">{label}</div>
       {hint && <div className="text-small text-muted/70">{hint}</div>}
     </div>

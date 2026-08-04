@@ -13,11 +13,19 @@ export default {
       colors: {
         bg: c('bg'),
         surface: c('surface'),
+        raised: c('raised'),
         ink: c('ink'),
         muted: c('muted'),
         hairline: c('hairline'),
-        accent: c('accent'),
-        'accent-ink': c('accent-ink'),
+
+        // Two accents, two jobs. Pink is only ever something you tap; gold is
+        // only ever something achieved. Neither is available as decoration.
+        pink: c('pink'),
+        'pink-pressed': c('pink-pressed'),
+        'on-pink': c('on-pink'),
+        gold: c('gold'),
+        'gold-light': c('gold-light'),
+
         positive: c('positive'),
         caution: c('caution'),
         negative: c('negative'),

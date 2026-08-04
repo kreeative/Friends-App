@@ -36,7 +36,7 @@ function SyncBadge() {
   if (pending === 0 && online) return null
 
   return (
-    <div className="animate-rise bg-accent/[0.1] px-6 py-2.5 text-center text-small text-ink">
+    <div className="animate-rise border-b border-hairline bg-surface px-6 py-2.5 text-center text-small text-ink">
       {pending > 0
         ? `Saved. ${pending === 1 ? 'It' : 'They'} will send as soon as you're back online.`
         : "You're offline — anything you write will send itself later."}

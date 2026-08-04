@@ -3,7 +3,7 @@
   "short_name": "Friends",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#000000",
+  "background_color": "#0C0A0E",
+  "theme_color": "#0C0A0E",
   "description": "A small-group accountability app built around a weekly ritual."
 }

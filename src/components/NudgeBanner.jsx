@@ -49,7 +49,9 @@ export default function NudgeBanner() {
         const assignedToMe = n.assigned_to === user?.id && n.state === 'pending'
 
         return (
-          <div key={n.id} className="animate-rise rounded-card bg-accent/[0.08] p-6">
+          // A raised surface rather than a pink wash: this is not something
+          // you tap, and pink here would spend the accent on decoration.
+          <div key={n.id} className="animate-rise rounded-card bg-surface p-6 shadow-raised">
             <h3 className="text-h2 text-ink">
               {nameOf(n.subject_id)} has been quiet for a couple of weeks.
             </h3>
