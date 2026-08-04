@@ -1,0 +1,148 @@
+# Going live
+
+Four things, in this order. Nothing here needs a paid plan except the domain,
+and even that is optional at the start.
+
+The SQL and the row level security in this repo have been executed and
+exercised against a real PostgreSQL 16 — group creation, joining by code,
+check-in submission, offline replay, and cross-group isolation all behave as
+intended. What follows is configuration, not debugging.
+
+---
+
+## 1. Supabase
+
+**Create the project** at supabase.com. Pick a region close to your users —
+`eu-west-1` (Ireland) or `eu-central-1` (Frankfurt) if the group is in Europe.
+The region cannot be changed later, and it is what your privacy policy points
+at when it mentions where data lives.
+
+**Run the SQL.** Open SQL Editor and run the files in order. Order matters:
+the policies in `03` call functions defined in `02`, which reference tables
+created in `01`.
+
+```
+supabase/01_schema.sql
+supabase/02_functions.sql
+supabase/03_policies.sql
+```
+
+Each should finish with no error. If `02` warns that the trigger
+`on_auth_user_created` does not exist, that is expected — it is a `drop if
+exists` running on a clean database.
+
+**Turn on Google sign-in.** Authentication → Providers → Google. You will need
+an OAuth client from the Google Cloud console: create a project, then
+Credentials → Create OAuth client ID → Web application. Supabase shows you the
+callback URL to paste into Google's "Authorised redirect URIs" — it looks like
+`https://YOUR-PROJECT.supabase.co/auth/v1/callback`. Copy Google's client ID
+and secret back into Supabase.
+
+Email sign-in works with no setup and is already wired as the fallback, so you
+can test before touching Google at all.
+
+**Add your URLs.** Authentication → URL Configuration → Redirect URLs:
+
+```
+http://localhost:5173
+https://YOUR-SITE.netlify.app
+https://yourdomain          ← once you have one
+```
+
+A sign-in that returns to a URL not on this list fails silently. It is the
+single most common first-deploy problem.
+
+**Copy your keys.** Project Settings → API. You need the Project URL and the
+`anon` key. The `service_role` key on that page must never go near the
+frontend — it bypasses every policy in `03_policies.sql`.
+
+---
+
+## 2. Netlify
+
+Connect the repository at app.netlify.com → Add new site → Import an existing
+project. `netlify.toml` already declares the build command, the publish
+directory and the SPA redirect, so accept what it offers.
+
+Then add the two variables under Site configuration → Environment variables:
+
+| Key | Value |
+| --- | --- |
+| `VITE_SUPABASE_URL` | `https://YOUR-PROJECT.supabase.co` |
+| `VITE_SUPABASE_ANON_KEY` | your anon key |
+
+Deploy. Vite inlines `VITE_*` at build time, so changing either value later
+needs a fresh deploy, not just a restart.
+
+Finally, go back to Supabase and add the `.netlify.app` URL to the redirect
+list. Sign-in will not work until you do.
+
+---
+
+## 3. The scheduled job
+
+Only needed for the two emails. Everything else works without it, because the
+client calls `tick()` on load.
+
+```bash
+supabase functions deploy notify --no-verify-jwt
+supabase secrets set RESEND_API_KEY=... MAIL_FROM="Rich & Friends <hi@yourdomain>"
+```
+
+Then edit `supabase/04_schedule.sql`, replace `YOUR-PROJECT` and
+`YOUR-SERVICE-ROLE-KEY`, and run it in the SQL editor.
+
+Without `RESEND_API_KEY` the function logs what it would have sent instead of
+sending it, which is the right way to test the schedule before wiring up mail.
+
+Note that Resend will only send from a domain you have verified, so a custom
+`MAIL_FROM` waits until step 4. Until then it falls back to Resend's own
+sandbox sender, which is fine for testing with your own address.
+
+---
+
+## 4. A domain
+
+**Free, and real:** Netlify gives every site a `*.netlify.app` subdomain with
+working HTTPS. `richandfriends.netlify.app` costs nothing and is a legitimate
+place to launch. Site configuration → Domain management → Options → Edit site
+name.
+
+**Avoid the "free domain" TLDs.** `.tk`, `.ml`, `.ga`, `.cf` were handed out by
+Freenom, which stopped issuing them and has a long history of reclaiming names
+without warning. A brand you intend to protect should not sit on one.
+
+**Cheap and yours,** roughly, per year:
+
+| | Typical cost | Notes |
+| --- | --- | --- |
+| `.xyz` | €1–3 first year, ~€12 after | Cheapest real option |
+| `.fr` | €7–10 | Requires an EU address; fits a French publisher |
+| `.com` | €10–12 | Worth it if you intend to register the trade mark |
+| `.app` | €14–18 | HTTPS enforced by the TLD |
+
+Buy at cost from Cloudflare Registrar or Porkbun — neither marks up renewals,
+which is where cheap registrars make their money back. If you are a student,
+the GitHub Student Developer Pack includes a free `.me` for a year.
+
+**Connecting it:** Netlify → Domain management → Add a domain, then point your
+registrar's nameservers at Netlify, or add the CNAME it gives you. HTTPS is
+issued automatically within a few minutes.
+
+Then, in order: add the new URL to Supabase's redirect list, verify the domain
+in Resend so `MAIL_FROM` can use it, and fill the domain into the legal texts
+in `src/legal/content.js`.
+
+---
+
+## Checklist
+
+- [ ] SQL files 01, 02, 03 run in order, no errors
+- [ ] Google provider configured, or email fallback accepted for now
+- [ ] All redirect URLs added, including localhost
+- [ ] Netlify env vars set and site deployed
+- [ ] Deployed URL added back to Supabase
+- [ ] `notify` function deployed and `04_schedule.sql` run
+- [ ] Domain connected, added to Supabase, verified in Resend
+- [ ] `[BRACKETS]` in `src/legal/content.js` filled in
+- [ ] Repository set to private
