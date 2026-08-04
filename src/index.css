@@ -1,0 +1,335 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/**
+ * Tokens.
+ *
+ * White white, dark dark, and three saturated pops. The job split is what
+ * keeps three loud colours from becoming decoration:
+ *
+ *   pink    anything you tap — buttons, focus. Nothing else, ever.
+ *   green   this week's state — checked in, did it.
+ *   yellow  what accumulates — the progress bar, the completion figure.
+ *   black   everything else: structure, surfaces, text.
+ *
+ * All three are fills, never text. Saturated hues cannot pass contrast as
+ * type on white — pink lands at 3.3:1, green 2.3:1, yellow 1.4:1 — so state
+ * labels are filled chips with dark text on top, which both passes and reads
+ * far more POP than coloured type ever would.
+ *
+ * Values are RGB channels so Tailwind's alpha modifier keeps working.
+ */
+@layer base {
+  :root {
+    /* Dark dark. */
+    /* Pure black, matching the ground the wordmark is drawn on. */
+    --c-bg: 0 0 0;
+    --c-surface: 20 18 22; /* #141216 */
+    --c-raised: 31 28 34; /* #1F1C22 */
+    --c-ink: 255 255 255; /* white white */
+    --c-muted: 154 153 162; /* #9A99A2 */
+    --c-hairline: 42 41 48; /* #2A2930 */
+
+    /* The three pops, at full strength in both modes — a saturated hue that
+       gets muddied for light mode stops being a pop. */
+    /* Taken from the wordmark itself, not approximated. */
+    --c-pink: 222 53 120; /* #DE3578 — action */
+    --c-green: 25 162 73; /* #19A249 — this week's state */
+    --c-yellow: 255 212 0; /* #FFD400 — what accumulates */
+
+    /* Every pop carries black text, in both modes — the same black the logo
+       sits on. None of the three can be a text colour itself: on white the
+       brand pink measures 4.3:1 and the brand green 3.3:1. As fills with
+       black on top they measure 4.9, 6.3 and 13.8. */
+    --c-on-pop: 0 0 0;
+
+    --c-pink-pressed: 232 90 147; /* #E85A93 — lighter, not darker: the brand pink
+                                     sits at 4.9:1 against its own black label,
+                                     so darkening the press state fails AA. */
+
+    /* Semantic states. Nothing here is a system colour, and nothing relies on
+       hue alone — every state ships a word next to it. */
+    --c-positive: 25 162 73; /* green — done this cycle */
+    --c-caution: 255 212 0; /* yellow — partway */
+    --c-negative: 255 90 100; /* #FF5A64 — trouble, still not a system red */
+
+    /* Elevation. Three levels and nothing else — flat, raised, floating. */
+    --e-raised: 0 2px 8px rgb(0 0 0 / 0.6);
+    --e-float: 0 12px 36px rgb(0 0 0 / 0.72);
+
+    --glass-tint: 31 28 34;
+    --glass-alpha: 0.6;
+    /* Denser variant for chrome floating over arbitrary content. */
+    --glass-alpha-strong: 0.82;
+    --glass-edge: rgb(255 255 255 / 0.1);
+    --glass-sheen: rgb(255 212 0 / 0.14);
+
+    --amb-pink: rgb(222 53 120 / 0.06);
+    --amb-yellow: rgb(25 162 73 / 0.05);
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root {
+      /* White white. Cards are white too — on white you cannot lift a surface
+         by making it lighter, so separation is shadow and hairline only. */
+      --c-bg: 255 255 255;
+      --c-surface: 255 255 255;
+      --c-raised: 244 244 245; /* #F4F4F5 for inset and nested elements */
+      --c-ink: 0 0 0; /* dark dark */
+      --c-muted: 107 107 112; /* #6B6B70 */
+      --c-hairline: 231 231 234; /* #E7E7EA */
+
+      /* Unchanged from dark — these are the point of the palette. */
+      --c-pink: 222 53 120;
+      --c-green: 25 162 73;
+      --c-yellow: 255 212 0;
+      --c-on-pop: 0 0 0;
+      --c-pink-pressed: 232 90 147;
+
+      --c-positive: 25 162 73;
+      --c-caution: 255 212 0;
+      --c-negative: 255 90 100;
+
+      --e-raised: 0 2px 8px rgb(0 0 0 / 0.07);
+      --e-float: 0 8px 32px rgb(0 0 0 / 0.11);
+
+      --glass-tint: 255 255 255;
+      --glass-alpha: 0.55;
+      --glass-alpha-strong: 0.78;
+      --glass-edge: rgb(0 0 0 / 0.08);
+      --glass-sheen: rgb(255 212 0 / 0.3);
+
+      /* Barely there — any more and the ground stops reading as white. */
+      --amb-pink: rgb(222 53 120 / 0.025);
+      --amb-yellow: rgb(25 162 73 / 0.02);
+    }
+  }
+
+  html {
+    background-color: rgb(var(--c-bg));
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-bg font-sans text-body text-ink;
+    /* Medium rather than regular. DM Sans at 400 goes thin at small sizes,
+       and the secondary greys were the worst of it. */
+    font-weight: 500;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply text-ink;
+    font-weight: 700;
+  }
+
+  ::placeholder {
+    @apply text-muted/60;
+  }
+
+  input,
+  textarea,
+  select,
+  button {
+    font: inherit;
+    color: inherit;
+    background: transparent;
+  }
+
+  input:focus,
+  textarea:focus,
+  select:focus {
+    outline: none;
+  }
+
+  /* Pink, because a focus ring marks the thing you are about to act on.
+     Visible only for keyboard users — it would otherwise fire on every tap. */
+  :focus-visible {
+    outline: 2px solid rgb(var(--c-pink) / 0.7);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* --- ambient --------------------------------------------------------- */
+  /**
+   * Three large washes bled off the edges of the viewport. Fixed, so content
+   * scrolls over them. It should sit just below the threshold of being
+   * noticed — the moment someone reads it as "a gradient", it is too strong.
+   */
+  .ambient {
+    @apply pointer-events-none fixed inset-0 z-0;
+    background:
+      radial-gradient(46rem 46rem at 4% 0%, var(--amb-pink), transparent 60%),
+      radial-gradient(42rem 42rem at 98% 92%, var(--amb-yellow), transparent 62%);
+  }
+
+  /* --- glass ----------------------------------------------------------- */
+  /**
+   * Solid first, translucent only where the browser can actually blur. Doing
+   * it in this order means an unsupported browser gets a readable surface
+   * rather than text floating on nothing.
+   *
+   * Reserved for hierarchy: the tab bar, one hero surface per screen, sheets.
+   * Never on repeated rows — glass on a list is what makes an interface muddy.
+   */
+  .glass {
+    background: rgb(var(--glass-tint) / 0.96);
+    border: 1px solid var(--glass-edge);
+    box-shadow: var(--e-float), inset 0 1px 0 var(--glass-sheen);
+  }
+
+  /**
+   * For glass that floats over content rather than over the page background.
+   * Anything can scroll underneath it — including the accent button — so it
+   * carries more tint. Text on it still needs to be ink, never muted.
+   */
+  .glass-strong {
+    /* Written out rather than @apply glass, so the cascade here doesn't
+       depend on how Tailwind orders the @supports rule it would copy. */
+    background: rgb(var(--glass-tint) / 0.98);
+    border: 1px solid var(--glass-edge);
+    box-shadow: var(--e-float), inset 0 1px 0 var(--glass-sheen);
+  }
+
+  @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .glass {
+      background: rgb(var(--glass-tint) / var(--glass-alpha));
+      /* saturate() is doing more work than blur() — it is what makes colour
+         behind the glass bloom through instead of turning to fog. */
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      backdrop-filter: blur(24px) saturate(180%);
+    }
+    .glass-strong {
+      background: rgb(var(--glass-tint) / var(--glass-alpha-strong));
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      backdrop-filter: blur(24px) saturate(180%);
+    }
+  }
+
+  /* --- surfaces -------------------------------------------------------- */
+  /* A card gets a hairline OR a shadow. Never both, never heavy. */
+  .card {
+    @apply rounded-card bg-surface p-6 shadow-raised;
+  }
+
+  /* --- chips ------------------------------------------------------------ */
+  /**
+   * How the pops reach the screen. A filled pill with dark text on it is the
+   * only way a saturated hue can carry a label and still pass AA, and it is
+   * also what makes the palette read as blocks of colour rather than tinted
+   * text. Each chip carries a word, so nothing depends on hue alone.
+   */
+  .chip {
+    @apply inline-flex items-center rounded-pill px-3 py-1 text-small font-bold;
+  }
+  .chip-green {
+    @apply chip bg-green text-on-pop;
+  }
+  .chip-yellow {
+    @apply chip bg-yellow text-on-pop;
+  }
+  .chip-pink {
+    @apply chip bg-pink text-on-pop;
+  }
+  /* Neutral states stay quiet — a missed week is not an alarm. */
+  .chip-quiet {
+    @apply chip bg-raised text-muted;
+  }
+
+  /* --- press ------------------------------------------------------------ */
+  /* Drops one elevation level and shrinks slightly. Physical feedback does
+     more for perceived quality than any amount of static styling. */
+  .press {
+    @apply transition-[transform,box-shadow] duration-150 ease-out;
+  }
+  .press:active {
+    transform: scale(0.98);
+    box-shadow: var(--e-raised);
+  }
+  .card-quiet {
+    @apply rounded-card border border-hairline bg-surface p-6;
+  }
+  .rule {
+    @apply border-hairline;
+  }
+
+  /* --- type ----------------------------------------------------------- */
+  .eyebrow {
+    @apply text-label font-semibold uppercase tracking-[0.1em] text-muted;
+  }
+  .lede {
+    @apply text-body text-muted;
+  }
+
+  /* --- controls ------------------------------------------------------- */
+  .btn {
+    @apply inline-flex min-h-[3rem] w-full items-center justify-center gap-2
+           rounded-pill px-6 py-3 text-body font-bold
+           transition-all duration-200 ease-settle
+           disabled:pointer-events-none disabled:opacity-40;
+  }
+  .btn-primary {
+    @apply btn bg-pink text-on-pop hover:opacity-90 active:bg-pink-pressed active:scale-[0.985];
+  }
+  /* Secondary is quiet by default and only borrows a wash on press. */
+  .btn-ghost {
+    @apply btn text-ink hover:bg-ink/[0.04] active:bg-ink/[0.07];
+  }
+  .btn-quiet {
+    @apply btn text-muted hover:text-ink;
+  }
+
+  /* Inputs are a line, not a box. */
+  .field {
+    @apply w-full border-0 border-b border-hairline bg-transparent px-0 pb-2.5 pt-1
+           text-body text-ink transition-colors duration-200 ease-settle
+           focus:border-pink;
+  }
+  .field-soft {
+    @apply w-full rounded-field border-0 bg-ink/[0.035] px-4 py-3 text-body text-ink
+           transition-colors duration-200 ease-settle focus:bg-ink/[0.06];
+  }
+  .field-label {
+    @apply mb-1 block text-small font-semibold text-muted;
+  }
+
+  /* Lists are separated by hairlines, never by nested cards. */
+  .list {
+    @apply divide-y divide-hairline;
+  }
+  .list-row {
+    @apply flex items-center gap-4 py-5;
+  }
+
+  .shell {
+    @apply mx-auto w-full max-w-content px-6;
+  }
+}
+
+/**
+ * Reduced motion keeps the fades and drops the movement — a cross-fade still
+ * communicates that content arrived, without anything sliding or scaling.
+ */
+@media (prefers-reduced-motion: reduce) {
+  @keyframes rise {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  .press:active {
+    transform: none;
+  }
+
+  [style*='--i'] {
+    animation-delay: 0ms !important;
+  }
+}
