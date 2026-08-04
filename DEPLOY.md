@@ -170,6 +170,49 @@ Then, and this order matters:
 - verify the domain in Resend so `MAIL_FROM` can use it;
 - fill the domain into the `[BRACKETS]` in `src/legal/content.js`.
 
+### If the domain is at GoDaddy
+
+GoDaddy does not support `ALIAS`/`ANAME` records, so the apex cannot be
+pointed at a hostname. That leaves two routes.
+
+**Switch the nameservers to Netlify** (simplest). Netlify → Domains → Add a
+domain, then copy the four `*.nsone.net` nameservers it gives you. In GoDaddy:
+My Products → the domain → **Nameservers → Change → I'll use my own
+nameservers** → paste all four → Save. Netlify then handles the apex and `www`
+without further records.
+
+Note this switches *all* DNS for the domain away from GoDaddy — any email
+forwarding or other records configured there stop working.
+
+**Or keep DNS at GoDaddy.** Delete the parked `@` A record and the default
+`www` CNAME GoDaddy creates, then add exactly what Netlify shows: an A record
+for `@` pointing at Netlify's load balancer, and a CNAME for `www` pointing at
+`your-site.netlify.app`. Use the address on Netlify's screen rather than one
+copied from a guide — it has changed before.
+
+Three GoDaddy-specific things worth checking on the day you buy:
+
+- **Renewal price.** The cheap first year is promotional; `.xyz` renews far
+  higher at GoDaddy than at Porkbun or Cloudflare. Decide now whether to keep
+  it there or transfer after the 60-day lock ICANN imposes on new
+  registrations.
+- **Auto-renew** is on by default. Leave it on — losing the domain is worse —
+  but know what it will charge.
+- **WHOIS privacy.** Confirm it is enabled. Without it, the postal address of
+  an individual registrant is publishable, which matters here because the
+  legal notice already names a private person.
+
+### A contact address at the domain
+
+The legal texts need a working email at the domain, and neither Netlify nor
+GoDaddy provides mailbox hosting free. Two free routes that forward to an
+existing inbox:
+
+- **ImprovMX** — works with any DNS provider, two MX records and a TXT.
+- **Cloudflare Email Routing** — free, but requires Cloudflare to be the DNS
+  provider. That combines fine with Netlify hosting: keep DNS at Cloudflare
+  and point the records at Netlify.
+
 **Connecting it:** Netlify → Domain management → Add a domain, then point your
 registrar's nameservers at Netlify, or add the CNAME it gives you. HTTPS is
 issued automatically within a few minutes.
