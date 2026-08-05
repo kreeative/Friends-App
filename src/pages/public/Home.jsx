@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { LANDING } from '../../content/landing'
 import { useT } from '../../lib/i18n'
 import { Mark } from '../../components/Wordmark'
-import PreviewCard from '../../components/PreviewCard'
+import Cover from '../../components/Cover'
 
 /**
  * The front page: what this is, why groups go quiet, and the way in.
@@ -17,15 +17,17 @@ export default function Home() {
 
   return (
     <>
-      <section className="mx-auto grid w-full max-w-5xl animate-rise gap-12 px-6 pb-16 pt-14 md:grid-cols-[1.05fr_1fr] md:items-center md:pt-20">
-        <div>
+      <Cover>
+        <div className="cover-panel animate-rise max-w-[36rem]">
           <p className="eyebrow">{c.hero.eyebrow}</p>
-          <h1 className="display mt-5 max-w-[15ch] text-[clamp(2.5rem,7vw,4.25rem)]">
+          <h1 className="display mt-4 max-w-[16ch] text-[clamp(2.25rem,6vw,3.75rem)]">
             {c.hero.title}
           </h1>
-          <p className="lede mt-6 max-w-[44ch] text-[1.0625rem]">{c.hero.body}</p>
+          {/* ink at 80% rather than muted: this is the one block of type with
+              a photograph under it, and muted grey has no margin to spend. */}
+          <p className="mt-5 max-w-[44ch] text-[1.0625rem] text-ink/80">{c.hero.body}</p>
 
-          <div className="mt-8 flex flex-wrap items-center gap-3">
+          <div className="mt-7 flex flex-wrap items-center gap-3">
             <Link to="/signin" className="btn-primary press w-auto px-8">
               {c.hero.cta}
             </Link>
@@ -33,13 +35,11 @@ export default function Home() {
               {c.hero.secondary}
             </Link>
           </div>
-          <p className="mt-4 text-small text-muted">{c.hero.note}</p>
+          <p className="mt-4 text-small text-ink/70">{c.hero.note}</p>
         </div>
+      </Cover>
 
-        <PreviewCard />
-      </section>
-
-      <div className="mx-auto w-full max-w-5xl px-6" aria-hidden="true">
+      <div className="mx-auto mt-16 w-full max-w-5xl px-6" aria-hidden="true">
         <span className="block h-1.5 w-full rounded-pill bg-accent/90" />
       </div>
 

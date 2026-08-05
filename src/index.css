@@ -255,6 +255,11 @@
       -webkit-backdrop-filter: blur(28px) saturate(200%);
       backdrop-filter: blur(28px) saturate(200%);
     }
+    .cover-panel {
+      background: rgb(var(--glass-tint) / 0.88);
+      -webkit-backdrop-filter: blur(30px) saturate(180%);
+      backdrop-filter: blur(30px) saturate(180%);
+    }
     .panel,
     .footer-glass {
       background: rgb(var(--glass-tint) / var(--glass-alpha));
@@ -306,6 +311,38 @@
     background: rgb(var(--glass-tint) / 0.92);
     border-top: 1px solid var(--glass-edge);
     box-shadow: inset 0 1px 0 var(--glass-sheen);
+  }
+
+  /**
+   * The cover photograph, and the glass that sits on it.
+   *
+   * The scrim is the page's own ground at low opacity, biased towards the
+   * bottom where the words are: a canopy against a bright sky has no
+   * predictable luminance, and text over an unmeasured photograph is a guess.
+   */
+  .cover-scrim {
+    background: linear-gradient(
+      to bottom,
+      rgb(var(--c-bg) / 0.1) 0%,
+      rgb(var(--c-bg) / 0.28) 55%,
+      rgb(var(--c-bg) / 0.62) 100%
+    );
+  }
+
+  /**
+   * Denser than .panel on purpose. A cover panel is the one surface with an
+   * arbitrary image behind it rather than a controlled ambient, so it carries
+   * enough tint that the type on it measures the same as type anywhere else —
+   * verified by sampling the rendered pixels, not by eye.
+   */
+  .cover-panel {
+    @apply rounded-card p-7 md:p-9;
+    background: rgb(var(--glass-tint) / 0.97);
+    border: 1px solid var(--glass-edge);
+    box-shadow:
+      var(--e-float),
+      inset 0 1px 0 var(--glass-sheen),
+      inset 0 -1px 0 var(--glass-underedge);
   }
 
   /**
