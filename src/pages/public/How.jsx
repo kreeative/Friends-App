@@ -9,11 +9,13 @@ export default function How() {
 
   return (
     <>
-      <section className="mx-auto w-full max-w-5xl animate-rise px-6 pb-12 pt-14 md:pt-20">
-        <p className="eyebrow">{c.steps.eyebrow}</p>
-        <h1 className="display mt-5 max-w-[18ch] text-[clamp(2.25rem,6vw,3.5rem)]">
-          {c.steps.title}
-        </h1>
+      <section className="mx-auto w-full max-w-5xl animate-rise px-6 pb-12 pt-10 md:pt-14">
+        <div className="panel p-8 md:p-11">
+          <p className="eyebrow">{c.steps.eyebrow}</p>
+          <h1 className="display mt-4 max-w-[18ch] text-[clamp(2.25rem,5.5vw,3.25rem)]">
+            {c.steps.title}
+          </h1>
+        </div>
 
         <div className="mt-12 grid gap-4 md:grid-cols-3">
           {c.steps.items.map((s) => (
@@ -27,8 +29,8 @@ export default function How() {
         </div>
       </section>
 
-      <section className="mx-auto grid w-full max-w-5xl gap-10 px-6 py-16 md:grid-cols-2 md:items-center">
-        <div>
+      <section className="mx-auto grid w-full max-w-5xl gap-4 px-6 py-12 md:grid-cols-2 md:items-center">
+        <div className="panel p-8 md:p-10">
           <p className="eyebrow">{c.different.eyebrow}</p>
           <div className="mt-8 space-y-7">
             {c.different.items.map((d) => (

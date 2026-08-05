@@ -7,11 +7,13 @@ export default function Books() {
   const c = (LANDING[locale] ?? LANDING.en).library
 
   return (
-    <section className="mx-auto w-full max-w-5xl animate-rise px-6 pb-20 pt-14 md:pt-20">
-      <p className="eyebrow">{c.eyebrow}</p>
-      <div className="mt-5 grid gap-8 md:grid-cols-[1.1fr_1fr] md:items-end">
-        <h1 className="display max-w-[18ch] text-[clamp(2.25rem,6vw,3.5rem)]">{c.title}</h1>
-        <p className="lede max-w-[46ch]">{c.body}</p>
+    <section className="mx-auto w-full max-w-5xl animate-rise px-6 pb-20 pt-10 md:pt-14">
+      <div className="panel p-8 md:p-11">
+        <p className="eyebrow">{c.eyebrow}</p>
+        <div className="mt-4 grid gap-6 md:grid-cols-[1.1fr_1fr] md:items-end">
+          <h1 className="display max-w-[18ch] text-[clamp(2.25rem,5.5vw,3.25rem)]">{c.title}</h1>
+          <p className="lede max-w-[46ch]">{c.body}</p>
+        </div>
       </div>
 
       <div className="mt-12 grid gap-4 md:grid-cols-3">

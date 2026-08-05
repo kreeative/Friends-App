@@ -2,14 +2,14 @@ import { Link } from 'react-router-dom'
 import { LANDING } from '../../content/landing'
 import { useT } from '../../lib/i18n'
 import { Mark } from '../../components/Wordmark'
-import Cover from '../../components/Cover'
+import Stickers from '../../components/Stickers'
 
 /**
  * The front page: what this is, why groups go quiet, and the way in.
  *
- * Everything that used to sit below — how it works, the books, the theme —
- * has its own page now. A home page's job is to be enough to decide with,
- * not to contain the site.
+ * Every block of words sits on glass. Nothing is set directly on the artwork
+ * — the background is deliberately loud, and type over it would be a guess
+ * that changes with whichever picture the theme happens to be showing.
  */
 export default function Home() {
   const { locale } = useT()
@@ -17,13 +17,14 @@ export default function Home() {
 
   return (
     <>
-      <section className="mx-auto grid w-full max-w-5xl animate-rise items-center gap-12 px-6 pb-16 pt-12 md:grid-cols-[1.1fr_1fr] md:pt-16">
-        <div>
+      <section className="relative mx-auto w-full max-w-5xl animate-rise px-6 pb-20 pt-10 md:pb-24 md:pt-14">
+        <Stickers set="hero" />
+        <div className="panel relative max-w-[38rem] p-8 md:p-11">
           <p className="eyebrow">{c.hero.eyebrow}</p>
-          <h1 className="display mt-4 max-w-[15ch] text-[clamp(2.5rem,6.5vw,4rem)]">
+          <h1 className="display mt-4 max-w-[15ch] text-[clamp(2.25rem,6vw,3.75rem)]">
             {c.hero.title}
           </h1>
-          <p className="lede mt-6 max-w-[44ch] text-[1.0625rem]">{c.hero.body}</p>
+          <p className="lede mt-6 max-w-[42ch] text-[1.0625rem]">{c.hero.body}</p>
 
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <Link to="/signin" className="btn-primary press w-auto px-8">
@@ -35,15 +36,9 @@ export default function Home() {
           </div>
           <p className="mt-4 text-small text-muted">{c.hero.note}</p>
         </div>
-
-        <Cover className="aspect-[4/5] w-full" />
       </section>
 
-      <div className="mx-auto w-full max-w-5xl px-6" aria-hidden="true">
-        <span className="block h-1.5 w-full rounded-pill bg-accent/90" />
-      </div>
-
-      <section className="mx-auto w-full max-w-5xl px-6 py-16">
+      <section className="mx-auto w-full max-w-5xl px-6 pb-16">
         <div className="panel grid gap-8 p-8 md:grid-cols-[1fr_1.5fr] md:p-12">
           <div>
             <p className="eyebrow">{c.problem.eyebrow}</p>
@@ -58,8 +53,9 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="mx-auto w-full max-w-5xl px-6 pb-16">
-        <div className="panel px-6 py-16 text-center">
+      <section className="relative mx-auto w-full max-w-5xl px-6 pb-16">
+        <Stickers set="close" />
+        <div className="panel relative px-6 py-16 text-center">
           <h2 className="display mx-auto max-w-[18ch] text-[clamp(1.875rem,5vw,2.75rem)]">
             {c.close.title}
           </h2>

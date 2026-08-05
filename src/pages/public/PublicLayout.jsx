@@ -4,6 +4,7 @@ import { LANDING } from '../../content/landing'
 import { useT } from '../../lib/i18n'
 import { Lockup } from '../../components/Wordmark'
 import Footer from '../../components/Footer'
+import Aurora from '../../components/Aurora'
 
 /**
  * The public site's chrome: one ambient, one navigation bar, one footer,
@@ -29,8 +30,11 @@ export default function PublicLayout() {
   useEffect(() => setOpen(false), [pathname])
 
   return (
-    <div className="relative min-h-dvh bg-bg">
-      <div className="ambient-loud" aria-hidden="true" />
+    <div className="relative min-h-dvh">
+      {/* No background colour on this element. An opaque in-flow background
+          paints after negative z-index descendants, so `bg-bg` here covered
+          the aurora completely. The ground colour lives on <html>. */}
+      <Aurora />
 
       <div className="relative z-10">
         <header className="sticky top-0 z-30 px-4 pt-4">

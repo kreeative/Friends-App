@@ -40,21 +40,33 @@
     --c-hairline: 42 41 48; /* #2A2930 */
 
     /* Elevation. Three levels and nothing else — flat, raised, floating. */
-    --e-raised: 0 2px 8px rgb(0 0 0 / 0.6);
-    --e-float: 0 12px 36px rgb(0 0 0 / 0.72);
+    /* Multi-layer rather than one blur: a tight contact shadow reads as
+       weight, the wide one as height. Either alone looks like a sticker. */
+    --e-raised: 0 1px 2px rgb(0 0 0 / 0.5), 0 4px 12px rgb(0 0 0 / 0.45);
+    --e-float:
+      0 2px 4px rgb(0 0 0 / 0.4), 0 12px 28px rgb(0 0 0 / 0.5),
+      0 32px 64px rgb(0 0 0 / 0.45);
 
-    --glass-tint: 31 28 34;
-    --glass-alpha: 0.42;
+    --glass-tint: 24 22 28;
+    /* Dense enough that type on a panel measures the same wherever the
+       artwork happens to be light or dark underneath, and no denser — you
+       still see colour and movement through it. */
+    --glass-alpha: 0.62;
     /* Denser variant for chrome floating over arbitrary content. */
-    --glass-alpha-strong: 0.72;
-    --glass-edge: rgb(255 255 255 / 0.14);
+    --glass-alpha-strong: 0.8;
+    --glass-edge: rgb(255 255 255 / 0.22);
+    --glass-edge-hover: rgb(255 255 255 / 0.42);
     /* A dark ground needs a dark under-edge too, or the panel looks printed
        on rather than lifted off. */
-    --glass-underedge: rgb(0 0 0 / 0.4);
+    --glass-underedge: rgb(0 0 0 / 0.45);
+
+    /* How far the background art is knocked back before anything sits on it.
+       Measured, not guessed — see the note on .aurora-veil. */
+    --veil: 0.3;
+    --art-blur: 44px;
 
     /* How much accent bleeds into the page behind the glass. */
     --amb-a: 0.07;
-    --amb-a-loud: 0.24;
 
     /* --- semantics ------------------------------------------------------- */
     /* Not themeable. Nothing here relies on hue alone — every state ships a
@@ -72,20 +84,31 @@
     --c-surface: 255 255 255;
     --c-raised: 244 244 245; /* #F4F4F5 for inset and nested elements */
     --c-ink: 0 0 0; /* dark dark */
-    --c-muted: 107 107 112; /* #6B6B70 */
+    /* Darkened from #6B6B70. Over a plain white card that measured 5.7:1,
+       but the ground here is glass over artwork and drifts a few points with
+       whichever picture the theme is showing — the measured worst case was
+       4.54:1, which is over the line by nothing at all. */
+    --c-muted: 96 96 103; /* #606067 */
     --c-hairline: 231 231 234; /* #E7E7EA */
 
-    --e-raised: 0 2px 8px rgb(0 0 0 / 0.07);
-    --e-float: 0 10px 34px rgb(0 0 0 / 0.1);
+    --e-raised: 0 1px 2px rgb(0 0 0 / 0.06), 0 4px 12px rgb(0 0 0 / 0.07);
+    --e-float:
+      0 2px 4px rgb(0 0 0 / 0.05), 0 12px 28px rgb(0 0 0 / 0.09),
+      0 32px 64px rgb(0 0 0 / 0.1);
 
     --glass-tint: 255 255 255;
-    --glass-alpha: 0.5;
-    --glass-alpha-strong: 0.76;
-    --glass-edge: rgb(255 255 255 / 0.7);
+    /* Higher than dark mode: white glass over a vivid picture hides less than
+       dark glass does, so it needs more of itself to reach the same floor. */
+    --glass-alpha: 0.74;
+    --glass-alpha-strong: 0.86;
+    --glass-edge: rgb(255 255 255 / 0.85);
+    --glass-edge-hover: rgb(255 255 255 / 1);
     --glass-underedge: rgb(0 0 0 / 0.05);
 
+    --veil: 0.4;
+    --art-blur: 44px;
+
     --amb-a: 0.035;
-    --amb-a-loud: 0.16;
   }
 
   /* --- accent ------------------------------------------------------------ */
@@ -185,27 +208,72 @@
       );
   }
 
-  /* The public page turns the same single hue up, because glass needs
-     something behind it to blur — over a flat ground it is just a tinted
-     rectangle. */
-  .ambient-loud {
-    @apply pointer-events-none fixed inset-0 z-0;
-    background:
-      radial-gradient(
-        40rem 40rem at 4% -6%,
-        rgb(var(--c-accent) / var(--amb-a-loud)),
-        transparent 62%
-      ),
-      radial-gradient(
-        34rem 34rem at 100% 12%,
-        rgb(var(--c-accent) / calc(var(--amb-a-loud) * 0.6)),
-        transparent 60%
-      ),
-      radial-gradient(
-        46rem 46rem at 46% 104%,
-        rgb(var(--c-accent) / calc(var(--amb-a-loud) * 0.75)),
-        transparent 62%
-      );
+  /* --- aurora ---------------------------------------------------------- */
+  /**
+   * The public site's ground: the chosen artwork, blurred out of legibility,
+   * under a veil of the page's own colour, under three drifting blobs.
+   *
+   * The artwork is not shown to be looked at — it is shown to give the glass
+   * something worth blurring. Blurring it to 46px throws away all the local
+   * contrast that would otherwise fight the type, and leaves the colour
+   * fields, which is the only part a background is supposed to contribute.
+   */
+  /* z-0, not a negative index. The painting order puts negative z-index
+     descendants BELOW the backgrounds of in-flow blocks, so `body`'s own
+     opaque ground covered this completely — the layer was rendering
+     perfectly and being painted over. A positioned z-0 layer paints after
+     those backgrounds; the content sits at z-10 above it. */
+  .aurora {
+    @apply pointer-events-none fixed inset-0 z-0 overflow-hidden;
+  }
+
+  .aurora-art {
+    @apply absolute h-full w-full object-cover;
+    /* Scaled past the edges because a blur of this radius pulls the page's
+       own colour in from outside the frame and leaves a pale border. */
+    transform: scale(1.18);
+    filter: blur(var(--art-blur)) saturate(1.25);
+  }
+
+  /**
+   * The veil is what makes any of this readable. These images are extremely
+   * high-contrast; without it, a glass panel over the black part of one and
+   * the same panel over the white part are two different surfaces, and only
+   * one of them passes. The alpha is set from the measured worst case, not
+   * by eye — see the contrast run in the commit that added it.
+   */
+  .aurora-veil {
+    @apply absolute inset-0;
+    background: rgb(var(--c-bg) / var(--veil));
+  }
+
+  /**
+   * Three soft blobs over the veil, all drawn from the accent. The multi-hue
+   * richness comes from the artwork underneath rather than from here: putting
+   * three different brand colours in the blobs is the exact mixture the theme
+   * system exists to prevent.
+   */
+  .aurora-blob {
+    @apply absolute rounded-pill;
+    filter: blur(72px);
+    will-change: transform;
+  }
+  .aurora-blob-1 {
+    @apply left-[-10%] top-[-14%] h-[46vmax] w-[46vmax] animate-drift;
+    background: rgb(var(--c-accent) / 0.42);
+  }
+  .aurora-blob-2 {
+    @apply right-[-14%] top-[18%] h-[38vmax] w-[38vmax] animate-drift;
+    background: rgb(var(--c-accent) / 0.28);
+    animation-duration: 34s;
+    animation-direction: reverse;
+  }
+  .aurora-blob-3 {
+    @apply bottom-[-18%] left-[24%] h-[42vmax] w-[42vmax] animate-drift;
+    /* Ink rather than accent: a light bloom in dark mode, a soft shade in
+       light mode, and in both it stops the other two reading as one shape. */
+    background: rgb(var(--c-ink) / 0.1);
+    animation-duration: 41s;
   }
 
   /* --- glass ----------------------------------------------------------- */
@@ -286,6 +354,19 @@
       var(--e-float),
       inset 0 1px 0 var(--glass-sheen),
       inset 0 -1px 0 var(--glass-underedge);
+    transition:
+      transform 260ms cubic-bezier(0.22, 0.61, 0.36, 1),
+      border-color 260ms ease,
+      box-shadow 260ms ease;
+  }
+
+  /* Lift and brighten. Two pixels is enough — the border catching the light
+     does more of the work than the movement does. */
+  @media (hover: hover) {
+    .panel:hover {
+      transform: translateY(-2px);
+      border-color: var(--glass-edge-hover);
+    }
   }
 
   /* Thinner sheet, for panels sitting immediately next to a filled one — two
@@ -309,19 +390,13 @@
   }
 
   /**
-   * The frame the cover artwork sits in.
-   *
-   * Framed rather than run full-bleed because the artwork is between 600 and
-   * 1125 pixels wide: stretched across a whole viewport it would be visibly
-   * soft. At this size it is shown at roughly its own resolution, and no type
-   * sits on top of it, so nothing has to be measured against a photograph.
+   * Stickers. Die-cut artwork scattered over the page, tilted and bobbing
+   * slightly out of phase. Decoration in the honest sense — aria-hidden, not
+   * clickable, and nothing depends on seeing them.
    */
-  .frame {
-    @apply relative overflow-hidden rounded-card;
-    border: 1px solid var(--glass-edge);
-    box-shadow:
-      var(--e-float),
-      inset 0 1px 0 var(--glass-sheen);
+  .sticker {
+    @apply pointer-events-none absolute select-none animate-bob;
+    filter: drop-shadow(0 6px 14px rgb(0 0 0 / 0.28));
   }
 
   /**

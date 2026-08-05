@@ -31,18 +31,26 @@ export default {
         negative: c('negative'),
       },
       fontFamily: {
-        sans: ['"DM Sans"', 'system-ui', '-apple-system', 'sans-serif'],
-        display: ['"Instrument Serif"', 'Georgia', 'serif'],
+        // One typeface. `display` is kept as a name because the app's metrics
+        // and invite codes reference it, but it resolves to the same family —
+        // there is no second voice on any screen now.
+        sans: ['Montserrat', 'system-ui', '-apple-system', 'sans-serif'],
+        display: ['Montserrat', 'system-ui', 'sans-serif'],
       },
       fontSize: {
-        // Scale, not weight, carries the hierarchy.
-        hero: ['3.5rem', { lineHeight: '1', letterSpacing: '-0.03em' }],
-        metric: ['3rem', { lineHeight: '1', letterSpacing: '-0.025em' }],
-        h1: ['2rem', { lineHeight: '1.12', letterSpacing: '-0.02em' }],
-        h2: ['1.375rem', { lineHeight: '1.25', letterSpacing: '-0.015em' }],
-        body: ['1rem', { lineHeight: '1.6' }],
-        small: ['0.875rem', { lineHeight: '1.55' }],
-        label: ['0.8125rem', { lineHeight: '1.3', letterSpacing: '0.02em' }],
+        // Scale carries the hierarchy, and the tracking is pulled in hard at
+        // every size. Montserrat is drawn wide; left at its defaults it reads
+        // as spaced-out rather than tight.
+        hero: ['3.5rem', { lineHeight: '1', letterSpacing: '-0.045em' }],
+        metric: ['3rem', { lineHeight: '1', letterSpacing: '-0.04em' }],
+        h1: ['2rem', { lineHeight: '1.14', letterSpacing: '-0.035em' }],
+        h2: ['1.375rem', { lineHeight: '1.28', letterSpacing: '-0.025em' }],
+        body: ['1rem', { lineHeight: '1.6', letterSpacing: '-0.012em' }],
+        small: ['0.875rem', { lineHeight: '1.55', letterSpacing: '-0.008em' }],
+        // Uppercase is the one place that stays at zero rather than going
+        // negative: caps have no descenders to separate them, and negative
+        // tracking closes them into a single shape.
+        label: ['0.8125rem', { lineHeight: '1.3', letterSpacing: '0em' }],
       },
       spacing: {
         // 8px rhythm. Named so the intent survives a refactor.
@@ -62,12 +70,27 @@ export default {
       },
       transitionTimingFunction: { settle: 'cubic-bezier(0.22, 0.61, 0.36, 1)' },
       keyframes: {
+        // The aurora blobs. Long, unequal periods so the three never line up
+        // into anything a viewer can read as a loop.
+        drift: {
+          '0%, 100%': { transform: 'translate3d(0,0,0) scale(1)' },
+          '33%': { transform: 'translate3d(6%, -8%, 0) scale(1.12)' },
+          '66%': { transform: 'translate3d(-5%, 6%, 0) scale(0.94)' },
+        },
+        bob: {
+          '0%, 100%': { transform: 'translateY(0) rotate(var(--tilt, 0deg))' },
+          '50%': { transform: 'translateY(-10px) rotate(var(--tilt, 0deg))' },
+        },
         rise: {
           from: { opacity: '0', transform: 'translateY(6px)' },
           to: { opacity: '1', transform: 'none' },
         },
       },
-      animation: { rise: 'rise 220ms cubic-bezier(0.22,0.61,0.36,1) both' },
+      animation: {
+        rise: 'rise 220ms cubic-bezier(0.22,0.61,0.36,1) both',
+        drift: 'drift 26s ease-in-out infinite',
+        bob: 'bob 5s ease-in-out infinite',
+      },
     },
   },
   plugins: [],

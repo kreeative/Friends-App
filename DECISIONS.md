@@ -200,6 +200,44 @@ the default and then corrects itself, which is visible.
 *To reverse:* the accent is one custom property and three declarations in
 `index.css`. Removing the picker leaves whichever accent is the default.
 
+## The public site is loud; the app is not
+
+The signed-in screens and the public site now look like two different rooms
+in the same building, on purpose. Inside the app someone is answering a
+question about their week in sixty seconds, and a background competing for
+attention is a cost with no return. On the way in, nobody has committed to
+anything yet, and a page that looks like a form is a page nobody signs up
+from.
+
+So the public site gets: the chosen artwork full-bleed and fixed, blurred to
+44px, under a veil of the page's own colour and three drifting blobs of the
+accent; every block of words on frosted glass; and die-cut stickers scattered
+over the top.
+
+Three things that are not taste:
+
+**The artwork is blurred to destroy it, not to soften it.** These images are
+extremely high-contrast. Unblurred, a glass panel over the black part of one
+and the same panel over the white part are two different surfaces, and only
+one of them passes. At 44px the local contrast is gone and only the colour
+fields remain, which is the only thing a background is supposed to
+contribute.
+
+**Nothing is set directly on the artwork.** Every run of type sits on glass.
+The alternative is measuring type against a picture that changes with the
+theme, which is a guess dressed as a decision.
+
+**The stickers sit above the glass, not behind it.** Behind a half-opaque
+panel, a sticker's black line work shows through as a dark patch under the
+words — measured at 2.8:1 before it was caught. On top they behave like
+stickers, and they are placed in the margins so they overlap panel edges
+rather than sentences.
+
+The whole thing is verified by rendering each theme twice: once normally to
+collect every text run and the colour it is painted in, then again with every
+glyph transparent, so the pixels inside each run's box are exactly the ground
+that text sits on. Nothing here was judged by eye.
+
 ## What was deliberately not built
 
 **Chat.** They already have a group chat and it is better than anything this
