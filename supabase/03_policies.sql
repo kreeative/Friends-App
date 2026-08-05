@@ -44,12 +44,15 @@ $$;
 -- group with. Names and avatars of strangers stay invisible; you can only
 -- edit your own row.
 -- ---------------------------------------------------------------------------
+drop policy if exists profiles_select on profiles;
 create policy profiles_select on profiles for select to authenticated
   using (id = auth.uid() or shares_group(id));
 
+drop policy if exists profiles_insert on profiles;
 create policy profiles_insert on profiles for insert to authenticated
   with check (id = auth.uid());
 
+drop policy if exists profiles_update on profiles;
 create policy profiles_update on profiles for update to authenticated
   using (id = auth.uid()) with check (id = auth.uid());
 
@@ -61,9 +64,11 @@ create policy profiles_update on profiles for update to authenticated
 -- admins can change the check-in rhythm, because changing it moves the ritual
 -- for everyone.
 -- ---------------------------------------------------------------------------
+drop policy if exists groups_select on groups;
 create policy groups_select on groups for select to authenticated
   using (is_member(id));
 
+drop policy if exists groups_update on groups;
 create policy groups_update on groups for update to authenticated
   using (is_group_admin(id)) with check (is_group_admin(id));
 
@@ -75,9 +80,11 @@ create policy groups_update on groups for update to authenticated
 -- join_group() (no INSERT policy); you may remove yourself, and an admin may
 -- remove anyone.
 -- ---------------------------------------------------------------------------
+drop policy if exists group_members_select on group_members;
 create policy group_members_select on group_members for select to authenticated
   using (is_member(group_id));
 
+drop policy if exists group_members_delete on group_members;
 create policy group_members_delete on group_members for delete to authenticated
   using (user_id = auth.uid() or is_group_admin(group_id));
 
@@ -87,6 +94,7 @@ create policy group_members_delete on group_members for delete to authenticated
 -- advanced by tick(); no client may invent, move or delete a period, which
 -- would otherwise be a trivial way to erase a missed check-in from history.
 -- ---------------------------------------------------------------------------
+drop policy if exists cycles_select on cycles;
 create policy cycles_select on cycles for select to authenticated
   using (is_member(group_id));
 
@@ -99,9 +107,11 @@ create policy cycles_select on cycles for select to authenticated
 -- exit from a goal is status='paused' or 'abandoned', which keeps the history
 -- intact rather than rewriting it.
 -- ---------------------------------------------------------------------------
+drop policy if exists goals_select on goals;
 create policy goals_select on goals for select to authenticated
   using (is_member(group_id));
 
+drop policy if exists goals_insert on goals;
 create policy goals_insert on goals for insert to authenticated
   with check (
     is_member(group_id)
@@ -111,6 +121,7 @@ create policy goals_insert on goals for insert to authenticated
     )
   );
 
+drop policy if exists goals_update on goals;
 create policy goals_update on goals for update to authenticated
   using (
     is_member(group_id)
@@ -121,6 +132,7 @@ create policy goals_update on goals for update to authenticated
     and (owner_id = auth.uid() or (kind = 'group' and owner_id is null))
   );
 
+drop policy if exists goals_delete on goals;
 create policy goals_delete on goals for delete to authenticated
   using (owner_id = auth.uid() or is_group_admin(group_id));
 
@@ -135,11 +147,13 @@ create policy goals_delete on goals for delete to authenticated
 -- There is no UPDATE-by-others and no DELETE policy — nobody can quietly
 -- retract or edit someone else's record of what happened.
 -- ---------------------------------------------------------------------------
+drop policy if exists checkins_select on checkins;
 create policy checkins_select on checkins for select to authenticated
   using (exists (
     select 1 from cycles c where c.id = cycle_id and is_member(c.group_id)
   ));
 
+drop policy if exists checkins_insert on checkins;
 create policy checkins_insert on checkins for insert to authenticated
   with check (
     user_id = auth.uid()
@@ -152,6 +166,7 @@ create policy checkins_insert on checkins for insert to authenticated
     )
   );
 
+drop policy if exists checkins_update on checkins;
 create policy checkins_update on checkins for update to authenticated
   using (user_id = auth.uid())
   with check (
@@ -166,22 +181,41 @@ create policy checkins_update on checkins for update to authenticated
 
 -- ---------------------------------------------------------------------------
 -- checkin_items
--- Enforces: visibility and ownership are both inherited from the parent
--- check-in, so there is exactly one place the rule is expressed. Writing an
--- item requires owning the check-in it hangs off.
+-- Enforces: visibility is inherited from the parent check-in. Writing an item
+-- requires owning that check-in AND the goal being in the same group as the
+-- check-in's cycle.
+--
+-- That second half is not redundant. Owning the check-in only says which row
+-- the item hangs off; goal_id was a separate, unchecked pointer, so a member
+-- of one group could attach another group's goal to their own check-in. It
+-- leaked nothing on its own — reads stay gated — but it wrote a row that
+-- crosses a tenant boundary, and anything that later aggregates by goal_id
+-- would pick it up. It was also an existence oracle: a real-but-invisible
+-- goal id succeeded while a made-up one failed on the foreign key, which
+-- distinguishes "this UUID is a goal somewhere" from "it is not". With the
+-- group check in place both now fail identically, before the FK is reached.
 -- ---------------------------------------------------------------------------
+drop policy if exists checkin_items_select on checkin_items;
 create policy checkin_items_select on checkin_items for select to authenticated
   using (exists (
     select 1 from checkins ck join cycles c on c.id = ck.cycle_id
     where ck.id = checkin_id and is_member(c.group_id)
   ));
 
+drop policy if exists checkin_items_write on checkin_items;
 create policy checkin_items_write on checkin_items for all to authenticated
   using (exists (
-    select 1 from checkins ck where ck.id = checkin_id and ck.user_id = auth.uid()
+    select 1 from checkins ck
+    where ck.id = checkin_items.checkin_id and ck.user_id = auth.uid()
   ))
   with check (exists (
-    select 1 from checkins ck where ck.id = checkin_id and ck.user_id = auth.uid()
+    select 1
+    from checkins ck
+    join cycles c on c.id = ck.cycle_id
+    join goals  g on g.id = checkin_items.goal_id
+    where ck.id = checkin_items.checkin_id
+      and ck.user_id = auth.uid()
+      and g.group_id = c.group_id
   ));
 
 -- ---------------------------------------------------------------------------
@@ -190,11 +224,13 @@ create policy checkin_items_write on checkin_items for all to authenticated
 -- declared absence reads differently from silence), but only you can declare
 -- or withdraw it, and only for a cycle in a group you belong to.
 -- ---------------------------------------------------------------------------
+drop policy if exists away_select on away_periods;
 create policy away_select on away_periods for select to authenticated
   using (exists (
     select 1 from cycles c where c.id = cycle_id and is_member(c.group_id)
   ));
 
+drop policy if exists away_write on away_periods;
 create policy away_write on away_periods for all to authenticated
   using (user_id = auth.uid())
   with check (
@@ -212,9 +248,11 @@ create policy away_write on away_periods for all to authenticated
 -- a nudge cannot close their own — otherwise the quiet person could dismiss
 -- the one mechanism designed to reach them.
 -- ---------------------------------------------------------------------------
+drop policy if exists nudges_select on nudges;
 create policy nudges_select on nudges for select to authenticated
   using (is_member(group_id));
 
+drop policy if exists nudges_update on nudges;
 create policy nudges_update on nudges for update to authenticated
   using (is_member(group_id) and subject_id <> auth.uid())
   with check (is_member(group_id) and subject_id <> auth.uid());
@@ -226,18 +264,55 @@ create policy nudges_update on nudges for update to authenticated
 -- is what makes the row a reliable "already sent" lock and keeps the two-email
 -- ceiling honest even if the sender runs twice.
 -- ---------------------------------------------------------------------------
+drop policy if exists notifications_select on notifications_log;
 create policy notifications_select on notifications_log for select to authenticated
   using (user_id = auth.uid());
 
 -- ---------------------------------------------------------------------------
--- Execution grants. tick() is intentionally callable by any signed-in user:
--- it is idempotent, and letting the client call it on app open means a group
--- keeps ticking even before pg_cron is configured.
+-- Execution grants.
+--
+-- PostgreSQL grants EXECUTE on every new function to PUBLIC, and both `anon`
+-- and `authenticated` inherit from PUBLIC. So `revoke ... from authenticated`
+-- is a no-op — the earlier version of this file did exactly that for
+-- ensure_cycles() and left it callable by anyone holding the anon key. Every
+-- function has to be revoked from PUBLIC first, then granted back by name.
+--
+-- Named one at a time rather than `revoke ... on all functions in schema
+-- public`: that would also strip gen_random_uuid(), which column DEFAULTs
+-- execute as the *inserting* user, breaking every insert.
 -- ---------------------------------------------------------------------------
+revoke execute on function
+  is_member(uuid), is_group_admin(uuid), shares_group(uuid),
+  missed_cycle(uuid, uuid), ensure_cycles(uuid, int), handle_new_user(),
+  create_group(text, text, int, int, int, int), join_group(text),
+  submit_checkin(uuid, text, text, jsonb), claim_nudge(uuid), tick()
+  from public;
+
+-- The three membership helpers are called from inside policy expressions,
+-- which are evaluated as the querying role — so they need EXECUTE even though
+-- no client calls them directly.
+grant execute on function is_member(uuid), is_group_admin(uuid), shares_group(uuid)
+  to authenticated;
+
 grant execute on function create_group(text, text, int, int, int, int) to authenticated;
 grant execute on function join_group(text)                              to authenticated;
 grant execute on function submit_checkin(uuid, text, text, jsonb)       to authenticated;
 grant execute on function claim_nudge(uuid)                             to authenticated;
-grant execute on function tick()                                        to authenticated;
 
-revoke execute on function ensure_cycles(uuid, int) from authenticated, anon;
+-- tick() stays callable by a signed-in user: it is idempotent, and letting
+-- the client call it on app open means a group keeps ticking even before
+-- pg_cron is configured. It is NOT granted to anon — it is a SECURITY DEFINER
+-- function that writes, and an unauthenticated caller has no business
+-- driving it.
+grant execute on function tick() to authenticated;
+
+-- ensure_cycles() and missed_cycle() get no grant at all. Both are internal
+-- helpers reached through SECURITY DEFINER callers, and both took a
+-- caller-supplied id for a group or a person the caller need not belong to:
+-- missed_cycle('someone else', 'a cycle in a group you are not in') answered
+-- honestly, and ensure_cycles(any group, 5000) would have written thousands
+-- of rows into a stranger's group.
+--
+-- handle_new_user() is a trigger function; EXECUTE is checked when the
+-- trigger is created, not when it fires, so revoking it changes nothing at
+-- run time and removes it as a directly callable entry point.

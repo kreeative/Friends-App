@@ -131,6 +131,7 @@ alter table reading_shares   enable row level security;
 -- books
 -- Enforces: the catalogue is visible to any signed-in user, because you cannot
 -- decide to buy something you cannot see. Unpublished drafts stay hidden.
+drop policy if exists books_select on books;
 create policy books_select on books for select to authenticated
   using (published = true);
 
@@ -139,6 +140,7 @@ create policy books_select on books for select to authenticated
 -- when the reader holds an entitlement for its book. Bodies are never
 -- filtered in application code, so a hand-written PostgREST query against
 -- /chapters returns exactly what the reader paid for and nothing else.
+drop policy if exists chapters_select on chapters;
 create policy chapters_select on chapters for select to authenticated
   using (
     exists (select 1 from books b where b.id = book_id and b.published)
@@ -150,12 +152,14 @@ create policy chapters_select on chapters for select to authenticated
 -- that someone else owns a book. No INSERT, UPDATE or DELETE policy exists at
 -- all: only the webhook's service-role key writes here, which is what makes
 -- the webhook the sole source of truth for entitlement.
+drop policy if exists entitlements_select on entitlements;
 create policy entitlements_select on entitlements for select to authenticated
   using (user_id = auth.uid());
 
 -- reading_progress
 -- Enforces: private to the reader. Where someone is in a book is nobody
 -- else's business, including their group's.
+drop policy if exists progress_all on reading_progress;
 create policy progress_all on reading_progress for all to authenticated
   using (user_id = auth.uid())
   with check (user_id = auth.uid() and owns_book(book_id));
@@ -163,6 +167,7 @@ create policy progress_all on reading_progress for all to authenticated
 -- highlights
 -- Enforces: private by default, and only creatable for a book you own — so a
 -- highlight cannot be used as an oracle to extract text you have not bought.
+drop policy if exists highlights_all on highlights;
 create policy highlights_all on highlights for all to authenticated
   using (user_id = auth.uid())
   with check (user_id = auth.uid() and owns_book(book_id));
@@ -171,9 +176,11 @@ create policy highlights_all on highlights for all to authenticated
 -- Enforces: the group sees what a member chose to share, and a member can
 -- only create or withdraw their own share. Deliberately never written
 -- automatically on purchase — see the note at the top of the table.
+drop policy if exists shares_select on reading_shares;
 create policy shares_select on reading_shares for select to authenticated
   using (is_member(group_id));
 
+drop policy if exists shares_write on reading_shares;
 create policy shares_write on reading_shares for all to authenticated
   using (user_id = auth.uid())
   with check (
@@ -182,6 +189,11 @@ create policy shares_write on reading_shares for all to authenticated
     and owns_book(book_id)
   );
 
+-- Same PUBLIC-grant trap as 03_policies.sql: revoke first, then grant by
+-- name. owns_book() keys on auth.uid() so an anonymous caller only ever
+-- learns "no", but leaving a SECURITY DEFINER function open to PUBLIC is a
+-- habit worth not having.
+revoke execute on function owns_book(uuid) from public;
 grant execute on function owns_book(uuid) to authenticated;
 
 -- ---------------------------------------------------------------------------
