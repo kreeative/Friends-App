@@ -158,6 +158,57 @@ Neither Vercel nor GoDaddy includes mailbox hosting. **ImprovMX** (any DNS) or
 
 ---
 
+## Troubleshooting
+
+### After Google, the browser lands on `localhost` and cannot connect
+
+The single most common setup failure, and it is one setting.
+
+Supabase Auth has two separate fields under **Authentication → URL
+Configuration**:
+
+- **Site URL** — where it sends people by default.
+- **Redirect URLs** — the allowlist of where it is *permitted* to send them.
+
+The app asks to come back to wherever it is running (`window.location.origin`).
+If that address is not on the allowlist, Supabase does not error — it silently
+falls back to **Site URL**. A new project's Site URL is `http://localhost:3000`,
+so a phone gets sent to itself, finds nothing listening, and shows "Safari
+can't open the page".
+
+Fix both fields:
+
+```
+Site URL:       https://richandfriends.xyz
+
+Redirect URLs:  https://richandfriends.xyz/**
+                https://www.richandfriends.xyz/**
+                https://YOUR-PROJECT.vercel.app/**
+                http://localhost:5173/**
+```
+
+The `/**` wildcard matters — without it only the exact root path is allowed,
+and any return carrying query parameters is rejected.
+
+Note that the URI registered in the **Google Cloud console** is a different
+thing again: that one must be Supabase's callback,
+`https://YOUR-PROJECT.supabase.co/auth/v1/callback`, not your site. If it were
+wrong you would have been stopped by Google rather than bounced back.
+
+### Sign-in returns to the app but nothing happens
+
+The address is missing from the Redirect URLs allowlist. The app now shows
+this as a message naming the setting rather than silently returning to the
+sign-in screen.
+
+### The app shows "Supabase is not configured"
+
+`VITE_SUPABASE_URL` or `VITE_SUPABASE_ANON_KEY` is missing from Vercel, or was
+added after the last build. Vite inlines them at build time — redeploy after
+adding them.
+
+---
+
 ## What the watermark does and does not do
 
 Describe it to buyers honestly, because the distinction matters.
