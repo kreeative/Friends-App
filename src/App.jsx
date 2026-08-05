@@ -13,6 +13,7 @@ import Goals from './pages/Goals'
 import Me from './pages/Me'
 import Settings from './pages/Settings'
 import Legal from './pages/Legal'
+import Landing from './pages/Landing'
 import Library from './pages/Library'
 import Reader from './pages/Reader'
 
@@ -45,8 +46,36 @@ function Gate() {
   const { loading: groupsLoading, memberships, error: groupError, reload } = useGroup()
   const { t } = useT()
 
+  // Marketing and legal pages are public in every sense — including when the
+  // backend is misconfigured or down. Only the signed-in app needs Supabase.
+  if (!configured) {
+    return (
+      <Routes>
+        <Route
+          path="/signin"
+          element={
+            <Splash>
+              Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your
+              host's environment variables, then redeploy.
+            </Splash>
+          }
+        />
+        <Route path="*" element={<Landing />} />
+      </Routes>
+    )
+  }
+
   if (loading) return <Splash>{t('err.loading')}</Splash>
-  if (!user) return <SignIn />
+
+  if (!user) {
+    return (
+      <Routes>
+        <Route path="/signin" element={<SignIn />} />
+        <Route path="*" element={<Landing />} />
+      </Routes>
+    )
+  }
+
   if (groupsLoading) return <Splash>{t('err.loading')}</Splash>
 
   // Signed in, but the group query failed. Previously this rendered Start,
@@ -74,15 +103,6 @@ function Gate() {
 }
 
 export default function App() {
-  if (!configured) {
-    return (
-      <Splash>
-        Supabase is not configured. Set VITE_SUPABASE_URL and
-        VITE_SUPABASE_ANON_KEY in your host's environment variables, then redeploy.
-      </Splash>
-    )
-  }
-
   return (
     <BrowserRouter>
       <I18nProvider>

@@ -247,6 +247,35 @@ The order is not cosmetic: `03` defines policies that call functions created
 in `02`, which reference tables created in `01`. Running them out of order
 fails with a missing-function or missing-relation error.
 
+**Paste the contents of the file, not its name.** The SQL editor runs exactly
+the characters in the box — it has no notion of files or paths. Pasting the
+line `supabase/01_schema.sql` produces:
+
+```
+ERROR: syntax error at or near "supabase"
+LINE 1: supabase/01_schema.sql
+        ^
+```
+
+Postgres is reading `supabase` as the start of a statement. The same happens
+if a stray heading or a note in another language is left above the SQL: the
+box must contain SQL and nothing else, with no filename on the first line.
+
+Open each file, select all of it, copy, paste into a **new query**, Run. The
+raw text is one click away:
+
+```
+https://raw.githubusercontent.com/kreeative/friends-app/main/supabase/01_schema.sql
+https://raw.githubusercontent.com/kreeative/friends-app/main/supabase/02_functions.sql
+https://raw.githubusercontent.com/kreeative/friends-app/main/supabase/03_policies.sql
+https://raw.githubusercontent.com/kreeative/friends-app/main/supabase/05_library.sql
+https://raw.githubusercontent.com/kreeative/friends-app/main/supabase/06_library_seed.sql
+```
+
+A correct paste starts with a comment or a `create`. Every file here opens on
+a `-- ====` rule. If the first line of your paste is not a `--` comment or a
+SQL keyword, that is the bug.
+
 If the tables clearly exist and the message persists, PostgREST is holding a
 stale schema cache. It normally reloads within seconds; to force it, run
 `notify pgrst, 'reload schema';` in the SQL editor.

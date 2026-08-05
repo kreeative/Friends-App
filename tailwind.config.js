@@ -34,6 +34,11 @@ export default {
       fontFamily: {
         sans: ['"DM Sans"', 'system-ui', '-apple-system', 'sans-serif'],
         display: ['"Instrument Serif"', 'Georgia', 'serif'],
+        // Playfair is the public voice — landing page, nav, footer headings.
+        // Deliberately NOT the app's `display` face: inside the product,
+        // Instrument Serif still carries the metrics, so nothing already
+        // designed and approved shifts underneath it.
+        title: ['"Playfair Display"', 'Georgia', 'serif'],
       },
       fontSize: {
         // Scale, not weight, carries the hierarchy.

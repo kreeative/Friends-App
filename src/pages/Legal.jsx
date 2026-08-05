@@ -1,6 +1,7 @@
 import { Link, Navigate, useParams } from 'react-router-dom'
-import { DOC_ORDER, LAST_UPDATED, LEGAL, OWNER, APP_NAME } from '../legal/content'
+import { DOC_ORDER, LAST_UPDATED, LEGAL, APP_NAME } from '../legal/content'
 import { useT } from '../lib/i18n'
+import Footer from '../components/Footer'
 
 /**
  * Public on purpose. Someone has to be able to read the terms before they
@@ -42,10 +43,7 @@ export default function Legal() {
               {docs[s].title}
             </Link>
           ))}
-          <button
-            onClick={() => setLocale(locale === 'fr' ? 'en' : 'fr')}
-            className="chip-quiet"
-          >
+          <button onClick={() => setLocale(locale === 'fr' ? 'en' : 'fr')} className="chip-quiet">
             {locale === 'fr' ? 'English' : 'Français'}
           </button>
         </nav>
@@ -62,14 +60,8 @@ export default function Legal() {
             </section>
           ))}
         </article>
-
-        <footer className="mt-section border-t border-hairline pt-8">
-          <p className="text-small text-muted">
-            © {new Date().getFullYear()} {OWNER}.{' '}
-            {locale === 'fr' ? 'Tous droits réservés.' : 'All rights reserved.'}
-          </p>
-        </footer>
       </div>
+      <Footer />
     </div>
   )
 }
