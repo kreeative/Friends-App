@@ -1,236 +1,276 @@
 # Going live
 
-Four things, in this order. Nothing here needs a paid plan except the domain,
-and even that is optional at the start.
+Supabase, then Vercel, then Stripe, then the domain. Nothing here needs a paid
+plan except the domain and Stripe's per-transaction fee.
 
-The SQL and the row level security in this repo have been executed and
-exercised against a real PostgreSQL 16 — group creation, joining by code,
-check-in submission, offline replay, and cross-group isolation all behave as
+The SQL and the row level security have been executed and exercised against a
+real PostgreSQL 16 — group creation, joining by code, check-in submission,
+offline replay, cross-group isolation, and the library paywall all behave as
 intended. What follows is configuration, not debugging.
 
 ---
 
 ## 1. Supabase
 
-**Create the project** at supabase.com. Pick a region close to your users —
-`eu-west-1` (Ireland) or `eu-central-1` (Frankfurt) if the group is in Europe.
-The region cannot be changed later, and it is what your privacy policy points
-at when it mentions where data lives.
+**Create the project.** Pick a region close to your users — `eu-west-1`
+(Ireland) or `eu-central-1` (Frankfurt) for Europe. The region cannot be
+changed later, and it is what your privacy policy points at.
 
-**Run the SQL.** Open SQL Editor and run the files in order. Order matters:
-the policies in `03` call functions defined in `02`, which reference tables
-created in `01`.
+**Run the SQL in order.** Order matters: policies in `03` call functions from
+`02`, which reference tables from `01`.
 
 ```
-supabase/01_schema.sql
-supabase/02_functions.sql
-supabase/03_policies.sql
+supabase/01_schema.sql      tables and indexes
+supabase/02_functions.sql   is_member(), cycles, tick(), submit_checkin()
+supabase/03_policies.sql    RLS for the check-in app
+supabase/05_library.sql     library tables + the paywall policy
+supabase/06_library_seed.sql  placeholder books (replace with manuscripts)
 ```
 
-Each should finish with no error. If `02` warns that the trigger
-`on_auth_user_created` does not exist, that is expected — it is a `drop if
-exists` running on a clean database.
+`04_schedule.sql` is separate — see step 4.
 
-**Turn on Google sign-in.** Authentication → Providers → Google. You will need
-an OAuth client from the Google Cloud console: create a project, then
-Credentials → Create OAuth client ID → Web application. Supabase shows you the
-callback URL to paste into Google's "Authorised redirect URIs" — it looks like
-`https://YOUR-PROJECT.supabase.co/auth/v1/callback`. Copy Google's client ID
-and secret back into Supabase.
-
-Email sign-in works with no setup and is already wired as the fallback, so you
-can test before touching Google at all.
+**Enable sign-in.** Authentication → Providers. Email works with no setup.
+For Google you need an OAuth client from the Google Cloud console; Supabase
+shows you the callback URL to paste into Google's authorised redirect URIs.
 
 **Add your URLs.** Authentication → URL Configuration → Redirect URLs:
 
 ```
 http://localhost:5173
-https://YOUR-SITE.netlify.app
-https://yourdomain          ← once you have one
+https://your-project.vercel.app
+https://richandfriends.xyz
 ```
 
-A sign-in that returns to a URL not on this list fails silently. It is the
-single most common first-deploy problem.
+A sign-in returning to a URL not on this list fails. The app now says so
+explicitly rather than silently returning you to the sign-in screen.
 
-**Copy your keys.** Project Settings → API. You need the Project URL and the
-`anon` key. The `service_role` key on that page must never go near the
-frontend — it bypasses every policy in `03_policies.sql`.
+**Replace the sign-in email.** Out of the box, a magic link arrives from
+"Supabase Auth" with Supabase's own footer, because the project is using
+Supabase's shared SMTP and its default template. Two reasons that cannot stay:
+
+- It is not your brand, and the footer advertises someone else's product on a
+  transactional email your buyers receive.
+- **The built-in sender is rate limited** — a handful of emails per hour on the
+  free tier — and Supabase documents it as unsuitable for production. Once more
+  than a couple of people try to sign in, they get "email rate limit exceeded"
+  and no message arrives at all.
+
+Fix both under **Authentication → Emails**:
+
+*SMTP Settings* — point at Resend, which you need anyway for the digests:
+
+```
+Host      smtp.resend.com
+Port      465
+Username  resend
+Password  your Resend API key
+Sender    hi@richandfriends.xyz
+Name      Rich & Friends
+```
+
+The sender domain has to be verified in Resend first, so this waits until the
+domain is connected (step 5).
+
+*Email Templates → Magic Link* — paste `supabase/email/magic-link.html`. It is
+bilingual, since Supabase stores only one template per type. Leave
+`{{ .ConfirmationURL }}` exactly as written; that is the token Supabase
+substitutes.
+
+**Copy your keys.** Project Settings → API. You need the Project URL, the
+anon/publishable key, and — for the Stripe webhook only — the service role key.
+The service role key bypasses every policy in `03_policies.sql` and
+`05_library.sql`. It belongs in Vercel's server-side environment and nowhere
+else.
 
 ---
 
-## 2. Netlify
+## 2. Vercel
 
-Connect the repository at app.netlify.com → Add new site → Import an existing
-project. `netlify.toml` already declares the build command, the publish
-directory and the SPA redirect, so accept what it offers.
+Import the repository at vercel.com/new. `vercel.json` already declares the
+build command, the output directory and the SPA rewrite, so accept what it
+offers. The rewrite deliberately excludes `/api/`, or the serverless functions
+would be swallowed by the single-page fallback.
 
-Then add the two variables under Site configuration → Environment variables:
+Set the environment variables under Settings → Environment Variables:
 
-| Key | Value |
-| --- | --- |
-| `VITE_SUPABASE_URL` | `https://YOUR-PROJECT.supabase.co` |
-| `VITE_SUPABASE_ANON_KEY` | your anon key |
+| Key | Value | Exposed to browser |
+| --- | --- | --- |
+| `VITE_SUPABASE_URL` | `https://YOUR-PROJECT.supabase.co` | yes |
+| `VITE_SUPABASE_ANON_KEY` | anon / publishable key | yes |
+| `SUPABASE_URL` | same as above | no |
+| `SUPABASE_SERVICE_ROLE_KEY` | service role key | **no — never** |
+| `STRIPE_SECRET_KEY` | `sk_live_…` or `sk_test_…` | no |
+| `STRIPE_WEBHOOK_SECRET` | `whsec_…` (step 3) | no |
 
-Deploy. Vite inlines `VITE_*` at build time, so changing either value later
-needs a fresh deploy, not just a restart.
+Only `VITE_*` reaches the client bundle — that prefix is the whole mechanism,
+so anything without it stays server-side. Vite inlines the `VITE_*` values at
+build time, so changing one needs a redeploy, not a restart.
 
-Finally, go back to Supabase and add the `.netlify.app` URL to the redirect
-list. Sign-in will not work until you do.
+Then add the Vercel URL to Supabase's redirect list.
 
 ---
 
-## 3. The scheduled job
+## 3. Stripe
+
+**Get the keys.** Developers → API keys. Use test keys until you have bought
+your own book end to end.
+
+**Create the webhook.** Developers → Webhooks → Add endpoint:
+
+```
+https://your-domain/api/stripe-webhook
+event: checkout.session.completed
+```
+
+Copy the signing secret into `STRIPE_WEBHOOK_SECRET` and redeploy.
+
+**Test locally** before trusting it:
+
+```bash
+stripe login
+stripe listen --forward-to localhost:3000/api/stripe-webhook
+# prints a whsec_… — put that in .env for local runs
+stripe trigger checkout.session.completed
+```
+
+Use `vercel dev` rather than `vite` locally, or `/api/*` will not exist.
+
+**Two things about this flow worth knowing.** The price is read from the
+database, never from the request — a client that could name its own price
+could buy a book for a cent. And entitlement is written *only* by the webhook:
+`entitlements` has no INSERT policy at all, so even a fully compromised
+browser session cannot grant itself a book.
+
+Stripe retries webhooks. The insert is an upsert against a unique
+`(user_id, book_id)`, so a redelivery is a no-op rather than a second row —
+verified against a real database.
+
+---
+
+## 4. The scheduled job
 
 Only needed for the two emails. Everything else works without it, because the
 client calls `tick()` on load.
 
 ```bash
 supabase functions deploy notify --no-verify-jwt
-supabase secrets set RESEND_API_KEY=... MAIL_FROM="Rich & Friends <hi@yourdomain>"
+supabase secrets set RESEND_API_KEY=... MAIL_FROM="Rich & Friends <hi@richandfriends.xyz>"
 ```
 
 Then edit `supabase/04_schedule.sql`, replace `YOUR-PROJECT` and
-`YOUR-SERVICE-ROLE-KEY`, and run it in the SQL editor.
+`YOUR-SERVICE-ROLE-KEY`, and run it.
 
 Without `RESEND_API_KEY` the function logs what it would have sent instead of
-sending it, which is the right way to test the schedule before wiring up mail.
-
-Note that Resend will only send from a domain you have verified, so a custom
-`MAIL_FROM` waits until step 4. Until then it falls back to Resend's own
-sandbox sender, which is fine for testing with your own address.
+sending, which is the right way to test the schedule before wiring up mail.
 
 ---
 
-## 4. A domain
+## 5. The domain
 
-**Free, and real:** Netlify gives every site a `*.netlify.app` subdomain with
-working HTTPS. `richandfriends.netlify.app` costs nothing and is a legitimate
-place to launch. Site configuration → Domain management → Options → Edit site
-name.
+`richandfriends.xyz` is registered at GoDaddy. In Vercel: Settings → Domains →
+Add. Vercel shows the records to create; GoDaddy supports no `ALIAS`, so the
+apex needs the A record Vercel displays and `www` needs a CNAME to
+`cname.vercel-dns.com`. Alternatively point GoDaddy's nameservers at Vercel and
+let it manage both.
 
-**Avoid the "free domain" TLDs.** `.tk`, `.ml`, `.ga`, `.cf` were handed out by
-Freenom, which stopped issuing them and has a long history of reclaiming names
-without warning. A brand you intend to protect should not sit on one.
+Certificates are issued automatically once DNS resolves.
 
-**Cheap and yours,** roughly, per year:
+Then, in this order:
 
-| | Typical cost | Notes |
-| --- | --- | --- |
-| `.xyz` | €1–3 first year, ~€12 after | Cheapest real option |
-| `.fr` | €7–10 | Requires an EU address; fits a French publisher |
-| `.com` | €10–12 | Worth it if you intend to register the trade mark |
-| `.app` | €14–18 | HTTPS enforced by the TLD |
-
-Buy at cost from Cloudflare Registrar or Porkbun — neither marks up renewals,
-which is where cheap registrars make their money back. If you are a student,
-the GitHub Student Developer Pack includes a free `.me` for a year.
-
-**Genuinely free, if you can wait:** `eu.org` hands out real subdomains such as
-`richandfriends.eu.org` at no cost and has done since 1996. Approval is manual
-and can take days or weeks. It works, but it reads as a hobby address rather
-than a brand.
-
-### Getting "netlify" out of the address bar
-
-Nothing else has to change: Netlify does not put a badge, a banner or any
-branding on the page itself, on any plan. The subdomain is the only place the
-name appears.
-
-Once you own a domain:
-
-1. **Netlify → Domain management → Add a domain.** Enter the domain without
-   `https://`. Netlify checks that you own it and then shows you the DNS
-   records to create.
-
-2. **Point the DNS.** Two ways, and Netlify will offer both:
-
-   *Netlify DNS* — change the nameservers at your registrar to the four
-   Netlify gives you. Simplest, and apex domains work without special record
-   types.
-
-   *Keep your registrar's DNS* — add the records exactly as Netlify displays
-   them: a CNAME for `www` pointing at your `*.netlify.app` hostname, and for
-   the apex either an `ALIAS`/`ANAME` record if your registrar supports one
-   (Cloudflare and Porkbun both do) or the A record Netlify shows. Use the
-   values on screen rather than any written down elsewhere — Netlify's
-   addresses change occasionally.
-
-3. **Wait.** Usually minutes, occasionally a few hours. Netlify issues a
-   Let's Encrypt certificate automatically once DNS resolves; there is nothing
-   to buy or upload.
-
-4. **Set the primary domain** under Domain management, and turn on *Force
-   HTTPS*. Requests to the `.netlify.app` address will then redirect to your
-   domain, so the old one stops appearing.
-
-Then, and this order matters:
-
-- add the new URL to Supabase → Authentication → URL Configuration, or
-  sign-in breaks the moment the domain becomes primary;
+- add `https://richandfriends.xyz` to Supabase → URL Configuration **before**
+  making it the primary domain, or sign-in breaks the moment it switches;
+- point the Stripe webhook at the final domain;
 - verify the domain in Resend so `MAIL_FROM` can use it;
-- fill the domain into the `[BRACKETS]` in `src/legal/content.js`.
+- fill the domain and a contact address into the `[BRACKETS]` in
+  `src/legal/content.js`.
 
-### If the domain is at GoDaddy
+Neither Vercel nor GoDaddy includes mailbox hosting. **ImprovMX** (any DNS) or
+**Cloudflare Email Routing** (Cloudflare DNS) will forward
+`contact@richandfriends.xyz` to an existing inbox for free.
 
-GoDaddy does not support `ALIAS`/`ANAME` records, so the apex cannot be
-pointed at a hostname. That leaves two routes.
+---
 
-**Switch the nameservers to Netlify** (simplest). Netlify → Domains → Add a
-domain, then copy the four `*.nsone.net` nameservers it gives you. In GoDaddy:
-My Products → the domain → **Nameservers → Change → I'll use my own
-nameservers** → paste all four → Save. Netlify then handles the apex and `www`
-without further records.
+## Troubleshooting
 
-Note this switches *all* DNS for the domain away from GoDaddy — any email
-forwarding or other records configured there stop working.
+### After Google, the browser lands on `localhost` and cannot connect
 
-**Or keep DNS at GoDaddy.** Delete the parked `@` A record and the default
-`www` CNAME GoDaddy creates, then add exactly what Netlify shows: an A record
-for `@` pointing at Netlify's load balancer, and a CNAME for `www` pointing at
-`your-site.netlify.app`. Use the address on Netlify's screen rather than one
-copied from a guide — it has changed before.
+The single most common setup failure, and it is one setting.
 
-Three GoDaddy-specific things worth checking on the day you buy:
+Supabase Auth has two separate fields under **Authentication → URL
+Configuration**:
 
-- **Renewal price.** The cheap first year is promotional; `.xyz` renews far
-  higher at GoDaddy than at Porkbun or Cloudflare. Decide now whether to keep
-  it there or transfer after the 60-day lock ICANN imposes on new
-  registrations.
-- **Auto-renew** is on by default. Leave it on — losing the domain is worse —
-  but know what it will charge.
-- **WHOIS privacy.** Confirm it is enabled. Without it, the postal address of
-  an individual registrant is publishable, which matters here because the
-  legal notice already names a private person.
+- **Site URL** — where it sends people by default.
+- **Redirect URLs** — the allowlist of where it is *permitted* to send them.
 
-### A contact address at the domain
+The app asks to come back to wherever it is running (`window.location.origin`).
+If that address is not on the allowlist, Supabase does not error — it silently
+falls back to **Site URL**. A new project's Site URL is `http://localhost:3000`,
+so a phone gets sent to itself, finds nothing listening, and shows "Safari
+can't open the page".
 
-The legal texts need a working email at the domain, and neither Netlify nor
-GoDaddy provides mailbox hosting free. Two free routes that forward to an
-existing inbox:
+Fix both fields:
 
-- **ImprovMX** — works with any DNS provider, two MX records and a TXT.
-- **Cloudflare Email Routing** — free, but requires Cloudflare to be the DNS
-  provider. That combines fine with Netlify hosting: keep DNS at Cloudflare
-  and point the records at Netlify.
+```
+Site URL:       https://richandfriends.xyz
 
-**Connecting it:** Netlify → Domain management → Add a domain, then point your
-registrar's nameservers at Netlify, or add the CNAME it gives you. HTTPS is
-issued automatically within a few minutes.
+Redirect URLs:  https://richandfriends.xyz/**
+                https://www.richandfriends.xyz/**
+                https://YOUR-PROJECT.vercel.app/**
+                http://localhost:5173/**
+```
 
-Then, in order: add the new URL to Supabase's redirect list, verify the domain
-in Resend so `MAIL_FROM` can use it, and fill the domain into the legal texts
-in `src/legal/content.js`.
+The `/**` wildcard matters — without it only the exact root path is allowed,
+and any return carrying query parameters is rejected.
+
+Note that the URI registered in the **Google Cloud console** is a different
+thing again: that one must be Supabase's callback,
+`https://YOUR-PROJECT.supabase.co/auth/v1/callback`, not your site. If it were
+wrong you would have been stopped by Google rather than bounced back.
+
+### Sign-in returns to the app but nothing happens
+
+The address is missing from the Redirect URLs allowlist. The app now shows
+this as a message naming the setting rather than silently returning to the
+sign-in screen.
+
+### The app shows "Supabase is not configured"
+
+`VITE_SUPABASE_URL` or `VITE_SUPABASE_ANON_KEY` is missing from Vercel, or was
+added after the last build. Vite inlines them at build time — redeploy after
+adding them.
+
+---
+
+## What the watermark does and does not do
+
+Describe it to buyers honestly, because the distinction matters.
+
+**It does:** print the buyer's name and a short account tag faintly behind the
+text and in the margin, so a leaked screenshot or PDF can be traced back to the
+account it came from.
+
+**It does not:** prevent copying. Nothing on the web can. The browser has to
+render the words to show them, and anything rendered can be screenshotted,
+selected via developer tools, or photographed off the screen. Any product
+claiming otherwise is selling false confidence.
+
+What actually protects the books is that they are cheap enough that copying is
+not worth the effort, that each chapter is fetched one at a time behind a
+server-side entitlement check so nobody can pull a whole book from a public
+endpoint, and that a bought copy carries progress and highlights a pirated one
+does not.
 
 ---
 
 ## Checklist
 
-- [ ] SQL files 01, 02, 03 run in order, no errors
-- [ ] Google provider configured, or email fallback accepted for now
-- [ ] All redirect URLs added, including localhost
-- [ ] Netlify env vars set and site deployed
-- [ ] Deployed URL added back to Supabase
-- [ ] `notify` function deployed and `04_schedule.sql` run
-- [ ] Domain connected, added to Supabase, verified in Resend
+- [ ] SQL 01, 02, 03, 05, 06 run in order without error
+- [ ] Sign-in provider enabled; all redirect URLs added, including localhost
+- [ ] Vercel env vars set — six of them, only two prefixed `VITE_`
+- [ ] Deployed, and the Vercel URL added back to Supabase
+- [ ] Stripe webhook created, secret set, test purchase completed
+- [ ] `notify` deployed and `04_schedule.sql` run
+- [ ] Domain connected, added to Supabase, pointed at by Stripe and Resend
 - [ ] `[BRACKETS]` in `src/legal/content.js` filled in
 - [ ] Repository set to private
+- [ ] Placeholder chapters replaced with the manuscripts

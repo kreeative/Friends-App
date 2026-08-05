@@ -3,12 +3,17 @@ import { useAuth } from '../context/AuthContext'
 import { useGroup } from '../context/GroupContext'
 import { completionRate } from '../lib/stats'
 import { DAYS } from '../lib/time'
+import { useT } from '../lib/i18n'
 import { Avatar, Screen, Section, Stat, TopBar } from '../components/ui'
 import HistoryStrip from '../components/HistoryStrip'
+import { LegalLinks } from './Legal'
+
+const DAYS_FR = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi']
 
 export default function Settings() {
   const { user } = useAuth()
   const { group, members, statuses, groups, setActiveGroup, activeId } = useGroup()
+  const { t, locale, setLocale } = useT()
 
   /**
    * Collective progress, deliberately not a ranking.
@@ -26,7 +31,8 @@ export default function Settings() {
 
   if (!group) return null
 
-  const shareText = `${group.name} — join us on Friends. Code: ${group.invite_code}`
+  const dayName = (locale === 'fr' ? DAYS_FR : DAYS)[group.checkin_dow]
+  const shareText = `${group.name} — Rich & Friends. ${t('start.invite_code')}: ${group.invite_code}`
 
   async function share() {
     if (navigator.share) {
@@ -40,36 +46,44 @@ export default function Settings() {
     <Screen>
       <TopBar
         title={group.name}
-        sub={`${DAYS[group.checkin_dow]} ${String(group.opens_hour).padStart(2, '0')}:00 · ${group.timezone}`}
+        sub={`${dayName} ${String(group.opens_hour).padStart(2, '0')}:00 · ${group.timezone}`}
       />
 
-      <Section title="Together">
-        <div className="flex gap-2">
+      <Section title={t('board.together')}>
+        <div className="flex gap-6">
           <Stat
             value={together.pct === null ? '—' : `${together.pct}%`}
-            label="Group check-in rate"
-            hint={`${together.done} of ${together.counted}`}
+            label={t('settings.group_rate')}
+            hint={`${together.done} / ${together.counted}`}
           />
-          <Stat value={members.length} label="People" hint="2–6 works best" />
+          <Stat
+            value={members.length}
+            label={t('settings.people')}
+            hint={t('settings.people_hint')}
+          />
         </div>
       </Section>
 
-      <Section title="Everyone">
-        <div className="divide-y divide-white/[0.14] hair">
+      <Section title={t('settings.everyone')}>
+        <div className="list">
           {members.map((m) => {
             const rows = statuses.filter((s) => s.user_id === m.user_id)
             const r = completionRate(rows, 14)
             return (
-              <div key={m.user_id} className="p-4">
-                <div className="flex items-center gap-3">
+              <div key={m.user_id} className="py-5">
+                <div className="flex items-center gap-4">
                   <Avatar profile={m.profile} />
-                  <span className="flex-1 font-display text-[15px]">
+                  <span className="flex-1 text-body text-ink">
                     {m.profile?.display_name}
-                    {m.user_id === user?.id && <span className="text-white/30"> · you</span>}
+                    {m.user_id === user?.id && (
+                      <span className="text-muted"> · {t('board.you')}</span>
+                    )}
                   </span>
-                  <span className="label">{r.total ? `${r.done}/${r.total}` : '—'}</span>
+                  <span className="text-small text-muted">
+                    {r.total ? `${r.done}/${r.total}` : '—'}
+                  </span>
                 </div>
-                <div className="mt-3 pl-10">
+                <div className="mt-4 pl-[3.5rem]">
                   <HistoryStrip rows={rows} count={10} />
                 </div>
               </div>
@@ -78,27 +92,44 @@ export default function Settings() {
         </div>
       </Section>
 
-      <Section title="Invite">
-        <div className="hair p-4">
-          <p className="font-mono text-[24px] tracking-[0.3em]">{group.invite_code}</p>
-          <button onClick={share} className="btn mt-3">
-            Send to a friend
-          </button>
-          <p className="mt-3 text-[12px] leading-snug text-white/30">
-            Conversation lives in your group chat, not here. This app only holds the check-in.
+      <Section title={t('board.invite')}>
+        <div className="card">
+          <p className="font-display text-metric tracking-[0.12em] text-ink">
+            {group.invite_code}
           </p>
+          <button onClick={share} className="btn-primary press mt-6">
+            {t('settings.send_to_friend')}
+          </button>
+          <p className="mt-4 text-small text-muted">{t('settings.invite_note')}</p>
+        </div>
+      </Section>
+
+      <Section title={t('settings.language')}>
+        <div className="flex gap-2">
+          {[
+            ['en', 'English'],
+            ['fr', 'Français'],
+          ].map(([code, label]) => (
+            <button
+              key={code}
+              onClick={() => setLocale(code)}
+              className={locale === code ? 'chip-pink press' : 'chip-quiet press'}
+            >
+              {label}
+            </button>
+          ))}
         </div>
       </Section>
 
       {groups.length > 1 && (
-        <Section title="Switch group">
+        <Section title={t('settings.switch_group')}>
           <div className="space-y-2">
             {groups.map((g) => (
               <button
                 key={g.id}
                 onClick={() => setActiveGroup(g.id)}
-                className={`hair w-full px-4 py-3 text-left font-display text-[15px] ${
-                  g.id === activeId ? 'bg-white text-black' : ''
+                className={`press w-full rounded-card px-5 py-4 text-left text-body ${
+                  g.id === activeId ? 'bg-pink text-on-pop' : 'bg-raised text-ink'
                 }`}
               >
                 {g.name}
@@ -107,6 +138,10 @@ export default function Settings() {
           </div>
         </Section>
       )}
+
+      <Section>
+        <LegalLinks />
+      </Section>
     </Screen>
   )
 }

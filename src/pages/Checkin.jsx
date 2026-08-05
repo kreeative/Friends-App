@@ -5,11 +5,13 @@ import { useAuth } from '../context/AuthContext'
 import { useGroup } from '../context/GroupContext'
 import { enqueue, flush } from '../lib/queue'
 import { cyclePhase, untilLabel } from '../lib/time'
+import { useT } from '../lib/i18n'
 import { Field, Screen, Section, TopBar } from '../components/ui'
 
 export default function Checkin() {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { t } = useT()
   const { currentCycle, myGoals, groupGoals, reloadGroup } = useGroup()
 
   const goals = useMemo(
@@ -75,12 +77,10 @@ export default function Checkin() {
   if (phase !== 'open') {
     return (
       <Screen>
-        <TopBar title="Check-in" sub="Window closed" />
+        <TopBar title={t('checkin.title')} sub={t('checkin.window_closed')} />
         <Section>
-          <p className="hair p-5 text-[14px] leading-relaxed text-white/60">
-            This cycle's window has closed. The next one opens{' '}
-            {untilLabel(currentCycle.closes_at, { prefix: 'in ' })} — nothing to catch up on in the
-            meantime.
+          <p className="card text-body text-muted">
+            {t('checkin.closed_body', { t: untilLabel(currentCycle.closes_at) })}
           </p>
         </Section>
       </Screen>
@@ -90,72 +90,76 @@ export default function Checkin() {
   return (
     <Screen>
       <TopBar
-        title="Check-in"
-        sub={`Closes ${untilLabel(currentCycle.closes_at, { prefix: 'in ' })}`}
+        title={t('checkin.title')}
+        sub={t('checkin.closes_in', { t: untilLabel(currentCycle.closes_at) })}
       />
 
       {goals.length === 0 ? (
         <Section>
-          <p className="hair p-5 text-[14px] leading-relaxed text-white/60">
-            No active goals yet. Add one first — a check-in needs something to check.
-          </p>
+          <p className="card text-body text-muted">{t('checkin.no_goals')}</p>
         </Section>
       ) : (
-        <Section title="What actually happened">
-          <div className="space-y-2">
+        <Section title={t('checkin.what_happened')}>
+          <div className="space-y-4">
             {goals.map((g) => {
               const a = answers[g.id] ?? {}
               const count = a.count ?? 0
               const target = g.target_per_cycle || 1
 
               return (
-                <div key={g.id} className="hair p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <h3 className="font-display text-[16px] leading-tight">{g.commitment}</h3>
-                    {g.kind === 'group' && <span className="label shrink-0 pt-1">Shared</span>}
+                <div key={g.id} className="card">
+                  <div className="flex items-start justify-between gap-4">
+                    <h3 className="text-h2 text-ink">{g.commitment}</h3>
+                    {g.kind === 'group' && (
+                      <span className="chip-quiet shrink-0">{t('checkin.shared')}</span>
+                    )}
                   </div>
-                  <p className="label mt-1">
-                    Committed: {g.cadence === 'recurring' ? `${target}×` : 'once'}
+                  <p className="mt-1.5 text-small text-muted">
+                    {g.cadence === 'recurring'
+                      ? t('checkin.committed', { n: target })
+                      : t('checkin.committed_once')}
                     {g.trigger_when ? ` · ${g.trigger_when}` : ''}
                   </p>
 
                   {g.cadence === 'recurring' ? (
-                    <div className="mt-4 flex items-center gap-3">
+                    <div className="mt-6 flex items-center gap-4">
                       <button
                         onClick={() => set(g.id, { count: Math.max(0, count - 1) })}
-                        className="hair h-12 w-12 text-[20px] leading-none"
-                        aria-label="One fewer"
+                        className="press h-14 w-14 shrink-0 rounded-pill bg-ink/[0.07] text-h2 leading-none text-ink"
+                        aria-label={t('checkin.fewer')}
                       >
                         −
                       </button>
                       <div className="flex-1 text-center">
-                        <div className="font-display text-[28px] leading-none">
-                          {count}
-                          <span className="text-white/30"> / {target}</span>
-                        </div>
+                        <span className="font-display text-metric text-ink">{count}</span>
+                        <span className="text-h2 text-muted"> / {target}</span>
                       </div>
                       <button
                         onClick={() => set(g.id, { count: Math.min(99, count + 1) })}
-                        className="hair h-12 w-12 text-[20px] leading-none"
-                        aria-label="One more"
+                        className="press h-14 w-14 shrink-0 rounded-pill bg-ink/[0.07] text-h2 leading-none text-ink"
+                        aria-label={t('checkin.more')}
                       >
                         +
                       </button>
                     </div>
                   ) : (
-                    <div className="mt-4 grid grid-cols-2 gap-2">
+                    <div className="mt-6 flex gap-2">
                       {[
-                        ['done', 'Did it'],
-                        ['missed', 'Not yet'],
-                      ].map(([v, l]) => (
+                        ['done', t('checkin.did_it')],
+                        ['missed', t('checkin.not_yet')],
+                      ].map(([v, label]) => (
                         <button
                           key={v}
                           onClick={() => set(g.id, { outcome: v, count: v === 'done' ? 1 : 0 })}
-                          className={`hair py-3 font-mono text-[11px] uppercase tracking-[0.16em] ${
-                            (a.outcome ?? '') === v ? 'bg-white text-black' : 'text-white/50'
-                          }`}
+                          className={
+                            (a.outcome ?? '') === v
+                              ? v === 'done'
+                                ? 'chip-green press'
+                                : 'chip-pink press'
+                              : 'chip-quiet press'
+                          }
                         >
-                          {l}
+                          {label}
                         </button>
                       ))}
                     </div>
@@ -163,7 +167,7 @@ export default function Checkin() {
 
                   {g.evidence_def && (
                     <input
-                      className="field mt-3"
+                      className="field mt-6"
                       placeholder={g.evidence_def}
                       value={a.evidence ?? ''}
                       onChange={(e) => set(g.id, { evidence: e.target.value })}
@@ -176,28 +180,26 @@ export default function Checkin() {
         </Section>
       )}
 
-      <Section title="One thing for next cycle">
-        <Field label="">
+      <Section title={t('checkin.one_thing')}>
+        <Field>
           <input
             className="field"
             value={next}
             onChange={(e) => setNext(e.target.value)}
-            placeholder="The single thing you'll do"
+            placeholder={t('checkin.one_thing_ph')}
             maxLength={280}
           />
         </Field>
       </Section>
 
       <Section>
-        <button onClick={submit} disabled={busy} className="btn-solid">
-          {busy ? 'Sending' : 'Submit check-in'}
+        <button onClick={submit} disabled={busy} className="btn-primary press">
+          {busy ? t('checkin.sending') : t('checkin.submit')}
         </button>
-        <button onClick={markAway} disabled={busy} className="btn mt-2">
-          I'm away this cycle
+        <button onClick={markAway} disabled={busy} className="btn-ghost press mt-2">
+          {t('checkin.away')}
         </button>
-        <p className="mt-3 text-center text-[12px] leading-snug text-white/30">
-          Away weeks don't count against you. They're not misses.
-        </p>
+        <p className="mt-4 text-center text-small text-muted">{t('checkin.away_note')}</p>
       </Section>
     </Screen>
   )

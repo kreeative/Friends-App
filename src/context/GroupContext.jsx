@@ -8,10 +8,20 @@ export const useGroup = () => useContext(GroupCtx)
 
 const ACTIVE_KEY = 'friends.activeGroup'
 
+// Storage can be disabled or throw (Safari private mode). Reading it at mount
+// unguarded would crash the provider before anything rendered.
+const readActive = () => {
+  try {
+    return localStorage.getItem(ACTIVE_KEY) || null
+  } catch {
+    return null
+  }
+}
+
 export function GroupProvider({ children }) {
   const { user } = useAuth()
   const [memberships, setMemberships] = useState([])
-  const [activeId, setActiveId] = useState(() => localStorage.getItem(ACTIVE_KEY) || null)
+  const [activeId, setActiveId] = useState(readActive)
   const [group, setGroup] = useState(null)
   const [members, setMembers] = useState([])
   const [cycles, setCycles] = useState([])
@@ -19,6 +29,7 @@ export function GroupProvider({ children }) {
   const [statuses, setStatuses] = useState([])
   const [nudges, setNudges] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
   const loadMemberships = useCallback(async () => {
     if (!user) {
@@ -26,19 +37,29 @@ export function GroupProvider({ children }) {
       setLoading(false)
       return
     }
-    const { data } = await supabase
-      .from('group_members')
-      .select('group_id, role, groups(*)')
-      .eq('user_id', user.id)
+    // A rejected query here used to escape as an unhandled rejection, leaving
+    // `loading` true forever — an eternal splash with no way out of it.
+    try {
+      const { data, error: err } = await supabase
+        .from('group_members')
+        .select('group_id, role, groups(*)')
+        .eq('user_id', user.id)
 
-    const rows = (data ?? []).filter((r) => r.groups)
-    setMemberships(rows)
+      if (err) throw err
+      setError(null)
 
-    setActiveId((current) => {
-      if (current && rows.some((r) => r.group_id === current)) return current
-      return rows[0]?.group_id ?? null
-    })
-    setLoading(false)
+      const rows = (data ?? []).filter((r) => r.groups)
+      setMemberships(rows)
+
+      setActiveId((current) => {
+        if (current && rows.some((r) => r.group_id === current)) return current
+        return rows[0]?.group_id ?? null
+      })
+    } catch (e) {
+      setError({ code: e?.code ?? 'network', description: e?.message ?? String(e) })
+    } finally {
+      setLoading(false)
+    }
   }, [user?.id])
 
   useEffect(() => {
@@ -46,7 +67,12 @@ export function GroupProvider({ children }) {
   }, [loadMemberships])
 
   useEffect(() => {
-    if (activeId) localStorage.setItem(ACTIVE_KEY, activeId)
+    if (!activeId) return
+    try {
+      localStorage.setItem(ACTIVE_KEY, activeId)
+    } catch {
+      /* not fatal — the group choice just won't survive a reload */
+    }
   }, [activeId])
 
   const loadGroup = useCallback(async () => {
@@ -63,7 +89,8 @@ export function GroupProvider({ children }) {
       /* offline or not yet migrated — the reads below still work */
     }
 
-    const [g, m, c, gl, st, nd] = await Promise.all([
+    try {
+      const [g, m, c, gl, st, nd] = await Promise.all([
       supabase.from('groups').select('*').eq('id', activeId).maybeSingle(),
       supabase
         .from('group_members')
@@ -84,14 +111,20 @@ export function GroupProvider({ children }) {
         .order('created_at'),
       supabase.from('member_cycle_status').select('*').eq('group_id', activeId),
       supabase.from('nudges').select('*').eq('group_id', activeId).in('state', ['pending', 'claimed']),
-    ])
+      ])
 
-    setGroup(g.data ?? null)
-    setMembers((m.data ?? []).map((r) => ({ ...r, profile: r.profiles })))
-    setCycles(c.data ?? [])
-    setGoals(gl.data ?? [])
-    setStatuses(st.data ?? [])
-    setNudges(nd.data ?? [])
+      setGroup(g.data ?? null)
+      setMembers((m.data ?? []).map((r) => ({ ...r, profile: r.profiles })))
+      setCycles(c.data ?? [])
+      setGoals(gl.data ?? [])
+      setStatuses(st.data ?? [])
+      setNudges(nd.data ?? [])
+      setError(null)
+    } catch (e) {
+      // One rejected request used to abort the whole Promise.all and leave
+      // every list at its previous value with nothing said about it.
+      setError({ code: e?.code ?? 'network', description: e?.message ?? String(e) })
+    }
   }, [activeId, user?.id])
 
   useEffect(() => {
@@ -125,6 +158,7 @@ export function GroupProvider({ children }) {
 
   const value = {
     loading,
+    error,
     memberships,
     groups: memberships.map((m) => m.groups),
     group,

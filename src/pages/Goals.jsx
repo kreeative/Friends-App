@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useGroup } from '../context/GroupContext'
+import { useT } from '../lib/i18n'
 import { Empty, Screen, Section, Sheet, TopBar } from '../components/ui'
 import GoalCard from '../components/GoalCard'
 import GoalForm from '../components/GoalForm'
@@ -8,6 +9,7 @@ import GoalForm from '../components/GoalForm'
 export default function Goals() {
   const { user } = useAuth()
   const { goals, members } = useGroup()
+  const { t } = useT()
   const [open, setOpen] = useState(false)
 
   const mine = goals.filter((g) => g.owner_id === user?.id)
@@ -19,19 +21,19 @@ export default function Goals() {
   return (
     <Screen>
       <TopBar
-        title="Goals"
+        title={t('nav.goals')}
         right={
-          <button onClick={() => setOpen(true)} className="label px-2 py-1 text-white">
-            + Add
+          <button onClick={() => setOpen(true)} className="chip-pink press">
+            {t('goals.add')}
           </button>
         }
       />
 
-      <Section title="Yours">
+      <Section title={t('goals.yours')}>
         {mine.length === 0 ? (
-          <Empty>Nothing yet. A goal needs a trigger and a proof to be checkable.</Empty>
+          <Empty>{t('goals.empty')}</Empty>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-4">
             {mine.map((g) => (
               <GoalCard key={g.id} goal={g} owner={ownerOf(g.owner_id)} showControls />
             ))}
@@ -40,8 +42,8 @@ export default function Goals() {
       </Section>
 
       {shared.length > 0 && (
-        <Section title="Together">
-          <div className="space-y-2">
+        <Section title={t('board.together')}>
+          <div className="space-y-4">
             {shared.map((g) => (
               <GoalCard key={g.id} goal={g} showControls />
             ))}
@@ -50,8 +52,8 @@ export default function Goals() {
       )}
 
       {others.length > 0 && (
-        <Section title="Everyone else">
-          <div className="space-y-2">
+        <Section title={t('goals.everyone_else')}>
+          <div className="space-y-4">
             {others.map((g) => (
               <GoalCard key={g.id} goal={g} owner={ownerOf(g.owner_id)} />
             ))}
@@ -59,7 +61,7 @@ export default function Goals() {
         </Section>
       )}
 
-      <Sheet open={open} onClose={() => setOpen(false)} title="New goal">
+      <Sheet open={open} onClose={() => setOpen(false)} title={t('goals.new_goal')}>
         <GoalForm onDone={() => setOpen(false)} />
       </Sheet>
     </Screen>
