@@ -200,6 +200,8 @@ const STRINGS = {
     'err.redirect_not_allowed':
       'This address isn’t on the sign-in allowlist. Add it under Authentication → URL Configuration in Supabase.',
     'err.load_failed': 'Couldn’t reach the server. Your connection may be down.',
+    'err.no_tables':
+      'The database is empty — the tables have not been created yet. In Supabase, open the SQL Editor and run supabase/01_schema.sql, then 02_functions.sql, then 03_policies.sql, pasting the contents of each file.',
     'err.retry': 'Try again',
     'err.loading': 'Loading',
 
@@ -434,6 +436,8 @@ const STRINGS = {
     'err.redirect_not_allowed':
       'Cette adresse n’est pas autorisée pour la connexion. Ajoute-la dans Authentication → URL Configuration sur Supabase.',
     'err.load_failed': 'Impossible de joindre le serveur. Ta connexion est peut-être coupée.',
+    'err.no_tables':
+      'La base est vide — les tables n’ont pas encore été créées. Dans Supabase, ouvre l’éditeur SQL et exécute supabase/01_schema.sql, puis 02_functions.sql, puis 03_policies.sql, en collant le contenu de chaque fichier.',
     'err.retry': 'Réessayer',
     'err.loading': 'Chargement',
 

@@ -21,6 +21,17 @@ export function explain(error, t) {
   if (raw.includes('failed to fetch') || raw.includes('networkerror') || error.code === 'network') {
     return t('err.load_failed')
   }
+  // PostgREST's way of saying the table does not exist. It only ever means one
+  // thing here — the SQL in supabase/ was never run — and the raw string sends
+  // people looking for a caching bug instead.
+  // `raw` is already lower-cased; comparing error.code directly would miss
+  // PGRST205 and 42P01, which arrive upper-case.
+  if (raw.includes('schema cache') || raw.includes('pgrst205') || raw.includes('42p01')) {
+    return t('err.no_tables')
+  }
+  if (raw.includes('does not exist') && raw.includes('relation')) {
+    return t('err.no_tables')
+  }
   return error.description || t('err.signin_failed')
 }
 

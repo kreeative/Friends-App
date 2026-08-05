@@ -47,7 +47,7 @@ export default {
         h2: ['1.375rem', { lineHeight: '1.25', letterSpacing: '-0.015em' }],
         body: ['1rem', { lineHeight: '1.6' }],
         small: ['0.875rem', { lineHeight: '1.55' }],
-        label: ['0.8125rem', { lineHeight: '1.3', letterSpacing: '0.08em' }],
+        label: ['0.8125rem', { lineHeight: '1.3', letterSpacing: '0.02em' }],
       },
       spacing: {
         // 8px rhythm. Named so the intent survives a refactor.

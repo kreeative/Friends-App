@@ -27,9 +27,9 @@ const SRC = {
 
 /**
  * Yellow measures 1.4:1 on a white page — as a mark it does not dim, it
- * disappears. That one combination gets a black ground under it; every other
- * one sits directly on the page, because a plate the logo does not need is
- * just another box.
+ * disappears. That one combination gets the supplied blue-on-yellow lockup;
+ * every other one sits directly on the page, because a ground the logo does
+ * not need is just another box.
  */
 export function useLogoPlate() {
   const { accent, resolved } = useTheme()
@@ -51,16 +51,18 @@ export default function Wordmark({ className = '', width = 260, variant }) {
 }
 
 /**
- * The wordmark with the black ground applied only where it is needed. Use
- * this anywhere the mark stands alone; use Wordmark directly when it is
- * already inside a surface you control.
+ * The wordmark, on its own ground only where it needs one. Use this anywhere
+ * the mark stands alone; use Wordmark directly when it is already inside a
+ * surface you control.
  */
 export function Lockup({ width = 150, className = '' }) {
   const plate = useLogoPlate()
   if (!plate) return <Wordmark width={width} className={className} />
   return (
-    <span className={`brand-badge ${className}`}>
-      <Wordmark width={width} />
+    <span className={`brand-lockup ${className}`}>
+      {/* Blue on yellow: the pairing that was drawn, rather than a plate of
+          my own invention underneath the yellow one. */}
+      <Wordmark width={width} variant="blue" />
     </span>
   )
 }
@@ -71,8 +73,8 @@ export function Mark({ size = 64, className = '' }) {
   const plate = useLogoPlate()
   if (!plate) return <Monogram size={size} className={className} />
   return (
-    <span className={`brand-badge p-4 ${className}`}>
-      <Monogram size={size} />
+    <span className={`brand-lockup p-4 ${className}`}>
+      <Monogram size={size} variant="blue" />
     </span>
   )
 }

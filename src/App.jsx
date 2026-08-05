@@ -14,7 +14,10 @@ import Goals from './pages/Goals'
 import Me from './pages/Me'
 import Settings from './pages/Settings'
 import Legal from './pages/Legal'
-import Landing from './pages/Landing'
+import PublicLayout from './pages/public/PublicLayout'
+import Home from './pages/public/Home'
+import How from './pages/public/How'
+import Books from './pages/public/Books'
 import Library from './pages/Library'
 import Reader from './pages/Reader'
 
@@ -42,6 +45,21 @@ function Stuck({ error, onRetry }) {
   )
 }
 
+/**
+ * The public site is three pages behind one shared layout, not one long
+ * scroll with a navigation bar pointing at fragments of itself. Declared once
+ * as a fragment because both the unconfigured and the signed-out branch below
+ * need exactly the same set.
+ */
+const PUBLIC_ROUTES = (
+  <Route element={<PublicLayout />}>
+    <Route index element={<Home />} />
+    <Route path="how-it-works" element={<How />} />
+    <Route path="books" element={<Books />} />
+    <Route path="*" element={<Navigate to="/" replace />} />
+  </Route>
+)
+
 function Gate() {
   const { user, loading, authError } = useAuth()
   const { loading: groupsLoading, memberships, error: groupError, reload } = useGroup()
@@ -61,7 +79,7 @@ function Gate() {
             </Splash>
           }
         />
-        <Route path="*" element={<Landing />} />
+        {PUBLIC_ROUTES}
       </Routes>
     )
   }
@@ -72,7 +90,7 @@ function Gate() {
     return (
       <Routes>
         <Route path="/signin" element={<SignIn />} />
-        <Route path="*" element={<Landing />} />
+        {PUBLIC_ROUTES}
       </Routes>
     )
   }

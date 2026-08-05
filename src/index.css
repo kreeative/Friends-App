@@ -309,18 +309,17 @@
   }
 
   /**
-   * The one case where the logo needs a ground of its own: the yellow
-   * colourway measures 1.4:1 on a white page, so on a light theme it would
-   * simply vanish. Black under it, and nothing else — one colour on black is
-   * a lockup, not a mixture.
+   * The supplied blue-on-yellow lockup, used for the one case where the mark
+   * cannot hold itself against the page: yellow measures 1.4:1 on white, so
+   * it does not dim there, it disappears.
+   *
+   * The answer is the artwork's own — blue and yellow belong together, and
+   * putting the blue colourway on the yellow ground is the pairing that was
+   * drawn. The black plate this replaces was mine, not the brand's.
    */
-  .brand-badge {
-    /* Card radius rather than a pill: the wordmark is two lines deep, and a
-       full pill around it turns into a large black oval at hero sizes. */
-    @apply inline-flex items-center justify-center rounded-card px-4 py-2.5;
-    background: #000;
-    border: 1px solid rgb(255 255 255 / 0.14);
-    box-shadow: inset 0 1px 0 rgb(var(--c-accent) / 0.24);
+  .brand-lockup {
+    @apply inline-flex items-center justify-center rounded-card px-3.5 py-2;
+    background: rgb(var(--c-accent));
   }
 
   /* The app's ghost button is deliberately edgeless — in context it always
@@ -330,6 +329,10 @@
   .btn-outline {
     @apply btn text-ink hover:bg-ink/[0.05] active:bg-ink/[0.08];
     border: 1px solid rgb(var(--c-ink) / 0.18);
+  }
+
+  .nav-link-active {
+    @apply text-ink;
   }
 
   /* Sans, not the display face. Playfair belongs on headlines; running it
@@ -383,8 +386,10 @@
   }
 
   /* --- type ----------------------------------------------------------- */
+  /* Letterspacing kept close. Wide-tracked uppercase reads as a fashion
+     caption and eats horizontal space a phone does not have. */
   .eyebrow {
-    @apply text-label font-semibold uppercase tracking-[0.1em] text-muted;
+    @apply text-label font-semibold uppercase tracking-[0.02em] text-muted;
   }
   .lede {
     @apply text-body text-muted;
@@ -396,7 +401,7 @@
    * top-level headline of a section and nothing smaller.
    */
   .display {
-    @apply font-title font-normal leading-[1.06] tracking-[-0.01em] text-ink;
+    @apply font-title font-normal leading-[1.04] tracking-[-0.025em] text-ink;
   }
 
   /* --- controls ------------------------------------------------------- */

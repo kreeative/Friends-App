@@ -11,11 +11,8 @@ export const LANDING = {
       title: 'The group chat where you actually finish things.',
       body: 'One check-in a week, at the same time, with the same people. Sixty seconds. That is the whole product — and it is why it still works in month three.',
       cta: 'Start a group',
-      secondary: 'See the books',
+      secondary: 'How it works',
       note: 'Free. No app to install.',
-      // Sits under the wordmark on its black plate. A domain lockup, because
-      // it is true and it dates the mark without inventing a heritage.
-      plate: 'richandfriends.xyz',
     },
 
     problem: {
@@ -26,6 +23,7 @@ export const LANDING = {
 
     steps: {
       eyebrow: 'How it works',
+      title: 'Three moving parts, and no fourth.',
       items: [
         {
           n: '01',
@@ -113,6 +111,8 @@ export const LANDING = {
     footer: {
       tagline: 'A weekly check-in with a few people who know what you are working on.',
       product: 'Product',
+      home: 'Home',
+      menu: 'Menu',
       links: { how: 'How it works', library: 'The books', signin: 'Sign in' },
       legalHeading: 'Legal',
       contact: 'Contact',
@@ -127,9 +127,8 @@ export const LANDING = {
       title: 'La conversation de groupe où les choses finissent vraiment.',
       body: 'Un point par semaine, au même moment, avec les mêmes personnes. Une minute. C’est tout le produit — et c’est pour ça qu’il tient encore au troisième mois.',
       cta: 'Créer un groupe',
-      secondary: 'Voir les livres',
+      secondary: 'Comment ça marche',
       note: 'Gratuit. Rien à installer.',
-      plate: 'richandfriends.xyz',
     },
 
     problem: {
@@ -140,6 +139,7 @@ export const LANDING = {
 
     steps: {
       eyebrow: 'Comment ça marche',
+      title: 'Trois pièces mobiles, pas une quatrième.',
       items: [
         {
           n: '01',
