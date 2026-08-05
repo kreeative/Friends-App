@@ -3,9 +3,37 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#000000" />
     <meta name="description" content="A weekly check-in with a few people who know what you're working on." />
+    <!--
+      Stamps the saved theme before the first paint. Without it the page
+      renders the default, then corrects itself once React mounts, which is
+      visible as a flash of the wrong colours on every load. Keep the storage
+      keys and the fallbacks identical to src/lib/theme.jsx.
+    -->
+    <script>
+      ;(function () {
+        var d = document.documentElement
+        var mode = 'dark'
+        var accent = 'pink'
+        try {
+          var saved = localStorage.getItem('rf.mode') || 'system'
+          accent = localStorage.getItem('rf.accent') || 'pink'
+          if (['light', 'dark'].indexOf(saved) >= 0) {
+            mode = saved
+          } else {
+            mode = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
+          }
+          if (['pink', 'yellow', 'blue'].indexOf(accent) < 0) accent = 'pink'
+        } catch (e) {
+          /* Private modes can throw on read; the defaults above stand. */
+        }
+        d.setAttribute('data-mode', mode)
+        d.setAttribute('data-accent', accent)
+        var m = document.querySelector('meta[name="theme-color"]')
+        if (m) m.setAttribute('content', mode === 'light' ? '#FFFFFF' : '#000000')
+      })()
+    </script>
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />

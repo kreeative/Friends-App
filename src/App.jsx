@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { GroupProvider, useGroup } from './context/GroupContext'
 import { I18nProvider, useT } from './lib/i18n'
+import { ThemeProvider } from './lib/theme'
 import { configured } from './lib/supabase'
 import ErrorNote from './components/ErrorNote'
 import AppShell from './components/AppShell'
@@ -106,18 +107,24 @@ export default function App() {
   return (
     <BrowserRouter>
       <I18nProvider>
-        <AuthProvider>
-          <GroupProvider>
-            {/**
-             * The legal routes sit above the auth gate: nobody can be asked to
-             * accept terms they are not allowed to read until after signing up.
-             */}
-            <Routes>
-              <Route path="/legal/:slug" element={<Legal />} />
-              <Route path="*" element={<Gate />} />
-            </Routes>
-          </GroupProvider>
-        </AuthProvider>
+        {/* Outermost of the app providers, because the logo colourway and
+            every surface below it read from the theme — including the splash
+            screens that render before auth has resolved. */}
+        <ThemeProvider>
+          <AuthProvider>
+            <GroupProvider>
+              {/**
+               * The legal routes sit above the auth gate: nobody can be asked
+               * to accept terms they are not allowed to read until after
+               * signing up.
+               */}
+              <Routes>
+                <Route path="/legal/:slug" element={<Legal />} />
+                <Route path="*" element={<Gate />} />
+              </Routes>
+            </GroupProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </I18nProvider>
     </BrowserRouter>
   )

@@ -201,7 +201,7 @@ export default function Reader() {
             <button onClick={() => setNotesOpen(true)} className="chip-quiet press">
               {t('reader.notes', { n: notes.length })}
             </button>
-            <button onClick={() => setDrawer(true)} className="chip-pink press">
+            <button onClick={() => setDrawer(true)} className="chip-accent press">
               {t('reader.chapters')}
             </button>
           </div>
@@ -269,7 +269,7 @@ export default function Reader() {
           <div className="glass-strong rounded-card p-5">
             <p className="line-clamp-3 text-small text-muted">“{selection}”</p>
             <div className="mt-4 flex gap-2">
-              <button onClick={saveHighlight} className="chip-pink press">
+              <button onClick={saveHighlight} className="chip-accent press">
                 {t('reader.save_highlight')}
               </button>
               <button onClick={() => setSelection('')} className="chip-quiet press">
@@ -310,7 +310,7 @@ export default function Reader() {
               <div key={h.id} className="py-5">
                 <p className="text-body text-ink">“{h.quoted_text}”</p>
                 <div className="mt-3 flex gap-2">
-                  <button onClick={() => shareHighlight(h)} className="chip-pink press">
+                  <button onClick={() => shareHighlight(h)} className="chip-accent press">
                     {t('reader.share_highlight')}
                   </button>
                   <button

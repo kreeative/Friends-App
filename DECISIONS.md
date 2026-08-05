@@ -166,6 +166,40 @@ hold someone accountable for one. But hard-blocking teaches people to phrase
 around the filter, and some outcome goals are genuinely what someone wants to
 watch. The nudge is at creation time, where rewriting is cheap.
 
+## The theme is two choices, and only one colour is ever on screen
+
+Ground (light / dark / follow the system) and accent (pink / yellow / blue)
+are stored and chosen separately. Everything that was previously a fixed
+brand colour — buttons, focus rings, progress bars, the logo colourway, the
+lit edge on every sheet of glass — now draws from a single `--c-accent`.
+
+The earlier palette gave pink, yellow and blue each a permanent job, on the
+theory that a colour without a job becomes decoration. That reasoning was
+right and the conclusion was wrong: three saturated hues in one view read as
+a mixture whatever their jobs are, and the jobs themselves were invisible to
+anyone who had not read the rule. One accent is legible without explanation.
+
+Green survives as the single exception. "Checked in this week" is a fact
+about the world rather than a matter of taste, and it has to mean the same
+thing in every theme — so it is not themeable, and the landing page does not
+use it at all, because a marketing page cannot make that claim.
+
+The accent is a fill and never text: on white, pink measures 4.3:1, blue
+3.2:1 and yellow 1.4:1. As fills carrying black text the three measure 4.9,
+6.5 and 13.5. Press states go *lighter*, never darker — darkening walks a
+fill towards failing AA against its own label.
+
+Yellow is the one case that needs a ground of its own. At 1.4:1 the mark does
+not dim on a white page, it disappears, so on a light theme the logo sits on
+black there and nowhere else.
+
+The choice is stamped onto `<html>` by an inline script in `index.html`
+before first paint. Applying it from React instead means every load renders
+the default and then corrects itself, which is visible.
+
+*To reverse:* the accent is one custom property and three declarations in
+`index.css`. Removing the picker leaves whichever accent is the default.
+
 ## What was deliberately not built
 
 **Chat.** They already have a group chat and it is better than anything this

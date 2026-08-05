@@ -155,7 +155,7 @@ export default function Checkin() {
                             (a.outcome ?? '') === v
                               ? v === 'done'
                                 ? 'chip-green press'
-                                : 'chip-pink press'
+                                : 'chip-accent press'
                               : 'chip-quiet press'
                           }
                         >

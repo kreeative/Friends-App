@@ -56,7 +56,7 @@ export function Stat({ value, label, hint }) {
       {/* Yellow cannot be type — 1.4:1 on white — so the metric stays ink and
           the yellow arrives as a rule underneath it. */}
       <div className="font-display text-metric text-ink">{value}</div>
-      <div className="mt-2 h-1 w-10 rounded-pill bg-yellow" />
+      <div className="mt-2 h-1 w-10 rounded-pill bg-accent" />
       <div className="mt-2 text-small text-muted">{label}</div>
       {hint && <div className="text-small text-muted/70">{hint}</div>}
     </div>

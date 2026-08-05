@@ -23,7 +23,7 @@ export default function Goals() {
       <TopBar
         title={t('nav.goals')}
         right={
-          <button onClick={() => setOpen(true)} className="chip-pink press">
+          <button onClick={() => setOpen(true)} className="chip-accent press">
             {t('goals.add')}
           </button>
         }

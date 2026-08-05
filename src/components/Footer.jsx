@@ -2,20 +2,20 @@ import { Link, useLocation } from 'react-router-dom'
 import { LANDING } from '../content/landing'
 import { DOC_ORDER, LEGAL, OWNER } from '../legal/content'
 import { useT } from '../lib/i18n'
-import Wordmark from './Wordmark'
+import { Lockup } from './Wordmark'
 
 /**
  * The real footer. Four columns on desktop, stacked on a phone, sitting on a
  * full-bleed sheet of glass so the page ends on a surface rather than a line.
  *
- * It carries the things a footer is actually for — what the thing is, where to
- * go next, who owns it, and how to reach them. The ownership notice matters
- * here beyond convention: it is the visible half of the IP position the
- * licence and the legal pages set out.
+ * It carries the things a footer is actually for — what the thing is, where
+ * to go next, who owns it, and how to reach them. The ownership notice
+ * matters here beyond convention: it is the visible half of the IP position
+ * the licence and the legal pages set out.
  *
- * The wordmark sits on its own black badge, same as in the nav. That is not
- * decoration: the yellow colourway measures 1.4:1 on a white page, so black
- * under it is the only way it can appear in light mode at all.
+ * One accent, like the rest of the page. The four-colour rule that used to
+ * close it out was the clearest case of the mixture: four brand colours in a
+ * row, none of them meaning anything.
  */
 export default function Footer() {
   const { locale, setLocale } = useT()
@@ -33,12 +33,8 @@ export default function Footer() {
       <div className="mx-auto w-full max-w-5xl px-6 py-16">
         <div className="grid gap-12 md:grid-cols-[1.6fr_1fr_1fr_1fr]">
           <div>
-            <span className="brand-badge">
-              <Wordmark variant="yellow" width={132} />
-            </span>
-            <p className="mt-7 max-w-[30ch] font-title text-[1.0625rem] italic leading-relaxed text-muted">
-              {c.tagline}
-            </p>
+            <Lockup width={132} />
+            <p className="lede mt-7 max-w-[30ch]">{c.tagline}</p>
           </div>
 
           <nav aria-label={c.product}>
@@ -90,7 +86,7 @@ export default function Footer() {
                   key={code}
                   onClick={() => setLocale(code)}
                   aria-pressed={locale === code}
-                  className={locale === code ? 'chip-pink press' : 'chip-quiet press'}
+                  className={locale === code ? 'chip-accent press' : 'chip-quiet press'}
                 >
                   {label}
                 </button>
@@ -99,13 +95,7 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* The four colours again, quietly, as the last rule on the page. */}
-        <div className="mt-16 flex gap-1.5" aria-hidden="true">
-          <span className="h-1 flex-[3] rounded-pill bg-pink" />
-          <span className="h-1 flex-[2] rounded-pill bg-green" />
-          <span className="h-1 flex-1 rounded-pill bg-yellow" />
-          <span className="h-1 flex-1 rounded-pill bg-blue" />
-        </div>
+        <div className="mt-16 h-1 w-full rounded-pill bg-accent/80" aria-hidden="true" />
 
         <div className="mt-6 flex flex-wrap items-baseline justify-between gap-4">
           <p className="text-small text-muted">

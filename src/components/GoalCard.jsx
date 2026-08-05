@@ -46,7 +46,7 @@ export default function GoalCard({ goal, owner, showControls = false, progress =
           {/* Yellow, not pink: this is progress, not something you tap. */}
           <div className="h-1.5 w-full overflow-hidden rounded-pill bg-ink/[0.07]">
             <div
-              className="h-full rounded-pill bg-yellow transition-[width] duration-300 ease-settle"
+              className="h-full rounded-pill bg-accent transition-[width] duration-300 ease-settle"
               style={{ width: `${progress.pct}%` }}
             />
           </div>

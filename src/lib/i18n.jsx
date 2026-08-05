@@ -183,6 +183,16 @@ const STRINGS = {
     'settings.switch_group': 'Switch group',
     'settings.language': 'Language',
 
+    'theme.title': 'Theme',
+    'theme.appearance': 'Appearance',
+    'theme.mode_system': 'System',
+    'theme.mode_light': 'Light',
+    'theme.mode_dark': 'Dark',
+    'theme.accent': 'Colour',
+    'theme.accent_pink': 'Pink',
+    'theme.accent_yellow': 'Yellow',
+    'theme.accent_blue': 'Blue',
+
     'err.title': 'Something went wrong',
     'err.signin_failed': 'Sign-in didn’t complete.',
     'err.provider_disabled':
@@ -406,6 +416,16 @@ const STRINGS = {
       'Les discussions se passent dans votre groupe habituel, pas ici. Cette appli ne garde que le point.',
     'settings.switch_group': 'Changer de groupe',
     'settings.language': 'Langue',
+
+    'theme.title': 'Thème',
+    'theme.appearance': 'Apparence',
+    'theme.mode_system': 'Système',
+    'theme.mode_light': 'Clair',
+    'theme.mode_dark': 'Sombre',
+    'theme.accent': 'Couleur',
+    'theme.accent_pink': 'Rose',
+    'theme.accent_yellow': 'Jaune',
+    'theme.accent_blue': 'Bleu',
 
     'err.title': 'Quelque chose a échoué',
     'err.signin_failed': 'La connexion n’est pas allée au bout.',

@@ -99,6 +99,11 @@ export const LANDING = {
       ],
     },
 
+    theme: {
+      title: 'Make it yours.',
+      body: 'Pick the ground and the colour separately. Only one colour is ever on screen — that is the point of choosing. Your choice is remembered on this device and follows you into the app.',
+    },
+
     close: {
       title: 'Two to six people. One evening a week.',
       body: 'Bring the friends you would actually be embarrassed to disappoint.',
@@ -206,6 +211,11 @@ export const LANDING = {
           line: 'Les gens qui ont l’air disciplinés ne résistent pas plus. Ils ont arrangé leur vie pour avoir moins à résister.',
         },
       ],
+    },
+
+    theme: {
+      title: 'À ta main.',
+      body: 'Choisis le fond et la couleur séparément. Une seule couleur à l’écran à la fois — c’est tout l’intérêt de choisir. Ton choix est retenu sur cet appareil et te suit dans l’application.',
     },
 
     close: {

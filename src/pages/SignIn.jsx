@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { Field } from '../components/ui'
-import Wordmark from '../components/Wordmark'
+import { Lockup } from '../components/Wordmark'
 import ErrorNote from '../components/ErrorNote'
 import { LegalLinks } from './Legal'
 import { useT } from '../lib/i18n'
@@ -37,7 +37,7 @@ export default function SignIn() {
 
       <main className="relative z-10 mx-auto flex min-h-dvh w-full max-w-content flex-col justify-between px-6 py-14">
         <div className="animate-rise">
-          <Wordmark width={280} className="max-w-full" />
+          <Lockup width={280} className="max-w-full" />
           <p className="lede mt-8 max-w-[34ch]">{t('signin.pitch')}</p>
         </div>
 

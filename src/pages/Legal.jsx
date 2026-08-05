@@ -37,7 +37,7 @@ export default function Legal() {
             <Link
               key={s}
               to={`/legal/${s}`}
-              className={s === slug ? 'chip-pink' : 'chip-quiet'}
+              className={s === slug ? 'chip-accent' : 'chip-quiet'}
               aria-current={s === slug ? 'page' : undefined}
             >
               {docs[s].title}

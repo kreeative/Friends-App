@@ -187,7 +187,7 @@ function ItemLine({ item }) {
     item.outcome === 'done'
       ? 'bg-green'
       : item.outcome === 'partial'
-        ? 'bg-yellow'
+        ? 'bg-accent'
         : 'bg-muted/40'
 
   const label =

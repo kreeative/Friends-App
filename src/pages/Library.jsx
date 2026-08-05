@@ -141,7 +141,7 @@ export default function Library() {
                   {b.owned && pct > 0 && (
                     <div className="mt-6">
                       <div className="h-1.5 w-full overflow-hidden rounded-pill bg-ink/[0.07]">
-                        <div className="h-full rounded-pill bg-yellow" style={{ width: `${pct}%` }} />
+                        <div className="h-full rounded-pill bg-accent" style={{ width: `${pct}%` }} />
                       </div>
                       <p className="mt-2.5 text-small text-muted">
                         {t('library.progress', { pct: Math.round(pct) })}
@@ -150,7 +150,7 @@ export default function Library() {
                   )}
 
                   <div className="mt-6 flex flex-wrap gap-2">
-                    <Link to={`/library/${b.slug}`} className="chip-pink press">
+                    <Link to={`/library/${b.slug}`} className="chip-accent press">
                       {b.owned ? t('library.read') : t('library.read_free')}
                     </Link>
                     {!b.owned && (

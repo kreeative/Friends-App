@@ -101,7 +101,7 @@ export default function GoalForm({ onDone, initial = null }) {
           key={v}
           type="button"
           onClick={() => onChange(v)}
-          className={value === v ? 'chip-pink press' : 'chip-quiet press'}
+          className={value === v ? 'chip-accent press' : 'chip-quiet press'}
         >
           {label}
         </button>
@@ -147,7 +147,7 @@ export default function GoalForm({ onDone, initial = null }) {
             </button>
             <button
               type="button"
-              className="chip-pink press"
+              className="chip-accent press"
               onClick={() => setDismissedHint(true)}
             >
               {t('form.rewrite')}

@@ -18,17 +18,16 @@ export default {
         muted: c('muted'),
         hairline: c('hairline'),
 
-        // Three pops, three jobs, no overlap. Each is a fill only — none of
-        // them is available as a text colour or as decoration.
-        pink: c('pink'), // action
-        'pink-pressed': c('pink-pressed'),
-        green: c('green'), // this week's state
-        yellow: c('yellow'), // what accumulates
-        'on-pop': c('on-pop'), // the dark text every pop carries
-        blue: c('blue'), // unassigned — see index.css
+        // The chosen accent — pink, yellow or blue, one at a time, never
+        // together. A fill only: never available as a text colour.
+        accent: c('accent'),
+        'accent-pressed': c('accent-pressed'),
+        'on-accent': c('on-accent'),
 
-        positive: c('positive'),
-        caution: c('caution'),
+        // Not themeable. "Checked in this week" is a fact about the world,
+        // not a matter of taste, so it means the same thing in every theme.
+        green: c('green'),
+        'on-pop': c('on-pop'),
         negative: c('negative'),
       },
       fontFamily: {

@@ -6,6 +6,7 @@ import { DAYS } from '../lib/time'
 import { useT } from '../lib/i18n'
 import { Avatar, Screen, Section, Stat, TopBar } from '../components/ui'
 import HistoryStrip from '../components/HistoryStrip'
+import ThemePicker from '../components/ThemePicker'
 import { LegalLinks } from './Legal'
 
 const DAYS_FR = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi']
@@ -104,6 +105,10 @@ export default function Settings() {
         </div>
       </Section>
 
+      <Section title={t('theme.title')}>
+        <ThemePicker />
+      </Section>
+
       <Section title={t('settings.language')}>
         <div className="flex gap-2">
           {[
@@ -113,7 +118,7 @@ export default function Settings() {
             <button
               key={code}
               onClick={() => setLocale(code)}
-              className={locale === code ? 'chip-pink press' : 'chip-quiet press'}
+              className={locale === code ? 'chip-accent press' : 'chip-quiet press'}
             >
               {label}
             </button>
@@ -129,7 +134,7 @@ export default function Settings() {
                 key={g.id}
                 onClick={() => setActiveGroup(g.id)}
                 className={`press w-full rounded-card px-5 py-4 text-left text-body ${
-                  g.id === activeId ? 'bg-pink text-on-pop' : 'bg-raised text-ink'
+                  g.id === activeId ? 'bg-accent text-on-accent' : 'bg-raised text-ink'
                 }`}
               >
                 {g.name}
