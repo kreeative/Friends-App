@@ -7,6 +7,7 @@ import { useT } from '../lib/i18n'
 const TABS = [
   { to: '/', key: 'nav.home', end: true },
   { to: '/goals', key: 'nav.goals' },
+  { to: '/library', key: 'nav.library' },
   { to: '/me', key: 'nav.you' },
   { to: '/settings', key: 'nav.group' },
 ]

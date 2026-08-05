@@ -13,6 +13,8 @@ import Goals from './pages/Goals'
 import Me from './pages/Me'
 import Settings from './pages/Settings'
 import Legal from './pages/Legal'
+import Library from './pages/Library'
+import Reader from './pages/Reader'
 
 function Splash({ children }) {
   return (
@@ -63,7 +65,9 @@ function Gate() {
         <Route path="goals" element={<Goals />} />
         <Route path="me" element={<Me />} />
         <Route path="settings" element={<Settings />} />
+        <Route path="library" element={<Library />} />
       </Route>
+      <Route path="library/:slug" element={<Reader />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
