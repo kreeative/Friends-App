@@ -227,6 +227,35 @@ thing again: that one must be Supabase's callback,
 `https://YOUR-PROJECT.supabase.co/auth/v1/callback`, not your site. If it were
 wrong you would have been stopped by Google rather than bounced back.
 
+### "Could not find the table 'public.group_members' in the schema cache"
+
+The database is empty — the migrations in `supabase/` were never run. Nothing
+in the application creates tables; they exist only because you ran the SQL.
+
+Open Supabase → SQL Editor and run the files **in this order**, waiting for
+each to report success before starting the next:
+
+```
+01_schema.sql       tables and indexes
+02_functions.sql    is_member(), cycles, tick(), submit_checkin()
+03_policies.sql     row level security
+05_library.sql      library tables and the paywall policy   (optional for now)
+06_library_seed.sql placeholder books                        (optional for now)
+```
+
+The order is not cosmetic: `03` defines policies that call functions created
+in `02`, which reference tables created in `01`. Running them out of order
+fails with a missing-function or missing-relation error.
+
+If the tables clearly exist and the message persists, PostgREST is holding a
+stale schema cache. It normally reloads within seconds; to force it, run
+`notify pgrst, 'reload schema';` in the SQL editor.
+
+Worth knowing why this surfaced only now: before the error handling was added,
+a failed group query was indistinguishable from "this user has no groups", so
+the app showed the Start screen instead. Creating a group there would have
+failed too, just as quietly.
+
 ### Sign-in returns to the app but nothing happens
 
 The address is missing from the Redirect URLs allowlist. The app now shows
