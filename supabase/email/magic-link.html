@@ -1,0 +1,105 @@
+<!--
+  Magic-link email for Rich & Friends.
+
+  Paste into Supabase → Authentication → Email Templates → Magic Link.
+  Supabase substitutes {{ .ConfirmationURL }}; leave that token exactly as is.
+
+  Supabase stores ONE template per email type — there is no per-locale
+  version — so this is deliberately bilingual, French first, matching the
+  audience. If you would rather send a single language, delete the block you
+  do not want.
+
+  Written table-based with inline styles because that is what email clients
+  actually render. No external CSS, no flexbox, no custom fonts: Outlook
+  ignores all three. The wordmark is referenced from the live site, and every
+  client that blocks images will show the alt text instead, which is why the
+  alt text is the brand name rather than "logo".
+-->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+       style="background:#ffffff;margin:0;padding:32px 0;">
+  <tr>
+    <td align="center">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+             style="max-width:480px;background:#ffffff;">
+
+        <tr>
+          <td style="padding:0 24px 32px;">
+            <img src="https://richandfriends.xyz/brand/wordmark.png"
+                 alt="Rich &amp; Friends" width="180"
+                 style="display:block;width:180px;max-width:60%;height:auto;border:0;" />
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:0 24px;font-family:'DM Sans',Helvetica,Arial,sans-serif;
+                     font-size:22px;line-height:1.3;color:#0b0a0d;font-weight:700;">
+            Ton lien de connexion
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:12px 24px 0;font-family:'DM Sans',Helvetica,Arial,sans-serif;
+                     font-size:16px;line-height:1.6;color:#6b6b70;">
+            Appuie sur le bouton pour te connecter. Le lien expire vite et ne
+            marche qu’une fois. Ouvre-le sur cet appareil — s’il s’ouvre dans un
+            autre navigateur, il faudra recommencer là-bas.
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:28px 24px 0;">
+            <table role="presentation" cellpadding="0" cellspacing="0">
+              <tr>
+                <td style="background:#de3578;border-radius:999px;">
+                  <a href="{{ .ConfirmationURL }}"
+                     style="display:inline-block;padding:15px 32px;
+                            font-family:'DM Sans',Helvetica,Arial,sans-serif;
+                            font-size:16px;font-weight:700;color:#000000;
+                            text-decoration:none;border-radius:999px;">
+                    Se connecter
+                  </a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:32px 24px 0;">
+            <hr style="border:0;border-top:1px solid #e7e7ea;margin:0;" />
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:20px 24px 0;font-family:'DM Sans',Helvetica,Arial,sans-serif;
+                     font-size:15px;line-height:1.6;color:#6b6b70;">
+            <strong style="color:#0b0a0d;">Your sign-in link.</strong>
+            Tap the button above to sign in. It expires shortly and works once.
+            Open it on this device — if it opens in a different browser you will
+            need to start again there.
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:28px 24px 0;font-family:'DM Sans',Helvetica,Arial,sans-serif;
+                     font-size:13px;line-height:1.6;color:#9a9aa2;">
+            Tu reçois cet e-mail parce que quelqu’un a demandé à se connecter
+            avec cette adresse. Si ce n’est pas toi, ignore-le — rien ne se
+            passera.
+            <br /><br />
+            You are receiving this because someone asked to sign in with this
+            address. If that was not you, ignore it and nothing happens.
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:24px;font-family:'DM Sans',Helvetica,Arial,sans-serif;
+                     font-size:12px;color:#9a9aa2;">
+            Rich &amp; Friends · richandfriends.xyz
+          </td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
+</table>

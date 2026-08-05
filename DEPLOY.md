@@ -44,6 +44,38 @@ https://richandfriends.xyz
 A sign-in returning to a URL not on this list fails. The app now says so
 explicitly rather than silently returning you to the sign-in screen.
 
+**Replace the sign-in email.** Out of the box, a magic link arrives from
+"Supabase Auth" with Supabase's own footer, because the project is using
+Supabase's shared SMTP and its default template. Two reasons that cannot stay:
+
+- It is not your brand, and the footer advertises someone else's product on a
+  transactional email your buyers receive.
+- **The built-in sender is rate limited** — a handful of emails per hour on the
+  free tier — and Supabase documents it as unsuitable for production. Once more
+  than a couple of people try to sign in, they get "email rate limit exceeded"
+  and no message arrives at all.
+
+Fix both under **Authentication → Emails**:
+
+*SMTP Settings* — point at Resend, which you need anyway for the digests:
+
+```
+Host      smtp.resend.com
+Port      465
+Username  resend
+Password  your Resend API key
+Sender    hi@richandfriends.xyz
+Name      Rich & Friends
+```
+
+The sender domain has to be verified in Resend first, so this waits until the
+domain is connected (step 5).
+
+*Email Templates → Magic Link* — paste `supabase/email/magic-link.html`. It is
+bilingual, since Supabase stores only one template per type. Leave
+`{{ .ConfirmationURL }}` exactly as written; that is the token Supabase
+substitutes.
+
 **Copy your keys.** Project Settings → API. You need the Project URL, the
 anon/publishable key, and — for the Stripe webhook only — the service role key.
 The service role key bypasses every policy in `03_policies.sql` and
