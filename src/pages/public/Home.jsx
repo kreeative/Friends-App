@@ -17,17 +17,15 @@ export default function Home() {
 
   return (
     <>
-      <Cover>
-        <div className="cover-panel animate-rise max-w-[36rem]">
+      <section className="mx-auto grid w-full max-w-5xl animate-rise items-center gap-12 px-6 pb-16 pt-12 md:grid-cols-[1.1fr_1fr] md:pt-16">
+        <div>
           <p className="eyebrow">{c.hero.eyebrow}</p>
-          <h1 className="display mt-4 max-w-[16ch] text-[clamp(2.25rem,6vw,3.75rem)]">
+          <h1 className="display mt-4 max-w-[15ch] text-[clamp(2.5rem,6.5vw,4rem)]">
             {c.hero.title}
           </h1>
-          {/* ink at 80% rather than muted: this is the one block of type with
-              a photograph under it, and muted grey has no margin to spend. */}
-          <p className="mt-5 max-w-[44ch] text-[1.0625rem] text-ink/80">{c.hero.body}</p>
+          <p className="lede mt-6 max-w-[44ch] text-[1.0625rem]">{c.hero.body}</p>
 
-          <div className="mt-7 flex flex-wrap items-center gap-3">
+          <div className="mt-8 flex flex-wrap items-center gap-3">
             <Link to="/signin" className="btn-primary press w-auto px-8">
               {c.hero.cta}
             </Link>
@@ -35,11 +33,13 @@ export default function Home() {
               {c.hero.secondary}
             </Link>
           </div>
-          <p className="mt-4 text-small text-ink/70">{c.hero.note}</p>
+          <p className="mt-4 text-small text-muted">{c.hero.note}</p>
         </div>
-      </Cover>
 
-      <div className="mx-auto mt-16 w-full max-w-5xl px-6" aria-hidden="true">
+        <Cover className="aspect-[4/5] w-full" />
+      </section>
+
+      <div className="mx-auto w-full max-w-5xl px-6" aria-hidden="true">
         <span className="block h-1.5 w-full rounded-pill bg-accent/90" />
       </div>
 

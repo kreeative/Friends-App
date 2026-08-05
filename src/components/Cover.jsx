@@ -1,51 +1,41 @@
 import { useTheme } from '../lib/theme'
 
 /**
- * The cover: a canopy photographed from underneath, running full width behind
- * the navigation, with the opening words on a sheet of glass over it.
+ * The cover artwork, one per accent.
  *
- * One photograph per accent, and the pairing is not arbitrary — each image is
- * already dominated by the colour it is shown with, so choosing a theme
- * repaints the whole page rather than putting a second hue next to the first.
- * That is the same rule the interface follows.
+ * The pairing is the point: each image is already dominated by the colour it
+ * is shown with, so choosing a theme repaints the page rather than putting a
+ * second hue beside the first. Same rule the interface follows.
  *
- * Two crops of each, because a wide band cropped into a tall phone-shaped box
- * loses the canopy entirely and leaves you looking at bark.
+ * Framed rather than full-bleed. The originals are 600 to 1125 pixels wide,
+ * and stretching one of those across a viewport would be visibly soft. At
+ * this size each is shown at about its own resolution — and no type sits on
+ * it, so legibility never depends on what the picture happens to be doing.
  */
-const PHOTO = {
-  pink: 'canopy-pink',
-  yellow: 'canopy-yellow',
-  blue: 'canopy-blue',
-  // Also in public/photos: canopy-pink-painted, the illustrated one. Swapping
-  // it in is a one-word change here — it is left out by default only because
-  // mixing a painting with three photographs reads as an accident.
+const ART = {
+  pink: 'bloom-pink',
+  yellow: 'bloom-yellow',
+  blue: 'bloom-blue',
+  // Also in public/photos: bloom-pearl, the shell. Left out only because it
+  // carries pink and blue at once, which is the one thing this mapping is
+  // for. Swapping it in is one word.
 }
 
-export default function Cover({ children }) {
+export default function Cover({ className = '' }) {
   const { accent } = useTheme()
-  const name = PHOTO[accent] ?? PHOTO.pink
+  const name = ART[accent] ?? ART.pink
 
   return (
-    /* Pulled up under the floating nav so the photograph starts at the very
-       top of the page, and padded back down by the same amount. */
-    <section className="relative isolate -mt-24 overflow-hidden pt-24">
-      <picture>
-        <source media="(min-width: 768px)" srcSet={`/photos/${name}-wide.webp`} />
-        <img
-          src={`/photos/${name}-tall.webp`}
-          alt=""
-          aria-hidden="true"
-          className="absolute inset-0 -z-10 h-full w-full object-cover"
-          fetchPriority="high"
-        />
-      </picture>
-      {/* Sits between the photograph and the glass. Without it the panel's
-          own translucency has nothing to separate it from a bright sky. */}
-      <div className="cover-scrim absolute inset-0 -z-10" aria-hidden="true" />
-
-      <div className="mx-auto flex w-full max-w-5xl items-end px-6 pb-14 pt-24 md:min-h-[34rem] md:pb-20">
-        {children}
-      </div>
-    </section>
+    <div className={`frame ${className}`}>
+      <img
+        src={`/photos/${name}.webp`}
+        alt=""
+        aria-hidden="true"
+        width={760}
+        height={950}
+        className="h-full w-full object-cover"
+        fetchPriority="high"
+      />
+    </div>
   )
 }

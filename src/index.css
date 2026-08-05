@@ -255,11 +255,6 @@
       -webkit-backdrop-filter: blur(28px) saturate(200%);
       backdrop-filter: blur(28px) saturate(200%);
     }
-    .cover-panel {
-      background: rgb(var(--glass-tint) / 0.88);
-      -webkit-backdrop-filter: blur(30px) saturate(180%);
-      backdrop-filter: blur(30px) saturate(180%);
-    }
     .panel,
     .footer-glass {
       background: rgb(var(--glass-tint) / var(--glass-alpha));
@@ -314,35 +309,19 @@
   }
 
   /**
-   * The cover photograph, and the glass that sits on it.
+   * The frame the cover artwork sits in.
    *
-   * The scrim is the page's own ground at low opacity, biased towards the
-   * bottom where the words are: a canopy against a bright sky has no
-   * predictable luminance, and text over an unmeasured photograph is a guess.
+   * Framed rather than run full-bleed because the artwork is between 600 and
+   * 1125 pixels wide: stretched across a whole viewport it would be visibly
+   * soft. At this size it is shown at roughly its own resolution, and no type
+   * sits on top of it, so nothing has to be measured against a photograph.
    */
-  .cover-scrim {
-    background: linear-gradient(
-      to bottom,
-      rgb(var(--c-bg) / 0.1) 0%,
-      rgb(var(--c-bg) / 0.28) 55%,
-      rgb(var(--c-bg) / 0.62) 100%
-    );
-  }
-
-  /**
-   * Denser than .panel on purpose. A cover panel is the one surface with an
-   * arbitrary image behind it rather than a controlled ambient, so it carries
-   * enough tint that the type on it measures the same as type anywhere else —
-   * verified by sampling the rendered pixels, not by eye.
-   */
-  .cover-panel {
-    @apply rounded-card p-7 md:p-9;
-    background: rgb(var(--glass-tint) / 0.97);
+  .frame {
+    @apply relative overflow-hidden rounded-card;
     border: 1px solid var(--glass-edge);
     box-shadow:
       var(--e-float),
-      inset 0 1px 0 var(--glass-sheen),
-      inset 0 -1px 0 var(--glass-underedge);
+      inset 0 1px 0 var(--glass-sheen);
   }
 
   /**
@@ -372,8 +351,7 @@
     @apply text-ink;
   }
 
-  /* Sans, not the display face. Playfair belongs on headlines; running it
-     through the navigation as well was what made it feel omnipresent. */
+  /* Small, semibold, quiet. Navigation is a list of places, not a voice. */
   .nav-link {
     @apply text-small font-semibold text-muted transition-colors duration-200 hover:text-ink;
   }
@@ -433,12 +411,13 @@
   }
 
   /**
-   * The display face, at the one weight it is allowed. Playfair at 600 and
-   * above turns into a poster; at 400 it reads as a voice. Reserved for the
-   * top-level headline of a section and nothing smaller.
+   * Headlines. No serif: the display face is gone, and the sans at 700 with
+   * the tracking pulled well in does the same job without a second voice on
+   * the page. Reserved for the top-level headline of a section and nothing
+   * smaller — at body sizes this tracking would close the words up.
    */
   .display {
-    @apply font-title font-normal leading-[1.04] tracking-[-0.025em] text-ink;
+    @apply font-sans font-bold leading-[1.05] tracking-[-0.035em] text-ink;
   }
 
   /* --- controls ------------------------------------------------------- */
