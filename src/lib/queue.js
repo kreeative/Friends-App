@@ -22,7 +22,13 @@ function read() {
 }
 
 function write(items) {
-  localStorage.setItem(KEY, JSON.stringify(items))
+  try {
+    localStorage.setItem(KEY, JSON.stringify(items))
+  } catch {
+    // Storage full or disabled. The check-in still goes out over the network
+    // below; it just isn't durable across a reload, which beats throwing in
+    // the middle of a submit.
+  }
   listeners.forEach((fn) => fn(items.length))
 }
 

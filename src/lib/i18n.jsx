@@ -183,6 +183,16 @@ const STRINGS = {
     'settings.switch_group': 'Switch group',
     'settings.language': 'Language',
 
+    'err.title': 'Something went wrong',
+    'err.signin_failed': 'Sign-in didn’t complete.',
+    'err.provider_disabled':
+      'Google sign-in isn’t switched on for this project yet. Use email instead, or enable the Google provider in Supabase.',
+    'err.redirect_not_allowed':
+      'This address isn’t on the sign-in allowlist. Add it under Authentication → URL Configuration in Supabase.',
+    'err.load_failed': 'Couldn’t reach the server. Your connection may be down.',
+    'err.retry': 'Try again',
+    'err.loading': 'Loading',
+
     'ui.close': 'Close',
   },
 
@@ -363,14 +373,34 @@ const STRINGS = {
     'settings.switch_group': 'Changer de groupe',
     'settings.language': 'Langue',
 
+    'err.title': 'Quelque chose a échoué',
+    'err.signin_failed': 'La connexion n’est pas allée au bout.',
+    'err.provider_disabled':
+      'La connexion Google n’est pas encore activée sur ce projet. Utilise l’e-mail, ou active le fournisseur Google dans Supabase.',
+    'err.redirect_not_allowed':
+      'Cette adresse n’est pas autorisée pour la connexion. Ajoute-la dans Authentication → URL Configuration sur Supabase.',
+    'err.load_failed': 'Impossible de joindre le serveur. Ta connexion est peut-être coupée.',
+    'err.retry': 'Réessayer',
+    'err.loading': 'Chargement',
+
     'ui.close': 'Fermer',
   },
 }
 
 const STORE_KEY = 'friends.locale'
 
+// localStorage throws in Safari private mode and when storage is disabled.
+// An exception here would take the app down before it rendered anything.
+function safeGet(key) {
+  try {
+    return localStorage.getItem(key)
+  } catch {
+    return null
+  }
+}
+
 export function detectLocale() {
-  const saved = localStorage.getItem(STORE_KEY)
+  const saved = safeGet(STORE_KEY)
   if (saved && STRINGS[saved]) return saved
   const nav = (navigator.languages?.[0] || navigator.language || 'en').toLowerCase()
   return nav.startsWith('fr') ? 'fr' : 'en'
@@ -401,7 +431,11 @@ export function I18nProvider({ children }) {
     }
 
     const setLocale = (next) => {
-      localStorage.setItem(STORE_KEY, next)
+      try {
+        localStorage.setItem(STORE_KEY, next)
+      } catch {
+        /* storage disabled — the choice just won't survive a reload */
+      }
       setLocaleState(next)
       document.documentElement.lang = next
     }
