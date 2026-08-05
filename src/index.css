@@ -36,7 +36,12 @@
     /* Taken from the wordmark itself, not approximated. */
     --c-pink: 222 53 120; /* #DE3578 — action */
     --c-green: 25 162 73; /* #19A249 — this week's state */
-    --c-yellow: 255 212 0; /* #FFD400 — what accumulates */
+    --c-yellow: 248 203 2; /* #F8CB02 — what accumulates */
+    /* Fourth brand colour, from the blue-on-yellow lockup. Deliberately has
+       no job yet: a colour without one is decoration, which is the single
+       thing this palette is built to avoid. Reserved for the reading library
+       if that ships — a whole section is a real job; a highlight is not. */
+    --c-blue: 0 157 185; /* #009DB9 */
 
     /* Every pop carries black text, in both modes — the same black the logo
        sits on. None of the three can be a text colour itself: on white the
@@ -51,7 +56,7 @@
     /* Semantic states. Nothing here is a system colour, and nothing relies on
        hue alone — every state ships a word next to it. */
     --c-positive: 25 162 73; /* green — done this cycle */
-    --c-caution: 255 212 0; /* yellow — partway */
+    --c-caution: 248 203 2; /* yellow — partway */
     --c-negative: 255 90 100; /* #FF5A64 — trouble, still not a system red */
 
     /* Elevation. Three levels and nothing else — flat, raised, floating. */
@@ -83,12 +88,13 @@
       /* Unchanged from dark — these are the point of the palette. */
       --c-pink: 222 53 120;
       --c-green: 25 162 73;
-      --c-yellow: 255 212 0;
+      --c-yellow: 248 203 2;
+      --c-blue: 0 157 185;
       --c-on-pop: 0 0 0;
       --c-pink-pressed: 232 90 147;
 
       --c-positive: 25 162 73;
-      --c-caution: 255 212 0;
+      --c-caution: 248 203 2;
       --c-negative: 255 90 100;
 
       --e-raised: 0 2px 8px rgb(0 0 0 / 0.07);
@@ -98,7 +104,7 @@
       --glass-alpha: 0.55;
       --glass-alpha-strong: 0.78;
       --glass-edge: rgb(0 0 0 / 0.08);
-      --glass-sheen: rgb(255 212 0 / 0.3);
+      --glass-sheen: rgb(248 203 2 / 0.3);
 
       /* Barely there — any more and the ground stops reading as white. */
       --amb-pink: rgb(222 53 120 / 0.025);

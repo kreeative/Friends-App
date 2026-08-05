@@ -25,6 +25,7 @@ export default {
         green: c('green'), // this week's state
         yellow: c('yellow'), // what accumulates
         'on-pop': c('on-pop'), // the dark text every pop carries
+        blue: c('blue'), // unassigned — see index.css
 
         positive: c('positive'),
         caution: c('caution'),
