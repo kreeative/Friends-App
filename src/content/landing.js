@@ -12,7 +12,7 @@ export const LANDING = {
       body: 'One check-in a week, at the same time, with the same people. Sixty seconds. That is the whole product — and it is why it still works in month three.',
       cta: 'Start a group',
       secondary: 'How it works',
-      note: 'Free. No app to install.',
+      note: 'Don't report this as tomorow too..',
     },
 
     problem: {
