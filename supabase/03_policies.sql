@@ -284,6 +284,7 @@ create policy notifications_select on notifications_log for select to authentica
 revoke execute on function
   is_member(uuid), is_group_admin(uuid), shares_group(uuid),
   missed_cycle(uuid, uuid), ensure_cycles(uuid, int), handle_new_user(),
+  ensure_profile(),
   create_group(text, text, int, int, int, int), join_group(text),
   submit_checkin(uuid, text, text, jsonb), claim_nudge(uuid), tick()
   from public;

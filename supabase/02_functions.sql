@@ -69,6 +69,56 @@ create trigger on_auth_user_created
   for each row execute function handle_new_user();
 
 -- ---------------------------------------------------------------------------
+-- The trigger above only fires for people who sign up AFTER this file has
+-- been run. Anyone who signed up while the database was still empty has an
+-- auth user and no profile row — and every other table keys off profiles, so
+-- for them the app fails at the first write with a foreign key violation:
+--
+--   insert or update on table "groups" violates foreign key constraint
+--   "groups_created_by_fkey"
+--
+-- which is what "I cannot create a group" looks like from the outside. Goals
+-- and check-ins would fail the same way for the same reason.
+--
+-- ensure_profile() closes the hole at call time; the backfill below closes it
+-- for accounts that already exist. Both are idempotent, so re-running this
+-- file is the repair.
+-- ---------------------------------------------------------------------------
+create or replace function ensure_profile()
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into profiles (id, display_name, avatar_url)
+  select
+    u.id,
+    coalesce(
+      u.raw_user_meta_data->>'full_name',
+      u.raw_user_meta_data->>'name',
+      split_part(coalesce(u.email, 'friend'), '@', 1)
+    ),
+    u.raw_user_meta_data->>'avatar_url'
+  from auth.users u
+  where u.id = auth.uid()
+  on conflict (id) do nothing;
+end;
+$$;
+
+insert into profiles (id, display_name, avatar_url)
+select
+  u.id,
+  coalesce(
+    u.raw_user_meta_data->>'full_name',
+    u.raw_user_meta_data->>'name',
+    split_part(coalesce(u.email, 'friend'), '@', 1)
+  ),
+  u.raw_user_meta_data->>'avatar_url'
+from auth.users u
+on conflict (id) do nothing;
+
+-- ---------------------------------------------------------------------------
 -- Cycle generation.
 --
 -- The anchor is the first check-in slot at/after the group was created,
@@ -245,6 +295,9 @@ begin
   if auth.uid() is null then
     raise exception 'not authenticated';
   end if;
+  -- Belt as well as braces: the backfill in this file repairs accounts that
+  -- already exist, this covers anyone whose profile went missing since.
+  perform ensure_profile();
 
   loop
     code := upper(substr(encode(gen_random_bytes(6), 'hex'), 1, 6));
@@ -278,6 +331,7 @@ begin
   if auth.uid() is null then
     raise exception 'not authenticated';
   end if;
+  perform ensure_profile();
 
   select * into g from groups where invite_code = upper(trim(p_code));
   if not found then
