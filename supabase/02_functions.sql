@@ -360,11 +360,21 @@ $$;
 -- client never has to reason about whether the first attempt got through.
 -- SECURITY INVOKER (the default) so the RLS policies still apply.
 -- ---------------------------------------------------------------------------
+-- p_mood is last and defaulted, so the four-argument call an older client
+-- makes still resolves against a migrated database.
+--
+-- The pre-mood version has to go first and explicitly. Adding a defaulted
+-- argument does not replace a function, it declares a second one beside it —
+-- and two overloads that both accept four arguments is how you get PostgREST
+-- picking the one that silently discards the mood.
+drop function if exists submit_checkin(uuid, text, text, jsonb);
+
 create or replace function submit_checkin(
   p_cycle_id uuid,
   p_next_commitment text,
   p_note text,
-  p_items jsonb
+  p_items jsonb,
+  p_mood text default null
 )
 returns uuid
 language plpgsql
@@ -374,11 +384,12 @@ declare
   cid  uuid;
   item jsonb;
 begin
-  insert into checkins (cycle_id, user_id, next_commitment, note)
-  values (p_cycle_id, auth.uid(), p_next_commitment, p_note)
+  insert into checkins (cycle_id, user_id, next_commitment, note, mood)
+  values (p_cycle_id, auth.uid(), p_next_commitment, p_note, p_mood)
   on conflict (cycle_id, user_id) do update
     set next_commitment = excluded.next_commitment,
         note            = excluded.note,
+        mood            = excluded.mood,
         submitted_at    = now()
   returning id into cid;
 
@@ -444,7 +455,10 @@ select
     when ap.id is not null then 'away'
     when c.state = 'closed' then 'missed'
     else 'pending'
-  end as status
+  end as status,
+  -- Appended, not inserted: `create or replace view` can add a column at the
+  -- end but cannot reorder the ones already there.
+  ci.mood
 from cycles c
 join group_members gm  on gm.group_id = c.group_id
 left join checkins ci  on ci.cycle_id = c.id and ci.user_id = gm.user_id

@@ -125,10 +125,10 @@ export const LANDING = {
     hero: {
       eyebrow: 'Pour deux à six personnes sérieuses',
       title: 'Parceque ensemble on construit plus vite.',
-      body: 'Notre environnement dicte nos résultats. Arrêtez de moudre dans l'isolement - entourez-vous d'amis de haut calibre qui vous forcent à monter de niveau chaque semaine',
+      body: 'Notre environnement dicte nos résultats. Arrêtez de moudre dans l’isolement - entourez-vous d’amis de haut calibre qui vous forcent à monter de niveau chaque semaine',
       cta: 'Créer un groupe',
       secondary: 'Comment ça marche',
-      note: 'L'ambition est contagieuse',
+      note: 'L’ambition est contagieuse',
     },
 
     problem: {

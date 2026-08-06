@@ -61,6 +61,7 @@ export async function flush() {
         p_next_commitment: entry.next_commitment ?? null,
         p_note: entry.note ?? null,
         p_items: entry.items ?? [],
+        p_mood: entry.mood ?? null,
       })
 
       if (error) {

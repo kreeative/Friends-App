@@ -63,10 +63,10 @@ export default function AppShell() {
        * reading as a lighter strip.
        */}
       <nav
-        className="glass-strong fixed inset-x-4 bottom-4 z-30 mx-auto max-w-content rounded-card"
+        className="lg lg-chrome fixed inset-x-4 bottom-4 z-30 mx-auto max-w-content"
         style={{ marginBottom: 'env(safe-area-inset-bottom)' }}
       >
-        <div className="flex">
+        <div className="flex gap-1 p-1.5">
           {TABS.map((tab) => (
             <NavLink
               key={tab.to}
@@ -75,9 +75,13 @@ export default function AppShell() {
               // Inactive labels are dimmed ink rather than the muted token:
               // muted over glass drops to 2.5:1 when the accent button passes
               // underneath. ink/70 holds above 4.5:1 in the worst case.
+              //
+              // The active tab is a second sheet of glass laid on the first,
+              // not a filled button — that is what makes it read as a lens
+              // over the bar rather than a swatch stuck to it.
               className={({ isActive }) =>
-                `press flex-1 rounded-card py-4 text-center text-small transition-colors duration-200 ease-settle ${
-                  isActive ? 'text-ink' : 'text-ink/70'
+                `press flex-1 rounded-pill py-3 text-center text-small transition-colors duration-200 ease-settle ${
+                  isActive ? 'lg-pill text-ink' : 'text-ink/70'
                 }`
               }
             >

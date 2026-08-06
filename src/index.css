@@ -60,6 +60,27 @@
        on rather than lifted off. */
     --glass-underedge: rgb(0 0 0 / 0.45);
 
+    /* --- liquid glass ---------------------------------------------------
+       Four dials, because the difference between "frosted", "clear" and
+       "blur" is entirely in these numbers — see the variants below.
+         a       how much tint sits over the blur
+         blur    the radius
+         sat     lets colour bloom through instead of going to fog
+         bright  lifts the whole sheet off the ground behind it            */
+    --lg-a: 0.44;
+    --lg-blur: 26px;
+    --lg-sat: 190%;
+    --lg-bright: 1.12;
+    /* The rim. Real glass bends light hardest at its edge, so the border is
+       a gradient that runs bright → nearly gone → bright rather than one
+       flat line. Without this a glass panel is a grey box with a stroke. */
+    --lg-rim-hi: rgb(255 255 255 / 0.62);
+    --lg-rim-lo: rgb(255 255 255 / 0.04);
+    --lg-rim-w: 1.25px;
+    /* The specular sweep across the top-left, from an implied light source
+       up and to the left of the page. */
+    --lg-spec: rgb(255 255 255 / 0.16);
+
     /* How far the background art is knocked back before anything sits on it.
        Measured, not guessed — see the note on .aurora-veil. */
     --veil: 0.3;
@@ -104,6 +125,18 @@
     --glass-edge: rgb(255 255 255 / 0.85);
     --glass-edge-hover: rgb(255 255 255 / 1);
     --glass-underedge: rgb(0 0 0 / 0.05);
+
+    /* Light mode carries more tint and less brightening: a sheet that is
+       already white cannot be lifted by making it whiter, so the separation
+       has to come from the rim and the cast shadow instead. */
+    --lg-a: 0.6;
+    --lg-blur: 24px;
+    --lg-sat: 180%;
+    --lg-bright: 1.04;
+    --lg-rim-hi: rgb(255 255 255 / 0.95);
+    --lg-rim-lo: rgb(255 255 255 / 0.15);
+    --lg-rim-w: 1.25px;
+    --lg-spec: rgb(255 255 255 / 0.55);
 
     --veil: 0.4;
     --art-blur: 44px;
@@ -333,6 +366,180 @@
       background: rgb(var(--glass-tint) / calc(var(--glass-alpha) * 0.55));
       -webkit-backdrop-filter: blur(20px) saturate(160%);
       backdrop-filter: blur(20px) saturate(160%);
+    }
+  }
+
+  /* --- liquid glass ----------------------------------------------------- */
+  /**
+   * The sheet, in the Apple sense rather than the 2014 sense.
+   *
+   * `.glass` above is a tinted panel with a stroke. This is a piece of
+   * material, and the difference is four things layered in this order:
+   *
+   *   1  the blur, saturated and brightened, so what is behind blooms
+   *      through instead of turning to fog
+   *   2  a refracted rim — a gradient border, bright at the corners the light
+   *      comes from and almost gone at the ones it does not, drawn with a
+   *      mask so it is only the rim and never a fill
+   *   3  a specular sweep across the top-left, from an implied source above
+   *      and left of the page
+   *   4  a cast shadow plus a dark under-edge, which is what gives the sheet
+   *      a thickness rather than making it look printed on
+   *
+   * Drop any one and it reads as a grey box. The rim is the one people skip.
+   */
+  .lg {
+    @apply relative rounded-card;
+    isolation: isolate;
+    /* Solid first. An unsupported browser gets a readable surface rather
+       than text floating on nothing. */
+    background: rgb(var(--glass-tint) / 0.94);
+    box-shadow:
+      var(--e-float),
+      inset 0 -1px 0 var(--glass-underedge);
+    transition:
+      transform 320ms cubic-bezier(0.22, 0.61, 0.36, 1),
+      box-shadow 320ms ease;
+  }
+
+  /* The rim. `padding` sets its width; the two masks cancel out everything
+     but the ring, so this is a border that can hold a gradient. */
+  .lg::before {
+    content: '';
+    @apply pointer-events-none absolute inset-0 z-[1];
+    border-radius: inherit;
+    padding: var(--lg-rim-w);
+    background: linear-gradient(
+      135deg,
+      var(--lg-rim-hi) 0%,
+      var(--lg-rim-lo) 38%,
+      var(--lg-rim-lo) 62%,
+      var(--lg-rim-hi) 100%
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+  }
+
+  /* The specular sweep. Sits under the content (z-0 against the content's
+     own stacking) and over the blur. */
+  .lg::after {
+    content: '';
+    @apply pointer-events-none absolute inset-0 z-0;
+    border-radius: inherit;
+    background: radial-gradient(
+      120% 90% at 12% 0%,
+      var(--lg-spec) 0%,
+      transparent 55%
+    );
+  }
+
+  /* Anything the author puts inside has to clear both pseudo-elements. */
+  .lg > * {
+    @apply relative z-[2];
+  }
+
+  @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .lg {
+      background: rgb(var(--glass-tint) / var(--lg-a));
+      -webkit-backdrop-filter: blur(var(--lg-blur)) saturate(var(--lg-sat))
+        brightness(var(--lg-bright));
+      backdrop-filter: blur(var(--lg-blur)) saturate(var(--lg-sat))
+        brightness(var(--lg-bright));
+    }
+  }
+
+  /**
+   * The three treatments from the reference, which differ only in the dials.
+   *
+   *   clear   iOS — barely blurred, heavily refracted. Needs something busy
+   *           behind it or there is nothing to bend.
+   *   frost   the concept shot — dense blur, tint pulled up, colour pulled
+   *           down. The only one that is safe over arbitrary content.
+   *   blur    One UI — pure radius, no rim to speak of. Softest, flattest.
+   */
+  .lg-clear {
+    --lg-a: 0.16;
+    --lg-blur: 6px;
+    --lg-sat: 230%;
+    --lg-bright: 1.16;
+    --lg-rim-w: 1.5px;
+  }
+
+  .lg-frost {
+    --lg-a: 0.58;
+    --lg-blur: 40px;
+    --lg-sat: 130%;
+    --lg-bright: 1.06;
+  }
+
+  .lg-blur {
+    --lg-a: 0.3;
+    --lg-blur: 48px;
+    --lg-sat: 160%;
+    --lg-bright: 1.02;
+    --lg-rim-hi: rgb(255 255 255 / 0.22);
+    --lg-rim-lo: rgb(255 255 255 / 0.02);
+  }
+
+  /* Chrome floating over arbitrary content — a nav, a sheet. Denser, because
+     the accent button can scroll underneath it. */
+  .lg-chrome {
+    --lg-a: 0.72;
+    --lg-blur: 32px;
+    --lg-sat: 200%;
+  }
+
+  /* Lift and brighten on hover. Two pixels; the rim catching the light does
+     more of the work than the movement does. */
+  @media (hover: hover) {
+    .lg-interactive:hover {
+      transform: translateY(-2px);
+      --lg-rim-hi: rgb(255 255 255 / 0.95);
+      --lg-bright: calc(1.12 + 0.06);
+    }
+  }
+
+  .lg-interactive:active {
+    transform: translateY(0) scale(0.995);
+  }
+
+  /**
+   * The selected row inside a glass menu — the "Feed" pill in the reference.
+   * A second, brighter sheet sitting on the first: it reads as a lens laid
+   * over the glass rather than as a filled button, which is the whole trick.
+   */
+  .lg-pill {
+    @apply relative rounded-pill;
+    background: rgb(255 255 255 / 0.14);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.4),
+      inset 0 -1px 0 rgb(0 0 0 / 0.12),
+      0 2px 12px rgb(0 0 0 / 0.14);
+    -webkit-backdrop-filter: blur(8px) brightness(1.2) saturate(150%);
+    backdrop-filter: blur(8px) brightness(1.2) saturate(150%);
+  }
+
+  :root[data-mode='light'] .lg-pill {
+    background: rgb(255 255 255 / 0.6);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.9),
+      inset 0 -1px 0 rgb(0 0 0 / 0.06),
+      0 2px 12px rgb(0 0 0 / 0.08);
+  }
+
+  /* Motion is decoration here, and decoration is opt-out. */
+  @media (prefers-reduced-motion: reduce) {
+    .lg,
+    .lg-interactive:hover,
+    .lg-interactive:active {
+      transition: none;
+      transform: none;
     }
   }
 

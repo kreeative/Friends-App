@@ -115,9 +115,29 @@ create table if not exists checkins (
   user_id         uuid not null references profiles(id) on delete cascade,
   next_commitment text check (length(next_commitment) <= 280),
   note            text check (length(note) <= 500),
+  -- How the week felt, as distinct from how it went. Nullable because it is
+  -- optional at the point of entry and must stay that way: a required mood
+  -- is a mood you lie about.
+  mood            text check (mood in (
+                    'excited','joyful','grateful','energized',
+                    'sensitive','confused','bored','stressed',
+                    'angry','insecure','hurt','guilty')),
   submitted_at    timestamptz not null default now(),
   unique (cycle_id, user_id)
 );
+
+-- Added after the fact, so existing databases pick it up on re-run.
+alter table checkins add column if not exists mood text;
+
+do $$
+begin
+  alter table checkins add constraint checkins_mood_check check (mood in (
+    'excited','joyful','grateful','energized',
+    'sensitive','confused','bored','stressed',
+    'angry','insecure','hurt','guilty'));
+exception
+  when duplicate_object then null;
+end $$;
 
 create index if not exists checkins_user_idx on checkins(user_id, submitted_at desc);
 

@@ -286,7 +286,7 @@ revoke execute on function
   missed_cycle(uuid, uuid), ensure_cycles(uuid, int), handle_new_user(),
   ensure_profile(),
   create_group(text, text, int, int, int, int), join_group(text),
-  submit_checkin(uuid, text, text, jsonb), claim_nudge(uuid), tick()
+  submit_checkin(uuid, text, text, jsonb, text), claim_nudge(uuid), tick()
   from public;
 
 -- The three membership helpers are called from inside policy expressions,
@@ -297,7 +297,7 @@ grant execute on function is_member(uuid), is_group_admin(uuid), shares_group(uu
 
 grant execute on function create_group(text, text, int, int, int, int) to authenticated;
 grant execute on function join_group(text)                              to authenticated;
-grant execute on function submit_checkin(uuid, text, text, jsonb)       to authenticated;
+grant execute on function submit_checkin(uuid, text, text, jsonb, text) to authenticated;
 grant execute on function claim_nudge(uuid)                             to authenticated;
 
 -- tick() stays callable by a signed-in user: it is idempotent, and letting

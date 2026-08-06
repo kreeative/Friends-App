@@ -9,6 +9,7 @@ import { useT } from '../lib/i18n'
 import { Avatar, Empty, Screen, Section, TopBar } from '../components/ui'
 import NudgeBanner from '../components/NudgeBanner'
 import GoalCard from '../components/GoalCard'
+import { MoodBadge } from '../components/MoodBoard'
 
 export default function Board() {
   const { user } = useAuth()
@@ -114,6 +115,10 @@ export default function Board() {
                     {m.profile?.display_name}
                     {mine && <span className="text-muted"> · {t('board.you')}</span>}
                   </span>
+                  {/* Sealed along with everything else. How someone felt is
+                      part of their check-in, so it waits for the window to
+                      close with the rest of it. */}
+                  {revealed && ck?.mood && <MoodBadge id={ck.mood} size={24} />}
                   {/* A filled chip, not coloured text: green at full saturation
                       cannot pass contrast as type, and the block reads louder. */}
                   <span className={ck ? 'chip-green' : 'chip-quiet'}>
