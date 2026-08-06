@@ -33,8 +33,6 @@ export default function SignIn() {
 
   return (
     <div className="relative min-h-dvh bg-bg">
-      <div className="ambient" aria-hidden="true" />
-
       <main className="relative z-10 mx-auto flex min-h-dvh w-full max-w-content flex-col justify-between px-6 py-14">
         <div className="animate-rise">
           <Wordmark size={188} />

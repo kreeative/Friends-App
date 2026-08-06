@@ -70,13 +70,8 @@ export default {
       },
       transitionTimingFunction: { settle: 'cubic-bezier(0.22, 0.61, 0.36, 1)' },
       keyframes: {
-        // The aurora blobs. Long, unequal periods so the three never line up
-        // into anything a viewer can read as a loop.
-        drift: {
-          '0%, 100%': { transform: 'translate3d(0,0,0) scale(1)' },
-          '33%': { transform: 'translate3d(6%, -8%, 0) scale(1.12)' },
-          '66%': { transform: 'translate3d(-5%, 6%, 0) scale(0.94)' },
-        },
+        // `drift` lived here for the aurora blobs. The ground is flat now and
+        // the stickers are the only thing moving on it.
         bob: {
           '0%, 100%': { transform: 'translateY(0) rotate(var(--tilt, 0deg))' },
           '50%': { transform: 'translateY(-10px) rotate(var(--tilt, 0deg))' },
@@ -88,7 +83,6 @@ export default {
       },
       animation: {
         rise: 'rise 220ms cubic-bezier(0.22,0.61,0.36,1) both',
-        drift: 'drift 26s ease-in-out infinite',
         bob: 'bob 5s ease-in-out infinite',
       },
     },

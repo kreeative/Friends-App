@@ -48,9 +48,6 @@
       0 32px 64px rgb(0 0 0 / 0.45);
 
     --glass-tint: 24 22 28;
-    /* Dense enough that type on a panel measures the same wherever the
-       artwork happens to be light or dark underneath, and no denser — you
-       still see colour and movement through it. */
     --glass-alpha: 0.62;
     /* Denser variant for chrome floating over arbitrary content. */
     --glass-alpha-strong: 0.8;
@@ -81,14 +78,6 @@
        up and to the left of the page. */
     --lg-spec: rgb(255 255 255 / 0.16);
 
-    /* How far the background art is knocked back before anything sits on it.
-       Measured, not guessed — see the note on .aurora-veil. */
-    --veil: 0.3;
-    --art-blur: 44px;
-
-    /* How much accent bleeds into the page behind the glass. */
-    --amb-a: 0.07;
-
     /* --- semantics ------------------------------------------------------- */
     /* Not themeable. Nothing here relies on hue alone — every state ships a
        word next to it. */
@@ -105,10 +94,10 @@
     --c-surface: 255 255 255;
     --c-raised: 244 244 245; /* #F4F4F5 for inset and nested elements */
     --c-ink: 0 0 0; /* dark dark */
-    /* Darkened from #6B6B70. Over a plain white card that measured 5.7:1,
-       but the ground here is glass over artwork and drifts a few points with
-       whichever picture the theme is showing — the measured worst case was
-       4.54:1, which is over the line by nothing at all. */
+    /* #606067 rather than #6B6B70. It was darkened when the ground was
+       artwork under glass and the worst case measured 4.54:1; on the flat
+       white ground it is now 5.4:1, and there is no reason to give that
+       back. */
     --c-muted: 96 96 103; /* #606067 */
     --c-hairline: 231 231 234; /* #E7E7EA */
 
@@ -118,8 +107,6 @@
       0 32px 64px rgb(0 0 0 / 0.1);
 
     --glass-tint: 255 255 255;
-    /* Higher than dark mode: white glass over a vivid picture hides less than
-       dark glass does, so it needs more of itself to reach the same floor. */
     --glass-alpha: 0.74;
     --glass-alpha-strong: 0.86;
     --glass-edge: rgb(255 255 255 / 0.85);
@@ -137,11 +124,6 @@
     --lg-rim-lo: rgb(255 255 255 / 0.15);
     --lg-rim-w: 1.25px;
     --lg-spec: rgb(255 255 255 / 0.55);
-
-    --veil: 0.4;
-    --art-blur: 44px;
-
-    --amb-a: 0.035;
   }
 
   /* --- accent ------------------------------------------------------------ */
@@ -222,92 +204,21 @@
 }
 
 @layer components {
-  /* --- ambient --------------------------------------------------------- */
+  /* --- ground ----------------------------------------------------------- */
   /**
-   * Washes of the accent, bled off the edges of the viewport. Fixed, so
-   * content scrolls over them. In the app this sits just below the threshold
-   * of being noticed — the moment someone reads it as "a gradient", it is too
-   * strong. One hue only: this is the ground the glass blurs, and two hues
-   * behind frosted glass is exactly the mud the theme split exists to avoid.
-   */
-  .ambient {
-    @apply pointer-events-none fixed inset-0 z-0;
-    background:
-      radial-gradient(46rem 46rem at 4% 0%, rgb(var(--c-accent) / var(--amb-a)), transparent 60%),
-      radial-gradient(
-        42rem 42rem at 98% 92%,
-        rgb(var(--c-accent) / calc(var(--amb-a) * 0.8)),
-        transparent 62%
-      );
-  }
-
-  /* --- aurora ---------------------------------------------------------- */
-  /**
-   * The public site's ground: the chosen artwork, blurred out of legibility,
-   * under a veil of the page's own colour, under three drifting blobs.
+   * There is none. The page is flat --c-bg and the stickers are the whole
+   * decoration.
    *
-   * The artwork is not shown to be looked at — it is shown to give the glass
-   * something worth blurring. Blurring it to 46px throws away all the local
-   * contrast that would otherwise fight the type, and leaves the colour
-   * fields, which is the only part a background is supposed to contribute.
+   * What this costs: backdrop-filter has nothing to work on over a flat
+   * ground, so on the marketing pages the blur in .lg is a no-op and the
+   * sheet is carried entirely by its rim, its sheen and its cast shadow.
+   * That still reads as a pane — it is the rim doing the work, which was
+   * always the case — but it is a pane, not a lens.
+   *
+   * Where the blur still earns its keep is chrome: the tab bar and the
+   * public header are fixed while the page scrolls underneath them, so
+   * there is real content to bend. Those keep .lg-chrome.
    */
-  /* z-0, not a negative index. The painting order puts negative z-index
-     descendants BELOW the backgrounds of in-flow blocks, so `body`'s own
-     opaque ground covered this completely — the layer was rendering
-     perfectly and being painted over. A positioned z-0 layer paints after
-     those backgrounds; the content sits at z-10 above it. */
-  .aurora {
-    @apply pointer-events-none fixed inset-0 z-0 overflow-hidden;
-  }
-
-  .aurora-art {
-    @apply absolute h-full w-full object-cover;
-    /* Scaled past the edges because a blur of this radius pulls the page's
-       own colour in from outside the frame and leaves a pale border. */
-    transform: scale(1.18);
-    filter: blur(var(--art-blur)) saturate(1.25);
-  }
-
-  /**
-   * The veil is what makes any of this readable. These images are extremely
-   * high-contrast; without it, a glass panel over the black part of one and
-   * the same panel over the white part are two different surfaces, and only
-   * one of them passes. The alpha is set from the measured worst case, not
-   * by eye — see the contrast run in the commit that added it.
-   */
-  .aurora-veil {
-    @apply absolute inset-0;
-    background: rgb(var(--c-bg) / var(--veil));
-  }
-
-  /**
-   * Three soft blobs over the veil, all drawn from the accent. The multi-hue
-   * richness comes from the artwork underneath rather than from here: putting
-   * three different brand colours in the blobs is the exact mixture the theme
-   * system exists to prevent.
-   */
-  .aurora-blob {
-    @apply absolute rounded-pill;
-    filter: blur(72px);
-    will-change: transform;
-  }
-  .aurora-blob-1 {
-    @apply left-[-10%] top-[-14%] h-[46vmax] w-[46vmax] animate-drift;
-    background: rgb(var(--c-accent) / 0.42);
-  }
-  .aurora-blob-2 {
-    @apply right-[-14%] top-[18%] h-[38vmax] w-[38vmax] animate-drift;
-    background: rgb(var(--c-accent) / 0.28);
-    animation-duration: 34s;
-    animation-direction: reverse;
-  }
-  .aurora-blob-3 {
-    @apply bottom-[-18%] left-[24%] h-[42vmax] w-[42vmax] animate-drift;
-    /* Ink rather than accent: a light bloom in dark mode, a soft shade in
-       light mode, and in both it stops the other two reading as one shape. */
-    background: rgb(var(--c-ink) / 0.1);
-    animation-duration: 41s;
-  }
 
   /* --- glass ----------------------------------------------------------- */
   /**

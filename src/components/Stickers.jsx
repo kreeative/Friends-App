@@ -23,7 +23,10 @@ const SETS = {
     // The two that are allowed on a phone, hanging off the panel's corners
     // where there is no text under them.
     { src: 'thumb', bottom: '-3%', left: '-2%', size: 74, tilt: -16, delay: 1.5, phone: true },
-    { src: 'skull', top: '-4%', left: '58%', size: 66, tilt: 18, delay: 0.7, phone: true },
+    // Was at top -4%, which slid under the sticky header and left half a
+    // skull showing — a sticker cropped by chrome reads as a bug, not as
+    // depth. Moved down to clear it.
+    { src: 'skull', top: '14%', left: '61%', size: 66, tilt: 18, delay: 0.7, phone: true },
   ],
   close: [
     { src: 'lips', top: '-6%', left: '3%', size: 84, tilt: -10, delay: 0.4, phone: true },

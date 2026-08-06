@@ -55,8 +55,6 @@ export default function Start() {
 
   return (
     <div className="relative min-h-dvh bg-bg">
-      <div className="ambient" aria-hidden="true" />
-
       <main className="relative z-10 mx-auto w-full max-w-content animate-rise px-6 pb-20 pt-14">
         <Wordmark size={140} />
 

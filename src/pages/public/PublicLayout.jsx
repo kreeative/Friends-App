@@ -4,11 +4,10 @@ import { LANDING } from '../../content/landing'
 import { useT } from '../../lib/i18n'
 import { Mark } from '../../components/Wordmark'
 import Footer from '../../components/Footer'
-import Aurora from '../../components/Aurora'
 
 /**
- * The public site's chrome: one ambient, one navigation bar, one footer,
- * around whichever page is showing.
+ * The public site's chrome: one navigation bar, one footer, around whichever
+ * page is showing.
  *
  * The site is three pages rather than one long scroll. A single page meant
  * the navigation pointed at fragments of itself, which is not a menu — you
@@ -29,13 +28,10 @@ export default function PublicLayout() {
   // A menu that survives navigation is a menu covering the page you asked for.
   useEffect(() => setOpen(false), [pathname])
 
+  // A flat ground. Nothing is washed, blurred or drifting behind any of this
+  // any more — the stickers are the whole decoration.
   return (
-    <div className="relative min-h-dvh">
-      {/* No background colour on this element. An opaque in-flow background
-          paints after negative z-index descendants, so `bg-bg` here covered
-          the aurora completely. The ground colour lives on <html>. */}
-      <Aurora />
-
+    <div className="relative min-h-dvh bg-bg">
       <div className="relative z-10">
         <header className="sticky top-0 z-30 px-4 pt-4">
           <nav className="glass-strong mx-auto w-full max-w-5xl rounded-card px-4 py-2.5">
