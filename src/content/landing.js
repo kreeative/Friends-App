@@ -8,7 +8,7 @@ export const LANDING = {
   en: {
     hero: {
       eyebrow: 'For two to six people who mean it',
-      title: 'The group chat where you actually finish things.',
+      title: 'Alone we go faster but together we go further.',
       body: 'One check-in a week, at the same time, with the same people. Sixty seconds. That is the whole product — and it is why it still works in month three.',
       cta: 'Start a group',
       secondary: 'How it works',
