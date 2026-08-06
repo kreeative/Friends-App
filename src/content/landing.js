@@ -9,7 +9,7 @@ export const LANDING = {
     hero: {
       eyebrow: 'For two to six people who mean it',
       title: 'Alone we go faster but together we go further.',
-      body: 'One check-in a week, at the same time, with the same people. Sixty seconds. That is the whole product — and it is why it still works in month three.',
+      body: 'Your environment dictates your output. Stop grinding in isolation—surround yourself with high-caliber peers who force you to level up every single week.',
       cta: 'Start a group',
       secondary: 'How it works',
       note: 'Don't report this as tomorow too..',
