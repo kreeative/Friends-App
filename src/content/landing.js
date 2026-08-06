@@ -117,7 +117,7 @@ export const LANDING = {
       legalHeading: 'Legal',
       contact: 'Contact',
       rights: 'All rights reserved.',
-      built: 'Made in France.',
+      built: 'Proudly Ivorian.',
     },
   },
 
@@ -235,7 +235,7 @@ export const LANDING = {
       legalHeading: 'Légal',
       contact: 'Contact',
       rights: 'Tous droits réservés.',
-      built: 'Fait en France.',
+      built: 'Fièrement ivoirien.',
     },
   },
 }
