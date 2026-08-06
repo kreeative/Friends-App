@@ -9,7 +9,7 @@ export const LANDING = {
     hero: {
       eyebrow: 'For two to six people who mean it',
       title: 'Alone we go faster, but together we go further.',
-      body: 'Your environment dictates your output. Stop grinding in isolation—surround yourself with high-caliber peers who force you to level up every single week.',
+      body: 'Our environment dictates our output. Stop grinding in isolation—surround yourself with high-caliber peers who force you to level up every single week.',
       cta: 'Start a group',
       secondary: 'How it works',
       note: 'Ambition Is Contagious.',
