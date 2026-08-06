@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useGroup } from '../context/GroupContext'
 import { DAYS, localTimezone } from '../lib/time'
 import { Field } from '../components/ui'
-import { Lockup } from '../components/Wordmark'
+import Wordmark from '../components/Wordmark'
 import { useT } from '../lib/i18n'
 
 export default function Start() {
@@ -58,7 +58,7 @@ export default function Start() {
       <div className="ambient" aria-hidden="true" />
 
       <main className="relative z-10 mx-auto w-full max-w-content animate-rise px-6 pb-20 pt-14">
-        <Lockup width={200} />
+        <Wordmark size={140} />
 
         <div className="mt-10 flex gap-2">
           {[

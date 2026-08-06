@@ -2,95 +2,67 @@ import { APP_NAME } from '../legal/content'
 import { useTheme } from '../lib/theme'
 
 /**
- * The wordmark, in the accent the visitor chose.
+ * The logo, in the accent the visitor chose.
  *
- * The artwork is flat colour over a real alpha channel, so the three
- * colourways are the same shapes with the RGB replaced — no fringe on any
- * ground, and no separate drawing to keep in step.
+ * The artwork is a filled tile now — the lettering sits on its own coloured
+ * ground rather than floating on the page as a transparent PNG. That removes
+ * the whole class of problem the previous version kept running into: yellow
+ * measures 1.4:1 on white, so a transparent yellow mark needed a plate
+ * invented for it. These carry their own, so there is no special case left.
  *
- * The logo follows the accent rather than carrying information of its own: a
- * logotype identifies, it does not signal. It is also the one place the
- * accent appears at size, which is why nothing else on a page needs to.
+ * Both shapes are square, which is why everything here is sized by one
+ * dimension. In a horizontal navigation bar a square tile has to be the
+ * monogram — the full wordmark shrunk to bar height is unreadable.
  */
-const SRC = {
-  wordmark: {
-    pink: '/brand/wordmark.png',
-    yellow: '/brand/wordmark-yellow.png',
-    blue: '/brand/wordmark-blue.png',
-  },
-  monogram: {
-    pink: '/brand/monogram.png',
-    yellow: '/brand/monogram-yellow.png',
-    blue: '/brand/monogram-blue.png',
-  },
+const WORDMARK = {
+  pink: '/brand/wordmark-pink.png', // pink ground, yellow lettering
+  yellow: '/brand/wordmark-yellow.png', // yellow ground, blue lettering
+  blue: '/brand/wordmark-blue.png', // blue ground, yellow lettering
 }
 
 /**
- * Yellow measures 1.4:1 on a white page — as a mark it does not dim, it
- * disappears. That one combination gets the supplied blue-on-yellow lockup;
- * every other one sits directly on the page, because a ground the logo does
- * not need is just another box.
+ * Only two monogram tiles were drawn, both on yellow. The blue one stands in
+ * for the blue theme as well as the yellow one — a yellow-ground mark beside
+ * a blue-ground wordmark is a small inconsistency, and the honest fix is a
+ * third drawing rather than me recolouring one.
  */
-export function useLogoPlate() {
-  const { accent, resolved } = useTheme()
-  return accent === 'yellow' && resolved === 'light'
+const MARK = {
+  pink: '/brand/mark-pink.png', // yellow ground, pink monogram
+  yellow: '/brand/mark-blue.png', // yellow ground, blue monogram
+  blue: '/brand/mark-blue.png',
 }
 
-export default function Wordmark({ className = '', width = 260, variant }) {
-  const { accent } = useTheme()
-  const key = variant ?? accent
+function Tile({ src, alt, size, className }) {
   return (
     <img
-      src={SRC.wordmark[key] ?? SRC.wordmark.pink}
-      alt={APP_NAME}
-      className={`h-auto select-none ${className}`}
-      style={{ width }}
+      src={src}
+      alt={alt}
+      className={`brand-tile select-none ${className}`}
+      style={{ width: size, height: size }}
       draggable="false"
     />
   )
 }
 
-/**
- * The wordmark, on its own ground only where it needs one. Use this anywhere
- * the mark stands alone; use Wordmark directly when it is already inside a
- * surface you control.
- */
-export function Lockup({ width = 150, className = '' }) {
-  const plate = useLogoPlate()
-  if (!plate) return <Wordmark width={width} className={className} />
-  return (
-    <span className={`brand-lockup ${className}`}>
-      {/* Blue on yellow: the pairing that was drawn, rather than a plate of
-          my own invention underneath the yellow one. */}
-      <Wordmark width={width} variant="blue" />
-    </span>
-  )
-}
-
-/** The ampersand with the same ground rule as Lockup, for when it is shown
- *  at a size where it is meant to be read rather than felt. */
-export function Mark({ size = 64, className = '' }) {
-  const plate = useLogoPlate()
-  if (!plate) return <Monogram size={size} className={className} />
-  return (
-    <span className={`brand-lockup p-4 ${className}`}>
-      <Monogram size={size} variant="blue" />
-    </span>
-  )
-}
-
-/** The ampersand alone — for tight spaces and the app icon. */
-export function Monogram({ size = 40, className = '', variant }) {
+/** The full lockup. Readable from about 90px up. */
+export default function Wordmark({ size = 160, className = '', variant }) {
   const { accent } = useTheme()
   const key = variant ?? accent
   return (
-    <img
-      src={SRC.monogram[key] ?? SRC.monogram.pink}
-      alt=""
-      aria-hidden="true"
-      className={`select-none ${className}`}
-      style={{ height: size, width: 'auto' }}
-      draggable="false"
-    />
+    <Tile src={WORDMARK[key] ?? WORDMARK.pink} alt={APP_NAME} size={size} className={className} />
   )
 }
+
+/** The ampersand monogram — navigation, tight spaces, the app icon. */
+export function Mark({ size = 44, className = '', variant }) {
+  const { accent } = useTheme()
+  const key = variant ?? accent
+  return <Tile src={MARK[key] ?? MARK.pink} alt={APP_NAME} size={size} className={className} />
+}
+
+/**
+ * Kept as a name because several screens ask for "the logo, handled" — but
+ * there is nothing left to handle now that the artwork brings its own
+ * ground, so it is simply the wordmark.
+ */
+export const Lockup = Wordmark

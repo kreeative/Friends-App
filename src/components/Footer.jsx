@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { LANDING } from '../content/landing'
 import { DOC_ORDER, LEGAL, OWNER } from '../legal/content'
 import { useT } from '../lib/i18n'
-import { Lockup } from './Wordmark'
+import Wordmark from './Wordmark'
 import ThemePicker from './ThemePicker'
 
 /**
@@ -28,7 +28,7 @@ export default function Footer() {
         <div className="grid gap-10 md:grid-cols-[1.6fr_1fr_1fr_1fr]">
           <div>
             <Link to="/" aria-label={c.home}>
-              <Lockup width={110} />
+              <Wordmark size={104} />
             </Link>
             <p className="lede mt-6 max-w-[30ch]">{c.tagline}</p>
           </div>

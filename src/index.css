@@ -400,17 +400,13 @@
   }
 
   /**
-   * The supplied blue-on-yellow lockup, used for the one case where the mark
-   * cannot hold itself against the page: yellow measures 1.4:1 on white, so
-   * it does not dim there, it disappears.
-   *
-   * The answer is the artwork's own — blue and yellow belong together, and
-   * putting the blue colourway on the yellow ground is the pairing that was
-   * drawn. The black plate this replaces was mine, not the brand's.
+   * The logo's tile. The artwork is a filled square, so all this does is
+   * round the corners to match everything else and give it the same physical
+   * depth — there is no ground to supply any more.
    */
-  .brand-lockup {
-    @apply inline-flex items-center justify-center rounded-card px-3.5 py-2;
-    background: rgb(var(--c-accent));
+  .brand-tile {
+    @apply rounded-card object-contain;
+    box-shadow: var(--e-raised);
   }
 
   /* The app's ghost button is deliberately edgeless — in context it always
