@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from './AuthContext'
 import { cyclePhase } from '../lib/time'
@@ -6,22 +7,27 @@ import { cyclePhase } from '../lib/time'
 const GroupCtx = createContext(null)
 export const useGroup = () => useContext(GroupCtx)
 
-const ACTIVE_KEY = 'friends.activeGroup'
-
-// Storage can be disabled or throw (Safari private mode). Reading it at mount
-// unguarded would crash the provider before anything rendered.
-const readActive = () => {
-  try {
-    return localStorage.getItem(ACTIVE_KEY) || null
-  } catch {
-    return null
-  }
-}
+/**
+ * Which group is open is a fact about the URL, not about this provider.
+ *
+ * It used to be a piece of state seeded from localStorage and defaulted to
+ * the first membership, which is what made signing in drop you straight into
+ * a group with no way back and no address for the thing you were looking at.
+ * Now /g/:id names it: the dashboard is the group-less state, back and
+ * forward work, and a link to a group is a link to that group.
+ *
+ * The provider sits above the route tree, so it reads the path itself rather
+ * than useParams — which only resolves inside a matched Route.
+ */
+const GROUP_PATH = /^\/g\/([0-9a-f-]{36})/i
+const groupIdFrom = (pathname) => pathname.match(GROUP_PATH)?.[1] ?? null
 
 export function GroupProvider({ children }) {
   const { user } = useAuth()
+  const { pathname } = useLocation()
+  const activeId = groupIdFrom(pathname)
+
   const [memberships, setMemberships] = useState([])
-  const [activeId, setActiveId] = useState(readActive)
   const [group, setGroup] = useState(null)
   const [members, setMembers] = useState([])
   const [cycles, setCycles] = useState([])
@@ -48,13 +54,7 @@ export function GroupProvider({ children }) {
       if (err) throw err
       setError(null)
 
-      const rows = (data ?? []).filter((r) => r.groups)
-      setMemberships(rows)
-
-      setActiveId((current) => {
-        if (current && rows.some((r) => r.group_id === current)) return current
-        return rows[0]?.group_id ?? null
-      })
+      setMemberships((data ?? []).filter((r) => r.groups))
     } catch (e) {
       setError({ code: e?.code ?? 'network', description: e?.message ?? String(e) })
     } finally {
@@ -65,15 +65,6 @@ export function GroupProvider({ children }) {
   useEffect(() => {
     loadMemberships()
   }, [loadMemberships])
-
-  useEffect(() => {
-    if (!activeId) return
-    try {
-      localStorage.setItem(ACTIVE_KEY, activeId)
-    } catch {
-      /* not fatal — the group choice just won't survive a reload */
-    }
-  }, [activeId])
 
   const loadGroup = useCallback(async () => {
     if (!activeId || !user) {
@@ -163,7 +154,6 @@ export function GroupProvider({ children }) {
     groups: memberships.map((m) => m.groups),
     group,
     activeId,
-    setActiveGroup: setActiveId,
     members,
     cycles,
     currentCycle,

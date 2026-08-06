@@ -8,6 +8,7 @@ import ErrorNote from './components/ErrorNote'
 import AppShell from './components/AppShell'
 import SignIn from './pages/SignIn'
 import Start from './pages/Start'
+import Dashboard from './pages/Dashboard'
 import Board from './pages/Board'
 import Checkin from './pages/Checkin'
 import Goals from './pages/Goals'
@@ -103,19 +104,30 @@ function Gate() {
   if (groupError) return <Stuck error={groupError} onRetry={reload} />
   if (authError && !user) return <SignIn />
 
-  if (memberships.length === 0) return <Start />
-
+  /**
+   * Signing in lands on the dashboard, never inside a group.
+   *
+   * Which group is open is carried by /g/:id rather than by state seeded
+   * from the first membership, so a group has an address, back works, and
+   * the way out of one is a link rather than signing out. /start is still
+   * the only screen someone with no groups can reach.
+   */
   return (
     <Routes>
       <Route element={<AppShell />}>
-        <Route index element={<Board />} />
-        <Route path="checkin" element={<Checkin />} />
-        <Route path="goals" element={<Goals />} />
+        <Route index element={memberships.length === 0 ? <Start /> : <Dashboard />} />
+        <Route path="start" element={<Start />} />
         <Route path="me" element={<Me />} />
-        <Route path="settings" element={<Settings />} />
         <Route path="library" element={<Library />} />
+        <Route path="library/:slug" element={<Reader />} />
+
+        <Route path="g/:groupId">
+          <Route index element={<Board />} />
+          <Route path="checkin" element={<Checkin />} />
+          <Route path="goals" element={<Goals />} />
+          <Route path="settings" element={<Settings />} />
+        </Route>
       </Route>
-      <Route path="library/:slug" element={<Reader />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

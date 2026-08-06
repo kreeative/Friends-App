@@ -14,7 +14,8 @@ import { MoodBadge } from '../components/MoodBoard'
 export default function Board() {
   const { user } = useAuth()
   const { t } = useT()
-  const { group, members, currentCycle, nextCycle, groupGoals, myGoals, statuses } = useGroup()
+  const { group, activeId, members, currentCycle, nextCycle, groupGoals, myGoals, statuses } =
+    useGroup()
   const [checkins, setCheckins] = useState([])
   const [items, setItems] = useState([])
 
@@ -88,7 +89,7 @@ export default function Board() {
               ? t('board.nothing_listed')
               : t('board.things_to_look_at', { n: openCount })}
           </p>
-          <Link to="/checkin" className="btn-primary press mt-6">
+          <Link to={`/g/${activeId}/checkin`} className="btn-primary press mt-6">
             {t('board.check_in')}
           </Link>
         </div>

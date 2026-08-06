@@ -15,8 +15,10 @@ export function Screen({ children, className = '' }) {
  * with room around it — one confident thing, which is the whole point.
  */
 export function TopBar({ title, right, sub }) {
+  // pt-10 rather than pt-14: there is a sticky nav above this now, and the
+  // heading was clearing chrome that no longer needed clearing.
   return (
-    <header className="flex items-start justify-between gap-4 pb-2 pt-14">
+    <header className="flex items-start justify-between gap-4 pb-2 pt-10">
       <div>
         <h1 className="text-h1 text-ink">{title}</h1>
         {sub && <p className="lede mt-2">{sub}</p>}

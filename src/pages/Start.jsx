@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useGroup } from '../context/GroupContext'
 import { DAYS, localTimezone } from '../lib/time'
@@ -7,7 +8,8 @@ import Wordmark from '../components/Wordmark'
 import { useT } from '../lib/i18n'
 
 export default function Start() {
-  const { reload, setActiveGroup } = useGroup()
+  const { reload } = useGroup()
+  const navigate = useNavigate()
   const { t, locale } = useT()
   const [mode, setMode] = useState('create')
   const [name, setName] = useState('')
@@ -37,8 +39,10 @@ export default function Start() {
     setBusy(false)
     if (err) return setError(err.message)
     const g = Array.isArray(data) ? data[0] : data
-    if (g?.id) setActiveGroup(g.id)
     await reload()
+    // Straight into the group you just made — this is the one moment where
+    // landing inside one is what you asked for.
+    if (g?.id) navigate(`/g/${g.id}`)
   }
 
   async function join(e) {
@@ -49,8 +53,8 @@ export default function Start() {
     setBusy(false)
     if (err) return setError(err.message)
     const g = Array.isArray(data) ? data[0] : data
-    if (g?.id) setActiveGroup(g.id)
     await reload()
+    if (g?.id) navigate(`/g/${g.id}`)
   }
 
   return (

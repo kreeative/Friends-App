@@ -13,7 +13,7 @@ export default function Checkin() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { t } = useT()
-  const { currentCycle, myGoals, groupGoals, reloadGroup } = useGroup()
+  const { activeId, currentCycle, myGoals, groupGoals, reloadGroup } = useGroup()
 
   const goals = useMemo(
     () => [...myGoals, ...groupGoals].filter((g) => g.status === 'active'),
@@ -65,7 +65,7 @@ export default function Checkin() {
     await flush()
     await reloadGroup()
     setBusy(false)
-    navigate('/')
+    navigate(`/g/${activeId}`)
   }
 
   async function markAway() {
@@ -77,7 +77,7 @@ export default function Checkin() {
     )
     await reloadGroup()
     setBusy(false)
-    navigate('/')
+    navigate(`/g/${activeId}`)
   }
 
   if (!currentCycle) return null

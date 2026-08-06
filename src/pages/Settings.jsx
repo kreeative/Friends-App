@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useGroup } from '../context/GroupContext'
 import { completionRate } from '../lib/stats'
@@ -13,7 +14,7 @@ const DAYS_FR = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 
 
 export default function Settings() {
   const { user } = useAuth()
-  const { group, members, statuses, groups, setActiveGroup, activeId } = useGroup()
+  const { group, members, statuses, groups, activeId } = useGroup()
   const { t, locale, setLocale } = useT()
 
   /**
@@ -130,15 +131,15 @@ export default function Settings() {
         <Section title={t('settings.switch_group')}>
           <div className="space-y-2">
             {groups.map((g) => (
-              <button
+              <Link
                 key={g.id}
-                onClick={() => setActiveGroup(g.id)}
-                className={`press w-full rounded-card px-5 py-4 text-left text-body ${
+                to={`/g/${g.id}`}
+                className={`press block w-full rounded-card px-5 py-4 text-left text-body ${
                   g.id === activeId ? 'bg-accent text-on-accent' : 'bg-raised text-ink'
                 }`}
               >
                 {g.name}
-              </button>
+              </Link>
             ))}
           </div>
         </Section>
