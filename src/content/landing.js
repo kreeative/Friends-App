@@ -8,16 +8,16 @@ export const LANDING = {
   en: {
     hero: {
       eyebrow: 'For two to six people who mean it',
-      title: 'Alone we go faster but together we go further.',
+      title: 'Alone we go faster, but together we go further.',
       body: 'Your environment dictates your output. Stop grinding in isolation—surround yourself with high-caliber peers who force you to level up every single week.',
       cta: 'Start a group',
       secondary: 'How it works',
-      note: 'Don't report this as tomorow too..',
+      note: 'Ambition Is Contagious.',
     },
 
     problem: {
-      eyebrow: 'Why groups go quiet',
-      title: 'Accountability apps do not fail for lack of features.',
+      eyebrow: 'Why often we are not reaching our goals?',
+      title: 'Productivity apps do not fail for lack of features.',
       body: 'They fail because vague goals cannot be checked, because nothing happens when someone goes silent, and because one missed day kills a streak so people quit rather than restart from zero. Every decision here was made against a single test: does this make the group more likely to still be here in week twelve?',
     },
 
@@ -124,22 +124,22 @@ export const LANDING = {
   fr: {
     hero: {
       eyebrow: 'Pour deux à six personnes sérieuses',
-      title: 'La conversation de groupe où les choses finissent vraiment.',
-      body: 'Un point par semaine, au même moment, avec les mêmes personnes. Une minute. C’est tout le produit — et c’est pour ça qu’il tient encore au troisième mois.',
+      title: 'Parceque ensemble on construit plus vite.',
+      body: 'Notre environnement dicte nos résultats. Arrêtez de moudre dans l'isolement - entourez-vous d'amis de haut calibre qui vous forcent à monter de niveau chaque semaine',
       cta: 'Créer un groupe',
       secondary: 'Comment ça marche',
-      note: 'Gratuit. Rien à installer.',
+      note: 'L'ambition est contagieuse',
     },
 
     problem: {
-      eyebrow: 'Pourquoi les groupes s’éteignent',
+      eyebrow: 'Pourquoi on atteint souvent pas nos objectifs?',
       title: 'Ces applis n’échouent pas par manque de fonctions.',
       body: 'Elles échouent parce qu’un objectif vague ne peut pas être vérifié, parce que rien ne se passe quand quelqu’un disparaît, et parce qu’un seul jour manqué casse une série — alors les gens abandonnent plutôt que de repartir de zéro. Chaque décision ici a été prise sur un seul critère : est-ce que ça augmente les chances que le groupe soit encore là à la douzième semaine ?',
     },
 
     steps: {
       eyebrow: 'Comment ça marche',
-      title: 'Trois pièces mobiles, pas une quatrième.',
+      title: 'Oui, en 3 étapes seulement.',
       items: [
         {
           n: '01',
