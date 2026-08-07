@@ -8,6 +8,7 @@ import { Avatar } from './ui'
 import { Mark } from './Wordmark'
 import Stickers from './Stickers'
 import PageTransition from './PageTransition'
+import { Slider, useSlider } from './Segmented'
 
 /**
  * Two levels of navigation, because there are two levels of place.
@@ -168,26 +169,39 @@ function TopNav() {
 
 function TabBar({ tabs }) {
   const { t } = useT()
+  const { pathname } = useLocation()
+
+  /* Which tab is current, worked out here rather than read back from
+     NavLink's isActive — the slider needs to know before the children render
+     so it can be measured in the same layout pass. Same rule NavLink uses:
+     exact match for an `end` tab, prefix match otherwise. */
+  const activeIdx = tabs.findIndex((tab) =>
+    tab.end ? pathname === tab.to : pathname === tab.to || pathname.startsWith(`${tab.to}/`),
+  )
+  const { ref, box } = useSlider(tabs[activeIdx]?.to ?? null)
+
   return (
     <nav
       className="lg lg-chrome fixed inset-x-4 bottom-4 z-30 mx-auto max-w-content"
       style={{ marginBottom: 'env(safe-area-inset-bottom)' }}
     >
-      <div className="flex gap-1 p-1.5">
-        {tabs.map((tab) => (
+      <div ref={ref} className="relative flex gap-1 p-1.5">
+        {/* The active tab used to be a second sheet stuck to whichever link
+            was current. It is one sheet now, and it travels. */}
+        <Slider box={box} className="lg-pill" />
+
+        {tabs.map((tab, i) => (
           <NavLink
             key={tab.to}
             to={tab.to}
             end={tab.end}
+            data-active={i === activeIdx}
             // Inactive labels are dimmed ink rather than the muted token:
             // muted over glass drops to 2.5:1 when the accent button passes
             // underneath. ink/70 holds above 4.5:1 in the worst case.
-            //
-            // The active tab is a second sheet laid over the first, so it
-            // reads as a lens over the bar rather than a swatch stuck to it.
             className={({ isActive }) =>
-              `press flex-1 truncate rounded-pill px-1 py-3 text-center text-small transition-colors duration-200 ease-settle ${
-                isActive ? 'lg-pill text-ink' : 'text-ink/70'
+              `press relative z-10 flex-1 truncate rounded-pill px-1 py-3 text-center text-small transition-colors duration-200 ease-settle ${
+                isActive ? 'text-ink' : 'text-ink/70'
               }`
             }
           >

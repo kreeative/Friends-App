@@ -699,6 +699,28 @@
     animation: chip-pick 320ms cubic-bezier(0.32, 0.72, 0, 1);
   }
   /**
+   * The two analytics surfaces.
+   *
+   * Both carry white type, which is what the yellow ground could never do —
+   * white on that yellow is 1.4:1. But two cards of identical ink side by
+   * side read as one block with a gap in it, so they are two tones of the
+   * same hue rather than one: the metric card is ink darkened, the chart card
+   * is ink itself. Roughly 8.9:1 and 7:1 for white, so the separation costs
+   * nothing in legibility.
+   */
+  .panel-ink {
+    background: rgb(var(--c-ink));
+  }
+
+  .panel-ink-deep {
+    /* A gradient of one flat colour, because a second background-color would
+       need a token per theme and this is arithmetic, not a decision. */
+    background:
+      linear-gradient(rgb(0 0 0 / 0.16), rgb(0 0 0 / 0.16)),
+      rgb(var(--c-ink));
+  }
+
+  /**
    * A goal that is over.
    *
    * Green, because in this palette green is the one colour that is not a
@@ -898,6 +920,13 @@
 
   .chip-accent {
     animation: none;
+  }
+
+  /* Inline styles, so this is the one place !important is the right tool
+     rather than a shortcut. The indicator still moves — it just arrives
+     without travelling. */
+  [data-slider] {
+    transition: none !important;
   }
 
   [style*='--i'] {

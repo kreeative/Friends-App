@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { useGroup } from '../context/GroupContext'
 import { useT } from '../lib/i18n'
 import { Field } from './ui'
+import { Slider, useSlider } from './Segmented'
 
 /**
  * Rough signals that someone has written an outcome ("hit 10k followers")
@@ -49,6 +50,38 @@ function Step({ n, title, hint, children }) {
       </div>
       <div className="mt-6 space-y-6 sm:pl-9">{children}</div>
     </section>
+  )
+}
+
+/**
+ * A two-or-three-way choice where the selection travels rather than swapping.
+ *
+ * Worth the machinery here specifically because these toggles change what the
+ * rest of the form asks for — picking "One-off" replaces two fields with one.
+ * When the highlight simply appeared on the other option there was nothing
+ * connecting the tap to the fields rearranging underneath it, and it read as
+ * the form glitching rather than as an answer being registered.
+ */
+function Toggle({ options, value, onChange }) {
+  const { ref, box } = useSlider(value)
+
+  return (
+    <div ref={ref} className="relative inline-flex gap-1 rounded-pill bg-ink/[0.05] p-1">
+      <Slider box={box} className="rounded-pill bg-accent" />
+      {options.map(([v, label]) => (
+        <button
+          key={v}
+          type="button"
+          data-active={value === v}
+          onClick={() => onChange(v)}
+          className={`relative z-10 rounded-pill px-4 py-1.5 text-small font-bold transition-colors duration-200 ease-settle ${
+            value === v ? 'text-on-accent' : 'text-muted hover:text-ink'
+          }`}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
   )
 }
 
@@ -135,21 +168,6 @@ export default function GoalForm({ onDone, onCancel, initial = null, groupId = n
     await reloadGroup()
     onDone?.()
   }
-
-  const Toggle = ({ options, value, onChange }) => (
-    <div className="flex flex-wrap gap-2">
-      {options.map(([v, label]) => (
-        <button
-          key={v}
-          type="button"
-          onClick={() => onChange(v)}
-          className={value === v ? 'chip-accent press' : 'chip-quiet press'}
-        >
-          {label}
-        </button>
-      ))}
-    </div>
-  )
 
   return (
     <form onSubmit={save} className="space-y-8">

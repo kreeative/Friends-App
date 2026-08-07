@@ -18,6 +18,9 @@
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { type Block, layout, plain } from './template.ts'
+
+const SITE = Deno.env.get('SITE_URL') ?? 'https://richandfriends.xyz'
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL')!,
@@ -32,9 +35,26 @@ async function emailFor(userId: string): Promise<string | null> {
   return data?.user?.email ?? null
 }
 
-async function send(to: string, subject: string, text: string) {
+/**
+ * Both parts, always. A message with an HTML part and no text alternative
+ * scores badly with spam filters and is unreadable in a text-only client, and
+ * the text part is also what shows if the HTML fails to render.
+ */
+async function send(
+  to: string,
+  subject: string,
+  { title, preheader, blocks, footnote }: {
+    title: string
+    preheader: string
+    blocks: Block[]
+    footnote?: string
+  },
+) {
+  const html = layout({ title, preheader, blocks, footnote })
+  const text = plain(title, blocks, footnote)
+
   if (!RESEND_KEY) {
-    console.log('[dry-run]', to, subject)
+    console.log('[dry-run]', to, subject, `${html.length} bytes html`)
     return true
   }
   const res = await fetch('https://api.resend.com/emails', {
@@ -43,7 +63,7 @@ async function send(to: string, subject: string, text: string) {
       Authorization: `Bearer ${RESEND_KEY}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ from: MAIL_FROM, to, subject, text }),
+    body: JSON.stringify({ from: MAIL_FROM, to, subject, html, text }),
   })
   if (!res.ok) console.error('send failed', await res.text())
   return res.ok
@@ -99,19 +119,25 @@ async function sendDigests() {
        * message is that something. Without it the field was a note nobody
        * ever saw again, which is presumably why it looked like tracking.
        */
-      const lines = listed
-        .map((g: any) => {
-          const times = g.cadence === 'recurring' ? ` (${g.target_per_cycle}×)` : ''
-          const trigger = [g.trigger_when, g.trigger_where].filter(Boolean).join(', ')
-          return `· ${g.commitment}${times}${trigger ? `\n    ${trigger}` : ''}`
-        })
-        .join('\n')
+      const items = listed.map((g: any) => ({
+        title: `${g.commitment}${g.cadence === 'recurring' ? ` · ${g.target_per_cycle}×` : ''}`,
+        note: [g.trigger_when, g.trigger_where].filter(Boolean).join(' · ') || undefined,
+      }))
 
-      await send(
-        to,
-        `Check-in opens tonight — ${(cycle as any).groups?.name ?? 'your group'}`,
-        `What you committed to:\n\n${lines}\n\nTakes under a minute.\n`,
-      )
+      const name = (cycle as any).groups?.name ?? 'your group'
+
+      await send(to, `Check-in opens tonight — ${name}`, {
+        title: 'Check-in opens tonight',
+        // Shown next to the subject in the inbox. Without one, clients scrape
+        // the first text in the message — which would be the logo's alt text.
+        preheader: `${name} · ${items.length} thing${items.length === 1 ? '' : 's'} to look at, about a minute.`,
+        blocks: [
+          { kind: 'lead', text: 'What you said you would do:' },
+          { kind: 'list', items },
+          { kind: 'button', label: 'Check in', href: `${SITE}/g/${cycle.group_id}/checkin` },
+          { kind: 'text', text: 'Takes under a minute. Nothing to catch up on if you miss it.' },
+        ],
+      })
     }
   }
 }
@@ -129,17 +155,25 @@ async function sendNudges() {
     const to = await emailFor(n.subject_id)
     if (!to) continue
 
-    await send(
-      to,
-      `No rush — ${(n as any).groups?.name ?? 'your group'}`,
-      [
-        "You've missed a couple of check-ins. That's genuinely fine.",
-        '',
-        "When you're ready, open the app and tap \"I'm still in\" — it parks everything",
-        'old and asks for one thing. There is no backlog to clear.',
-        '',
-      ].join('\n'),
-    )
+    const name = (n as any).groups?.name ?? 'your group'
+
+    /* Deliberately the quiet one: no button colour shouting, no count of what
+       was missed, no streak language. The whole design of this message is
+       that it must not read as a debt collector. */
+    await send(to, `No rush — ${name}`, {
+      title: 'No rush',
+      preheader: 'Nothing to catch up on. One thing when you are ready.',
+      blocks: [
+        { kind: 'lead', text: 'You have missed a couple of check-ins. That is genuinely fine.' },
+        {
+          kind: 'text',
+          text:
+            'When you are ready, open the app and tap “I’m still in”. It parks everything old and asks for one thing — there is no backlog to clear and nothing to explain.',
+        },
+        { kind: 'button', label: 'Pick one thing', href: `${SITE}/me` },
+      ],
+      footnote: `Sent once, because you are in ${name}. There is no second one.`,
+    })
   }
 }
 

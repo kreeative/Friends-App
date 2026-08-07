@@ -10,9 +10,11 @@ import { useT } from '../lib/i18n'
  * of the same numbers reads as a jagged fever line, which says "volatile"
  * about data that is nothing of the sort.
  *
- * It sits on the field colour with black on it, which is the system rule for
- * anything set directly on a saturated fill: 13.5:1 on the yellow, 6.5:1 on
- * the blue. The tooltip inverts that, and is the only dark surface in the app.
+ * It sits on the theme's ink with the line in yellow. That pairing is what
+ * lets every word on the card be white: white on the yellow this used to use
+ * as a ground measures 1.4:1, so as a surface it forced black type. As a
+ * stroke on a dark ground the same yellow measures about 4.5:1, which is well
+ * clear of the 3:1 a graphic needs, and the type above it is at 7:1.
  */
 
 const W = 600
@@ -160,7 +162,7 @@ export default function TrendChart({ series, className = '' }) {
   if (pts.length < 2) {
     return (
       <div className={`flex h-[200px] items-center justify-center ${className}`}>
-        <p className="text-small text-on-field/70">{t('me.no_cycles')}</p>
+        <p className="text-small text-white/65">{t('me.no_cycles')}</p>
       </div>
     )
   }
@@ -200,11 +202,11 @@ export default function TrendChart({ series, className = '' }) {
       onPointerLeave={() => setHover(null)}
     >
       <defs>
-        {/* Black at a low alpha, not a second hue. On yellow any tint reads as
-            a third colour, and the palette is two. */}
+        {/* The same yellow as the line, fading out. A separate hue under the
+            curve would put a third colour on a card that has two. */}
         <linearGradient id="trend-fill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="rgb(var(--c-on-field))" stopOpacity="0.22" />
-          <stop offset="100%" stopColor="rgb(var(--c-on-field))" stopOpacity="0" />
+          <stop offset="0%" stopColor="rgb(var(--c-spark))" stopOpacity="0.30" />
+          <stop offset="100%" stopColor="rgb(var(--c-spark))" stopOpacity="0" />
         </linearGradient>
       </defs>
 
@@ -217,8 +219,8 @@ export default function TrendChart({ series, className = '' }) {
               y1={y}
               x2={W - PAD.right}
               y2={y}
-              stroke="rgb(var(--c-on-field))"
-              strokeOpacity="0.13"
+              stroke="rgb(255 255 255)"
+              strokeOpacity="0.16"
               strokeWidth="1"
             />
             <text
@@ -227,8 +229,8 @@ export default function TrendChart({ series, className = '' }) {
               textAnchor="end"
               fontSize="11"
               fontWeight="600"
-              fill="rgb(var(--c-on-field))"
-              fillOpacity="0.55"
+              fill="rgb(255 255 255)"
+              fillOpacity="0.6"
             >
               {Math.round(v)}
             </text>
@@ -240,7 +242,7 @@ export default function TrendChart({ series, className = '' }) {
       <path
         d={line}
         fill="none"
-        stroke="rgb(var(--c-on-field))"
+        stroke="rgb(var(--c-spark))"
         strokeWidth="2.5"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -256,8 +258,8 @@ export default function TrendChart({ series, className = '' }) {
           textAnchor={i === 0 ? 'start' : 'end'}
           fontSize="11"
           fontWeight="600"
-          fill="rgb(var(--c-on-field))"
-          fillOpacity="0.55"
+          fill="rgb(255 255 255)"
+          fillOpacity="0.6"
         >
           {fmt.format(new Date(pts[i].at))}
         </text>
@@ -270,29 +272,29 @@ export default function TrendChart({ series, className = '' }) {
         y1={p.y}
         x2={p.x}
         y2={PAD.top + INNER.h}
-        stroke="rgb(var(--c-on-field))"
+        stroke="rgb(255 255 255)"
         strokeOpacity="0.45"
         strokeWidth="1.5"
       />
-      <circle cx={p.x} cy={PAD.top + INNER.h} r="4" fill="rgb(var(--c-on-field))" />
+      <circle cx={p.x} cy={PAD.top + INNER.h} r="4" fill="rgb(var(--c-spark))" />
       <circle
         cx={p.x}
         cy={p.y}
         r="6"
-        fill="rgb(var(--c-on-field))"
-        stroke="rgb(var(--c-field))"
+        fill="rgb(var(--c-spark))"
+        stroke="rgb(var(--c-ink))"
         strokeWidth="2.5"
       />
 
       <g transform={`translate(${tipX} 2)`}>
-        <rect width={tipW} height="34" rx="17" fill="rgb(var(--c-on-field))" />
+        <rect width={tipW} height="34" rx="17" fill="rgb(var(--c-spark))" />
         <text
           x={tipW / 2}
           y="22"
           textAnchor="middle"
           fontSize="13"
           fontWeight="700"
-          fill="rgb(var(--c-field))"
+          fill="rgb(16 14 20)"
         >
           {p.pct}% · {fmt.format(new Date(p.at))}
         </text>

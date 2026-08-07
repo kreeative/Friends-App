@@ -36,7 +36,7 @@ export default function ConsistencyPanel({ rate, trend, cycles, goalCount, group
       {/* The one dark surface in the app. It is the theme's own ink — deep
           plum in sun, deep teal in sea — rather than black, so white on it
           measures 7:1 and it still belongs to the palette. */}
-      <div style={{ '--i': 0 }} className="rounded-card bg-ink p-6 text-white sm:p-7">
+      <div style={{ '--i': 0 }} className="panel-ink-deep rounded-card p-6 text-white sm:p-7">
         <div className="flex items-center gap-3">
           <span className="flex h-9 w-9 items-center justify-center rounded-pill bg-white/15">
             <Bolt />
@@ -76,17 +76,26 @@ export default function ConsistencyPanel({ rate, trend, cycles, goalCount, group
         </div>
       </div>
 
-      {/* The field colour with black on it, exactly as the reference puts its
-          chart on the loudest surface it has. */}
-      <div
-        style={{ '--i': 1 }}
-        className="flex flex-col rounded-card bg-field p-6 text-on-field sm:p-7"
-      >
+      {/**
+       * Yellow moved from the surface to the data.
+       *
+       * This card was a block of the field colour carrying black text, and
+       * black is exactly what it should not have been — but white was not
+       * available either: white on this yellow measures 1.4:1, which is not a
+       * matter of taste, it is not visible. The only way every word on this
+       * panel is white is for the ground to be dark.
+       *
+       * So the ground is ink and the yellow is the chart: the line, the fill
+       * and the marker. That is also closer to the reference than the old
+       * arrangement was — a dark card with one saturated colour doing the
+       * data is the shape it actually uses.
+       */}
+      <div style={{ '--i': 1 }} className="panel-ink flex flex-col rounded-card p-6 text-white sm:p-7">
         <div className="flex items-center justify-between gap-3">
-          <span className="inline-flex items-center rounded-pill bg-on-field/10 px-3.5 py-1.5 text-small font-bold">
+          <span className="inline-flex items-center rounded-pill bg-white/15 px-3.5 py-1.5 text-small font-bold">
             {t('me.last12')}
           </span>
-          <span className="text-small font-semibold text-on-field/60">
+          <span className="text-small font-semibold text-white/65">
             {t('me.rate_note_short')}
           </span>
         </div>
@@ -102,17 +111,17 @@ export default function ConsistencyPanel({ rate, trend, cycles, goalCount, group
             their own row they are readable; set beside a 56px number they
             were decoration. */}
         <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-inner bg-on-field/10 px-4 py-3">
+          <div className="rounded-inner bg-white/10 px-4 py-3">
             <div className="text-h2 leading-none [font-variant-numeric:tabular-nums]">
               {goalCount}
             </div>
-            <div className="mt-1.5 text-small text-on-field/70">{t('me.live_goals')}</div>
+            <div className="mt-1.5 text-small text-white/65">{t('me.live_goals')}</div>
           </div>
-          <div className="rounded-inner bg-on-field/10 px-4 py-3">
+          <div className="rounded-inner bg-white/10 px-4 py-3">
             <div className="text-h2 leading-none [font-variant-numeric:tabular-nums]">
               {groupCount}
             </div>
-            <div className="mt-1.5 text-small text-on-field/70">{t('home.groups')}</div>
+            <div className="mt-1.5 text-small text-white/65">{t('home.groups')}</div>
           </div>
         </div>
       </div>
