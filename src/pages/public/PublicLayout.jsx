@@ -35,7 +35,7 @@ export default function PublicLayout() {
   // their rim. Over a saturated ground there is something to refract, which
   // is the whole reason the material exists.
   return (
-    <div className="relative min-h-dvh bg-field">
+    <div className="ground relative min-h-dvh">
       {/* Every public page, not just the landing hero. */}
       <Stickers set="page" />
 

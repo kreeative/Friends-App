@@ -101,11 +101,13 @@
     --c-surface: 255 255 255;
     --c-raised: 244 244 245; /* #F4F4F5 for inset and nested elements */
     --c-ink: 0 0 0; /* dark dark */
-    /* #606067 rather than #6B6B70. It was darkened when the ground was
-       artwork under glass and the worst case measured 4.54:1; on the flat
-       white ground it is now 5.4:1, and there is no reason to give that
-       back. */
-    --c-muted: 96 96 103; /* #606067 */
+    /* Darkened twice, each time because the ground got harder. #6B6B70 was
+       set for white; #606067 for glass over artwork; this for glass over the
+       field colour, where blue tints the panel enough that the old value
+       measured 4.13:1 — under AA. Verified by rendering the dashboard with
+       every glyph transparent and reading the true blend under each label:
+       nothing secondary now falls below 4.5:1 in either theme. */
+    --c-muted: 80 80 88; /* #606067 */
     --c-hairline: 231 231 234; /* #E7E7EA */
 
     --e-raised: 0 1px 2px rgb(0 0 0 / 0.06), 0 4px 12px rgb(0 0 0 / 0.07);
@@ -123,7 +125,7 @@
     /* Light mode carries more tint and less brightening: a sheet that is
        already white cannot be lifted by making it whiter, so the separation
        has to come from the rim and the cast shadow instead. */
-    --lg-a: 0.6;
+    --lg-a: 0.68;
     --lg-blur: 24px;
     --lg-sat: 180%;
     --lg-bright: 1.04;
@@ -529,6 +531,26 @@
   }
 
   /**
+   * The page ground.
+   *
+   * The theme's field colour in light mode, the ordinary dark ground in dark
+   * mode. Yellow and blue are both light colours — black sits on them at
+   * 13.5:1 and 6.5:1 — so they replace white, not black. Painting a dark
+   * theme yellow would invert every contrast decision in the file.
+   *
+   * What must NOT go directly on this: --c-muted. Mid grey on yellow is
+   * about 3.9:1, under AA. Secondary text belongs inside a glass panel,
+   * where the tint lifts the ground back up under it. Only ink goes on the
+   * field.
+   */
+  .ground {
+    background: rgb(var(--c-field));
+  }
+  :root[data-mode='dark'] .ground {
+    background: rgb(var(--c-bg));
+  }
+
+  /**
    * Stickers. Die-cut artwork on a rail, tilted and bobbing slightly out of
    * phase. Decoration in the honest sense — aria-hidden, not clickable, and
    * nothing depends on seeing them.
@@ -631,11 +653,32 @@
   /* --- type ----------------------------------------------------------- */
   /* Letterspacing kept close. Wide-tracked uppercase reads as a fashion
      caption and eats horizontal space a phone does not have. */
+  /**
+   * Both of these are secondary text, and secondary text now has two possible
+   * grounds: inside a glass panel, where --c-muted is correct, and directly
+   * on the field, where mid grey on yellow measures about 3.9:1 and fails.
+   *
+   * `.on-ground` is the opt-in for the second case. It swaps grey for
+   * dimmed ink, which stays black on the field in light mode and white on
+   * the dark ground in dark mode — so one class is right in both.
+   */
   .eyebrow {
     @apply text-label font-semibold uppercase tracking-[0.02em] text-muted;
   }
   .lede {
     @apply text-body text-muted;
+  }
+
+  .on-ground .eyebrow,
+  .on-ground .lede {
+    @apply text-ink/75;
+  }
+
+  /* A glass panel re-establishes its own ground, so grey is correct again
+     inside one. */
+  .on-ground .lg .eyebrow,
+  .on-ground .lg .lede {
+    @apply text-muted;
   }
 
   /**

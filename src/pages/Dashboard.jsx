@@ -167,7 +167,7 @@ export default function Dashboard() {
   const first = (profile?.display_name ?? '').split(' ')[0]
 
   return (
-    <Screen>
+    <Screen className="on-ground">
       <TopBar
         title={first ? `${greeting}, ${first}.` : greeting}
         sub={waiting ? undefined : t('home.sub')}
@@ -179,23 +179,24 @@ export default function Dashboard() {
        * field colour lands here because this is the only row that is asking
        * for something.
        *
-       * Black on the field by system rule — 13.5:1 on yellow, 6.5:1 on blue —
-       * so the loudest element is also the most legible one, which is not
-       * usually how loud elements go.
+       * The accent rather than the field, because the ground is the field
+       * now — a block of the same colour on the same colour is not a block.
+       * Black on it either way by system rule: 4.9:1 on pink, 13.5:1 on
+       * yellow.
        */}
       {waiting && (
         <div className="animate-rise pt-6">
           <Link
             to={`/g/${waiting.group.id}/checkin`}
-            className="press group block rounded-card bg-field p-6 no-underline transition-transform duration-200 ease-settle hover:-translate-y-0.5 sm:p-7"
+            className="press group block rounded-card bg-accent p-6 no-underline transition-transform duration-200 ease-settle hover:-translate-y-0.5 sm:p-7"
           >
-            <span className="block text-label font-bold uppercase tracking-[0.14em] text-on-field/70">
+            <span className="block text-label font-bold uppercase tracking-[0.14em] text-on-accent/70">
               {t('checkin.closes_in', { t: untilLabel(waiting.row.closes_at) })}
             </span>
-            <span className="mt-3 block text-h1 font-bold leading-[1.05] tracking-[-0.03em] text-on-field">
+            <span className="mt-3 block text-h1 font-bold leading-[1.05] tracking-[-0.03em] text-on-accent">
               {t('home.waiting_on_you', { group: waiting.group.name })}
             </span>
-            <span className="mt-5 inline-flex items-center gap-2 rounded-pill bg-on-field px-5 py-2.5 text-small font-bold text-field">
+            <span className="mt-5 inline-flex items-center gap-2 rounded-pill bg-on-accent px-5 py-2.5 text-small font-bold text-accent">
               {t('board.check_in')}
               <span aria-hidden="true" className="transition-transform duration-200 group-hover:translate-x-0.5">
                 →
@@ -213,19 +214,21 @@ export default function Dashboard() {
         )
       }>
         {loading ? (
-          <p className="text-small text-muted">{t('err.loading')}</p>
+          <p className="text-small text-ink/70">{t('err.loading')}</p>
         ) : memberships.length === 0 ? (
-          <div className="py-2">
+          <div className="lg p-6">
             <p className="max-w-[38ch] text-body text-muted">{t('home.no_groups')}</p>
             <Link to="/start" className="btn-primary press mt-6 inline-flex">
               {t('start.new_group')}
             </Link>
           </div>
         ) : (
-          <div className="list">
-            {memberships.map((m) => (
-              <GroupRow key={m.group_id} membership={m} rows={rows} t={t} />
-            ))}
+          <div className="lg px-5">
+            <div className="list">
+              {memberships.map((m) => (
+                <GroupRow key={m.group_id} membership={m} rows={rows} t={t} />
+              ))}
+            </div>
           </div>
         )}
       </Section>
@@ -235,7 +238,7 @@ export default function Dashboard() {
             screen on its own; three of them inside a card is three competing
             heroes, and the accent rule under each reads as a stray mark once
             there is a border nearby. Divided cells, tabular figures. */}
-        <div className="grid grid-cols-3 divide-x divide-hairline border-y border-hairline">
+        <div className="lg grid grid-cols-3 divide-x divide-hairline">
           {[
             [
               rate.total ? `${rate.done}/${rate.total}` : '—',
@@ -245,7 +248,7 @@ export default function Dashboard() {
             [goals.length, t('me.live_goals'), null],
             [memberships.length, t('home.groups'), null],
           ].map(([value, label, hint]) => (
-            <div key={label} className="py-5 pl-4 first:pl-0">
+            <div key={label} className="px-5 py-6">
               <div className="text-h1 leading-none text-ink [font-variant-numeric:tabular-nums]">
                 {value}
               </div>
@@ -254,7 +257,7 @@ export default function Dashboard() {
             </div>
           ))}
         </div>
-        <p className="mt-4 text-small text-muted">{t('me.rate_note')}</p>
+        <p className="mt-4 text-small text-ink/70">{t('me.rate_note')}</p>
       </Section>
 
       <Section
@@ -266,14 +269,15 @@ export default function Dashboard() {
         }
       >
         {owned.length === 0 ? (
-          <div className="py-2">
+          <div className="lg p-6">
             <p className="max-w-[38ch] text-body text-muted">{t('home.no_books')}</p>
             <Link to="/library" className="btn-outline press mt-6 inline-flex">
               {t('library.read_free')}
             </Link>
           </div>
         ) : (
-          <div className="list">
+          <div className="lg px-5">
+            <div className="list">
             {owned.map((b) => (
               <Link
                 key={b.id}
@@ -293,6 +297,7 @@ export default function Dashboard() {
                 )}
               </Link>
             ))}
+            </div>
           </div>
         )}
       </Section>
