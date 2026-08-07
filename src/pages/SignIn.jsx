@@ -19,7 +19,7 @@ import { useT } from '../lib/i18n'
  */
 // Filtered against what is actually in src/assets/stickers, so renaming
 // or removing art degrades to a shorter row instead of broken images.
-const HERO_ART = pickStickers(['unicorn', 'skull', 'pizza', 'koi', 'cat', 'cactus'])
+const HERO_ART = pickStickers(['cloudguy', 'skullfire', 'bass', 'burger', 'bird', 'popsicle'])
 
 function ArtRow() {
   return (
