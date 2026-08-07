@@ -7,7 +7,7 @@
  *
  * Two independent choices, and nothing else:
  *
- *   ground   light or dark        [data-mode]
+
  *   theme    sun or sea           [data-theme]
  *
  * A theme is a PAIR: a field for large blocks, an accent for what you click.
@@ -36,79 +36,35 @@
  * Values are RGB channels so Tailwind's alpha modifier keeps working.
  */
 @layer base {
+  /**
+   * One ground, two themes, and no black.
+   *
+   *   theme  sun | sea   [data-theme]
+   *
+   *   sun   pink type, yellow field
+   *   sea   blue type, yellow field
+   *
+   * The dark mode is gone. It was a second full set of contrast decisions
+   * for a product whose whole surface is now white and saturated colour, and
+   * a dark ground makes the yellow field either glow or turn to mud.
+   *
+   * Type is the theme's own hue rather than ink. That needs two values, not
+   * one, because a hue bright enough to be a fill is rarely dark enough to be
+   * body text — measured on white, the brand pink is 4.30:1 and the brand
+   * blue 3.22:1, so neither passes AA as running text even though both are
+   * fine as large display type at the 3:1 bar.
+   *
+   *   --c-ink     7:1  body, headings, anything small
+   *   --c-loud    the brand hue itself, only above ~24px
+   *
+   * Yellow is never type on white. It measures 1.55:1 and no size rescues
+   * that; it is a field colour and a fill, and that is all.
+   */
   :root {
-    /* --- ground: dark ---------------------------------------------------- */
-    /* Pure black, matching the ground the wordmark was drawn on. */
-    --c-bg: 0 0 0;
-    --c-surface: 20 18 22; /* #141216 */
-    --c-raised: 31 28 34; /* #1F1C22 */
-    --c-ink: 255 255 255; /* white white */
-    --c-muted: 154 153 162; /* #9A99A2 */
-    --c-hairline: 42 41 48; /* #2A2930 */
-
-    /* Elevation. Three levels and nothing else — flat, raised, floating. */
-    /* Multi-layer rather than one blur: a tight contact shadow reads as
-       weight, the wide one as height. Either alone looks like a sticker. */
-    --e-raised: 0 1px 2px rgb(0 0 0 / 0.5), 0 4px 12px rgb(0 0 0 / 0.45);
-    --e-float:
-      0 2px 4px rgb(0 0 0 / 0.4), 0 12px 28px rgb(0 0 0 / 0.5),
-      0 32px 64px rgb(0 0 0 / 0.45);
-
-    --glass-tint: 24 22 28;
-    --glass-alpha: 0.62;
-    /* Denser variant for chrome floating over arbitrary content. */
-    --glass-alpha-strong: 0.8;
-    --glass-edge: rgb(255 255 255 / 0.22);
-    --glass-edge-hover: rgb(255 255 255 / 0.42);
-    /* A dark ground needs a dark under-edge too, or the panel looks printed
-       on rather than lifted off. */
-    --glass-underedge: rgb(0 0 0 / 0.45);
-
-    /* --- liquid glass ---------------------------------------------------
-       Four dials, because the difference between "frosted", "clear" and
-       "blur" is entirely in these numbers — see the variants below.
-         a       how much tint sits over the blur
-         blur    the radius
-         sat     lets colour bloom through instead of going to fog
-         bright  lifts the whole sheet off the ground behind it            */
-    --lg-a: 0.44;
-    --lg-blur: 26px;
-    --lg-sat: 190%;
-    --lg-bright: 1.12;
-    /* The rim. Real glass bends light hardest at its edge, so the border is
-       a gradient that runs bright → nearly gone → bright rather than one
-       flat line. Without this a glass panel is a grey box with a stroke. */
-    --lg-rim-hi: rgb(255 255 255 / 0.62);
-    --lg-rim-lo: rgb(255 255 255 / 0.04);
-    --lg-rim-w: 1.25px;
-    /* The specular sweep across the top-left, from an implied light source
-       up and to the left of the page. */
-    --lg-spec: rgb(255 255 255 / 0.16);
-
-    /* --- semantics ------------------------------------------------------- */
-    /* Not themeable. Nothing here relies on hue alone — every state ships a
-       word next to it. */
-    --c-green: 25 162 73; /* #19A249 — done this cycle */
-    --c-negative: 255 90 100; /* #FF5A64 — trouble, still not a system red */
-    --c-on-pop: 0 0 0;
-  }
-
-  :root[data-mode='light'] {
-    /* --- ground: light --------------------------------------------------- */
-    /* White white. Cards are white too — on white you cannot lift a surface
-       by making it lighter, so separation is shadow and hairline only. */
     --c-bg: 255 255 255;
     --c-surface: 255 255 255;
-    --c-raised: 244 244 245; /* #F4F4F5 for inset and nested elements */
-    --c-ink: 0 0 0; /* dark dark */
-    /* Darkened twice, each time because the ground got harder. #6B6B70 was
-       set for white; #606067 for glass over artwork; this for glass over the
-       field colour, where blue tints the panel enough that the old value
-       measured 4.13:1 — under AA. Verified by rendering the dashboard with
-       every glyph transparent and reading the true blend under each label:
-       nothing secondary now falls below 4.5:1 in either theme. */
-    --c-muted: 80 80 88; /* #606067 */
-    --c-hairline: 231 231 234; /* #E7E7EA */
+    --c-raised: 246 246 247;
+    --c-hairline: 232 232 235;
 
     --e-raised: 0 1px 2px rgb(0 0 0 / 0.06), 0 4px 12px rgb(0 0 0 / 0.07);
     --e-float:
@@ -122,57 +78,45 @@
     --glass-edge-hover: rgb(255 255 255 / 1);
     --glass-underedge: rgb(0 0 0 / 0.05);
 
-    /* Light mode carries more tint and less brightening: a sheet that is
-       already white cannot be lifted by making it whiter, so the separation
-       has to come from the rim and the cast shadow instead. */
     --lg-a: 0.68;
     --lg-blur: 24px;
     --lg-sat: 180%;
     --lg-bright: 1.04;
-    /* Ink, not white.
-       A white rim was legible over artwork because there was artwork for it
-       to be lighter than. On the flat white ground it is white on white, so
-       every card lost its edge and floated on a blur — which was most of
-       what read as unfinished. The gradient still runs bright → faint →
-       bright; it is just doing it in the other direction. */
     --lg-rim-hi: rgb(16 14 20 / 0.24);
     --lg-rim-lo: rgb(16 14 20 / 0.11);
     --lg-rim-w: 1px;
     --lg-spec: rgb(255 255 255 / 0.55);
-  }
 
-  /* --- accent ------------------------------------------------------------ */
-  /**
-   * `pressed` is lighter than the base in every case, never darker: each
-   * accent already carries black text, so darkening the press state would
-   * walk it towards failing AA on its own label.
-   */
-  /* sun — yellow field, pink accent. The warm one. */
-  :root,
-  :root[data-theme='sun'] {
-    --c-field: 248 203 2; /* #F8CB02 — black on it: 13.5:1 */
-    --c-accent: 222 53 120; /* #DE3578 — black on it:  4.9:1 */
-    --c-accent-pressed: 232 90 147; /* #E85A93 */
-  }
-
-  /* sea — blue field, yellow accent. The cool one. */
-  :root[data-theme='sea'] {
-    --c-field: 0 157 185; /* #009DB9 — black on it:  6.5:1 */
-    --c-accent: 248 203 2; /* #F8CB02 — black on it: 13.5:1 */
-    --c-accent-pressed: 255 219 61; /* #FFDB3D */
-  }
-
-  /* Black on every field and every accent. Declared once, because it is a
-     property of the system rather than of any one colour — and it is the one
-     rule that keeps a saturated palette legible without re-measuring per
-     screen. */
-  :root {
+    /* Not themeable. "Checked in this week" is a fact about the world. */
+    --c-green: 21 128 61; /* darkened to 4.8:1 on white, since it labels too */
+    --c-negative: 190 30 45;
+    --c-on-pop: 255 255 255;
     --c-on-accent: 0 0 0;
     --c-on-field: 0 0 0;
-    /* The lit top edge of every glass surface picks up the accent. It is the
-       only place the accent appears without being a fill. */
     --glass-sheen: rgb(var(--c-accent) / 0.22);
   }
+
+  /* sun — pink type, yellow field. The warm one. */
+  :root,
+  :root[data-theme='sun'] {
+    --c-ink: 169 28 84;    /* #A91C54 — 7.04:1 on white */
+    --c-muted: 220 43 114; /* #DC2B72 — 4.53:1 */
+    --c-loud: 222 53 120;  /* #DE3578 — 4.30:1, display sizes only */
+    --c-field: 248 203 2;  /* #F8CB02 — black on it 13.5:1 */
+    --c-accent: 222 53 120;
+    --c-accent-pressed: 232 90 147;
+  }
+
+  /* sea — blue type, yellow field. The cool one. */
+  :root[data-theme='sea'] {
+    --c-ink: 0 98 116;     /* #006274 — 7.00:1 on white */
+    --c-muted: 0 130 153;  /* #008299 — 4.51:1 */
+    --c-loud: 0 157 185;   /* #009DB9 — 3.22:1, display sizes only */
+    --c-field: 0 157 185;
+    --c-accent: 248 203 2; /* yellow, as a fill carrying black: 13.5:1 */
+    --c-accent-pressed: 255 219 61;
+  }
+
 
   html {
     background-color: rgb(var(--c-bg));
@@ -430,13 +374,9 @@
   @media (hover: hover) {
     .lg-interactive:hover {
       transform: translateY(-2px);
-      --lg-rim-hi: rgb(255 255 255 / 0.95);
-      --lg-bright: 1.18;
-    }
-    :root[data-mode='light'] .lg-interactive:hover {
       --lg-rim-hi: rgb(16 14 20 / 0.3);
-      --lg-bright: 1.04;
     }
+
   }
 
   .lg-interactive:active {
@@ -450,22 +390,15 @@
    */
   .lg-pill {
     @apply relative rounded-pill;
-    background: rgb(255 255 255 / 0.14);
-    box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 0.4),
-      inset 0 -1px 0 rgb(0 0 0 / 0.12),
-      0 2px 12px rgb(0 0 0 / 0.14);
-    -webkit-backdrop-filter: blur(8px) brightness(1.2) saturate(150%);
-    backdrop-filter: blur(8px) brightness(1.2) saturate(150%);
-  }
-
-  :root[data-mode='light'] .lg-pill {
     background: rgb(255 255 255 / 0.6);
     box-shadow:
       inset 0 1px 0 rgb(255 255 255 / 0.9),
       inset 0 -1px 0 rgb(0 0 0 / 0.06),
       0 2px 12px rgb(0 0 0 / 0.08);
+    -webkit-backdrop-filter: blur(8px) brightness(1.2) saturate(150%);
+    backdrop-filter: blur(8px) brightness(1.2) saturate(150%);
   }
+
 
   /* Motion is decoration here, and decoration is opt-out. */
   @media (prefers-reduced-motion: reduce) {
@@ -531,46 +464,20 @@
   }
 
   /**
-   * Type that sits directly on a field colour.
+   * The page ground: plain white.
    *
-   * White alone does not work here: on yellow it is 1.4:1 and on blue 3.2:1,
-   * both under AA, and a soft drop shadow does not change that — a blur
-   * spreads the dark instead of bounding the letterform.
+   * It was the field colour briefly. Going back to white takes the whole
+   * legibility problem with it — nothing sits on a saturated ground any more,
+   * so nothing needs an outline to survive it, and secondary text is safe
+   * everywhere rather than only inside glass. The theme has not gone
+   * anywhere; it is the type colour and it is the blocks, rather than being
+   * the page.
    *
-   * A hard outline does. Stroking each glyph in black and painting the stroke
-   * UNDER the fill means every edge of every letter meets black at 21:1, so
-   * the shape is read off the outline rather than off the fill. It is the
-   * convention the reference stickers use, and it is why they stay legible on
-   * any colour they land on. The offset shadow is depth on top of that, not
-   * the thing doing the work.
-   *
-   * The stroke is in em so it tracks the type size; at label sizes a fixed
-   * pixel stroke closes up the counters.
-   */
-  .pop {
-    color: #fff;
-    -webkit-text-stroke: 0.055em rgb(var(--c-on-field));
-    paint-order: stroke fill;
-    text-shadow: 0.055em 0.06em 0 rgb(var(--c-on-field) / 0.9);
-  }
-
-  /**
-   * The page ground.
-   *
-   * The theme's field colour in light mode, the ordinary dark ground in dark
-   * mode. Yellow and blue are both light colours — black sits on them at
-   * 13.5:1 and 6.5:1 — so they replace white, not black. Painting a dark
-   * theme yellow would invert every contrast decision in the file.
-   *
-   * What must NOT go directly on this: --c-muted. Mid grey on yellow is
-   * about 3.9:1, under AA. Secondary text belongs inside a glass panel,
-   * where the tint lifts the ground back up under it. Only ink goes on the
-   * field.
+   * html and body carry the same colour. When they disagreed with this, an
+   * overscroll or a short page showed the other one at the edges — which is
+   * what "you can see the edges of the site" was.
    */
   .ground {
-    background: rgb(var(--c-field));
-  }
-  :root[data-mode='dark'] .ground {
     background: rgb(var(--c-bg));
   }
 
@@ -691,35 +598,6 @@
   }
   .lede {
     @apply text-body text-muted;
-  }
-
-  /**
-   * Everything sitting directly on the field gets the outlined treatment:
-   * white fill, black stroke painted under it. See .pop above for why a soft
-   * shadow could not do this job.
-   */
-  .on-ground :is(h1, h2, .eyebrow, .lede, .on-field-text) {
-    color: #fff;
-    -webkit-text-stroke: 0.055em rgb(var(--c-on-field));
-    paint-order: stroke fill;
-    text-shadow: 0.055em 0.06em 0 rgb(var(--c-on-field) / 0.9);
-  }
-
-  /**
-   * A glass panel re-establishes its own ground. Inside one there is no field
-   * colour to fight, so the outline comes off and ordinary ink and grey are
-   * correct again — an outlined heading on glass would be costume.
-   */
-  .on-ground .lg :is(h1, h2, h3, .eyebrow, .lede, .on-field-text) {
-    color: inherit;
-    -webkit-text-stroke: 0;
-    text-shadow: none;
-  }
-  .on-ground .lg :is(h1, h2, h3) {
-    @apply text-ink;
-  }
-  .on-ground .lg :is(.eyebrow, .lede) {
-    @apply text-muted;
   }
 
   /**

@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#000000" />
+    <meta name="theme-color" content="#FFFFFF" />
     <meta name="description" content="A weekly check-in with a few people who know what you're working on." />
     <!--
       Stamps the saved theme before the first paint. Without it the page
@@ -13,30 +13,23 @@
     -->
     <script>
       ;(function () {
+        /* One attribute now. The dark mode is gone, so there is no ground to
+           resolve and nothing to flash — only which of the two colour themes
+           to stamp before first paint. */
         var d = document.documentElement
-        var mode = 'dark'
         var theme = 'sun'
         try {
-          var saved = localStorage.getItem('rf.mode') || 'system'
           theme = localStorage.getItem('rf.theme')
-          if (['light', 'dark'].indexOf(saved) >= 0) {
-            mode = saved
-          } else {
-            mode = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
-          }
-          /* Migrate the old three-accent scheme: blue was the only cool one. */
           if (!theme) {
+            /* Migrate the older schemes: blue was the only cool one. */
             var old = localStorage.getItem('rf.accent')
             theme = old === 'blue' ? 'sea' : 'sun'
           }
           if (['sun', 'sea'].indexOf(theme) < 0) theme = 'sun'
         } catch (e) {
-          /* Private modes can throw on read; the defaults above stand. */
+          /* Private modes can throw on read; the default above stands. */
         }
-        d.setAttribute('data-mode', mode)
         d.setAttribute('data-theme', theme)
-        var m = document.querySelector('meta[name="theme-color"]')
-        if (m) m.setAttribute('content', mode === 'light' ? '#FFFFFF' : '#000000')
       })()
     </script>
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />

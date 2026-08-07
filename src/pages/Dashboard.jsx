@@ -168,7 +168,7 @@ export default function Dashboard() {
   const first = (profile?.display_name ?? '').split(' ')[0]
 
   return (
-    <Screen className="on-ground">
+    <Screen>
       <TopBar
         title={first ? `${greeting}, ${first}.` : greeting}
         sub={waiting ? undefined : t('home.sub')}
@@ -215,7 +215,7 @@ export default function Dashboard() {
         )
       }>
         {loading ? (
-          <p className="on-field-text text-small">{t('err.loading')}</p>
+          <p className="text-small text-muted">{t('err.loading')}</p>
         ) : memberships.length === 0 ? (
           <div className="lg p-6">
             <p className="max-w-[38ch] text-body text-muted">{t('home.no_groups')}</p>
@@ -286,7 +286,7 @@ export default function Dashboard() {
             </span>
           </div>
         </div>
-        <p className="on-field-text mt-4 text-small">{t('me.rate_note')}</p>
+        <p className="mt-4 text-small text-muted">{t('me.rate_note')}</p>
       </Section>
 
       <Section

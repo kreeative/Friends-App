@@ -1,9 +1,9 @@
-import { MODES, THEMES, useTheme } from '../lib/theme'
+import { THEMES, useTheme } from '../lib/theme'
 import { useT } from '../lib/i18n'
 
 /**
- * Two rows, because the two choices are independent: the ground, and the pair
- * of colours that appears on it.
+ * One row now — the ground is no longer a choice, so a theme is just the pair
+ * of colours.
  *
  * A theme is a pair now, so each option previews BOTH of its colours — the
  * field as the larger block and the accent as the smaller one, in the same
@@ -15,29 +15,12 @@ import { useT } from '../lib/i18n'
  * marks nothing.
  */
 export default function ThemePicker({ className = '' }) {
-  const { mode, theme, setMode, setTheme } = useTheme()
+  const { theme, setTheme } = useTheme()
   const { t } = useT()
 
   return (
     <div className={className}>
       <fieldset>
-        <legend className="eyebrow">{t('theme.appearance')}</legend>
-        <div className="mt-4 flex flex-wrap gap-2">
-          {MODES.map((m) => (
-            <button
-              key={m}
-              type="button"
-              onClick={() => setMode(m)}
-              aria-pressed={mode === m}
-              className={mode === m ? 'chip-accent press' : 'chip-quiet press'}
-            >
-              {t(`theme.mode_${m}`)}
-            </button>
-          ))}
-        </div>
-      </fieldset>
-
-      <fieldset className="mt-7">
         <legend className="eyebrow">{t('theme.colour')}</legend>
         <div className="mt-4 flex flex-wrap gap-3">
           {THEMES.map((name) => (

@@ -215,10 +215,6 @@ const STRINGS = {
     'settings.language': 'Language',
 
     'theme.title': 'Theme',
-    'theme.appearance': 'Appearance',
-    'theme.mode_system': 'System',
-    'theme.mode_light': 'Light',
-    'theme.mode_dark': 'Dark',
     'theme.colour': 'Colour',
     'theme.name_sun': 'Sun',
     'theme.name_sea': 'Sea',
@@ -481,10 +477,6 @@ const STRINGS = {
     'settings.language': 'Langue',
 
     'theme.title': 'Thème',
-    'theme.appearance': 'Apparence',
-    'theme.mode_system': 'Système',
-    'theme.mode_light': 'Clair',
-    'theme.mode_dark': 'Sombre',
     'theme.colour': 'Couleur',
     'theme.name_sun': 'Soleil',
     'theme.name_sea': 'Mer',
