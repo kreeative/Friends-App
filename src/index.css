@@ -529,13 +529,31 @@
   }
 
   /**
-   * Stickers. Die-cut artwork scattered over the page, tilted and bobbing
-   * slightly out of phase. Decoration in the honest sense — aria-hidden, not
-   * clickable, and nothing depends on seeing them.
+   * Stickers. Die-cut artwork on a rail, tilted and bobbing slightly out of
+   * phase. Decoration in the honest sense — aria-hidden, not clickable, and
+   * nothing depends on seeing them.
+   *
+   * The rail's offset changes with the room available. A narrow screen has no
+   * margin beside the content column, so the rail tucks against the viewport
+   * edge and the stickers hang partly off it, overlapping panel corners the
+   * way a sticker actually would. A wide screen has a real margin, so the
+   * rail moves out into it and nothing overlaps at all.
+   *
+   * They were `hidden xl:block` for a while, which meant a phone — the way
+   * most people will ever see this — got none of them at all. Hiding
+   * decoration on the majority device is not a rule, it is an omission.
    */
   .sticker {
     @apply pointer-events-none absolute select-none animate-bob;
     filter: drop-shadow(0 6px 14px rgb(0 0 0 / 0.28));
+    --rail-x: -12px;
+    width: clamp(46px, 13vw, var(--rail-size, 72px));
+  }
+
+  @media (min-width: 1280px) {
+    .sticker {
+      --rail-x: var(--rail-far);
+    }
   }
 
   /**

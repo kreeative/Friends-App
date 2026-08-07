@@ -59,18 +59,18 @@ function rail(names, { from = 8, to = 90, size = 72 } = {}) {
  * narrower max-w-content. Anchoring both to the same width is what put the
  * public set on top of its own panels rather than beside them.
  *
- * `showAt` follows from that. A rail needs column + 2×(sticker + gap) of
- * viewport before there is anywhere for it to be; below that the stickers are
- * hidden rather than shrunk into the gutter, which would be the unstructured
- * version of having them at all.
+ * The rail's horizontal offset is set in CSS rather than here, because it
+ * depends on the viewport: tucked against the screen edge on a phone, out in
+ * the margin on a wide screen. See .sticker in index.css. Nothing is hidden
+ * at any width — an earlier version hid them below 1280px, which meant a
+ * phone got none of them.
  */
 const GAP = 28
 
 const SETS = {
-  /** The public site — max-w-5xl, so it needs a wide screen. */
+  /** The public site. */
   page: {
     column: '64rem',
-    showAt: 'xl',
     items: rail(pickStickers(['unicorn', 'pizza', 'skull', 'cactus', 'cat', 'koi']), {
       from: 7,
       to: 91,
@@ -81,7 +81,6 @@ const SETS = {
   /** The signed-in screens: same rule, quieter — a tool, not a poster. */
   app: {
     column: '40rem',
-    showAt: 'lg',
     items: rail(pickStickers(['thumb', 'fox', 'lips', 'deer']), {
       from: 12,
       to: 86,
@@ -89,9 +88,6 @@ const SETS = {
     }),
   },
 }
-
-// Written out so Tailwind's scanner can see both class names as literals.
-const VISIBILITY = { lg: 'hidden lg:block', xl: 'hidden xl:block' }
 
 export default function Stickers({ set = 'page' }) {
   const conf = SETS[set]
@@ -107,11 +103,13 @@ export default function Stickers({ set = 'page' }) {
             src={stickerSrc(s.src)}
             alt=""
             loading="lazy"
-            className={`sticker ${VISIBILITY[conf.showAt]}`}
+            className="sticker"
             style={{
               top: s.top,
-              [s.side]: `-${s.size + GAP}px`,
-              width: s.size,
+              // The side is fixed; how far out it sits is the responsive part.
+              [s.side]: 'var(--rail-x)',
+              '--rail-far': `-${s.size + GAP}px`,
+              '--rail-size': `${s.size}px`,
               '--tilt': `${s.tilt}deg`,
               animationDelay: `${s.delay}s`,
             }}
