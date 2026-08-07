@@ -23,11 +23,17 @@ changed later, and it is what your privacy policy points at.
 supabase/01_schema.sql      tables and indexes
 supabase/02_functions.sql   is_member(), cycles, tick(), submit_checkin()
 supabase/03_policies.sql    RLS for the check-in app
-supabase/05_library.sql     library tables + the paywall policy
-supabase/06_library_seed.sql  placeholder books (replace with manuscripts)
+supabase/07_books_all_in_one.sql  the library: tables, paywall, 3 books
+supabase/08_chapter_bodies.sql    the written chapters (generated)
 ```
 
 `04_schedule.sql` is separate — see step 4.
+
+`07` is `05_library.sql` and `06_library_seed.sql` concatenated, so it is one
+paste rather than two. **Skip it and the Library page has nothing to show** —
+it will now name this file rather than claiming no books have been published.
+`08` then replaces the placeholder chapter text with the written manuscripts;
+re-run it after every edit to `content/books/`.
 
 **Enable sign-in.** Authentication → Providers. Email works with no setup.
 For Google you need an OAuth client from the Google Cloud console; Supabase
@@ -239,13 +245,18 @@ each to report success before starting the next:
 01_schema.sql       tables and indexes
 02_functions.sql    is_member(), cycles, tick(), submit_checkin()
 03_policies.sql     row level security
-05_library.sql      library tables and the paywall policy   (optional for now)
-06_library_seed.sql placeholder books                        (optional for now)
+07_books_all_in_one.sql   the library: tables, paywall policy, 3 books
+08_chapter_bodies.sql     the written chapters
 ```
 
 The order is not cosmetic: `03` defines policies that call functions created
 in `02`, which reference tables created in `01`. Running them out of order
-fails with a missing-function or missing-relation error.
+fails with a missing-function or missing-relation error. The same applies to
+the last two — `08` only updates rows that `07` created, so on its own it
+succeeds and changes nothing, which is the confusing way to fail.
+
+`07` was marked optional here for a long time. It is not: the Library page is
+empty until it runs, and the buy button has nothing to sell.
 
 **Paste the contents of the file, not its name.** The SQL editor runs exactly
 the characters in the box — it has no notion of files or paths. Pasting the
