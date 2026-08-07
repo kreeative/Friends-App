@@ -3,34 +3,81 @@
 @tailwind utilities;
 
 /**
- * Nunito, self-hosted.
+ * Poppins, self-hosted.
  *
- * Rounded terminals, which is the whole reason it is here — a geometric face
- * with circular bowls still ends every stem in a flat cut, and that flat cut
- * is what made the old face read as square beside a hand-drawn logo and a
- * sheet of cartoon stickers. It also has to survive being 13px body text,
- * which is what rules out the rounder display faces: Baloo and Fredoka are
- * lovely at 48px and turn to mush at 14.
+ * Round letters, sharp edges — which are two different requests and the
+ * distinction is the whole point. Nunito was here briefly and it is a
+ * *rounded* face: its stems end in soft, filed-off terminals, which is a
+ * different quality from the letters themselves being circular. Poppins is
+ * geometric: the o, e, c, b, d and p are built from near-perfect circles, and
+ * every stroke stops dead in a flat cut. Round shapes, no soft corners.
  *
- * Self-hosted rather than linked, for three reasons. It renders even when
- * fonts.googleapis.com is blocked or slow, which it is on plenty of networks.
- * It removes a render-blocking connection to a third party on first paint.
- * And it means the typeface can actually be checked in a headless browser
- * rather than silently falling back to whatever the machine happens to have.
+ * It also happens to be what this design was originally drawn against —
+ * the fonts README has always described the intended face as geometric with
+ * near-circular bowls.
  *
- * One file for every weight: Google serves Nunito as a variable font and
- * returns the same URL for 400 through 900, so declaring the range here is
- * both accurate and 39KB instead of six times that.
+ * Self-hosted rather than linked, for three reasons. It renders on networks
+ * that block Google Fonts, which plenty do. It removes a third-party
+ * connection from first paint. And it can be verified in a headless browser
+ * instead of silently falling back to whatever the machine has lying around.
+ *
+ * Five static files rather than one variable one, because that is what Google
+ * ships for this family. They are ~7KB each — 35KB for the set, which is less
+ * than the single variable file it replaces.
  *
  * The unicode-range is the latin subset Google itself splits out. The site is
  * English and French; both fit inside it, accents included.
  */
 @font-face {
-  font-family: 'Nunito';
+  font-family: 'Poppins';
   font-style: normal;
-  font-weight: 400 900;
+  font-weight: 400;
   font-display: swap;
-  src: url('./assets/fonts/nunito-variable.woff2') format('woff2');
+  src: url('./assets/fonts/poppins-400.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Poppins';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('./assets/fonts/poppins-500.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Poppins';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('./assets/fonts/poppins-600.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Poppins';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('./assets/fonts/poppins-700.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Poppins';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url('./assets/fonts/poppins-800.woff2') format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
     U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
     U+2212, U+2215, U+FEFF, U+FFFD;
@@ -834,7 +881,7 @@
    * smaller — at body sizes this tracking would close the words up.
    */
   .display {
-    @apply font-sans font-bold leading-[1.08] tracking-[-0.018em] text-ink;
+    @apply font-sans font-bold leading-[1.08] tracking-[-0.024em] text-ink;
   }
 
   /* --- controls ------------------------------------------------------- */

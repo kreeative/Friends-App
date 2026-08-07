@@ -41,30 +41,32 @@ export default {
         // One typeface. `display` is kept as a name because the app's metrics
         // and invite codes reference it, but it resolves to the same family —
         // there is no second voice on any screen now.
-        sans: ['Nunito', 'system-ui', '-apple-system', 'sans-serif'],
-        display: ['Nunito', 'system-ui', 'sans-serif'],
+        sans: ['Poppins', 'system-ui', '-apple-system', 'sans-serif'],
+        display: ['Poppins', 'system-ui', 'sans-serif'],
       },
       fontSize: {
         /**
          * Scale carries the hierarchy; the tracking only keeps it honest.
          *
-         * These numbers were tuned against Montserrat, which is drawn wide and
-         * needed a lot of negative tracking or it read as spaced-out. Nunito is
-         * narrower and its round terminals already carry the eye from one
-         * letter to the next, so the same values closed the words up into
-         * single shapes — worst at the display sizes, where it was most
-         * visible. Roughly halved throughout.
+         * Poppins is a geometric face built on circles, so it is wide and its
+         * default spacing is generous — at display sizes it reads as set in
+         * neon-sign letters unless it is pulled in. Not as far as Montserrat
+         * needed, because Poppins has a tall x-height that fills the line, but
+         * further than a narrow face would want.
+         *
+         * Line height goes up rather than down for the same reason: the tall
+         * x-height and short descenders make tightly-led Poppins look packed.
          */
-        hero: ['3.5rem', { lineHeight: '1.02', letterSpacing: '-0.022em' }],
-        metric: ['3rem', { lineHeight: '1.02', letterSpacing: '-0.02em' }],
-        h1: ['2rem', { lineHeight: '1.16', letterSpacing: '-0.018em' }],
-        h2: ['1.375rem', { lineHeight: '1.3', letterSpacing: '-0.012em' }],
-        body: ['1rem', { lineHeight: '1.62', letterSpacing: '-0.003em' }],
-        small: ['0.875rem', { lineHeight: '1.55', letterSpacing: '0em' }],
+        hero: ['3.5rem', { lineHeight: '1.05', letterSpacing: '-0.03em' }],
+        metric: ['3rem', { lineHeight: '1.04', letterSpacing: '-0.028em' }],
+        h1: ['2rem', { lineHeight: '1.2', letterSpacing: '-0.024em' }],
+        h2: ['1.375rem', { lineHeight: '1.34', letterSpacing: '-0.016em' }],
+        body: ['1rem', { lineHeight: '1.65', letterSpacing: '-0.006em' }],
+        small: ['0.875rem', { lineHeight: '1.58', letterSpacing: '-0.002em' }],
         // Uppercase stays open rather than going negative: caps have no
         // descenders to separate them, and tightening closes them into one
-        // shape. Nunito's caps are rounder still, so they need the room.
-        label: ['0.8125rem', { lineHeight: '1.3', letterSpacing: '0.01em' }],
+        // shape. Geometric caps are the widest in the set, so they need most.
+        label: ['0.8125rem', { lineHeight: '1.35', letterSpacing: '0.02em' }],
       },
       spacing: {
         // 8px rhythm. Named so the intent survives a refactor.

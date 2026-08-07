@@ -45,12 +45,12 @@ export default function ConsistencyPanel({ rate, trend, cycles, goalCount, group
         </div>
 
         <div className="mt-6 flex items-baseline gap-1">
-          <span className="text-[3.5rem] font-bold leading-none tracking-[-0.022em] [font-variant-numeric:tabular-nums]">
+          <span className="text-[3.5rem] font-bold leading-none tracking-[-0.03em] [font-variant-numeric:tabular-nums]">
             {rate.pct !== null ? rate.pct : '—'}
           </span>
           {/* The unit picked out in colour, as in the reference. It is a glyph
               rather than a label, so the hue carries no meaning on its own. */}
-          <span className="text-[2rem] font-bold leading-none tracking-[-0.015em] text-spark">
+          <span className="text-[2rem] font-bold leading-none tracking-[-0.024em] text-spark">
             %
           </span>
         </div>

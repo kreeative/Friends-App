@@ -195,7 +195,7 @@ export default function Dashboard() {
             <span className="block text-label font-bold uppercase tracking-[0.14em] text-on-accent/70">
               {t('checkin.closes_in', { t: untilLabel(waiting.row.closes_at) })}
             </span>
-            <span className="mt-3 block text-h1 font-bold leading-[1.05] tracking-[-0.015em] text-on-accent">
+            <span className="mt-3 block text-h1 font-bold leading-[1.05] tracking-[-0.024em] text-on-accent">
               {t('home.waiting_on_you', { group: waiting.group.name })}
             </span>
             <span className="mt-5 inline-flex items-center gap-2 rounded-pill bg-on-accent px-5 py-2.5 text-small font-bold text-accent">
