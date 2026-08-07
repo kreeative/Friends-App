@@ -11,17 +11,26 @@ import { createClient } from '@supabase/supabase-js'
  *
  * Entitlement is written by the webhook and only by the webhook.
  */
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? '', {
-  apiVersion: '2024-06-20',
-})
+const REQUIRED = ['STRIPE_SECRET_KEY', 'SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY']
 
-// Service role: needed to read the caller's identity from their JWT. It never
-// reaches the browser — Vercel only exposes variables prefixed VITE_ there.
-const admin = createClient(
-  process.env.SUPABASE_URL ?? '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY ?? '',
-  { auth: { persistSession: false } },
-)
+/**
+ * Both clients are built per request rather than at module scope. With the
+ * variables unset, `createClient('', '')` throws while the module is still
+ * loading, so the function dies before `handler` ever runs: Vercel answers
+ * with its own HTML error page and the browser just sees a button that does
+ * nothing. Building them after the check below lets an unconfigured
+ * deployment say so instead.
+ */
+function clients() {
+  return {
+    stripe: new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2024-06-20' }),
+    // Service role: needed to read the caller's identity from their JWT. It
+    // never reaches the browser — Vercel only exposes VITE_ variables there.
+    admin: createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, {
+      auth: { persistSession: false },
+    }),
+  }
+}
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -29,7 +38,20 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
+  /* Named, not generic. Without the service-role key the identity lookup below
+     fails and the plausible-looking answer is "Not signed in" — which sends
+     someone off to debug their account instead of their Vercel settings. */
+  const missing = REQUIRED.filter((name) => !process.env[name])
+  if (missing.length > 0) {
+    return res.status(503).json({
+      error: `Checkout is not set up yet. Missing from the Vercel environment: ${missing.join(', ')}.`,
+      missing,
+    })
+  }
+
   try {
+    const { stripe, admin } = clients()
+
     const token = (req.headers.authorization ?? '').replace(/^Bearer\s+/i, '')
     if (!token) return res.status(401).json({ error: 'Not signed in' })
 

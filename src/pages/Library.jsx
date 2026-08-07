@@ -36,7 +36,10 @@ export default function Library() {
       setBooks(await listBooks())
       setError(null)
     } catch (e) {
-      setError({ code: 'network', description: e?.message ?? String(e) })
+      /* Keep PostgREST's own code — `explain` reads it to tell "the library SQL
+         was never run" apart from a genuine network failure, and hard-coding
+         'network' here made every cause look like the same one. */
+      setError({ code: e?.code ?? 'network', description: e?.message ?? String(e) })
     } finally {
       setLoading(false)
     }
@@ -61,7 +64,11 @@ export default function Library() {
     const slug = params.get('book')
     let tries = 0
     const tick = async () => {
-      const fresh = await listBooks()
+      // listBooks throws now, and this one runs on a timer rather than from a
+      // render — an unhandled rejection here would surface as a console error
+      // on the success screen and nothing else.
+      const fresh = await listBooks().catch(() => null)
+      if (!fresh) return setParams({}, { replace: true })
       setBooks(fresh)
       const bought = fresh.find((b) => b.slug === slug)
       if (bought?.owned) {

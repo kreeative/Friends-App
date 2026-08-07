@@ -5,6 +5,7 @@ import { useT } from '../../lib/i18n'
 import { Mark } from '../../components/Wordmark'
 import Footer from '../../components/Footer'
 import Stickers from '../../components/Stickers'
+import PageTransition from '../../components/PageTransition'
 
 /**
  * The public site's chrome: one navigation bar, one footer, around whichever
@@ -108,7 +109,9 @@ export default function PublicLayout() {
           </nav>
         </header>
 
-        <Outlet />
+        <PageTransition>
+          <Outlet />
+        </PageTransition>
         <Footer />
       </div>
     </div>

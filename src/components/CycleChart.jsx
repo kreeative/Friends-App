@@ -15,29 +15,59 @@ import { useT } from '../lib/i18n'
  * Nothing here communicates by colour alone — the heights differ, the hatch
  * differs, and the legend names all three.
  */
-const BAR = {
-  submitted: { h: '100%', cls: 'bg-green' },
-  away: {
-    h: '52%',
-    cls: 'bg-[repeating-linear-gradient(45deg,transparent,transparent_3px,rgb(var(--c-muted)/0.5)_3px,rgb(var(--c-muted)/0.5)_6px)] ring-1 ring-inset ring-ink/10',
+
+/**
+ * Two grounds, because the chart now appears on both.
+ *
+ * On the dark card the bars have to be light — the same green capsule that
+ * reads as "in" on white drops to about 2:1 on deep ink and disappears. The
+ * ink card is the theme's own dark hue, so white on it measures 7:1 and the
+ * accent stays legible as a fill.
+ */
+const TONES = {
+  light: {
+    submitted: { h: '100%', cls: 'bg-green' },
+    latest: { h: '100%', cls: 'bg-green' },
+    away: {
+      h: '52%',
+      cls: 'bg-[repeating-linear-gradient(45deg,transparent,transparent_3px,rgb(var(--c-muted)/0.5)_3px,rgb(var(--c-muted)/0.5)_6px)] ring-1 ring-inset ring-ink/10',
+    },
+    pending: { h: '24%', cls: 'border border-dashed border-ink/25' },
+    missed: { h: '24%', cls: 'bg-ink/[0.10]' },
+    pad: 'bg-ink/[0.05]',
   },
-  pending: { h: '24%', cls: 'border border-dashed border-ink/25' },
-  missed: { h: '24%', cls: 'bg-ink/[0.10]' },
+  dark: {
+    submitted: { h: '100%', cls: 'bg-white/90' },
+    /* The most recent cycle picked out, the way the reference marks today —
+       it is the only bar you can still do anything about. In the spark rather
+       than the accent: sun's accent is pink on a deep pink card, which is one
+       hue at two lightnesses and disappears. */
+    latest: { h: '100%', cls: 'bg-spark' },
+    away: {
+      h: '52%',
+      cls: 'bg-[repeating-linear-gradient(45deg,transparent,transparent_3px,rgb(255_255_255/0.45)_3px,rgb(255_255_255/0.45)_6px)] ring-1 ring-inset ring-white/20',
+    },
+    pending: { h: '24%', cls: 'border border-dashed border-white/35' },
+    missed: { h: '24%', cls: 'bg-white/[0.14]' },
+    pad: 'bg-white/[0.07]',
+  },
 }
 
-export default function CycleChart({ rows, count = 12, className = '' }) {
+export default function CycleChart({ rows, count = 12, tone = 'light', className = '' }) {
   const { t } = useT()
+  const T = TONES[tone] ?? TONES.light
   const cells = [...rows].sort((a, b) => a.seq - b.seq).slice(-count)
   const pad = Math.max(0, count - cells.length)
 
   return (
     <div className={className}>
-      <div className="flex h-24 items-end gap-1.5" role="img" aria-label={t('me.last12')}>
+      <div className="flex h-28 items-end gap-1.5" role="img" aria-label={t('me.last12')}>
         {Array.from({ length: pad }).map((_, i) => (
-          <span key={`p${i}`} className="h-[24%] flex-1 rounded-pill bg-ink/[0.05]" />
+          <span key={`p${i}`} className={`h-[24%] flex-1 rounded-pill ${T.pad}`} />
         ))}
-        {cells.map((c) => {
-          const b = BAR[c.status] ?? BAR.missed
+        {cells.map((c, i) => {
+          const newest = i === cells.length - 1
+          const b = (newest && c.status === 'submitted' ? T.latest : T[c.status]) ?? T.missed
           return (
             <span
               key={c.cycle_id}

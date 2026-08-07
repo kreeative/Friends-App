@@ -1,5 +1,18 @@
 import { useT } from '../lib/i18n'
 
+/* The library ships in its own SQL file, separately from the core schema.
+   PostgREST names the relation it could not find, and that name is the only
+   thing telling the two cases apart — sending someone to 01/02/03 when what is
+   missing is the books has them re-running migrations they already have. */
+const LIBRARY_TABLES = [
+  'books',
+  'chapters',
+  'entitlements',
+  'reading_progress',
+  'highlights',
+  'reading_shares',
+]
+
 /**
  * Turns a Supabase error into something a person can act on.
  *
@@ -26,11 +39,16 @@ export function explain(error, t) {
   // people looking for a caching bug instead.
   // `raw` is already lower-cased; comparing error.code directly would miss
   // PGRST205 and 42P01, which arrive upper-case.
-  if (raw.includes('schema cache') || raw.includes('pgrst205') || raw.includes('42p01')) {
-    return t('err.no_tables')
-  }
-  if (raw.includes('does not exist') && raw.includes('relation')) {
-    return t('err.no_tables')
+  const missingTable =
+    raw.includes('schema cache') ||
+    raw.includes('pgrst205') ||
+    raw.includes('42p01') ||
+    (raw.includes('does not exist') && raw.includes('relation'))
+
+  if (missingTable) {
+    return LIBRARY_TABLES.some((name) => raw.includes(name))
+      ? t('err.no_library_tables')
+      : t('err.no_tables')
   }
   return error.description || t('err.signin_failed')
 }

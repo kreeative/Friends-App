@@ -27,6 +27,10 @@ export default {
         field: c('field'),
         'on-field': c('on-field'),
 
+        // The highlight on the dark card — yellow in both themes, because it
+        // is the one colour both palettes already contain.
+        spark: c('spark'),
+
         // Not themeable. "Checked in this week" is a fact about the world,
         // not a matter of taste, so it means the same thing in every theme.
         green: c('green'),

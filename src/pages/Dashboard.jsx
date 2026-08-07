@@ -4,11 +4,11 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useGroup } from '../context/GroupContext'
 import { listBooks } from '../lib/library'
-import { completionRate } from '../lib/stats'
+import { completionRate, rollingRate } from '../lib/stats'
 import { cyclePhase, untilLabel } from '../lib/time'
 import { useT } from '../lib/i18n'
 import { Screen, Section, TopBar } from '../components/ui'
-import CycleChart from '../components/CycleChart'
+import ConsistencyPanel from '../components/ConsistencyPanel'
 import { stickerFor } from '../lib/art'
 
 /**
@@ -140,6 +140,7 @@ export default function Dashboard() {
   // one habit, and splitting the number in two only flatters the better half.
   const mine = useMemo(() => rows.filter((r) => r.user_id === user?.id), [rows, user?.id])
   const rate = completionRate(mine, 14)
+  const trend = useMemo(() => rollingRate(mine, { window: 3, points: 12 }), [mine])
 
   const owned = books.filter((b) => b.owned)
 
@@ -235,57 +236,13 @@ export default function Dashboard() {
       </Section>
 
       <Section title={t('home.you_overall')}>
-        {/**
-         * One headline figure and the shape behind it. The number alone was a
-         * fact with no trend in it — whether the last month went better or
-         * worse than the one before is the part worth knowing, and only the
-         * bars can say that.
-         */}
-        <div className="lg p-6">
-          <div className="flex items-end justify-between gap-6">
-            <div>
-              <div className="text-[3.25rem] font-bold leading-none tracking-[-0.04em] text-ink [font-variant-numeric:tabular-nums]">
-                {rate.pct !== null ? `${rate.pct}%` : '—'}
-              </div>
-              <div className="mt-2 text-small text-muted">
-                {rate.total
-                  ? `${rate.done}/${rate.total} · ${t('me.checked_in')}`
-                  : t('me.no_cycles')}
-              </div>
-            </div>
-            <div className="flex gap-6 text-right">
-              <div>
-                <div className="text-h2 leading-none text-ink [font-variant-numeric:tabular-nums]">
-                  {goals.length}
-                </div>
-                <div className="mt-1.5 text-small text-muted">{t('me.live_goals')}</div>
-              </div>
-              <div>
-                <div className="text-h2 leading-none text-ink [font-variant-numeric:tabular-nums]">
-                  {memberships.length}
-                </div>
-                <div className="mt-1.5 text-small text-muted">{t('home.groups')}</div>
-              </div>
-            </div>
-          </div>
-
-          <CycleChart rows={mine} count={12} className="mt-7" />
-
-          <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1.5 text-small text-muted">
-            <span className="flex items-center gap-2">
-              <span className="h-2.5 w-2.5 rounded-pill bg-green" />
-              {t('me.legend_in')}
-            </span>
-            <span className="flex items-center gap-2">
-              <span className="h-2.5 w-2.5 rounded-pill bg-[repeating-linear-gradient(45deg,transparent,transparent_2px,rgb(var(--c-muted)/0.6)_2px,rgb(var(--c-muted)/0.6)_4px)] ring-1 ring-inset ring-ink/15" />
-              {t('me.legend_away')}
-            </span>
-            <span className="flex items-center gap-2">
-              <span className="h-2.5 w-2.5 rounded-pill bg-ink/[0.14]" />
-              {t('me.legend_missed')}
-            </span>
-          </div>
-        </div>
+        <ConsistencyPanel
+          rate={rate}
+          trend={trend}
+          cycles={mine}
+          goalCount={goals.length}
+          groupCount={memberships.length}
+        />
         <p className="mt-4 text-small text-muted">{t('me.rate_note')}</p>
       </Section>
 

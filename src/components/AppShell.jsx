@@ -7,6 +7,7 @@ import { useT } from '../lib/i18n'
 import { Avatar } from './ui'
 import { Mark } from './Wordmark'
 import Stickers from './Stickers'
+import PageTransition from './PageTransition'
 
 /**
  * Two levels of navigation, because there are two levels of place.
@@ -215,7 +216,10 @@ export default function AppShell() {
       <TopNav />
       <div className="relative z-10">
         <SyncBadge />
-        <Outlet />
+        {/* The chrome above and below stays put; only the page moves. */}
+        <PageTransition>
+          <Outlet />
+        </PageTransition>
       </div>
       <TabBar tabs={activeId ? IN_GROUP(activeId) : MINE} />
     </div>

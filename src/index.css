@@ -87,6 +87,19 @@
     --lg-rim-w: 1px;
     --lg-spec: rgb(255 255 255 / 0.55);
 
+    /**
+     * The highlight on the dark card, and the one colour that is not chosen
+     * per theme.
+     *
+     * The accent cannot do this job. In sea it is yellow on deep teal, which
+     * is excellent; in sun it is pink on deep pink, which is the same hue at
+     * two lightnesses and reads as a smudge. Yellow is the one colour that is
+     * already in both palettes — sun's field, sea's accent — so pinning the
+     * highlight to it is consistent with the theme rather than a third colour
+     * smuggled in. Roughly 9:1 on either ink.
+     */
+    --c-spark: 248 203 2;
+
     /* Not themeable. "Checked in this week" is a fact about the world. */
     --c-green: 21 128 61; /* darkened to 4.8:1 on white, since it labels too */
     --c-negative: 190 30 45;
@@ -499,8 +512,23 @@
   .sticker {
     @apply pointer-events-none absolute select-none animate-bob;
     filter: drop-shadow(0 6px 14px rgb(0 0 0 / 0.28));
-    --rail-x: -12px;
-    width: clamp(46px, 13vw, var(--rail-size, 72px));
+
+    /**
+     * How far onto the page a sticker reaches, rather than how far off it
+     * sits. Those are the same statement only if the sticker is a fixed size,
+     * and it is not — it grows with the viewport while the page gutter stays
+     * at 24px, so any fixed offset that clears the text on a phone lands on
+     * top of it by tablet.
+     *
+     * Solving for the overlap instead pins it: 20px of every sticker is on
+     * the page at every width, with 4px of gutter still between it and the
+     * first glyph. The old -12px was tuned against a hero that sat on a panel
+     * and borrowed the panel's padding as clearance; the hero has no panel
+     * now, and the headline runs to the gutter.
+     */
+    --rail-w: clamp(46px, 13vw, var(--rail-size, 72px));
+    --rail-x: calc(20px - var(--rail-w));
+    width: var(--rail-w);
   }
 
   @media (min-width: 1280px) {
@@ -564,14 +592,47 @@
     @apply chip bg-raised text-muted;
   }
 
+  /* --- motion ----------------------------------------------------------- */
+  /**
+   * One curve for everything that moves: cubic-bezier(0.32, 0.72, 0, 1).
+   *
+   * It is the sheet curve from iOS, and the reason it feels the way it does
+   * is the distribution rather than the duration — most of the distance is
+   * covered in the first third and the last few pixels take the rest. That is
+   * what makes movement read as something settling into place instead of
+   * something stopping. A linear or ease-out curve over the same 400ms feels
+   * mechanical by comparison.
+   */
+  .page-enter {
+    animation: page-enter 420ms cubic-bezier(0.32, 0.72, 0, 1) both;
+  }
+
+  /**
+   * Children arriving just behind their page, in order. The delay is capped
+   * in the markup at a handful of items: past about the fifth nobody reads a
+   * sequence any more, they wait for a page to finish loading.
+   */
+  .stagger > * {
+    animation: page-enter 460ms cubic-bezier(0.32, 0.72, 0, 1) both;
+    animation-delay: calc(var(--i, 0) * 55ms);
+  }
+
   /* --- press ------------------------------------------------------------ */
-  /* Drops one elevation level and shrinks slightly. Physical feedback does
-     more for perceived quality than any amount of static styling. */
+  /**
+   * Fast in, slow out. The asymmetry is the entire effect: the press answers
+   * in 90ms so it feels connected to the finger, and the release takes 260ms
+   * on the settle curve so it feels sprung. A symmetric transition — which is
+   * what this was — reads as an animation playing, not as a button.
+   */
   .press {
-    @apply transition-[transform,box-shadow] duration-150 ease-out;
+    transition:
+      transform 260ms cubic-bezier(0.32, 0.72, 0, 1),
+      box-shadow 260ms ease,
+      opacity 200ms ease;
   }
   .press:active {
-    transform: scale(0.98);
+    transform: scale(0.97);
+    transition-duration: 90ms;
     box-shadow: var(--e-raised);
   }
   .card-quiet {
@@ -618,7 +679,16 @@
            disabled:pointer-events-none disabled:opacity-40;
   }
   .btn-primary {
-    @apply btn bg-accent text-on-accent hover:opacity-90 active:bg-accent-pressed active:scale-[0.985];
+    @apply btn bg-accent text-on-accent hover:opacity-90 active:bg-accent-pressed active:scale-[0.97];
+  }
+
+  /**
+   * `.btn` declares its own transition and sits after `.press` in this file,
+   * so at equal specificity it wins — which silently cost every button the
+   * fast-in half of the press. Restating the duration here puts it back.
+   */
+  .btn:active {
+    transition-duration: 90ms;
   }
   /* Secondary is quiet by default and only borrows a wash on press. */
   .btn-ghost {
@@ -655,6 +725,20 @@
   }
 }
 
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    /* Ten pixels and half a percent of scale. Both are small enough that
+       nobody sees them happen — what they see is the page arriving with
+       weight rather than being swapped. */
+    transform: translate3d(0, 10px, 0) scale(0.994);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 /**
  * Reduced motion keeps the fades and drops the movement — a cross-fade still
  * communicates that content arrived, without anything sliding or scaling.
@@ -667,6 +751,19 @@
     to {
       opacity: 1;
     }
+  }
+
+  @keyframes page-enter {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  .stagger > * {
+    animation-delay: 0ms;
   }
 
   .press:active {

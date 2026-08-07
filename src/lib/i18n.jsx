@@ -198,6 +198,8 @@ const STRINGS = {
     'me.rate_note':
       'A rate, not a streak. A bad cycle moves this a few points — it never resets anything to zero.',
     'me.last12': 'Last 12 cycles',
+    'me.rate_window': 'last 14 cycles',
+    'me.rate_note_short': '3-cycle average',
     'me.legend_in': 'In',
     'me.legend_away': 'Away',
     'me.legend_missed': 'Missed',
@@ -228,12 +230,15 @@ const STRINGS = {
     'err.load_failed': 'Couldn’t reach the server. Your connection may be down.',
     'err.no_tables':
       'The database is empty — the tables have not been created yet. In Supabase, open the SQL Editor and run supabase/01_schema.sql, then 02_functions.sql, then 03_policies.sql, pasting the contents of each file.',
+    'err.no_library_tables':
+      'The library tables do not exist yet. In Supabase, open the SQL Editor and run supabase/07_books_all_in_one.sql — a single paste that creates the tables and adds the three books.',
     'err.retry': 'Try again',
     'err.loading': 'Loading',
 
     'nav.library': 'Library',
     'library.sub': 'Three books, read here',
-    'library.empty': 'No books yet. They will appear here when published.',
+    'library.empty':
+      'The catalogue is empty. In Supabase, open the SQL Editor and run supabase/07_books_all_in_one.sql — it adds the three books.',
     'library.owned': 'Yours',
     'library.read': 'Read',
     'library.read_free': 'Read chapter 1 free',
@@ -460,6 +465,8 @@ const STRINGS = {
     'me.rate_note':
       'Un taux, pas une série. Un mauvais cycle fait bouger ça de quelques points — rien ne repart jamais de zéro.',
     'me.last12': '12 derniers cycles',
+    'me.rate_window': '14 derniers cycles',
+    'me.rate_note_short': 'moyenne sur 3 cycles',
     'me.legend_in': 'Fait',
     'me.legend_away': 'Absent',
     'me.legend_missed': 'Manqué',
@@ -490,12 +497,15 @@ const STRINGS = {
     'err.load_failed': 'Impossible de joindre le serveur. Ta connexion est peut-être coupée.',
     'err.no_tables':
       'La base est vide — les tables n’ont pas encore été créées. Dans Supabase, ouvre l’éditeur SQL et exécute supabase/01_schema.sql, puis 02_functions.sql, puis 03_policies.sql, en collant le contenu de chaque fichier.',
+    'err.no_library_tables':
+      'Les tables de la bibliothèque n’existent pas encore. Dans Supabase, ouvre l’éditeur SQL et exécute supabase/07_books_all_in_one.sql — un seul copier-coller qui crée les tables et ajoute les trois livres.',
     'err.retry': 'Réessayer',
     'err.loading': 'Chargement',
 
     'nav.library': 'Lectures',
     'library.sub': 'Trois livres, à lire ici',
-    'library.empty': 'Aucun livre pour l’instant. Ils apparaîtront ici une fois publiés.',
+    'library.empty':
+      'Le catalogue est vide. Dans Supabase, ouvre l’éditeur SQL et exécute supabase/07_books_all_in_one.sql — il ajoute les trois livres.',
     'library.owned': 'À toi',
     'library.read': 'Lire',
     'library.read_free': 'Lire le chapitre 1',

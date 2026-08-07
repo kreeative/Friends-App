@@ -11,11 +11,20 @@ import { supabase } from './supabase'
  */
 
 export async function listBooks() {
-  const [{ data: books }, { data: owned }, { data: progress }] = await Promise.all([
+  const [{ data: books, error }, { data: owned }, { data: progress }] = await Promise.all([
     supabase.from('books').select('*').eq('published', true).order('created_at'),
     supabase.from('entitlements').select('book_id'),
     supabase.from('reading_progress').select('book_id, chapter_id, scroll_pct'),
   ])
+
+  /* The catalogue read is the one that has to be believed. Swallowing this
+     turned a missing table into an empty array, and the page then said "no
+     books yet" — a sentence that is both false and unactionable, because the
+     books do exist and the fix is to run supabase/07_books_all_in_one.sql.
+     The other two are left soft on purpose: with no entitlements table you
+     should still see the catalogue and the prices, just nothing marked as
+     owned. */
+  if (error) throw error
 
   const ownedIds = new Set((owned ?? []).map((e) => e.book_id))
   const progressBy = Object.fromEntries((progress ?? []).map((p) => [p.book_id, p]))
@@ -109,11 +118,27 @@ export async function startCheckout(bookId) {
   const token = sess?.session?.access_token
   if (!token) return { error: 'Not signed in' }
 
-  const res = await fetch('/api/checkout', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ book_id: bookId }),
-  })
+  let res
+  try {
+    res = await fetch('/api/checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ book_id: bookId }),
+    })
+  } catch (e) {
+    return { error: `Could not reach the checkout endpoint. ${e?.message ?? e}` }
+  }
+
+  /* /api/checkout is a serverless function, so it only exists on the deployed
+     site. Anywhere else — `vite dev`, a plain static host — the request falls
+     through to index.html and a page of HTML comes back with a 200. Parsing
+     that and reporting "no URL in the response" is true and useless; say what
+     actually happened. */
+  if (!(res.headers.get('content-type') ?? '').includes('application/json')) {
+    return {
+      error: `/api/checkout did not answer as an API (HTTP ${res.status}). Buying works on the deployed site — not on a local dev server.`,
+    }
+  }
 
   const payload = await res.json().catch(() => ({}))
   if (!res.ok) return { error: payload.error || `Checkout failed (${res.status})` }
