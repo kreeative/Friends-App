@@ -4,7 +4,9 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from './AuthContext'
 import { cyclePhase } from '../lib/time'
 
-const GroupCtx = createContext(null)
+/* Exported so a test or a preview can supply a value without standing up a
+   Supabase client. Application code should use the hook. */
+export const GroupCtx = createContext(null)
 export const useGroup = () => useContext(GroupCtx)
 
 /**
@@ -32,10 +34,37 @@ export function GroupProvider({ children }) {
   const [members, setMembers] = useState([])
   const [cycles, setCycles] = useState([])
   const [goals, setGoals] = useState([])
+  const [soloGoals, setSoloGoals] = useState([])
   const [statuses, setStatuses] = useState([])
   const [nudges, setNudges] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+
+  /**
+   * Goals with no group at all.
+   *
+   * Loaded here rather than inside loadGroup, because they belong to the
+   * person and not to whichever group happens to be open — they have to be
+   * available on /goals, where there is no group, and they must survive
+   * switching between groups without a refetch.
+   *
+   * Failure is soft. These are additive, and someone who has not run the
+   * migration yet should still get their groups rather than an error screen.
+   */
+  const loadSolo = useCallback(async () => {
+    if (!user) return setSoloGoals([])
+    const { data } = await supabase
+      .from('goals')
+      .select('*')
+      .is('group_id', null)
+      .eq('owner_id', user.id)
+      .order('created_at')
+    setSoloGoals(data ?? [])
+  }, [user?.id])
+
+  useEffect(() => {
+    loadSolo()
+  }, [loadSolo])
 
   const loadMemberships = useCallback(async () => {
     if (!user) {
@@ -94,12 +123,10 @@ export function GroupProvider({ children }) {
         .eq('group_id', activeId)
         .order('seq', { ascending: false })
         .limit(24),
-      supabase
-        .from('goals')
-        .select('*')
-        .eq('group_id', activeId)
-        .in('status', ['active', 'paused'])
-        .order('created_at'),
+      /* Every status, not just active and paused. "Past goals" is a screen
+         now, and a finished goal that vanishes from the app the moment you
+         finish it is the one piece of evidence you most wanted to keep. */
+      supabase.from('goals').select('*').eq('group_id', activeId).order('created_at'),
       supabase.from('member_cycle_status').select('*').eq('group_id', activeId),
       supabase.from('nudges').select('*').eq('group_id', activeId).in('state', ['pending', 'claimed']),
       ])
@@ -136,11 +163,22 @@ export function GroupProvider({ children }) {
     [cycles],
   )
 
+  /* Live only. Everything downstream — the board, the check-in, the count on
+     the dashboard — means "things I am currently on the hook for", and that
+     stopped being the same set as `goals` once the finished ones stayed. */
+  const live = useMemo(() => goals.filter((g) => g.status === 'active' || g.status === 'paused'), [goals])
+
   const myGoals = useMemo(
-    () => goals.filter((g) => g.kind === 'personal' && g.owner_id === user?.id),
-    [goals, user?.id],
+    () => live.filter((g) => g.kind === 'personal' && g.owner_id === user?.id),
+    [live, user?.id],
   )
-  const groupGoals = useMemo(() => goals.filter((g) => g.kind === 'group'), [goals])
+  const groupGoals = useMemo(() => live.filter((g) => g.kind === 'group'), [live])
+
+  /** Whether you can delete the group you are looking at. */
+  const myRole = useMemo(
+    () => memberships.find((m) => m.group_id === activeId)?.role ?? null,
+    [memberships, activeId],
+  )
 
   const statusesFor = useCallback(
     (uid) => statuses.filter((s) => s.user_id === uid),
@@ -161,14 +199,21 @@ export function GroupProvider({ children }) {
     goals,
     myGoals,
     groupGoals,
+    soloGoals,
+    myRole,
     statuses,
     statusesFor,
     nudges,
     reload: async () => {
-      await loadMemberships()
-      await loadGroup()
+      await Promise.all([loadMemberships(), loadGroup(), loadSolo()])
     },
-    reloadGroup: loadGroup,
+    /* Anything that writes a goal may have written a solo one, and the form
+       is shared between both screens — so this refreshes both rather than
+       making every caller work out which list it just changed. */
+    reloadGroup: async () => {
+      await Promise.all([loadGroup(), loadSolo()])
+    },
+    reloadSolo: loadSolo,
   }
 
   return <GroupCtx.Provider value={value}>{children}</GroupCtx.Provider>

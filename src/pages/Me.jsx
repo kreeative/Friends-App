@@ -1,23 +1,30 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useGroup } from '../context/GroupContext'
-import { completionRate, consecutiveMisses } from '../lib/stats'
+import { completionRate, consecutiveMisses, rollingRate } from '../lib/stats'
 import { useT } from '../lib/i18n'
-import { Screen, Section, Sheet, Stat, TopBar } from '../components/ui'
-import HistoryStrip, { HistoryLegend } from '../components/HistoryStrip'
-import GoalForm from '../components/GoalForm'
+import { Screen, Section, TopBar } from '../components/ui'
+import ConsistencyPanel from '../components/ConsistencyPanel'
 
 export default function Me() {
   const { user, profile, signOut } = useAuth()
-  const { statusesFor, myGoals, reloadGroup } = useGroup()
+  const { statusesFor, myGoals, soloGoals, groups, reloadGroup } = useGroup()
   const { t } = useT()
-  const [resetOpen, setResetOpen] = useState(false)
+  const navigate = useNavigate()
   const [busy, setBusy] = useState(false)
 
   const rows = statusesFor(user?.id)
   const rate = completionRate(rows, 14)
   const quiet = consecutiveMisses(rows)
+  const trend = useMemo(() => rollingRate(rows, { window: 3, points: 12 }), [rows])
+
+  /* Both kinds count. Someone running three solo goals and none in a group is
+     not a person with no goals, which is what this said before. */
+  const liveGoals =
+    myGoals.filter((g) => g.status === 'active').length +
+    soloGoals.filter((g) => g.status === 'active').length
 
   /**
    * Frictionless re-entry.
@@ -36,7 +43,9 @@ export default function Me() {
       .eq('status', 'active')
     await reloadGroup()
     setBusy(false)
-    setResetOpen(true)
+    // Straight to the form, on its own page. This used to open a sheet on top
+    // of this screen, which is the container the goal form has just left.
+    navigate('/goals/new')
   }
 
   return (
@@ -56,36 +65,40 @@ export default function Me() {
         </div>
       )}
 
-      <Section title={t('me.last14')}>
-        <div className="flex gap-6">
-          <Stat
-            value={rate.total ? `${rate.done}/${rate.total}` : '—'}
-            label={t('me.checked_in')}
-            hint={rate.pct !== null ? `${rate.pct}%` : t('me.no_cycles')}
-          />
-          <Stat
-            value={myGoals.filter((g) => g.status === 'active').length}
-            label={t('me.live_goals')}
-          />
-          <Stat value={rate.away} label={t('me.away')} hint={t('me.not_counted')} />
+      {/* The same two cards as the dashboard. This screen was still three
+          plain numbers with a yellow rule under each and a bare strip of
+          circles — the old design, left behind when the dashboard moved. */}
+      <Section title={t('me.consistency')}>
+        <ConsistencyPanel
+          rate={rate}
+          trend={trend}
+          cycles={rows}
+          goalCount={liveGoals}
+          groupCount={groups.length}
+        />
+        <p className="mt-4 text-small text-muted">{t('me.rate_note')}</p>
+      </Section>
+
+      <Section title={t('me.account')}>
+        <div className="lg px-5">
+          <div className="list">
+            <Link to="/goals" className="press flex items-center gap-4 py-5 no-underline">
+              <span className="flex-1 text-body text-ink">{t('me.your_goals')}</span>
+              <span className="text-small text-muted">{soloGoals.length || ''} →</span>
+            </Link>
+            <Link to="/library" className="press flex items-center gap-4 py-5 no-underline">
+              <span className="flex-1 text-body text-ink">{t('nav.library')}</span>
+              <span className="text-small text-muted">→</span>
+            </Link>
+            <button
+              onClick={signOut}
+              className="press flex w-full items-center gap-4 py-5 text-left"
+            >
+              <span className="flex-1 text-body text-ink">{t('me.sign_out')}</span>
+            </button>
+          </div>
         </div>
-        <p className="mt-6 text-small text-muted">{t('me.rate_note')}</p>
       </Section>
-
-      <Section title={t('me.last12')}>
-        <HistoryStrip rows={rows} count={12} />
-        <HistoryLegend />
-      </Section>
-
-      <Section>
-        <button onClick={signOut} className="btn-ghost press">
-          {t('me.sign_out')}
-        </button>
-      </Section>
-
-      <Sheet open={resetOpen} onClose={() => setResetOpen(false)} title={t('me.one_thing')}>
-        <GoalForm onDone={() => setResetOpen(false)} />
-      </Sheet>
     </Screen>
   )
 }

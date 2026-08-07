@@ -12,6 +12,7 @@ import Dashboard from './pages/Dashboard'
 import Board from './pages/Board'
 import Checkin from './pages/Checkin'
 import Goals from './pages/Goals'
+import GoalEditor from './pages/GoalEditor'
 import Me from './pages/Me'
 import Settings from './pages/Settings'
 import Legal from './pages/Legal'
@@ -121,10 +122,22 @@ function Gate() {
         <Route path="library" element={<Library />} />
         <Route path="library/:slug" element={<Reader />} />
 
+        {/**
+         * Goals with no group at all. The app assumed a group was the only
+         * place a goal could live, so keeping one of your own meant finding
+         * people first — the wrong order, and the reason someone could sign
+         * up and immediately have nothing they were able to do.
+         */}
+        <Route path="goals" element={<Goals />} />
+        <Route path="goals/new" element={<GoalEditor />} />
+        <Route path="goals/:goalId/edit" element={<GoalEditor />} />
+
         <Route path="g/:groupId">
           <Route index element={<Board />} />
           <Route path="checkin" element={<Checkin />} />
           <Route path="goals" element={<Goals />} />
+          <Route path="goals/new" element={<GoalEditor />} />
+          <Route path="goals/:goalId/edit" element={<GoalEditor />} />
           <Route path="settings" element={<Settings />} />
         </Route>
       </Route>

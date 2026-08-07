@@ -635,6 +635,76 @@
     transition-duration: 90ms;
     box-shadow: var(--e-raised);
   }
+
+  /**
+   * The rest of the interaction layer.
+   *
+   * The page moved and the press answered, and in between those two there was
+   * nothing — every card, row and chip was static until the moment you
+   * committed to it. Hover is where an interface tells you what is live
+   * before you touch it, and on a phone the same transitions carry the tap.
+   *
+   * Everything below uses the one curve, and everything below is small. Two
+   * pixels of lift and a percent of scale is the entire budget; past that it
+   * stops reading as responsiveness and starts reading as a website from 2013.
+   */
+  @media (hover: hover) {
+    .card:hover,
+    .lg-lift:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--e-float);
+    }
+
+    /* Rows do not lift — they are in a stack, and lifting one out of a divided
+       list breaks the hairlines either side of it. They warm instead. */
+    .list > a:hover,
+    .list > button:hover,
+    .list > .press:hover {
+      background: rgb(var(--c-ink) / 0.03);
+    }
+  }
+
+  .card,
+  .lg-lift {
+    transition:
+      transform 260ms cubic-bezier(0.32, 0.72, 0, 1),
+      box-shadow 260ms ease;
+  }
+
+  .list > a,
+  .list > button,
+  .list > .press {
+    /* The row's own inset, so the wash has edges that follow the card it is
+       inside rather than stopping short of it. */
+    margin-inline: -0.75rem;
+    padding-inline: 0.75rem;
+    border-radius: theme('borderRadius.inner');
+    transition: background-color 200ms ease;
+  }
+
+  /**
+   * A chip that has just been chosen. The toggle in the goal form was the
+   * clearest case: two pills where the selection moved between them with no
+   * indication that anything had happened, on a form where several of those
+   * choices change what the rest of the form asks for.
+   */
+  .chip {
+    transition:
+      background-color 200ms ease,
+      color 200ms ease,
+      transform 260ms cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  .chip-accent {
+    animation: chip-pick 320ms cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  /* The small controls on a goal card. Named because there are now four of
+     them across two states and they were three copies of the same string. */
+  .goal-action {
+    @apply inline-flex items-center rounded-pill px-3 py-1.5 text-small text-muted no-underline
+           transition-colors duration-200 ease-settle hover:bg-ink/[0.05] hover:text-ink;
+  }
+
   .card-quiet {
     @apply rounded-card border border-hairline bg-surface p-6;
   }
@@ -725,6 +795,20 @@
   }
 }
 
+/* Overshoots by a percent and settles. Small enough to register as a
+   confirmation rather than as a bounce. */
+@keyframes chip-pick {
+  0% {
+    transform: scale(0.94);
+  }
+  55% {
+    transform: scale(1.01);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
 @keyframes page-enter {
   from {
     opacity: 0;
@@ -766,8 +850,14 @@
     animation-delay: 0ms;
   }
 
-  .press:active {
+  .press:active,
+  .card:hover,
+  .lg-lift:hover {
     transform: none;
+  }
+
+  .chip-accent {
+    animation: none;
   }
 
   [style*='--i'] {

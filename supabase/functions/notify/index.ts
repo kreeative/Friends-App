@@ -75,19 +75,36 @@ async function sendDigests() {
     for (const m of members ?? []) {
       const { data: goals } = await supabase
         .from('goals')
-        .select('commitment, target_per_cycle, cadence')
+        .select('commitment, target_per_cycle, cadence, trigger_when, trigger_where, remind')
         .eq('group_id', cycle.group_id)
         .eq('status', 'active')
         .or(`owner_id.eq.${m.user_id},kind.eq.group`)
 
-      if (!goals?.length) continue
+      // `remind` is per goal and opt-out. A muted goal should not be the
+      // reason an email goes out at all, so filter before deciding to send.
+      const listed = (goals ?? []).filter((g: any) => g.remind !== false)
+      if (!listed.length) continue
       if (!(await claim(m.user_id, cycle.id, 'digest'))) continue
 
       const to = await emailFor(m.user_id)
       if (!to) continue
 
-      const lines = goals
-        .map((g) => `· ${g.commitment}${g.cadence === 'recurring' ? ` (${g.target_per_cycle}×)` : ''}`)
+      /**
+       * The trigger goes in the email.
+       *
+       * The app has no idea where anyone is and is never going to have one —
+       * so the "when and where" on a goal is a sentence you wrote to
+       * yourself, and the only way it can do any work is for something to
+       * read it back to you shortly before the moment it describes. This
+       * message is that something. Without it the field was a note nobody
+       * ever saw again, which is presumably why it looked like tracking.
+       */
+      const lines = listed
+        .map((g: any) => {
+          const times = g.cadence === 'recurring' ? ` (${g.target_per_cycle}×)` : ''
+          const trigger = [g.trigger_when, g.trigger_where].filter(Boolean).join(', ')
+          return `· ${g.commitment}${times}${trigger ? `\n    ${trigger}` : ''}`
+        })
         .join('\n')
 
       await send(

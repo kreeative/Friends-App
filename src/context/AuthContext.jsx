@@ -2,7 +2,9 @@ import { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { localTimezone } from '../lib/time'
 
-const AuthCtx = createContext(null)
+/* Exported so a test or a preview can supply a value without a live session.
+   Application code should use the hook. */
+export const AuthCtx = createContext(null)
 export const useAuth = () => useContext(AuthCtx)
 
 /**

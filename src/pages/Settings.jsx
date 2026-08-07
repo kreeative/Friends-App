@@ -8,6 +8,7 @@ import { useT } from '../lib/i18n'
 import { Avatar, Screen, Section, Stat, TopBar } from '../components/ui'
 import HistoryStrip from '../components/HistoryStrip'
 import ThemePicker from '../components/ThemePicker'
+import DangerZone from '../components/DangerZone'
 import { LegalLinks } from './Legal'
 
 const DAYS_FR = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi']
@@ -144,6 +145,13 @@ export default function Settings() {
           </div>
         </Section>
       )}
+
+      {/* Last, and under its own heading. Leaving was previously impossible
+          without signing out of the product, which is why people were signing
+          out of the product. */}
+      <Section title={t('settings.leaving')}>
+        <DangerZone />
+      </Section>
 
       <Section>
         <LegalLinks />
