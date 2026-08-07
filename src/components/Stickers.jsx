@@ -94,7 +94,24 @@ export default function Stickers({ set = 'page' }) {
   if (!conf?.items.length) return null
 
   return (
-    <div className="pointer-events-none absolute inset-0 z-20" aria-hidden="true">
+    /**
+     * `overflow-hidden` is load-bearing, not tidiness.
+     *
+     * Every sticker deliberately hangs off the page — only about 20px of each
+     * stays on it. Unclipped, that overhang is real layout: the document
+     * became 35px wider than a phone viewport and 63px wider than a tablet
+     * one, which is a horizontal scrollbar and, worse, an off-centre site.
+     * Everything in normal flow centres inside the *document*, so it all
+     * shifted left, while the `fixed` tab bar centred on the viewport and
+     * stayed put — which is why the page looked subtly lopsided rather than
+     * obviously broken.
+     *
+     * Clipping here rather than on .ground or body on purpose: an ancestor
+     * with `overflow: hidden` silently kills `position: sticky`, and the
+     * header above this is sticky. This wrapper contains nothing but
+     * decoration, so it can be clipped without side effects.
+     */
+    <div className="pointer-events-none absolute inset-0 z-20 overflow-hidden" aria-hidden="true">
       {/* The rails hang off this, not off the viewport. */}
       <div className="relative mx-auto h-full" style={{ maxWidth: conf.column }}>
         {conf.items.map((s) => (
