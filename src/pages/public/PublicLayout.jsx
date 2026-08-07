@@ -29,10 +29,13 @@ export default function PublicLayout() {
   // A menu that survives navigation is a menu covering the page you asked for.
   useEffect(() => setOpen(false), [pathname])
 
-  // A flat ground. Nothing is washed, blurred or drifting behind any of this
-  // any more — the stickers are the whole decoration.
+  // The ground is the theme's field colour, full bleed. That is also what
+  // finally makes the glass real: a sheet over flat white has nothing to
+  // bend, so the blur was a no-op and the panels were carried entirely by
+  // their rim. Over a saturated ground there is something to refract, which
+  // is the whole reason the material exists.
   return (
-    <div className="relative min-h-dvh bg-bg">
+    <div className="relative min-h-dvh bg-field">
       {/* Every public page, not just the landing hero. */}
       <Stickers set="page" />
 

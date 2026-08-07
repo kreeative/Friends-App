@@ -18,48 +18,37 @@ export default function Home() {
     <>
       <section className="relative mx-auto w-full max-w-5xl animate-rise px-6 pb-20 pt-10 md:pb-24 md:pt-14">
         {/**
-         * The hero is a block of the theme's field colour rather than a white
-         * panel with a small coloured button on it. Colour used as a sliver
-         * is decoration; colour used at this size is the page's voice, which
-         * is the whole point of a two-colour theme.
-         *
-         * Everything inside is black — 13.5:1 on yellow, 6.5:1 on blue — so
-         * the loudest surface on the site is also its most legible one.
+         * Glass over the coloured ground, not a block of colour itself. The
+         * page carries the theme; this sheet sits on it and bends it.
          */}
-        <div className="relative max-w-[40rem] rounded-card bg-field p-8 text-on-field md:p-12">
+        <div className="lg relative max-w-[40rem] p-8 md:p-12">
           {/* No eyebrow. The headline is the first thing in the block now —
               a small grey qualifier above a statement this size only softens
               it, and the audience it named is said better by the page. */}
-          <h1 className="max-w-[14ch] text-[clamp(2.5rem,6.5vw,4.25rem)] font-bold leading-[0.98] tracking-[-0.035em] text-on-field">
+          <h1 className="max-w-[14ch] text-[clamp(2.5rem,6.5vw,4.25rem)] font-bold leading-[0.98] tracking-[-0.035em] text-ink">
             {c.hero.title}
           </h1>
-          <p className="mt-7 max-w-[44ch] text-[1.0625rem] leading-[1.6] text-on-field/80">
+          <p className="mt-7 max-w-[44ch] text-[1.0625rem] leading-[1.6] text-ink/75">
             {c.hero.body}
           </p>
 
           <div className="mt-9 flex flex-wrap items-center gap-3">
-            {/* Inverted: black pill on the field, so the primary action is the
-                one thing here that is not the field colour. */}
-            <Link
-              to="/signin"
-              className="press inline-flex items-center rounded-pill bg-on-field px-8 py-3.5 text-body font-bold text-field no-underline"
-            >
+            {/* The accent, which is the theme's other colour: yellow when the
+                ground is blue, pink when the ground is yellow. Either way the
+                button is never the colour it is sitting on. */}
+            <Link to="/signin" className="btn-primary press w-auto px-8">
               {c.hero.cta}
             </Link>
-            <Link
-              to="/how-it-works"
-              className="press inline-flex items-center rounded-pill px-8 py-3.5 text-body font-bold text-on-field no-underline"
-              style={{ boxShadow: 'inset 0 0 0 2px rgb(var(--c-on-field) / 0.35)' }}
-            >
+            <Link to="/how-it-works" className="btn-outline press w-auto px-8">
               {c.hero.secondary}
             </Link>
           </div>
-          <p className="mt-5 text-small text-on-field/70">{c.hero.note}</p>
+          <p className="mt-5 text-small text-muted">{c.hero.note}</p>
         </div>
       </section>
 
       <section className="mx-auto w-full max-w-5xl px-6 pb-16">
-        <div className="panel grid gap-8 p-8 md:grid-cols-[1fr_1.5fr] md:p-12">
+        <div className="lg grid gap-8 p-8 md:grid-cols-[1fr_1.5fr] md:p-12">
           <div>
             <p className="eyebrow">{c.problem.eyebrow}</p>
             <Mark size={96} className="mt-7" />
@@ -74,7 +63,7 @@ export default function Home() {
       </section>
 
       <section className="relative mx-auto w-full max-w-5xl px-6 pb-16">
-        <div className="panel relative px-6 py-16 text-center">
+        <div className="lg relative px-6 py-16 text-center">
           <h2 className="display mx-auto max-w-[18ch] text-[clamp(1.875rem,5vw,2.75rem)]">
             {c.close.title}
           </h2>
