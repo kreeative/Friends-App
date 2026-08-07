@@ -173,21 +173,34 @@ export default function Dashboard() {
         sub={waiting ? undefined : t('home.sub')}
       />
 
+      {/**
+       * The one block of colour on the page, and it is the size of the thing
+       * it is announcing. A dashboard of white rows is a filing cabinet; the
+       * field colour lands here because this is the only row that is asking
+       * for something.
+       *
+       * Black on the field by system rule — 13.5:1 on yellow, 6.5:1 on blue —
+       * so the loudest element is also the most legible one, which is not
+       * usually how loud elements go.
+       */}
       {waiting && (
         <div className="animate-rise pt-6">
           <Link
             to={`/g/${waiting.group.id}/checkin`}
-            className="press group flex items-center justify-between gap-4 rounded-card bg-ink px-5 py-4 no-underline"
+            className="press group block rounded-card bg-field p-6 no-underline transition-transform duration-200 ease-settle hover:-translate-y-0.5 sm:p-7"
           >
-            <span className="min-w-0">
-              <span className="block truncate text-body font-semibold text-bg">
-                {t('home.waiting_on_you', { group: waiting.group.name })}
-              </span>
-              <span className="mt-0.5 block text-small text-bg/60">
-                {t('checkin.closes_in', { t: untilLabel(waiting.row.closes_at) })}
+            <span className="block text-label font-bold uppercase tracking-[0.14em] text-on-field/70">
+              {t('checkin.closes_in', { t: untilLabel(waiting.row.closes_at) })}
+            </span>
+            <span className="mt-3 block text-h1 font-bold leading-[1.05] tracking-[-0.03em] text-on-field">
+              {t('home.waiting_on_you', { group: waiting.group.name })}
+            </span>
+            <span className="mt-5 inline-flex items-center gap-2 rounded-pill bg-on-field px-5 py-2.5 text-small font-bold text-field">
+              {t('board.check_in')}
+              <span aria-hidden="true" className="transition-transform duration-200 group-hover:translate-x-0.5">
+                →
               </span>
             </span>
-            <span className="chip-accent shrink-0">{t('board.check_in')}</span>
           </Link>
         </div>
       )}

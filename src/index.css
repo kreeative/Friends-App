@@ -8,11 +8,18 @@
  * Two independent choices, and nothing else:
  *
  *   ground   light or dark        [data-mode]
- *   accent   pink, yellow or blue [data-accent]
+ *   theme    sun or sea           [data-theme]
  *
- * Only one accent is ever on screen. That is the whole point of splitting it
- * out: a page that shows pink and yellow and blue at once has no accent, it
- * has decoration. Green survives as the single exception, because "checked
+ * A theme is a PAIR: a field for large blocks, an accent for what you click.
+ *
+ *   sun   yellow field, pink accent
+ *   sea   blue field, yellow accent
+ *
+ * Two colours, never three, and never more than two on a screen. Yellow sits
+ * in both because it is the one colour here that cannot carry the accent job
+ * alone — 1.4:1 on white, so as a small mark it vanishes — while being the
+ * strongest field in the set: black on yellow is 13.5:1, the highest
+ * contrast available. It leads as a surface; pink or blue leads as an action. Green survives as the single exception, because "checked
  * in this week" is a fact about the world rather than a matter of taste, and
  * it has to keep meaning the same thing in every theme.
  *
@@ -138,24 +145,28 @@
    * accent already carries black text, so darkening the press state would
    * walk it towards failing AA on its own label.
    */
+  /* sun — yellow field, pink accent. The warm one. */
   :root,
-  :root[data-accent='pink'] {
-    --c-accent: 222 53 120; /* #DE3578 */
+  :root[data-theme='sun'] {
+    --c-field: 248 203 2; /* #F8CB02 — black on it: 13.5:1 */
+    --c-accent: 222 53 120; /* #DE3578 — black on it:  4.9:1 */
     --c-accent-pressed: 232 90 147; /* #E85A93 */
   }
-  :root[data-accent='yellow'] {
-    --c-accent: 248 203 2; /* #F8CB02 */
+
+  /* sea — blue field, yellow accent. The cool one. */
+  :root[data-theme='sea'] {
+    --c-field: 0 157 185; /* #009DB9 — black on it:  6.5:1 */
+    --c-accent: 248 203 2; /* #F8CB02 — black on it: 13.5:1 */
     --c-accent-pressed: 255 219 61; /* #FFDB3D */
   }
-  :root[data-accent='blue'] {
-    --c-accent: 0 157 185; /* #009DB9 */
-    --c-accent-pressed: 34 186 214; /* #22BAD6 */
-  }
 
-  /* Black on all three. Derived once here rather than repeated per accent,
-     because it is a property of the system, not of the colour. */
+  /* Black on every field and every accent. Declared once, because it is a
+     property of the system rather than of any one colour — and it is the one
+     rule that keeps a saturated palette legible without re-measuring per
+     screen. */
   :root {
     --c-on-accent: 0 0 0;
+    --c-on-field: 0 0 0;
     /* The lit top edge of every glass surface picks up the accent. It is the
        only place the accent appears without being a fill. */
     --glass-sheen: rgb(var(--c-accent) / 0.22);

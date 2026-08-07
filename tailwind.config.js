@@ -18,11 +18,14 @@ export default {
         muted: c('muted'),
         hairline: c('hairline'),
 
-        // The chosen accent — pink, yellow or blue, one at a time, never
-        // together. A fill only: never available as a text colour.
+        // The theme's accent — what you click. A fill only, never text.
         accent: c('accent'),
         'accent-pressed': c('accent-pressed'),
         'on-accent': c('on-accent'),
+
+        // The theme's field — large blocks. Also a fill, also carries black.
+        field: c('field'),
+        'on-field': c('on-field'),
 
         // Not themeable. "Checked in this week" is a fact about the world,
         // not a matter of taste, so it means the same thing in every theme.

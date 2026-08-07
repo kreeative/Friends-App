@@ -17,22 +17,44 @@ export default function Home() {
   return (
     <>
       <section className="relative mx-auto w-full max-w-5xl animate-rise px-6 pb-20 pt-10 md:pb-24 md:pt-14">
-        <div className="panel relative max-w-[38rem] p-8 md:p-11">
-          <p className="eyebrow">{c.hero.eyebrow}</p>
-          <h1 className="display mt-4 max-w-[15ch] text-[clamp(2.25rem,6vw,3.75rem)]">
+        {/**
+         * The hero is a block of the theme's field colour rather than a white
+         * panel with a small coloured button on it. Colour used as a sliver
+         * is decoration; colour used at this size is the page's voice, which
+         * is the whole point of a two-colour theme.
+         *
+         * Everything inside is black — 13.5:1 on yellow, 6.5:1 on blue — so
+         * the loudest surface on the site is also its most legible one.
+         */}
+        <div className="relative max-w-[40rem] rounded-card bg-field p-8 text-on-field md:p-12">
+          <p className="text-label font-bold uppercase tracking-[0.16em] text-on-field/70">
+            {c.hero.eyebrow}
+          </p>
+          <h1 className="mt-5 max-w-[14ch] text-[clamp(2.5rem,6.5vw,4.25rem)] font-bold leading-[0.98] tracking-[-0.035em] text-on-field">
             {c.hero.title}
           </h1>
-          <p className="lede mt-6 max-w-[42ch] text-[1.0625rem]">{c.hero.body}</p>
+          <p className="mt-7 max-w-[44ch] text-[1.0625rem] leading-[1.6] text-on-field/80">
+            {c.hero.body}
+          </p>
 
-          <div className="mt-8 flex flex-wrap items-center gap-3">
-            <Link to="/signin" className="btn-primary press w-auto px-8">
+          <div className="mt-9 flex flex-wrap items-center gap-3">
+            {/* Inverted: black pill on the field, so the primary action is the
+                one thing here that is not the field colour. */}
+            <Link
+              to="/signin"
+              className="press inline-flex items-center rounded-pill bg-on-field px-8 py-3.5 text-body font-bold text-field no-underline"
+            >
               {c.hero.cta}
             </Link>
-            <Link to="/how-it-works" className="btn-outline press w-auto px-8">
+            <Link
+              to="/how-it-works"
+              className="press inline-flex items-center rounded-pill px-8 py-3.5 text-body font-bold text-on-field no-underline"
+              style={{ boxShadow: 'inset 0 0 0 2px rgb(var(--c-on-field) / 0.35)' }}
+            >
               {c.hero.secondary}
             </Link>
           </div>
-          <p className="mt-4 text-small text-muted">{c.hero.note}</p>
+          <p className="mt-5 text-small text-on-field/70">{c.hero.note}</p>
         </div>
       </section>
 

@@ -15,21 +15,26 @@
       ;(function () {
         var d = document.documentElement
         var mode = 'dark'
-        var accent = 'pink'
+        var theme = 'sun'
         try {
           var saved = localStorage.getItem('rf.mode') || 'system'
-          accent = localStorage.getItem('rf.accent') || 'pink'
+          theme = localStorage.getItem('rf.theme')
           if (['light', 'dark'].indexOf(saved) >= 0) {
             mode = saved
           } else {
             mode = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
           }
-          if (['pink', 'yellow', 'blue'].indexOf(accent) < 0) accent = 'pink'
+          /* Migrate the old three-accent scheme: blue was the only cool one. */
+          if (!theme) {
+            var old = localStorage.getItem('rf.accent')
+            theme = old === 'blue' ? 'sea' : 'sun'
+          }
+          if (['sun', 'sea'].indexOf(theme) < 0) theme = 'sun'
         } catch (e) {
           /* Private modes can throw on read; the defaults above stand. */
         }
         d.setAttribute('data-mode', mode)
-        d.setAttribute('data-accent', accent)
+        d.setAttribute('data-theme', theme)
         var m = document.querySelector('meta[name="theme-color"]')
         if (m) m.setAttribute('content', mode === 'light' ? '#FFFFFF' : '#000000')
       })()

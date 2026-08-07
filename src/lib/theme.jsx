@@ -3,12 +3,21 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 /**
  * Theme: two independent choices, stored separately.
  *
- *   mode    system | light | dark
- *   accent  pink | yellow | blue
+ *   mode   system | light | dark
+ *   theme  sun | sea
  *
- * Splitting them is what keeps a theme coherent. One accent is on screen at
- * a time; the mode only decides the ground it sits on. Anything that would
- * put two accents in the same view is a bug, not a style.
+ * A theme is a PAIR now, not a single accent: a field colour for large
+ * blocks, and an accent for the things you click.
+ *
+ *   sun   yellow field, pink accent
+ *   sea   blue field, yellow accent
+ *
+ * Yellow is in both, because it is the one colour in the palette that cannot
+ * do the accent job alone — 1.4:1 on white, so as a small mark it vanishes —
+ * while being the strongest field there is: black on yellow is 13.5:1, the
+ * highest contrast in the set. It leads as a surface; pink or blue leads as
+ * an action. The rule that keeps it safe is that fields and accents always
+ * carry black type, never white and never coloured type.
  *
  * The values are stamped onto <html> as data attributes, which is also what
  * the inline script in index.html does before first paint — so a reload
@@ -17,10 +26,10 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
  */
 
 export const MODES = ['system', 'light', 'dark']
-export const ACCENTS = ['pink', 'yellow', 'blue']
+export const THEMES = ['sun', 'sea']
 
 const KEY_MODE = 'rf.mode'
-const KEY_ACCENT = 'rf.accent'
+const KEY_THEME = 'rf.theme'
 
 /* localStorage throws outright in a few privacy configurations rather than
    returning null, and this runs at mount on every screen. */
@@ -57,7 +66,13 @@ const ThemeContext = createContext(null)
 
 export function ThemeProvider({ children }) {
   const [mode, setModeState] = useState(() => read(KEY_MODE, MODES, 'system'))
-  const [accent, setAccentState] = useState(() => read(KEY_ACCENT, ACCENTS, 'pink'))
+  const [theme, setThemeState] = useState(() => {
+    const stored = read(KEY_THEME, THEMES, null)
+    if (stored) return stored
+    // Migrate the three-accent scheme. Blue was the only cool one, so it
+    // becomes sea; pink and yellow both fold into sun.
+    return read('rf.accent', ['pink', 'yellow', 'blue'], 'pink') === 'blue' ? 'sea' : 'sun'
+  })
   // Held as state rather than read on each render, so that following the OS
   // mid-session actually re-renders. Reading matchMedia inline would compute
   // the right answer and never tell React about it.
@@ -68,12 +83,12 @@ export function ThemeProvider({ children }) {
   useEffect(() => {
     const el = document.documentElement
     el.dataset.mode = resolved
-    el.dataset.accent = accent
+    el.dataset.theme = theme
     // The browser chrome around the page is part of the theme; leaving it on
     // the media-query defaults makes an explicit choice look half-applied.
     const meta = document.querySelector('meta[name="theme-color"]')
     if (meta) meta.setAttribute('content', resolved === 'light' ? '#FFFFFF' : '#000000')
-  }, [resolved, accent])
+  }, [resolved, theme])
 
   // Attached once, regardless of the current mode: following the OS
   // mid-session is the whole promise of `system`, and the value is ignored
@@ -96,15 +111,15 @@ export function ThemeProvider({ children }) {
     write(KEY_MODE, next)
   }, [])
 
-  const setAccent = useCallback((next) => {
-    if (!ACCENTS.includes(next)) return
-    setAccentState(next)
-    write(KEY_ACCENT, next)
+  const setTheme = useCallback((next) => {
+    if (!THEMES.includes(next)) return
+    setThemeState(next)
+    write(KEY_THEME, next)
   }, [])
 
   const value = useMemo(
-    () => ({ mode, accent, resolved, setMode, setAccent }),
-    [mode, accent, resolved, setMode, setAccent]
+    () => ({ mode, theme, resolved, setMode, setTheme }),
+    [mode, theme, resolved, setMode, setTheme]
   )
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>

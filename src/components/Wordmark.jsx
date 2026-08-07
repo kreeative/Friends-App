@@ -2,7 +2,7 @@ import { APP_NAME } from '../legal/content'
 import { useTheme } from '../lib/theme'
 
 /**
- * The logo, in the accent the visitor chose.
+ * The logo, in the theme the visitor chose.
  *
  * The artwork is a filled tile now — the lettering sits on its own coloured
  * ground rather than floating on the page as a transparent PNG. That removes
@@ -15,21 +15,18 @@ import { useTheme } from '../lib/theme'
  * monogram — the full wordmark shrunk to bar height is unreadable.
  */
 const WORDMARK = {
-  pink: '/brand/wordmark-pink.png', // pink ground, yellow lettering
-  yellow: '/brand/wordmark-yellow.png', // yellow ground, blue lettering
-  blue: '/brand/wordmark-blue.png', // blue ground, yellow lettering
+  sun: '/brand/wordmark-pink.png', // pink ground, yellow lettering
+  sea: '/brand/wordmark-blue.png', // blue ground, yellow lettering
 }
 
 /**
- * Only two monogram tiles were drawn, both on yellow. The blue one stands in
- * for the blue theme as well as the yellow one — a yellow-ground mark beside
- * a blue-ground wordmark is a small inconsistency, and the honest fix is a
- * third drawing rather than me recolouring one.
+ * Both monogram tiles sit on yellow, which is now the field colour of sun and
+ * the accent of sea — so each theme's mark carries its own second colour on a
+ * shared ground, which is exactly the pairing the themes describe.
  */
 const MARK = {
-  pink: '/brand/mark-pink.png', // yellow ground, pink monogram
-  yellow: '/brand/mark-blue.png', // yellow ground, blue monogram
-  blue: '/brand/mark-blue.png',
+  sun: '/brand/mark-pink.png', // yellow ground, pink monogram
+  sea: '/brand/mark-blue.png', // yellow ground, blue monogram
 }
 
 function Tile({ src, alt, size, className }) {
@@ -46,18 +43,18 @@ function Tile({ src, alt, size, className }) {
 
 /** The full lockup. Readable from about 90px up. */
 export default function Wordmark({ size = 160, className = '', variant }) {
-  const { accent } = useTheme()
-  const key = variant ?? accent
+  const { theme } = useTheme()
+  const key = variant ?? theme
   return (
-    <Tile src={WORDMARK[key] ?? WORDMARK.pink} alt={APP_NAME} size={size} className={className} />
+    <Tile src={WORDMARK[key] ?? WORDMARK.sun} alt={APP_NAME} size={size} className={className} />
   )
 }
 
 /** The ampersand monogram — navigation, tight spaces, the app icon. */
 export function Mark({ size = 44, className = '', variant }) {
-  const { accent } = useTheme()
-  const key = variant ?? accent
-  return <Tile src={MARK[key] ?? MARK.pink} alt={APP_NAME} size={size} className={className} />
+  const { theme } = useTheme()
+  const key = variant ?? theme
+  return <Tile src={MARK[key] ?? MARK.sun} alt={APP_NAME} size={size} className={className} />
 }
 
 /**
