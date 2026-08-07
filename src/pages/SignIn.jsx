@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import { Field } from '../components/ui'
 import ErrorNote from '../components/ErrorNote'
 import { LegalLinks } from './Legal'
-import { stickerSrc } from '../lib/art'
+import { pickStickers, stickerSrc } from '../lib/art'
 import { useT } from '../lib/i18n'
 
 /**
@@ -17,7 +17,9 @@ import { useT } from '../lib/i18n'
  * Overlapped and alternately tilted so the row reads as a handful of stickers
  * thrown down rather than as a toolbar of icons.
  */
-const HERO_ART = ['unicorn', 'skull', 'pizza', 'koi', 'cat', 'cactus']
+// Filtered against what is actually in src/assets/stickers, so renaming
+// or removing art degrades to a shorter row instead of broken images.
+const HERO_ART = pickStickers(['unicorn', 'skull', 'pizza', 'koi', 'cat', 'cactus'])
 
 function ArtRow() {
   return (

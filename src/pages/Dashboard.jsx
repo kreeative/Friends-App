@@ -8,7 +8,7 @@ import { completionRate } from '../lib/stats'
 import { cyclePhase, untilLabel } from '../lib/time'
 import { useT } from '../lib/i18n'
 import { Screen, Section, TopBar } from '../components/ui'
-import { stickerFor, stickerSrc } from '../lib/art'
+import { stickerFor } from '../lib/art'
 
 /**
  * Home base.
@@ -54,7 +54,7 @@ function GroupRow({ membership, rows, t }) {
       className="press group flex items-center gap-4 py-5 no-underline"
     >
       <img
-        src={stickerSrc(art)}
+        src={art}
         alt=""
         aria-hidden="true"
         loading="lazy"
@@ -141,7 +141,24 @@ export default function Dashboard() {
   const rate = completionRate(mine, 14)
 
   const owned = books.filter((b) => b.owned)
-  const reading = owned.find((b) => b.progress)
+
+  /**
+   * The one thing that is actually waiting on you.
+   *
+   * A dashboard that only lists things is a filing cabinet. The whole point
+   * of this app is a window that is open right now, so if there is one, it
+   * gets said before anything else on the page — and if there are several,
+   * it is the one closing soonest, because that is the one you can still
+   * miss.
+   */
+  const waiting = useMemo(() => {
+    const open = mine
+      .filter((r) => cyclePhase(r) === 'open' && r.status !== 'submitted' && r.status !== 'away')
+      .sort((a, b) => new Date(a.closes_at) - new Date(b.closes_at))
+    if (!open.length) return null
+    const m = memberships.find((x) => x.group_id === open[0].group_id)
+    return m ? { row: open[0], group: m.groups } : null
+  }, [mine, memberships])
 
   const hour = new Date().getHours()
   const greeting =
@@ -151,7 +168,29 @@ export default function Dashboard() {
 
   return (
     <Screen>
-      <TopBar title={first ? `${greeting}, ${first}.` : greeting} sub={t('home.sub')} />
+      <TopBar
+        title={first ? `${greeting}, ${first}.` : greeting}
+        sub={waiting ? undefined : t('home.sub')}
+      />
+
+      {waiting && (
+        <div className="animate-rise pt-6">
+          <Link
+            to={`/g/${waiting.group.id}/checkin`}
+            className="press group flex items-center justify-between gap-4 rounded-card bg-ink px-5 py-4 no-underline"
+          >
+            <span className="min-w-0">
+              <span className="block truncate text-body font-semibold text-bg">
+                {t('home.waiting_on_you', { group: waiting.group.name })}
+              </span>
+              <span className="mt-0.5 block text-small text-bg/60">
+                {t('checkin.closes_in', { t: untilLabel(waiting.row.closes_at) })}
+              </span>
+            </span>
+            <span className="chip-accent shrink-0">{t('board.check_in')}</span>
+          </Link>
+        </div>
+      )}
 
       <Section title={t('home.your_groups')} action={
         memberships.length > 0 && (

@@ -1,3 +1,5 @@
+import { stickerSrc } from '../lib/art'
+
 /**
  * Die-cut stickers, stuck on top of the page.
  *
@@ -54,21 +56,33 @@ const SETS = {
     { src: 'koi', top: '86%', left: '1%', size: 78, tilt: 19, delay: 1.8 },
   ],
 
-  /** Sparser, for the signed-in screens — this is a tool, not a poster. */
+  /**
+   * The signed-in screens. Quieter than the public set — this is a tool, not
+   * a poster — but present on every screen rather than absent from all of
+   * them. Two are allowed on a phone, tucked into the corners the content
+   * column does not reach.
+   */
   app: [
-    { src: 'thumb', top: '8%', right: '1%', size: 62, tilt: -14, delay: 0.4 },
-    { src: 'fox', top: '46%', left: '1%', size: 58, tilt: 11, delay: 1.6 },
-    { src: 'deer', top: '80%', right: '2%', size: 60, tilt: -6, delay: 2.6 },
+    { src: 'thumb', top: '5%', right: '1%', size: 66, tilt: -14, delay: 0.4 },
+    { src: 'fox', top: '28%', left: '1%', size: 60, tilt: 11, delay: 1.6 },
+    { src: 'lips', top: '52%', right: '2%', size: 58, tilt: -8, delay: 0.9 },
+    { src: 'deer', top: '74%', left: '2%', size: 62, tilt: 7, delay: 2.6 },
+    { src: 'cactus', top: '90%', right: '1%', size: 54, tilt: -12, delay: 1.9 },
   ],
 }
 
 export default function Stickers({ set = 'hero' }) {
   return (
     <div className="pointer-events-none absolute inset-0 z-20" aria-hidden="true">
-      {(SETS[set] ?? []).map((s) => (
+      {(SETS[set] ?? [])
+        // A name with no matching file is skipped rather than rendered as a
+        // broken image — art gets renamed, and decoration must not be able to
+        // put a torn-page icon on the screen.
+        .filter((s) => stickerSrc(s.src))
+        .map((s) => (
         <img
           key={s.src}
-          src={`/stickers/${s.src}.png`}
+          src={stickerSrc(s.src)}
           alt=""
           loading="lazy"
           className={`sticker ${s.phone ? '' : 'hidden md:block'}`}
