@@ -41,23 +41,30 @@ export default {
         // One typeface. `display` is kept as a name because the app's metrics
         // and invite codes reference it, but it resolves to the same family —
         // there is no second voice on any screen now.
-        sans: ['Montserrat', 'system-ui', '-apple-system', 'sans-serif'],
-        display: ['Montserrat', 'system-ui', 'sans-serif'],
+        sans: ['Nunito', 'system-ui', '-apple-system', 'sans-serif'],
+        display: ['Nunito', 'system-ui', 'sans-serif'],
       },
       fontSize: {
-        // Scale carries the hierarchy, and the tracking is pulled in hard at
-        // every size. Montserrat is drawn wide; left at its defaults it reads
-        // as spaced-out rather than tight.
-        hero: ['3.5rem', { lineHeight: '1', letterSpacing: '-0.045em' }],
-        metric: ['3rem', { lineHeight: '1', letterSpacing: '-0.04em' }],
-        h1: ['2rem', { lineHeight: '1.14', letterSpacing: '-0.035em' }],
-        h2: ['1.375rem', { lineHeight: '1.28', letterSpacing: '-0.025em' }],
-        body: ['1rem', { lineHeight: '1.6', letterSpacing: '-0.012em' }],
-        small: ['0.875rem', { lineHeight: '1.55', letterSpacing: '-0.008em' }],
-        // Uppercase is the one place that stays at zero rather than going
-        // negative: caps have no descenders to separate them, and negative
-        // tracking closes them into a single shape.
-        label: ['0.8125rem', { lineHeight: '1.3', letterSpacing: '0em' }],
+        /**
+         * Scale carries the hierarchy; the tracking only keeps it honest.
+         *
+         * These numbers were tuned against Montserrat, which is drawn wide and
+         * needed a lot of negative tracking or it read as spaced-out. Nunito is
+         * narrower and its round terminals already carry the eye from one
+         * letter to the next, so the same values closed the words up into
+         * single shapes — worst at the display sizes, where it was most
+         * visible. Roughly halved throughout.
+         */
+        hero: ['3.5rem', { lineHeight: '1.02', letterSpacing: '-0.022em' }],
+        metric: ['3rem', { lineHeight: '1.02', letterSpacing: '-0.02em' }],
+        h1: ['2rem', { lineHeight: '1.16', letterSpacing: '-0.018em' }],
+        h2: ['1.375rem', { lineHeight: '1.3', letterSpacing: '-0.012em' }],
+        body: ['1rem', { lineHeight: '1.62', letterSpacing: '-0.003em' }],
+        small: ['0.875rem', { lineHeight: '1.55', letterSpacing: '0em' }],
+        // Uppercase stays open rather than going negative: caps have no
+        // descenders to separate them, and tightening closes them into one
+        // shape. Nunito's caps are rounder still, so they need the room.
+        label: ['0.8125rem', { lineHeight: '1.3', letterSpacing: '0.01em' }],
       },
       spacing: {
         // 8px rhythm. Named so the intent survives a refactor.

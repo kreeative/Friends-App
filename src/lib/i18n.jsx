@@ -112,6 +112,8 @@ const STRINGS = {
     'checkin.title': 'Check-in',
     'checkin.closes_in': 'Closes in {t}',
     'checkin.window_closed': 'Window closed',
+    'checkin.no_cycle_body':
+      'This group has no check-in window yet. The first one is being set up — it will appear here on the day and hour the group chose.',
     'checkin.closed_body':
       'This cycle’s window has closed. The next one opens in {t} — nothing to catch up on in the meantime.',
     'checkin.no_goals': 'No active goals yet. Add one first — a check-in needs something to check.',
@@ -132,6 +134,8 @@ const STRINGS = {
 
     'mood.question': 'How are you today?',
     'mood.hint': 'Optional, and not counted either way. Tap again to unpick.',
+    'mood.when':
+      'This is the first thing your check-in asks. It unlocks when your window opens, and it is always optional.',
     'mood.excited': 'Excited',
     'mood.joyful': 'Joyful',
     'mood.grateful': 'Grateful',
@@ -416,6 +420,8 @@ const STRINGS = {
     'checkin.title': 'Le point',
     'checkin.closes_in': 'Ferme dans {t}',
     'checkin.window_closed': 'Fenêtre fermée',
+    'checkin.no_cycle_body':
+      'Ce groupe n’a pas encore de fenêtre de point. La première est en cours de création — elle apparaîtra ici au jour et à l’heure choisis par le groupe.',
     'checkin.closed_body':
       'La fenêtre de ce cycle est fermée. La prochaine ouvre dans {t} — rien à rattraper d’ici là.',
     'checkin.no_goals':
@@ -437,6 +443,8 @@ const STRINGS = {
 
     'mood.question': 'Comment tu te sens aujourd’hui ?',
     'mood.hint': 'Facultatif, et jamais compté. Retape dessus pour l’enlever.',
+    'mood.when':
+      'C’est la première question du point. Ça s’ouvre en même temps que ta fenêtre, et c’est toujours facultatif.',
     'mood.excited': 'Impatient',
     'mood.joyful': 'Joyeux',
     'mood.grateful': 'Reconnaissant',

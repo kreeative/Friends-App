@@ -1,36 +1,58 @@
-# Gordita
+# Nunito
 
-Gordita is a **commercial** typeface. It is not on Google Fonts and cannot be
-fetched from a CDN, so it is not shipped in this repo — you have to buy a
-webfont licence and drop the files here yourself.
-
-Until they exist, everything falls back to **Outfit**, which has the same
-geometric skeleton and near-circular bowls. The site is designed against
-Gordita's metrics and looks correct in either.
-
-## Adding it
-
-Buy the **web** licence (a desktop licence does not permit `@font-face`), then
-put these four files in this folder, named exactly:
+Self-hosted, one file, declared at the top of `src/index.css`.
 
 ```
-gordita-regular.woff2    400
-gordita-medium.woff2     500
-gordita-bold.woff2       700
-gordita-black.woff2      800
+nunito-variable.woff2    weights 400–900, latin subset
 ```
 
-Then uncomment the `@font-face` block at the top of `src/index.css`. Nothing
-else changes — `Gordita` is already first in the stack in `tailwind.config.js`,
-so it takes over the moment the files resolve.
+## Why it is here rather than on a link
 
-If your foundry ships `.woff` or `.ttf` instead, convert to `.woff2` first. It
-is roughly 30% smaller and every browser this app supports reads it.
+Google serves this perfectly well, and linking it is one line. It is local
+anyway for three reasons:
 
-## Why the fallback is Outfit and not something else
+1. **It renders on networks that block Google Fonts.** Plenty do — corporate
+   proxies, some countries, some privacy extensions. The fallback in that case
+   is whatever sans the device happens to have, which is not the design.
+2. **No third-party connection on first paint.** A `<link>` to
+   fonts.googleapis.com is a DNS lookup, a TLS handshake and a CSS round trip
+   before the font request even starts.
+3. **It can be verified.** A headless browser with no outbound access silently
+   falls back, so a screenshot taken to check the typography would have been
+   checking the wrong typeface — which is exactly what happened once.
 
-The face is doing a specific job here: the headline sizes run to `clamp(2.5rem,
-6.5vw, 4.25rem)` at `-0.035em` tracking, which needs a geometric sans with
-tight, even sidebearings and a large x-height. Outfit holds at that size.
-Poppins is close but rounder and sits noticeably wider, so line breaks in the
-hero move. Montserrat — what this used before — is wider still.
+## Why one file for six weights
+
+Nunito is a variable font. Google's own CSS returns the *same* URL for 400
+through 900 and simply varies the `font-weight` line, so shipping six files
+would be shipping the same 39KB six times. The `@font-face` declares
+`font-weight: 400 900` and the browser interpolates.
+
+## Updating it
+
+```
+curl -A "Mozilla/5.0 (X11; Linux x86_64) Chrome/120" \
+  "https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap"
+```
+
+Take the `.woff2` URL from the block commented `/* latin */` — not
+`latin-ext`, which is a second file for characters this site does not use —
+and save it here as `nunito-variable.woff2`. The `unicode-range` in
+`src/index.css` must match the one in that same block.
+
+Nunito is licensed under the SIL Open Font License, which permits
+redistribution including in a repository like this one.
+
+## If you ever swap the face
+
+Two files, and the metrics matter more than the family name:
+
+- `src/index.css` — the `@font-face` block
+- `tailwind.config.js` — `fontFamily`, and the per-size `letterSpacing`
+
+That second one is not optional. The tracking here is tuned for Nunito, which
+is narrow and whose round terminals already carry the eye between letters. The
+previous face was Montserrat, drawn much wider, and needed roughly double the
+negative tracking; those values applied to Nunito closed whole words into
+single shapes. Change the family without changing the tracking and it will
+look wrong in a way that is hard to name.

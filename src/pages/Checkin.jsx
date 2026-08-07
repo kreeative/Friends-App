@@ -80,16 +80,50 @@ export default function Checkin() {
     navigate(`/g/${activeId}`)
   }
 
-  if (!currentCycle) return null
+  /**
+   * No cycle at all — a group whose first window has not been materialised
+   * yet. This used to `return null`, which paints nothing: a blank white
+   * screen under the chrome, with no way to tell a loading state from a
+   * broken one. Anything is better than nothing here.
+   */
+  if (!currentCycle) {
+    return (
+      <Screen>
+        <TopBar title={t('checkin.title')} sub={t('board.getting_ready')} />
+        <Section>
+          <p className="card text-body text-muted">{t('checkin.no_cycle_body')}</p>
+        </Section>
+      </Screen>
+    )
+  }
 
   if (phase !== 'open') {
     return (
       <Screen>
         <TopBar title={t('checkin.title')} sub={t('checkin.window_closed')} />
         <Section>
-          <p className="card text-body text-muted">
-            {t('checkin.closed_body', { t: untilLabel(currentCycle.closes_at) })}
-          </p>
+          <div className="card">
+            <p className="text-body text-muted">
+              {t('checkin.closed_body', { t: untilLabel(currentCycle.closes_at) })}
+            </p>
+          </div>
+        </Section>
+
+        {/**
+         * A preview of the first question, greyed out.
+         *
+         * The mood board only exists inside an open window, which meant that
+         * for most of the week there was no evidence anywhere in the app that
+         * it existed at all — "where is the option to check the mood" is the
+         * expected result of hiding a feature six days out of seven. Showing
+         * it disabled costs nothing and answers the question before it is
+         * asked.
+         */}
+        <Section title={t('mood.question')}>
+          <div className="lg lg-frost p-5 opacity-45 grayscale" aria-hidden="true">
+            <MoodBoard value={null} onChange={() => {}} />
+          </div>
+          <p className="mt-4 text-small text-muted">{t('mood.when')}</p>
         </Section>
       </Screen>
     )
