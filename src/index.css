@@ -531,6 +531,30 @@
   }
 
   /**
+   * Type that sits directly on a field colour.
+   *
+   * White alone does not work here: on yellow it is 1.4:1 and on blue 3.2:1,
+   * both under AA, and a soft drop shadow does not change that — a blur
+   * spreads the dark instead of bounding the letterform.
+   *
+   * A hard outline does. Stroking each glyph in black and painting the stroke
+   * UNDER the fill means every edge of every letter meets black at 21:1, so
+   * the shape is read off the outline rather than off the fill. It is the
+   * convention the reference stickers use, and it is why they stay legible on
+   * any colour they land on. The offset shadow is depth on top of that, not
+   * the thing doing the work.
+   *
+   * The stroke is in em so it tracks the type size; at label sizes a fixed
+   * pixel stroke closes up the counters.
+   */
+  .pop {
+    color: #fff;
+    -webkit-text-stroke: 0.055em rgb(var(--c-on-field));
+    paint-order: stroke fill;
+    text-shadow: 0.055em 0.06em 0 rgb(var(--c-on-field) / 0.9);
+  }
+
+  /**
    * The page ground.
    *
    * The theme's field colour in light mode, the ordinary dark ground in dark
@@ -669,15 +693,32 @@
     @apply text-body text-muted;
   }
 
-  .on-ground .eyebrow,
-  .on-ground .lede {
-    @apply text-ink/75;
+  /**
+   * Everything sitting directly on the field gets the outlined treatment:
+   * white fill, black stroke painted under it. See .pop above for why a soft
+   * shadow could not do this job.
+   */
+  .on-ground :is(h1, h2, .eyebrow, .lede, .on-field-text) {
+    color: #fff;
+    -webkit-text-stroke: 0.055em rgb(var(--c-on-field));
+    paint-order: stroke fill;
+    text-shadow: 0.055em 0.06em 0 rgb(var(--c-on-field) / 0.9);
   }
 
-  /* A glass panel re-establishes its own ground, so grey is correct again
-     inside one. */
-  .on-ground .lg .eyebrow,
-  .on-ground .lg .lede {
+  /**
+   * A glass panel re-establishes its own ground. Inside one there is no field
+   * colour to fight, so the outline comes off and ordinary ink and grey are
+   * correct again — an outlined heading on glass would be costume.
+   */
+  .on-ground .lg :is(h1, h2, h3, .eyebrow, .lede, .on-field-text) {
+    color: inherit;
+    -webkit-text-stroke: 0;
+    text-shadow: none;
+  }
+  .on-ground .lg :is(h1, h2, h3) {
+    @apply text-ink;
+  }
+  .on-ground .lg :is(.eyebrow, .lede) {
     @apply text-muted;
   }
 
