@@ -25,7 +25,15 @@ export default function Goals() {
   const { groupId } = useParams()
   const { goals, soloGoals, members } = useGroup()
   const { t } = useT()
-  const [showPast, setShowPast] = useState(false)
+  /**
+   * Open by default.
+   *
+   * It was collapsed, and collapsed was wrong: marking a goal done removed it
+   * from the live list and put it somewhere you could not see, so the reward
+   * for finishing something was watching it disappear. This section is last
+   * on the page, so showing it buries nothing.
+   */
+  const [showPast, setShowPast] = useState(true)
 
   const source = groupId ? goals : soloGoals
   const base = groupId ? `/g/${groupId}/goals` : '/goals'

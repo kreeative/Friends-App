@@ -4,9 +4,15 @@ import { useGroup } from '../context/GroupContext'
 import { shortDate } from '../lib/time'
 import { localeTag, useT } from '../lib/i18n'
 
-/* Finished states, which get a label instead of controls. A completed goal is
-   a record; offering to pause it is offering to edit history. */
-const DONE = { completed: 'goal.done', abandoned: 'goal.dropped' }
+/**
+ * Finished states. Each gets its own card colour and a chip, rather than the
+ * word appended to the cadence line where it was previously — "3 times a week
+ * · done" is the kind of sentence you read past.
+ */
+const DONE = {
+  completed: { label: 'goal.done', card: 'card-done', chip: 'chip-green' },
+  abandoned: { label: 'goal.dropped', card: 'card-dropped', chip: 'chip-quiet' },
+}
 
 export default function GoalCard({
   goal,
@@ -32,14 +38,18 @@ export default function GoalCard({
 
   return (
     <article
-      className={`card transition-opacity duration-200 ease-settle ${paused ? 'opacity-55' : ''}`}
+      className={`${finished?.card ?? 'card'} transition-opacity duration-200 ease-settle ${
+        paused ? 'opacity-55' : ''
+      }`}
     >
-      <h3 className="text-h2 text-ink">{goal.commitment}</h3>
+      <div className="flex items-start justify-between gap-4">
+        <h3 className="text-h2 text-ink">{goal.commitment}</h3>
+        {finished && <span className={`${finished.chip} shrink-0`}>{t(finished.label)}</span>}
+      </div>
 
       <p className="mt-1.5 text-small text-muted">
         {cadence}
         {paused && ` · ${t('goal.paused')}`}
-        {finished && ` · ${t(finished)}`}
       </p>
 
       {(goal.trigger_when || goal.trigger_where) && (
@@ -48,8 +58,13 @@ export default function GoalCard({
         </p>
       )}
 
+      {/* Not muted/75. --c-muted is already tuned to sit just above 4.5:1, so
+          three quarters of it measured 3.0:1 on a plain white card — the
+          quietest line on the card was the one that failed. The "Proof:"
+          prefix distinguishes it from the trigger line above without needing
+          a second, lighter grey to do it. */}
       {goal.evidence_def && (
-        <p className="mt-1 text-small text-muted/75">
+        <p className="mt-1 text-small text-muted">
           {t('goal.proof', { text: goal.evidence_def })}
         </p>
       )}
