@@ -8,7 +8,7 @@ import { completionRate } from '../lib/stats'
 import { cyclePhase, untilLabel } from '../lib/time'
 import { useT } from '../lib/i18n'
 import { Screen, Section, TopBar } from '../components/ui'
-import Character, { CREW } from '../components/Character'
+import { stickerFor, stickerSrc } from '../lib/art'
 
 /**
  * Home base.
@@ -31,7 +31,7 @@ import Character, { CREW } from '../components/Character'
  * texture of the page. Rows with one hairline between them separate exactly
  * as well and put nothing on screen that is not information.
  *
- * The face is the group's identity. It is picked from the id, so it is
+ * The sticker is the group's identity. It is picked from the id, so it is
  * stable for the life of the group without needing a column to store it —
  * and it is the illustration doing the work a repeated logo was doing badly.
  */
@@ -46,19 +46,19 @@ function GroupRow({ membership, rows, t }) {
   const inCycle = open ? rows.filter((r) => r.cycle_id === open.cycle_id) : []
   const done = inCycle.filter((r) => r.status === 'submitted').length
 
-  // Sum of the id's hex digits — any stable hash would do; this one needs no
-  // import and cannot throw on a malformed id.
-  const face = CREW[[...g.id.replace(/-/g, '')].reduce((a, c) => a + (parseInt(c, 16) || 0), 0) % CREW.length]
+  const art = stickerFor(g.id)
 
   return (
     <Link
       to={`/g/${g.id}`}
       className="press group flex items-center gap-4 py-5 no-underline"
     >
-      <Character
-        who={face}
-        size={52}
-        className="shrink-0 transition-transform duration-200 ease-settle group-hover:-rotate-6"
+      <img
+        src={stickerSrc(art)}
+        alt=""
+        aria-hidden="true"
+        loading="lazy"
+        className="h-14 w-14 shrink-0 object-contain transition-transform duration-200 ease-settle group-hover:-rotate-6"
       />
 
       <div className="min-w-0 flex-1">
