@@ -27,10 +27,10 @@ export default function Home() {
          * the loudest surface on the site is also its most legible one.
          */}
         <div className="relative max-w-[40rem] rounded-card bg-field p-8 text-on-field md:p-12">
-          <p className="text-label font-bold uppercase tracking-[0.16em] text-on-field/70">
-            {c.hero.eyebrow}
-          </p>
-          <h1 className="mt-5 max-w-[14ch] text-[clamp(2.5rem,6.5vw,4.25rem)] font-bold leading-[0.98] tracking-[-0.035em] text-on-field">
+          {/* No eyebrow. The headline is the first thing in the block now —
+              a small grey qualifier above a statement this size only softens
+              it, and the audience it named is said better by the page. */}
+          <h1 className="max-w-[14ch] text-[clamp(2.5rem,6.5vw,4.25rem)] font-bold leading-[0.98] tracking-[-0.035em] text-on-field">
             {c.hero.title}
           </h1>
           <p className="mt-7 max-w-[44ch] text-[1.0625rem] leading-[1.6] text-on-field/80">

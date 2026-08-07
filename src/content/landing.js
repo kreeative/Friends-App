@@ -7,7 +7,6 @@
 export const LANDING = {
   en: {
     hero: {
-      eyebrow: 'For two to six people who mean it',
       title: 'Alone we go faster, but together we go further.',
       body: 'Our environment dictates our output. Stop grinding in isolation—surround yourself with high-caliber peers who force you to level up every single week.',
       cta: 'Start a group',
@@ -123,7 +122,6 @@ export const LANDING = {
 
   fr: {
     hero: {
-      eyebrow: 'Pour deux à six personnes sérieuses',
       title: 'Parceque ensemble on construit plus vite.',
       body: 'Notre environnement dicte nos résultats. Arrêtez de moudre dans l’isolement - entourez-vous d’amis de haut calibre qui vous forcent à monter de niveau chaque semaine',
       cta: 'Créer un groupe',
