@@ -2,7 +2,6 @@ import { Link } from 'react-router-dom'
 import { LANDING } from '../../content/landing'
 import { useT } from '../../lib/i18n'
 import { Mark } from '../../components/Wordmark'
-import Stickers from '../../components/Stickers'
 
 /**
  * The front page: what this is, why groups go quiet, and the way in.
@@ -18,7 +17,6 @@ export default function Home() {
   return (
     <>
       <section className="relative mx-auto w-full max-w-5xl animate-rise px-6 pb-20 pt-10 md:pb-24 md:pt-14">
-        <Stickers set="hero" />
         <div className="panel relative max-w-[38rem] p-8 md:p-11">
           <p className="eyebrow">{c.hero.eyebrow}</p>
           <h1 className="display mt-4 max-w-[15ch] text-[clamp(2.25rem,6vw,3.75rem)]">
@@ -54,7 +52,6 @@ export default function Home() {
       </section>
 
       <section className="relative mx-auto w-full max-w-5xl px-6 pb-16">
-        <Stickers set="close" />
         <div className="panel relative px-6 py-16 text-center">
           <h2 className="display mx-auto max-w-[18ch] text-[clamp(1.875rem,5vw,2.75rem)]">
             {c.close.title}
