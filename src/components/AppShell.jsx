@@ -6,6 +6,7 @@ import { useGroup } from '../context/GroupContext'
 import { useT } from '../lib/i18n'
 import { Avatar } from './ui'
 import { Mark } from './Wordmark'
+import Stickers from './Stickers'
 
 /**
  * Two levels of navigation, because there are two levels of place.
@@ -205,6 +206,9 @@ export default function AppShell() {
 
   return (
     <div className="relative min-h-dvh bg-bg">
+      {/* Sparser than the public set — this is a tool, not a poster. */}
+      <Stickers set="app" />
+
       <TopNav />
       <div className="relative z-10">
         <SyncBadge />

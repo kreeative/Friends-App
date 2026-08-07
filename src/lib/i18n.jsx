@@ -82,6 +82,7 @@ const STRINGS = {
     'nudge.close': 'Done — we spoke',
     'nudge.busy': 'One moment',
 
+    'signin.title': 'Get in with people who move.',
     'signin.pitch':
       'One check-in a week, at the same time, with the same people. Sixty seconds. That’s the whole thing.',
     'signin.google': 'Continue with Google',
@@ -343,6 +344,7 @@ const STRINGS = {
     'nudge.close': 'C’est fait — on s’est parlé',
     'nudge.busy': 'Un instant',
 
+    'signin.title': 'Rejoins des gens qui avancent.',
     'signin.pitch':
       'Un point par semaine, au même moment, avec les mêmes personnes. Une minute. C’est tout.',
     'signin.google': 'Continuer avec Google',

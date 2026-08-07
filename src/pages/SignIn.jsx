@@ -1,10 +1,47 @@
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { Field } from '../components/ui'
-import Wordmark from '../components/Wordmark'
+import Character, { CREW } from '../components/Character'
 import ErrorNote from '../components/ErrorNote'
 import { LegalLinks } from './Legal'
 import { useT } from '../lib/i18n'
+
+/**
+ * The crew, not the logo.
+ *
+ * A wordmark says who built the thing. A row of people staring back says who
+ * it is for, which is the more useful thing to say on the one screen where
+ * somebody is deciding whether to bother. The mark still exists — it lives in
+ * the top bar of the app, where identification is what is actually wanted.
+ *
+ * Heads overlap and alternate their tilt so the row reads as a group rather
+ * than as six icons in a toolbar.
+ */
+function Crew() {
+  return (
+    <div
+      className="flex items-end pl-3"
+      aria-label="Rich & Friends"
+      role="img"
+    >
+      {CREW.map((who, i) => (
+        <div
+          key={who}
+          // Negative margin overlaps them; the z-order runs left to right so
+          // each face tucks behind the one after it.
+          className="-ml-3 first:ml-0 animate-rise"
+          style={{
+            zIndex: CREW.length - i,
+            transform: `rotate(${(i % 2 ? 1 : -1) * (3 + (i % 3))}deg) translateY(${i % 2 ? 4 : 0}px)`,
+            animationDelay: `${i * 60}ms`,
+          }}
+        >
+          <Character who={who} size={72} className="drop-shadow-[0_3px_8px_rgba(0,0,0,0.16)]" />
+        </div>
+      ))}
+    </div>
+  )
+}
 
 export default function SignIn() {
   const { signInWithGoogle, signInWithEmail, authError, clearAuthError } = useAuth()
@@ -33,10 +70,11 @@ export default function SignIn() {
 
   return (
     <div className="relative min-h-dvh bg-bg">
-      <main className="relative z-10 mx-auto flex min-h-dvh w-full max-w-content flex-col justify-between px-6 py-14">
-        <div className="animate-rise">
-          <Wordmark size={188} />
-          <p className="lede mt-8 max-w-[34ch]">{t('signin.pitch')}</p>
+      <main className="relative z-10 mx-auto flex min-h-dvh w-full max-w-content flex-col justify-between gap-12 px-6 py-14">
+        <div>
+          <Crew />
+          <h1 className="mt-10 text-hero text-ink">{t('signin.title')}</h1>
+          <p className="lede mt-5 max-w-[34ch]">{t('signin.pitch')}</p>
         </div>
 
         <div className="animate-rise space-y-3">
@@ -45,7 +83,7 @@ export default function SignIn() {
           <ErrorNote error={authError} />
 
           {sent ? (
-            <p className="card text-body text-muted">{t('signin.link_sent', { email })}</p>
+            <p className="text-body text-muted">{t('signin.link_sent', { email })}</p>
           ) : (
             <>
               <button className="btn-primary press" onClick={google} disabled={busy !== null}>

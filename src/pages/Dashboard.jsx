@@ -8,6 +8,7 @@ import { completionRate } from '../lib/stats'
 import { cyclePhase, untilLabel } from '../lib/time'
 import { useT } from '../lib/i18n'
 import { Screen, Section, TopBar } from '../components/ui'
+import Character, { CREW } from '../components/Character'
 
 /**
  * Home base.
@@ -22,14 +23,19 @@ import { Screen, Section, TopBar } from '../components/ui'
  */
 
 /**
- * A group as it looks from outside: what it is called, where it is in its
- * week, and whether it is waiting on you.
+ * A group, as a row rather than as a card.
  *
- * The name gets its own line. Sharing one with the status chip meant a flex
- * row where the only shrinkable thing was the title, so "Sunday Four"
- * truncated to "Sunday F…" next to a chip with room to spare.
+ * This page used to be six boxes stacked on top of each other — groups,
+ * stats, books, all in their own rounded rectangle. At that point the
+ * rectangle stops meaning "these things belong together" and becomes the
+ * texture of the page. Rows with one hairline between them separate exactly
+ * as well and put nothing on screen that is not information.
+ *
+ * The face is the group's identity. It is picked from the id, so it is
+ * stable for the life of the group without needing a column to store it —
+ * and it is the illustration doing the work a repeated logo was doing badly.
  */
-function GroupCard({ membership, rows, t }) {
+function GroupRow({ membership, rows, t }) {
   const g = membership.groups
   const mine = rows.filter((r) => r.group_id === g.id)
 
@@ -37,50 +43,52 @@ function GroupCard({ membership, rows, t }) {
   const cycle = open ?? mine[0] ?? null
   const meIn = open && open.status === 'submitted'
 
-  // Everyone's row for the open cycle, so the card can say 2 of 4 rather than
-  // just "open" — the number is the reason to tap.
   const inCycle = open ? rows.filter((r) => r.cycle_id === open.cycle_id) : []
   const done = inCycle.filter((r) => r.status === 'submitted').length
 
+  // Sum of the id's hex digits — any stable hash would do; this one needs no
+  // import and cannot throw on a malformed id.
+  const face = CREW[[...g.id.replace(/-/g, '')].reduce((a, c) => a + (parseInt(c, 16) || 0), 0) % CREW.length]
+
   return (
-    <Link to={`/g/${g.id}`} className="lg lg-interactive block p-5 no-underline">
-      <h3 className="truncate text-h2 text-ink">{g.name}</h3>
+    <Link
+      to={`/g/${g.id}`}
+      className="press group flex items-center gap-4 py-5 no-underline"
+    >
+      <Character
+        who={face}
+        size={52}
+        className="shrink-0 transition-transform duration-200 ease-settle group-hover:-rotate-6"
+      />
 
-      <p className="mt-1 text-small text-muted">
-        {open
-          ? t('checkin.closes_in', { t: untilLabel(open.closes_at) })
-          : cycle
-            ? t('board.next_opens_in', { t: untilLabel(cycle.opens_at) })
-            : t('board.getting_ready')}
-      </p>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-baseline gap-3">
+          <h3 className="truncate text-h2 text-ink">{g.name}</h3>
+        </div>
+        <p className="mt-0.5 text-small text-muted">
+          {open
+            ? `${t('home.n_of_total', { n: done, total: inCycle.length })} · ${t('checkin.closes_in', { t: untilLabel(open.closes_at) })}`
+            : cycle
+              ? t('board.next_opens_in', { t: untilLabel(cycle.opens_at) })
+              : t('board.getting_ready')}
+        </p>
 
-      {/* How far along the room is, as a bar rather than only a sentence —
-          the shape of it is readable before the words are. */}
-      {open && (
-        <div className="mt-5">
-          <div
-            className="h-1 w-full overflow-hidden rounded-pill bg-ink/[0.08]"
-            role="presentation"
-          >
+        {open && (
+          <div className="mt-3 h-1 w-full overflow-hidden rounded-pill bg-ink/[0.08]">
             <div
               className="h-full rounded-pill bg-green transition-[width] duration-500 ease-settle"
               style={{ width: `${inCycle.length ? (done / inCycle.length) * 100 : 0}%` }}
             />
           </div>
-          <div className="mt-3 flex items-center justify-between gap-3">
-            {/* Short form. The board's full sentence wrapped to two lines
-                beside the chip at card width, and the bar above already
-                says the same thing faster. */}
-            <span className="text-small text-muted">
-              {t('home.n_of_total', { n: done, total: inCycle.length })}
-            </span>
-            {/* Waiting-on-you is the only state that should pull the eye, so
-                it is the only one that gets the accent. */}
-            <span className={meIn ? 'chip-green shrink-0' : 'chip-accent shrink-0'}>
-              {meIn ? t('board.state_in') : t('board.check_in')}
-            </span>
-          </div>
-        </div>
+        )}
+      </div>
+
+      {/* Waiting-on-you is the only state that should pull the eye, so it is
+          the only one that gets the accent. */}
+      {open && (
+        <span className={meIn ? 'chip-green shrink-0' : 'chip-accent shrink-0'}>
+          {meIn ? t('board.state_in') : t('board.check_in')}
+        </span>
       )}
     </Link>
   )
@@ -155,16 +163,16 @@ export default function Dashboard() {
         {loading ? (
           <p className="text-small text-muted">{t('err.loading')}</p>
         ) : memberships.length === 0 ? (
-          <div className="lg p-6">
-            <p className="text-body text-muted">{t('home.no_groups')}</p>
+          <div className="py-2">
+            <p className="max-w-[38ch] text-body text-muted">{t('home.no_groups')}</p>
             <Link to="/start" className="btn-primary press mt-6 inline-flex">
               {t('start.new_group')}
             </Link>
           </div>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="list">
             {memberships.map((m) => (
-              <GroupCard key={m.group_id} membership={m} rows={rows} t={t} />
+              <GroupRow key={m.group_id} membership={m} rows={rows} t={t} />
             ))}
           </div>
         )}
@@ -175,7 +183,7 @@ export default function Dashboard() {
             screen on its own; three of them inside a card is three competing
             heroes, and the accent rule under each reads as a stray mark once
             there is a border nearby. Divided cells, tabular figures. */}
-        <div className="lg grid grid-cols-3 divide-x divide-hairline p-1">
+        <div className="grid grid-cols-3 divide-x divide-hairline border-y border-hairline">
           {[
             [
               rate.total ? `${rate.done}/${rate.total}` : '—',
@@ -185,7 +193,7 @@ export default function Dashboard() {
             [goals.length, t('me.live_goals'), null],
             [memberships.length, t('home.groups'), null],
           ].map(([value, label, hint]) => (
-            <div key={label} className="px-4 py-5">
+            <div key={label} className="py-5 pl-4 first:pl-0">
               <div className="text-h1 leading-none text-ink [font-variant-numeric:tabular-nums]">
                 {value}
               </div>
@@ -206,22 +214,30 @@ export default function Dashboard() {
         }
       >
         {owned.length === 0 ? (
-          <div className="lg p-6">
-            <p className="text-body text-muted">{t('home.no_books')}</p>
+          <div className="py-2">
+            <p className="max-w-[38ch] text-body text-muted">{t('home.no_books')}</p>
             <Link to="/library" className="btn-outline press mt-6 inline-flex">
               {t('library.read_free')}
             </Link>
           </div>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="list">
             {owned.map((b) => (
-              <Link key={b.id} to={`/library/${b.slug}`} className="lg lg-interactive block p-5 no-underline">
-                <h3 className="text-h2 text-ink">{b.title}</h3>
-                {b.subtitle && <p className="mt-1 text-small text-muted">{b.subtitle}</p>}
+              <Link
+                key={b.id}
+                to={`/library/${b.slug}`}
+                className="press flex items-baseline justify-between gap-4 py-5 no-underline"
+              >
+                <span className="min-w-0">
+                  <span className="block truncate text-h2 text-ink">{b.title}</span>
+                  {b.subtitle && (
+                    <span className="mt-0.5 block text-small text-muted">{b.subtitle}</span>
+                  )}
+                </span>
                 {b.progress?.scroll_pct != null && (
-                  <p className="mt-4 text-small text-muted">
+                  <span className="shrink-0 text-small text-muted">
                     {t('library.progress', { pct: Math.round(b.progress.scroll_pct) })}
-                  </p>
+                  </span>
                 )}
               </Link>
             ))}

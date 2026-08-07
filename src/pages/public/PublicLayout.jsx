@@ -4,6 +4,7 @@ import { LANDING } from '../../content/landing'
 import { useT } from '../../lib/i18n'
 import { Mark } from '../../components/Wordmark'
 import Footer from '../../components/Footer'
+import Stickers from '../../components/Stickers'
 
 /**
  * The public site's chrome: one navigation bar, one footer, around whichever
@@ -32,6 +33,9 @@ export default function PublicLayout() {
   // any more — the stickers are the whole decoration.
   return (
     <div className="relative min-h-dvh bg-bg">
+      {/* Every public page, not just the landing hero. */}
+      <Stickers set="page" />
+
       <div className="relative z-10">
         <header className="sticky top-0 z-30 px-4 pt-4">
           <nav className="glass-strong mx-auto w-full max-w-5xl rounded-card px-4 py-2.5">

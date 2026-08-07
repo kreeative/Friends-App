@@ -34,12 +34,38 @@ const SETS = {
     { src: 'deer', top: '18%', right: '-2%', size: 70, tilt: 6, delay: 2.4 },
     { src: 'fox', bottom: '20%', left: '-3%', size: 72, tilt: -14, delay: 3.1 },
   ],
+
+  /**
+   * The page-wide set.
+   *
+   * Every page gets stickers now, not just the landing hero — but a page is
+   * mostly one narrow column of text with wide empty margins either side, so
+   * these live entirely in those margins and none of them is allowed on a
+   * phone, where the margin does not exist. Percentages are of the whole
+   * scroll height, which is what spreads them down a long page instead of
+   * clustering them all in the first screen.
+   */
+  page: [
+    { src: 'unicorn', top: '4%', right: '2%', size: 84, tilt: -11, delay: 0 },
+    { src: 'pizza', top: '21%', left: '1%', size: 70, tilt: 13, delay: 1.2 },
+    { src: 'skull', top: '38%', right: '3%', size: 66, tilt: 17, delay: 0.7 },
+    { src: 'cactus', top: '55%', left: '2%', size: 62, tilt: -8, delay: 2.7 },
+    { src: 'cat', top: '70%', right: '2%', size: 74, tilt: 9, delay: 2.1 },
+    { src: 'koi', top: '86%', left: '1%', size: 78, tilt: 19, delay: 1.8 },
+  ],
+
+  /** Sparser, for the signed-in screens — this is a tool, not a poster. */
+  app: [
+    { src: 'thumb', top: '8%', right: '1%', size: 62, tilt: -14, delay: 0.4 },
+    { src: 'fox', top: '46%', left: '1%', size: 58, tilt: 11, delay: 1.6 },
+    { src: 'deer', top: '80%', right: '2%', size: 60, tilt: -6, delay: 2.6 },
+  ],
 }
 
 export default function Stickers({ set = 'hero' }) {
   return (
     <div className="pointer-events-none absolute inset-0 z-20" aria-hidden="true">
-      {SETS[set].map((s) => (
+      {(SETS[set] ?? []).map((s) => (
         <img
           key={s.src}
           src={`/stickers/${s.src}.png`}
