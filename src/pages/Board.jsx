@@ -10,6 +10,8 @@ import { Avatar, Empty, Screen, Section, TopBar } from '../components/ui'
 import NudgeBanner from '../components/NudgeBanner'
 import GroupMoods from '../components/GroupMoods'
 import ConsistencyPanel from '../components/ConsistencyPanel'
+import TodayObjective from '../components/TodayObjective'
+import GroupFeed from '../components/GroupFeed'
 import GoalCard from '../components/GoalCard'
 import { MoodBadge } from '../components/MoodBoard'
 
@@ -28,6 +30,7 @@ export default function Board() {
     groupGoals,
     myGoals,
     statuses,
+    reloadGroup,
   } = useGroup()
   const [checkins, setCheckins] = useState([])
   const [items, setItems] = useState([])
@@ -107,6 +110,21 @@ export default function Board() {
   )
 
   const nowItemIds = new Set(now.map((c) => c.id))
+
+  /* Goals I have already recorded an outcome for today, so the one-tap card
+     knows what is left rather than offering the same goal again after it has
+     been marked. Only mine: a shared goal another member ticked is still
+     outstanding for me. */
+  const myCheckinIds = new Set(now.filter((c) => c.user_id === user?.id).map((c) => c.id))
+  const doneToday = new Set(
+    items
+      .filter(
+        (i) =>
+          myCheckinIds.has(i.checkin_id) &&
+          (i.outcome === 'done' || i.outcome === 'partial'),
+      )
+      .map((i) => i.goal_id),
+  )
   const iHaveChecked = submittedIds.has(user?.id)
   const meAway = awayIds.has(user?.id)
   const openCount = [...myGoals, ...groupGoals].filter((g) => g.status === 'active').length
@@ -133,18 +151,36 @@ export default function Board() {
        * body. Everything below it stays solid, a second floating card here
        * would flatten the hierarchy this is buying.
        */}
-      {phase === 'open' && !iHaveChecked && !meAway && (
-        <div className="glass mt-8 rounded-card p-6">
-          <h2 className="text-h2 text-ink">{t('board.ready')}</h2>
-          <p className="mt-2 text-body text-ink/70">
-            {openCount === 0
-              ? t('board.nothing_listed')
-              : t('board.things_to_look_at', { n: openCount })}
-          </p>
-          <Link to={`/g/${activeId}/checkin`} className="btn-primary press mt-6">
-            {t('board.check_in')}
-          </Link>
-        </div>
+      {/**
+       * The day's one actionable thing, and a tap to finish it.
+       *
+       * This replaces "ready when you are" as the lead. On a weekly cadence,
+       * pointing at the full form was right: a week's review has several
+       * goals and a note worth writing. On a daily one the honest answer is
+       * usually just yes, and making somebody open a form to say it turns a
+       * daily habit into a chore about the app.
+       *
+       * The form is still here, underneath, for the days that need it.
+       */}
+      {phase === 'open' && !meAway && (
+        <>
+          <TodayObjective
+            cycle={currentCycle}
+            goals={[...myGoals, ...groupGoals].filter((g) => g.status === 'active')}
+            doneGoalIds={doneToday}
+            onDone={reloadGroup}
+          />
+          {!iHaveChecked && openCount > 0 && (
+            <div className="mt-4">
+              <Link
+                to={`/g/${activeId}/checkin`}
+                className="text-small text-ink underline-offset-4 hover:underline"
+              >
+                {t('board.things_to_look_at', { n: openCount })}
+              </Link>
+            </div>
+          )}
+        </>
       )}
 
       <Section
@@ -197,6 +233,8 @@ export default function Board() {
           />
         </Section>
       )}
+
+      <GroupFeed groupId={activeId} />
 
       {/**
        * How everyone is today, above the goals.

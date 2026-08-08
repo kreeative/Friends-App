@@ -71,7 +71,11 @@ export default function DangerZone() {
           </button>
           {/* Only an admin can delete, and a button that is simply absent
               looks like a missing feature rather than a permission. */}
-          {myRole === 'admin' ? (
+          {/* Creator or admin. Whether an admin's press actually goes
+              through is decided by delete_group against the group's
+              admins_can_delete toggle, so this decides who sees a button,
+              not who may act. */}
+          {myRole === 'admin' || myRole === 'creator' ? (
             <button
               onClick={() => setConfirm('delete')}
               className="btn press text-negative hover:bg-negative/[0.07] sm:w-auto sm:px-7"
