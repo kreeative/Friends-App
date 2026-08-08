@@ -8,6 +8,7 @@ import { groupGoalProgress } from '../lib/stats'
 import { useT } from '../lib/i18n'
 import { Avatar, Empty, Screen, Section, TopBar } from '../components/ui'
 import NudgeBanner from '../components/NudgeBanner'
+import GroupMoods from '../components/GroupMoods'
 import GoalCard from '../components/GoalCard'
 import { MoodBadge } from '../components/MoodBoard'
 
@@ -179,6 +180,20 @@ export default function Board() {
           />
         </Section>
       )}
+
+      {/**
+       * How everyone is today, above the goals.
+       *
+       * Deliberately not sealed with the rest of the board. A mood is shared
+       * on purpose, by somebody who pressed a switch to share it, and the
+       * point of that switch is that a group-mate sees it now rather than at
+       * the end of the week. It is also the one thing here that is about the
+       * person and not about their performance, which is why it sits above
+       * the goals rather than under them.
+       *
+       * Renders nothing at all when nobody has shared. See GroupMoods.
+       */}
+      <GroupMoods groupId={activeId} members={members} />
 
       {groupGoals.length > 0 && (
         <Section title={t('board.together')}>
