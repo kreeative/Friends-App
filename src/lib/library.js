@@ -44,18 +44,43 @@ export async function listBooks() {
  * the reader downstream turned both into the same blank page.
  */
 export async function listChapters(bookId) {
+  const cols = 'id, idx, title, is_preview, word_count'
+
   /* chapter_index, not chapters. The table's policy hides the whole row of
      anything unbought, so reading the table returned one chapter for a
      nine-chapter book: no contents, no next chapter, and no sign of what
-     buying would get you. The view carries the titles and does not have a
-     `body` column at all. */
+     buying would get you. The view carries the titles and has no `body`
+     column at all. */
   const { data, error } = await supabase
     .from('chapter_index')
-    .select('id, idx, title, is_preview, word_count')
+    .select(cols)
     .eq('book_id', bookId)
     .order('idx')
-  if (error) throw error
-  return data ?? []
+
+  if (!error) return data ?? []
+
+  /**
+   * The view is newer than the table it reads, and a catalogue set up before
+   * 11_chapter_index.sql existed has the one without the other. Falling back
+   * to the table means that database still opens its books -- with a shorter
+   * contents list, because the policy hides what you have not bought, which
+   * is the exact limitation the view was created to remove.
+   *
+   * Only for a missing relation. A policy error or a dropped connection is
+   * not something to paper over with a second query.
+   */
+  const raw = `${error.code ?? ''} ${error.message ?? ''}`.toLowerCase()
+  const noView =
+    raw.includes('pgrst205') ||
+    raw.includes('42p01') ||
+    raw.includes('schema cache') ||
+    (raw.includes('does not exist') && raw.includes('relation'))
+
+  if (!noView) throw error
+
+  const fallback = await supabase.from('chapters').select(cols).eq('book_id', bookId).order('idx')
+  if (fallback.error) throw fallback.error
+  return fallback.data ?? []
 }
 
 /**

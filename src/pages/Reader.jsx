@@ -195,6 +195,18 @@ export default function Reader() {
         setError(null)
       } catch (e) {
         if (cancelled) return
+
+        /**
+         * A readable chapter beats a correct error message.
+         *
+         * If the bundle seeded this page, something is already on screen and
+         * whatever the database just failed to do has not taken it away.
+         * Replacing a chapter someone is reading with a note about an unrun
+         * migration serves nobody: they came to read, they can read, and the
+         * migration is not theirs to run from here.
+         */
+        if (seed) return
+
         /* Keep PostgREST's own code so `explain` can name the SQL file that
            has not been run. 'load' told nobody anything. */
         setError(
@@ -259,7 +271,11 @@ export default function Reader() {
           }
         }
       } catch (e) {
-        setError({ code: e?.code ?? 'load', description: e?.message ?? String(e) })
+        /* Chapter one is in the bundle either way, so a failed fetch for it
+           falls back rather than blanking a page that can be read. */
+        const body = localChapterBody(slug, meta?.idx)
+        if (body) setCurrent({ ...meta, body })
+        else setError({ code: e?.code ?? 'load', description: e?.message ?? String(e) })
       }
       window.scrollTo({ top: 0, behavior: 'instant' })
     },
