@@ -248,12 +248,17 @@
   /**
    * Strip the native control chrome.
    *
-   * This is what was drawing a second line under the goal form's inputs. The
-   * reset above only took the font, colour and background; it left
-   * -webkit-appearance alone, so iOS Safari kept painting its own inset
-   * border and corner radius underneath. Against `.field`, which is a single
-   * bottom rule by design, that reads as a doubled edge, and it is worst on
-   * date and number inputs where the native styling is heaviest.
+   * Worth having on its own terms: the reset above only took the font, colour
+   * and background, leaving -webkit-appearance alone, so iOS Safari would
+   * paint its own inset border and corner radius under `.field`, which is a
+   * single bottom rule by design.
+   *
+   * It was NOT, however, the doubled line people kept reporting in the goal
+   * form. I assumed it was and shipped this as the fix; measuring the rendered
+   * form afterwards showed each input drawing exactly one 1px border, and the
+   * real second rule was the Step divider in GoalForm.jsx sitting just below
+   * the hint text. Left in place because it prevents a genuine problem on
+   * iOS, and noted here because the comment claimed a cause it did not have.
    *
    * Checkboxes and radios are excluded deliberately. They have no useful
    * appearance of their own once this is removed, and the mood sharing

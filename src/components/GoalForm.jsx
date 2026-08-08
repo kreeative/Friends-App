@@ -38,7 +38,23 @@ function looksLikeOutcome(text) {
  */
 function Step({ n, title, hint, children }) {
   return (
-    <section className="border-t border-hairline pt-7 first:border-0 first:pt-0">
+    /**
+     * No divider rule.
+     *
+     * This was `border-t border-hairline`, and it is the second line that
+     * kept getting reported under the form's inputs. `.field` is an underline
+     * by design, so the last field in a step drew one rule and the next
+     * step's divider drew another just below it, with only the hint text in
+     * between. Measured in a browser: both are real, both 1px hairline, and
+     * at reading distance they read as one doubled edge belonging to the
+     * input rather than as a boundary between two steps.
+     *
+     * A step is already separated by a numbered badge, a heading and a good
+     * deal of space. The rule was restating a boundary three other things
+     * were making, and it was the one causing the confusion, so it goes.
+     * Padding grows to carry the separation on its own.
+     */
+    <section className="pt-10 first:pt-0">
       <div className="flex items-baseline gap-3">
         <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-pill bg-ink text-[0.6875rem] font-bold text-white">
           {n}
