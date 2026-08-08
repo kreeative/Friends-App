@@ -317,12 +317,15 @@ const STRINGS = {
     'reader.share_highlight': 'Share with group',
     'reader.delete': 'Delete',
     'reader.chapter_n': 'Chapter {n}',
+    'preview.rest_title': 'The other {n} chapters',
     'reader.free_preview': 'free preview',
     'reader.free': 'Free',
     'reader.locked': 'Locked',
     'reader.locked_title': 'This chapter is part of the full book',
     'reader.locked_body':
       'Chapter 1 is free to read. The rest opens once you have the book.',
+    'reader.local_only':
+      'The rest of this book is not connected yet. The free chapter is included in the app; the paid chapters arrive once the catalogue is set up in Supabase.',
     'reader.unlock': 'Get the book',
     'reader.previous': 'Previous',
     'reader.next': 'Next',
@@ -642,12 +645,15 @@ const STRINGS = {
     'reader.share_highlight': 'Partager au groupe',
     'reader.delete': 'Supprimer',
     'reader.chapter_n': 'Chapitre {n}',
+    'preview.rest_title': 'Les {n} autres chapitres',
     'reader.free_preview': 'extrait gratuit',
     'reader.free': 'Gratuit',
     'reader.locked': 'Verrouillé',
     'reader.locked_title': 'Ce chapitre fait partie du livre complet',
     'reader.locked_body':
       'Le chapitre 1 est en accès libre. La suite s’ouvre une fois le livre acquis.',
+    'reader.local_only':
+      'La suite de ce livre n’est pas encore connectée. Le chapitre gratuit est inclus dans l’app ; les chapitres payants arrivent une fois le catalogue installé dans Supabase.',
     'reader.unlock': 'Obtenir le livre',
     'reader.previous': 'Précédent',
     'reader.next': 'Suivant',

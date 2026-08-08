@@ -6,6 +6,7 @@ import { listBooks, shareToGroup, startCheckout } from '../lib/library'
 import { useT } from '../lib/i18n'
 import { Empty, Screen, Section, Sheet, TopBar } from '../components/ui'
 import ErrorNote from '../components/ErrorNote'
+import { localBooks } from '../content/previews'
 
 /**
  * The price, in the currency it is actually charged in, formatted the way the
@@ -58,9 +59,15 @@ export default function Library() {
   async function load() {
     setLoading(true)
     try {
-      setBooks(await listBooks())
+      const rows = await listBooks()
+      /* An empty catalogue means the SQL has not run. The three books exist
+         either way and their free chapters are in the bundle, so show them
+         rather than an empty shop: a visitor who came to read a sample should
+         get the sample, not a note about a migration. */
+      setBooks(rows.length > 0 ? rows : localBooks())
       setError(null)
     } catch (e) {
+      setBooks(localBooks())
       /* Keep PostgREST's own code — `explain` reads it to tell "the library SQL
          was never run" apart from a genuine network failure, and hard-coding
          'network' here made every cause look like the same one. */
@@ -185,7 +192,10 @@ export default function Library() {
                     <Link to={`/library/${b.slug}`} className="chip-accent press">
                       {b.owned ? t('library.read') : t('library.read_free')}
                     </Link>
-                    {!b.owned && (
+                    {/* No Buy on a bundled book: there is no row to record
+                        the purchase against, so the money would be taken for
+                        something the app could not then unlock. */}
+                    {!b.owned && !b.local && (
                       <button
                         onClick={() => buy(b)}
                         disabled={busy === b.id}

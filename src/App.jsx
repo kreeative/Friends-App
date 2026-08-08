@@ -21,6 +21,7 @@ import Home from './pages/public/Home'
 import How from './pages/public/How'
 import About from './pages/public/About'
 import Books from './pages/public/Books'
+import Preview from './pages/public/Preview'
 import Library from './pages/Library'
 import Reader from './pages/Reader'
 
@@ -60,6 +61,8 @@ const PUBLIC_ROUTES = (
     <Route path="how-it-works" element={<How />} />
     <Route path="about" element={<About />} />
     <Route path="books" element={<Books />} />
+    {/* The free chapter, readable with no account and no database. */}
+    <Route path="books/:slug" element={<Preview />} />
     <Route path="*" element={<Navigate to="/" replace />} />
   </Route>
 )

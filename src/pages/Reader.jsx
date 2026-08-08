@@ -17,6 +17,7 @@ import { useT } from '../lib/i18n'
 import { Screen, Sheet } from '../components/ui'
 import Watermark, { WatermarkNote } from '../components/Watermark'
 import ErrorNote from '../components/ErrorNote'
+import { localBook, localChapterBody } from '../content/previews'
 
 const SIZES = [
   { key: 's', px: 16, lh: 1.65 },
@@ -24,7 +25,41 @@ const SIZES = [
   { key: 'l', px: 21, lh: 1.72 },
 ]
 
-/** Minimal markdown: paragraphs, ## headings, > quotes, *emphasis*. */
+/**
+ * Inline marks. The manuscripts use two, and both carry real weight in them:
+ * **bold** for the sentence an argument turns on, *italic* for a word being
+ * used precisely rather than loosely. Rendering either as literal asterisks
+ * is worse than rendering neither, because it reads as a typo in a book that
+ * is arguing for its own care.
+ *
+ * Bold is matched first so that the inner ** of a bold run is never mistaken
+ * for a pair of italics.
+ */
+function inline(text, key) {
+  const out = []
+  const re = /\*\*(.+?)\*\*|\*(.+?)\*/g
+  let last = 0
+  let m
+  while ((m = re.exec(text)) !== null) {
+    if (m.index > last) out.push(text.slice(last, m.index))
+    out.push(
+      m[1] !== undefined ? (
+        <strong key={`${key}b${m.index}`} className="font-bold text-ink">
+          {m[1]}
+        </strong>
+      ) : (
+        <em key={`${key}i${m.index}`} className="italic">
+          {m[2]}
+        </em>
+      ),
+    )
+    last = re.lastIndex
+  }
+  if (last < text.length) out.push(text.slice(last))
+  return out
+}
+
+/** Minimal markdown: paragraphs, ## headings, > quotes, and inline marks. */
 function render(md) {
   return md.split(/\n{2,}/).map((block, i) => {
     const b = block.trim()
@@ -45,7 +80,7 @@ function render(md) {
     }
     return (
       <p key={i} className="mt-6">
-        {b}
+        {inline(b, i)}
       </p>
     )
   })
@@ -75,13 +110,34 @@ export default function Reader() {
     ;(async () => {
       setLoading(true)
       try {
-        const { data: b } = await supabase
+        /**
+         * The database first, the bundle second.
+         *
+         * Once the SQL has run this is the real catalogue, with entitlements
+         * and reading progress attached. Until then, or if Supabase is
+         * unreachable, the free chapter still has to open: it is the thing a
+         * visitor reads before deciding whether to pay, and "Book not found"
+         * is the worst possible answer to someone who came to sample a book.
+         */
+        const { data: b, error: bookErr } = await supabase
           .from('books')
           .select('*')
           .eq('slug', slug)
           .maybeSingle()
         if (cancelled) return
-        if (!b) throw new Error('Book not found')
+
+        if (bookErr || !b) {
+          const local = localBook(slug)
+          if (!local) throw new Error('Book not found')
+
+          setBook(local.book)
+          setChapters(local.chapters)
+          setNotes([])
+          setCurrent({ ...local.chapters[0], body: localChapterBody(slug, 1) ?? '' })
+          setError(null)
+          return
+        }
+
         setBook(b)
 
         /* Only the chapter list is allowed to fail loudly. Highlights and the
@@ -102,7 +158,17 @@ export default function Reader() {
            upstream starts cloning. */
         setBook({ ...b, owned: Boolean(ent) })
 
-        if (chs.length === 0) throw new Error('NO_CHAPTERS')
+        /* The book exists but has no chapters, which is 07 run without 08,
+           or 11 not run at all. The free chapter is in the bundle either way,
+           so show it rather than an error page nobody can act on from here. */
+        if (chs.length === 0) {
+          const local = localBook(slug)
+          if (!local) throw new Error('NO_CHAPTERS')
+          setChapters(local.chapters)
+          setCurrent({ ...local.chapters[0], body: localChapterBody(slug, 1) ?? '' })
+          setError(null)
+          return
+        }
 
         const { data: prog } = await supabase
           .from('reading_progress')
@@ -147,6 +213,17 @@ export default function Reader() {
       if (!chapterId) return
       const meta = (list ?? chapters).find((c) => c.id === chapterId)
       setDrawer(false)
+
+      /* Bundled ids are answered from the bundle. Chapter one has its body
+         here; everything else is deliberately absent, so a paid chapter falls
+         through to the locked card exactly as it would from the database. */
+      if (String(chapterId).startsWith('local:')) {
+        const body = localChapterBody(meta?.book_id?.replace('local:', ''), meta?.idx)
+        setCurrent(body ? { ...meta, body } : { locked: true, id: chapterId })
+        window.scrollTo({ top: 0, behavior: 'instant' })
+        return
+      }
+
       try {
         const ch = await getChapter(chapterId)
         if (ch) {
@@ -259,9 +336,16 @@ export default function Reader() {
           <div className="card mt-16">
             <h2 className="text-h2 text-ink">{t('reader.locked_title')}</h2>
             <p className="mt-2 text-body text-muted">{t('reader.locked_body')}</p>
-            <button onClick={() => startCheckout(book.id)} className="btn-primary press mt-6">
-              {t('reader.unlock')}
-            </button>
+            {/* A bundled book has no row to record a purchase against, so
+                offering to take money for it would be selling something the
+                app could not then deliver. */}
+            {book.local ? (
+              <p className="mt-6 text-small text-muted">{t('reader.local_only')}</p>
+            ) : (
+              <button onClick={() => startCheckout(book.id)} className="btn-primary press mt-6">
+                {t('reader.unlock')}
+              </button>
+            )}
           </div>
         ) : (
           <article className="relative mt-12">
