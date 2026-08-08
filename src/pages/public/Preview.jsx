@@ -1,7 +1,10 @@
+import { useEffect, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { LANDING } from '../../content/landing'
 import { PREVIEW_BOOKS, localChapterBody } from '../../content/previews'
+import { livePrice, startCheckout } from '../../lib/library'
 import { useT } from '../../lib/i18n'
+import { money } from '../../lib/money'
 import { usePageMeta } from '../../lib/seo'
 
 /**
@@ -87,6 +90,41 @@ export default function Preview() {
   const book = PREVIEW_BOOKS.find((b) => b.slug === slug)
   const body = book ? localChapterBody(slug, 1) : null
 
+  /**
+   * The price Stripe will actually charge.
+   *
+   * The bundled catalogue carries a number so the button is never blank, but
+   * it is a copy, and the copy on the live site had drifted from the Price
+   * object by the time anybody looked. Asked for on mount and swapped in when
+   * it arrives, so nothing is waiting on a network call in order to render.
+   */
+  const [price, setPrice] = useState(null)
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState(null)
+
+  useEffect(() => {
+    if (!slug) return
+    let cancelled = false
+    livePrice(slug)
+      .then((p) => !cancelled && p && setPrice(p))
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [slug])
+
+  async function buy() {
+    if (busy) return
+    setBusy(true)
+    setErr(null)
+    const { error } = await startCheckout(slug)
+    if (error) {
+      setErr(error)
+      setBusy(false)
+    }
+    // On success the browser has already left for Stripe, so nothing to undo.
+  }
+
   usePageMeta({
     title: book ? `${book.chapters[0]} · ${book.title}` : 'Rich & Friends',
     description: book?.description,
@@ -127,12 +165,41 @@ export default function Preview() {
               </li>
             ))}
           </ol>
-          <Link
-            to="/signin"
-            className="btn press mt-8 w-auto bg-on-field px-9 text-field hover:opacity-90"
-          >
-            {nav.links.signin}
-          </Link>
+          {/**
+           * Buy, not sign in.
+           *
+           * This button used to go to /signin, which asked somebody who had
+           * read three thousand words and decided they wanted the rest to
+           * stop and make an account first. That is a wall in the one place
+           * where there should be a door. Checkout takes guests now, Stripe
+           * collects the address during payment, and the book is waiting on
+           * that address whenever they do sign in.
+           *
+           * The amount is on the button. A price you have to click to find
+           * out is a reason to hesitate.
+           */}
+          <div className="mt-8 flex flex-wrap items-center gap-4">
+            <button
+              onClick={buy}
+              disabled={busy}
+              className="btn press w-auto bg-on-field px-9 text-field hover:opacity-90 disabled:opacity-60"
+            >
+              {busy
+                ? t('preview.opening')
+                : t('preview.buy', {
+                    price: money(
+                      price?.cents ?? book.price_cents,
+                      price?.currency ?? book.currency,
+                      locale,
+                    ),
+                  })}
+            </button>
+            <Link to="/signin" className="text-small text-on-field/70 underline-offset-4 hover:underline">
+              {t('preview.already_bought')}
+            </Link>
+          </div>
+
+          {err && <p className="mt-4 text-small text-on-field/80">{err}</p>}
         </div>
       </div>
     </article>

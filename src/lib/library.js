@@ -10,11 +10,45 @@ import { supabase } from './supabase'
  * simply absent. There is no client-side filtering anywhere in this file.
  */
 
+/**
+ * The live price list, from Stripe.
+ *
+ * Fetched once and remembered, because it is the same for everybody and does
+ * not change while somebody is looking at the page. Any failure is silent and
+ * yields an empty map: the shop then shows books.price_cents, which is what it
+ * always used to show.
+ */
+let priceList = null
+
+/** Exported for the public preview, which has no catalogue row to read from. */
+export async function livePrice(ref) {
+  const list = await livePrices()
+  return list?.[ref] ?? null
+}
+
+async function livePrices() {
+  if (priceList) return priceList
+  try {
+    const res = await fetch('/api/prices')
+    if (!(res.headers.get('content-type') ?? '').includes('application/json')) {
+      // Not deployed, or a dev server answering with index.html. Not an error.
+      priceList = {}
+      return priceList
+    }
+    const body = await res.json()
+    priceList = body?.prices ?? {}
+  } catch {
+    priceList = {}
+  }
+  return priceList
+}
+
 export async function listBooks() {
-  const [{ data: books, error }, { data: owned }, { data: progress }] = await Promise.all([
+  const [{ data: books, error }, { data: owned }, { data: progress }, prices] = await Promise.all([
     supabase.from('books').select('*').eq('published', true).order('created_at'),
     supabase.from('entitlements').select('book_id'),
     supabase.from('reading_progress').select('book_id, chapter_id, scroll_pct'),
+    livePrices(),
   ])
 
   /* The catalogue read is the one that has to be believed. Swallowing this
@@ -29,11 +63,70 @@ export async function listBooks() {
   const ownedIds = new Set((owned ?? []).map((e) => e.book_id))
   const progressBy = Object.fromEntries((progress ?? []).map((p) => [p.book_id, p]))
 
-  return (books ?? []).map((b) => ({
-    ...b,
-    owned: ownedIds.has(b.id),
-    progress: progressBy[b.id] ?? null,
-  }))
+  const priced = (books ?? []).map((b) => {
+    /* Stripe first, the column second. The two disagreed on the live site,
+       which is the worst way for a price to fail: the shelf edge said one
+       number and the till was going to take another. */
+    const live = prices?.[b.id]
+    return {
+      ...b,
+      price_cents: live?.cents ?? b.price_cents,
+      currency: live?.currency ?? b.currency,
+      owned: ownedIds.has(b.id),
+      progress: progressBy[b.id] ?? null,
+    }
+  })
+
+  return dedupe(priced)
+}
+
+/**
+ * One card per book, and only books somebody could buy.
+ *
+ * The live catalogue picked up a second set of rows: the same three books
+ * under different slugs, priced at zero, left over from before
+ * 07_books_all_in_one.sql created the real ones. Six cards, three of them
+ * unbuyable, which is what the shop was showing.
+ *
+ * 15_dedupe_books.sql retires them properly. This is the belt to that braces,
+ * because a storefront should not be capable of listing the same title twice
+ * whatever state the table is in, and because a fix that needs somebody to
+ * paste SQL before the page looks right is not finished.
+ *
+ * Two filters, in the order that matters.
+ *
+ * The first is the one that actually catches these. Matching on the title does
+ * not: the leftovers are titled "Story You Tell" and the real book is "The
+ * Story You Tell About Ability". What every leftover has in common is that it
+ * costs nothing and names no Stripe object, so Checkout has nothing to charge
+ * for. That is not a free book, this app has no such thing; it is a row that
+ * cannot be sold. Owned books survive whatever their price, because a book
+ * vanishing off your own shelf is worse than a duplicate card.
+ *
+ * The second catches a genuine duplicate that is priced. The survivor is the
+ * one somebody can act on: wired to Stripe, then priced, then already owned.
+ */
+function dedupe(books) {
+  const sellable = books.filter(
+    (b) => b.owned || b.price_cents > 0 || (b.stripe_ref ?? '').trim() !== '',
+  )
+
+  const key = (b) =>
+    (b.title ?? '')
+      .toLowerCase()
+      .replace(/^(the|a|an)\s+/, '')
+      .replace(/[^a-z0-9]/g, '')
+
+  const rank = (b) => (b.stripe_ref ? 4 : 0) + (b.price_cents > 0 ? 2 : 0) + (b.owned ? 1 : 0)
+
+  const best = new Map()
+  for (const b of sellable) {
+    const k = key(b)
+    if (!k) continue
+    const held = best.get(k)
+    if (!held || rank(b) > rank(held)) best.set(k, b)
+  }
+  return [...best.values()]
 }
 
 /**
@@ -165,17 +258,37 @@ export async function shareToGroup({ userId, groupId, bookId, kind, highlightId,
   return { error }
 }
 
-export async function startCheckout(bookId) {
+/**
+ * Send somebody to Stripe.
+ *
+ * Takes an id or a slug, because the two storefronts have different things in
+ * hand: the signed-in library holds catalogue rows, the public preview renders
+ * from the bundle and has only a slug.
+ *
+ * No longer refuses a signed-out buyer. It used to answer "Not signed in",
+ * which meant somebody who had just read the free chapter and wanted the rest
+ * was asked to make an account before the shop would take their money. Stripe
+ * collects an email during payment; the webhook matches it to an account, or
+ * parks the purchase until that account exists. The token is still sent when
+ * there is one, because a purchase that can be written straight against a user
+ * id beats one that has to be matched afterwards.
+ */
+export async function startCheckout(ref) {
   const { data: sess } = await supabase.auth.getSession()
   const token = sess?.session?.access_token
-  if (!token) return { error: 'Not signed in' }
+
+  const isId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(ref ?? '')
+  const request = isId ? { book_id: ref } : { slug: ref }
 
   let res
   try {
     res = await fetch('/api/checkout', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ book_id: bookId }),
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(request),
     })
   } catch (e) {
     return { error: `Could not reach the checkout endpoint. ${e?.message ?? e}` }

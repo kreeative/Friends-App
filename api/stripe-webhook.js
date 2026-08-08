@@ -67,11 +67,64 @@ export default async function handler(req, res) {
         return res.status(200).json({ received: true, skipped: 'unpaid' })
       }
 
-      const userId = session.metadata?.user_id
       const bookId = session.metadata?.book_id
-      if (!userId || !bookId) {
-        console.error('session without metadata', session.id)
-        return res.status(200).json({ received: true, skipped: 'no metadata' })
+      if (!bookId) {
+        console.error('session without a book', session.id)
+        return res.status(200).json({ received: true, skipped: 'no book' })
+      }
+
+      /**
+       * Who bought it, in order of how much the answer can be trusted.
+       *
+       * user_id is written by /api/checkout for somebody who was signed in,
+       * and it is the only field here that came out of a verified session
+       * rather than off a payment form.
+       *
+       * A guest has no user_id, so the email Stripe collected is all there is.
+       * If an account already uses that address the book goes straight onto
+       * it; if not, the purchase is parked against the address and claimed the
+       * first time somebody signs in with it. Parking is the important half.
+       * Without it, buying before making an account loses the book, and the
+       * person who paid has no way to tell that apart from a bug.
+       */
+      const email = (session.customer_details?.email ?? session.customer_email ?? '')
+        .trim()
+        .toLowerCase()
+
+      let userId = session.metadata?.user_id ?? null
+
+      if (!userId && email) {
+        // listUsers is paginated and has no exact-email filter, so this asks
+        // the database directly rather than walking every page.
+        const { data: match } = await admin
+          .from('profiles')
+          .select('id')
+          .eq('email_lower', email)
+          .maybeSingle()
+        userId = match?.id ?? null
+      }
+
+      if (!userId) {
+        if (!email) {
+          console.error('guest session with no email', session.id)
+          return res.status(200).json({ received: true, skipped: 'no email' })
+        }
+
+        const { error: parkErr } = await admin.from('pending_entitlements').upsert(
+          {
+            email,
+            book_id: bookId,
+            stripe_session_id: session.id,
+            amount_cents: session.amount_total ?? null,
+          },
+          { onConflict: 'email,book_id', ignoreDuplicates: true },
+        )
+
+        if (parkErr) {
+          console.error('could not park guest purchase', parkErr)
+          return res.status(500).json({ error: 'Could not record purchase' })
+        }
+        return res.status(200).json({ received: true, parked: true })
       }
 
       const { error } = await admin.from('entitlements').upsert(

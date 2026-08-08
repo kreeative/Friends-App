@@ -104,35 +104,59 @@ export default async function handler(req, res) {
   try {
     const { stripe, admin } = clients()
 
+    /**
+     * Signing in is no longer a precondition for buying.
+     *
+     * It used to be, and that is a strange thing to ask of somebody who has
+     * just finished the free chapter and wants the rest: the shop demanded an
+     * account before it would take their money. Stripe collects an email
+     * address during payment regardless, so the account can be matched or made
+     * afterwards out of something the buyer had to give anyway.
+     *
+     * A signed-in buyer is still the better path, because the entitlement can
+     * be written straight against their id. A guest gets the same book by a
+     * slower route: the webhook matches the email, and if no account exists
+     * yet it parks the purchase until one does. See 14_guest_purchase.sql.
+     */
     const token = (req.headers.authorization ?? '').replace(/^Bearer\s+/i, '')
-    if (!token) return res.status(401).json({ error: 'Not signed in' })
+    let user = null
+    if (token) {
+      const { data: userData } = await admin.auth.getUser(token)
+      user = userData?.user ?? null
+    }
 
-    const { data: userData, error: userErr } = await admin.auth.getUser(token)
-    if (userErr || !userData?.user) return res.status(401).json({ error: 'Not signed in' })
-    const user = userData.user
+    /* Either identifier. The signed-in library holds catalogue rows and knows
+       the id; the public preview renders from the bundle, which has a slug and
+       no id, and it has to be able to sell from there too. */
+    const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body
+    const bookId = body?.book_id
+    const slug = body?.slug
+    if (!bookId && !slug) return res.status(400).json({ error: 'book_id or slug is required' })
 
-    const bookId = (typeof req.body === 'string' ? JSON.parse(req.body) : req.body)?.book_id
-    if (!bookId) return res.status(400).json({ error: 'book_id is required' })
-
-    const { data: book, error: bookErr } = await admin
+    const query = admin
       .from('books')
       .select('id, slug, title, price_cents, currency, published, stripe_ref')
-      .eq('id', bookId)
-      .maybeSingle()
+    const { data: book, error: bookErr } = await (
+      bookId ? query.eq('id', bookId) : query.eq('slug', slug)
+    ).maybeSingle()
 
     if (bookErr || !book || !book.published) {
       return res.status(404).json({ error: 'No such book' })
     }
 
     // Already owned. Sending them to Stripe would charge twice for nothing.
-    const { data: owned } = await admin
-      .from('entitlements')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('book_id', book.id)
-      .maybeSingle()
+    // Only checkable for someone we can identify; a guest has not told us who
+    // they are yet, and the webhook's upsert is what stops a double grant.
+    if (user) {
+      const { data: owned } = await admin
+        .from('entitlements')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('book_id', book.id)
+        .maybeSingle()
 
-    if (owned) return res.status(409).json({ error: 'Already owned', owned: true })
+      if (owned) return res.status(409).json({ error: 'Already owned', owned: true })
+    }
 
     const origin =
       req.headers.origin ||
@@ -140,10 +164,14 @@ export default async function handler(req, res) {
 
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
-      customer_email: user.email ?? undefined,
+      // Prefilled when we know it, collected by Stripe when we do not. Either
+      // way the webhook ends up with an address it can match an account to.
+      customer_email: user?.email ?? undefined,
+      ...(user ? {} : { customer_creation: 'always' }),
       line_items: [await lineItem(stripe, book)],
-      // The webhook trusts these two fields and nothing from the browser.
-      metadata: { user_id: user.id, book_id: book.id },
+      // The webhook trusts these fields and nothing from the browser. user_id
+      // is absent for a guest, which is the signal to match on email instead.
+      metadata: { ...(user ? { user_id: user.id } : {}), book_id: book.id },
       success_url: `${origin}/library?purchase=success&book=${book.slug}`,
       cancel_url: `${origin}/library?purchase=cancelled`,
     })

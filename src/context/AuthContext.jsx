@@ -52,7 +52,24 @@ export function AuthProvider({ children }) {
 
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
       setSession(s ?? null)
-      if (s) setAuthError(null)
+      if (s) {
+        setAuthError(null)
+        /**
+         * Collect anything bought before this account existed.
+         *
+         * Checkout no longer requires an account, so a book can be paid for by
+         * an address with no user attached to it. The webhook parks that
+         * purchase; this is the other half. It runs on every sign-in rather
+         * than only the first, because the address somebody signs up with is
+         * not always the one they paid with and they may fix that later. It is
+         * cheap: with nothing queued it deletes nothing and returns zero.
+         *
+         * Failure is silent on purpose. Somebody signing in should not meet an
+         * error about a migration they have never heard of, and the next
+         * sign-in tries again.
+         */
+        supabase.rpc('claim_entitlements').catch(() => {})
+      }
     })
     return () => {
       cancelled = true
