@@ -172,3 +172,50 @@ where r.id = b.id
 -- Check: three rows, all published, all priced, all with a Stripe ref.
 --   select slug, title, price_cents, currency, stripe_ref
 --   from books where published order by title;
+
+-- ---------------------------------------------------------------------------
+-- 5. Never leave a title with nothing published.
+--
+-- A safety net, added after this file unpublished the only sellable copy of
+-- "Evidence of Yourself" on a live catalogue. The ranking above assumes at
+-- least one row per title is worth keeping, and every step is guarded, but
+-- "every step is guarded" is exactly the reasoning that produced the bug: the
+-- steps are individually correct and the combination still managed to retire
+-- everything under one title.
+--
+-- So rather than reason harder about the ordering, assert the postcondition.
+-- For any title with no published row left, put the best candidate back. This
+-- is cheap, it is idempotent, and it makes the failure impossible rather than
+-- unlikely.
+-- ---------------------------------------------------------------------------
+with norm as (
+  select
+    id, title, price_cents, stripe_ref, created_at, published,
+    regexp_replace(
+      lower(regexp_replace(title, '^(the|a|an)\s+', '', 'i')),
+      '[^a-z0-9]', '', 'g'
+    ) as k
+  from books
+),
+orphaned as (
+  select k from norm group by k having bool_and(not published)
+),
+best as (
+  select distinct on (n.k) n.k, n.id
+  from norm n
+  join orphaned o on o.k = n.k
+  order by n.k,
+           (n.stripe_ref is not null and n.stripe_ref <> '') desc,
+           (n.price_cents > 0) desc,
+           n.created_at asc
+)
+update books b
+set published = true
+from best
+where b.id = best.id;
+
+-- Check: every title should have exactly one published row.
+--   select regexp_replace(lower(regexp_replace(title,'^(the|a|an)\s+','','i')),
+--                         '[^a-z0-9]','','g') as k,
+--          count(*) filter (where published) as published_copies
+--   from books group by k order by k;
