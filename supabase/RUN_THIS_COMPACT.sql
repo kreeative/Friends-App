@@ -1,6 +1,9 @@
 -- Rich & Friends: everything outstanding, one paste. Safe to run twice.
 -- Assumes 01_schema, 02_functions and 03_policies have already been run.
 
+create table if not exists books    (id uuid primary key default gen_random_uuid());
+create table if not exists chapters (id uuid primary key default gen_random_uuid());
+
 create table if not exists books (
   id          uuid primary key default gen_random_uuid(),
   slug        text not null unique,
