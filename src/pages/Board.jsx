@@ -4,11 +4,12 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useGroup } from '../context/GroupContext'
 import { cycleEnd, cyclePhase, shortDate, untilLabel } from '../lib/time'
-import { groupGoalProgress } from '../lib/stats'
+import { completionRate, groupGoalProgress, rollingRate } from '../lib/stats'
 import { useT } from '../lib/i18n'
 import { Avatar, Empty, Screen, Section, TopBar } from '../components/ui'
 import NudgeBanner from '../components/NudgeBanner'
 import GroupMoods from '../components/GroupMoods'
+import ConsistencyPanel from '../components/ConsistencyPanel'
 import GoalCard from '../components/GoalCard'
 import { MoodBadge } from '../components/MoodBoard'
 
@@ -88,6 +89,22 @@ export default function Board() {
    * waits. You write whenever the week gives you a minute.
    */
   const revealed = phase === 'closed' || allIn
+
+  /**
+   * The group's consistency, computed exactly as the dashboard computes
+   * yours, from the same helpers, over the same view.
+   *
+   * `statuses` is every member's row for every cycle of this group, so
+   * completionRate over it is the share of the whole group's check-ins that
+   * actually happened, and the trend is that number rolling. Passing the
+   * group's rows into the same functions is what keeps the two screens
+   * agreeing about what a percentage means.
+   */
+  const groupRate = useMemo(() => completionRate(statuses, 14), [statuses])
+  const groupTrend = useMemo(
+    () => rollingRate(statuses, { window: 3, points: 12 }),
+    [statuses],
+  )
 
   const nowItemIds = new Set(now.map((c) => c.id))
   const iHaveChecked = submittedIds.has(user?.id)
@@ -194,6 +211,35 @@ export default function Board() {
        * Renders nothing at all when nobody has shared. See GroupMoods.
        */}
       <GroupMoods groupId={activeId} members={members} />
+
+      {/**
+       * The same panel the dashboard and the "You" screen use.
+       *
+       * The group page had no analytics on it at all: two of the three screens
+       * that show a number showed it in the dark panel with the trend beside
+       * it, and the group, the one place where the number is about a shared
+       * thing, showed nothing. That reads as an unfinished screen rather than
+       * a deliberate omission, and it is why the group data "looks different
+       * from the other analytics UI": there was no group data.
+       *
+       * Deliberately one component rather than a second one that looks like
+       * it. Two implementations of the same chart is how the two come to
+       * disagree about what a percentage means.
+       *
+       * The rows are the whole group's, not yours. On the dashboard the number
+       * answers "how am I doing"; here it answers "how are we doing", which is
+       * the question this page exists for.
+       */}
+      <Section title={t('board.how_we_are')}>
+        <ConsistencyPanel
+          rate={groupRate}
+          trend={groupTrend}
+          cycles={statuses}
+          goalCount={groupGoals.length}
+          groupCount={members.length}
+        />
+        <p className="mt-4 text-small text-muted">{t('board.rate_note')}</p>
+      </Section>
 
       {groupGoals.length > 0 && (
         <Section title={t('board.together')}>
