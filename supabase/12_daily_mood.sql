@@ -44,11 +44,25 @@ alter table daily_mood enable row level security;
 -- which is a different and much more invasive thing than knowing how someone
 -- is this morning; without shares_group it would be public.
 -- ---------------------------------------------------------------------------
+-- The membership test is written out rather than calling shares_group(),
+-- which lives in 03_policies.sql. Inlining it means this file has exactly one
+-- prerequisite -- the tables in 01_schema.sql -- and cannot fail with a
+-- missing-function error for someone running the files out of order.
 drop policy if exists daily_mood_select on daily_mood;
 create policy daily_mood_select on daily_mood for select to authenticated
   using (
     user_id = auth.uid()
-    or (shared and day = current_date and shares_group(user_id))
+    or (
+      shared
+      and day = current_date
+      and exists (
+        select 1
+          from group_members mine
+          join group_members theirs on theirs.group_id = mine.group_id
+         where mine.user_id = auth.uid()
+           and theirs.user_id = daily_mood.user_id
+      )
+    )
   );
 
 drop policy if exists daily_mood_write on daily_mood;

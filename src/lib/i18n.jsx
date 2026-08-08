@@ -139,8 +139,9 @@ const STRINGS = {
     'mood.share': 'Let my groups see this',
     'mood.share_on': 'The people in your groups can see today’s mood. Only today’s, and only while this is on.',
     'mood.share_off': 'Off. Nobody else can see it.',
-    'mood.not_installed':
-      'The mood table has not been created yet. In Supabase, run supabase/12_daily_mood.sql.',
+    'mood.share_unavailable':
+      'Sharing needs the database. Today’s mood is saved on this device, and a device cannot show it to anyone else. Run supabase/12_daily_mood.sql in Supabase to switch sharing on.',
+    'mood.local_note': 'Saved on this device.',
     'mood.excited': 'Excited',
     'mood.joyful': 'Joyful',
     'mood.grateful': 'Grateful',
@@ -463,8 +464,9 @@ const STRINGS = {
     'mood.share': 'Laisser mes groupes le voir',
     'mood.share_on': 'Les gens de tes groupes voient ton humeur du jour. Celle d’aujourd’hui seulement, et seulement tant que c’est activé.',
     'mood.share_off': 'Désactivé. Personne d’autre ne le voit.',
-    'mood.not_installed':
-      'La table des humeurs n’a pas encore été créée. Dans Supabase, exécute supabase/12_daily_mood.sql.',
+    'mood.share_unavailable':
+      'Le partage a besoin de la base. Ton humeur du jour est enregistrée sur cet appareil, et un appareil ne peut la montrer à personne. Exécute supabase/12_daily_mood.sql dans Supabase pour activer le partage.',
+    'mood.local_note': 'Enregistré sur cet appareil.',
     'mood.excited': 'Impatient',
     'mood.joyful': 'Joyeux',
     'mood.grateful': 'Reconnaissant',
