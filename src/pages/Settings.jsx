@@ -22,7 +22,7 @@ export default function Settings() {
    * Collective progress, deliberately not a ranking.
    *
    * In a friend group a leaderboard mostly teaches whoever is last to stop
-   * opening the app — and they are the person the group most needs to keep.
+   * opening the app, and they are the person the group most needs to keep.
    * So the shared number is the group's, and individual histories sit next to
    * each other unsorted rather than in rank order.
    */
@@ -35,7 +35,7 @@ export default function Settings() {
   if (!group) return null
 
   const dayName = (locale === 'fr' ? DAYS_FR : DAYS)[group.checkin_dow]
-  const shareText = `${group.name} — Rich & Friends. ${t('start.invite_code')}: ${group.invite_code}`
+  const shareText = `${group.name}. Rich & Friends. ${t('start.invite_code')}: ${group.invite_code}`
 
   async function share() {
     if (navigator.share) {

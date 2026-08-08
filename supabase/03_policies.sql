@@ -1,9 +1,9 @@
 -- ============================================================================
--- Friends v2 — Row Level Security
+-- Friends v2. Row Level Security
 -- Run after 02_functions.sql.
 --
 -- v1's mistake was `using (true)`, which meant anyone holding the anon key
--- (it ships in the JS bundle — it is public by definition) could read and
+-- (it ships in the JS bundle, it is public by definition) could read and
 -- write every group's data. The rule below is absolute: there is no
 -- `using (true)` anywhere in this file, and every policy resolves to either
 -- "this row is mine" or "I am a member of the group this row belongs to".
@@ -22,7 +22,7 @@ alter table notifications_log  enable row level security;
 
 -- Helper: do I share at least one group with this person? Used only by the
 -- profiles policy. SECURITY DEFINER for the same anti-recursion reason as
--- is_member() — the lookup itself must not be filtered by RLS.
+-- is_member(), the lookup itself must not be filtered by RLS.
 create or replace function shares_group(other uuid)
 returns boolean
 language sql
@@ -59,7 +59,7 @@ create policy profiles_update on profiles for update to authenticated
 -- ---------------------------------------------------------------------------
 -- groups
 -- Enforces: a group is invisible until you are in it. Note there is no INSERT
--- policy at all — creation goes exclusively through create_group(), so an
+-- policy at all, creation goes exclusively through create_group(), so an
 -- attacker cannot mint a group with a chosen invite_code to squat on. Only
 -- admins can change the check-in rhythm, because changing it moves the ritual
 -- for everyone.
@@ -75,7 +75,7 @@ create policy groups_update on groups for update to authenticated
 -- ---------------------------------------------------------------------------
 -- group_members
 -- Enforces: you see the roster of your own groups only. This is the table
--- that makes is_member() necessary — a policy here that queried
+-- that makes is_member() necessary, a policy here that queried
 -- group_members directly would recurse forever. Joining goes through
 -- join_group() (no INSERT policy); you may remove yourself, and an admin may
 -- remove anyone.
@@ -103,7 +103,7 @@ create policy cycles_select on cycles for select to authenticated
 -- Enforces: members read every goal in the group (accountability requires
 -- visibility). You may create a personal goal only for yourself; group goals
 -- are unowned and any member may create one. Editing follows the same split,
--- with admins able to tidy up. Deleting is deliberately narrow — the intended
+-- with admins able to tidy up. Deleting is deliberately narrow, the intended
 -- exit from a goal is status='paused' or 'abandoned', which keeps the history
 -- intact rather than rewriting it.
 -- ---------------------------------------------------------------------------
@@ -144,7 +144,7 @@ create policy goals_delete on goals for delete to authenticated
 -- The 12-hour tail on closes_at is the offline allowance: a check-in composed
 -- on the train inside the window must still sync when the phone reconnects an
 -- hour after close. It is bounded so history cannot be rewritten days later.
--- There is no UPDATE-by-others and no DELETE policy — nobody can quietly
+-- There is no UPDATE-by-others and no DELETE policy, nobody can quietly
 -- retract or edit someone else's record of what happened.
 -- ---------------------------------------------------------------------------
 drop policy if exists checkins_select on checkins;
@@ -188,7 +188,7 @@ create policy checkins_update on checkins for update to authenticated
 -- That second half is not redundant. Owning the check-in only says which row
 -- the item hangs off; goal_id was a separate, unchecked pointer, so a member
 -- of one group could attach another group's goal to their own check-in. It
--- leaked nothing on its own — reads stay gated — but it wrote a row that
+-- leaked nothing on its own (reads stay gated) but it wrote a row that
 -- crosses a tenant boundary, and anything that later aggregates by goal_id
 -- would pick it up. It was also an existence oracle: a real-but-invisible
 -- goal id succeeded while a made-up one failed on the foreign key, which
@@ -220,8 +220,7 @@ create policy checkin_items_write on checkin_items for all to authenticated
 
 -- ---------------------------------------------------------------------------
 -- away_periods
--- Enforces: the group can see that you are away (that is the entire point —
--- declared absence reads differently from silence), but only you can declare
+-- Enforces: the group can see that you are away (that is the entire point. -- declared absence reads differently from silence), but only you can declare
 -- or withdraw it, and only for a cycle in a group you belong to.
 -- ---------------------------------------------------------------------------
 drop policy if exists away_select on away_periods;
@@ -245,7 +244,7 @@ create policy away_write on away_periods for all to authenticated
 -- Enforces: the whole group sees that someone has gone quiet, which is what
 -- lets a nudge be claimed rather than assigned. Nudges are created only by
 -- tick() (no INSERT policy) so they cannot be fabricated, and the subject of
--- a nudge cannot close their own — otherwise the quiet person could dismiss
+-- a nudge cannot close their own, otherwise the quiet person could dismiss
 -- the one mechanism designed to reach them.
 -- ---------------------------------------------------------------------------
 drop policy if exists nudges_select on nudges;
@@ -260,7 +259,7 @@ create policy nudges_update on nudges for update to authenticated
 -- ---------------------------------------------------------------------------
 -- notifications_log
 -- Enforces: you can audit what the app sent you and nothing else. There is no
--- write policy — only the Edge Function's service-role key inserts here, which
+-- write policy, only the Edge Function's service-role key inserts here, which
 -- is what makes the row a reliable "already sent" lock and keeps the two-email
 -- ceiling honest even if the sender runs twice.
 -- ---------------------------------------------------------------------------
@@ -273,7 +272,7 @@ create policy notifications_select on notifications_log for select to authentica
 --
 -- PostgreSQL grants EXECUTE on every new function to PUBLIC, and both `anon`
 -- and `authenticated` inherit from PUBLIC. So `revoke ... from authenticated`
--- is a no-op — the earlier version of this file did exactly that for
+-- is a no-op, the earlier version of this file did exactly that for
 -- ensure_cycles() and left it callable by anyone holding the anon key. Every
 -- function has to be revoked from PUBLIC first, then granted back by name.
 --
@@ -290,7 +289,7 @@ revoke execute on function
   from public;
 
 -- The three membership helpers are called from inside policy expressions,
--- which are evaluated as the querying role — so they need EXECUTE even though
+-- which are evaluated as the querying role, so they need EXECUTE even though
 -- no client calls them directly.
 grant execute on function is_member(uuid), is_group_admin(uuid), shares_group(uuid)
   to authenticated;
@@ -302,7 +301,7 @@ grant execute on function claim_nudge(uuid)                             to authe
 
 -- tick() stays callable by a signed-in user: it is idempotent, and letting
 -- the client call it on app open means a group keeps ticking even before
--- pg_cron is configured. It is NOT granted to anon — it is a SECURITY DEFINER
+-- pg_cron is configured. It is NOT granted to anon, it is a SECURITY DEFINER
 -- function that writes, and an unauthenticated caller has no business
 -- driving it.
 grant execute on function tick() to authenticated;

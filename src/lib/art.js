@@ -2,7 +2,7 @@
  * The sticker artwork.
  *
  * Adding one is dropping a PNG into src/assets/stickers/. There is no list to
- * update and nothing to register — the glob below picks up whatever is in
+ * update and nothing to register, the glob below picks up whatever is in
  * that folder at build time, and every place that shows a sticker starts
  * showing it.
  *
@@ -16,7 +16,7 @@
  * Names are sorted so the id-to-sticker mapping below is stable: a group must
  * not change its face because a new sticker landed earlier in the directory
  * listing. Adding art appends to the end of the sorted list and only shifts
- * assignments if the new name sorts before existing ones — see the note on
+ * assignments if the new name sorts before existing ones. See the note on
  * stickerFor.
  */
 const MODULES = import.meta.glob('../assets/stickers/*.png', {
@@ -36,12 +36,12 @@ const BY_NAME = Object.fromEntries(STICKERS.map((s) => [s.name, s.src]))
 
 /**
  * The URL for one sticker by name, or undefined if there is no such file.
- * Callers that name a specific sticker should tolerate undefined — art gets
+ * Callers that name a specific sticker should tolerate undefined. Art gets
  * renamed, and a missing picture should not take a page down.
  */
 export const stickerSrc = (name) => BY_NAME[name]
 
-/** The names that exist, from a wish list — order preserved, gaps dropped. */
+/** The names that exist, from a wish list. Order preserved, gaps dropped. */
 export const pickStickers = (wanted) => wanted.filter((n) => n in BY_NAME)
 
 /**

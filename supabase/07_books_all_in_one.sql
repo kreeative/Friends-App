@@ -1,5 +1,5 @@
 -- ============================================================================
--- LES LIVRES — un seul fichier à coller
+-- LES LIVRES, un seul fichier à coller
 --
 -- La bibliothèque est vide parce que 05 et 06 n'ont jamais été exécutés. Ce
 -- fichier est simplement les deux collés bout à bout, dans le bon ordre, pour
@@ -12,12 +12,12 @@
 -- pas de doublons.
 --
 -- Après ça, /library affiche les trois livres. Attention : leur texte est du
--- remplissage généré, pas les vrais manuscrits — voir la note à la fin.
+-- remplissage généré, pas les vrais manuscrits, voir la note à la fin.
 -- ============================================================================
 
 
 -- ============================================================================
--- Rich & Friends — paid reading library
+-- Rich & Friends, paid reading library
 -- Run after 03_policies.sql. Schema and policies only; no UI depends on this
 -- yet, and it is safe to run before the reader exists.
 --
@@ -55,7 +55,7 @@ create index if not exists chapters_book_idx on chapters(book_id, idx);
 
 -- ---------------------------------------------------------------------------
 -- entitlements: written only by the Stripe webhook, holding the service role.
--- There is deliberately no INSERT policy — a client that could write its own
+-- There is deliberately no INSERT policy, a client that could write its own
 -- entitlement would make the paywall decorative.
 --
 -- The unique constraint on (user_id, book_id) makes webhook redelivery safe:
@@ -120,7 +120,7 @@ create index if not exists reading_shares_group_idx on reading_shares(group_id, 
 
 -- ---------------------------------------------------------------------------
 -- owns_book(): the entitlement check, as a SECURITY DEFINER function for the
--- same reason is_member() is one — the chapters policy must be able to consult
+-- same reason is_member() is one, the chapters policy must be able to consult
 -- entitlements without being filtered by the entitlements policy in turn.
 -- ---------------------------------------------------------------------------
 create or replace function owns_book(b uuid)
@@ -153,7 +153,7 @@ drop policy if exists books_select on books;
 create policy books_select on books for select to authenticated
   using (published = true);
 
--- chapters — THE policy this file exists for.
+-- chapters. THE policy this file exists for.
 -- Enforces: a chapter row is selectable only when it is the free preview, or
 -- when the reader holds an entitlement for its book. Bodies are never
 -- filtered in application code, so a hand-written PostgREST query against
@@ -166,7 +166,7 @@ create policy chapters_select on chapters for select to authenticated
   );
 
 -- entitlements
--- Enforces: you can see what you own, and nothing else — not even the fact
+-- Enforces: you can see what you own, and nothing else, not even the fact
 -- that someone else owns a book. No INSERT, UPDATE or DELETE policy exists at
 -- all: only the webhook's service-role key writes here, which is what makes
 -- the webhook the sole source of truth for entitlement.
@@ -183,7 +183,7 @@ create policy progress_all on reading_progress for all to authenticated
   with check (user_id = auth.uid() and owns_book(book_id));
 
 -- highlights
--- Enforces: private by default, and only creatable for a book you own — so a
+-- Enforces: private by default, and only creatable for a book you own, so a
 -- highlight cannot be used as an oracle to extract text you have not bought.
 drop policy if exists highlights_all on highlights;
 create policy highlights_all on highlights for all to authenticated
@@ -193,7 +193,7 @@ create policy highlights_all on highlights for all to authenticated
 -- reading_shares
 -- Enforces: the group sees what a member chose to share, and a member can
 -- only create or withdraw their own share. Deliberately never written
--- automatically on purchase — see the note at the top of the table.
+-- automatically on purchase, see the note at the top of the table.
 drop policy if exists shares_select on reading_shares;
 create policy shares_select on reading_shares for select to authenticated
   using (is_member(group_id));
@@ -218,7 +218,7 @@ grant execute on function owns_book(uuid) to authenticated;
 -- What this does NOT do, stated plainly so it is not mistaken for security:
 --
 -- It stops someone reading a chapter they have not bought. It does not stop
--- someone who HAS bought a book from copying its text — no web application
+-- someone who HAS bought a book from copying its text, no web application
 -- can, because the browser must render the words to show them. Watermarking
 -- (handled in the reader, not here) makes a leaked copy traceable to a buyer;
 -- it does not prevent the leak.
@@ -229,16 +229,15 @@ grant execute on function owns_book(uuid) to authenticated;
 -- Placeholder content for the reading library.
 --
 -- Real chapter titles from the content brief, PLACEHOLDER bodies. The point is
--- to exercise the reader against realistic volume — roughly 3,000 words a
--- chapter — so scrolling, progress saving and chapter switching are tested
+-- to exercise the reader against realistic volume, roughly 3,000 words a
+-- chapter, so scrolling, progress saving and chapter switching are tested
 -- against what the finished books will weigh, not against two paragraphs.
 --
 -- The bodies are generated with repeat() rather than pasted, which keeps this
 -- file small while still producing full-length chapters.
 --
 -- Replace the bodies with the manuscripts when they are written. Chapter 1 of
--- each book is the free preview and should be the strongest chapter you have —
--- a weak free chapter is a broken storefront.
+-- each book is the free preview and should be the strongest chapter you have. -- a weak free chapter is a broken storefront.
 -- ============================================================================
 
 -- ~40 words per sentence-block, repeated to reach chapter length.
@@ -259,7 +258,7 @@ insert into books (slug, title, subtitle, description, price_cents, currency, pu
  ('story-you-tell',
   'The Story You Tell About Ability',
   'Mindset, honestly',
-  'What you believe about ability changes what you do after failure — the only moment that matters. Growth mindset has been oversold; this is where it actually works.',
+  'What you believe about ability changes what you do after failure, the only moment that matters. Growth mindset has been oversold; this is where it actually works.',
   1200, 'CAD', true),
  ('evidence-of-yourself',
   'Evidence of Yourself',
@@ -322,6 +321,6 @@ drop function _placeholder_body(text, int);
 
 
 -- ============================================================================
--- Vérification — doit renvoyer 3 lignes.
+-- Vérification, doit renvoyer 3 lignes.
 -- ============================================================================
 select slug, title, price_cents, published from books order by created_at;

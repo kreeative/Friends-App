@@ -30,7 +30,7 @@ export default function Me() {
    * Frictionless re-entry.
    *
    * Someone coming back after a gap should not have to face a wall of overdue
-   * items — that backlog is precisely what makes people close the app and not
+   * items, that backlog is precisely what makes people close the app and not
    * return. So coming back parks everything old (paused, not failed) and asks
    * for exactly one new thing.
    */
@@ -67,7 +67,7 @@ export default function Me() {
 
       {/* The same two cards as the dashboard. This screen was still three
           plain numbers with a yellow rule under each and a bare strip of
-          circles — the old design, left behind when the dashboard moved. */}
+          circles, the old design, left behind when the dashboard moved. */}
       <Section title={t('me.consistency')}>
         <ConsistencyPanel
           rate={rate}

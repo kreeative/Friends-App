@@ -7,7 +7,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
  * selection is one object that moves rather than two states that swap. When
  * it swaps, nothing connects the tab you left to the tab you arrived at and
  * the change reads as a redraw. When it slides, the movement itself is what
- * tells you the two are alternatives — you can see the relationship.
+ * tells you the two are alternatives. You can see the relationship.
  *
  * Measured from the DOM rather than computed from an index, because the
  * options are words of different lengths in two languages. Anything derived
@@ -32,7 +32,7 @@ export function useSlider(activeKey) {
   /**
    * Re-measure when the box changes size. The tab bar is fluid, the labels
    * change with the locale, and a web font landing after first paint reflows
-   * every label under the indicator — all three used to leave it stranded.
+   * every label under the indicator. All three used to leave it stranded.
    */
   useEffect(() => {
     const host = ref.current
@@ -66,8 +66,8 @@ export function Slider({ box, className = '' }) {
   return (
     <span
       aria-hidden="true"
-      /* The transition has to be inline — it depends on whether this is the
-         first measurement — so a stylesheet cannot override it. The attribute
+      /* The transition has to be inline, it depends on whether this is the
+         first measurement, so a stylesheet cannot override it. The attribute
          gives the reduced-motion rule in index.css something to target. */
       data-slider=""
       className={`pointer-events-none absolute left-0 top-0 z-0 ${className}`}

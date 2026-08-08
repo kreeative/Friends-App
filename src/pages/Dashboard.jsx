@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import { useGroup } from '../context/GroupContext'
 import { listBooks } from '../lib/library'
 import { completionRate, rollingRate } from '../lib/stats'
-import { cyclePhase, untilLabel } from '../lib/time'
+import { cycleEnd, cyclePhase, soonestUpcoming, untilLabel } from '../lib/time'
 import { useT } from '../lib/i18n'
 import { Screen, Section, TopBar } from '../components/ui'
 import ConsistencyPanel from '../components/ConsistencyPanel'
@@ -27,26 +27,39 @@ import { stickerFor } from '../lib/art'
 /**
  * A group, as a row rather than as a card.
  *
- * This page used to be six boxes stacked on top of each other — groups,
+ * This page used to be six boxes stacked on top of each other. Groups,
  * stats, books, all in their own rounded rectangle. At that point the
  * rectangle stops meaning "these things belong together" and becomes the
  * texture of the page. Rows with one hairline between them separate exactly
  * as well and put nothing on screen that is not information.
  *
  * The sticker is the group's identity. It is picked from the id, so it is
- * stable for the life of the group without needing a column to store it —
+ * stable for the life of the group without needing a column to store it,
  * and it is the illustration doing the work a repeated logo was doing badly.
  */
 function GroupRow({ membership, rows, t }) {
   const g = membership.groups
   const mine = rows.filter((r) => r.group_id === g.id)
+  const cadence = g.cadence_days ?? null
 
-  const open = mine.find((r) => cyclePhase(r) === 'open')
-  const cycle = open ?? mine[0] ?? null
+  /**
+   * The period you are in, and failing that the next one to start.
+   *
+   * This line used to read `open ?? mine[0]`, and mine is sorted newest
+   * first, so with no open period it named the furthest one the database had
+   * materialised. Four periods ahead on a weekly group is "next one opens in
+   * 23d" on the dashboard of a group that meets on Sunday. Nothing was
+   * actually locked for a month; the row was reading the wrong row. It is
+   * fixed twice over: soonestUpcoming picks the nearest, and a period now
+   * runs until the next one starts, so there is almost always an open one.
+   */
+  const open = mine.find((r) => cyclePhase(r, mine, cadence) === 'open')
+  const cycle = open ?? soonestUpcoming(mine, cadence)
   const meIn = open && open.status === 'submitted'
 
   const inCycle = open ? rows.filter((r) => r.cycle_id === open.cycle_id) : []
   const done = inCycle.filter((r) => r.status === 'submitted').length
+  const ends = open ? cycleEnd(open, mine, cadence): null
 
   const art = stickerFor(g.id)
 
@@ -69,7 +82,7 @@ function GroupRow({ membership, rows, t }) {
         </div>
         <p className="mt-0.5 text-small text-muted">
           {open
-            ? `${t('home.n_of_total', { n: done, total: inCycle.length })} · ${t('checkin.closes_in', { t: untilLabel(open.closes_at) })}`
+            ? `${t('home.n_of_total', { n: done, total: inCycle.length })} · ${t('board.reveals_in', { t: untilLabel(ends) })}`
             : cycle
               ? t('board.next_opens_in', { t: untilLabel(cycle.opens_at) })
               : t('board.getting_ready')}
@@ -107,7 +120,7 @@ export default function Dashboard() {
 
   /**
    * One read for every group at once. member_cycle_status is already scoped
-   * by RLS to groups you are in, so this does not need a group filter — and
+   * by RLS to groups you are in, so this does not need a group filter, and
    * fetching per-card would be a request per group on first paint.
    */
   useEffect(() => {
@@ -150,17 +163,25 @@ export default function Dashboard() {
    *
    * A dashboard that only lists things is a filing cabinet. The whole point
    * of this app is a window that is open right now, so if there is one, it
-   * gets said before anything else on the page — and if there are several,
+   * gets said before anything else on the page, and if there are several,
    * it is the one closing soonest, because that is the one you can still
    * miss.
    */
   const waiting = useMemo(() => {
-    const open = mine
-      .filter((r) => cyclePhase(r) === 'open' && r.status !== 'submitted' && r.status !== 'away')
-      .sort((a, b) => new Date(a.closes_at) - new Date(b.closes_at))
-    if (!open.length) return null
-    const m = memberships.find((x) => x.group_id === open[0].group_id)
-    return m ? { row: open[0], group: m.groups } : null
+    /* Per group, because when a period ends depends on when that group's
+       next one starts, and mine holds every group at once. */
+    const open = []
+    for (const m of memberships) {
+      const cadence = m.groups?.cadence_days ?? null
+      const rows = mine.filter((r) => r.group_id === m.group_id)
+      for (const r of rows) {
+        if (cyclePhase(r, rows, cadence) !== 'open') continue
+        if (r.status === 'submitted' || r.status === 'away') continue
+        open.push({ row: r, group: m.groups, ends: cycleEnd(r, rows, cadence) })
+      }
+    }
+    open.sort((a, b) => new Date(a.ends) - new Date(b.ends))
+    return open[0] ?? null
   }, [mine, memberships])
 
   const hour = new Date().getHours()
@@ -183,7 +204,7 @@ export default function Dashboard() {
        * for something.
        *
        * The accent rather than the field, because the ground is the field
-       * now — a block of the same colour on the same colour is not a block.
+       * now, a block of the same colour on the same colour is not a block.
        * Black on it either way by system rule: 4.9:1 on pink, 13.5:1 on
        * yellow.
        */}
@@ -194,7 +215,7 @@ export default function Dashboard() {
             className="press group block rounded-card bg-accent p-6 no-underline transition-transform duration-200 ease-settle hover:-translate-y-0.5 sm:p-7"
           >
             <span className="block text-label font-bold uppercase tracking-[0.14em] text-on-accent/70">
-              {t('checkin.closes_in', { t: untilLabel(waiting.row.closes_at) })}
+              {t('board.reveals_in', { t: untilLabel(waiting.ends) })}
             </span>
             <span className="mt-3 block text-h1 font-bold leading-[1.05] tracking-[-0.024em] text-on-accent">
               {t('home.waiting_on_you', { group: waiting.group.name })}

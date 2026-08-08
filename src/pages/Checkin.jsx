@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useGroup } from '../context/GroupContext'
 import { enqueue, flush } from '../lib/queue'
-import { cyclePhase, untilLabel } from '../lib/time'
+import { cycleEnd, cyclePhase, untilLabel } from '../lib/time'
 import { useT } from '../lib/i18n'
 import { Field, Screen, Section, TopBar } from '../components/ui'
 import MoodBoard from '../components/MoodBoard'
@@ -13,7 +13,8 @@ export default function Checkin() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { t } = useT()
-  const { activeId, currentCycle, myGoals, groupGoals, reloadGroup } = useGroup()
+  const { activeId, cycles, cadence, currentCycle, nextCycle, myGoals, groupGoals, reloadGroup } =
+    useGroup()
 
   const goals = useMemo(
     () => [...myGoals, ...groupGoals].filter((g) => g.status === 'active'),
@@ -25,7 +26,8 @@ export default function Checkin() {
   const [mood, setMood] = useState(null)
   const [busy, setBusy] = useState(false)
 
-  const phase = cyclePhase(currentCycle)
+  const phase = cyclePhase(currentCycle, cycles, cadence)
+  const ends = cycleEnd(currentCycle, cycles, cadence)
 
   function set(goalId, patch) {
     setAnswers((a) => ({ ...a, [goalId]: { ...(a[goalId] ?? {}), ...patch } }))
@@ -54,7 +56,7 @@ export default function Checkin() {
       }
     })
 
-    // Local first, network second — a bad connection must never lose this.
+    // Local first, network second, a bad connection must never lose this.
     enqueue({
       cycle_id: currentCycle.id,
       next_commitment: next.trim() || null,
@@ -81,7 +83,7 @@ export default function Checkin() {
   }
 
   /**
-   * No cycle at all — a group whose first window has not been materialised
+   * No cycle at all, a group whose first window has not been materialised
    * yet. This used to `return null`, which paints nothing: a blank white
    * screen under the chrome, with no way to tell a loading state from a
    * broken one. Anything is better than nothing here.
@@ -97,14 +99,28 @@ export default function Checkin() {
     )
   }
 
+  /**
+   * A period you cannot write into.
+   *
+   * This screen was here for most of the week. Thirty hours open, a hundred
+   * and thirty-eight shut, and the shut version was the one nearly everyone
+   * saw. It is still here because a group whose next period has not started
+   * yet is a real state, but it is now the rare one rather than the default,
+   * and the copy says when rather than no.
+   */
   if (phase !== 'open') {
     return (
       <Screen>
-        <TopBar title={t('checkin.title')} sub={t('checkin.window_closed')} />
+        <TopBar title={t('checkin.title')} sub={t('checkin.between')} />
         <Section>
           <div className="card">
             <p className="text-body text-muted">
-              {t('checkin.closed_body', { t: untilLabel(currentCycle.closes_at) })}
+              {/* nextCycle, not currentCycle: with nothing open, currentCycle
+                  is the period that just ended, and its opens_at is in the
+                  past, which is how you get "starts again 3d ago". */}
+              {nextCycle
+                ? t('checkin.between_body', { t: untilLabel(nextCycle.opens_at) })
+: t('checkin.no_cycle_body')}
             </p>
           </div>
         </Section>
@@ -114,7 +130,7 @@ export default function Checkin() {
          *
          * The mood board only exists inside an open window, which meant that
          * for most of the week there was no evidence anywhere in the app that
-         * it existed at all — "where is the option to check the mood" is the
+         * it existed at all. "where is the option to check the mood" is the
          * expected result of hiding a feature six days out of seven. Showing
          * it disabled costs nothing and answers the question before it is
          * asked.
@@ -133,7 +149,7 @@ export default function Checkin() {
     <Screen>
       <TopBar
         title={t('checkin.title')}
-        sub={t('checkin.closes_in', { t: untilLabel(currentCycle.closes_at) })}
+        sub={t('board.reveals_in', { t: untilLabel(ends) })}
       />
 
       {/**

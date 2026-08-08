@@ -4,7 +4,7 @@
  * Be clear about what this is: it does not prevent copying, and it is not
  * security. Anything the browser renders can be photographed. What it does is
  * make a leaked copy traceable to the account it came from, which is a far
- * stronger deterrent than a disabled right-click — and unlike DRM it costs the
+ * stronger deterrent than a disabled right-click, and unlike DRM it costs the
  * paying reader nothing.
  *
  * It sits behind the text at very low opacity, is not selectable, and is
@@ -38,7 +38,7 @@ export default function Watermark({ name, tag }) {
   )
 }
 
-/** The visible, honest version — small, in the margin, not hidden from anyone. */
+/** The visible, honest version. Small, in the margin, not hidden from anyone. */
 export function WatermarkNote({ name, tag }) {
   if (!name) return null
   return (

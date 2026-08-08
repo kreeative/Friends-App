@@ -13,7 +13,7 @@
  * taste, and it has to keep meaning the same thing in every theme. Mood
  * colour is the same kind of thing: warm-bright for the pleasant end,
  * cool-mid for the flat end, hot-orange for the sharp end. That mapping is
- * doing work — it is how the grid is scannable at all — and it would be
+ * doing work (it is how the grid is scannable at all) and it would be
  * destroyed by tinting all twelve in the chosen accent.
  *
  * So: a semantic palette, declared once here, exempt from the accent for the
@@ -22,8 +22,8 @@
  * On shape:
  *
  * Every mood also has its own silhouette. Colour alone would put the whole
- * feature out of reach of anyone who cannot separate these hues — about one
- * man in twelve — and the labels are the belt, but the shapes are the
+ * feature out of reach of anyone who cannot separate these hues. About one
+ * man in twelve, and the labels are the belt, but the shapes are the
  * braces. They are why this reads at a glance rather than requiring the
  * caption to be read every time.
  *
@@ -65,7 +65,7 @@ export const MOODS = [
     mouth: 'smile',
     // three lobes over a rounded base. The arcs are elliptical rather than
     // circular so the lobes reach the top of the box without eating the
-    // body — a circular arc wide enough to span a third of the width is
+    // body, a circular arc wide enough to span a third of the width is
     // only ever 16 tall, and the face ends up sitting on the rim.
     path: 'M4 36a15.3 24 0 0 1 30.7 0a15.3 24 0 0 1 30.7 0a15.3 24 0 0 1 30.6 0v48a12 12 0 0 1-12 12H16A12 12 0 0 1 4 84Z',
   },

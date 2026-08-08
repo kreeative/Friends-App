@@ -8,8 +8,8 @@ import TrendChart from './TrendChart'
  *
  * This was one white panel with a number in its corner and the bars beneath.
  * What the reference gets right is that the two questions have different
- * shapes — "how much" is a figure with bars under it, "which way" is a curve
- * — and asking one panel to answer both meant it answered neither loudly.
+ * shapes. "how much" is a figure with bars under it, "which way" is a curve
+ *, and asking one panel to answer both meant it answered neither loudly.
  *
  * The two cards are the only saturated surfaces on the dashboard, which is
  * what keeps them reading as the data rather than as decoration: everything
@@ -19,7 +19,7 @@ import TrendChart from './TrendChart'
  * squeezed into half the width is a smear.
  */
 
-/** The reference's metric badge. Drawn rather than imported — one glyph. */
+/** The reference's metric badge. Drawn rather than imported, one glyph. */
 function Bolt() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4">
@@ -33,8 +33,8 @@ export default function ConsistencyPanel({ rate, trend, cycles, goalCount, group
 
   return (
     <div className="stagger grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)]">
-      {/* The one dark surface in the app. It is the theme's own ink — deep
-          plum in sun, deep teal in sea — rather than black, so white on it
+      {/* The one dark surface in the app. It is the theme's own ink. Deep
+          plum in sun, deep teal in sea. Rather than black, so white on it
           measures 7:1 and it still belongs to the palette. */}
       <div style={{ '--i': 0 }} className="panel-ink-deep rounded-card p-6 text-white sm:p-7">
         <div className="flex items-center gap-3">
@@ -80,14 +80,14 @@ export default function ConsistencyPanel({ rate, trend, cycles, goalCount, group
        * Yellow moved from the surface to the data.
        *
        * This card was a block of the field colour carrying black text, and
-       * black is exactly what it should not have been — but white was not
+       * black is exactly what it should not have been, but white was not
        * available either: white on this yellow measures 1.4:1, which is not a
        * matter of taste, it is not visible. The only way every word on this
        * panel is white is for the ground to be dark.
        *
        * So the ground is ink and the yellow is the chart: the line, the fill
        * and the marker. That is also closer to the reference than the old
-       * arrangement was — a dark card with one saturated colour doing the
+       * arrangement was, a dark card with one saturated colour doing the
        * data is the shape it actually uses.
        */}
       <div style={{ '--i': 1 }} className="panel-ink flex flex-col rounded-card p-6 text-white sm:p-7">
@@ -100,8 +100,8 @@ export default function ConsistencyPanel({ rate, trend, cycles, goalCount, group
           </span>
         </div>
 
-        {/* Centred in whatever height is left over. The left card is taller —
-            a bar chart plus a legend — and pinning the curve directly under
+        {/* Centred in whatever height is left over. The left card is taller,
+            a bar chart plus a legend, and pinning the curve directly under
             the header stranded it above a block of empty colour. */}
         <div className="flex flex-1 items-center py-4">
           <TrendChart series={trend} />

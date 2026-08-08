@@ -6,7 +6,7 @@ import { localeTag, useT } from '../lib/i18n'
 
 /**
  * Finished states. Each gets its own card colour and a chip, rather than the
- * word appended to the cadence line where it was previously — "3 times a week
+ * word appended to the cadence line where it was previously. "3 times a week
  * · done" is the kind of sentence you read past.
  */
 const DONE = {
@@ -59,7 +59,7 @@ export default function GoalCard({
       )}
 
       {/* Not muted/75. --c-muted is already tuned to sit just above 4.5:1, so
-          three quarters of it measured 3.0:1 on a plain white card — the
+          three quarters of it measured 3.0:1 on a plain white card, the
           quietest line on the card was the one that failed. The "Proof:"
           prefix distinguishes it from the trigger line above without needing
           a second, lighter grey to do it. */}
@@ -87,7 +87,7 @@ export default function GoalCard({
       {/**
        * Wraps as a column below `sm`. Three controls and an owner name do not
        * fit on one phone-width line, and as a single flex row the buttons
-       * wrapped underneath each other while the name stayed put — so they
+       * wrapped underneath each other while the name stayed put, so they
        * overlapped, which is what it looked like: a pile.
        */}
       <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

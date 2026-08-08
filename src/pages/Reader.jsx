@@ -235,7 +235,7 @@ export default function Reader() {
    *
    * @param list the chapter metadata to look this id up in. Passed explicitly
    *             because the first call happens inside the loading effect, in
-   *             the same tick as setChapters — so the `chapters` state is
+   *             the same tick as setChapters, so the `chapters` state is
    *             still [] there, and a preview chapter would be misread as one
    *             that simply is not in the list.
    */
@@ -394,7 +394,7 @@ export default function Reader() {
           </div>
         ) : (
           <article className="relative mt-12">
-            {/* Traceable, not preventive — see the note in Watermark.jsx. */}
+            {/* Traceable, not preventive. See the note in Watermark.jsx. */}
             <Watermark
               name={profile?.display_name}
               tag={user?.id?.slice(0, 8)}

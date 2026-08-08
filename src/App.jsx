@@ -91,7 +91,7 @@ function Gate() {
   const { loading: groupsLoading, memberships, error: groupError, reload } = useGroup()
   const { t } = useT()
 
-  // Marketing and legal pages are public in every sense — including when the
+  // Marketing and legal pages are public in every sense, including when the
   // backend is misconfigured or down. Only the signed-in app needs Supabase.
   if (!configured) {
     return (
@@ -165,7 +165,7 @@ function Gate() {
         {/**
          * Goals with no group at all. The app assumed a group was the only
          * place a goal could live, so keeping one of your own meant finding
-         * people first — the wrong order, and the reason someone could sign
+         * people first, the wrong order, and the reason someone could sign
          * up and immediately have nothing they were able to do.
          */}
         <Route path="goals" element={<Goals />} />
@@ -191,7 +191,7 @@ export default function App() {
     <BrowserRouter>
       <I18nProvider>
         {/* Outermost of the app providers, because the logo colourway and
-            every surface below it read from the theme — including the splash
+            every surface below it read from the theme, including the splash
             screens that render before auth has resolved. */}
         <ThemeProvider>
           <AuthProvider>

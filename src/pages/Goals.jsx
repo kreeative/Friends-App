@@ -15,7 +15,7 @@ import GoalCard from '../components/GoalCard'
  * the sections, the empty states and the archive for no gain.
  *
  * The archive is new. Goals used to be loaded as active-or-paused only, so
- * finishing one made it disappear — which is exactly backwards, since a
+ * finishing one made it disappear, which is exactly backwards, since a
  * finished goal is the only evidence you have that any of this works.
  */
 const LIVE = new Set(['active', 'paused'])
@@ -119,7 +119,7 @@ export default function Goals() {
 
       {/**
        * Collapsed by default. The archive is worth keeping and worth being
-       * able to find, but it is not what you came to this screen for — and a
+       * able to find, but it is not what you came to this screen for, and a
        * long list of finished things above your live ones would bury them.
        */}
       {past.length > 0 && (

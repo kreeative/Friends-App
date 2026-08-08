@@ -7,7 +7,7 @@ import { useT } from '../lib/i18n'
 /**
  * The response to silence.
  *
- * Two rules shape this component. It never addresses the quiet person — it
+ * Two rules shape this component. It never addresses the quiet person, it
  * addresses everyone else, because the one thing that reliably reaches someone
  * who has stopped opening an app is a message from a friend, not another
  * notification. And it is claimed rather than assigned: volunteering is a real

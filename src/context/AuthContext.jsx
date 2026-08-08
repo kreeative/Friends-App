@@ -76,7 +76,7 @@ export function AuthProvider({ children }) {
         if (cancelled) return
         setProfile(data ?? null)
 
-        // Keep the timezone fresh — it decides when their digest arrives.
+        // Keep the timezone fresh, it decides when their digest arrives.
         const tz = localTimezone()
         if (data && data.timezone !== tz) {
           await supabase.from('profiles').update({ timezone: tz }).eq('id', session.user.id)
@@ -101,7 +101,7 @@ export function AuthProvider({ children }) {
     /**
      * OAuth is the primary path deliberately. A magic link opens in whatever
      * the OS considers the default browser, which is frequently not the one
-     * the person started in — so the session lands somewhere they cannot see
+     * the person started in, so the session lands somewhere they cannot see
      * it. For an app meant to be used in under a minute while standing up,
      * that failure is fatal. The link remains as a fallback for anyone who
      * would rather not use a Google account.

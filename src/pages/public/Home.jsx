@@ -7,7 +7,7 @@ import { Mark } from '../../components/Wordmark'
  * The front page: what this is, why groups go quiet, and the way in.
  *
  * Every block of words sits on glass. Nothing is set directly on the artwork
- * — the background is deliberately loud, and type over it would be a guess
+ *, the background is deliberately loud, and type over it would be a guess
  * that changes with whichever picture the theme happens to be showing.
  */
 export default function Home() {
@@ -20,7 +20,7 @@ export default function Home() {
        * The hero has no container.
        *
        * It sat on a glass sheet for as long as the ground was the theme's
-       * field colour — type over saturated yellow needed something between
+       * field colour. Type over saturated yellow needed something between
        * the two. The ground is white now, so the sheet had nothing left to
        * bend: white-on-white, and all anyone could see was a rounded
        * rectangle with a shadow, boxing in the one statement on the site that
@@ -65,7 +65,7 @@ export default function Home() {
       </section>
 
       {/* Also unboxed. Two white rectangles in a row on a white page is not a
-          hierarchy, it is a texture — a hairline separates these just as well
+          hierarchy, it is a texture, a hairline separates these just as well
           and puts nothing on screen that is not information. */}
       <section className="mx-auto w-full max-w-5xl border-t border-hairline px-6 py-16 md:py-20">
         <div className="grid gap-10 md:grid-cols-[1fr_1.5fr]">
@@ -85,7 +85,7 @@ export default function Home() {
       {/**
        * The one block of colour on the page, full width, and it is the last
        * thing you read. The palette had nowhere to land once the panels went
-       * — the page was white with coloured type and that was all — so the
+       * (the page was white with coloured type and that was all) so the
        * closing ask becomes the field itself, with black on it at 13.5:1.
        */}
       <section className="relative mx-auto w-full max-w-5xl px-6 pb-20">

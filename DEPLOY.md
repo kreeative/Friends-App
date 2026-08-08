@@ -4,7 +4,7 @@ Supabase, then Vercel, then Stripe, then the domain. Nothing here needs a paid
 plan except the domain and Stripe's per-transaction fee.
 
 The SQL and the row level security have been executed and exercised against a
-real PostgreSQL 16 — group creation, joining by code, check-in submission,
+real PostgreSQL 16, group creation, joining by code, check-in submission,
 offline replay, cross-group isolation, and the library paywall all behave as
 intended. What follows is configuration, not debugging.
 
@@ -12,7 +12,7 @@ intended. What follows is configuration, not debugging.
 
 ## 1. Supabase
 
-**Create the project.** Pick a region close to your users — `eu-west-1`
+**Create the project.** Pick a region close to your users. `eu-west-1`
 (Ireland) or `eu-central-1` (Frankfurt) for Europe. The region cannot be
 changed later, and it is what your privacy policy points at.
 
@@ -27,11 +27,10 @@ supabase/07_books_all_in_one.sql  the library: tables, paywall, 3 books
 supabase/08_chapter_bodies.sql    the written chapters (generated)
 ```
 
-`04_schedule.sql` is separate — see step 4.
+`04_schedule.sql` is separate, see step 4.
 
 `07` is `05_library.sql` and `06_library_seed.sql` concatenated, so it is one
-paste rather than two. **Skip it and the Library page has nothing to show** —
-it will now name this file rather than claiming no books have been published.
+paste rather than two. **Skip it and the Library page has nothing to show**, it will now name this file rather than claiming no books have been published.
 `08` then replaces the placeholder chapter text with the written manuscripts;
 re-run it after every edit to `content/books/`.
 
@@ -56,14 +55,14 @@ Supabase's shared SMTP and its default template. Two reasons that cannot stay:
 
 - It is not your brand, and the footer advertises someone else's product on a
   transactional email your buyers receive.
-- **The built-in sender is rate limited** — a handful of emails per hour on the
-  free tier — and Supabase documents it as unsuitable for production. Once more
+- **The built-in sender is rate limited**, a handful of emails per hour on the
+  free tier, and Supabase documents it as unsuitable for production. Once more
   than a couple of people try to sign in, they get "email rate limit exceeded"
   and no message arrives at all.
 
 Fix both under **Authentication → Emails**:
 
-*SMTP Settings* — point at Resend, which you need anyway for the digests:
+*SMTP Settings*, point at Resend, which you need anyway for the digests:
 
 ```
 Host      smtp.resend.com
@@ -77,13 +76,13 @@ Name      Rich & Friends
 The sender domain has to be verified in Resend first, so this waits until the
 domain is connected (step 5).
 
-*Email Templates → Magic Link* — paste `supabase/email/magic-link.html`. It is
+*Email Templates → Magic Link*, paste `supabase/email/magic-link.html`. It is
 bilingual, since Supabase stores only one template per type. Leave
 `{{ .ConfirmationURL }}` exactly as written; that is the token Supabase
 substitutes.
 
 **Copy your keys.** Project Settings → API. You need the Project URL, the
-anon/publishable key, and — for the Stripe webhook only — the service role key.
+anon/publishable key, and (for the Stripe webhook only) the service role key.
 The service role key bypasses every policy in `03_policies.sql` and
 `05_library.sql`. It belongs in Vercel's server-side environment and nowhere
 else.
@@ -104,11 +103,11 @@ Set the environment variables under Settings → Environment Variables:
 | `VITE_SUPABASE_URL` | `https://YOUR-PROJECT.supabase.co` | yes |
 | `VITE_SUPABASE_ANON_KEY` | anon / publishable key | yes |
 | `SUPABASE_URL` | same as above | no |
-| `SUPABASE_SERVICE_ROLE_KEY` | service role key | **no — never** |
+| `SUPABASE_SERVICE_ROLE_KEY` | service role key | **no, never** |
 | `STRIPE_SECRET_KEY` | `sk_live_…` or `sk_test_…` | no |
 | `STRIPE_WEBHOOK_SECRET` | `whsec_…` (step 3) | no |
 
-Only `VITE_*` reaches the client bundle — that prefix is the whole mechanism,
+Only `VITE_*` reaches the client bundle, that prefix is the whole mechanism,
 so anything without it stays server-side. Vite inlines the `VITE_*` values at
 build time, so changing one needs a redeploy, not a restart.
 
@@ -135,21 +134,20 @@ Copy the signing secret into `STRIPE_WEBHOOK_SECRET` and redeploy.
 ```bash
 stripe login
 stripe listen --forward-to localhost:3000/api/stripe-webhook
-# prints a whsec_… — put that in .env for local runs
+# prints a whsec_…, put that in .env for local runs
 stripe trigger checkout.session.completed
 ```
 
 Use `vercel dev` rather than `vite` locally, or `/api/*` will not exist.
 
 **Two things about this flow worth knowing.** The price is read from the
-database, never from the request — a client that could name its own price
+database, never from the request, a client that could name its own price
 could buy a book for a cent. And entitlement is written *only* by the webhook:
 `entitlements` has no INSERT policy at all, so even a fully compromised
 browser session cannot grant itself a book.
 
 Stripe retries webhooks. The insert is an upsert against a unique
-`(user_id, book_id)`, so a redelivery is a no-op rather than a second row —
-verified against a real database.
+`(user_id, book_id)`, so a redelivery is a no-op rather than a second row, verified against a real database.
 
 ---
 
@@ -205,11 +203,11 @@ The single most common setup failure, and it is one setting.
 Supabase Auth has two separate fields under **Authentication → URL
 Configuration**:
 
-- **Site URL** — where it sends people by default.
-- **Redirect URLs** — the allowlist of where it is *permitted* to send them.
+- **Site URL**, where it sends people by default.
+- **Redirect URLs**, the allowlist of where it is *permitted* to send them.
 
 The app asks to come back to wherever it is running (`window.location.origin`).
-If that address is not on the allowlist, Supabase does not error — it silently
+If that address is not on the allowlist, Supabase does not error, it silently
 falls back to **Site URL**. A new project's Site URL is `http://localhost:3000`,
 so a phone gets sent to itself, finds nothing listening, and shows "Safari
 can't open the page".
@@ -225,7 +223,7 @@ Redirect URLs:  https://richandfriends.xyz/**
                 http://localhost:5173/**
 ```
 
-The `/**` wildcard matters — without it only the exact root path is allowed,
+The `/**` wildcard matters, without it only the exact root path is allowed,
 and any return carrying query parameters is rejected.
 
 Note that the URI registered in the **Google Cloud console** is a different
@@ -235,7 +233,7 @@ wrong you would have been stopped by Google rather than bounced back.
 
 ### "Could not find the table 'public.group_members' in the schema cache"
 
-The database is empty — the migrations in `supabase/` were never run. Nothing
+The database is empty, the migrations in `supabase/` were never run. Nothing
 in the application creates tables; they exist only because you ran the SQL.
 
 Open Supabase → SQL Editor and run the files **in this order**, waiting for
@@ -252,14 +250,14 @@ each to report success before starting the next:
 The order is not cosmetic: `03` defines policies that call functions created
 in `02`, which reference tables created in `01`. Running them out of order
 fails with a missing-function or missing-relation error. The same applies to
-the last two — `08` only updates rows that `07` created, so on its own it
+the last two. `08` only updates rows that `07` created, so on its own it
 succeeds and changes nothing, which is the confusing way to fail.
 
 `07` was marked optional here for a long time. It is not: the Library page is
 empty until it runs, and the buy button has nothing to sell.
 
 **Paste the contents of the file, not its name.** The SQL editor runs exactly
-the characters in the box — it has no notion of files or paths. Pasting the
+the characters in the box, it has no notion of files or paths. Pasting the
 line `supabase/01_schema.sql` produces:
 
 ```
@@ -305,7 +303,7 @@ sign-in screen.
 ### The app shows "Supabase is not configured"
 
 `VITE_SUPABASE_URL` or `VITE_SUPABASE_ANON_KEY` is missing from Vercel, or was
-added after the last build. Vite inlines them at build time — redeploy after
+added after the last build. Vite inlines them at build time, redeploy after
 adding them.
 
 ---
@@ -335,7 +333,7 @@ does not.
 
 - [ ] SQL 01, 02, 03, 05, 06 run in order without error
 - [ ] Sign-in provider enabled; all redirect URLs added, including localhost
-- [ ] Vercel env vars set — six of them, only two prefixed `VITE_`
+- [ ] Vercel env vars set, six of them, only two prefixed `VITE_`
 - [ ] Deployed, and the Vercel URL added back to Supabase
 - [ ] Stripe webhook created, secret set, test purchase completed
 - [ ] `notify` deployed and `04_schedule.sql` run

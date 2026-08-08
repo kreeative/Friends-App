@@ -4,7 +4,7 @@
  *
  * The manuscripts are markdown files in the repo, not SQL string literals.
  * Prose belongs somewhere it can be read, diffed and edited by a person who
- * is not thinking about quoting rules — and a chapter is three thousand words
+ * is not thinking about quoting rules, and a chapter is three thousand words
  * of text containing apostrophes, which is the worst possible thing to keep
  * inside a single-quoted SQL literal.
  *
@@ -72,7 +72,7 @@ if (rows.length === 0) throw new Error('no manuscripts found under content/books
 const total = rows.reduce((n, r) => n + r.words, 0)
 
 const sql = `-- ============================================================================
--- Chapter bodies. GENERATED — do not edit.
+-- Chapter bodies. GENERATED, do not edit.
 --
 -- Source: content/books/<slug>/<nn>-<name>.md
 -- Rebuild: node scripts/build-chapters.mjs

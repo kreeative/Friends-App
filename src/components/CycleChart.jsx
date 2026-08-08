@@ -5,21 +5,21 @@ import { useT } from '../lib/i18n'
  *
  * The dashboard used to say "11/14" and stop. A number is a fact; a shape is
  * a trend, and the thing worth knowing is whether the last month went better
- * or worse than the one before it — which a single figure cannot say.
+ * or worse than the one before it, which a single figure cannot say.
  *
  * A check-in is not a quantity, so the bars do not encode one. They encode a
  * state, at three heights: in, away, missed. Away is drawn at mid height and
  * hatched rather than short, because it is explicitly not a failure and
  * drawing it like one would be the app arguing against its own rule.
  *
- * Nothing here communicates by colour alone — the heights differ, the hatch
+ * Nothing here communicates by colour alone, the heights differ, the hatch
  * differs, and the legend names all three.
  */
 
 /**
  * Two grounds, because the chart now appears on both.
  *
- * On the dark card the bars have to be light — the same green capsule that
+ * On the dark card the bars have to be light, the same green capsule that
  * reads as "in" on white drops to about 2:1 on deep ink and disappears. The
  * ink card is the theme's own dark hue, so white on it measures 7:1 and the
  * accent stays legible as a fill.
@@ -38,7 +38,7 @@ const TONES = {
   },
   dark: {
     submitted: { h: '100%', cls: 'bg-white/90' },
-    /* The most recent cycle picked out, the way the reference marks today —
+    /* The most recent cycle picked out, the way the reference marks today,
        it is the only bar you can still do anything about. In the spark rather
        than the accent: sun's accent is pink on a deep pink card, which is one
        hue at two lightnesses and disappears. */

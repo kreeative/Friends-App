@@ -68,7 +68,7 @@ export default function Library() {
       setError(null)
     } catch (e) {
       setBooks(localBooks())
-      /* Keep PostgREST's own code — `explain` reads it to tell "the library SQL
+      /* Keep PostgREST's own code. `explain` reads it to tell "the library SQL
          was never run" apart from a genuine network failure, and hard-coding
          'network' here made every cause look like the same one. */
       setError({ code: e?.code ?? 'network', description: e?.message ?? String(e) })
@@ -84,7 +84,7 @@ export default function Library() {
   /**
    * Coming back from Stripe. The entitlement is written by the webhook, which
    * may land a moment after the redirect, so this refreshes rather than
-   * assuming — and it never writes an entitlement itself.
+   * assuming, and it never writes an entitlement itself.
    *
    * The share prompt appears here and defaults to NOT sharing. Announcing what
    * someone bought without asking is the kind of thing that makes people stop
@@ -97,7 +97,7 @@ export default function Library() {
     let tries = 0
     const tick = async () => {
       // listBooks throws now, and this one runs on a timer rather than from a
-      // render — an unhandled rejection here would surface as a console error
+      // render, an unhandled rejection here would surface as a console error
       // on the success screen and nothing else.
       const fresh = await listBooks().catch(() => null)
       if (!fresh) return setParams({}, { replace: true })

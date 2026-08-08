@@ -4,7 +4,7 @@ import { supabase } from './supabase'
  * All library reads go through here.
  *
  * Two rules the UI must not be able to break:
- *   nothing ever fetches a whole book — one chapter per request, always;
+ *   nothing ever fetches a whole book, one chapter per request, always;
  *   nothing decides what you may read. RLS does that, server-side, per query.
  * If a body comes back, you were entitled to it; if you were not, the row is
  * simply absent. There is no client-side filtering anywhere in this file.
@@ -19,7 +19,7 @@ export async function listBooks() {
 
   /* The catalogue read is the one that has to be believed. Swallowing this
      turned a missing table into an empty array, and the page then said "no
-     books yet" — a sentence that is both false and unactionable, because the
+     books yet", a sentence that is both false and unactionable, because the
      books do exist and the fix is to run supabase/07_books_all_in_one.sql.
      The other two are left soft on purpose: with no entitlements table you
      should still see the catalogue and the prices, just nothing marked as
@@ -182,13 +182,13 @@ export async function startCheckout(bookId) {
   }
 
   /* /api/checkout is a serverless function, so it only exists on the deployed
-     site. Anywhere else — `vite dev`, a plain static host — the request falls
+     site. Anywhere else (`vite dev`, a plain static host) the request falls
      through to index.html and a page of HTML comes back with a 200. Parsing
      that and reporting "no URL in the response" is true and useless; say what
      actually happened. */
   if (!(res.headers.get('content-type') ?? '').includes('application/json')) {
     return {
-      error: `/api/checkout did not answer as an API (HTTP ${res.status}). Buying works on the deployed site — not on a local dev server.`,
+      error: `/api/checkout did not answer as an API (HTTP ${res.status}). Buying works on the deployed site, not on a local dev server.`,
     }
   }
 

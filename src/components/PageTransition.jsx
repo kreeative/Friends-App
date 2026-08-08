@@ -14,8 +14,8 @@ import { useLocation } from 'react-router-dom'
  * rather than as polish. Everything arrives; nothing lingers.
  *
  * Only the path is keyed on. Query strings change underneath a page that is
- * staying put — /library?purchase=success is the same screen polling for its
- * entitlement — and remounting there would restart the poll on every tick.
+ * staying put. /library?purchase=success is the same screen polling for its
+ * entitlement, and remounting there would restart the poll on every tick.
  */
 export default function PageTransition({ children }) {
   const { pathname } = useLocation()
@@ -25,7 +25,7 @@ export default function PageTransition({ children }) {
    * Land at the top of the new page.
    *
    * The browser keeps the scroll offset across a client-side navigation, so a
-   * tall page followed by a short one opens already scrolled — which looks
+   * tall page followed by a short one opens already scrolled, which looks
    * like the transition broke rather than like a position was preserved. Not
    * on first paint though: that would fight a deep link to an anchor.
    */

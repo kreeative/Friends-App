@@ -40,7 +40,7 @@ export default function Start() {
     if (err) return setError(err.message)
     const g = Array.isArray(data) ? data[0] : data
     await reload()
-    // Straight into the group you just made — this is the one moment where
+    // Straight into the group you just made, this is the one moment where
     // landing inside one is what you asked for.
     if (g?.id) navigate(`/g/${g.id}`)
   }

@@ -71,7 +71,7 @@ function SyncBadge() {
   )
 }
 
-/** Home, who you are, and the way out — present on every screen. */
+/** Home, who you are, and the way out. Present on every screen. */
 function TopNav() {
   const { user, profile, signOut } = useAuth()
   const { activeId, group } = useGroup()
@@ -172,7 +172,7 @@ function TabBar({ tabs }) {
   const { pathname } = useLocation()
 
   /* Which tab is current, worked out here rather than read back from
-     NavLink's isActive — the slider needs to know before the children render
+     NavLink's isActive, the slider needs to know before the children render
      so it can be measured in the same layout pass. Same rule NavLink uses:
      exact match for an `end` tab, prefix match otherwise. */
   const activeIdx = tabs.findIndex((tab) =>
@@ -226,7 +226,7 @@ export default function AppShell() {
        on white is a filing cabinet; the theme carries the page and the
        content sits on it in glass. */
     <div className="ground relative min-h-dvh">
-      {/* Sparser than the public set — this is a tool, not a poster. */}
+      {/* Sparser than the public set, this is a tool, not a poster. */}
       <Stickers set="app" />
 
       <TopNav />

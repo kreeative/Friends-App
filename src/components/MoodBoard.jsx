@@ -2,7 +2,7 @@ import { MOODS, moodById } from '../lib/moods'
 import { useT } from '../lib/i18n'
 
 /**
- * "How are you today?" — twelve shapes, one tap.
+ * "How are you today?". Twelve shapes, one tap.
  *
  * Deliberately optional, and deliberately first. A check-in that opens with
  * twelve goals and a counter asks "did you perform"; opening with this asks
@@ -15,7 +15,7 @@ import { useT } from '../lib/i18n'
 
 const FACE = {
   eyes: {
-    // Relaxed, shut, curving up — the reference's whole cast wears these.
+    // Relaxed, shut, curving up, the reference's whole cast wears these.
     closed: (
       <>
         <path d="M30 46q6 7 12 0" />
@@ -70,7 +70,7 @@ function MoodGlyph({ mood }) {
 /**
  * @param value      the selected mood id, or null
  * @param onChange   called with the id, or with null when the same one is
- *                   tapped again — undo has to be as cheap as choosing
+ *                   tapped again. Undo has to be as cheap as choosing
  */
 export default function MoodBoard({ value, onChange }) {
   const { t } = useT()
@@ -101,7 +101,7 @@ export default function MoodBoard({ value, onChange }) {
               <MoodGlyph mood={mood} />
             </span>
             {/* Selection is carried by the ring on the label, not by colour
-                on the glyph — the glyph is already the mood's own colour and
+                on the glyph, the glyph is already the mood's own colour and
                 has nowhere left to go. */}
             <span
               className={`rounded-pill px-2 py-0.5 text-center text-small leading-tight ${
@@ -117,7 +117,7 @@ export default function MoodBoard({ value, onChange }) {
   )
 }
 
-/** The chosen mood, at rest — for the board and the history strip. */
+/** The chosen mood, at rest. For the board and the history strip. */
 export function MoodBadge({ id, size = 28, withLabel = false }) {
   const { t } = useT()
   const mood = moodById(id)

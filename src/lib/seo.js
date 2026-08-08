@@ -7,8 +7,8 @@ import { useEffect } from 'react'
  * every page in a search result carries the home page's title and every link
  * shared in a message previews as the home page. Google runs the JavaScript
  * and reads what it finds afterwards, so setting these on mount is enough for
- * search; it is not enough for the crawlers that do not execute scripts —
- * Facebook's and Slack's among them — which is a real limitation and the
+ * search; it is not enough for the crawlers that do not execute scripts,
+ * Facebook's and Slack's among them, which is a real limitation and the
  * reason the important ones are also hard-coded in index.html.
  *
  * Kept deliberately small: no library, no context, no <head> manager. Two tags

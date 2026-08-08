@@ -12,7 +12,7 @@ import PageTransition from '../../components/PageTransition'
  * page is showing.
  *
  * The site is three pages rather than one long scroll. A single page meant
- * the navigation pointed at fragments of itself, which is not a menu — you
+ * the navigation pointed at fragments of itself, which is not a menu. You
  * cannot be anywhere in it, so nothing can be marked current and nothing can
  * be linked to on its own.
  */

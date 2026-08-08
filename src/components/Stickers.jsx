@@ -4,8 +4,8 @@ import { pickStickers, stickerSrc } from '../lib/art'
  * Die-cut stickers, on a rail.
  *
  * Placement is a rule rather than a list of coordinates. The previous version
- * was twenty-odd hand-picked numbers — a top percentage, a side, a size and a
- * tilt for every sticker — and hand-picked numbers with no rule behind them
+ * was twenty-odd hand-picked numbers, a top percentage, a side, a size and a
+ * tilt for every sticker, and hand-picked numbers with no rule behind them
  * are exactly what "randomly scattered" looks like, because that is what they
  * are. Four properties varying independently reads as noise however carefully
  * each value was chosen.
@@ -62,7 +62,7 @@ function rail(names, { from = 8, to = 90, size = 72 } = {}) {
  * The rail's horizontal offset is set in CSS rather than here, because it
  * depends on the viewport: tucked against the screen edge on a phone, out in
  * the margin on a wide screen. See .sticker in index.css. Nothing is hidden
- * at any width — an earlier version hid them below 1280px, which meant a
+ * at any width, an earlier version hid them below 1280px, which meant a
  * phone got none of them.
  */
 const GAP = 28
@@ -78,7 +78,7 @@ const SETS = {
     }),
   },
 
-  /** The signed-in screens: same rule, quieter — a tool, not a poster. */
+  /** The signed-in screens: same rule, quieter, a tool, not a poster. */
   app: {
     column: '40rem',
     items: rail(pickStickers(['coin', 'turntable', 'bass', 'eyelips']), {
@@ -97,13 +97,13 @@ export default function Stickers({ set = 'page' }) {
     /**
      * `overflow-hidden` is load-bearing, not tidiness.
      *
-     * Every sticker deliberately hangs off the page — only about 20px of each
+     * Every sticker deliberately hangs off the page. Only about 20px of each
      * stays on it. Unclipped, that overhang is real layout: the document
      * became 35px wider than a phone viewport and 63px wider than a tablet
      * one, which is a horizontal scrollbar and, worse, an off-centre site.
      * Everything in normal flow centres inside the *document*, so it all
      * shifted left, while the `fixed` tab bar centred on the viewport and
-     * stayed put — which is why the page looked subtly lopsided rather than
+     * stayed put, which is why the page looked subtly lopsided rather than
      * obviously broken.
      *
      * Clipping here rather than on .ground or body on purpose: an ancestor

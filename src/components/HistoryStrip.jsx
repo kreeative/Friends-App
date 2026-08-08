@@ -5,7 +5,7 @@ import { useT } from '../lib/i18n'
  *
  * Amabile's progress principle: seeing accumulated small wins is the strongest
  * sustained motivator there is. So this shows what has been built up, not what
- * is overdue — a done week is a filled green block and a missed one is a quiet
+ * is overdue, a done week is a filled green block and a missed one is a quiet
  * empty slot, never a red one. Guilt-coloured UI makes people close the app,
  * which is the opposite of the goal.
  *

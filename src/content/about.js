@@ -9,7 +9,7 @@
  * no city and no anecdote that was not given, because this is somebody's
  * actual life and a plausible-sounding detail in the wrong place is worse
  * than a gap. The shape is right; the specifics are hers to fill in, and the
- * page is better the moment she does — a real number, a real week, a real
+ * page is better the moment she does. A real number, a real week, a real
  * conversation will carry more than any of the sentences below.
  */
 export const ABOUT = {

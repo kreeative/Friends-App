@@ -2,16 +2,16 @@ import { THEMES, useTheme } from '../lib/theme'
 import { useT } from '../lib/i18n'
 
 /**
- * One row now — the ground is no longer a choice, so a theme is just the pair
+ * One row now, the ground is no longer a choice, so a theme is just the pair
  * of colours.
  *
- * A theme is a pair now, so each option previews BOTH of its colours — the
+ * A theme is a pair now, so each option previews BOTH of its colours, the
  * field as the larger block and the accent as the smaller one, in the same
  * proportion they appear at on a page. Showing one swatch would be a preview
  * of half the choice.
  *
  * The selected one is named as well as ringed, and the ring is drawn in ink
- * rather than in the theme's own colour — a yellow ring on a white ground
+ * rather than in the theme's own colour, a yellow ring on a white ground
  * marks nothing.
  */
 export default function ThemePicker({ className = '' }) {

@@ -1,5 +1,5 @@
 -- ============================================================================
--- Friends v2 — functions, triggers, views
+-- Friends v2, functions, triggers, views
 -- Run after 01_schema.sql.
 -- ============================================================================
 
@@ -71,7 +71,7 @@ create trigger on_auth_user_created
 -- ---------------------------------------------------------------------------
 -- The trigger above only fires for people who sign up AFTER this file has
 -- been run. Anyone who signed up while the database was still empty has an
--- auth user and no profile row — and every other table keys off profiles, so
+-- auth user and no profile row, and every other table keys off profiles, so
 -- for them the app fails at the first write with a foreign key violation:
 --
 --   insert or update on table "groups" violates foreign key constraint
@@ -121,12 +121,20 @@ on conflict (id) do nothing;
 -- ---------------------------------------------------------------------------
 -- Cycle generation.
 --
--- The anchor is the first check-in slot at/after the group was created,
--- expressed in the group's local timezone. Later cycles are derived by adding
--- whole days to the LOCAL timestamp before converting back, so a group does
--- not drift by an hour when daylight saving changes.
+-- A period runs from when it opens until the next one opens: the whole
+-- cadence, not window_hours. Writing is open the entire time. What waits for
+-- the appointed hour is the reading, which the board holds sealed until the
+-- period ends. See 13_group_rhythm.sql for why, and for the repair that
+-- brings a database created before this to the same shape.
+--
+-- The anchor is the check-in slot at or before the group was created,
+-- expressed in the group's local timezone, so a new group is inside its first
+-- week straight away rather than waiting up to a cadence for one. Later
+-- periods follow the previous row, so a group already running keeps the
+-- rhythm it has, and days are added to the LOCAL timestamp before converting
+-- back, so it does not drift by an hour when daylight saving changes.
 -- ---------------------------------------------------------------------------
-create or replace function ensure_cycles(gid uuid, ahead int default 4)
+create or replace function ensure_cycles(gid uuid, ahead int default 2)
 returns void
 language plpgsql
 security definer
@@ -134,45 +142,106 @@ set search_path = public
 as $$
 declare
   g            groups%rowtype;
-  anchor_local timestamp;
   base_date    date;
   dow_offset   int;
   next_seq     int;
+  last_opens   timestamptz;
   opens_local  timestamp;
+  ends_local   timestamp;
+  first_end    timestamp;
   future_count int;
 begin
   select * into g from groups where id = gid;
   if not found then return; end if;
 
-  base_date  := (g.created_at at time zone g.timezone)::date;
-  dow_offset := (g.checkin_dow - extract(dow from base_date)::int + 7) % 7;
-  anchor_local := (base_date + dow_offset)::timestamp + make_interval(hours => g.opens_hour);
+  /**
+   * Clamped rather than merely defaulted.
+   *
+   * create_group, join_group and tick all ask for four, and they were written
+   * before there was any reason not to. Capping here fixes all three at once
+   * and, more usefully, cannot be undone by a caller that this file does not
+   * know about. Two is the one you are in plus the one after it, which is
+   * everything any screen has ever needed.
+   */
+  ahead := least(greatest(coalesce(ahead, 2), 1), 2);
 
-  select coalesce(max(seq) + 1, 0) into next_seq from cycles where group_id = gid;
+  select max(seq), max(opens_at) into next_seq, last_opens
+  from cycles where group_id = gid;
+
+  if next_seq is null then
+    /**
+     * A group with no periods yet. The anchor is the meeting on or before the
+     * group was made, not the one after it.
+     *
+     * It used to look forward, which meant a group created on a Monday with a
+     * Sunday check-in had nothing open for six days. You would set the whole
+     * thing up, invite people, and find a locked door. Anchoring backwards
+     * puts the group inside its first week immediately, and that week still
+     * reveals on the first real meeting evening.
+     */
+    base_date   := (g.created_at at time zone g.timezone)::date;
+    dow_offset  := (extract(dow from base_date)::int - g.checkin_dow + 7) % 7;
+    opens_local := (base_date - dow_offset)::timestamp + make_interval(hours => g.opens_hour);
+
+    /**
+     * Made on the check-in day but before the hour, so even the backwards
+     * anchor is ahead of the group. Neither obvious answer is good: opening
+     * at the anchor leaves the group shut for the rest of the day it was
+     * created, and stepping back a whole cadence invents a week that ended
+     * before the group existed, which the board would then show as everybody
+     * having gone quiet.
+     *
+     * So the first week is a short one. It starts now and ends at the real
+     * meeting hour, and every week after it is full length. That is also just
+     * true: you did join partway through a week.
+     */
+    if opens_local at time zone g.timezone > g.created_at then
+      first_end   := opens_local;
+      opens_local := (g.created_at at time zone g.timezone);
+    end if;
+
+    next_seq := 0;
+  else
+    /**
+     * A group that is already running continues from its own last period, not
+     * from a recomputed anchor.
+     *
+     * Deriving every period from the anchor was fine while the anchor never
+     * moved. It moved above, so a group with five weeks of history would have
+     * had its next period computed on the new anchor and landed on top of a
+     * week it already had. Following the last row keeps every existing group
+     * on exactly the rhythm it has been on.
+     */
+    opens_local := (last_opens at time zone g.timezone) + make_interval(days => g.cadence_days);
+    next_seq    := next_seq + 1;
+  end if;
 
   select count(*) into future_count
   from cycles where group_id = gid and closes_at > now();
 
-  -- Top up until there are `ahead` cycles still in the future.
   while future_count < ahead loop
-    opens_local := anchor_local + make_interval(days => g.cadence_days * next_seq);
+    -- The whole cadence, not window_hours. This is the change. first_end is
+    -- set only for the short opening week above, and only for its one turn.
+    ends_local := coalesce(first_end, opens_local + make_interval(days => g.cadence_days));
+    first_end  := null;
 
     insert into cycles (group_id, seq, opens_at, closes_at, state)
     values (
       gid,
       next_seq,
       opens_local at time zone g.timezone,
-      (opens_local + make_interval(hours => g.window_hours)) at time zone g.timezone,
+      ends_local  at time zone g.timezone,
       'upcoming'
     )
     on conflict (group_id, seq) do nothing;
 
-    if (opens_local + make_interval(hours => g.window_hours)) at time zone g.timezone > now() then
+    if ends_local at time zone g.timezone > now() then
       future_count := future_count + 1;
     end if;
+
+    opens_local := ends_local;
     next_seq := next_seq + 1;
 
-    -- Safety valve for a group created long ago: never loop forever.
     if next_seq > 5000 then exit; end if;
   end loop;
 end;
@@ -217,7 +286,7 @@ declare
   fallback_uid uuid;
 begin
   for g_id in select id from groups loop
-    perform ensure_cycles(g_id, 4);
+    perform ensure_cycles(g_id, 2);
   end loop;
 
   update cycles set state = 'open'
@@ -313,7 +382,7 @@ begin
   insert into group_members (group_id, user_id, role, nudge_order)
   values (g.id, auth.uid(), 'admin', 0);
 
-  perform ensure_cycles(g.id, 4);
+  perform ensure_cycles(g.id, 2);
   return g;
 end;
 $$;
@@ -347,7 +416,7 @@ begin
   values (g.id, auth.uid(), n)
   on conflict do nothing;
 
-  perform ensure_cycles(g.id, 4);
+  perform ensure_cycles(g.id, 2);
   return g;
 end;
 $$;
@@ -356,7 +425,7 @@ $$;
 -- submit_checkin(): one atomic write for a whole check-in.
 --
 -- Upsert semantics on (cycle_id, user_id) mean the offline queue can replay a
--- submission as many times as it likes without creating duplicates — the
+-- submission as many times as it likes without creating duplicates, the
 -- client never has to reason about whether the first attempt got through.
 -- SECURITY INVOKER (the default) so the RLS policies still apply.
 -- ---------------------------------------------------------------------------
@@ -364,8 +433,7 @@ $$;
 -- makes still resolves against a migrated database.
 --
 -- The pre-mood version has to go first and explicitly. Adding a defaulted
--- argument does not replace a function, it declares a second one beside it —
--- and two overloads that both accept four arguments is how you get PostgREST
+-- argument does not replace a function, it declares a second one beside it. -- and two overloads that both accept four arguments is how you get PostgREST
 -- picking the one that silently discards the mood.
 drop function if exists submit_checkin(uuid, text, text, jsonb);
 
@@ -436,8 +504,7 @@ $$;
 
 -- ---------------------------------------------------------------------------
 -- member_cycle_status: the one view the UI reads for history, the live board
--- and the completion rate. security_invoker keeps the caller's RLS in force —
--- without it the view would leak every group's data to every user.
+-- and the completion rate. security_invoker keeps the caller's RLS in force. -- without it the view would leak every group's data to every user.
 -- ---------------------------------------------------------------------------
 create or replace view member_cycle_status
 with (security_invoker = on)
@@ -466,7 +533,7 @@ left join away_periods ap on ap.cycle_id = c.id and ap.user_id = gm.user_id;
 
 -- ---------------------------------------------------------------------------
 -- Scheduled heartbeat. Requires the pg_cron extension (Database > Extensions).
--- Without this, nothing happens while the group is not looking — which is
+-- Without this, nothing happens while the group is not looking, which is
 -- exactly when someone goes quiet.
 -- ---------------------------------------------------------------------------
 -- create extension if not exists pg_cron;

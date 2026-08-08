@@ -2,16 +2,15 @@
 -- Placeholder content for the reading library.
 --
 -- Real chapter titles from the content brief, PLACEHOLDER bodies. The point is
--- to exercise the reader against realistic volume — roughly 3,000 words a
--- chapter — so scrolling, progress saving and chapter switching are tested
+-- to exercise the reader against realistic volume, roughly 3,000 words a
+-- chapter, so scrolling, progress saving and chapter switching are tested
 -- against what the finished books will weigh, not against two paragraphs.
 --
 -- The bodies are generated with repeat() rather than pasted, which keeps this
 -- file small while still producing full-length chapters.
 --
 -- Replace the bodies with the manuscripts when they are written. Chapter 1 of
--- each book is the free preview and should be the strongest chapter you have —
--- a weak free chapter is a broken storefront.
+-- each book is the free preview and should be the strongest chapter you have. -- a weak free chapter is a broken storefront.
 -- ============================================================================
 
 -- ~40 words per sentence-block, repeated to reach chapter length.
@@ -32,7 +31,7 @@ insert into books (slug, title, subtitle, description, price_cents, currency, pu
  ('story-you-tell',
   'The Story You Tell About Ability',
   'Mindset, honestly',
-  'What you believe about ability changes what you do after failure — the only moment that matters. Growth mindset has been oversold; this is where it actually works.',
+  'What you believe about ability changes what you do after failure, the only moment that matters. Growth mindset has been oversold; this is where it actually works.',
   1200, 'CAD', true),
  ('evidence-of-yourself',
   'Evidence of Yourself',

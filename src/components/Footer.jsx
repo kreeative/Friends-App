@@ -9,7 +9,7 @@ import ThemePicker from './ThemePicker'
  * The real footer. Four columns on desktop, stacked on a phone, sitting on a
  * full-bleed sheet of glass so the page ends on a surface rather than a line.
  *
- * It carries the things a footer is actually for — what the thing is, where
+ * It carries the things a footer is actually for. What the thing is, where
  * to go next, who owns it, and how to reach them. The ownership notice
  * matters here beyond convention: it is the visible half of the IP position
  * the licence and the legal pages set out.
@@ -70,7 +70,7 @@ export default function Footer() {
           <div>
             <h2 className="eyebrow">{c.contact}</h2>
             <p className="mt-4 text-body text-muted">
-              {/* Kept as a placeholder deliberately — see src/legal/content.js */}
+              {/* Kept as a placeholder deliberately. See src/legal/content.js */}
               contact@richandfriends.xyz
             </p>
             <div className="mt-5 flex gap-2">

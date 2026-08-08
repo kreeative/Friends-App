@@ -38,6 +38,10 @@ const STRINGS = {
     'sync.offline': 'You’re offline. Anything you write will send itself later.',
 
     'board.open_for': 'Open for another {t}',
+    'board.reveals_in': 'Everyone’s week shows in {t}',
+    'board.sealed_note':
+      'You can check in any time this week. Nobody sees anybody’s answers until the week is up.',
+    'board.last_week': 'Week of {d}',
     'board.opens_in': 'Opens in {t}',
     'board.next_opens_in': 'Next one opens in {t}',
     'board.closed': 'Closed for now',
@@ -112,6 +116,9 @@ const STRINGS = {
     'checkin.title': 'Check-in',
     'checkin.closes_in': 'Closes in {t}',
     'checkin.window_closed': 'Window closed',
+    'checkin.between': 'Between weeks',
+    'checkin.between_body':
+      'Last week is finished and the new one starts in {t}. You will have the whole week to write it, not just the evening.',
     'checkin.no_cycle_body':
       'This group has no check-in window yet. The first one is being set up. It will appear here on the day and hour the group chose.',
     'checkin.closed_body':
@@ -135,7 +142,7 @@ const STRINGS = {
     'mood.question': 'How are you today?',
     'mood.hint': 'Optional, and not counted either way. Tap again to unpick.',
     'mood.when':
-      'This is the first thing your check-in asks. It unlocks when your window opens, and it is always optional.',
+      'This is the first thing your check-in asks. It unlocks when the new week starts, and it is always optional.',
     'mood.share': 'Let my groups see this',
     'mood.share_on': 'The people in your groups can see today’s mood. Only today’s, and only while this is on.',
     'mood.share_off': 'Off. Nobody else can see it.',
@@ -362,6 +369,10 @@ const STRINGS = {
     'sync.offline': 'Tu es hors ligne. Ce que tu écris partira tout seul plus tard.',
 
     'board.open_for': 'Encore ouvert {t}',
+    'board.reveals_in': 'La semaine de tout le monde s’affiche dans {t}',
+    'board.sealed_note':
+      'Tu peux faire ton point quand tu veux dans la semaine. Personne ne voit les réponses des autres avant la fin de la semaine.',
+    'board.last_week': 'Semaine du {d}',
     'board.opens_in': 'Ouvre dans {t}',
     'board.next_opens_in': 'Le prochain ouvre dans {t}',
     'board.closed': 'Fermé pour l’instant',
@@ -438,6 +449,9 @@ const STRINGS = {
     'checkin.title': 'Le point',
     'checkin.closes_in': 'Ferme dans {t}',
     'checkin.window_closed': 'Fenêtre fermée',
+    'checkin.between': 'Entre deux semaines',
+    'checkin.between_body':
+      'La semaine passée est bouclée et la nouvelle commence dans {t}. Tu auras toute la semaine pour l’écrire, pas seulement la soirée.',
     'checkin.no_cycle_body':
       'Ce groupe n’a pas encore de fenêtre de point. La première est en cours de création. Elle apparaîtra ici au jour et à l’heure choisis par le groupe.',
     'checkin.closed_body':
@@ -462,7 +476,7 @@ const STRINGS = {
     'mood.question': 'Comment tu te sens aujourd’hui ?',
     'mood.hint': 'Facultatif, et jamais compté. Retape dessus pour l’enlever.',
     'mood.when':
-      'C’est la première question du point. Ça s’ouvre en même temps que ta fenêtre, et c’est toujours facultatif.',
+      'C’est la première question du point. Ça s’ouvre quand la nouvelle semaine commence, et c’est toujours facultatif.',
     'mood.share': 'Laisser mes groupes le voir',
     'mood.share_on': 'Les gens de tes groupes voient ton humeur du jour. Celle d’aujourd’hui seulement, et seulement tant que c’est activé.',
     'mood.share_off': 'Désactivé. Personne d’autre ne le voit.',

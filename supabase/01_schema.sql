@@ -1,5 +1,5 @@
 -- ============================================================================
--- Friends v2 — schema
+-- Friends v2, schema
 -- Run this first, then 02_functions.sql, then 03_policies.sql.
 -- ============================================================================
 
@@ -160,7 +160,7 @@ create index if not exists checkin_items_goal_idx on checkin_items(goal_id);
 
 -- ---------------------------------------------------------------------------
 -- away_periods: a declared absence. Excluded from the completion-rate
--- denominator and never triggers a nudge — declared absence is not silence.
+-- denominator and never triggers a nudge, declared absence is not silence.
 -- ---------------------------------------------------------------------------
 create table if not exists away_periods (
   id         uuid primary key default gen_random_uuid(),

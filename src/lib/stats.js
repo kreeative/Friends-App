@@ -5,7 +5,7 @@
  * week moves it a few points; it cannot destroy anything, so there is no
  * moment where starting over looks more appealing than continuing.
  *
- * Declared-away cycles leave the denominator entirely — being honest about an
+ * Declared-away cycles leave the denominator entirely. Being honest about an
  * exam week should cost nothing.
  */
 export function completionRate(rows, windowSize = 14) {
@@ -30,7 +30,7 @@ export function completionRate(rows, windowSize = 14) {
  *
  * The headline figure answers "how am I doing". This answers "which way is it
  * going", which is the only question a chart exists for. Each point is the
- * rate over the `window` cycles ending there — a raw per-cycle series can
+ * rate over the `window` cycles ending there, a raw per-cycle series can
  * only ever be 0 or 100, so it draws as a square wave with no trend visible
  * in it at all.
  *
@@ -56,7 +56,7 @@ export function rollingRate(rows, { window = 4, points = 12 } = {}) {
   return series.slice(-points)
 }
 
-/** Consecutive missed cycles, most recent first — drives the quiet-member logic. */
+/** Consecutive missed cycles, most recent first. Drives the quiet-member logic. */
 export function consecutiveMisses(rows) {
   const ordered = rows
     .filter((r) => r.status !== 'pending')

@@ -5,15 +5,14 @@
 /**
  * Poppins, self-hosted.
  *
- * Round letters, sharp edges — which are two different requests and the
+ * Round letters, sharp edges, which are two different requests and the
  * distinction is the whole point. Nunito was here briefly and it is a
  * *rounded* face: its stems end in soft, filed-off terminals, which is a
  * different quality from the letters themselves being circular. Poppins is
  * geometric: the o, e, c, b, d and p are built from near-perfect circles, and
  * every stroke stops dead in a flat cut. Round shapes, no soft corners.
  *
- * It also happens to be what this design was originally drawn against —
- * the fonts README has always described the intended face as geometric with
+ * It also happens to be what this design was originally drawn against. * the fonts README has always described the intended face as geometric with
  * near-circular bowls.
  *
  * Self-hosted rather than linked, for three reasons. It renders on networks
@@ -22,7 +21,7 @@
  * instead of silently falling back to whatever the machine has lying around.
  *
  * Five static files rather than one variable one, because that is what Google
- * ships for this family. They are ~7KB each — 35KB for the set, which is less
+ * ships for this family. They are ~7KB each, 35KB for the set, which is less
  * than the single variable file it replaces.
  *
  * The unicode-range is the latin subset Google itself splits out. The site is
@@ -98,14 +97,14 @@
  *
  * Two colours, never three, and never more than two on a screen. Yellow sits
  * in both because it is the one colour here that cannot carry the accent job
- * alone — 1.4:1 on white, so as a small mark it vanishes — while being the
+ * alone (1.4:1 on white, so as a small mark it vanishes) while being the
  * strongest field in the set: black on yellow is 13.5:1, the highest
  * contrast available. It leads as a surface; pink or blue leads as an action. Green survives as the single exception, because "checked
  * in this week" is a fact about the world rather than a matter of taste, and
  * it has to keep meaning the same thing in every theme.
  *
  * The accent is a fill, never text. Saturated hues cannot pass contrast as
- * type — pink measures 4.3:1 on white, yellow 1.4:1, blue 3.2:1 — so labels
+ * type (pink measures 4.3:1 on white, yellow 1.4:1, blue 3.2:1) so labels
  * are filled pills carrying black text, which both passes and reads louder
  * than coloured type ever would. As fills with black on top the three
  * measure 4.9:1, 13.5:1 and 6.5:1.
@@ -131,7 +130,7 @@
    *
    * Type is the theme's own hue rather than ink. That needs two values, not
    * one, because a hue bright enough to be a fill is rarely dark enough to be
-   * body text — measured on white, the brand pink is 4.30:1 and the brand
+   * body text, measured on white, the brand pink is 4.30:1 and the brand
    * blue 3.22:1, so neither passes AA as running text even though both are
    * fine as large display type at the 3:1 bar.
    *
@@ -175,7 +174,7 @@
      * The accent cannot do this job. In sea it is yellow on deep teal, which
      * is excellent; in sun it is pink on deep pink, which is the same hue at
      * two lightnesses and reads as a smudge. Yellow is the one colour that is
-     * already in both palettes — sun's field, sea's accent — so pinning the
+     * already in both palettes (sun's field, sea's accent) so pinning the
      * highlight to it is consistent with the theme rather than a third colour
      * smuggled in. Roughly 9:1 on either ink.
      */
@@ -190,22 +189,22 @@
     --glass-sheen: rgb(var(--c-accent) / 0.22);
   }
 
-  /* sun — pink type, yellow field. The warm one. */
+  /* sun, pink type, yellow field. The warm one. */
   :root,
   :root[data-theme='sun'] {
-    --c-ink: 169 28 84;    /* #A91C54 — 7.04:1 on white */
-    --c-muted: 220 43 114; /* #DC2B72 — 4.53:1 */
-    --c-loud: 222 53 120;  /* #DE3578 — 4.30:1, display sizes only */
-    --c-field: 248 203 2;  /* #F8CB02 — black on it 13.5:1 */
+    --c-ink: 169 28 84;    /* #A91C54, 7.04:1 on white */
+    --c-muted: 220 43 114; /* #DC2B72, 4.53:1 */
+    --c-loud: 222 53 120;  /* #DE3578, 4.30:1, display sizes only */
+    --c-field: 248 203 2;  /* #F8CB02, black on it 13.5:1 */
     --c-accent: 222 53 120;
     --c-accent-pressed: 232 90 147;
   }
 
-  /* sea — blue type, yellow field. The cool one. */
+  /* sea, blue type, yellow field. The cool one. */
   :root[data-theme='sea'] {
-    --c-ink: 0 98 116;     /* #006274 — 7.00:1 on white */
-    --c-muted: 0 130 153;  /* #008299 — 4.51:1 */
-    --c-loud: 0 157 185;   /* #009DB9 — 3.22:1, display sizes only */
+    --c-ink: 0 98 116;     /* #006274, 7.00:1 on white */
+    --c-muted: 0 130 153;  /* #008299, 4.51:1 */
+    --c-loud: 0 157 185;   /* #009DB9, 3.22:1, display sizes only */
     --c-field: 0 157 185;
     --c-accent: 248 203 2; /* yellow, as a fill carrying black: 13.5:1 */
     --c-accent-pressed: 255 219 61;
@@ -253,7 +252,7 @@
   }
 
   /* The accent, because a focus ring marks the thing you are about to act on.
-     Visible only for keyboard users — it would otherwise fire on every tap. */
+     Visible only for keyboard users, it would otherwise fire on every tap. */
   :focus-visible {
     outline: 2px solid rgb(var(--c-accent) / 0.75);
     outline-offset: 2px;
@@ -269,8 +268,8 @@
    * What this costs: backdrop-filter has nothing to work on over a flat
    * ground, so on the marketing pages the blur in .lg is a no-op and the
    * sheet is carried entirely by its rim, its sheen and its cast shadow.
-   * That still reads as a pane — it is the rim doing the work, which was
-   * always the case — but it is a pane, not a lens.
+   * That still reads as a pane, it is the rim doing the work, which was
+   * always the case, but it is a pane, not a lens.
    *
    * Where the blur still earns its keep is chrome: the tab bar and the
    * public header are fixed while the page scrolls underneath them, so
@@ -299,7 +298,7 @@
 
   /**
    * For glass that floats over content rather than over the page background.
-   * Anything can scroll underneath it — including the accent button — so it
+   * Anything can scroll underneath it (including the accent button) so it
    * carries more tint. Text on it still needs to be ink, never muted.
    */
   .glass-strong {
@@ -346,7 +345,7 @@
    *
    *   1  the blur, saturated and brightened, so what is behind blooms
    *      through instead of turning to fog
-   *   2  a refracted rim — a gradient border, bright at the corners the light
+   *   2  a refracted rim, a gradient border, bright at the corners the light
    *      comes from and almost gone at the ones it does not, drawn with a
    *      mask so it is only the rim and never a fill
    *   3  a specular sweep across the top-left, from an implied source above
@@ -425,11 +424,11 @@
   /**
    * The three treatments from the reference, which differ only in the dials.
    *
-   *   clear   iOS — barely blurred, heavily refracted. Needs something busy
+   *   clear   iOS, barely blurred, heavily refracted. Needs something busy
    *           behind it or there is nothing to bend.
-   *   frost   the concept shot — dense blur, tint pulled up, colour pulled
+   *   frost   the concept shot, dense blur, tint pulled up, colour pulled
    *           down. The only one that is safe over arbitrary content.
-   *   blur    One UI — pure radius, no rim to speak of. Softest, flattest.
+   *   blur    One UI, pure radius, no rim to speak of. Softest, flattest.
    */
   .lg-clear {
     --lg-a: 0.16;
@@ -455,7 +454,7 @@
     --lg-rim-lo: rgb(255 255 255 / 0.02);
   }
 
-  /* Chrome floating over arbitrary content — a nav, a sheet. Denser, because
+  /* Chrome floating over arbitrary content, a nav, a sheet. Denser, because
      the accent button can scroll underneath it. */
   .lg-chrome {
     --lg-a: 0.72;
@@ -478,7 +477,7 @@
   }
 
   /**
-   * The selected row inside a glass menu — the "Feed" pill in the reference.
+   * The selected row inside a glass menu, the "Feed" pill in the reference.
    * A second, brighter sheet sitting on the first: it reads as a lens laid
    * over the glass rather than as a filled button, which is the whole trick.
    */
@@ -507,11 +506,11 @@
   /* --- public page ------------------------------------------------------ */
   /**
    * Everything below is used by the landing page and the footer only. The
-   * signed-in screens are deliberately calm — a marketing page is read once,
+   * signed-in screens are deliberately calm, a marketing page is read once,
    * at leisure, by someone deciding, and it is allowed to be the loud room.
    */
 
-  /* Glass in panel form — the surface the public page is built out of.
+  /* Glass in panel form, the surface the public page is built out of.
      Longhand rather than `@apply glass` so the blur cannot be lost to a
      future reordering of the @supports rule above. */
   .panel {
@@ -528,7 +527,7 @@
       box-shadow 260ms ease;
   }
 
-  /* Lift and brighten. Two pixels is enough — the border catching the light
+  /* Lift and brighten. Two pixels is enough, the border catching the light
      does more of the work than the movement does. */
   @media (hover: hover) {
     .panel:hover {
@@ -537,7 +536,7 @@
     }
   }
 
-  /* Thinner sheet, for panels sitting immediately next to a filled one — two
+  /* Thinner sheet, for panels sitting immediately next to a filled one, two
      float shadows side by side flatten each other out. */
   .panel-quiet {
     @apply rounded-card p-6;
@@ -549,7 +548,7 @@
   }
 
   /* Full-bleed glass, so the footer reads as a floor the page rests on rather
-     than a stray line with links under it. Top edge only — a border on all
+     than a stray line with links under it. Top edge only, a border on all
      four sides of something that touches the viewport looks like a mistake. */
   .footer-glass {
     background: rgb(var(--glass-tint) / 0.92);
@@ -561,14 +560,14 @@
    * The page ground: plain white.
    *
    * It was the field colour briefly. Going back to white takes the whole
-   * legibility problem with it — nothing sits on a saturated ground any more,
+   * legibility problem with it, nothing sits on a saturated ground any more,
    * so nothing needs an outline to survive it, and secondary text is safe
    * everywhere rather than only inside glass. The theme has not gone
    * anywhere; it is the type colour and it is the blocks, rather than being
    * the page.
    *
    * html and body carry the same colour. When they disagreed with this, an
-   * overscroll or a short page showed the other one at the edges — which is
+   * overscroll or a short page showed the other one at the edges, which is
    * what "you can see the edges of the site" was.
    */
   .ground {
@@ -577,7 +576,7 @@
 
   /**
    * Stickers. Die-cut artwork on a rail, tilted and bobbing slightly out of
-   * phase. Decoration in the honest sense — aria-hidden, not clickable, and
+   * phase. Decoration in the honest sense, aria-hidden, not clickable, and
    * nothing depends on seeing them.
    *
    * The rail's offset changes with the room available. A narrow screen has no
@@ -586,8 +585,8 @@
    * way a sticker actually would. A wide screen has a real margin, so the
    * rail moves out into it and nothing overlaps at all.
    *
-   * They were `hidden xl:block` for a while, which meant a phone — the way
-   * most people will ever see this — got none of them at all. Hiding
+   * They were `hidden xl:block` for a while, which meant a phone, the way
+   * most people will ever see this, got none of them at all. Hiding
    * decoration on the majority device is not a rule, it is an omission.
    */
   .sticker {
@@ -597,7 +596,7 @@
     /**
      * How far onto the page a sticker reaches, rather than how far off it
      * sits. Those are the same statement only if the sticker is a fixed size,
-     * and it is not — it grows with the viewport while the page gutter stays
+     * and it is not, it grows with the viewport while the page gutter stays
      * at 24px, so any fixed offset that clears the text on a phone lands on
      * top of it by tablet.
      *
@@ -621,14 +620,14 @@
   /**
    * The logo's tile. The artwork is a filled square, so all this does is
    * round the corners to match everything else and give it the same physical
-   * depth — there is no ground to supply any more.
+   * depth, there is no ground to supply any more.
    */
   .brand-tile {
     @apply rounded-card object-contain;
     box-shadow: var(--e-raised);
   }
 
-  /* The app's ghost button is deliberately edgeless — in context it always
+  /* The app's ghost button is deliberately edgeless, in context it always
      sits under a filled primary that establishes the row. Standing alone on
      the landing page it read as a stray line of bold text, so the public
      page gets a bordered secondary instead. */
@@ -668,7 +667,7 @@
   .chip-green {
     @apply chip bg-green text-on-pop;
   }
-  /* Neutral states stay quiet — a missed week is not an alarm. */
+  /* Neutral states stay quiet, a missed week is not an alarm. */
   .chip-quiet {
     @apply chip bg-raised text-muted;
   }
@@ -678,7 +677,7 @@
    * One curve for everything that moves: cubic-bezier(0.32, 0.72, 0, 1).
    *
    * It is the sheet curve from iOS, and the reason it feels the way it does
-   * is the distribution rather than the duration — most of the distance is
+   * is the distribution rather than the duration, most of the distance is
    * covered in the first third and the last few pixels take the rest. That is
    * what makes movement read as something settling into place instead of
    * something stopping. A linear or ease-out curve over the same 400ms feels
@@ -702,8 +701,8 @@
   /**
    * Fast in, slow out. The asymmetry is the entire effect: the press answers
    * in 90ms so it feels connected to the finger, and the release takes 260ms
-   * on the settle curve so it feels sprung. A symmetric transition — which is
-   * what this was — reads as an animation playing, not as a button.
+   * on the settle curve so it feels sprung. A symmetric transition, which is
+   * what this was, reads as an animation playing, not as a button.
    */
   .press {
     transition:
@@ -721,7 +720,7 @@
    * The rest of the interaction layer.
    *
    * The page moved and the press answered, and in between those two there was
-   * nothing — every card, row and chip was static until the moment you
+   * nothing, every card, row and chip was static until the moment you
    * committed to it. Hover is where an interface tells you what is live
    * before you touch it, and on a phone the same transitions carry the tap.
    *
@@ -736,7 +735,7 @@
       box-shadow: var(--e-float);
     }
 
-    /* Rows do not lift — they are in a stack, and lifting one out of a divided
+    /* Rows do not lift, they are in a stack, and lifting one out of a divided
        list breaks the hairlines either side of it. They warm instead. */
     .list > a:hover,
     .list > button:hover,
@@ -782,8 +781,7 @@
   /**
    * The two analytics surfaces.
    *
-   * Both carry white type, which is what the yellow ground could never do —
-   * white on that yellow is 1.4:1. But two cards of identical ink side by
+   * Both carry white type, which is what the yellow ground could never do. * white on that yellow is 1.4:1. But two cards of identical ink side by
    * side read as one block with a gap in it, so they are two tones of the
    * same hue rather than one: the metric card is ink darkened, the chart card
    * is ink itself. Roughly 8.9:1 and 7:1 for white, so the separation costs
@@ -805,7 +803,7 @@
    * A goal that is over.
    *
    * Green, because in this palette green is the one colour that is not a
-   * matter of taste — it already means "this happened" on the board and on
+   * matter of taste, it already means "this happened" on the board and on
    * the chart, and a completed goal is the same claim about the world. It
    * stays a tint rather than a fill so the card is still something you read
    * rather than a badge.
@@ -819,7 +817,7 @@
   .card-dropped {
     @apply rounded-card p-6;
     /**
-     * The tint costs about 0.4:1, and --c-muted did not have it to give — it
+     * The tint costs about 0.4:1, and --c-muted did not have it to give, it
      * measures 4.53:1 on plain white, which is the edge. So inside these two
      * cards the secondary text falls back to the ink value, which has 7:1 to
      * spend and lands around 6.3:1 here. Size and weight still carry the
@@ -833,7 +831,7 @@
     box-shadow: inset 0 0 0 1px rgb(var(--c-green) / 0.25);
   }
 
-  /* Abandoned is not a failure and is not drawn as one — it is just quiet.
+  /* Abandoned is not a failure and is not drawn as one, it is just quiet.
      A red card here would be the app arguing against its own rule about
      what a missed thing means. */
   .card-dropped {
@@ -865,7 +863,7 @@
    *
    * `.on-ground` is the opt-in for the second case. It swaps grey for
    * dimmed ink, which stays black on the field in light mode and white on
-   * the dark ground in dark mode — so one class is right in both.
+   * the dark ground in dark mode, so one class is right in both.
    */
   .eyebrow {
     @apply text-label font-semibold uppercase tracking-[0.02em] text-muted;
@@ -878,7 +876,7 @@
    * Headlines. No serif: the display face is gone, and the sans at 700 with
    * the tracking pulled well in does the same job without a second voice on
    * the page. Reserved for the top-level headline of a section and nothing
-   * smaller — at body sizes this tracking would close the words up.
+   * smaller, at body sizes this tracking would close the words up.
    */
   .display {
     @apply font-sans font-bold leading-[1.08] tracking-[-0.024em] text-ink;
@@ -897,7 +895,7 @@
 
   /**
    * `.btn` declares its own transition and sits after `.press` in this file,
-   * so at equal specificity it wins — which silently cost every button the
+   * so at equal specificity it wins, which silently cost every button the
    * fast-in half of the press. Restating the duration here puts it back.
    */
   .btn:active {
@@ -956,7 +954,7 @@
   from {
     opacity: 0;
     /* Ten pixels and half a percent of scale. Both are small enough that
-       nobody sees them happen — what they see is the page arriving with
+       nobody sees them happen, what they see is the page arriving with
        weight rather than being swapped. */
     transform: translate3d(0, 10px, 0) scale(0.994);
   }
@@ -967,7 +965,7 @@
 }
 
 /**
- * Reduced motion keeps the fades and drops the movement — a cross-fade still
+ * Reduced motion keeps the fades and drops the movement, a cross-fade still
  * communicates that content arrived, without anything sliding or scaling.
  */
 @media (prefers-reduced-motion: reduce) {
@@ -1004,7 +1002,7 @@
   }
 
   /* Inline styles, so this is the one place !important is the right tool
-     rather than a shortcut. The indicator still moves — it just arrives
+     rather than a shortcut. The indicator still moves, it just arrives
      without travelling. */
   [data-slider] {
     transition: none !important;

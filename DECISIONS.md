@@ -15,7 +15,7 @@ shared window instead: everyone checks in between Sunday 18:00 and Monday
 23:59 in the group's timezone.
 
 A ritual needs simultaneity. If one person checks in on Tuesday and another on
-Friday, there is no moment — only a form that is permanently open, which is
+Friday, there is no moment, only a form that is permanently open, which is
 what v1 already was and what went quiet after nine days. A shared window gives
 the week a beat, makes one digest email meaningful instead of five, and turns
 "who hasn't checked in yet" into something the group can see rather than
@@ -26,7 +26,7 @@ row" is a join, not date arithmetic scattered through the client.
 
 *To reverse:* move `checkin_dow` / `opens_hour` / `window_hours` from `groups`
 to `group_members` and make `cycles` per-member. The rest of the schema is
-unaffected — `checkins` already keys on `(cycle_id, user_id)`.
+unaffected. `checkins` already keys on `(cycle_id, user_id)`.
 
 ## Results stay sealed until the window closes
 
@@ -38,21 +38,21 @@ always-visible board looks identical whenever you glance at it, so there is
 never a reason to glance. It also removes the anchoring effect where whoever
 posts first sets the tone and everyone else calibrates their honesty to it.
 
-## No freezes — declared absences instead **[contested]**
+## No freezes, declared absences instead **[contested]**
 
 The brief asked for a small number of freezes that auto-apply to a missed
 period. This ships `away_periods` instead: you mark a cycle away *in advance*,
 and it leaves the completion-rate denominator entirely.
 
 Freezes exist to protect an unbroken chain. The headline metric here is
-deliberately not a chain — it is "11 of the last 14" over a rolling window,
+deliberately not a chain, it is "11 of the last 14" over a rolling window,
 which needs no protection because it heals on its own as the window slides. An
 auto-applied freeze would be worse than nothing: it silently changes the
 denominator to 13, the user never sees the save, so it costs a balance, refill
 rules and UI while delivering no felt relief.
 
 A declared absence does the same forgiveness work honestly, and it earns its
-keep twice — a member who says "exams, back in two weeks" is not silent, so
+keep twice, a member who says "exams, back in two weeks" is not silent, so
 they correctly do not trigger the quiet-member flow.
 
 *To reverse:* add `freezes_remaining` to `group_members` (the `freeze_grace`
@@ -70,7 +70,7 @@ pairs are close friends and some are acquaintances-by-association, and "you
 have been assigned to check on Sam" produces either nothing or a stilted
 message. Volunteering is a real commitment; an assigned chore is the exact
 texture of obligation that makes people quit. But pure volunteering fails to
-diffusion of responsibility, hence the 24-hour fallback — the rotation is the
+diffusion of responsibility, hence the 24-hour fallback, the rotation is the
 safety net, not the mechanism.
 
 The nudge deliberately points *out* of the app: message them where you
@@ -86,7 +86,7 @@ The brief allowed either. Google sign-in is the primary path and email is the
 fallback.
 
 A magic link opens in whatever the OS considers the default browser, which is
-frequently not the browser the person started in — so the session lands
+frequently not the browser the person started in, so the session lands
 somewhere they cannot see, and they are stuck. For an app whose entire promise
 is "sixty seconds, standing up", that is a fatal first-run failure. The link
 stays available for anyone who would rather not use a Google account.
@@ -111,7 +111,7 @@ the app can reset to zero.
 The abandonment cliff on chain counters is well documented and mechanical: the
 chain breaks, the identity attached to it ("I'm a 40-day person") dies, and
 restarting from zero is less appealing than quitting. A percentage degrades
-gracefully — a bad week is a few points, and the window forgets it entirely
+gracefully, a bad week is a few points, and the window forgets it entirely
 within three months.
 
 ## Missing is a hollow square, not a red one
@@ -122,7 +122,7 @@ outline, away ones as hatched. Nothing is red and nothing is labelled
 
 Guilt-shaped UI produces avoidance: a wall of red makes people close the app,
 which is the opposite of what a wall of red is trying to achieve. The strip is
-built to show accumulation — Amabile's progress principle is that visible small
+built to show accumulation. Amabile's progress principle is that visible small
 progress is the strongest sustained motivator there is, so the design shows
 what has been built rather than what is owed.
 
@@ -133,7 +133,7 @@ tap rather than presenting a backlog.
 
 Someone returning after three quiet weeks meets either a wall of overdue items
 or a clean slate. The wall is why they do not return. Pausing is not a soft
-delete — history stays intact, so the completion rate stays honest.
+delete, history stays intact, so the completion rate stays honest.
 
 ## Group progress, no leaderboard
 
@@ -170,8 +170,8 @@ watch. The nudge is at creation time, where rewriting is cheap.
 
 Ground (light / dark / follow the system) and accent (pink / yellow / blue)
 are stored and chosen separately. Everything that was previously a fixed
-brand colour — buttons, focus rings, progress bars, the logo colourway, the
-lit edge on every sheet of glass — now draws from a single `--c-accent`.
+brand colour, buttons, focus rings, progress bars, the logo colourway, the
+lit edge on every sheet of glass, now draws from a single `--c-accent`.
 
 The earlier palette gave pink, yellow and blue each a permanent job, on the
 theory that a colour without a job becomes decoration. That reasoning was
@@ -181,12 +181,12 @@ anyone who had not read the rule. One accent is legible without explanation.
 
 Green survives as the single exception. "Checked in this week" is a fact
 about the world rather than a matter of taste, and it has to mean the same
-thing in every theme — so it is not themeable, and the landing page does not
+thing in every theme, so it is not themeable, and the landing page does not
 use it at all, because a marketing page cannot make that claim.
 
 The accent is a fill and never text: on white, pink measures 4.3:1, blue
 3.2:1 and yellow 1.4:1. As fills carrying black text the three measure 4.9,
-6.5 and 13.5. Press states go *lighter*, never darker — darkening walks a
+6.5 and 13.5. Press states go *lighter*, never darker, darkening walks a
 fill towards failing AA against its own label.
 
 Yellow is the one case that needs a ground of its own. At 1.4:1 the mark does
@@ -229,7 +229,7 @@ theme, which is a guess dressed as a decision.
 
 **The stickers sit above the glass, not behind it.** Behind a half-opaque
 panel, a sticker's black line work shows through as a dark patch under the
-words — measured at 2.8:1 before it was caught. On top they behave like
+words, measured at 2.8:1 before it was caught. On top they behave like
 stickers, and they are placed in the margins so they overlap panel edges
 rather than sentences.
 
@@ -244,7 +244,7 @@ that text sits on. Nothing here was judged by eye.
 app would ship. Settings has a share-out button instead.
 
 **Push notifications.** Web push on iOS requires installing the PWA to the
-home screen, which most people will not do — so a push-first design would
+home screen, which most people will not do, so a push-first design would
 silently reach nobody. Email is the honest channel.
 
 **Payments for stakes.** `stake_text` is a string the humans settle

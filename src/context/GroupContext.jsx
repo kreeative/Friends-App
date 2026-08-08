@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from './AuthContext'
-import { cyclePhase } from '../lib/time'
+import { cyclePhase, lastClosed, soonestUpcoming } from '../lib/time'
 
 /* Exported so a test or a preview can supply a value without standing up a
    Supabase client. Application code should use the hook. */
@@ -19,7 +19,7 @@ export const useGroup = () => useContext(GroupCtx)
  * forward work, and a link to a group is a link to that group.
  *
  * The provider sits above the route tree, so it reads the path itself rather
- * than useParams — which only resolves inside a matched Route.
+ * than useParams, which only resolves inside a matched Route.
  */
 const GROUP_PATH = /^\/g\/([0-9a-f-]{36})/i
 const groupIdFrom = (pathname) => pathname.match(GROUP_PATH)?.[1] ?? null
@@ -44,7 +44,7 @@ export function GroupProvider({ children }) {
    * Goals with no group at all.
    *
    * Loaded here rather than inside loadGroup, because they belong to the
-   * person and not to whichever group happens to be open — they have to be
+   * person and not to whichever group happens to be open, they have to be
    * available on /goals, where there is no group, and they must survive
    * switching between groups without a refetch.
    *
@@ -73,7 +73,7 @@ export function GroupProvider({ children }) {
       return
     }
     // A rejected query here used to escape as an unhandled rejection, leaving
-    // `loading` true forever — an eternal splash with no way out of it.
+    // `loading` true forever, an eternal splash with no way out of it.
     try {
       const { data, error: err } = await supabase
         .from('group_members')
@@ -106,7 +106,7 @@ export function GroupProvider({ children }) {
     try {
       await supabase.rpc('tick')
     } catch {
-      /* offline or not yet migrated — the reads below still work */
+      /* offline or not yet migrated, the reads below still work */
     }
 
     try {
@@ -149,22 +149,32 @@ export function GroupProvider({ children }) {
     loadGroup()
   }, [loadGroup])
 
-  // The open cycle if there is one, otherwise the most recent — the board
-  // should always have something to show, never an empty screen.
+  /* Every phase question in the app goes through the same two arguments, so
+     that a period ends when the next one starts rather than thirty hours in.
+     Bound once here and passed down, because a component that asks with only
+     the row gets the old answer and there is no way to see that it did. */
+  const cadence = group?.cadence_days ?? null
+
+  // The period you are in if there is one, otherwise the one that just ended.
+  // The board should always have something to show, never an empty screen.
   const currentCycle = useMemo(() => {
-    const open = cycles.find((c) => cyclePhase(c) === 'open')
+    const open = cycles.find((c) => cyclePhase(c, cycles, cadence) === 'open')
     if (open) return open
-    const past = cycles.filter((c) => cyclePhase(c) === 'closed')
-    return past[0] ?? cycles[cycles.length - 1] ?? null
-  }, [cycles])
+    return lastClosed(cycles, cadence) ?? cycles[cycles.length - 1] ?? null
+  }, [cycles, cadence])
 
-  const nextCycle = useMemo(
-    () => [...cycles].reverse().find((c) => cyclePhase(c) === 'upcoming') ?? null,
-    [cycles],
-  )
+  /* The period that just ended, which is the one the board reveals. It is
+     separate from currentCycle now: with the window running the whole week,
+     the moment last week's results unseal is the same moment this week opens,
+     so the board has to be able to hold both at once. Otherwise the reveal
+     you waited seven days for is replaced by an empty week the second it
+     arrives. */
+  const lastCycle = useMemo(() => lastClosed(cycles, cadence), [cycles, cadence])
 
-  /* Live only. Everything downstream — the board, the check-in, the count on
-     the dashboard — means "things I am currently on the hook for", and that
+  const nextCycle = useMemo(() => soonestUpcoming(cycles, cadence), [cycles, cadence])
+
+  /* Live only. Everything downstream, the board, the check-in, the count on
+     the dashboard. Means "things I am currently on the hook for", and that
      stopped being the same set as `goals` once the finished ones stayed. */
   const live = useMemo(() => goals.filter((g) => g.status === 'active' || g.status === 'paused'), [goals])
 
@@ -194,7 +204,9 @@ export function GroupProvider({ children }) {
     activeId,
     members,
     cycles,
+    cadence,
     currentCycle,
+    lastCycle,
     nextCycle,
     goals,
     myGoals,
@@ -208,7 +220,7 @@ export function GroupProvider({ children }) {
       await Promise.all([loadMemberships(), loadGroup(), loadSolo()])
     },
     /* Anything that writes a goal may have written a solo one, and the form
-       is shared between both screens — so this refreshes both rather than
+       is shared between both screens, so this refreshes both rather than
        making every caller work out which list it just changed. */
     reloadGroup: async () => {
       await Promise.all([loadGroup(), loadSolo()])

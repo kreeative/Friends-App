@@ -6,8 +6,8 @@ import { env, missingEnv } from './_env.js'
  * Creates a Stripe Checkout session for one book.
  *
  * This endpoint deliberately does NOT grant anything. It reads the price from
- * the database rather than from the request — a client that could name its own
- * price would be able to buy a book for a cent — and it records who is buying
+ * the database rather than from the request, a client that could name its own
+ * price would be able to buy a book for a cent, and it records who is buying
  * what in the session metadata so the webhook can act on it later.
  *
  * Entitlement is written by the webhook and only by the webhook.
@@ -91,7 +91,7 @@ export default async function handler(req, res) {
   }
 
   /* Named, not generic. Without the service-role key the identity lookup below
-     fails and the plausible-looking answer is "Not signed in" — which sends
+     fails and the plausible-looking answer is "Not signed in", which sends
      someone off to debug their account instead of their Vercel settings. */
   const missing = missingEnv(REQUIRED)
   if (missing.length > 0) {
@@ -124,7 +124,7 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: 'No such book' })
     }
 
-    // Already owned — sending them to Stripe would charge twice for nothing.
+    // Already owned. Sending them to Stripe would charge twice for nothing.
     const { data: owned } = await admin
       .from('entitlements')
       .select('id')

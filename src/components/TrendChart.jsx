@@ -6,7 +6,7 @@ import { useT } from '../lib/i18n'
  *
  * Built to the reference: a spline rather than a polyline, a fill that fades
  * out under it, a vertical drop from the marker to the baseline, and a dark
- * pill carrying the value. The curve is the point — a straight-segment chart
+ * pill carrying the value. The curve is the point, a straight-segment chart
  * of the same numbers reads as a jagged fever line, which says "volatile"
  * about data that is nothing of the sort.
  *
@@ -20,7 +20,7 @@ import { useT } from '../lib/i18n'
 const W = 600
 const H = 250
 /* The top pad clears the readout pill, which is pinned above the plot rather
-   than floating inside it — overlapping the top gridline made both unreadable. */
+   than floating inside it. Overlapping the top gridline made both unreadable. */
 const PAD = { top: 46, right: 14, bottom: 28, left: 40 }
 const INNER = { w: W - PAD.left - PAD.right, h: H - PAD.top - PAD.bottom }
 
@@ -29,7 +29,7 @@ const INNER = { w: W - PAD.left - PAD.right, h: H - PAD.top - PAD.bottom }
  *
  * Not a fixed 0–100. Consistency is a number people keep in the top third, so
  * a fixed axis draws every real series as a flat line pinned to the ceiling
- * with two thirds of the card empty underneath — technically faithful and
+ * with two thirds of the card empty underneath. Technically faithful and
  * completely unreadable. The window follows the data with a margin, and
  * because the axis is labelled with its actual values nothing is being
  * overstated: you can see what range you are looking at.
@@ -55,7 +55,7 @@ function domain(values) {
  *
  * The obvious choice here is Catmull-Rom, and it is wrong. Catmull-Rom
  * overshoots whenever the data turns sharply, so a run of 100% weeks drew a
- * curve that bulged *above* its own axis — the chart was showing better than
+ * curve that bulged *above* its own axis, the chart was showing better than
  * perfect. On a percentage that is not a rounding artefact, it is a false
  * claim.
  *
@@ -75,7 +75,7 @@ function spline(pts) {
     secant[i] = (pts[i + 1].y - pts[i].y) / dx[i]
   }
 
-  // A tangent is the average of its neighbouring secants — except at a
+  // A tangent is the average of its neighbouring secants. Except at a
   // turning point, where it is forced flat so the curve cannot sail past the
   // peak it is supposed to be describing.
   const m = [secant[0]]
@@ -173,7 +173,7 @@ export default function TrendChart({ series, className = '' }) {
   const area = `${line} L ${pts[pts.length - 1].x} ${PAD.top + INNER.h} L ${pts[0].x} ${PAD.top + INNER.h} Z`
 
   /* Nearest point to the pointer, in viewBox units. Reading the box every
-     move rather than caching it — the card is in a responsive grid, so its
+     move rather than caching it, the card is in a responsive grid, so its
      width changes without this component re-rendering. */
   function track(e) {
     const box = svg.current?.getBoundingClientRect()

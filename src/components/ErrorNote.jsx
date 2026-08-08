@@ -2,7 +2,7 @@ import { useT } from '../lib/i18n'
 
 /* The library ships in its own SQL file, separately from the core schema.
    PostgREST names the relation it could not find, and that name is the only
-   thing telling the two cases apart — sending someone to 01/02/03 when what is
+   thing telling the two cases apart. Sending someone to 01/02/03 when what is
    missing is the books has them re-running migrations they already have. */
 const LIBRARY_TABLES = [
   'books',
@@ -16,8 +16,8 @@ const LIBRARY_TABLES = [
 /**
  * Turns a Supabase error into something a person can act on.
  *
- * The two failures that actually happen during setup — the provider not being
- * enabled, and the return URL not being on the allowlist — both surface as
+ * The two failures that actually happen during setup, the provider not being
+ * enabled, and the return URL not being on the allowlist. Both surface as
  * opaque strings, and both used to render as nothing at all. Naming the fix in
  * the message is the difference between a dead button and a to-do.
  */
@@ -43,7 +43,7 @@ export function explain(error, t) {
     return t('err.load_failed')
   }
   // PostgREST's way of saying the table does not exist. It only ever means one
-  // thing here — the SQL in supabase/ was never run — and the raw string sends
+  // thing here (the SQL in supabase/ was never run) and the raw string sends
   // people looking for a caching bug instead.
   // `raw` is already lower-cased; comparing error.code directly would miss
   // PGRST205 and 42P01, which arrive upper-case.

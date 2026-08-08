@@ -4,21 +4,21 @@ Self-hosted, five weights, declared at the top of `src/index.css`.
 
 ```
 poppins-400.woff2   regular
-poppins-500.woff2   medium — body text is set at 500, not 400
+poppins-500.woff2   medium, body text is set at 500, not 400
 poppins-600.woff2   semibold
-poppins-700.woff2   bold — headings
-poppins-800.woff2   extrabold — the hero
+poppins-700.woff2   bold, headings
+poppins-800.woff2   extrabold, the hero
 ```
 
 ## Round letters, sharp edges
 
 Those are two different things and the difference decided this file.
 
-A **rounded** face — Nunito, Varela Round, Baloo — files the ends off its
+A **rounded** face (Nunito, Varela Round, Baloo) files the ends off its
 strokes. The letters can be any shape at all; what makes it rounded is that
 every terminal is soft.
 
-A **geometric** face — Poppins, Futura, Century Gothic — builds its letters
+A **geometric** face (Poppins, Futura, Century Gothic) builds its letters
 out of circles and straight lines, and cuts every stroke off dead flat. The
 shapes are round; the edges are not.
 
@@ -42,7 +42,7 @@ anyway:
    wrong typeface. That happened once here and nearly shipped.
 
 Five static files at roughly 7KB each. Google does not publish a variable
-Poppins, so this is the whole family — and 35KB for the set is still less than
+Poppins, so this is the whole family, and 35KB for the set is still less than
 one variable file of most other faces.
 
 ## Updating it
@@ -52,8 +52,8 @@ curl -A "Mozilla/5.0 (X11; Linux x86_64) Chrome/120" \
   "https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap"
 ```
 
-Take the `.woff2` from each block commented `/* latin */` — not `latin-ext`,
-which is a second set of files for characters this site does not use — and
+Take the `.woff2` from each block commented `/* latin */`, not `latin-ext`,
+which is a second set of files for characters this site does not use, and
 save them here by weight. The `unicode-range` in `src/index.css` must match
 the one in those blocks.
 
@@ -64,8 +64,8 @@ redistribution including in a repository like this one.
 
 Two files, and the metrics matter more than the family name:
 
-- `src/index.css` — the `@font-face` blocks
-- `tailwind.config.js` — `fontFamily`, and the per-size `letterSpacing`
+- `src/index.css`, the `@font-face` blocks
+- `tailwind.config.js`. `fontFamily`, and the per-size `letterSpacing`
 
 That second one is not optional, and it is easy to forget because the result
 looks wrong in a way that is hard to name. Poppins is built on circles, so it

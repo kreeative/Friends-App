@@ -1,5 +1,5 @@
 -- ============================================================================
--- Friends v2 — the scheduled heartbeat
+-- Friends v2, the scheduled heartbeat
 -- Run last, after deploying the `notify` Edge Function.
 --
 -- This file is what makes §5 (a response to silence) possible at all. A static
@@ -22,7 +22,7 @@ select cron.schedule(
 -- so an hourly cadence covers all timezones without a job per group.
 --
 -- Replace YOUR-PROJECT and YOUR-SERVICE-ROLE-KEY before running. Keep the
--- service role key out of the client — it bypasses every RLS policy.
+-- service role key out of the client, it bypasses every RLS policy.
 select cron.schedule(
   'friends-notify',
   '0 * * * *',

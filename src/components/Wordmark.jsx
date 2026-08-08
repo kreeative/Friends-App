@@ -4,7 +4,7 @@ import { useTheme } from '../lib/theme'
 /**
  * The logo, in the theme the visitor chose.
  *
- * The artwork is a filled tile now — the lettering sits on its own coloured
+ * The artwork is a filled tile now, the lettering sits on its own coloured
  * ground rather than floating on the page as a transparent PNG. That removes
  * the whole class of problem the previous version kept running into: yellow
  * measures 1.4:1 on white, so a transparent yellow mark needed a plate
@@ -12,7 +12,7 @@ import { useTheme } from '../lib/theme'
  *
  * Both shapes are square, which is why everything here is sized by one
  * dimension. In a horizontal navigation bar a square tile has to be the
- * monogram — the full wordmark shrunk to bar height is unreadable.
+ * monogram, the full wordmark shrunk to bar height is unreadable.
  */
 const WORDMARK = {
   sun: '/brand/wordmark-pink.png', // pink ground, yellow lettering
@@ -21,7 +21,7 @@ const WORDMARK = {
 
 /**
  * Both monogram tiles sit on yellow, which is now the field colour of sun and
- * the accent of sea — so each theme's mark carries its own second colour on a
+ * the accent of sea, so each theme's mark carries its own second colour on a
  * shared ground, which is exactly the pairing the themes describe.
  */
 const MARK = {
@@ -50,7 +50,7 @@ export default function Wordmark({ size = 160, className = '', variant }) {
   )
 }
 
-/** The ampersand monogram — navigation, tight spaces, the app icon. */
+/** The ampersand monogram. Navigation, tight spaces, the app icon. */
 export function Mark({ size = 44, className = '', variant }) {
   const { theme } = useTheme()
   const key = variant ?? theme
@@ -58,7 +58,7 @@ export function Mark({ size = 44, className = '', variant }) {
 }
 
 /**
- * Kept as a name because several screens ask for "the logo, handled" — but
+ * Kept as a name because several screens ask for "the logo, handled", but
  * there is nothing left to handle now that the artwork brings its own
  * ground, so it is simply the wordmark.
  */

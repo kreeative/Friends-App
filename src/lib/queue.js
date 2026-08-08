@@ -5,7 +5,7 @@ import { supabase } from './supabase'
  *
  * A check-in gets written to localStorage first and sent second, so a dead
  * connection in a stairwell never loses one. Replay is safe because
- * submit_checkin() upserts on (cycle_id, user_id) — sending the same entry
+ * submit_checkin() upserts on (cycle_id, user_id). Sending the same entry
  * twice updates one row instead of creating two, which means we never have to
  * work out whether the first attempt actually landed.
  */
@@ -66,7 +66,7 @@ export async function flush() {
 
       if (error) {
         // A rejected write (closed cycle, revoked membership) will never
-        // succeed on retry — drop it rather than looping on it forever.
+        // succeed on retry. Drop it rather than looping on it forever.
         const permanent = error.code === '42501' || error.code === '23514' || error.code === '23503'
         if (!permanent) break
       }

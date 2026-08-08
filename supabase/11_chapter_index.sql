@@ -28,7 +28,7 @@
 -- anywhere in the projection. There is no way to widen it from the client.
 --
 -- Note what is deliberately absent: `body`. Not "body, filtered" or "body,
--- truncated" — absent. A column that is not in the view cannot leak from it,
+-- truncated", absent. A column that is not in the view cannot leak from it,
 -- which is a much shorter thing to audit than a policy.
 -- ---------------------------------------------------------------------------
 create or replace view chapter_index as

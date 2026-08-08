@@ -11,7 +11,7 @@ import { useT } from '../lib/i18n'
  *
  * A wordmark says who built the thing, which is the least interesting thing
  * to say on the one screen where somebody is deciding whether to bother. The
- * mark still exists — it lives in the app's top bar, where identification is
+ * mark still exists, it lives in the app's top bar, where identification is
  * what is actually wanted.
  *
  * Overlapped and alternately tilted so the row reads as a handful of stickers
@@ -114,7 +114,7 @@ export default function SignIn() {
             </>
           )}
 
-          {/* Reachable before signing up, not after — you cannot agree to terms
+          {/* Reachable before signing up, not after. You cannot agree to terms
               you were not allowed to read. */}
           <div className="pt-6">
             <LegalLinks />

@@ -13,7 +13,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
  * and a dark ground makes the yellow field either glow or turn to mud.
  *
  * The value is stamped onto <html> as a data attribute, which the inline
- * script in index.html also does before first paint — so a reload lands on
+ * script in index.html also does before first paint, so a reload lands on
  * the chosen theme rather than flashing the default. Keep the key and the
  * fallback here in step with that script.
  */
@@ -36,7 +36,7 @@ function write(key, value) {
   try {
     localStorage.setItem(key, value)
   } catch {
-    /* Nothing to do — the choice just will not survive a reload. */
+    /* Nothing to do, the choice just will not survive a reload. */
   }
 }
 

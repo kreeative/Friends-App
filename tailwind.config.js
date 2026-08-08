@@ -1,7 +1,7 @@
 /**
  * Colours are declared as raw RGB channels in index.css so that Tailwind's
  * `<alpha-value>` still works (`bg-surface/60`) and so light and dark are the
- * same class names with different values — no `dark:` variant on every element.
+ * same class names with different values, no `dark:` variant on every element.
  */
 const c = (name) => `rgb(var(--c-${name}) / <alpha-value>)`
 
@@ -18,16 +18,16 @@ export default {
         muted: c('muted'),
         hairline: c('hairline'),
 
-        // The theme's accent — what you click. A fill only, never text.
+        // The theme's accent, what you click. A fill only, never text.
         accent: c('accent'),
         'accent-pressed': c('accent-pressed'),
         'on-accent': c('on-accent'),
 
-        // The theme's field — large blocks. Also a fill, also carries black.
+        // The theme's field, large blocks. Also a fill, also carries black.
         field: c('field'),
         'on-field': c('on-field'),
 
-        // The highlight on the dark card — yellow in both themes, because it
+        // The highlight on the dark card, yellow in both themes, because it
         // is the one colour both palettes already contain.
         spark: c('spark'),
 
@@ -39,8 +39,7 @@ export default {
       },
       fontFamily: {
         // One typeface. `display` is kept as a name because the app's metrics
-        // and invite codes reference it, but it resolves to the same family —
-        // there is no second voice on any screen now.
+        // and invite codes reference it, but it resolves to the same family. // there is no second voice on any screen now.
         sans: ['Poppins', 'system-ui', '-apple-system', 'sans-serif'],
         display: ['Poppins', 'system-ui', 'sans-serif'],
       },
@@ -49,7 +48,7 @@ export default {
          * Scale carries the hierarchy; the tracking only keeps it honest.
          *
          * Poppins is a geometric face built on circles, so it is wide and its
-         * default spacing is generous — at display sizes it reads as set in
+         * default spacing is generous, at display sizes it reads as set in
          * neon-sign letters unless it is pulled in. Not as far as Montserrat
          * needed, because Poppins has a tall x-height that fills the line, but
          * further than a narrow face would want.
@@ -79,7 +78,7 @@ export default {
       borderRadius: { card: '1.375rem', inner: '0.8125rem', field: '0.8125rem', pill: '999px' },
       boxShadow: {
         // Three levels, no exceptions. Values live in index.css so dark mode
-        // can swap warm ink for true black — a light-tinted shadow on a dark
+        // can swap warm ink for true black, a light-tinted shadow on a dark
         // ground reads as a glow.
         raised: 'var(--e-raised)',
         float: 'var(--e-float)',

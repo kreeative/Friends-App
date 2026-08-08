@@ -8,13 +8,13 @@ import { useT } from '../lib/i18n'
  * The way out of a group.
  *
  * Both actions run as database functions rather than as deletes from here,
- * because neither is one row's worth of work — leaving has to decide what
+ * because neither is one row's worth of work. Leaving has to decide what
  * happens to your goals, whether an admin needs promoting, and whether the
  * group still exists afterwards. Doing that from the client means three
  * round trips that can half-fail.
  *
  * Neither is behind a modal. A dialog you can dismiss by tapping the backdrop
- * is not a safeguard, it is a speed bump — so the confirmation is inline and
+ * is not a safeguard, it is a speed bump, so the confirmation is inline and
  * it makes you press the thing twice, with the second press saying exactly
  * what is about to happen.
  */

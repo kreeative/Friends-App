@@ -186,7 +186,7 @@ insert into books (slug, title, subtitle, description, price_cents, currency, pu
  ('story-you-tell',
   'The Story You Tell About Ability',
   'Mindset, honestly',
-  'What you believe about ability changes what you do after failure — the only moment that matters. Growth mindset has been oversold; this is where it actually works.',
+  'What you believe about ability changes what you do after failure, the only moment that matters. Growth mindset has been oversold; this is where it actually works.',
   1200, 'CAD', true),
  ('evidence-of-yourself',
   'Evidence of Yourself',

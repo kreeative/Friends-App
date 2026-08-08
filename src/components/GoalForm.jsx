@@ -9,8 +9,8 @@ import { Slider, useSlider } from './Segmented'
 /**
  * Rough signals that someone has written an outcome ("hit 10k followers")
  * rather than a process ("post 3 videos a week"). Outcomes are not within the
- * person's control, so holding them accountable for one is unfair and — more
- * practically — unfixable in a bad week, which is when people quit.
+ * person's control, so holding them accountable for one is unfair and. More
+ * practically. Unfixable in a bad week, which is when people quit.
  *
  * This only prompts. Hard-blocking would just teach people to phrase around
  * the filter, and some outcome goals are genuinely what someone wants to track.
@@ -33,7 +33,7 @@ function looksLikeOutcome(text) {
  * The form used to be nine fields in an undifferentiated column inside a
  * bottom sheet, which is why it read as a wall you had to get through rather
  * than a set of decisions. It is the same nine fields; grouping them into
- * four named steps is the whole change, and it is enough — you can now tell
+ * four named steps is the whole change, and it is enough. You can now tell
  * at a glance where you are and how much is left.
  */
 function Step({ n, title, hint, children }) {
@@ -57,7 +57,7 @@ function Step({ n, title, hint, children }) {
  * A two-or-three-way choice where the selection travels rather than swapping.
  *
  * Worth the machinery here specifically because these toggles change what the
- * rest of the form asks for — picking "One-off" replaces two fields with one.
+ * rest of the form asks for. Picking "One-off" replaces two fields with one.
  * When the highlight simply appeared on the other option there was nothing
  * connecting the tap to the fields rearranging underneath it, and it read as
  * the form glitching rather than as an answer being registered.
@@ -87,7 +87,7 @@ function Toggle({ options, value, onChange }) {
 
 /**
  * @param groupId  the group this goal belongs to, or null for a solo goal.
- *                 Null is a real value here, not a missing one — a goal with
+ *                 Null is a real value here, not a missing one, a goal with
  *                 no group is private to you and is the whole point of being
  *                 able to use this without joining anybody.
  */
@@ -132,7 +132,7 @@ export default function GoalForm({ onDone, onCancel, initial = null, groupId = n
     setError(null)
 
     // A goal with no group cannot belong to a group, whatever the toggle says
-    // — and the toggle is not shown in that case. Belt and braces, because the
+    //, and the toggle is not shown in that case. Belt and braces, because the
     // database constraint rejects the combination and the error it gives is
     // not one anybody should have to read.
     const effectiveKind = groupId ? kind : 'personal'
@@ -278,7 +278,7 @@ export default function GoalForm({ onDone, onCancel, initial = null, groupId = n
           />
         </Field>
 
-        {/* Relabelled and re-explained. "The trigger — where" read as though
+        {/* Relabelled and re-explained. "The trigger, where" read as though
             the app were going to check, which it has no way of doing and no
             intention of doing. It is a sentence you write to yourself, and
             saying so removes the only genuinely alarming field in the form. */}

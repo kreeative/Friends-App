@@ -14,7 +14,7 @@
 --
 -- group_id becomes nullable. A goal with no group is yours alone: nobody else
 -- can read it, it does not appear on any board, and it is not part of anyone's
--- cycle. It is still a goal — same fields, same check-in semantics if you
+-- cycle. It is still a goal, same fields, same check-in semantics if you
 -- later attach it to a group.
 --
 -- The new constraint is the thing that keeps this honest: without a group
@@ -170,7 +170,7 @@ grant execute on function leave_group(uuid) to authenticated;
 --
 -- Admins only, and it takes the cycles, check-ins and group goals with it via
 -- the existing cascades. Personal goals are detached first for the same reason
--- as above — deleting a group is a decision about a group, not about what four
+-- as above, deleting a group is a decision about a group, not about what four
 -- other people were trying to do with their year.
 --
 -- There is deliberately no soft delete. A group that appears in your list but

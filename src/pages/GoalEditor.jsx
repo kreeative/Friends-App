@@ -9,7 +9,7 @@ import GoalForm from '../components/GoalForm'
  *
  * This was a bottom sheet, and a bottom sheet was the wrong container for it.
  * Nine fields do not fit in one, so the form scrolled inside a rounded box
- * that was itself inside the page — two nested scrolling regions on a phone,
+ * that was itself inside the page, two nested scrolling regions on a phone,
  * with the tab bar floating over the bottom of the inner one. You could not
  * see how much form was left, the keyboard covered a third of what remained,
  * and dismissing it by accident lost everything typed.

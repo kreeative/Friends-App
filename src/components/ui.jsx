@@ -12,7 +12,7 @@ export function Screen({ children, className = '' }) {
 
 /**
  * No sticky bar, no bottom rule. The heading just sits at the top of the page
- * with room around it — one confident thing, which is the whole point.
+ * with room around it, one confident thing, which is the whole point.
  */
 export function TopBar({ title, right, sub }) {
   // pt-10 rather than pt-14: there is a sticky nav above this now, and the
@@ -51,11 +51,11 @@ export function Empty({ children, action }) {
   )
 }
 
-/** A number and its name. No box — the scale does the work. */
+/** A number and its name. No box, the scale does the work. */
 export function Stat({ value, label, hint }) {
   return (
     <div className="flex-1">
-      {/* Yellow cannot be type — 1.4:1 on white — so the metric stays ink and
+      {/* Yellow cannot be type (1.4:1 on white) so the metric stays ink and
           the yellow arrives as a rule underneath it. */}
       <div className="font-display text-metric text-ink">{value}</div>
       <div className="mt-2 h-1 w-10 rounded-pill bg-accent" />

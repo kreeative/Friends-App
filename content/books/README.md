@@ -14,7 +14,7 @@ content/books/
 ```
 
 The number at the front of the filename is the chapter's `idx`. Everything
-after it is for humans — the title shown in the app comes from the seed, not
+after it is for humans, the title shown in the app comes from the seed, not
 from the filename, so renaming a file cannot break a table of contents.
 
 ## Adding or editing a chapter
@@ -60,5 +60,5 @@ Set by the brief the placeholder text describes, and worth keeping to:
 
 The first chapter of each book is the free preview, and the paywall that
 enforces that lives in the database policy, not in the app. It should be the
-strongest chapter in the book — it is what someone reads before deciding
+strongest chapter in the book, it is what someone reads before deciding
 whether to pay for the other eight.
