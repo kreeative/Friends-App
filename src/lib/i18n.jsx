@@ -136,6 +136,11 @@ const STRINGS = {
     'mood.hint': 'Optional, and not counted either way. Tap again to unpick.',
     'mood.when':
       'This is the first thing your check-in asks. It unlocks when your window opens, and it is always optional.',
+    'mood.share': 'Let my groups see this',
+    'mood.share_on': 'The people in your groups can see today’s mood. Only today’s, and only while this is on.',
+    'mood.share_off': 'Off. Nobody else can see it.',
+    'mood.not_installed':
+      'The mood table has not been created yet. In Supabase, run supabase/12_daily_mood.sql.',
     'mood.excited': 'Excited',
     'mood.joyful': 'Joyful',
     'mood.grateful': 'Grateful',
@@ -171,6 +176,9 @@ const STRINGS = {
     'me.your_goals': 'Your own goals',
 
     'settings.leaving': 'Leaving',
+    'settings.leave_not_installed':
+      'Leaving is not switched on in the database yet. In Supabase, run supabase/09_solo_goals_and_leaving.sql, then try again.',
+    'settings.delete_admin_only': 'Only an admin can delete this group.',
     'settings.leave': 'Leave this group',
     'settings.delete': 'Delete the group',
     'settings.keep': 'Never mind',
@@ -449,6 +457,11 @@ const STRINGS = {
     'mood.hint': 'Facultatif, et jamais compté. Retape dessus pour l’enlever.',
     'mood.when':
       'C’est la première question du point. Ça s’ouvre en même temps que ta fenêtre, et c’est toujours facultatif.',
+    'mood.share': 'Laisser mes groupes le voir',
+    'mood.share_on': 'Les gens de tes groupes voient ton humeur du jour. Celle d’aujourd’hui seulement, et seulement tant que c’est activé.',
+    'mood.share_off': 'Désactivé. Personne d’autre ne le voit.',
+    'mood.not_installed':
+      'La table des humeurs n’a pas encore été créée. Dans Supabase, exécute supabase/12_daily_mood.sql.',
     'mood.excited': 'Impatient',
     'mood.joyful': 'Joyeux',
     'mood.grateful': 'Reconnaissant',
@@ -485,6 +498,9 @@ const STRINGS = {
     'me.your_goals': 'Tes propres objectifs',
 
     'settings.leaving': 'Quitter',
+    'settings.leave_not_installed':
+      'Quitter un groupe n’est pas encore activé dans la base. Dans Supabase, exécute supabase/09_solo_goals_and_leaving.sql, puis réessaie.',
+    'settings.delete_admin_only': 'Seul un admin peut supprimer ce groupe.',
     'settings.leave': 'Quitter ce groupe',
     'settings.delete': 'Supprimer le groupe',
     'settings.keep': 'Annuler',

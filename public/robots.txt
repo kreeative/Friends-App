@@ -1,0 +1,11 @@
+# Everything public is crawlable. The signed-in app is not linked from
+# anywhere a crawler can reach and needs a session regardless, but it is
+# named here so nobody has to guess.
+User-agent: *
+Allow: /
+Disallow: /g/
+Disallow: /checkin
+Disallow: /me
+Disallow: /library/
+
+Sitemap: https://richandfriends.xyz/sitemap.xml

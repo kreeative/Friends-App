@@ -4,7 +4,47 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#FFFFFF" />
-    <meta name="description" content="A weekly check-in with a few people who know what you're working on." />
+    <meta name="description" content="A weekly check-in with a few people who know what you are working on. One evening a week, two to six people, sixty seconds. Ambition is contagious." />
+    <link rel="canonical" href="https://richandfriends.xyz/" />
+
+    <!--
+      Open Graph and Twitter. These are what a link to the site looks like
+      when it is pasted into a message, which for a product spread by word of
+      mouth is a more common first impression than a search result.
+
+      Absolute URLs, because a crawler resolving a relative path against its
+      own host gets nothing. The image is the wordmark on its own ground: it
+      has to be legible as a 200px thumbnail, which rules out a screenshot.
+    -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Rich &amp; Friends" />
+    <meta property="og:title" content="Rich &amp; Friends" />
+    <meta property="og:description" content="One check-in a week, at the same time, with the same people. Sixty seconds. That is the whole thing." />
+    <meta property="og:url" content="https://richandfriends.xyz/" />
+    <meta property="og:image" content="https://richandfriends.xyz/brand/wordmark-pink.png" />
+    <meta property="og:image:alt" content="Rich &amp; Friends" />
+    <meta property="og:locale" content="en_GB" />
+    <meta property="og:locale:alternate" content="fr_CA" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Rich &amp; Friends" />
+    <meta name="twitter:description" content="One check-in a week, at the same time, with the same people. Sixty seconds." />
+    <meta name="twitter:image" content="https://richandfriends.xyz/brand/wordmark-pink.png" />
+
+    <!--
+      Organisation data for the knowledge panel. Kept to what is verifiable:
+      a name, a URL and a logo. Inventing ratings or founding dates here is
+      how a site earns a structured-data penalty rather than a rich result.
+    -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "Rich & Friends",
+        "url": "https://richandfriends.xyz",
+        "logo": "https://richandfriends.xyz/brand/wordmark-pink.png",
+        "description": "A weekly group check-in for two to six people."
+      }
+    </script>
     <!--
       Stamps the saved theme before the first paint. Without it the page
       renders the default, then corrects itself once React mounts, which is

@@ -19,6 +19,7 @@ import Legal from './pages/Legal'
 import PublicLayout from './pages/public/PublicLayout'
 import Home from './pages/public/Home'
 import How from './pages/public/How'
+import About from './pages/public/About'
 import Books from './pages/public/Books'
 import Library from './pages/Library'
 import Reader from './pages/Reader'
@@ -57,6 +58,7 @@ const PUBLIC_ROUTES = (
   <Route element={<PublicLayout />}>
     <Route index element={<Home />} />
     <Route path="how-it-works" element={<How />} />
+    <Route path="about" element={<About />} />
     <Route path="books" element={<Books />} />
     <Route path="*" element={<Navigate to="/" replace />} />
   </Route>

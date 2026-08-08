@@ -9,6 +9,7 @@ import { cyclePhase, untilLabel } from '../lib/time'
 import { useT } from '../lib/i18n'
 import { Screen, Section, TopBar } from '../components/ui'
 import ConsistencyPanel from '../components/ConsistencyPanel'
+import MoodToday from '../components/MoodToday'
 import { stickerFor } from '../lib/art'
 
 /**
@@ -207,6 +208,14 @@ export default function Dashboard() {
           </Link>
         </div>
       )}
+
+      {/* First thing under the greeting. Asking how someone is before asking
+          what they got done is the whole order of operations this product
+          argues for, and it was previously buried inside a check-in window
+          that is shut six days out of seven. */}
+      <Section title={t('mood.question')}>
+        <MoodToday groupCount={memberships.length} />
+      </Section>
 
       <Section title={t('home.your_groups')} action={
         memberships.length > 0 && (

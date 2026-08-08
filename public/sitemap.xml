@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  The four public pages. Everything else is behind a sign-in and has nothing
+  a crawler could read, so listing it would only spend crawl budget on 
+  redirects.
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://richandfriends.xyz/</loc><changefreq>monthly</changefreq><priority>1.0</priority></url>
+  <url><loc>https://richandfriends.xyz/how-it-works</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://richandfriends.xyz/about</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://richandfriends.xyz/books</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+</urlset>

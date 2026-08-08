@@ -32,7 +32,21 @@ export default function DangerZone() {
     setError(null)
     const { error: err } = await supabase.rpc(fn, { p_group: activeId })
     if (err) {
-      setError(err.message)
+      /**
+       * The failure that actually happens here is that the function does not
+       * exist yet, because 09_solo_goals_and_leaving.sql has not been run.
+       * PostgREST reports that as PGRST202, with a message about not finding
+       * the function in the schema cache, which reads like an application bug
+       * rather than an unrun migration. Naming the file is the difference
+       * between a dead button and a to-do.
+       */
+      const raw = `${err.code ?? ''} ${err.message ?? ''}`.toLowerCase()
+      const notInstalled =
+        raw.includes('pgrst202') ||
+        raw.includes('could not find the function') ||
+        (raw.includes('function') && raw.includes('does not exist'))
+
+      setError(notInstalled ? t('settings.leave_not_installed') : err.message)
       setBusy(false)
       setConfirm(null)
       return
@@ -55,13 +69,17 @@ export default function DangerZone() {
           >
             {t('settings.leave')}
           </button>
-          {myRole === 'admin' && (
+          {/* Only an admin can delete, and a button that is simply absent
+              looks like a missing feature rather than a permission. */}
+          {myRole === 'admin' ? (
             <button
               onClick={() => setConfirm('delete')}
               className="btn press text-negative hover:bg-negative/[0.07] sm:w-auto sm:px-7"
             >
               {t('settings.delete')}
             </button>
+          ) : (
+            <p className="self-center text-small text-muted">{t('settings.delete_admin_only')}</p>
           )}
         </div>
       )}

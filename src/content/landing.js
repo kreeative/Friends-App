@@ -112,7 +112,7 @@ export const LANDING = {
       product: 'Product',
       home: 'Home',
       menu: 'Menu',
-      links: { how: 'How it works', library: 'The books', signin: 'Sign in' },
+      links: { how: 'How it works', about: 'About', library: 'The books', signin: 'Sign in' },
       legalHeading: 'Legal',
       contact: 'Contact',
       rights: 'All rights reserved.',
@@ -227,6 +227,7 @@ export const LANDING = {
       product: 'Produit',
       links: {
         how: 'Comment ça marche',
+        about: 'À propos',
         library: 'Les livres',
         signin: 'Se connecter',
       },

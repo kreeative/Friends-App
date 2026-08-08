@@ -18,6 +18,7 @@ import PageTransition from '../../components/PageTransition'
  */
 export const PUBLIC_LINKS = [
   { to: '/how-it-works', key: 'how' },
+  { to: '/about', key: 'about' },
   { to: '/books', key: 'library' },
 ]
 
