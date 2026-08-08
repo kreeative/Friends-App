@@ -87,9 +87,12 @@ export default {
       keyframes: {
         // `drift` lived here for the aurora blobs. The ground is flat now and
         // the stickers are the only thing moving on it.
+        /* translate3d rather than translateY: the z keeps the element on a
+           composited layer for the whole cycle instead of letting the
+           compositor drop it back to the main thread between frames. */
         bob: {
-          '0%, 100%': { transform: 'translateY(0) rotate(var(--tilt, 0deg))' },
-          '50%': { transform: 'translateY(-10px) rotate(var(--tilt, 0deg))' },
+          '0%, 100%': { transform: 'translate3d(0, 0, 0) rotate(var(--tilt, 0deg))' },
+          '50%': { transform: 'translate3d(0, -10px, 0) rotate(var(--tilt, 0deg))' },
         },
         rise: {
           from: { opacity: '0', transform: 'translateY(6px)' },

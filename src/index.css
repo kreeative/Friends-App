@@ -594,6 +594,23 @@
     filter: drop-shadow(0 6px 14px rgb(0 0 0 / 0.28));
 
     /**
+     * Promoted to its own layer, once.
+     *
+     * The bob already animates `transform` rather than `top`, so it was never
+     * causing layout, but without a hint the compositor is free to keep
+     * repainting it on the main thread, and a drop-shadow filter on something
+     * moving every frame is the expensive combination. `will-change` and a 3D
+     * translate both ask for the same thing; declaring it here means the layer
+     * exists before the first frame rather than being promoted mid-animation.
+     *
+     * `backface-visibility` is the old trick and is still what stops a
+     * promoted layer from being re-rasterised on some mobile engines.
+     */
+    will-change: transform;
+    transform: translate3d(0, 0, 0) rotate(var(--tilt, 0deg));
+    backface-visibility: hidden;
+
+    /**
      * How far onto the page a sticker reaches, rather than how far off it
      * sits. Those are the same statement only if the sticker is a fixed size,
      * and it is not, it grows with the viewport while the page gutter stays
@@ -614,6 +631,43 @@
   @media (min-width: 1280px) {
     .sticker {
       --rail-x: var(--rail-far);
+    }
+  }
+
+  /**
+   * On a phone the stickers hold still.
+   *
+   * Six elements each running an infinite transform with a drop-shadow filter
+   * is six composited layers being kept alive for the whole session, on the
+   * device with the least to spare and the one where scrolling has to stay
+   * smooth. They are decoration; they lose nothing by sitting still, and the
+   * tilt stays, so the page still looks placed by hand rather than aligned by
+   * a grid.
+   *
+   * will-change goes too. Holding a layer for something that is not moving is
+   * the worst of both: the memory cost with none of the benefit.
+   */
+  @media (max-width: 767px) {
+    .sticker {
+      animation: none;
+      will-change: auto;
+    }
+  }
+
+  /**
+   * And on a phone the glass is thinner.
+   *
+   * backdrop-filter re-samples everything underneath the element on every
+   * frame it is composited. A 24px blur over a scrolling page is the single
+   * most expensive thing in this stylesheet on mobile hardware, and at phone
+   * size the surface it decorates is small enough that a lighter blur is not
+   * a visible loss. The rim and the tint carry the effect; the radius was
+   * always the part doing the work in the profiler rather than in the eye.
+   */
+  @media (max-width: 767px) {
+    :root {
+      --lg-blur: 12px;
+      --lg-sat: 150%;
     }
   }
 
