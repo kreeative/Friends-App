@@ -13,7 +13,6 @@ import ConsistencyPanel from '../components/ConsistencyPanel'
 import TodayObjective from '../components/TodayObjective'
 import GroupFeed from '../components/GroupFeed'
 import GoalCard from '../components/GoalCard'
-import { MoodBadge } from '../components/MoodBoard'
 
 export default function Board() {
   const { user } = useAuth()
@@ -345,9 +344,6 @@ function Roster({ members, checkins, items, awayIds, revealed, settled, me, t })
                 {m.profile?.display_name}
                 {mine && <span className="text-muted"> · {t('board.you')}</span>}
               </span>
-              {/* Sealed along with everything else. How someone felt is part
-                  of their check-in, so it waits with the rest of it. */}
-              {revealed && ck?.mood && <MoodBadge id={ck.mood} size={24} />}
               {/* A filled chip, not coloured text: green at full saturation
                   cannot pass contrast as type, and the block reads louder. */}
               <span className={ck ? 'chip-green': 'chip-quiet'}>

@@ -7,7 +7,6 @@ import { enqueue, flush } from '../lib/queue'
 import { cycleEnd, cyclePhase, untilLabel } from '../lib/time'
 import { useT } from '../lib/i18n'
 import { Field, Screen, Section, TopBar } from '../components/ui'
-import MoodBoard from '../components/MoodBoard'
 
 export default function Checkin() {
   const navigate = useNavigate()
@@ -23,7 +22,6 @@ export default function Checkin() {
 
   const [answers, setAnswers] = useState({})
   const [next, setNext] = useState('')
-  const [mood, setMood] = useState(null)
   const [busy, setBusy] = useState(false)
 
   const phase = cyclePhase(currentCycle, cycles, cadence)
@@ -61,7 +59,6 @@ export default function Checkin() {
       cycle_id: currentCycle.id,
       next_commitment: next.trim() || null,
       note: null,
-      mood,
       items,
     })
     await flush()
@@ -125,22 +122,6 @@ export default function Checkin() {
           </div>
         </Section>
 
-        {/**
-         * A preview of the first question, greyed out.
-         *
-         * The mood board only exists inside an open window, which meant that
-         * for most of the week there was no evidence anywhere in the app that
-         * it existed at all. "where is the option to check the mood" is the
-         * expected result of hiding a feature six days out of seven. Showing
-         * it disabled costs nothing and answers the question before it is
-         * asked.
-         */}
-        <Section title={t('mood.question')}>
-          <div className="lg lg-frost p-5 opacity-45 grayscale" aria-hidden="true">
-            <MoodBoard value={null} onChange={() => {}} />
-          </div>
-          <p className="mt-4 text-small text-muted">{t('mood.when')}</p>
-        </Section>
       </Screen>
     )
   }
@@ -151,19 +132,6 @@ export default function Checkin() {
         title={t('checkin.title')}
         sub={t('board.reveals_in', { t: untilLabel(ends) })}
       />
-
-      {/**
-       * Before the goals, not after them. Opening a check-in with a counter
-       * asks "did you perform"; opening it with this asks "how are you",
-       * which is the question that keeps someone in a group through the
-       * fortnight where the answer to the first one is no.
-       */}
-      <Section title={t('mood.question')}>
-        <div className="lg lg-frost p-5">
-          <MoodBoard value={mood} onChange={setMood} />
-        </div>
-        <p className="mt-4 text-small text-muted">{t('mood.hint')}</p>
-      </Section>
 
       {goals.length === 0 ? (
         <Section>
