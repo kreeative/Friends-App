@@ -1,5 +1,6 @@
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
+import { env, missingEnv } from './_env.js'
 
 /**
  * Creates a Stripe Checkout session for one book.
@@ -11,7 +12,7 @@ import { createClient } from '@supabase/supabase-js'
  *
  * Entitlement is written by the webhook and only by the webhook.
  */
-const REQUIRED = ['STRIPE_SECRET_KEY', 'SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY']
+const REQUIRED = ['stripeSecret', 'supabaseUrl', 'serviceRole']
 
 /**
  * Both clients are built per request rather than at module scope. With the
@@ -23,12 +24,63 @@ const REQUIRED = ['STRIPE_SECRET_KEY', 'SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KE
  */
 function clients() {
   return {
-    stripe: new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2024-06-20' }),
+    stripe: new Stripe(env('stripeSecret'), { apiVersion: '2024-06-20' }),
     // Service role: needed to read the caller's identity from their JWT. It
-    // never reaches the browser — Vercel only exposes VITE_ variables there.
-    admin: createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, {
+    // never reaches the browser, since Vercel only exposes VITE_ variables
+    // there. Read through env() because this project stores it under the name
+    // `service_role`, Vercel having refused the canonical one.
+    admin: createClient(env('supabaseUrl'), env('serviceRole'), {
       auth: { persistSession: false },
     }),
+  }
+}
+
+/**
+ * What Stripe should actually charge for.
+ *
+ * `books.stripe_ref` holds whichever identifier the catalogue was set up with,
+ * and the two are not interchangeable:
+ *
+ *   price_…   a Price. This is what line_items wants, so it is used as-is.
+ *   prod_…    a Product. A Product has no amount on it; the amount lives on
+ *             its Price. Passing one straight to Checkout fails, so it is
+ *             resolved to the product's default_price first.
+ *
+ * With no ref at all it falls back to inline price_data from the database
+ * columns, which is how this worked before there were Stripe objects. That
+ * fallback matters: it keeps the catalogue sellable while products are still
+ * being wired up, rather than making a half-configured book a dead button.
+ *
+ * Reading the price from Stripe rather than the request is the same rule as
+ * before. A client that could name its own price could buy a book for a cent.
+ */
+async function lineItem(stripe, book) {
+  const ref = (book.stripe_ref ?? '').trim()
+
+  if (ref.startsWith('price_')) return { price: ref, quantity: 1 }
+
+  if (ref.startsWith('prod_')) {
+    const product = await stripe.products.retrieve(ref)
+    const price =
+      typeof product.default_price === 'string'
+        ? product.default_price
+        : product.default_price?.id
+
+    if (!price) {
+      throw new Error(
+        `Stripe product ${ref} has no default price. Set one on the product in the Stripe dashboard, or store its price_… id instead.`,
+      )
+    }
+    return { price, quantity: 1 }
+  }
+
+  return {
+    quantity: 1,
+    price_data: {
+      currency: book.currency?.toLowerCase() || 'cad',
+      unit_amount: book.price_cents,
+      product_data: { name: book.title },
+    },
   }
 }
 
@@ -41,7 +93,7 @@ export default async function handler(req, res) {
   /* Named, not generic. Without the service-role key the identity lookup below
      fails and the plausible-looking answer is "Not signed in" — which sends
      someone off to debug their account instead of their Vercel settings. */
-  const missing = REQUIRED.filter((name) => !process.env[name])
+  const missing = missingEnv(REQUIRED)
   if (missing.length > 0) {
     return res.status(503).json({
       error: `Checkout is not set up yet. Missing from the Vercel environment: ${missing.join(', ')}.`,
@@ -64,7 +116,7 @@ export default async function handler(req, res) {
 
     const { data: book, error: bookErr } = await admin
       .from('books')
-      .select('id, slug, title, price_cents, currency, published')
+      .select('id, slug, title, price_cents, currency, published, stripe_ref')
       .eq('id', bookId)
       .maybeSingle()
 
@@ -89,16 +141,7 @@ export default async function handler(req, res) {
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       customer_email: user.email ?? undefined,
-      line_items: [
-        {
-          quantity: 1,
-          price_data: {
-            currency: book.currency?.toLowerCase() || 'eur',
-            unit_amount: book.price_cents,
-            product_data: { name: book.title },
-          },
-        },
-      ],
+      line_items: [await lineItem(stripe, book)],
       // The webhook trusts these two fields and nothing from the browser.
       metadata: { user_id: user.id, book_id: book.id },
       success_url: `${origin}/library?purchase=success&book=${book.slug}`,

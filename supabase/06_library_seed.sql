@@ -33,17 +33,17 @@ insert into books (slug, title, subtitle, description, price_cents, currency, pu
   'The Story You Tell About Ability',
   'Mindset, honestly',
   'What you believe about ability changes what you do after failure — the only moment that matters. Growth mindset has been oversold; this is where it actually works.',
-  1200, 'EUR', true),
+  1200, 'CAD', true),
  ('evidence-of-yourself',
   'Evidence of Yourself',
   'Confidence as a byproduct, not a feeling',
   'Confidence is not manufactured internally and then acted on. It is the residue of accumulated evidence that you can handle things. Most advice inverts this and fails.',
-  1200, 'EUR', true),
+  1200, 'CAD', true),
  ('design-beats-discipline',
   'Design Beats Discipline',
   'Why willpower is not the variable',
   'People who look disciplined are mostly not resisting more. They have arranged their lives so there is less to resist.',
-  1200, 'EUR', true)
+  1200, 'CAD', true)
 on conflict (slug) do nothing;
 
 -- Chapter 1 of every book is the free preview. Everything else is gated by the

@@ -5,7 +5,7 @@
  * change on their own schedule and need to be diffable as prose, not as
  * hundreds of interface keys.
  *
- * IMPORTANT — this is a drafted template, not legal advice. It was written to
+ * IMPORTANT. This is a drafted template, not legal advice. It was written to
  * match what this application actually does (see the data map in `privacy`,
  * which mirrors supabase/01_schema.sql), but it must be reviewed by a
  * qualified lawyer before publication. Anything in [BRACKETS] is a value only
@@ -90,14 +90,14 @@ export const LEGAL = {
           h: '4. Your content',
           p: [
             'Your goals, check-ins, notes and any evidence you attach remain yours. Nothing here transfers ownership of them.',
-            'You grant the publisher a limited, non-exclusive, royalty-free licence to store, reproduce and display that content strictly as needed to operate the service for you and the members of your group. That licence exists only so the application can function, ends when you delete the content or your account, and does not permit any other use — in particular it does not permit publication, sale, or use for advertising.',
+            'You grant the publisher a limited, non-exclusive, royalty-free licence to store, reproduce and display that content strictly as needed to operate the service for you and the members of your group. That licence exists only so the application can function, ends when you delete the content or your account, and does not permit any other use. In particular it does not permit publication, sale, or use for advertising.',
             'You are responsible for what you post. Remember that everything you submit is visible to the other members of your group.',
           ],
         },
         {
           h: '5. Intellectual property',
           p: [
-            `The service — including its source code, database structure, interface design, layouts, graphics, wording, and the name and wordmark "${APP_NAME}" — is the exclusive property of ${OWNER} and is protected by copyright and, where registered, by trade mark law. All rights are reserved.`,
+            `The service, including its source code, database structure, interface design, layouts, graphics, wording, and the name and wordmark "${APP_NAME}". Is the exclusive property of ${OWNER} and is protected by copyright and, where registered, by trade mark law. All rights are reserved.`,
             'These terms grant you a personal, non-transferable, revocable right to use the service as an end user. They grant no licence over the code, the design, the name or the wordmark, and no right to reproduce, adapt, translate, distribute, publicly display or exploit any part of them.',
             `You may not use "${APP_NAME}", the wordmark, or any confusingly similar name or sign to identify a product or service, or in a way that suggests endorsement by or affiliation with the publisher.`,
             'Reproducing all or a substantial part of the interface, the copy, or the structure of the service in a competing product is an infringement and will be treated as one.',
@@ -177,7 +177,7 @@ export const LEGAL = {
         {
           h: 'Why, and on what legal basis',
           p: [
-            'To provide the service — creating your account, running the weekly cycle, storing and showing your check-ins to your group. Basis: performance of the contract between you and the publisher.',
+            'To provide the service. Creating your account, running the weekly cycle, storing and showing your check-ins to your group. Basis: performance of the contract between you and the publisher.',
             'To send the check-in digest before a window opens, and one message if you have missed two cycles in a row. Basis: performance of the contract, since these are the mechanics of the service itself. You can stop them by closing your account.',
             'To keep the service secure and prevent abuse. Basis: the publisher’s legitimate interest in a safe service.',
             'To comply with legal obligations where they apply.',
@@ -300,14 +300,14 @@ export const LEGAL = {
           h: '4. Vos contenus',
           p: [
             'Vos objectifs, vos points hebdomadaires, vos notes et les preuves que vous ajoutez restent vôtres. Rien ici n’en transfère la propriété.',
-            'Vous concédez à l’éditrice une licence limitée, non exclusive et gratuite pour héberger, reproduire et afficher ces contenus, strictement dans la mesure nécessaire au fonctionnement du service pour vous et les membres de votre groupe. Cette licence n’existe que pour faire fonctionner l’application, prend fin lorsque vous supprimez le contenu ou votre compte, et n’autorise aucun autre usage — en particulier ni publication, ni cession, ni exploitation publicitaire.',
+            'Vous concédez à l’éditrice une licence limitée, non exclusive et gratuite pour héberger, reproduire et afficher ces contenus, strictement dans la mesure nécessaire au fonctionnement du service pour vous et les membres de votre groupe. Cette licence n’existe que pour faire fonctionner l’application, prend fin lorsque vous supprimez le contenu ou votre compte, et n’autorise aucun autre usage, en particulier ni publication, ni cession, ni exploitation publicitaire.',
             'Vous êtes responsable de ce que vous publiez. Tout ce que vous soumettez est visible par les autres membres de votre groupe.',
           ],
         },
         {
           h: '5. Propriété intellectuelle',
           p: [
-            `Le service — son code source, la structure de sa base de données, le design de son interface, ses mises en page, ses graphismes, ses textes, ainsi que la dénomination et le logotype « ${APP_NAME} » — est la propriété exclusive de ${OWNER} et est protégé par le droit d’auteur et, en cas d’enregistrement, par le droit des marques. Tous droits réservés.`,
+            `Le service. Son code source, la structure de sa base de données, le design de son interface, ses mises en page, ses graphismes, ses textes, ainsi que la dénomination et le logotype « ${APP_NAME} ». Est la propriété exclusive de ${OWNER} et est protégé par le droit d’auteur et, en cas d’enregistrement, par le droit des marques. Tous droits réservés.`,
             'Les présentes conditions vous confèrent un droit d’usage personnel, non cessible et révocable, en qualité d’utilisateur final. Elles ne confèrent aucune licence sur le code, le design, la dénomination ou le logotype, ni aucun droit de reproduction, d’adaptation, de traduction, de distribution, de représentation ou d’exploitation.',
             `Vous ne pouvez pas utiliser « ${APP_NAME} », le logotype, ni un signe prêtant à confusion, pour désigner un produit ou un service, ni d’une manière laissant croire à un partenariat ou à une approbation de l’éditrice.`,
             'La reprise de tout ou partie substantielle de l’interface, des textes ou de la structure du service dans un produit concurrent constitue une contrefaçon et sera traitée comme telle.',
@@ -387,7 +387,7 @@ export const LEGAL = {
         {
           h: 'Finalités et bases légales',
           p: [
-            'Fournir le service — créer votre compte, faire tourner le cycle hebdomadaire, enregistrer et afficher vos points à votre groupe. Base légale : exécution du contrat.',
+            'Fournir le service. Créer votre compte, faire tourner le cycle hebdomadaire, enregistrer et afficher vos points à votre groupe. Base légale : exécution du contrat.',
             'Envoyer le récapitulatif avant l’ouverture d’une fenêtre, et un message unique après deux cycles manqués consécutifs. Base légale : exécution du contrat, ces envois constituant le mécanisme même du service. Vous pouvez y mettre fin en fermant votre compte.',
             'Assurer la sécurité du service et prévenir les abus. Base légale : intérêt légitime de l’éditrice à proposer un service sûr.',
             'Respecter les obligations légales lorsqu’elles s’appliquent.',

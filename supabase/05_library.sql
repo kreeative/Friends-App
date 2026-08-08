@@ -16,7 +16,7 @@ create table if not exists books (
   description text,
   cover_url   text,
   price_cents int  not null check (price_cents >= 0),
-  currency    text not null default 'EUR',
+  currency    text not null default 'CAD',
   word_count  int,
   published   boolean not null default false,
   created_at  timestamptz not null default now()

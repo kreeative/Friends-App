@@ -8,7 +8,7 @@ export const LANDING = {
   en: {
     hero: {
       title: 'Alone we go faster, but together we go further.',
-      body: 'Our environment dictates our output. Stop grinding in isolation—surround yourself with high-caliber peers who force you to level up every single week.',
+      body: 'Our environment dictates our output. Stop grinding in isolation, surround yourself with high-caliber peers who force you to level up every single week.',
       cta: 'Start a group',
       secondary: 'How it works',
       note: 'Ambition Is Contagious.',
@@ -27,7 +27,7 @@ export const LANDING = {
         {
           n: '01',
           title: 'Say what you will actually do',
-          body: 'Not "get fit". A commitment, a cadence, a trigger — when and where — and what counts as proof. Naming when and where roughly doubles follow-through over stating an intention alone.',
+          body: 'Not "get fit". A commitment, a cadence, a trigger (when and where) and what counts as proof. Naming when and where roughly doubles follow-through over stating an intention alone.',
         },
         {
           n: '02',
@@ -37,7 +37,7 @@ export const LANDING = {
         {
           n: '03',
           title: 'Someone notices when you go quiet',
-          body: 'Miss two weeks and the group sees it — and one of them can offer to check on you. A message from a friend, not another notification into the void.',
+          body: 'Miss two weeks and the group sees it, and one of them can offer to check on you. A message from a friend, not another notification into the void.',
         },
       ],
     },
@@ -59,7 +59,7 @@ export const LANDING = {
         },
         {
           title: 'Away is not a miss',
-          body: 'Exams, travel, illness — say so in advance and the week leaves the maths entirely. Being honest about a hard fortnight should cost nothing.',
+          body: 'Exams, travel, illness. Say so in advance and the week leaves the maths entirely. Being honest about a hard fortnight should cost nothing.',
         },
         {
           title: 'No leaderboard',
@@ -75,13 +75,13 @@ export const LANDING = {
     library: {
       eyebrow: 'The reading library',
       title: 'Three books, written to be accurate.',
-      body: 'Most personal development repeats claims the research abandoned years ago — willpower as a fuel tank, power posing, twenty-one days to a habit. These name the researchers, state where the evidence is thin, and say plainly what failed to replicate. First chapter of each is free.',
+      body: 'Most personal development repeats claims the research abandoned years ago. Willpower as a fuel tank, power posing, twenty-one days to a habit. These name the researchers, state where the evidence is thin, and say plainly what failed to replicate. First chapter of each is free.',
       cta: 'Read a first chapter',
       books: [
         {
           title: 'The Story You Tell About Ability',
           sub: 'Mindset, honestly',
-          line: 'What you believe about ability changes what you do after failure — the only moment that matters.',
+          line: 'What you believe about ability changes what you do after failure. The only moment that matters.',
         },
         {
           title: 'Evidence of Yourself',
@@ -98,7 +98,7 @@ export const LANDING = {
 
     theme: {
       title: 'Make it yours.',
-      body: 'Pick the ground and the colour separately. Only one colour is ever on screen — that is the point of choosing. Your choice is remembered on this device and follows you into the app.',
+      body: 'Pick the ground and the colour separately. Only one colour is ever on screen. That is the point of choosing. Your choice is remembered on this device and follows you into the app.',
     },
 
     close: {
@@ -132,7 +132,7 @@ export const LANDING = {
     problem: {
       eyebrow: 'Pourquoi on atteint souvent pas nos objectifs?',
       title: 'Ces applis n’échouent pas par manque de fonctions.',
-      body: 'Elles échouent parce qu’un objectif vague ne peut pas être vérifié, parce que rien ne se passe quand quelqu’un disparaît, et parce qu’un seul jour manqué casse une série — alors les gens abandonnent plutôt que de repartir de zéro. Chaque décision ici a été prise sur un seul critère : est-ce que ça augmente les chances que le groupe soit encore là à la douzième semaine ?',
+      body: 'Elles échouent parce qu’un objectif vague ne peut pas être vérifié, parce que rien ne se passe quand quelqu’un disparaît, et parce qu’un seul jour manqué casse une série, alors les gens abandonnent plutôt que de repartir de zéro. Chaque décision ici a été prise sur un seul critère : est-ce que ça augmente les chances que le groupe soit encore là à la douzième semaine ?',
     },
 
     steps: {
@@ -142,7 +142,7 @@ export const LANDING = {
         {
           n: '01',
           title: 'Dis ce que tu vas vraiment faire',
-          body: 'Pas « me remettre au sport ». Un engagement, un rythme, un déclencheur — quand et où — et ce qui compte comme preuve. Préciser quand et où double à peu près les chances de s’y tenir.',
+          body: 'Pas « me remettre au sport ». Un engagement, un rythme, un déclencheur (quand et où) et ce qui compte comme preuve. Préciser quand et où double à peu près les chances de s’y tenir.',
         },
         {
           n: '02',
@@ -152,7 +152,7 @@ export const LANDING = {
         {
           n: '03',
           title: 'Quelqu’un remarque quand tu disparais',
-          body: 'Deux semaines sans nouvelles et le groupe le voit — et l’un d’eux peut proposer de prendre des tiennes. Un message d’un ami, pas une notification de plus dans le vide.',
+          body: 'Deux semaines sans nouvelles et le groupe le voit, et l’un d’eux peut proposer de prendre des tiennes. Un message d’un ami, pas une notification de plus dans le vide.',
         },
       ],
     },
@@ -174,7 +174,7 @@ export const LANDING = {
         },
         {
           title: 'Absent n’est pas manqué',
-          body: 'Examens, voyage, maladie — dis-le à l’avance et la semaine sort complètement du calcul. Être honnête sur une quinzaine difficile ne devrait rien coûter.',
+          body: 'Examens, voyage, maladie. Dis-le à l’avance et la semaine sort complètement du calcul. Être honnête sur une quinzaine difficile ne devrait rien coûter.',
         },
         {
           title: 'Pas de classement',
@@ -190,13 +190,13 @@ export const LANDING = {
     library: {
       eyebrow: 'La bibliothèque',
       title: 'Trois livres, écrits pour être justes.',
-      body: 'Le développement personnel répète des affirmations que la recherche a abandonnées depuis longtemps — la volonté comme réservoir, les postures de pouvoir, vingt-et-un jours pour une habitude. Ces livres nomment les chercheurs, disent où les preuves sont minces, et annoncent clairement ce qui n’a pas été reproduit. Le premier chapitre de chacun est gratuit.',
+      body: 'Le développement personnel répète des affirmations que la recherche a abandonnées depuis longtemps. La volonté comme réservoir, les postures de pouvoir, vingt-et-un jours pour une habitude. Ces livres nomment les chercheurs, disent où les preuves sont minces, et annoncent clairement ce qui n’a pas été reproduit. Le premier chapitre de chacun est gratuit.',
       cta: 'Lire un premier chapitre',
       books: [
         {
           title: 'The Story You Tell About Ability',
           sub: 'L’état d’esprit, honnêtement',
-          line: 'Ce que tu crois sur tes capacités change ce que tu fais après un échec — le seul moment qui compte.',
+          line: 'Ce que tu crois sur tes capacités change ce que tu fais après un échec. Le seul moment qui compte.',
         },
         {
           title: 'Evidence of Yourself',
@@ -213,7 +213,7 @@ export const LANDING = {
 
     theme: {
       title: 'À ta main.',
-      body: 'Choisis le fond et la couleur séparément. Une seule couleur à l’écran à la fois — c’est tout l’intérêt de choisir. Ton choix est retenu sur cet appareil et te suit dans l’application.',
+      body: 'Choisis le fond et la couleur séparément. Une seule couleur à l’écran à la fois. C’est tout l’intérêt de choisir. Ton choix est retenu sur cet appareil et te suit dans l’application.',
     },
 
     close: {

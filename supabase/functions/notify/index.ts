@@ -1,5 +1,5 @@
 /**
- * Scheduled sender — the piece a static site cannot provide.
+ * Scheduled sender. The piece a static site cannot provide.
  *
  * A Netlify-hosted bundle only runs when someone opens it, and the person the
  * app most needs to reach is the one who has stopped opening it. So the two
@@ -10,8 +10,8 @@
  * notifications_log, whose unique (user_id, cycle_id, kind) constraint makes a
  * duplicate physically impossible even if this function runs twice.
  *
- *   digest — a few hours before the window opens: what you committed to
- *   nudge  — after a missed cycle: one message, no escalation, no streak talk
+ *   digest. A few hours before the window opens: what you committed to
+ *   nudge . After a missed cycle: one message, no escalation, no streak talk
  *
  * Deploy:  supabase functions deploy notify --no-verify-jwt
  * Secrets: supabase secrets set RESEND_API_KEY=... MAIL_FROM="Friends <hi@yourdomain>"
@@ -112,7 +112,7 @@ async function sendDigests() {
       /**
        * The trigger goes in the email.
        *
-       * The app has no idea where anyone is and is never going to have one —
+       * The app has no idea where anyone is and is never going to have one , 
        * so the "when and where" on a goal is a sentence you wrote to
        * yourself, and the only way it can do any work is for something to
        * read it back to you shortly before the moment it describes. This
@@ -126,10 +126,10 @@ async function sendDigests() {
 
       const name = (cycle as any).groups?.name ?? 'your group'
 
-      await send(to, `Check-in opens tonight — ${name}`, {
+      await send(to, `Check-in opens tonight. ${name}`, {
         title: 'Check-in opens tonight',
         // Shown next to the subject in the inbox. Without one, clients scrape
-        // the first text in the message — which would be the logo's alt text.
+        // the first text in the message, which would be the logo's alt text.
         preheader: `${name} · ${items.length} thing${items.length === 1 ? '' : 's'} to look at, about a minute.`,
         blocks: [
           { kind: 'lead', text: 'What you said you would do:' },
@@ -143,7 +143,7 @@ async function sendDigests() {
 }
 
 async function sendNudges() {
-  // One message to the person who went quiet — never a second.
+  // One message to the person who went quiet. Never a second.
   const { data: nudges } = await supabase
     .from('nudges')
     .select('id, cycle_id, subject_id, group_id, groups(name)')
@@ -160,7 +160,7 @@ async function sendNudges() {
     /* Deliberately the quiet one: no button colour shouting, no count of what
        was missed, no streak language. The whole design of this message is
        that it must not read as a debt collector. */
-    await send(to, `No rush — ${name}`, {
+    await send(to, `No rush. ${name}`, {
       title: 'No rush',
       preheader: 'Nothing to catch up on. One thing when you are ready.',
       blocks: [
@@ -168,7 +168,7 @@ async function sendNudges() {
         {
           kind: 'text',
           text:
-            'When you are ready, open the app and tap “I’m still in”. It parks everything old and asks for one thing — there is no backlog to clear and nothing to explain.',
+            'When you are ready, open the app and tap “I’m still in”. It parks everything old and asks for one thing. There is no backlog to clear and nothing to explain.',
         },
         { kind: 'button', label: 'Pick one thing', href: `${SITE}/me` },
       ],

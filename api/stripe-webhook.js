@@ -1,5 +1,6 @@
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
+import { env } from './_env.js'
 
 /**
  * The only thing in the system that grants entitlement.
@@ -17,13 +18,13 @@ import { createClient } from '@supabase/supabase-js'
  */
 export const config = { api: { bodyParser: false } }
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? '', {
+const stripe = new Stripe(env('stripeSecret') ?? '', {
   apiVersion: '2024-06-20',
 })
 
 const admin = createClient(
-  process.env.SUPABASE_URL ?? '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY ?? '',
+  env('supabaseUrl') ?? '',
+  env('serviceRole') ?? '',
   { auth: { persistSession: false } },
 )
 
@@ -48,7 +49,7 @@ export default async function handler(req, res) {
     event = stripe.webhooks.constructEvent(
       body,
       req.headers['stripe-signature'],
-      process.env.STRIPE_WEBHOOK_SECRET,
+      env('stripeWebhook'),
     )
   } catch (err) {
     // A bad signature means this did not come from Stripe. Never act on it.

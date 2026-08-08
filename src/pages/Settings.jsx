@@ -55,7 +55,7 @@ export default function Settings() {
       <Section title={t('board.together')}>
         <div className="flex gap-6">
           <Stat
-            value={together.pct === null ? '—' : `${together.pct}%`}
+            value={together.pct === null ? '0%' : `${together.pct}%`}
             label={t('settings.group_rate')}
             hint={`${together.done} / ${together.counted}`}
           />
@@ -83,7 +83,7 @@ export default function Settings() {
                     )}
                   </span>
                   <span className="text-small text-muted">
-                    {r.total ? `${r.done}/${r.total}` : '—'}
+                    {r.total ? `${r.done}/${r.total}` : '0/0'}
                   </span>
                 </div>
                 <div className="mt-4 pl-[3.5rem]">

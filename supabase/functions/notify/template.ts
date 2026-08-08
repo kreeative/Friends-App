@@ -6,7 +6,7 @@
  * may invert your background without asking. So: tables, inline styles, web-
  * safe fallbacks, and colours chosen to survive being inverted.
  *
- * The brand marks are served from the site itself — they are already public
+ * The brand marks are served from the site itself. They are already public
  * files under /brand, which is what makes them usable here. An inbox cannot
  * see anything that is not on a public URL, and inlining a 70KB PNG as base64
  * is how a message ends up in the promotions tab.
@@ -96,7 +96,7 @@ function renderBlock(b: Block): string {
 
 /**
  * @param preheader the line inboxes show next to the subject. Left out, they
- *                  scrape the first text they find — which is usually the
+ *                  scrape the first text they find, which is usually the
  *                  alt text of the logo.
  */
 export function layout({
@@ -168,12 +168,12 @@ export function layout({
 </html>`
 }
 
-/** The plain-text alternative. Not optional — a message with no text part
+/** The plain-text alternative. Not optional. A message with no text part
     scores badly with spam filters and is unreadable in a text-only client. */
 export function plain(title: string, blocks: Block[], footnote?: string): string {
   const body = blocks
     .map((b) => {
-      if (b.kind === 'rule') return '—'
+      if (b.kind === 'rule') return ', '
       if (b.kind === 'list')
         return b.items.map((i) => `· ${i.title}${i.note ? `\n    ${i.note}` : ''}`).join('\n')
       if (b.kind === 'button') return `${b.label}: ${b.href}`

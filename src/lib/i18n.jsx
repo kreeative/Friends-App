@@ -3,7 +3,7 @@ import { createContext, useContext, useMemo, useState } from 'react'
 /**
  * Two locales, one flat dictionary, no dependency.
  *
- * The copy is translated rather than transliterated — French keeps the same
+ * The copy is translated rather than transliterated. French keeps the same
  * voice the English has (short, plain, warm, second person singular). "Faire
  * le point" carries what "check in" actually means here far better than
  * "s'enregistrer" would.
@@ -35,7 +35,7 @@ const STRINGS = {
 
     'sync.queued_one': 'Saved. It will send as soon as you’re back online.',
     'sync.queued_other': 'Saved. They will send as soon as you’re back online.',
-    'sync.offline': 'You’re offline — anything you write will send itself later.',
+    'sync.offline': 'You’re offline. Anything you write will send itself later.',
 
     'board.open_for': 'Open for another {t}',
     'board.opens_in': 'Opens in {t}',
@@ -43,7 +43,7 @@ const STRINGS = {
     'board.closed': 'Closed for now',
     'board.getting_ready': 'Getting things ready',
     'board.ready': 'Ready when you are',
-    'board.nothing_listed': 'Nothing on your list yet — add something first.',
+    'board.nothing_listed': 'Nothing on your list yet. Add something first.',
     'board.things_to_look_at_one': '{n} thing to look at. Takes about a minute.',
     'board.things_to_look_at_other': '{n} things to look at. Takes about a minute.',
     'board.check_in': 'Check in',
@@ -58,7 +58,7 @@ const STRINGS = {
     'board.next': 'Next: {text}',
     'board.together': 'Together',
     'board.invite': 'Invite someone',
-    'board.invite_body': 'It’s just you so far. Send this code to a friend — two to six people works best.',
+    'board.invite_body': 'It’s just you so far. Send this code to a friend. Two to six people works best.',
     'board.did_it': 'Did it',
     'board.partly': 'Got part of the way',
     'board.not_this_week': 'Not this week',
@@ -75,12 +75,12 @@ const STRINGS = {
     'goal.mark_done': 'Mark done',
 
     'nudge.quiet': '{name} has been quiet for a couple of weeks.',
-    'nudge.claimed_by_me': 'You’ve got this one. Send them a message — about them, not about the app.',
+    'nudge.claimed_by_me': 'You’ve got this one. Send them a message about them, not about the app.',
     'nudge.claimed_by_other': '{name} is checking in on them.',
     'nudge.assigned': 'Nobody picked this one up, so it came to you. A text is plenty.',
-    'nudge.open': 'Someone should say hello — wherever you actually talk, not in here.',
+    'nudge.open': 'Someone should say hello, wherever you actually talk, not in here.',
     'nudge.claim': 'I’ll check on them',
-    'nudge.close': 'Done — we spoke',
+    'nudge.close': 'Done, we spoke',
     'nudge.busy': 'One moment',
 
     'signin.title': 'Get in with people who move.',
@@ -92,7 +92,7 @@ const STRINGS = {
     'signin.send_link': 'Send me a link',
     'signin.sending': 'Sending',
     'signin.link_sent':
-      'Link sent to {email}. Open it on this device — if it opens in a different browser you’ll need to sign in again there.',
+      'Link sent to {email}. Open it on this device. If it opens in a different browser you’ll need to sign in again there.',
 
     'start.new_group': 'New group',
     'start.join_one': 'Join one',
@@ -100,7 +100,7 @@ const STRINGS = {
     'start.group_name_ph': 'Sunday Four',
     'start.checkin_opens': 'Check-in opens',
     'start.checkin_hint':
-      'Everyone checks in inside the same window. The shared moment is the part that keeps a group alive — staggered check-ins are just a form that’s always open.',
+      'Everyone checks in inside the same window. The shared moment is the part that keeps a group alive. Staggered check-ins are just a form that’s always open.',
     'start.window_note': 'Window stays open 30 hours · {tz}',
     'start.create': 'Create group',
     'start.creating': 'Creating',
@@ -113,10 +113,10 @@ const STRINGS = {
     'checkin.closes_in': 'Closes in {t}',
     'checkin.window_closed': 'Window closed',
     'checkin.no_cycle_body':
-      'This group has no check-in window yet. The first one is being set up — it will appear here on the day and hour the group chose.',
+      'This group has no check-in window yet. The first one is being set up. It will appear here on the day and hour the group chose.',
     'checkin.closed_body':
-      'This cycle’s window has closed. The next one opens in {t} — nothing to catch up on in the meantime.',
-    'checkin.no_goals': 'No active goals yet. Add one first — a check-in needs something to check.',
+      'This cycle’s window has closed. The next one opens in {t}. Nothing to catch up on in the meantime.',
+    'checkin.no_goals': 'No active goals yet. Add one first: a check-in needs something to check.',
     'checkin.what_happened': 'What actually happened',
     'checkin.committed': 'Committed: {n}×',
     'checkin.committed_once': 'Committed: once',
@@ -158,7 +158,7 @@ const STRINGS = {
     'goals.show_n': 'Show {n}',
     'goals.hide': 'Hide',
     'goals.edit_goal': 'Edit goal',
-    'goals.solo_sub': 'Yours alone — nobody else can see these.',
+    'goals.solo_sub': 'Yours alone. Nobody else can see these.',
     'goals.empty_solo':
       'Nothing here yet. These are private: no group needed, and nobody sees them but you.',
     'goal.edit': 'Edit',
@@ -186,7 +186,7 @@ const STRINGS = {
     'form.mine': 'Mine',
     'form.whole_group': 'Whole group',
     'form.commitment': 'The commitment',
-    'form.commitment_hint': 'What specifically gets done. Not the result you want — the thing you do.',
+    'form.commitment_hint': 'What specifically gets done. Not the result you want, but the thing you do.',
     'form.commitment_ph': 'Post 3 videos',
     'form.step_what': 'What are you committing to?',
     'form.step_often': 'How often?',
@@ -197,7 +197,7 @@ const STRINGS = {
     'form.times_hint': 'How many times between one check-in and the next.',
     'form.until_hint': 'Leave empty to keep going indefinitely.',
     'form.where_hint':
-      'A note to yourself, nothing more — the app has no idea where you are and never asks. Writing the place down is what makes the plan specific enough to act on.',
+      'A note to yourself, nothing more. The app has no idea where you are and never asks. Writing the place down is what makes the plan specific enough to act on.',
     'form.remind': 'Email me this before check-in',
     'form.remind_hint':
       'Your commitment and the when-and-where, in the digest that already goes out before the window opens. Never more than one email per cycle.',
@@ -222,7 +222,7 @@ const STRINGS = {
     'form.evidence_hint': 'What you’ll show at check-in that proves it happened.',
     'form.evidence_ph': 'Links to the posted videos',
     'form.stake': 'Stake (optional)',
-    'form.stake_hint': 'Settled between you — the app only remembers it.',
+    'form.stake_hint': 'Settled between you. The app only remembers it.',
     'form.stake_ph': 'Coffee for whoever asks',
     'form.save_changes': 'Save changes',
     'form.add_goal': 'Add goal',
@@ -233,7 +233,7 @@ const STRINGS = {
     'me.quiet_label': 'Been a couple of cycles',
     'me.still_in': 'Still in?',
     'me.still_in_body': 'Park what’s there and pick one thing. No catching up, no backlog.',
-    'me.reset': 'I’m still in — reset me',
+    'me.reset': 'I’m still in, reset me',
     'me.last14': 'Last 14 cycles',
     'me.checked_in': 'Checked in',
     'me.live_goals': 'Live goals',
@@ -241,7 +241,7 @@ const STRINGS = {
     'me.not_counted': 'Not counted',
     'me.no_cycles': 'No cycles yet',
     'me.rate_note':
-      'A rate, not a streak. A bad cycle moves this a few points — it never resets anything to zero.',
+      'A rate, not a streak. A bad cycle moves this a few points. It never resets anything to zero.',
     'me.last12': 'Last 12 cycles',
     'me.rate_window': 'last 14 cycles',
     'me.rate_note_short': '3-cycle average',
@@ -274,16 +274,16 @@ const STRINGS = {
       'This address isn’t on the sign-in allowlist. Add it under Authentication → URL Configuration in Supabase.',
     'err.load_failed': 'Couldn’t reach the server. Your connection may be down.',
     'err.no_tables':
-      'The database is empty — the tables have not been created yet. In Supabase, open the SQL Editor and run supabase/01_schema.sql, then 02_functions.sql, then 03_policies.sql, pasting the contents of each file.',
+      'The database is empty. The tables have not been created yet. In Supabase, open the SQL Editor and run supabase/01_schema.sql, then 02_functions.sql, then 03_policies.sql, pasting the contents of each file.',
     'err.no_library_tables':
-      'The library tables do not exist yet. In Supabase, open the SQL Editor and run supabase/07_books_all_in_one.sql — a single paste that creates the tables and adds the three books.',
+      'The library tables do not exist yet. In Supabase, open the SQL Editor and run supabase/07_books_all_in_one.sql. A single paste that creates the tables and adds the three books.',
     'err.retry': 'Try again',
     'err.loading': 'Loading',
 
     'nav.library': 'Library',
     'library.sub': 'Three books, read here',
     'library.empty':
-      'The catalogue is empty. In Supabase, open the SQL Editor and run supabase/07_books_all_in_one.sql — it adds the three books.',
+      'The catalogue is empty. In Supabase, open the SQL Editor and run supabase/07_books_all_in_one.sql. It adds the three books.',
     'library.owned': 'Yours',
     'library.read': 'Read',
     'library.read_free': 'Read chapter 1 free',
@@ -341,7 +341,7 @@ const STRINGS = {
 
     'sync.queued_one': 'Enregistré. Ça partira dès que tu seras reconnecté.',
     'sync.queued_other': 'Enregistrés. Ils partiront dès que tu seras reconnecté.',
-    'sync.offline': 'Tu es hors ligne — ce que tu écris partira tout seul plus tard.',
+    'sync.offline': 'Tu es hors ligne. Ce que tu écris partira tout seul plus tard.',
 
     'board.open_for': 'Encore ouvert {t}',
     'board.opens_in': 'Ouvre dans {t}',
@@ -349,7 +349,7 @@ const STRINGS = {
     'board.closed': 'Fermé pour l’instant',
     'board.getting_ready': 'On prépare tout',
     'board.ready': 'Quand tu veux',
-    'board.nothing_listed': 'Rien sur ta liste — commence par ajouter quelque chose.',
+    'board.nothing_listed': 'Rien sur ta liste. Commence par ajouter quelque chose.',
     'board.things_to_look_at_one': '{n} chose à regarder. Une minute suffit.',
     'board.things_to_look_at_other': '{n} choses à regarder. Une minute suffit.',
     'board.check_in': 'Faire le point',
@@ -365,7 +365,7 @@ const STRINGS = {
     'board.together': 'Ensemble',
     'board.invite': 'Inviter quelqu’un',
     'board.invite_body':
-      'Tu es seul pour l’instant. Envoie ce code à un ami — de deux à six, c’est l’idéal.',
+      'Tu es seul pour l’instant. Envoie ce code à un ami. De deux à six, c’est l’idéal.',
     'board.did_it': 'Fait',
     'board.partly': 'En partie',
     'board.not_this_week': 'Pas cette semaine',
@@ -383,12 +383,12 @@ const STRINGS = {
 
     'nudge.quiet': '{name} n’a rien dit depuis deux semaines.',
     'nudge.claimed_by_me':
-      'C’est toi qui t’en occupes. Écris-lui — parle de lui, pas de l’appli.',
+      'C’est toi qui t’en occupes. Écris-lui, et parle de lui, pas de l’appli.',
     'nudge.claimed_by_other': '{name} prend de ses nouvelles.',
     'nudge.assigned': 'Personne ne s’en est chargé, alors ça te revient. Un message suffit.',
-    'nudge.open': 'Quelqu’un devrait lui écrire — là où vous parlez vraiment, pas ici.',
+    'nudge.open': 'Quelqu’un devrait lui écrire. Là où vous parlez vraiment, pas ici.',
     'nudge.claim': 'Je m’en occupe',
-    'nudge.close': 'C’est fait — on s’est parlé',
+    'nudge.close': 'C’est fait, on s’est parlé',
     'nudge.busy': 'Un instant',
 
     'signin.title': 'Rejoins des gens qui avancent.',
@@ -400,7 +400,7 @@ const STRINGS = {
     'signin.send_link': 'Envoyez-moi un lien',
     'signin.sending': 'Envoi',
     'signin.link_sent':
-      'Lien envoyé à {email}. Ouvrez-le sur cet appareil — s’il s’ouvre dans un autre navigateur, il faudra vous reconnecter là-bas.',
+      'Lien envoyé à {email}. Ouvrez-le sur cet appareil. S’il s’ouvre dans un autre navigateur, il faudra vous reconnecter là-bas.',
 
     'start.new_group': 'Nouveau groupe',
     'start.join_one': 'Rejoindre',
@@ -408,7 +408,7 @@ const STRINGS = {
     'start.group_name_ph': 'Les Quatre du Dimanche',
     'start.checkin_opens': 'Le point ouvre',
     'start.checkin_hint':
-      'Tout le monde fait le point dans la même fenêtre. C’est ce moment partagé qui fait tenir un groupe — des points décalés, ce n’est qu’un formulaire toujours ouvert.',
+      'Tout le monde fait le point dans la même fenêtre. C’est ce moment partagé qui fait tenir un groupe. Des points décalés, ce n’est qu’un formulaire toujours ouvert.',
     'start.window_note': 'La fenêtre reste ouverte 30 heures · {tz}',
     'start.create': 'Créer le groupe',
     'start.creating': 'Création',
@@ -421,11 +421,11 @@ const STRINGS = {
     'checkin.closes_in': 'Ferme dans {t}',
     'checkin.window_closed': 'Fenêtre fermée',
     'checkin.no_cycle_body':
-      'Ce groupe n’a pas encore de fenêtre de point. La première est en cours de création — elle apparaîtra ici au jour et à l’heure choisis par le groupe.',
+      'Ce groupe n’a pas encore de fenêtre de point. La première est en cours de création. Elle apparaîtra ici au jour et à l’heure choisis par le groupe.',
     'checkin.closed_body':
-      'La fenêtre de ce cycle est fermée. La prochaine ouvre dans {t} — rien à rattraper d’ici là.',
+      'La fenêtre de ce cycle est fermée. La prochaine ouvre dans {t}. Rien à rattraper d’ici là.',
     'checkin.no_goals':
-      'Aucun objectif actif. Commence par en ajouter un — il faut quelque chose à pointer.',
+      'Aucun objectif actif. Commence par en ajouter un : il faut quelque chose à pointer.',
     'checkin.what_happened': 'Ce qui s’est vraiment passé',
     'checkin.committed': 'Prévu : {n}×',
     'checkin.committed_once': 'Prévu : une fois',
@@ -468,7 +468,7 @@ const STRINGS = {
     'goals.show_n': 'Afficher {n}',
     'goals.hide': 'Masquer',
     'goals.edit_goal': 'Modifier l’objectif',
-    'goals.solo_sub': 'Rien qu’à toi — personne d’autre ne les voit.',
+    'goals.solo_sub': 'Rien qu’à toi. Personne d’autre ne les voit.',
     'goals.empty_solo':
       'Rien ici pour l’instant. Ceux-là sont privés : pas besoin de groupe, et personne d’autre ne les voit.',
     'goal.edit': 'Modifier',
@@ -497,7 +497,7 @@ const STRINGS = {
     'form.whole_group': 'Tout le groupe',
     'form.commitment': 'L’engagement',
     'form.commitment_hint':
-      'Ce qui se fait concrètement. Pas le résultat visé — l’action elle-même.',
+      'Ce qui se fait concrètement. Pas le résultat visé, mais l’action elle-même.',
     'form.commitment_ph': 'Publier 3 vidéos',
     'form.step_what': 'Tu t’engages à quoi ?',
     'form.step_often': 'À quelle fréquence ?',
@@ -509,7 +509,7 @@ const STRINGS = {
     'form.times_hint': 'Combien de fois entre deux points.',
     'form.until_hint': 'Laisse vide pour continuer indéfiniment.',
     'form.where_hint':
-      'Une note pour toi, rien de plus — l’app ne sait pas où tu es et ne le demande jamais. Écrire le lieu, c’est ce qui rend le plan assez précis pour être suivi.',
+      'Une note pour toi, rien de plus. L’app ne sait pas où tu es et ne le demande jamais. Écrire le lieu, c’est ce qui rend le plan assez précis pour être suivi.',
     'form.remind': 'Me l’envoyer par e-mail avant le point',
     'form.remind_hint':
       'Ton engagement et le quand-et-où, dans le récap qui part déjà avant l’ouverture. Jamais plus d’un e-mail par cycle.',
@@ -524,17 +524,17 @@ const STRINGS = {
     'form.times_per_cycle': 'Combien de fois',
     'form.until': 'Jusqu’au (optionnel)',
     'form.due_by': 'Avant le',
-    'form.when': 'Le déclencheur — quand',
+    'form.when': 'Quand',
     'form.when_hint':
       'Préciser quand et où double à peu près les chances de s’y tenir, par rapport à une simple intention.',
     'form.when_ph': 'Après mon cours du mardi',
-    'form.where': 'Le déclencheur — où',
+    'form.where': 'Où (facultatif)',
     'form.where_ph': 'À la bibliothèque, deuxième étage',
     'form.evidence': 'La preuve',
     'form.evidence_hint': 'Ce que tu montreras au moment du point pour prouver que c’est fait.',
     'form.evidence_ph': 'Les liens vers les vidéos publiées',
     'form.stake': 'Gage (optionnel)',
-    'form.stake_hint': 'À régler entre vous — l’appli ne fait que s’en souvenir.',
+    'form.stake_hint': 'À régler entre vous. L’appli ne fait que s’en souvenir.',
     'form.stake_ph': 'Un café pour qui le demande',
     'form.save_changes': 'Enregistrer',
     'form.add_goal': 'Ajouter',
@@ -546,7 +546,7 @@ const STRINGS = {
     'me.still_in': 'Toujours partant ?',
     'me.still_in_body':
       'On met de côté ce qui traîne et tu choisis une seule chose. Rien à rattraper.',
-    'me.reset': 'Je suis toujours là — remets à zéro',
+    'me.reset': 'Je suis toujours là, remets à zéro',
     'me.last14': '14 derniers cycles',
     'me.checked_in': 'Points faits',
     'me.live_goals': 'Objectifs actifs',
@@ -554,7 +554,7 @@ const STRINGS = {
     'me.not_counted': 'Non comptées',
     'me.no_cycles': 'Aucun cycle',
     'me.rate_note':
-      'Un taux, pas une série. Un mauvais cycle fait bouger ça de quelques points — rien ne repart jamais de zéro.',
+      'Un taux, pas une série. Un mauvais cycle fait bouger ça de quelques points. Rien ne repart jamais de zéro.',
     'me.last12': '12 derniers cycles',
     'me.rate_window': '14 derniers cycles',
     'me.rate_note_short': 'moyenne sur 3 cycles',
@@ -587,16 +587,16 @@ const STRINGS = {
       'Cette adresse n’est pas autorisée pour la connexion. Ajoute-la dans Authentication → URL Configuration sur Supabase.',
     'err.load_failed': 'Impossible de joindre le serveur. Ta connexion est peut-être coupée.',
     'err.no_tables':
-      'La base est vide — les tables n’ont pas encore été créées. Dans Supabase, ouvre l’éditeur SQL et exécute supabase/01_schema.sql, puis 02_functions.sql, puis 03_policies.sql, en collant le contenu de chaque fichier.',
+      'La base est vide. Les tables n’ont pas encore été créées. Dans Supabase, ouvre l’éditeur SQL et exécute supabase/01_schema.sql, puis 02_functions.sql, puis 03_policies.sql, en collant le contenu de chaque fichier.',
     'err.no_library_tables':
-      'Les tables de la bibliothèque n’existent pas encore. Dans Supabase, ouvre l’éditeur SQL et exécute supabase/07_books_all_in_one.sql — un seul copier-coller qui crée les tables et ajoute les trois livres.',
+      'Les tables de la bibliothèque n’existent pas encore. Dans Supabase, ouvre l’éditeur SQL et exécute supabase/07_books_all_in_one.sql. Un seul copier-coller qui crée les tables et ajoute les trois livres.',
     'err.retry': 'Réessayer',
     'err.loading': 'Chargement',
 
     'nav.library': 'Lectures',
     'library.sub': 'Trois livres, à lire ici',
     'library.empty':
-      'Le catalogue est vide. Dans Supabase, ouvre l’éditeur SQL et exécute supabase/07_books_all_in_one.sql — il ajoute les trois livres.',
+      'Le catalogue est vide. Dans Supabase, ouvre l’éditeur SQL et exécute supabase/07_books_all_in_one.sql. Il ajoute les trois livres.',
     'library.owned': 'À toi',
     'library.read': 'Lire',
     'library.read_free': 'Lire le chapitre 1',
@@ -679,7 +679,7 @@ export function I18nProvider({ children }) {
       try {
         localStorage.setItem(STORE_KEY, next)
       } catch {
-        /* storage disabled — the choice just won't survive a reload */
+        /* storage disabled. The choice just won't survive a reload */
       }
       setLocaleState(next)
       document.documentElement.lang = next

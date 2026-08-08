@@ -38,6 +38,7 @@ Run these one at a time. Paste, press **Run**, wait for it to say success,
 | 4 | `supabase/07_books_all_in_one.sql` | **The books** — tables, paywall, and the three titles |
 | 5 | `supabase/08_chapter_bodies.sql` | **The writing** — the chapters themselves |
 | 6 | `supabase/09_solo_goals_and_leaving.sql` | Goals without a group; leaving and deleting a group |
+| 7 | `supabase/10_cad_and_stripe.sql` | Prices in CAD, and the Stripe product for each book |
 
 The order is not cosmetic. Step 3 defines rules that call functions made in
 step 2, which use tables made in step 1. Step 5 only fills in chapters that
@@ -114,6 +115,17 @@ STRIPE_SECRET_KEY           sk_live_… or sk_test_…
 STRIPE_WEBHOOK_SECRET       whsec_…
 SUPABASE_SERVICE_ROLE_KEY   from Supabase → Settings → API
 ```
+
+**If Vercel refuses the name `SUPABASE_SERVICE_ROLE_KEY`**, store it as
+`service_role` instead. The code accepts either, and also `SERVICE_ROLE` and
+`SUPABASE_SERVICE_KEY`, so whichever one the dashboard lets you save will
+work. The same applies to the other two: `stripe_secret_key` and
+`stripe_webhook_secret` are accepted in lower case.
+
+Each book is sold through a Stripe **Product**, and every product needs a
+**default price** set on it in the Stripe dashboard. Without one, checkout
+says so by name rather than failing generically: a Product carries no amount,
+only its Price does.
 
 Redeploy after adding them — Vercel does not pick up new variables on a
 running deployment.

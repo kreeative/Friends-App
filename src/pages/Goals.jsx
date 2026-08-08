@@ -53,8 +53,20 @@ export default function Goals() {
         title={t('nav.goals')}
         sub={groupId ? undefined : t('goals.solo_sub')}
         right={
-          <Link to={`${base}/new`} className="chip-accent press">
-            {t('goals.add')}
+          /**
+           * A plus and nothing else. "+ Add" wrapped onto two lines inside the
+           * pill on a phone, making the chip taller than the heading beside
+           * it. The word was never doing work that a plus in the corner of a
+           * list does not already do, but it has to keep its accessible name,
+           * so the label moves to aria-label rather than disappearing.
+           */
+          <Link
+            to={`${base}/new`}
+            aria-label={t('goals.new_goal')}
+            title={t('goals.new_goal')}
+            className="press flex h-11 w-11 shrink-0 items-center justify-center rounded-pill bg-accent text-[1.375rem] font-bold leading-none text-on-accent"
+          >
+            +
           </Link>
         }
       />
