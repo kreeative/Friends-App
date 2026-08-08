@@ -189,7 +189,21 @@ export default function Library() {
                   )}
 
                   <div className="mt-6 flex flex-wrap gap-2">
-                    <Link to={`/library/${b.slug}`} className="chip-accent press">
+                    {/**
+                     * Two destinations, because they are two different jobs.
+                     *
+                     * Owned: the real reader, which has your progress, your
+                     * highlights and every chapter.
+                     *
+                     * Not owned: the free chapter, at the route that is served
+                     * entirely from the bundle. It needs no row, no view and
+                     * no session, so it cannot fail for a reason the reader
+                     * has spent this long failing for.
+                     */}
+                    <Link
+                      to={b.owned ? `/library/${b.slug}` : `/books/${b.slug}`}
+                      className="chip-accent press"
+                    >
                       {b.owned ? t('library.read') : t('library.read_free')}
                     </Link>
                     {/* No Buy on a bundled book: there is no row to record

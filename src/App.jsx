@@ -145,6 +145,18 @@ function Gate() {
         <Route path="me" element={<Me />} />
         <Route path="library" element={<Library />} />
         <Route path="library/:slug" element={<Reader />} />
+
+        {/**
+         * The free chapter, signed in as well as signed out.
+         *
+         * This route existed only on the public side, so a signed-in reader
+         * following it fell through to the catch-all and was bounced to the
+         * dashboard -- which is precisely what "Read chapter one" did from
+         * inside the app. Same component either way: it reads from the
+         * bundle, so it cannot fail on a missing row, view or session.
+         */}
+        <Route path="books/:slug" element={<Preview />} />
+        <Route path="books" element={<Navigate to="/library" replace />} />
         {/* The navigation calls this "Lectures" in French, so people type it.
             Aliased rather than duplicated: one Library, two spellings. */}
         <Route path="lectures" element={<Navigate to="/library" replace />} />

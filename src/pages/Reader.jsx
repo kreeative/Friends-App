@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
@@ -104,7 +104,7 @@ export default function Reader() {
    * Seeding also means "Book not found" can no longer appear for any of the
    * three books, in any auth state, with or without a row in the database.
    */
-  const seed = useState(() => localBook(slug))[0]
+  const seed = useMemo(() => localBook(slug), [slug])
 
   const [book, setBook] = useState(seed?.book ?? null)
   const [chapters, setChapters] = useState(seed?.chapters ?? [])
@@ -150,7 +150,11 @@ export default function Reader() {
            book genuinely does not exist. */
         if (bookErr || !b) {
           if (seed) return
-          throw new Error('Book not found')
+          /* An unknown slug: a stale link, a renamed book, or a catalogue
+             that never had this one. Naming it beats "Book not found", which
+             says nothing anybody can act on. */
+          setError({ code: 'unknown_book', description: slug })
+          return
         }
 
         setBook(b)
@@ -181,7 +185,8 @@ export default function Reader() {
            page with an error nobody can act on from here. */
         if (chs.length === 0) {
           if (seed) return
-          throw new Error('NO_CHAPTERS')
+          setError({ code: 'no_chapters', description: 'no_chapters' })
+          return
         }
 
         const { data: prog } = await supabase
@@ -253,7 +258,17 @@ export default function Reader() {
       try {
         const ch = await getChapter(chapterId)
         if (ch) {
-          setCurrent(ch)
+          /**
+           * 07 creates every chapter with generated filler and 08 replaces it
+           * with the manuscript. A database with the first and not the second
+           * returns a chapter whose body is the word PLACEHOLDER forty-eight
+           * times, and rendering that is worse than not opening the book at
+           * all -- it looks like the writing is nonsense rather than absent.
+           * The bundle has the real chapter one, so it wins over filler.
+           */
+          const real = localChapterBody(slug, ch.idx)
+          const filler = typeof ch.body === 'string' && ch.body.includes('PLACEHOLDER.')
+          setCurrent(filler && real ? { ...ch, body: real } : ch)
           setError(null)
         } else {
           /**

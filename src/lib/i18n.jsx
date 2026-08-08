@@ -286,6 +286,8 @@ const STRINGS = {
       'The database is empty. The tables have not been created yet. In Supabase, open the SQL Editor and run supabase/01_schema.sql, then 02_functions.sql, then 03_policies.sql, pasting the contents of each file.',
     'err.no_library_tables':
       'The library tables do not exist yet. In Supabase, open the SQL Editor and run supabase/07_books_all_in_one.sql. A single paste that creates the tables and adds the three books.',
+    'err.unknown_book':
+      'There is no book with the address “{slug}”. It may have been renamed. The three books are on the Library page.',
     'err.no_chapters':
       'This book has no chapters in the database. In Supabase, run supabase/07_books_all_in_one.sql to create them, then supabase/08_chapter_bodies.sql to fill in the writing.',
     'err.preview_missing':
@@ -615,6 +617,8 @@ const STRINGS = {
       'La base est vide. Les tables n’ont pas encore été créées. Dans Supabase, ouvre l’éditeur SQL et exécute supabase/01_schema.sql, puis 02_functions.sql, puis 03_policies.sql, en collant le contenu de chaque fichier.',
     'err.no_library_tables':
       'Les tables de la bibliothèque n’existent pas encore. Dans Supabase, ouvre l’éditeur SQL et exécute supabase/07_books_all_in_one.sql. Un seul copier-coller qui crée les tables et ajoute les trois livres.',
+    'err.unknown_book':
+      'Aucun livre ne correspond à l’adresse « {slug} ». Il a peut-être été renommé. Les trois livres sont sur la page Lectures.',
     'err.no_chapters':
       'Ce livre n’a aucun chapitre dans la base. Dans Supabase, exécute supabase/07_books_all_in_one.sql pour les créer, puis supabase/08_chapter_bodies.sql pour le texte.',
     'err.preview_missing':

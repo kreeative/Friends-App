@@ -27,6 +27,7 @@ export function explain(error, t) {
   /* Reader-specific, and checked before the string matching below because
      both are conditions the app worked out for itself rather than messages
      Postgres handed back. */
+  if (error.code === 'unknown_book') return t('err.unknown_book', { slug: error.description })
   if (error.code === 'no_chapters') return t('err.no_chapters')
   if (error.code === 'preview_missing') return t('err.preview_missing')
 
