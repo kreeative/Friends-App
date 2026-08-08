@@ -14,7 +14,7 @@ Participants arrived at a lab that had been deliberately filled with the smell o
 
 Then everyone was given a geometric puzzle to work on. What nobody was told was that the puzzle was unsolvable.
 
-The cookie group and the no-food group worked at it for around twenty minutes. The radish group. The people who had just spent five minutes sitting in front of warm cookies not eating them. Gave up in about eight.
+The cookie group and the no-food group worked at it for around twenty minutes. The radish group, the people who had just spent five minutes sitting in front of warm cookies not eating them, gave up in about eight.
 
 The interpretation was elegant and immediately intuitive: self-control runs on a limited resource. Resisting the cookies drew the tank down. There was less left for the puzzle. Baumeister called it *ego depletion*, and it explained an enormous amount of ordinary experience. Why you eat badly at eleven at night after a hard day. Why the diet survives the office and dies in your own kitchen. Why judges, famously, seemed to grant parole more often in the morning.
 
@@ -22,7 +22,7 @@ For most of two decades, this was the model. It is still the model most people a
 
 ## What happened when people checked
 
-In 2014 Evan Carter and Michael McCullough re-examined the meta-analysis that the ego depletion literature rested on. When they corrected for small-study effects. The statistical fingerprint left when small experiments that found nothing quietly fail to get published. The effect shrank towards zero.
+In 2014 Evan Carter and Michael McCullough re-examined the meta-analysis that the ego depletion literature rested on. When they corrected for small-study effects (the statistical fingerprint left when small experiments that found nothing quietly fail to get published), the effect shrank towards zero.
 
 That is a warning sign, not a verdict. So the field did the right thing, and the correct thing here is rare enough to be worth admiring: they ran a pre-registered replication at scale. Twenty-three laboratories, a protocol agreed in advance with Baumeister's input, over two thousand participants, everyone committed to publishing whatever came out.
 
