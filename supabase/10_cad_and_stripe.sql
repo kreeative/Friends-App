@@ -42,14 +42,13 @@ alter table books alter column currency set default 'CAD';
 -- ---------------------------------------------------------------------------
 -- 3. Wire the three books to Stripe.
 --
--- These are Product ids. The checkout handler resolves each to its
--- default_price at purchase time, so every book needs a default price set on
--- it in the Stripe dashboard. If one is missing, checkout says so by name
--- instead of failing with a generic error.
+-- These are Price ids, which is what Stripe Checkout wants directly: a Price
+-- carries the amount, a Product does not. The handler uses a price_ id as-is
+-- and only has to go looking for a default price when given a prod_ one.
 -- ---------------------------------------------------------------------------
-update books set stripe_ref = 'prod_V22QUE8t5TrTgl' where slug = 'design-beats-discipline';
-update books set stripe_ref = 'prod_V22Rg2y07sqrfy' where slug = 'evidence-of-yourself';
-update books set stripe_ref = 'prod_V22SGqwaDDko33' where slug = 'story-you-tell';
+update books set stripe_ref = 'price_1U1qJjLZRMaGXv1mXtAa5jiF' where slug = 'design-beats-discipline';
+update books set stripe_ref = 'price_1U1qVgLZRMaGXv1mipl2PNKa' where slug = 'evidence-of-yourself';
+update books set stripe_ref = 'price_1U1qWTLZRMaGXv1mFvnYmfFs' where slug = 'story-you-tell';
 
 -- Check: three rows, all CAD, all with a ref.
 --   select slug, price_cents, currency, stripe_ref from books order by title;
