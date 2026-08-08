@@ -839,11 +839,33 @@
     box-shadow: inset 0 0 0 1px rgb(var(--c-ink) / 0.09);
   }
 
-  /* The small controls on a goal card. Named because there are now four of
-     them across two states and they were three copies of the same string. */
+  /* The small controls on a goal card.
+   *
+   * These were three runs of plain grey text in a row, which read as three
+   * labels rather than three buttons: nothing to aim at, no edge, and no way
+   * to tell that "Mark done" finishes a thing while "Pause" only parks it.
+   *
+   * Three weights for three jobs. Edit is the quietest, because it is the one
+   * you take when you are already on your way somewhere else. Pause is filled
+   * faintly, so it reads as a control without competing. Mark done carries the
+   * accent: it is the button the whole card is for, and the only one whose
+   * result you would be sorry to reach by accident, so it should be visible
+   * from across the page and impossible to hit while aiming at something else.
+   */
   .goal-action {
-    @apply inline-flex items-center rounded-pill px-3 py-1.5 text-small text-muted no-underline
-           transition-colors duration-200 ease-settle hover:bg-ink/[0.05] hover:text-ink;
+    @apply inline-flex items-center rounded-pill border border-hairline px-4 py-2
+           text-small font-bold text-muted no-underline transition-colors
+           duration-200 ease-settle hover:border-ink/20 hover:text-ink;
+  }
+  .goal-action-fill {
+    @apply inline-flex items-center rounded-pill bg-ink/[0.06] px-4 py-2 text-small
+           font-bold text-ink no-underline transition-colors duration-200
+           ease-settle hover:bg-ink/[0.11];
+  }
+  .goal-action-done {
+    @apply inline-flex items-center rounded-pill bg-accent px-4 py-2 text-small
+           font-bold text-on-accent no-underline transition-opacity duration-200
+           ease-settle hover:opacity-90;
   }
 
   .card-quiet {
@@ -919,8 +941,24 @@
     @apply w-full rounded-field border-0 bg-ink/[0.035] px-4 py-3 text-body text-ink
            transition-colors duration-200 ease-settle focus:bg-ink/[0.06];
   }
+  /* A field's name, and the note under it.
+   *
+   * The label was muted grey at the same weight as the hint below it and the
+   * placeholder inside it, so a form step arrived as three lines of identical
+   * type and you had to read all three to find out which one was the question.
+   * The label is ink now and the hint stays muted, which is the whole of the
+   * hierarchy: what this is, then why, then an example inside the box.
+   */
   .field-label {
-    @apply mb-1 block text-small font-semibold text-muted;
+    @apply mb-1.5 block text-small font-bold text-ink;
+  }
+
+  /* Guidance that earns its place: the two or three notes in the goal form
+     that carry a real finding rather than restating the label. The accent
+     rule marks them as worth reading without shouting, and stops them from
+     looking like more of the same grey. */
+  .field-note {
+    @apply mt-2 block border-l-2 border-accent/50 pl-3 text-small text-muted;
   }
 
   /* Lists are separated by hairlines, never by nested cards. */

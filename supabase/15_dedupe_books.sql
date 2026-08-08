@@ -15,6 +15,11 @@
 -- destructive statement against a live catalogue. Unpublished rows vanish from
 -- the shop, which is the actual requirement, and can be deleted by hand once
 -- you have looked at them.
+--
+-- Order matters here, and the first draft of this file had it wrong. Anything
+-- somebody owns has to be moved onto the surviving row BEFORE the row it sits
+-- on is retired. Retiring first and moving afterwards takes the book off their
+-- shelf in between, and if the move then misses, it stays off.
 -- ============================================================================
 
 -- ---------------------------------------------------------------------------
@@ -44,7 +49,73 @@ alter table books add column if not exists stripe_ref text;
 --   order by k, price_cents desc;
 
 -- ---------------------------------------------------------------------------
--- 2. Retire the rows nobody could buy.
+-- 2. Move every entitlement onto the row that is going to survive.
+--
+-- First, not last. This is what makes the two statements below safe: once a
+-- purchase has been moved, retiring the row it used to point at cannot take
+-- anybody's book away.
+--
+-- The keeper is chosen without reference to `published`, so this agrees with
+-- the ranking below no matter which of them has run before.
+-- ---------------------------------------------------------------------------
+with norm as (
+  select
+    id, price_cents, stripe_ref, created_at,
+    regexp_replace(
+      lower(regexp_replace(title, '^(the|a|an)\s+', '', 'i')),
+      '[^a-z0-9]', '', 'g'
+    ) as k
+  from books
+),
+keeper as (
+  select distinct on (k) k, id
+  from norm
+  order by k,
+           (stripe_ref is not null and stripe_ref <> '') desc,
+           (price_cents > 0) desc,
+           created_at asc
+)
+update entitlements e
+set book_id = keeper.id
+from norm n
+join keeper on keeper.k = n.k
+where e.book_id = n.id
+  and n.id <> keeper.id
+  -- Skip anyone who already owns the keeper: the unique (user_id, book_id)
+  -- would reject the update, and they have lost nothing either way.
+  and not exists (
+    select 1 from entitlements x
+    where x.user_id = e.user_id and x.book_id = keeper.id
+  );
+
+-- Whatever could not be moved above is a genuine duplicate purchase by the
+-- same person. Drop the copy rather than leaving a row pointing at a book that
+-- is about to leave the shop.
+with norm as (
+  select
+    id, price_cents, stripe_ref, created_at,
+    regexp_replace(
+      lower(regexp_replace(title, '^(the|a|an)\s+', '', 'i')),
+      '[^a-z0-9]', '', 'g'
+    ) as k
+  from books
+),
+keeper as (
+  select distinct on (k) k, id
+  from norm
+  order by k,
+           (stripe_ref is not null and stripe_ref <> '') desc,
+           (price_cents > 0) desc,
+           created_at asc
+)
+delete from entitlements e
+using norm n, keeper
+where keeper.k = n.k
+  and e.book_id = n.id
+  and n.id <> keeper.id;
+
+-- ---------------------------------------------------------------------------
+-- 3. Retire the rows nobody could buy.
 --
 -- This is the rule that actually catches them, and matching on the title is
 -- not: the leftovers are titled "Story You Tell" while the real book is "The
@@ -53,9 +124,6 @@ alter table books add column if not exists stripe_ref text;
 -- and points at no Stripe object, which means Checkout has nothing to charge
 -- for. It is not a free book, because this app has no such thing. It is a row
 -- that cannot be sold.
---
--- Anything anybody already owns is left published regardless. A book vanishing
--- off somebody's shelf is worse than a duplicate card.
 -- ---------------------------------------------------------------------------
 update books b
 set published = false
@@ -65,18 +133,16 @@ where b.published
   and not exists (select 1 from entitlements e where e.book_id = b.id);
 
 -- ---------------------------------------------------------------------------
--- 3. Then, if a title still appears twice, keep the one somebody can buy.
+-- 4. Then, if a title still appears twice, keep the one somebody can buy.
 --
--- Ranked the same way the storefront ranks it, so the two cannot disagree:
--- wired to Stripe beats not wired, then a real price beats zero, then the
--- older row wins so a re-run is stable.
+-- Ranked exactly as in step 2, so the row that kept the purchases is the row
+-- that stays in the shop. Still guarded on entitlements: after step 2 there
+-- should be none left on a loser, and if there somehow are, a duplicate card
+-- is better than a book disappearing off somebody's shelf.
 -- ---------------------------------------------------------------------------
 with norm as (
   select
-    id,
-    price_cents,
-    stripe_ref,
-    created_at,
+    id, price_cents, stripe_ref, created_at,
     regexp_replace(
       lower(regexp_replace(title, '^(the|a|an)\s+', '', 'i')),
       '[^a-z0-9]', '', 'g'
@@ -85,8 +151,7 @@ with norm as (
 ),
 ranked as (
   select
-    id,
-    k,
+    id, k,
     row_number() over (
       partition by k
       order by
@@ -101,45 +166,8 @@ set published = false
 from ranked r
 where r.id = b.id
   and r.rn > 1
-  and b.published;
-
--- ---------------------------------------------------------------------------
--- 4. Move any entitlement onto the row that survived.
---
--- Belt and braces. If somebody did somehow buy a duplicate, this keeps their
--- book readable instead of quietly taking it off their shelf along with the
--- row it pointed at.
--- ---------------------------------------------------------------------------
-with norm as (
-  select
-    id,
-    price_cents,
-    stripe_ref,
-    created_at,
-    published,
-    regexp_replace(
-      lower(regexp_replace(title, '^(the|a|an)\s+', '', 'i')),
-      '[^a-z0-9]', '', 'g'
-    ) as k
-  from books
-),
-keeper as (
-  select distinct on (k) k, id
-  from norm
-  where published
-  order by k, (stripe_ref is not null and stripe_ref <> '') desc,
-           (price_cents > 0) desc, created_at asc
-)
-update entitlements e
-set book_id = keeper.id
-from norm n
-join keeper on keeper.k = n.k
-where e.book_id = n.id
-  and n.id <> keeper.id
-  and not exists (
-    select 1 from entitlements x
-    where x.user_id = e.user_id and x.book_id = keeper.id
-  );
+  and b.published
+  and not exists (select 1 from entitlements e where e.book_id = b.id);
 
 -- Check: three rows, all published, all priced, all with a Stripe ref.
 --   select slug, title, price_cents, currency, stripe_ref

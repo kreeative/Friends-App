@@ -12,7 +12,7 @@ Delete one and it disappears just as cleanly.
 | | |
 |---|---|
 | **Format** | PNG with a real alpha channel |
-| **Size** | 600 px on the long edge (they render at 56–110 px, so this covers 2× and a bit) |
+| **Size** | 600 px on the long edge (they render at 56-110 px, so this covers 2× and a bit) |
 | **Background** | Transparent. Not white, white shows as a box on a white page |
 | **Trim** | Crop tight to the artwork. Padding inside the file becomes a gap the layout cannot see |
 | **Weight** | Aim under 40 kB each. `pngquant --quality 65-90` gets there without a visible change |

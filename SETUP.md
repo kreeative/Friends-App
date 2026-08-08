@@ -45,7 +45,7 @@ step 2, which use tables made in step 1. Step 5 only fills in chapters that
 step 4 created, run it alone and it will succeed while changing nothing,
 which is the confusing way to fail.
 
-If you have already done 1–3 in the past, start at 4.
+If you have already done 1 to 3 in the past, start at 4.
 
 ---
 

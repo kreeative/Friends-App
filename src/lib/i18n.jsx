@@ -140,6 +140,12 @@ const STRINGS = {
     'checkin.more': 'One more',
 
     'mood.question': 'How are you today?',
+    'mood.question_day': 'What is the mood of the day?',
+    'mood.today_is': 'The mood of the day is',
+    'mood.choose': 'Choose mood',
+    'mood.change': 'Change',
+    'mood.clear': 'Clear it',
+    'mood.optional': 'Optional, and never counted either way.',
     'mood.hint': 'Optional, and not counted either way. Tap again to unpick.',
     'mood.when':
       'This is the first thing your check-in asks. It unlocks when the new week starts, and it is always optional.',
@@ -202,16 +208,16 @@ const STRINGS = {
     'form.mine': 'Mine',
     'form.whole_group': 'Whole group',
     'form.commitment': 'The commitment',
-    'form.commitment_hint': 'What specifically gets done. Not the result you want, but the thing you do.',
+    'form.commitment_hint': 'The action you take, not the result you hope for.',
     'form.commitment_ph': 'Post 3 videos',
     'form.step_what': 'What are you committing to?',
     'form.step_often': 'How often?',
     'form.step_when': 'When will you actually do it?',
     'form.step_proof': 'Proof and stakes',
-    'form.optional_step': 'Both optional. Skip them if you like.',
-    'form.cadence_hint': 'Every cycle repeats until you stop it. One-off has a single deadline.',
-    'form.times_hint': 'How many times between one check-in and the next.',
-    'form.until_hint': 'Leave empty to keep going indefinitely.',
+    'form.optional_step': 'Both optional.',
+    'form.cadence_hint': '',
+    'form.times_hint': '',
+    'form.until_hint': 'Leave empty to keep going.',
     'form.where_hint':
       'A note to yourself, nothing more. The app has no idea where you are and never asks. Writing the place down is what makes the plan specific enough to act on.',
     'form.remind': 'Email me this before check-in',
@@ -235,7 +241,7 @@ const STRINGS = {
     'form.where': 'Where (optional)',
     'form.where_ph': 'At the library, third floor',
     'form.evidence': 'How you’ll show it happened',
-    'form.evidence_hint': 'What you’ll show at check-in that proves it happened.',
+    'form.evidence_hint': '',
     'form.evidence_ph': 'Links to the posted videos',
     'form.stake': 'Stake (optional)',
     'form.stake_hint': 'Settled between you. The app only remembers it.',
@@ -269,7 +275,7 @@ const STRINGS = {
 
     'settings.group_rate': 'Group check-in rate',
     'settings.people': 'People',
-    'settings.people_hint': '2–6 works best',
+    'settings.people_hint': '2 to 6 works best',
     'settings.everyone': 'Everyone',
     'settings.send_to_friend': 'Send to a friend',
     'settings.invite_note':
@@ -344,6 +350,7 @@ const STRINGS = {
     'reader.next': 'Next',
 
     'ui.close': 'Close',
+    'ui.save': 'Save',
   },
 
   fr: {
@@ -477,6 +484,12 @@ const STRINGS = {
     'checkin.more': 'Un de plus',
 
     'mood.question': 'Comment tu te sens aujourd’hui ?',
+    'mood.question_day': 'C’est quoi l’humeur du jour ?',
+    'mood.today_is': 'L’humeur du jour, c’est',
+    'mood.choose': 'Choisir',
+    'mood.change': 'Changer',
+    'mood.clear': 'Effacer',
+    'mood.optional': 'Facultatif, et jamais compté d’une façon ou d’une autre.',
     'mood.hint': 'Facultatif, et jamais compté. Retape dessus pour l’enlever.',
     'mood.when':
       'C’est la première question du point. Ça s’ouvre quand la nouvelle semaine commence, et c’est toujours facultatif.',
@@ -547,10 +560,9 @@ const STRINGS = {
     'form.step_often': 'À quelle fréquence ?',
     'form.step_when': 'Tu le feras quand, concrètement ?',
     'form.step_proof': 'Preuve et gage',
-    'form.optional_step': 'Les deux sont facultatifs. Passe si tu veux.',
-    'form.cadence_hint':
-      'Chaque cycle se répète jusqu’à ce que tu l’arrêtes. Ponctuel n’a qu’une seule échéance.',
-    'form.times_hint': 'Combien de fois entre deux points.',
+    'form.optional_step': 'Les deux sont facultatifs.',
+    'form.cadence_hint': '',
+    'form.times_hint': '',
     'form.until_hint': 'Laisse vide pour continuer indéfiniment.',
     'form.where_hint':
       'Une note pour toi, rien de plus. L’app ne sait pas où tu es et ne le demande jamais. Écrire le lieu, c’est ce qui rend le plan assez précis pour être suivi.',
@@ -575,7 +587,7 @@ const STRINGS = {
     'form.where': 'Où (facultatif)',
     'form.where_ph': 'À la bibliothèque, deuxième étage',
     'form.evidence': 'La preuve',
-    'form.evidence_hint': 'Ce que tu montreras au moment du point pour prouver que c’est fait.',
+    'form.evidence_hint': '',
     'form.evidence_ph': 'Les liens vers les vidéos publiées',
     'form.stake': 'Gage (optionnel)',
     'form.stake_hint': 'À régler entre vous. L’appli ne fait que s’en souvenir.',
@@ -685,6 +697,7 @@ const STRINGS = {
     'reader.next': 'Suivant',
 
     'ui.close': 'Fermer',
+    'ui.save': 'Enregistrer',
   },
 }
 

@@ -70,7 +70,11 @@ export function Field({ label, hint, children }) {
     <label className="block">
       {label && <span className="field-label">{label}</span>}
       {children}
-      {hint && <span className="mt-2 block text-small text-muted">{hint}</span>}
+      {/* field-note rather than another run of plain muted text. What survived
+          the trim is the guidance carrying a real finding, and it was reading
+          as a third line of the same grey as the label above it and the
+          placeholder inside the box. */}
+      {hint && <span className="field-note">{hint}</span>}
     </label>
   )
 }

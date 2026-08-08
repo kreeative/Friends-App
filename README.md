@@ -1,6 +1,6 @@
 # Rich & Friends
 
-A small-group accountability app for 2–6 people, built around one shared weekly
+A small-group accountability app for 2 to 6 people, built around one shared weekly
 check-in instead of a wall of goals.
 
 © 2026 Anne-Kelly Kouyaté. All rights reserved. This is proprietary software, see [LICENSE](./LICENSE). The published legal texts live in

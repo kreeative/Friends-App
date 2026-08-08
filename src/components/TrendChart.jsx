@@ -27,7 +27,7 @@ const INNER = { w: W - PAD.left - PAD.right, h: H - PAD.top - PAD.bottom }
 /**
  * The vertical range the curve is drawn in.
  *
- * Not a fixed 0–100. Consistency is a number people keep in the top third, so
+ * Not a fixed 0-100. Consistency is a number people keep in the top third, so
  * a fixed axis draws every real series as a flat line pinned to the ceiling
  * with two thirds of the card empty underneath. Technically faithful and
  * completely unreadable. The window follows the data with a margin, and
@@ -51,7 +51,7 @@ function domain(values) {
 }
 
 /**
- * Monotone cubic interpolation (Fritsch–Carlson), as cubic béziers.
+ * Monotone cubic interpolation (Fritsch-Carlson), as cubic béziers.
  *
  * The obvious choice here is Catmull-Rom, and it is wrong. Catmull-Rom
  * overshoots whenever the data turns sharply, so a run of 100% weeks drew a

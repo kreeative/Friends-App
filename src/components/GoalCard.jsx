@@ -97,7 +97,7 @@ export default function GoalCard({
         </span>
 
         {showControls && !finished && (
-          <div className="-mx-2 flex flex-wrap gap-1 sm:mx-0 sm:-mr-2 sm:justify-end">
+          <div className="flex flex-wrap gap-2 sm:justify-end">
             {editHref && (
               <Link to={editHref} className="goal-action press">
                 {t('goal.edit')}
@@ -105,11 +105,11 @@ export default function GoalCard({
             )}
             <button
               onClick={() => setStatus(paused ? 'active' : 'paused')}
-              className="goal-action press"
+              className="goal-action-fill press"
             >
               {paused ? t('goal.resume') : t('goal.pause')}
             </button>
-            <button onClick={() => setStatus('completed')} className="goal-action press">
+            <button onClick={() => setStatus('completed')} className="goal-action-done press">
               {t('goal.mark_done')}
             </button>
           </div>
@@ -121,7 +121,7 @@ export default function GoalCard({
         {showControls && finished && (
           <button
             onClick={() => setStatus('active')}
-            className="goal-action press -mx-2 self-start sm:mx-0 sm:-mr-2"
+            className="goal-action-fill press self-start"
           >
             {t('goal.reopen')}
           </button>
