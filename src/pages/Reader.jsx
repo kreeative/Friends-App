@@ -38,7 +38,7 @@ function render(md) {
     }
     if (b.startsWith('> ')) {
       return (
-        <blockquote key={i} className="my-8 border-l-2 border-yellow pl-5 text-ink/80">
+        <blockquote key={i} className="my-8 border-l-2 border-accent pl-5 text-ink/80">
           {b.replace(/^> ?/gm, '')}
         </blockquote>
       )
@@ -84,15 +84,25 @@ export default function Reader() {
         if (!b) throw new Error('Book not found')
         setBook(b)
 
+        /* Only the chapter list is allowed to fail loudly. Highlights and the
+           entitlement lookup are additive: not knowing whether you own the
+           book should cost you a badge in the drawer, not the book. */
         const [chs, { data: ent }, hl] = await Promise.all([
           listChapters(b.id),
           supabase.from('entitlements').select('id').eq('book_id', b.id).maybeSingle(),
-          listHighlights(b.id),
+          listHighlights(b.id).catch(() => []),
         ])
         if (cancelled) return
+
         setChapters(chs)
         setNotes(hl)
-        b.owned = Boolean(ent)
+        /* Set on a copy, through state. Mutating the object already handed to
+           setBook happened to work because it was the same reference, which
+           is exactly the kind of thing that stops working the moment anything
+           upstream starts cloning. */
+        setBook({ ...b, owned: Boolean(ent) })
+
+        if (chs.length === 0) throw new Error('NO_CHAPTERS')
 
         const { data: prog } = await supabase
           .from('reading_progress')
@@ -101,10 +111,17 @@ export default function Reader() {
           .maybeSingle()
 
         const resume = chs.find((c) => c.id === prog?.chapter_id)
-        await open(resume?.id ?? chs[0]?.id)
+        await open(resume?.id ?? chs[0].id, chs)
         setError(null)
       } catch (e) {
-        if (!cancelled) setError({ code: 'load', description: e?.message ?? String(e) })
+        if (cancelled) return
+        /* Keep PostgREST's own code so `explain` can name the SQL file that
+           has not been run. 'load' told nobody anything. */
+        setError(
+          e?.message === 'NO_CHAPTERS'
+            ? { code: 'no_chapters', description: 'no_chapters' }
+            : { code: e?.code ?? 'load', description: e?.message ?? String(e) },
+        )
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -116,16 +133,47 @@ export default function Reader() {
 
   /**
    * One chapter per request, always. Nothing here decides whether it may be
-   * read — a locked chapter simply comes back null, because the policy filtered
-   * it server-side. That is also why the whole book is never fetched at once.
+   * read: a locked chapter comes back null because the policy filtered it
+   * server-side. That is also why the whole book is never fetched at once.
+   *
+   * @param list the chapter metadata to look this id up in. Passed explicitly
+   *             because the first call happens inside the loading effect, in
+   *             the same tick as setChapters — so the `chapters` state is
+   *             still [] there, and a preview chapter would be misread as one
+   *             that simply is not in the list.
    */
-  const open = useCallback(async (chapterId) => {
-    if (!chapterId) return
-    const ch = await getChapter(chapterId)
-    setCurrent(ch ?? { locked: true, id: chapterId })
-    setDrawer(false)
-    window.scrollTo({ top: 0, behavior: 'instant' })
-  }, [])
+  const open = useCallback(
+    async (chapterId, list) => {
+      if (!chapterId) return
+      const meta = (list ?? chapters).find((c) => c.id === chapterId)
+      setDrawer(false)
+      try {
+        const ch = await getChapter(chapterId)
+        if (ch) {
+          setCurrent(ch)
+          setError(null)
+        } else {
+          /**
+           * Null means the policy filtered it. For a paid chapter that is the
+           * paywall doing its job. For the free preview it cannot be: the
+           * policy lets `is_preview` through unconditionally, so if chapter
+           * one comes back empty the chapter row itself is missing and no
+           * amount of buying will fix it. Saying "unlock for $12" there would
+           * be selling something that is not the problem.
+           */
+          if (meta?.is_preview) {
+            setError({ code: 'preview_missing', description: 'preview_missing' })
+          } else {
+            setCurrent({ locked: true, id: chapterId })
+          }
+        }
+      } catch (e) {
+        setError({ code: e?.code ?? 'load', description: e?.message ?? String(e) })
+      }
+      window.scrollTo({ top: 0, behavior: 'instant' })
+    },
+    [chapters],
+  )
 
   // --- save progress, throttled -------------------------------------------
   useEffect(() => {

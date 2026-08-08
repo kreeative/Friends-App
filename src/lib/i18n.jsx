@@ -277,6 +277,10 @@ const STRINGS = {
       'The database is empty. The tables have not been created yet. In Supabase, open the SQL Editor and run supabase/01_schema.sql, then 02_functions.sql, then 03_policies.sql, pasting the contents of each file.',
     'err.no_library_tables':
       'The library tables do not exist yet. In Supabase, open the SQL Editor and run supabase/07_books_all_in_one.sql. A single paste that creates the tables and adds the three books.',
+    'err.no_chapters':
+      'This book has no chapters in the database. In Supabase, run supabase/07_books_all_in_one.sql to create them, then supabase/08_chapter_bodies.sql to fill in the writing.',
+    'err.preview_missing':
+      'The free chapter is missing from the database rather than locked. Chapter 1 is readable by everyone, so this is not something buying the book would fix. In Supabase, run supabase/07_books_all_in_one.sql and then supabase/08_chapter_bodies.sql.',
     'err.retry': 'Try again',
     'err.loading': 'Loading',
 
@@ -590,6 +594,10 @@ const STRINGS = {
       'La base est vide. Les tables n’ont pas encore été créées. Dans Supabase, ouvre l’éditeur SQL et exécute supabase/01_schema.sql, puis 02_functions.sql, puis 03_policies.sql, en collant le contenu de chaque fichier.',
     'err.no_library_tables':
       'Les tables de la bibliothèque n’existent pas encore. Dans Supabase, ouvre l’éditeur SQL et exécute supabase/07_books_all_in_one.sql. Un seul copier-coller qui crée les tables et ajoute les trois livres.',
+    'err.no_chapters':
+      'Ce livre n’a aucun chapitre dans la base. Dans Supabase, exécute supabase/07_books_all_in_one.sql pour les créer, puis supabase/08_chapter_bodies.sql pour le texte.',
+    'err.preview_missing':
+      'Le chapitre gratuit est absent de la base, pas verrouillé. Le chapitre 1 est lisible par tout le monde : acheter le livre n’y changerait rien. Dans Supabase, exécute supabase/07_books_all_in_one.sql puis supabase/08_chapter_bodies.sql.',
     'err.retry': 'Réessayer',
     'err.loading': 'Chargement',
 

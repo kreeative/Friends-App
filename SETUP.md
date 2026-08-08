@@ -39,6 +39,7 @@ Run these one at a time. Paste, press **Run**, wait for it to say success,
 | 5 | `supabase/08_chapter_bodies.sql` | **The writing** — the chapters themselves |
 | 6 | `supabase/09_solo_goals_and_leaving.sql` | Goals without a group; leaving and deleting a group |
 | 7 | `supabase/10_cad_and_stripe.sql` | Prices in CAD, and the Stripe product for each book |
+| 8 | `supabase/11_chapter_index.sql` | Chapter titles public, bodies still paywalled |
 
 The order is not cosmetic. Step 3 defines rules that call functions made in
 step 2, which use tables made in step 1. Step 5 only fills in chapters that

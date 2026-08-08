@@ -23,6 +23,13 @@ const LIBRARY_TABLES = [
  */
 export function explain(error, t) {
   if (!error) return null
+
+  /* Reader-specific, and checked before the string matching below because
+     both are conditions the app worked out for itself rather than messages
+     Postgres handed back. */
+  if (error.code === 'no_chapters') return t('err.no_chapters')
+  if (error.code === 'preview_missing') return t('err.preview_missing')
+
   const raw = `${error.code ?? ''} ${error.description ?? ''}`.toLowerCase()
 
   if (raw.includes('provider') && (raw.includes('not enabled') || raw.includes('disabled'))) {

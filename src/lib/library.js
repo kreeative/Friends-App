@@ -36,23 +36,50 @@ export async function listBooks() {
   }))
 }
 
-/** Titles and preview flags only — never bodies. Safe for the drawer. */
+/**
+ * Titles and preview flags only, never bodies. Safe for the drawer.
+ *
+ * Throws rather than returning []. An empty list and a failed request are
+ * completely different situations that used to be indistinguishable here, and
+ * the reader downstream turned both into the same blank page.
+ */
 export async function listChapters(bookId) {
-  const { data } = await supabase
-    .from('chapters')
+  /* chapter_index, not chapters. The table's policy hides the whole row of
+     anything unbought, so reading the table returned one chapter for a
+     nine-chapter book: no contents, no next chapter, and no sign of what
+     buying would get you. The view carries the titles and does not have a
+     `body` column at all. */
+  const { data, error } = await supabase
+    .from('chapter_index')
     .select('id, idx, title, is_preview, word_count')
     .eq('book_id', bookId)
     .order('idx')
+  if (error) throw error
   return data ?? []
 }
 
-/** One chapter, with its body. Returns null when not entitled — by policy. */
+/**
+ * One chapter, with its body.
+ *
+ * Three outcomes, and they must not be conflated:
+ *
+ *   { chapter }        you may read it
+ *   null               the policy filtered it out. You have not bought this
+ *                      book and the chapter is not the free preview. This is
+ *                      the paywall working, not a failure.
+ *   throws             the request itself failed.
+ *
+ * The old version returned null for the last two alike, so a missing table or
+ * a broken connection rendered as "buy this to unlock" on a chapter that is
+ * free to everyone.
+ */
 export async function getChapter(chapterId) {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('chapters')
     .select('id, book_id, idx, title, body, is_preview')
     .eq('id', chapterId)
     .maybeSingle()
+  if (error) throw error
   return data ?? null
 }
 
