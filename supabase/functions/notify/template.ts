@@ -173,7 +173,11 @@ export function layout({
 export function plain(title: string, blocks: Block[], footnote?: string): string {
   const body = blocks
     .map((b) => {
-      if (b.kind === 'rule') return ', '
+      // A plain-text divider, doing in ASCII what the HTML `rule` case does
+      // with a border. Was a literal em-dash; a later cleanup pass that
+      // scanned for the character in prose caught this string literal too
+      // and left it as a stray ", " with no divider at all.
+      if (b.kind === 'rule') return '----------------------------------------'
       if (b.kind === 'list')
         return b.items.map((i) => `· ${i.title}${i.note ? `\n    ${i.note}` : ''}`).join('\n')
       if (b.kind === 'button') return `${b.label}: ${b.href}`

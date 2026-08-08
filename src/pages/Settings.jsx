@@ -54,8 +54,11 @@ export default function Settings() {
 
       <Section title={t('board.together')}>
         <div className="flex gap-6">
+          {/* '-', not '0%'. A blind em-dash removal pass turned the "no data
+              yet" glyph into a literal zero percent, which asserts a measured
+              rate for a group that has not had a cycle yet. */}
           <Stat
-            value={together.pct === null ? '0%' : `${together.pct}%`}
+            value={together.pct === null ? '-' : `${together.pct}%`}
             label={t('settings.group_rate')}
             hint={`${together.done} / ${together.counted}`}
           />
@@ -82,8 +85,10 @@ export default function Settings() {
                       <span className="text-muted"> · {t('board.you')}</span>
                     )}
                   </span>
+                  {/* '-', not '0/0'. "0 of 0" reads as attempted-and-failed
+                      rather than as nobody having had a cycle yet. */}
                   <span className="text-small text-muted">
-                    {r.total ? `${r.done}/${r.total}` : '0/0'}
+                    {r.total ? `${r.done}/${r.total}` : '-'}
                   </span>
                 </div>
                 <div className="mt-4 pl-[3.5rem]">

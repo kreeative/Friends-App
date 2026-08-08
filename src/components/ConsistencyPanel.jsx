@@ -45,8 +45,12 @@ export default function ConsistencyPanel({ rate, trend, cycles, goalCount, group
         </div>
 
         <div className="mt-6 flex items-baseline gap-1">
+          {/* '-', not '0'. A blind em-dash removal pass turned the original
+              "no data yet" glyph into a literal zero, which reads as a
+              measured 0% rather than as "nothing recorded", exactly wrong for
+              someone who has not had a cycle yet. */}
           <span className="text-[3.5rem] font-bold leading-none tracking-[-0.03em] [font-variant-numeric:tabular-nums]">
-            {rate.pct !== null ? rate.pct : '0'}
+            {rate.pct !== null ? rate.pct : '-'}
           </span>
           {/* The unit picked out in colour, as in the reference. It is a glyph
               rather than a label, so the hue carries no meaning on its own. */}
