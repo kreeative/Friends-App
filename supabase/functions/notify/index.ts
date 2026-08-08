@@ -112,8 +112,8 @@ async function sendDigests() {
       /**
        * The trigger goes in the email.
        *
-       * The app has no idea where anyone is and is never going to have one , 
-       * so the "when and where" on a goal is a sentence you wrote to
+       * The app has no idea where anyone is and is never going to have one.
+       * So the "when and where" on a goal is a sentence you wrote to
        * yourself, and the only way it can do any work is for something to
        * read it back to you shortly before the moment it describes. This
        * message is that something. Without it the field was a note nobody
