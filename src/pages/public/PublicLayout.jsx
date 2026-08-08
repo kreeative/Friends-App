@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { LANDING } from '../../content/landing'
 import { useT } from '../../lib/i18n'
-import { Mark } from '../../components/Wordmark'
+import { LockupInline } from '../../components/Wordmark'
 import Footer from '../../components/Footer'
 import Stickers from '../../components/Stickers'
 import PageTransition from '../../components/PageTransition'
@@ -46,7 +46,7 @@ export default function PublicLayout() {
           <nav className="glass-strong mx-auto w-full max-w-5xl rounded-card px-4 py-2.5">
             <div className="flex items-center justify-between gap-4">
               <Link to="/" aria-label={c.home}>
-                <Mark size={42} />
+                <LockupInline size={38} />
               </Link>
 
               <div className="hidden items-center gap-7 sm:flex">

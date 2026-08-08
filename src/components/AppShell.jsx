@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import { useGroup } from '../context/GroupContext'
 import { useT } from '../lib/i18n'
 import { Avatar } from './ui'
-import { Mark } from './Wordmark'
+import { LockupInline } from './Wordmark'
 import Stickers from './Stickers'
 import PageTransition from './PageTransition'
 import { Slider, useSlider } from './Segmented'
@@ -94,7 +94,7 @@ function TopNav() {
       <nav className="lg lg-chrome mx-auto w-full max-w-content">
         <div className="flex items-center gap-2.5 px-3 py-2.5">
           <Link to="/" aria-label={t('nav.home')} className="press shrink-0">
-            <Mark size={32} />
+            <LockupInline size={32} hideNameOnMobile />
           </Link>
 
           {/* Inside a group the bar says which one, and the name is the way

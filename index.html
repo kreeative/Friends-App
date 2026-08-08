@@ -72,8 +72,24 @@
         d.setAttribute('data-theme', theme)
       })()
     </script>
+    <!--
+      Four declarations, because the tab and the home screen want different
+      things and only one of them was being answered.
+
+      /favicon.ico comes first. There was only a 192px PNG here, and a great
+      many browsers still request /favicon.ico by path before they look at any
+      link tag at all. That 404'd, so the tab fell back to a blank sheet. The
+      .ico carries 16 through 64 in one file.
+
+      The small sizes use a tighter crop of the same artwork. The wordmark is
+      four lines of lettering inside a generous margin: at 512 that margin is
+      the design, at 16 it is most of the icon and the words are a smudge.
+      Trimming the ground gives the lettering the whole square.
+    -->
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/icon-32.png" />
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <!--
       No font link. Nunito is self-hosted and declared in src/index.css, so

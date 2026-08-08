@@ -58,6 +58,39 @@ export function Mark({ size = 44, className = '', variant }) {
 }
 
 /**
+ * The name, written out, in a navigation bar.
+ *
+ * Both headers showed the ampersand monogram, which is a square tile with no
+ * words in it, so nothing anywhere on the site actually said what the site was
+ * called. The obvious fix does not work: the wordmark artwork is four lines of
+ * lettering in a square, readable from about 90px up, and a navigation bar is
+ * 32 to 44 high. Dropping it in gives an unreadable smudge and a very tall bar.
+ *
+ * So the lockup goes horizontal. The tile keeps its job as the mark, and the
+ * name is set beside it in the site's own type, which reads at any bar height
+ * and stays legible when the bar is glass over a photograph.
+ *
+ * The name can be dropped below the smallest breakpoint on the app side, where
+ * the bar also has to hold a group name and a menu. The tile carries it there,
+ * and the accessible name comes from the link's aria-label either way.
+ */
+export function LockupInline({ size = 32, className = '', hideNameOnMobile = false }) {
+  return (
+    <span className={`inline-flex items-center gap-2.5 ${className}`}>
+      <Mark size={size} />
+      <span
+        className={`whitespace-nowrap font-bold tracking-[-0.02em] text-ink ${
+          hideNameOnMobile ? 'hidden sm:inline' : ''
+        }`}
+        style={{ fontSize: Math.round(size * 0.5) }}
+      >
+        {APP_NAME}
+      </span>
+    </span>
+  )
+}
+
+/**
  * Kept as a name because several screens ask for "the logo, handled", but
  * there is nothing left to handle now that the artwork brings its own
  * ground, so it is simply the wordmark.
