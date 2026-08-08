@@ -1,4 +1,4 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes, useParams } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { GroupProvider, useGroup } from './context/GroupContext'
 import { I18nProvider, useT } from './lib/i18n'
@@ -24,6 +24,12 @@ import Books from './pages/public/Books'
 import Preview from './pages/public/Preview'
 import Library from './pages/Library'
 import Reader from './pages/Reader'
+
+/** /lectures/:slug is the same page as /library/:slug, spelled in French. */
+function LecturesRedirect() {
+  const { slug } = useParams()
+  return <Navigate to={`/library/${slug}`} replace />
+}
 
 function Splash({ children }) {
   return (
@@ -61,8 +67,21 @@ const PUBLIC_ROUTES = (
     <Route path="how-it-works" element={<How />} />
     <Route path="about" element={<About />} />
     <Route path="books" element={<Books />} />
-    {/* The free chapter, readable with no account and no database. */}
+    {/**
+     * The free chapter, readable with no account and no database.
+     *
+     * Three paths reach it, because three exist in the wild. /books/:slug is
+     * the canonical one. /library/:slug is what the signed-in app links to,
+     * and a signed-out visitor following that link -- from a shared message,
+     * a bookmark, a search result -- was being bounced to the home page
+     * instead of getting the chapter they were sent to read. /lectures is the
+     * French word in the navigation, which people type.
+     */}
     <Route path="books/:slug" element={<Preview />} />
+    <Route path="library/:slug" element={<Preview />} />
+    <Route path="lectures/:slug" element={<Preview />} />
+    <Route path="lectures" element={<Books />} />
+    <Route path="library" element={<Books />} />
     <Route path="*" element={<Navigate to="/" replace />} />
   </Route>
 )
@@ -126,6 +145,10 @@ function Gate() {
         <Route path="me" element={<Me />} />
         <Route path="library" element={<Library />} />
         <Route path="library/:slug" element={<Reader />} />
+        {/* The navigation calls this "Lectures" in French, so people type it.
+            Aliased rather than duplicated: one Library, two spellings. */}
+        <Route path="lectures" element={<Navigate to="/library" replace />} />
+        <Route path="lectures/:slug" element={<LecturesRedirect />} />
 
         {/**
          * Goals with no group at all. The app assumed a group was the only

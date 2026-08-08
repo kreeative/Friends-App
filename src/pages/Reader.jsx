@@ -92,10 +92,26 @@ export default function Reader() {
   const { group } = useGroup()
   const { t } = useT()
 
-  const [book, setBook] = useState(null)
-  const [chapters, setChapters] = useState([])
-  const [current, setCurrent] = useState(null)
-  const [loading, setLoading] = useState(true)
+  /**
+   * Seeded from the bundle, then corrected by the database.
+   *
+   * Nothing waits on the network to paint the free chapter. The previous
+   * version queried first and fell back on failure, which is fine when a
+   * request fails and useless when it hangs -- an unreachable or very slow
+   * host does not reject, it simply does not answer, and the page sat on
+   * "Loading" for ten seconds before showing anything. Measured.
+   *
+   * Seeding also means "Book not found" can no longer appear for any of the
+   * three books, in any auth state, with or without a row in the database.
+   */
+  const seed = useState(() => localBook(slug))[0]
+
+  const [book, setBook] = useState(seed?.book ?? null)
+  const [chapters, setChapters] = useState(seed?.chapters ?? [])
+  const [current, setCurrent] = useState(
+    seed ? { ...seed.chapters[0], body: localChapterBody(slug, 1) ?? '' } : null,
+  )
+  const [loading, setLoading] = useState(!seed)
   const [error, setError] = useState(null)
   const [size, setSize] = useState(1)
   const [drawer, setDrawer] = useState(false)
@@ -108,7 +124,10 @@ export default function Reader() {
   useEffect(() => {
     let cancelled = false
     ;(async () => {
-      setLoading(true)
+      /* Only when there is nothing to show yet. Setting it unconditionally
+         put the spinner back over a chapter that was already rendered from
+         the bundle, which is the whole thing this seeding exists to avoid. */
+      if (!seed) setLoading(true)
       try {
         /**
          * The database first, the bundle second.
@@ -126,16 +145,12 @@ export default function Reader() {
           .maybeSingle()
         if (cancelled) return
 
+        /* No row. If this slug is one of the bundled three the seed is
+           already on screen and there is nothing to do; if it is not, the
+           book genuinely does not exist. */
         if (bookErr || !b) {
-          const local = localBook(slug)
-          if (!local) throw new Error('Book not found')
-
-          setBook(local.book)
-          setChapters(local.chapters)
-          setNotes([])
-          setCurrent({ ...local.chapters[0], body: localChapterBody(slug, 1) ?? '' })
-          setError(null)
-          return
+          if (seed) return
+          throw new Error('Book not found')
         }
 
         setBook(b)
@@ -161,13 +176,12 @@ export default function Reader() {
         /* The book exists but has no chapters, which is 07 run without 08,
            or 11 not run at all. The free chapter is in the bundle either way,
            so show it rather than an error page nobody can act on from here. */
+        /* 07 run without 08, or 11 not run at all. The seeded chapter is
+           already showing, so leave it there rather than replacing a readable
+           page with an error nobody can act on from here. */
         if (chs.length === 0) {
-          const local = localBook(slug)
-          if (!local) throw new Error('NO_CHAPTERS')
-          setChapters(local.chapters)
-          setCurrent({ ...local.chapters[0], body: localChapterBody(slug, 1) ?? '' })
-          setError(null)
-          return
+          if (seed) return
+          throw new Error('NO_CHAPTERS')
         }
 
         const { data: prog } = await supabase
@@ -195,7 +209,7 @@ export default function Reader() {
     return () => {
       cancelled = true
     }
-  }, [slug])
+  }, [slug, seed])
 
   /**
    * One chapter per request, always. Nothing here decides whether it may be
