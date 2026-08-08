@@ -113,6 +113,8 @@ export default function Reader() {
   )
   const [loading, setLoading] = useState(!seed)
   const [error, setError] = useState(null)
+  const [buying, setBuying] = useState(false)
+  const [buyError, setBuyError] = useState(null)
   const [size, setSize] = useState(1)
   const [drawer, setDrawer] = useState(false)
   const [notes, setNotes] = useState([])
@@ -387,9 +389,31 @@ export default function Reader() {
             {book.local ? (
               <p className="mt-6 text-small text-muted">{t('reader.local_only')}</p>
             ) : (
-              <button onClick={() => startCheckout(book.id)} className="btn-primary press mt-6">
-                {t('reader.unlock')}
-              </button>
+              <>
+                {/**
+                 * The result is read now.
+                 *
+                 * startCheckout returns { error } and this button threw it
+                 * away, so a checkout that failed did nothing at all: no
+                 * redirect, no message, a button that looked broken. On
+                 * success the browser has already left for Stripe, so there
+                 * is nothing to clear.
+                 */}
+                <button
+                  onClick={async () => {
+                    setBuying(true)
+                    setBuyError(null)
+                    const { error: err } = await startCheckout(book.id)
+                    if (err) setBuyError(err)
+                    setBuying(false)
+                  }}
+                  disabled={buying}
+                  className="btn-primary press mt-6 disabled:opacity-60"
+                >
+                  {buying ? t('library.opening') : t('reader.unlock')}
+                </button>
+                {buyError && <p className="mt-4 text-small text-negative">{buyError}</p>}
+              </>
             )}
           </div>
         ) : (

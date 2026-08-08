@@ -133,6 +133,23 @@ export default async function handler(req, res) {
     const slug = body?.slug
     if (!bookId && !slug) return res.status(400).json({ error: 'book_id or slug is required' })
 
+    /**
+     * A bundled book has no row to sell.
+     *
+     * localBooks() hands out ids of the form `local:<slug>` so the free
+     * chapter can render with no database at all. Those are not catalogue
+     * rows, and every surface is supposed to hide Buy when it sees one. If
+     * one arrives here anyway, say so plainly rather than letting it fall
+     * through to a lookup that will miss and report "no such book", which
+     * sends somebody hunting for a missing row that was never meant to exist.
+     */
+    if (typeof bookId === 'string' && bookId.startsWith('local:')) {
+      return res.status(409).json({
+        error:
+          'That is the bundled copy of the book, which has no catalogue row to record a purchase against. The library is being served from the local fallback, which means the catalogue read failed. Run supabase/07_books_all_in_one.sql.',
+      })
+    }
+
     const query = admin
       .from('books')
       .select('id, slug, title, price_cents, currency, published, stripe_ref')
@@ -140,8 +157,32 @@ export default async function handler(req, res) {
       bookId ? query.eq('id', bookId) : query.eq('slug', slug)
     ).maybeSingle()
 
-    if (bookErr || !book || !book.published) {
-      return res.status(404).json({ error: 'No such book' })
+    /**
+     * Three different failures, three different messages.
+     *
+     * These were one branch answering "No such book" to all of them, which is
+     * the least useful sentence available: it is the same words whether the
+     * query itself failed, the row is missing, or the row is there and simply
+     * unpublished. Those have completely different fixes, and the person
+     * reading the message is the one who has to pick.
+     */
+    if (bookErr) {
+      console.error('book lookup failed', bookErr)
+      return res.status(500).json({
+        error: `Could not read the catalogue: ${bookErr.message ?? bookErr.code ?? 'unknown error'}. If it names a missing column, the library migrations are not all in: run supabase/07_books_all_in_one.sql and 10_cad_and_stripe.sql.`,
+      })
+    }
+
+    if (!book) {
+      return res.status(404).json({
+        error: `No book in the catalogue with ${bookId ? `id ${bookId}` : `slug "${slug}"`}.`,
+      })
+    }
+
+    if (!book.published) {
+      return res.status(409).json({
+        error: `"${book.title}" exists but is not published, so it is not for sale. If 15_dedupe_books.sql retired it as a duplicate, re-publish the one you want: update books set published = true where slug = '${book.slug}';`,
+      })
     }
 
     // Already owned. Sending them to Stripe would charge twice for nothing.

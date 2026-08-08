@@ -86,11 +86,24 @@
       the design, at 16 it is most of the icon and the words are a smudge.
       Trimming the ground gives the lettering the whole square.
     -->
-    <link rel="icon" href="/favicon.ico" sizes="any" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/icon-32.png" />
-    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-    <link rel="manifest" href="/manifest.webmanifest" />
+    <!--
+      ?v=2 on every one of these, and that is the whole reason this changed.
+
+      The artwork was already the full wordmark; the files were correct. But a
+      favicon is the most aggressively cached asset a browser has. Safari in
+      particular keeps one keyed by origin, not by content hash, and will keep
+      showing a stale icon across hard reloads and even app restarts. A new
+      path is the only thing it reliably notices, so the version string is
+      doing real work rather than being decoration.
+
+      Bump it again if the artwork ever changes.
+    -->
+    <link rel="icon" href="/favicon.ico?v=2" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/icon-32.png?v=2" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png?v=2" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png?v=2" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=2" />
+    <link rel="manifest" href="/manifest.webmanifest?v=2" />
     <!--
       No font link. Nunito is self-hosted and declared in src/index.css, so
       there is no third-party connection on the critical path and nothing to

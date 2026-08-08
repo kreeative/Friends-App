@@ -245,6 +245,42 @@
     background: transparent;
   }
 
+  /**
+   * Strip the native control chrome.
+   *
+   * This is what was drawing a second line under the goal form's inputs. The
+   * reset above only took the font, colour and background; it left
+   * -webkit-appearance alone, so iOS Safari kept painting its own inset
+   * border and corner radius underneath. Against `.field`, which is a single
+   * bottom rule by design, that reads as a doubled edge, and it is worst on
+   * date and number inputs where the native styling is heaviest.
+   *
+   * Checkboxes and radios are excluded deliberately. They have no useful
+   * appearance of their own once this is removed, and the mood sharing
+   * control relies on accent-color styling the real widget.
+   */
+  input:not([type='checkbox']):not([type='radio']),
+  textarea,
+  select {
+    -webkit-appearance: none;
+    appearance: none;
+    border-radius: 0;
+  }
+
+  /* Safari also insets its own clear/spin affordances on these two, which
+     land on top of the underline at small widths. */
+  input[type='number'] {
+    -moz-appearance: textfield;
+  }
+  input[type='number']::-webkit-outer-spin-button,
+  input[type='number']::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type='date']::-webkit-date-and-time-value {
+    text-align: left;
+  }
+
   input:focus,
   textarea:focus,
   select:focus {

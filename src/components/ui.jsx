@@ -52,15 +52,30 @@ export function Empty({ children, action }) {
 }
 
 /** A number and its name. No box, the scale does the work. */
+/**
+ * One number, its name, and an optional gloss.
+ *
+ * There used to be a short accent rule between the number and its label. The
+ * intent was to get the brand colour in somewhere that yellow could survive,
+ * since yellow cannot be type at 1.4:1 on white. The effect was a small bar
+ * of fixed width sitting under every metric, which reads as a progress bar
+ * pinned at the same fill no matter what the number says. A bar that never
+ * moves is worse than no bar: it invites you to compare lengths that carry no
+ * information.
+ *
+ * The label and the hint were also the same size and nearly the same colour,
+ * stacked with no room between them, so a two-line label ran into the hint
+ * under it. They are now separated by weight and space rather than by a
+ * hairline of opacity.
+ */
 export function Stat({ value, label, hint }) {
   return (
-    <div className="flex-1">
-      {/* Yellow cannot be type (1.4:1 on white) so the metric stays ink and
-          the yellow arrives as a rule underneath it. */}
-      <div className="font-display text-metric text-ink">{value}</div>
-      <div className="mt-2 h-1 w-10 rounded-pill bg-accent" />
-      <div className="mt-2 text-small text-muted">{label}</div>
-      {hint && <div className="text-small text-muted/70">{hint}</div>}
+    <div className="min-w-0 flex-1">
+      <div className="font-display text-metric leading-none text-ink [font-variant-numeric:tabular-nums]">
+        {value}
+      </div>
+      <div className="mt-3 text-small font-bold leading-snug text-ink">{label}</div>
+      {hint && <div className="mt-1 text-small leading-snug text-muted">{hint}</div>}
     </div>
   )
 }
