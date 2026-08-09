@@ -24,9 +24,20 @@
 
         <tr>
           <td style="padding:0 24px 32px;">
-            <img src="https://richandfriends.xyz/brand/wordmark.png"
-                 alt="Rich &amp; Friends" width="180"
-                 style="display:block;width:180px;max-width:60%;height:auto;border:0;" />
+            <!--
+              Absolute URL, never a relative path: an inbox has no idea what
+              site this came from. The file must be one that actually exists
+              under public/brand. This previously read "wordmark.png", which
+              is not one of them, so the logo arrived broken.
+
+              The mark is a 600x600 square with a solid ground, so it is sized
+              square here and given the same corner radius the reminder email
+              uses. Width is set as an attribute as well as in the style,
+              because Outlook reads the attribute and ignores the CSS.
+            -->
+            <img src="https://richandfriends.xyz/brand/wordmark-pink.png"
+                 alt="Rich &amp; Friends" width="112" height="112"
+                 style="display:block;width:112px;height:112px;border:0;border-radius:14px;" />
           </td>
         </tr>
 
