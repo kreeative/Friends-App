@@ -43,6 +43,70 @@ function ArtRow() {
   )
 }
 
+/**
+ * Six boxes, one input.
+ *
+ * The tempting build is six separate inputs with focus-hopping between them.
+ * It looks the same and behaves badly: paste puts all six digits in the first
+ * box, iOS will not offer the code from the notification because there is no
+ * single field to fill, backspace at the start of a box does nothing, and
+ * every browser autofill path has to be re-implemented by hand.
+ *
+ * So there is exactly one real input, stretched invisibly across the whole
+ * row, and the boxes underneath are decoration that reads its value. Paste,
+ * autofill, the one-time-code keyboard hint and backspace all keep working
+ * because they are talking to an ordinary text input. The caret is hidden and
+ * drawn instead as a pulsing box outline, so the row still shows where you
+ * are without a text cursor sitting in the middle of a rectangle.
+ */
+function CodeBoxes({ value, onChange, label, length = 6 }) {
+  const [focused, setFocused] = useState(false)
+  const cells = Array.from({ length })
+  // The cell the next digit lands in, clamped so a full code keeps the last
+  // box lit rather than pointing past the end of the row.
+  const active = Math.min(value.length, length - 1)
+
+  return (
+    <div className="relative">
+      <div className="flex gap-2" aria-hidden="true">
+        {cells.map((_, i) => {
+          const filled = i < value.length
+          const here = focused && i === active
+          return (
+            <div
+              key={i}
+              className={`flex h-16 flex-1 items-center justify-center rounded-inner border-2 bg-surface font-display text-h1 leading-none text-ink transition-colors duration-150 [font-variant-numeric:tabular-nums] ${
+                here ? 'border-accent' : filled ? 'border-ink/25' : 'border-ink/10'
+              }`}
+            >
+              {value[i] ?? ''}
+            </div>
+          )
+        })}
+      </div>
+
+      <input
+        type="text"
+        required
+        inputMode="numeric"
+        autoComplete="one-time-code"
+        pattern="[0-9]*"
+        autoFocus
+        aria-label={label}
+        value={value}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        /* No maxLength. The browser applies it to a paste before React sees
+           the value, so pasting "Code: 418205" out of a mail app clipped to
+           six characters and the digit filter then left nothing at all.
+           Filtering the whole pasted string and slicing after makes it work. */
+        onChange={(e) => onChange(e.target.value.replace(/\D/g, '').slice(0, length))}
+        className="absolute inset-0 h-full w-full cursor-pointer rounded-inner border-0 bg-transparent p-0 text-transparent caret-transparent outline-none focus:ring-0"
+      />
+    </div>
+  )
+}
+
 export default function SignIn() {
   const { signInWithGoogle, signInWithEmail, verifyEmailCode, authError, clearAuthError } = useAuth()
   const { t } = useT()
@@ -113,33 +177,7 @@ export default function SignIn() {
               <p className="text-body text-muted">{t('signin.code_sent', { email })}</p>
 
               <Field label={t('signin.code')}>
-                {/*
-                  inputMode numeric puts the digit pad up on a phone without
-                  type="number", which would bring spinners and strip a
-                  leading zero. autoComplete one-time-code is what lets iOS
-                  offer the code straight from the notification, which is the
-                  single biggest thing that makes this flow feel quick.
-
-                  Deliberately no maxLength. The browser applies it to a paste
-                  before React sees the value, so pasting "Code: 418205" out
-                  of a mail app would clip to the first six characters and the
-                  digit filter below would then leave nothing at all. Letting
-                  the filter run on the whole pasted string and slicing after
-                  means that paste yields 418205, which is what was meant.
-                */}
-                <input
-                  type="text"
-                  required
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  pattern="[0-9]*"
-                  autoFocus
-                  className="field text-center text-hero tracking-[0.35em]"
-                  value={code}
-                  onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  placeholder="000000"
-                  aria-label={t('signin.code')}
-                />
+                <CodeBoxes value={code} onChange={setCode} label={t('signin.code')} />
               </Field>
 
               <button className="btn-primary press" disabled={busy !== null || code.length < 6}>
