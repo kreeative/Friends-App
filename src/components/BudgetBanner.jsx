@@ -86,14 +86,13 @@ export default function BudgetBanner() {
         &times;
       </button>
 
-      <div className="flex items-start gap-3 pr-8">
-        <span aria-hidden="true" className="text-h2 leading-none">
-          💰
-        </span>
-        <div className="min-w-0">
-          <div className="text-body font-bold text-ink">{t('banner.budget_title')}</div>
-          <p className="mt-1 text-small leading-snug text-muted">{t('banner.budget_sub')}</p>
-        </div>
+      {/* No icon. An emoji renders as a different picture on every platform
+          and at a different weight from the type beside it, so it was the one
+          thing in the card that did not look drawn by the same hand. The
+          gradient and the border already say "this is new". */}
+      <div className="pr-8">
+        <div className="text-body font-bold text-ink">{t('banner.budget_title')}</div>
+        <p className="mt-1 text-small leading-snug text-muted">{t('banner.budget_sub')}</p>
       </div>
 
       <Link to="/money" onClick={dismiss} className="btn-primary press mt-4 inline-flex">
