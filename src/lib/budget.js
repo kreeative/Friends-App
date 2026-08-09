@@ -105,7 +105,7 @@ const sum = (rows, pick) => rows.reduce((n, r) => n + (Number(pick(r)) || 0), 0)
  * @param entries budget_entry rows
  * @param today   injected so tests can sit on a specific date
  */
-export function summarise({ plan, fixed = [], entries = [], today = new Date() }) {
+export function summarise({ plan, fixed = [], entries = [], today = new Date(), currency }) {
   const startDay = plan?.period_start_day ?? 1
   const period = periodBounds(today, startDay)
 
@@ -145,7 +145,16 @@ export function summarise({ plan, fixed = [], entries = [], today = new Date() }
   return {
     ready: Boolean(plan) && income > 0,
     period,
-    currency: plan?.currency || 'CAD',
+    /**
+     * The person's currency wins, then whatever the plan happens to say, then
+     * the fallback.
+     *
+     * In that order because the plan's column was never written: it has read
+     * CAD in every account since the feature shipped, so treating it as an
+     * answer would override the real one. It is kept in the chain at all so a
+     * database that was edited by hand is not ignored.
+     */
+    currency: currency || plan?.currency || 'CAD',
 
     income,
     committed,

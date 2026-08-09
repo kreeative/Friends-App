@@ -6,14 +6,15 @@ import { useGroup } from '../context/GroupContext'
 import { completionRate, consecutiveMisses, rollingRate } from '../lib/stats'
 import { dayKey } from '../lib/time'
 import { ACCEPT, isMissingBucket, removeAvatar, uploadAvatar } from '../lib/avatar'
-import { useT } from '../lib/i18n'
+import { CURRENCIES, FALLBACK, currencyName } from '../lib/currency'
+import { localeTag, useT } from '../lib/i18n'
 import { Avatar, Field, Screen, Section, TopBar } from '../components/ui'
 import ConsistencyPanel from '../components/ConsistencyPanel'
 
 export default function Me() {
   const { user, profile, signOut, updateProfile } = useAuth()
   const { statusesFor, myGoals, soloGoals, groups, reloadGroup } = useGroup()
-  const { t } = useT()
+  const { t, locale } = useT()
   const navigate = useNavigate()
   const [busy, setBusy] = useState(false)
 
@@ -146,6 +147,24 @@ export default function Me() {
   }
 
   /**
+   * The currency the budget is counted in.
+   *
+   * Saved straight from the select, because a dropdown has no half-chosen
+   * state to protect anybody from. Nothing is converted: the amounts are the
+   * numbers the person typed, and switching the label from dollars to francs
+   * does not move any money. Anyone who genuinely relocates is retyping their
+   * plan anyway, and an app that silently multiplied their rent by six hundred
+   * because it looked up a rate would be far worse than one that does nothing.
+   */
+  const [currencyError, setCurrencyError] = useState(false)
+
+  async function saveCurrency(code) {
+    setCurrencyError(false)
+    const { error } = (await updateProfile?.({ currency: code })) ?? {}
+    if (error) setCurrencyError(true)
+  }
+
+  /**
    * Play the budget intro again.
    *
    * The flag is the whole mechanism: Money renders the carousel whenever it is
@@ -266,6 +285,24 @@ export default function Me() {
             />
           </Field>
           {birthdayError && <p className="text-small text-negative">{t('me.birthday_failed')}</p>}
+
+          <Field label={t('me.currency')} hint={t('me.currency_hint')}>
+            {/* The code and the name together. "XOF" alone is a lookup, and
+                "franc CFA (BCEAO)" alone does not tell somebody scanning for
+                the three letters their bank app shows them. */}
+            <select
+              className="field"
+              value={profile?.currency ?? FALLBACK}
+              onChange={(e) => saveCurrency(e.target.value)}
+            >
+              {CURRENCIES.map((code) => (
+                <option key={code} value={code}>
+                  {`${code} · ${currencyName(code, localeTag(locale))}`}
+                </option>
+              ))}
+            </select>
+          </Field>
+          {currencyError && <p className="text-small text-negative">{t('me.currency_failed')}</p>}
         </div>
       </Section>
 

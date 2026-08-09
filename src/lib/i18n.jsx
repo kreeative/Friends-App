@@ -225,6 +225,8 @@ const STRINGS = {
     'money.cancel': 'Cancel',
     'money.save': 'Save',
     'money.saving': 'Saving',
+    'money.draft_restored': 'Picked up where you left off. Nothing is saved until you save it.',
+    'money.draft_discard': 'Start over',
 
     'start.new_group': 'New group',
     'start.join_one': 'Join one',
@@ -331,6 +333,11 @@ const STRINGS = {
       'Your groups see the day, never the year. Leave it empty and nothing is ever shown.',
     'me.birthday_failed':
       'That did not save. Birthdays need the database: run supabase/20_quiet_and_birthdays.sql in Supabase.',
+    'me.currency': 'Currency',
+    'me.currency_hint':
+      'What your budget is counted in. Changing it relabels your amounts, it does not convert them.',
+    'me.currency_failed':
+      'That did not save. Currencies need the database: run supabase/22_profile_currency.sql in Supabase.',
 
     'settings.leaving': 'Leaving',
     'settings.leave_not_installed':
@@ -711,6 +718,8 @@ const STRINGS = {
     'money.cancel': 'Annuler',
     'money.save': 'Enregistrer',
     'money.saving': 'Enregistrement',
+    'money.draft_restored': 'On reprend où tu t’étais arrêté. Rien n’est enregistré tant que tu ne le fais pas.',
+    'money.draft_discard': 'Recommencer',
 
     'start.new_group': 'Nouveau groupe',
     'start.join_one': 'Rejoindre',
@@ -819,6 +828,11 @@ const STRINGS = {
       'Tes groupes voient le jour, jamais l’année. Laisse vide et rien n’est jamais affiché.',
     'me.birthday_failed':
       'Ça n’a pas été enregistré. Les anniversaires ont besoin de la base : exécute supabase/20_quiet_and_birthdays.sql dans Supabase.',
+    'me.currency': 'Devise',
+    'me.currency_hint':
+      'La devise de ton budget. La changer réétiquette tes montants, elle ne les convertit pas.',
+    'me.currency_failed':
+      'Ça n’a pas été enregistré. Les devises ont besoin de la base : exécute supabase/22_profile_currency.sql dans Supabase.',
 
     'settings.leaving': 'Quitter',
     'settings.leave_not_installed':

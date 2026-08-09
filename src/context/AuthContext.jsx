@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { localTimezone } from '../lib/time'
+import { detectCurrency } from '../lib/currency'
 
 /* Exported so a test or a preview can supply a value without a live session.
    Application code should use the hook. */
@@ -104,6 +105,33 @@ export function AuthProvider({ children }) {
         const tz = localTimezone()
         if (data && data.timezone !== tz) {
           await supabase.from('profiles').update({ timezone: tz }).eq('id', session.user.id)
+        }
+
+        /**
+         * A currency, once, and then never again.
+         *
+         * Deliberately not kept fresh the way the timezone above is. A
+         * timezone is a fact about where the phone is right now and should
+         * follow it; a currency is a decision, and re-detecting it on every
+         * sign-in would silently overwrite the setting of anybody who travels
+         * or whose browser reports a language they do not budget in.
+         *
+         * So it is written exactly when the column is still null, which is
+         * what migration 22 leaves it as and what the picker can never set it
+         * back to. Failure is silent: the app reads null as the fallback, and
+         * the next sign-in tries again.
+         */
+        if (data && !data.currency) {
+          const guess = detectCurrency(
+            navigator.languages ?? [navigator.language].filter(Boolean),
+          )
+          const { data: updated } = await supabase
+            .from('profiles')
+            .update({ currency: guess })
+            .eq('id', session.user.id)
+            .select()
+            .maybeSingle()
+          if (updated && !cancelled) setProfile(updated)
         }
       } catch {
         /* the profile is cosmetic here; the session is what gates the app */
