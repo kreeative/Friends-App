@@ -746,6 +746,20 @@
     @apply rounded-card bg-surface p-6 shadow-raised;
   }
 
+  /**
+   * A card carrying a finding the reader will not enjoy.
+   *
+   * Used by the money screen when a plan does not close: fixed costs plus
+   * savings exceed income, so there is no daily allowance to show. It leans on
+   * the yellow field rather than the accent, because the accent is the colour
+   * of things you are invited to tap and this is not an invitation. The left
+   * rule carries the emphasis so the message is not hue-only, which matters
+   * both for contrast and for anyone who cannot separate the two.
+   */
+  .card-warn {
+    @apply rounded-card border-l-4 border-field bg-field/15 p-6;
+  }
+
   /* --- chips ------------------------------------------------------------ */
   /**
    * How colour reaches the screen. A filled pill with black text on it is the

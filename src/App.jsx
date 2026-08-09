@@ -14,6 +14,7 @@ import Checkin from './pages/Checkin'
 import Goals from './pages/Goals'
 import GoalEditor from './pages/GoalEditor'
 import Me from './pages/Me'
+import Money from './pages/Money'
 import Settings from './pages/Settings'
 import Legal from './pages/Legal'
 import PublicLayout from './pages/public/PublicLayout'
@@ -143,6 +144,7 @@ function Gate() {
         <Route index element={memberships.length === 0 ? <Start /> : <Dashboard />} />
         <Route path="start" element={<Start />} />
         <Route path="me" element={<Me />} />
+        <Route path="money" element={<Money />} />
         <Route path="library" element={<Library />} />
         <Route path="library/:slug" element={<Reader />} />
 

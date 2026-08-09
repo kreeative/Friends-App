@@ -68,7 +68,14 @@ export function AuthProvider({ children }) {
          * error about a migration they have never heard of, and the next
          * sign-in tries again.
          */
-        supabase.rpc('claim_entitlements').catch(() => {})
+        /* Promise.resolve first. supabase.rpc() hands back a PostgrestBuilder,
+           which is a thenable rather than a Promise: it implements then and
+           nothing else. Calling .catch on it directly threw TypeError inside
+           this listener on every single sign-in, before the request was ever
+           sent, so the silent-failure path above was not silent and the claim
+           never actually ran. Promise.resolve adopts the thenable and gives a
+           real Promise with a real .catch. */
+        Promise.resolve(supabase.rpc('claim_entitlements')).catch(() => {})
       }
     })
     return () => {

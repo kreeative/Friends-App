@@ -10,6 +10,7 @@ import { useT } from '../lib/i18n'
 import { Screen, Section, TopBar } from '../components/ui'
 import ConsistencyPanel from '../components/ConsistencyPanel'
 import MoodToday from '../components/MoodToday'
+import BudgetToday from '../components/BudgetToday'
 import { stickerFor } from '../lib/art'
 
 /**
@@ -237,6 +238,11 @@ export default function Dashboard() {
       <Section title={t('mood.question')}>
         <MoodToday groupCount={memberships.length} />
       </Section>
+
+      {/* Renders its own Section, so it vanishes heading and all when there is
+          no plan yet or the migration has not been run. Placed above groups
+          because it is about today and the group list is about other people. */}
+      <BudgetToday />
 
       <Section title={t('home.your_groups')} action={
         memberships.length > 0 && (
