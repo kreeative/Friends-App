@@ -113,12 +113,7 @@ function TopNav() {
         <div className="px-3 py-2.5">
           <div className="flex items-center gap-2.5">
             <Link to="/" aria-label={t('nav.home')} className="press shrink-0">
-              {/* The name is dropped on a narrow screen only when a group name
-                  is also competing for the row. Outside a group there is
-                  nothing else in the bar, and hiding it left a phone with a
-                  small tile at one end, a face at the other and a hand's width
-                  of nothing in between. */}
-              <LockupInline size={32} hideNameOnMobile={Boolean(activeId && group)} />
+              <LockupInline size={36} />
             </Link>
 
             {/* Inside a group the bar says which one, and the name is the way

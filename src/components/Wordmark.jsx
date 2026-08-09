@@ -67,54 +67,21 @@ export function Mark({ size = 44, className = '', variant }) {
 }
 
 /**
- * The name, written out, in a navigation bar.
+ * The bar logo: the wordmark tile, and nothing beside it.
  *
- * Both headers showed the ampersand monogram, which is a square tile with no
- * words in it, so nothing anywhere on the site actually said what the site was
- * called. The obvious fix does not work: the wordmark artwork is four lines of
- * lettering in a square, readable from about 90px up, and a navigation bar is
- * 32 to 44 high. Dropping it in gives an unreadable smudge and a very tall bar.
+ * This was a horizontal lockup, the tile plus the name set in type. That
+ * arrangement made sense while the tile was the ampersand monogram, which has
+ * no words in it, so without the type nothing anywhere said what the site was
+ * called. Once the tile became the wordmark the type was the name printed
+ * twice in the same 200 pixels, which is what "the logo already says Rich &
+ * Friends" means, and it is right.
  *
- * So the lockup goes horizontal. The tile keeps its job as the mark, and the
- * name is set beside it in the site's own type, which reads at any bar height
- * and stays legible when the bar is glass over a photograph.
- *
- * The name can be dropped below the smallest breakpoint on the app side, where
- * the bar also has to hold a group name and a menu. The tile carries it there,
- * and the accessible name comes from the link's aria-label either way.
+ * A little larger than the lockup's tile was, because it is carrying the job
+ * alone now, and the accessible name comes from the aria-label on the link
+ * that wraps it in both headers.
  */
-export function LockupInline({ size = 32, className = '', hideNameOnMobile = false }) {
-  return (
-    /**
-     * The tile is the wordmark artwork, not the ampersand monogram.
-     *
-     * The monogram was here because the wordmark is four lines of lettering in
-     * a square and does not resolve at bar height. That argument was about
-     * legibility, and it was answering a question nobody asks of a logo in a
-     * navigation bar: the name is set beside it in type, so the tile does not
-     * have to be readable, it has to be recognisable. The wordmark is what is
-     * on the app icon, the share card and the sign-in screen, and having the
-     * one place people look at every day show something else meant the brand
-     * had two marks and no logo.
-     *
-     * `leading-none` on the name is the alignment fix. Inherited line height
-     * gives a 16px name a 26px line box, and centring a 26px box against a
-     * 32px tile centres the box rather than the letters, so the word sat low
-     * against the mark and the pair read as slightly tipped over. Collapsing
-     * the box to the glyphs means what gets centred is what you can see.
-     */
-    <span className={`inline-flex items-center gap-2.5 ${className}`}>
-      <Wordmark size={size} />
-      <span
-        className={`whitespace-nowrap font-bold leading-none tracking-[-0.02em] text-ink ${
-          hideNameOnMobile ? 'hidden sm:inline' : ''
-        }`}
-        style={{ fontSize: Math.round(size * 0.46) }}
-      >
-        {APP_NAME}
-      </span>
-    </span>
-  )
+export function LockupInline({ size = 38, className = '' }) {
+  return <Wordmark size={size} className={className} />
 }
 
 /**
