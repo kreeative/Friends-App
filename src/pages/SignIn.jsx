@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { Field } from '../components/ui'
 import ErrorNote from '../components/ErrorNote'
@@ -115,6 +115,25 @@ export default function SignIn() {
   const [sent, setSent] = useState(false)
   const [showEmail, setShowEmail] = useState(false)
   const [busy, setBusy] = useState(null) // 'google' | 'email' | 'code' | null
+  const [codeError, setCodeError] = useState(false)
+  const [cooldown, setCooldown] = useState(0)
+
+  /**
+   * The resend cooldown.
+   *
+   * Thirty seconds, counted down in state rather than by comparing timestamps
+   * on render, because the button has to relabel itself every second anyway.
+   * Cleared on unmount so a signed-in user does not leave an interval running.
+   *
+   * It is not only politeness: Supabase rate-limits the send endpoint, and a
+   * button somebody can hit five times in five seconds spends that budget and
+   * then starts failing for reasons nobody can see.
+   */
+  useEffect(() => {
+    if (cooldown <= 0) return
+    const id = setInterval(() => setCooldown((n) => (n <= 1 ? 0 : n - 1)), 1000)
+    return () => clearInterval(id)
+  }, [cooldown])
 
   async function google() {
     clearAuthError()
@@ -130,7 +149,29 @@ export default function SignIn() {
     setBusy('email')
     const { error } = await signInWithEmail(email.trim())
     setBusy(null)
-    if (!error) setSent(true)
+    if (!error) {
+      setSent(true)
+      setCooldown(30)
+    }
+  }
+
+  /**
+   * A second code for the same address.
+   *
+   * Sending a new one invalidates the old, so the boxes are emptied at the
+   * same time: leaving the previous digits sitting there invites somebody to
+   * submit a code that is already dead and read the resulting error as the
+   * app being broken.
+   */
+  async function resend() {
+    if (cooldown > 0 || busy) return
+    clearAuthError()
+    setCodeError(false)
+    setCode('')
+    setBusy('email')
+    const { error } = await signInWithEmail(email.trim())
+    setBusy(null)
+    if (!error) setCooldown(30)
   }
 
   /**
@@ -146,6 +187,13 @@ export default function SignIn() {
     if (error) {
       setBusy(null)
       setCode('')
+      /* One message, ours, rather than the provider's. Supabase says "Token
+         has expired or is invalid", which names an implementation detail and
+         reads as a fault. The reply that matters is the same either way: that
+         code will not work, get another. clearAuthError so the generic
+         ErrorNote does not also print the raw string underneath. */
+      clearAuthError()
+      setCodeError(true)
     }
   }
 
@@ -154,8 +202,10 @@ export default function SignIn() {
   // code that can no longer work.
   function startOver() {
     clearAuthError()
+    setCodeError(false)
     setSent(false)
     setCode('')
+    setCooldown(0)
   }
 
   return (
@@ -177,11 +227,33 @@ export default function SignIn() {
               <p className="text-body text-muted">{t('signin.code_sent', { email })}</p>
 
               <Field label={t('signin.code')}>
-                <CodeBoxes value={code} onChange={setCode} label={t('signin.code')} />
+                <CodeBoxes
+                  value={code}
+                  onChange={(v) => {
+                    if (codeError) setCodeError(false)
+                    setCode(v)
+                  }}
+                  label={t('signin.code')}
+                />
               </Field>
+
+              {codeError && (
+                <p className="field-note !text-negative" role="alert">
+                  {t('signin.code_invalid')}
+                </p>
+              )}
 
               <button className="btn-primary press" disabled={busy !== null || code.length < 6}>
                 {busy === 'code' ? t('signin.verifying') : t('signin.verify')}
+              </button>
+
+              <button
+                type="button"
+                className="btn-ghost press"
+                onClick={resend}
+                disabled={cooldown > 0 || busy !== null}
+              >
+                {cooldown > 0 ? t('signin.resend_in', { s: cooldown }) : t('signin.resend')}
               </button>
 
               <button type="button" className="btn-ghost press" onClick={startOver}>

@@ -117,6 +117,9 @@ const STRINGS = {
     'signin.code_sent': 'We sent a code to {email}. It expires shortly.',
     'signin.verify': 'Sign in',
     'signin.verifying': 'Checking',
+    'signin.code_invalid': 'Invalid or expired code. Please request a new one.',
+    'signin.resend': 'Resend code',
+    'signin.resend_in': 'Resend in {s}s',
     'signin.wrong_email': 'Use a different address',
 
     'intro.skip': 'Skip',
@@ -565,6 +568,9 @@ const STRINGS = {
     'signin.code_sent': 'Code envoyé à {email}. Il expire rapidement.',
     'signin.verify': 'Se connecter',
     'signin.verifying': 'Vérification',
+    'signin.code_invalid': 'Code invalide ou expiré. Demandes-en un nouveau.',
+    'signin.resend': 'Renvoyer le code',
+    'signin.resend_in': 'Renvoyer dans {s} s',
     'signin.wrong_email': 'Utiliser une autre adresse',
 
     'intro.skip': 'Passer',
