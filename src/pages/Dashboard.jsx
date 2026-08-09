@@ -11,6 +11,7 @@ import { Screen, Section, TopBar } from '../components/ui'
 import ConsistencyPanel from '../components/ConsistencyPanel'
 import MoodToday from '../components/MoodToday'
 import BudgetToday from '../components/BudgetToday'
+import BudgetBanner from '../components/BudgetBanner'
 import { stickerFor } from '../lib/art'
 
 /**
@@ -243,6 +244,11 @@ export default function Dashboard() {
           no plan yet or the migration has not been run. Placed above groups
           because it is about today and the group list is about other people. */}
       <BudgetToday />
+
+      {/* Above the groups because it is an announcement, and below the mood
+          and the budget card because those are about today. Removes itself
+          once there is a plan, or once it is dismissed. */}
+      <BudgetBanner />
 
       <Section title={t('home.your_groups')} action={
         memberships.length > 0 && (

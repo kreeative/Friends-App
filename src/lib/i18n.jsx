@@ -144,6 +144,10 @@ const STRINGS = {
     'nav.budget': 'Budget',
     'settings.rewatch_intro': 'Watch the budget intro again',
 
+    'banner.budget_title': 'New: My Budget',
+    'banner.budget_sub': 'Being rich starts with planning it.',
+    'banner.budget_cta': 'Set up budget →',
+    'banner.dismiss': 'Dismiss',
     'money.title': 'Money',
     'money.sub_new': 'Being rich starts with planning it.',
     'money.sub_period': '{days} days left this month',
@@ -588,6 +592,10 @@ const STRINGS = {
     'nav.budget': 'Budget',
     'settings.rewatch_intro': 'Revoir l’intro du budget',
 
+    'banner.budget_title': 'Nouveau : Mon budget',
+    'banner.budget_sub': 'Être riche commence par le planifier.',
+    'banner.budget_cta': 'Configurer mon budget →',
+    'banner.dismiss': 'Fermer',
     'money.title': 'Argent',
     'money.sub_new': 'Être riche commence par le planifier.',
     'money.sub_period': 'Il reste {days} jours dans le mois',

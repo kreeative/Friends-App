@@ -46,19 +46,15 @@ export default function BudgetToday() {
   const s = summarise({ ...state, today: new Date() })
   const fmt = (c) => money(c, s.currency, locale)
 
-  // Nothing set up yet. One quiet invitation, not a dashboard-sized pitch.
-  if (!s.ready) {
-    return (
-      <Section title={t('money.title')}>
-        <Link to="/money" className="block">
-          <p className="lede max-w-[30ch]">{t('money.sub_new')}</p>
-          <span className="mt-3 inline-block text-body font-bold text-ink underline">
-            {t('money.set_up')}
-          </span>
-        </Link>
-      </Section>
-    )
-  }
+  /**
+   * Nothing set up yet, so this renders nothing at all.
+   *
+   * It used to put a heading and a sentence here, which on a feed of real
+   * sections read as a section that had failed to load rather than as an
+   * invitation. Announcing the feature is BudgetBanner's job now, and a
+   * banner can be dismissed, which a heading cannot.
+   */
+  if (!s.ready) return null
 
   return (
     <Section title={t('money.title')}>
