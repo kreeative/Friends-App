@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useT } from '../lib/i18n'
 import { money } from '../lib/money'
 import { CATEGORIES, summarise } from '../lib/budget'
 import { minorDigits } from '../lib/currency'
+import { clearDraft, hasFreshDraft, readDraft, useDraft } from '../lib/draft'
 import { loadBudget } from '../lib/budgetData'
 import { Empty, Field, Screen, Section, TopBar } from '../components/ui'
 import BudgetIntro from '../components/BudgetIntro'
@@ -45,6 +46,9 @@ function toCents(text) {
  * has none, and the zeros are noise in a field somebody has to type into.
  */
 const fromCents = (c, digits = 2) => (c == null ? '' : (c / 100).toFixed(digits))
+
+/* Unsubmitted plan input, per person. See PlanForm and src/lib/draft.js. */
+const DRAFT_KEY = 'rich_friends_budget_draft'
 
 function MoneyInput({ value, onChange, digits = 2, autoFocus = false }) {
   return (
@@ -220,6 +224,25 @@ export default function Money() {
   useEffect(() => {
     load()
   }, [load])
+
+  /**
+   * Come back into the form you were in the middle of.
+   *
+   * A reload lands on the money screen, because that is the route. The draft
+   * survives it either way, but leaving somebody to rediscover their own
+   * numbers by guessing that Edit plan still holds them is most of the problem
+   * left unsolved: they see the screen they had before they started, conclude
+   * the typing is gone, and are right to.
+   *
+   * Only once per mount, and only for a draft from the last day. Cancel and
+   * Save both clear it, so there is no state this can loop on.
+   */
+  const resumed = useRef(false)
+  useEffect(() => {
+    if (resumed.current || loading || missing || !user) return
+    resumed.current = true
+    if (hasFreshDraft(`${DRAFT_KEY}.${user.id}`)) setEditing(true)
+  }, [loading, missing, user?.id])
 
   const s = useMemo(
     () => summarise({ plan, fixed, entries, today: new Date(), currency: profile?.currency }),
@@ -529,30 +552,81 @@ export default function Money() {
 function PlanForm({ plan, fixed, userId, currency, onCancel, onSaved }) {
   const { t } = useT()
   const digits = minorDigits(currency)
-  const [income, setIncome] = useState('')
-  const [savings, setSavings] = useState('')
-  const [rows, setRows] = useState([])
+
+  /**
+   * Keyed by person, not global.
+   *
+   * Two people signing in on one phone is ordinary, and a draft is somebody's
+   * unfinished sentence about their own rent. Restoring one account's numbers
+   * into another account's form would be worse than losing them.
+   */
+  const draftKey = userId ? `${DRAFT_KEY}.${userId}` : null
+
+  /* Read exactly once, at mount, before any effect can run. A lazy initializer
+     rather than an effect, so the seeding effect below sees the decision
+     already made and never gets a frame in which it can overwrite it. */
+  const saved = useState(() => (draftKey ? readDraft(draftKey) : null))[0]
+  const restored = useRef(Boolean(saved))
+
+  const [income, setIncome] = useState(saved?.income ?? '')
+  const [savings, setSavings] = useState(saved?.savings ?? '')
+  const [rows, setRows] = useState(() => (Array.isArray(saved?.rows) ? saved.rows : []))
   const [busy, setBusy] = useState(false)
 
-  // Re-seeded from the saved plan, so a cancelled edit does not persist.
-  useEffect(() => {
-    setIncome(fromCents(plan?.monthly_income_cents, digits) || '')
-    setSavings(fromCents(plan?.savings_target_cents, digits) || '')
-    setRows(
-      (fixed ?? []).map((f) => ({
+  /** The saved plan, in the shape the fields hold it. */
+  const asFields = useCallback(
+    () => ({
+      income: fromCents(plan?.monthly_income_cents, digits) || '',
+      savings: fromCents(plan?.savings_target_cents, digits) || '',
+      rows: (fixed ?? []).map((f) => ({
         id: f.id,
         label: f.label,
         amount: fromCents(f.amount_cents, digits),
         active: f.active !== false,
       })),
-    )
-  }, [plan, fixed, digits])
+    }),
+    [plan, fixed, digits],
+  )
+
+  // Re-seeded from the saved plan, so a cancelled edit does not persist. Not
+  // when a draft was restored: something typed and not yet saved outranks
+  // whatever the server last heard, which is the entire point of the draft.
+  useEffect(() => {
+    if (restored.current) return
+    const next = asFields()
+    setIncome(next.income)
+    setSavings(next.savings)
+    setRows(next.rows)
+  }, [asFields])
+
+  /**
+   * Persist only what differs from the saved plan.
+   *
+   * Comparing against the server's own values rather than tracking a `dirty`
+   * flag through nine change handlers: a flag is a thing to forget to set on
+   * the tenth, and this cannot be forgotten. It also means undoing your own
+   * edits clears the draft, so the form stops offering to restore something
+   * identical to what is already saved.
+   */
+  const current = { income, savings, rows }
+  const dirty = JSON.stringify(current) !== JSON.stringify(asFields())
+  useDraft(draftKey, dirty ? current : null)
+
+  /** Throw the draft away and go back to what the server has. */
+  function discardDraft() {
+    restored.current = false
+    if (draftKey) clearDraft(draftKey)
+    const next = asFields()
+    setIncome(next.income)
+    setSavings(next.savings)
+    setRows(next.rows)
+  }
 
   async function save() {
     if (!userId) return
     setBusy(true)
 
-    await supabase.from('budget_plan').upsert(
+    const { error } = await supabase.from('budget_plan').upsert(
       {
         user_id: userId,
         monthly_income_cents: toCents(income) ?? 0,
@@ -564,6 +638,15 @@ function PlanForm({ plan, fixed, userId, currency, onCancel, onSaved }) {
       },
       { onConflict: 'user_id' },
     )
+
+    /* A failed write must not take the draft with it. This used to ignore the
+       result entirely, which was survivable while nothing depended on it and
+       is not now: clearing the draft after a write that did not land is the
+       one way this feature could itself destroy what it exists to protect. */
+    if (error) {
+      setBusy(false)
+      return
+    }
 
     // Rows the user cleared out are removed rather than left at zero, since
     // the amount column refuses zero and a paused row is what `active` is for.
@@ -584,8 +667,21 @@ function PlanForm({ plan, fixed, userId, currency, onCancel, onSaved }) {
       else await supabase.from('budget_fixed').insert(payload)
     }
 
+    /* Landed. Nothing left to protect, and leaving it would offer the same
+       numbers back as a draft the next time the form opens. */
+    restored.current = false
+    if (draftKey) clearDraft(draftKey)
+
     setBusy(false)
     await onSaved?.()
+  }
+
+  /* Cancel already means "discard what I typed", so it discards the copy of
+     what you typed too. The draft is insurance against the page being taken
+     away, not against your own decision. */
+  function cancel() {
+    if (draftKey) clearDraft(draftKey)
+    onCancel?.()
   }
 
   return (
@@ -593,11 +689,26 @@ function PlanForm({ plan, fixed, userId, currency, onCancel, onSaved }) {
       <TopBar
         title={t('money.plan_title')}
         right={
-          <button className="btn-ghost press" onClick={onCancel}>
+          <button className="btn-ghost press" onClick={cancel}>
             {t('money.cancel')}
           </button>
         }
       />
+
+      {/**
+        * Said out loud, because silently showing numbers other than the ones
+        * on the saved plan is the kind of help that reads as a bug. It also
+        * needs a way out: somebody who wanted to start over should not have to
+        * clear five fields by hand.
+        */}
+      {restored.current && dirty && (
+        <div className="animate-rise mt-4 flex flex-wrap items-center justify-between gap-3 rounded-inner bg-ink/[0.035] p-4">
+          <span className="text-small text-ink">{t('money.draft_restored')}</span>
+          <button onClick={discardDraft} className="goal-action press">
+            {t('money.draft_discard')}
+          </button>
+        </div>
+      )}
       {/* pb-32 clears the floating tab bar plus its inset, so the save button
           at the end of the list is reachable rather than sitting under it. */}
       <div className="space-y-8 pb-32 pt-4">

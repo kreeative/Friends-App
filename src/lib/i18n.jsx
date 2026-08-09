@@ -225,6 +225,8 @@ const STRINGS = {
     'money.cancel': 'Cancel',
     'money.save': 'Save',
     'money.saving': 'Saving',
+    'money.draft_restored': 'Picked up where you left off. Nothing is saved until you save it.',
+    'money.draft_discard': 'Start over',
 
     'start.new_group': 'New group',
     'start.join_one': 'Join one',
@@ -716,6 +718,8 @@ const STRINGS = {
     'money.cancel': 'Annuler',
     'money.save': 'Enregistrer',
     'money.saving': 'Enregistrement',
+    'money.draft_restored': 'On reprend où tu t’étais arrêté. Rien n’est enregistré tant que tu ne le fais pas.',
+    'money.draft_discard': 'Recommencer',
 
     'start.new_group': 'Nouveau groupe',
     'start.join_one': 'Rejoindre',
