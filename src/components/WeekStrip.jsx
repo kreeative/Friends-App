@@ -162,9 +162,10 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
   })
 
   const entries = entriesByDay[selected] ?? []
-  const spent = entries
-    .filter((e) => e.kind === 'expense')
-    .reduce((sum, e) => sum + (e.amount_cents || 0), 0)
+  const total = (kind) =>
+    entries.filter((e) => e.kind === kind).reduce((sum, e) => sum + (e.amount_cents || 0), 0)
+  const spent = total('expense')
+  const earned = total('income')
 
   const selectedDate = new Date(`${selected}T00:00:00`)
   const isFutureDay = selected > todayKey
@@ -251,15 +252,37 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
 
             {entries.length > 0 && (
               <div className="mt-4 border-t border-hairline pt-3">
-                <div className="flex items-baseline justify-between gap-3">
-                  <span className="eyebrow">{t('money.title')}</span>
-                  {spent > 0 && (
-                    <span className="text-small text-muted">
-                      {t('money.spent')} {fmt(spent)}
-                    </span>
-                  )}
+                <span className="eyebrow">{t('money.title')}</span>
+
+                {/**
+                 * Out and in, as a pair, before the itemised list.
+                 *
+                 * A single "Spent CA$46.50" over a list of categories is a
+                 * receipt, not a summary: it answers half the question and
+                 * leaves the other half to be worked out by reading every row
+                 * and noticing which of them were income. Two figures side by
+                 * side is the whole day in one glance.
+                 *
+                 * Both are always shown, including a day where nothing came
+                 * in. A zero is the answer to "did anything come in today",
+                 * and hiding it makes the pair jump around from day to day so
+                 * that neither figure ever lands in the same place twice.
+                 */}
+                <div className="mt-3 grid grid-cols-2 gap-3">
+                  {[
+                    [t('money.spent'), spent],
+                    [t('money.kind_income'), earned],
+                  ].map(([label, cents]) => (
+                    <div key={label} className="rounded-inner bg-ink/[0.035] px-4 py-3">
+                      <div className="text-small font-bold text-muted">{label}</div>
+                      <div className="mt-1 font-display text-h2 leading-none text-ink [font-variant-numeric:tabular-nums]">
+                        {fmt(cents)}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <div className="mt-2 space-y-2">
+
+                <div className="mt-3 space-y-2">
                   {entries.map((e) => (
                     <div key={e.id} className="flex items-center gap-3">
                       <span className="min-w-0 flex-1 truncate text-small text-ink">
