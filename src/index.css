@@ -1075,8 +1075,23 @@
      that carry a real finding rather than restating the label. The accent
      rule marks them as worth reading without shouting, and stops them from
      looking like more of the same grey. */
+  /**
+   * A hint under a field, and nothing more than that.
+   *
+   * It used to carry an accent left rule and text-muted. Both were wrong for
+   * the job. text-muted is the theme's own hue, which in sun is #DC2B72, so
+   * every explanatory line on a form was dark pink at the same weight as the
+   * label above it, and a settings screen ended up almost entirely magenta.
+   * The rule added a second vertical pink mark beside it.
+   *
+   * A hint is the quietest thing on the form, so it is a neutral grey and
+   * nothing else. Hard-coded rather than themed: this grey has to stay
+   * receding in both palettes, and a themed token would drag it back to the
+   * hue it is here to escape. 4.6:1 on white, so it still passes as text.
+   */
   .field-note {
-    @apply mt-2 block border-l-2 border-accent/50 pl-3 text-small text-muted;
+    @apply mt-2 block text-small;
+    color: rgb(100 106 116);
   }
 
   /* Lists are separated by hairlines, never by nested cards. */
