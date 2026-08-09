@@ -27,6 +27,7 @@ const MINE = [
   { to: '/', key: 'nav.home', end: true },
   // Your own goals, which no longer require a group to exist in.
   { to: '/goals', key: 'nav.goals' },
+  { to: '/money', key: 'nav.budget' },
   { to: '/library', key: 'nav.library' },
   { to: '/me', key: 'nav.you' },
 ]

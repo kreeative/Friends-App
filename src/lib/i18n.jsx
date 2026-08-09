@@ -119,6 +119,31 @@ const STRINGS = {
     'signin.verifying': 'Checking',
     'signin.wrong_email': 'Use a different address',
 
+    'intro.skip': 'Skip',
+    'intro.next': 'Next',
+    'intro.start': 'Start building my budget',
+    'intro.step': '{n} of {total}',
+    'intro.mindset_title': 'Mindset first',
+    'intro.mindset_body':
+      'Financial freedom is not about how much you make. It is about how intentional you are with what you already have.',
+    'intro.plan_title': 'Plan ahead',
+    'intro.plan_body':
+      'A budget is simply giving every single dollar a job before the month starts.',
+    'intro.track_title': 'Track and reflect',
+    'intro.track_body':
+      'Small daily leaks sink big ships. Tracking what you spend builds awareness, not restriction.',
+    'intro.amplify_title': 'Amplify revenue',
+    'intro.amplify_body':
+      'Knowing your baseline costs shows you exactly how much extra income you need to create.',
+    'intro.habits_title': 'Consistent habits',
+    'intro.habits_body':
+      'Reviewing your numbers every week keeps you in control and takes the anxiety out of money.',
+    'intro.freedom_title': 'Your path to freedom',
+    'intro.freedom_body':
+      'Ready to build real wealth? Let us set up your monthly targets.',
+    'nav.budget': 'My Budget',
+    'settings.rewatch_intro': 'Watch the budget intro again',
+
     'money.title': 'Money',
     'money.sub_new': 'Being rich starts with planning it.',
     'money.sub_period': '{days} days left in this period',
@@ -535,6 +560,31 @@ const STRINGS = {
     'signin.verify': 'Se connecter',
     'signin.verifying': 'Vérification',
     'signin.wrong_email': 'Utiliser une autre adresse',
+
+    'intro.skip': 'Passer',
+    'intro.next': 'Suivant',
+    'intro.start': 'Construire mon budget',
+    'intro.step': '{n} sur {total}',
+    'intro.mindset_title': 'L’état d’esprit d’abord',
+    'intro.mindset_body':
+      'La liberté financière ne dépend pas de ce que tu gagnes. Elle dépend de l’intention que tu mets dans ce que tu as déjà.',
+    'intro.plan_title': 'Planifier',
+    'intro.plan_body':
+      'Un budget, c’est simplement donner un rôle à chaque dollar avant que le mois commence.',
+    'intro.track_title': 'Suivre et réfléchir',
+    'intro.track_body':
+      'Les petites fuites coulent les grands navires. Noter ses dépenses crée de la conscience, pas de la privation.',
+    'intro.amplify_title': 'Augmenter les revenus',
+    'intro.amplify_body':
+      'Connaître tes coûts de base te montre exactement combien de revenus en plus tu dois créer.',
+    'intro.habits_title': 'Des habitudes constantes',
+    'intro.habits_body':
+      'Revoir tes chiffres chaque semaine te garde aux commandes et enlève l’anxiété liée à l’argent.',
+    'intro.freedom_title': 'Ton chemin vers la liberté',
+    'intro.freedom_body':
+      'Prêt à bâtir une vraie richesse ? On configure tes objectifs mensuels.',
+    'nav.budget': 'Mon budget',
+    'settings.rewatch_intro': 'Revoir l’intro du budget',
 
     'money.title': 'Argent',
     'money.sub_new': 'Être riche commence par le planifier.',

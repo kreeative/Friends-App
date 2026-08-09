@@ -6,6 +6,7 @@ import { money } from '../lib/money'
 import { CATEGORIES, summarise } from '../lib/budget'
 import { loadBudget } from '../lib/budgetData'
 import { Empty, Field, Screen, Section, Sheet, TopBar } from '../components/ui'
+import BudgetIntro from '../components/BudgetIntro'
 
 /**
  * The money screen.
@@ -70,7 +71,7 @@ function SpendBar({ spent, pool }) {
 }
 
 export default function Money() {
-  const { user } = useAuth()
+  const { user, profile, updateProfile } = useAuth()
   const { t, locale } = useT()
 
   const [plan, setPlan] = useState(null)
@@ -80,6 +81,7 @@ export default function Money() {
   const [missing, setMissing] = useState(false)
   const [editing, setEditing] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [introDone, setIntroDone] = useState(false)
 
   // Quick add
   const [amount, setAmount] = useState('')
@@ -133,6 +135,28 @@ export default function Money() {
     setEntries((prev) => prev.filter((r) => r.id !== id))
     await supabase.from('budget_entry').delete().eq('id', id)
     await load()
+  }
+
+  /**
+   * The intro, once.
+   *
+   * The flag lives on the profile rather than in localStorage so it follows
+   * the person to a second device instead of replaying the whole carousel on
+   * their laptop. It is written optimistically and the failure is swallowed:
+   * somebody who has just watched six slides should not be shown an error,
+   * and the worst case of a failed write is seeing them again.
+   *
+   * Held until loading finishes so the carousel does not flash over a screen
+   * that was about to render anyway.
+   */
+  const seen = profile?.has_seen_budget_intro
+  if (!loading && !missing && seen === false && !introDone) {
+    const finish = async (start) => {
+      setIntroDone(true)
+      updateProfile?.({ has_seen_budget_intro: true })
+      if (start) setEditing(true)
+    }
+    return <BudgetIntro onDone={() => finish(true)} onSkip={() => finish(false)} />
   }
 
   if (missing) {

@@ -746,6 +746,15 @@
     @apply rounded-card bg-surface p-6 shadow-raised;
   }
 
+  /* A scroller whose bar is noise: a snap carousel where the dots already say
+     where you are. Both spellings, because Firefox and WebKit disagree. */
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
   /**
    * A card carrying a finding the reader will not enjoy.
    *
