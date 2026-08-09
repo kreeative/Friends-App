@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { useT } from '../lib/i18n'
 
 export function Screen({ children, className = '' }) {
@@ -94,13 +95,48 @@ export function Field({ label, hint, children }) {
   )
 }
 
+/**
+ * A face, or the initials of one.
+ *
+ * avatar_url has been on the profile since the first schema and has been
+ * filled in by the Google sign-up trigger the whole time, and this component
+ * has been ignoring it and drawing initials for everybody. So a picture people
+ * already had was never once shown.
+ *
+ * The fallback is not only for a missing url. A picture can 404 after the
+ * storage object is deleted, and a broken-image glyph next to somebody's name
+ * is worse than the initials were, so a failed load falls back too. The flag
+ * resets whenever the url changes, otherwise one bad image would poison the
+ * next one.
+ *
+ * Decorative in every placement here: the name is always next to it in text,
+ * so an alt would be the same words read twice.
+ */
 export function Avatar({ profile, size = 40 }) {
+  const [broken, setBroken] = useState(false)
+  const url = profile?.avatar_url
+
+  useEffect(() => setBroken(false), [url])
+
   const initials = (profile?.display_name ?? '?')
     .split(' ')
     .map((w) => w[0])
     .slice(0, 2)
     .join('')
     .toUpperCase()
+
+  if (url && !broken) {
+    return (
+      <img
+        src={url}
+        alt=""
+        loading="lazy"
+        onError={() => setBroken(true)}
+        className="shrink-0 rounded-pill bg-ink/[0.06] object-cover"
+        style={{ width: size, height: size }}
+      />
+    )
+  }
 
   return (
     <div

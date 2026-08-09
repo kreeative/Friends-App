@@ -7,6 +7,7 @@ import { cycleEnd, cyclePhase, shortDate, untilLabel } from '../lib/time'
 import { completionRate, groupCycles, groupGoalProgress, rollingRate } from '../lib/stats'
 import { useT } from '../lib/i18n'
 import { Avatar, Empty, Screen, Section, TopBar } from '../components/ui'
+import BirthdayBanner from '../components/BirthdayBanner'
 import NudgeBanner from '../components/NudgeBanner'
 import GroupMoods from '../components/GroupMoods'
 import ConsistencyPanel from '../components/ConsistencyPanel'
@@ -155,6 +156,10 @@ export default function Board() {
   return (
     <Screen>
       <TopBar title={group.name} sub={status} />
+
+      {/* Above the nudge, because a nudge waits for whoever gets to it and a
+          birthday does not wait at all. */}
+      <BirthdayBanner people={members.map((m) => m.profile)} />
 
       <NudgeBanner />
 

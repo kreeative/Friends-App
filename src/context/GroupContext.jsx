@@ -114,7 +114,10 @@ export function GroupProvider({ children }) {
       supabase.from('groups').select('*').eq('id', activeId).maybeSingle(),
       supabase
         .from('group_members')
-        .select('user_id, role, nudge_order, profiles(id, display_name, avatar_url)')
+        /* birthday comes down with the roster because the banner needs a
+           week's notice and the roster is already loaded. It is a month and a
+           day to the app; the year is never rendered. */
+        .select('user_id, role, nudge_order, profiles(id, display_name, avatar_url, birthday)')
         .eq('group_id', activeId)
         .order('nudge_order'),
       supabase

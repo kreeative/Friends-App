@@ -8,6 +8,7 @@ import { completionRate, rollingRate } from '../lib/stats'
 import { cycleEnd, cyclePhase, soonestUpcoming, untilLabel } from '../lib/time'
 import { useT } from '../lib/i18n'
 import { Screen, Section, TopBar } from '../components/ui'
+import BirthdayBanner from '../components/BirthdayBanner'
 import ConsistencyPanel from '../components/ConsistencyPanel'
 import WeekStrip from '../components/WeekStrip'
 import MoodToday from '../components/MoodToday'
@@ -120,6 +121,7 @@ export default function Dashboard() {
   const [rows, setRows] = useState([])
   const [books, setBooks] = useState([])
   const [goals, setGoals] = useState([])
+  const [friends, setFriends] = useState([])
 
   /**
    * One read for every group at once. member_cycle_status is already scoped
@@ -130,7 +132,7 @@ export default function Dashboard() {
     if (!user) return
     let cancelled = false
     ;(async () => {
-      const [st, gl, bk] = await Promise.all([
+      const [st, gl, bk, fr] = await Promise.all([
         supabase
           .from('member_cycle_status')
           .select('*')
@@ -145,11 +147,23 @@ export default function Dashboard() {
           .eq('owner_id', user.id)
           .eq('status', 'active'),
         listBooks().catch(() => []),
+        /**
+         * Everybody you share a group with, for the birthday banner.
+         *
+         * No group filter, on purpose. group_members_select is
+         * `is_member(group_id)`, so this already returns exactly the rosters
+         * you belong to, and the embedded profile is filtered again by
+         * profiles_select. Naming the groups here would repeat a rule the
+         * database already enforces and get it wrong the first time somebody
+         * joins one mid-session.
+         */
+        supabase.from('group_members').select('profiles(id, display_name, avatar_url, birthday)'),
       ])
       if (cancelled) return
       setRows(st.data ?? [])
       setGoals(gl.data ?? [])
       setBooks(bk)
+      setFriends((fr.data ?? []).map((r) => r.profiles).filter(Boolean))
     })()
     return () => {
       cancelled = true
@@ -202,6 +216,10 @@ export default function Dashboard() {
         title={first ? `${greeting}, ${first}.` : greeting}
         sub={waiting ? undefined : t('home.sub')}
       />
+
+      {/* First, and only for the week it is true. Everything else on this page
+          is still here tomorrow. */}
+      <BirthdayBanner people={friends} />
 
       {/**
        * The week, directly under the greeting and above everything that is a
