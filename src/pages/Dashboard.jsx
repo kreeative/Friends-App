@@ -200,6 +200,21 @@ export default function Dashboard() {
       />
 
       {/**
+       * First thing in the feed, above even the waiting-on-you card.
+       *
+       * It is in the normal flow rather than pinned or floating, so it pushes
+       * the rest of the page down instead of sitting over the header, and it
+       * leaves with the same transition it arrives with, which means the feed
+       * closes the gap smoothly on dismissal rather than snapping shut.
+       *
+       * It outranks the waiting card only because it is temporary: it appears
+       * once, is dismissed once, and is then gone for good, whereas the
+       * waiting card is the page's permanent first priority and gets that
+       * position back immediately.
+       */}
+      <BudgetBanner />
+
+      {/**
        * The one block of colour on the page, and it is the size of the thing
        * it is announcing. A dashboard of white rows is a filing cabinet; the
        * field colour lands here because this is the only row that is asking
@@ -244,11 +259,6 @@ export default function Dashboard() {
           no plan yet or the migration has not been run. Placed above groups
           because it is about today and the group list is about other people. */}
       <BudgetToday />
-
-      {/* Above the groups because it is an announcement, and below the mood
-          and the budget card because those are about today. Removes itself
-          once there is a plan, or once it is dismissed. */}
-      <BudgetBanner />
 
       <Section title={t('home.your_groups')} action={
         memberships.length > 0 && (
