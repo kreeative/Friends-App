@@ -59,12 +59,27 @@ function ArtRow() {
  * drawn instead as a pulsing box outline, so the row still shows where you
  * are without a text cursor sitting in the middle of a rectangle.
  */
-function CodeBoxes({ value, onChange, label, length = 6 }) {
+/**
+ * Supabase's OTP length is a server setting, between 6 and 10 digits, and the
+ * browser has no way to ask what it is. This row was built assuming 6 and
+ * capped the input at 6, so a project configured for 9 produced an email full
+ * of digits that could not physically be typed in: the field refused the last
+ * three and the button stayed disabled. Being unable to sign in at all is a
+ * bad way to express a config mismatch.
+ *
+ * So six is the shape it draws, not a limit it enforces. The row grows to fit
+ * whatever arrives, up to the ten Supabase allows, and submitting only needs
+ * the minimum. Setting the project back to 6 makes this invisible again.
+ */
+const OTP_MIN = 6
+const OTP_MAX = 10
+
+function CodeBoxes({ value, onChange, label, length = OTP_MIN }) {
   const [focused, setFocused] = useState(false)
-  const cells = Array.from({ length })
+  const cells = Array.from({ length: Math.min(Math.max(length, value.length), OTP_MAX) })
   // The cell the next digit lands in, clamped so a full code keeps the last
   // box lit rather than pointing past the end of the row.
-  const active = Math.min(value.length, length - 1)
+  const active = Math.min(value.length, cells.length - 1)
 
   return (
     <div className="relative">
@@ -75,7 +90,7 @@ function CodeBoxes({ value, onChange, label, length = 6 }) {
           return (
             <div
               key={i}
-              className={`flex h-16 flex-1 items-center justify-center rounded-inner border-2 bg-surface font-display text-h1 leading-none text-ink transition-colors duration-150 [font-variant-numeric:tabular-nums] ${
+              className={`flex h-16 min-w-0 flex-1 items-center justify-center rounded-inner border-2 bg-surface font-display leading-none text-ink transition-colors duration-150 [font-variant-numeric:tabular-nums] ${cells.length > 6 ? 'text-h2' : 'text-h1'} ${
                 here ? 'border-accent' : filled ? 'border-ink/25' : 'border-ink/10'
               }`}
             >
@@ -100,7 +115,7 @@ function CodeBoxes({ value, onChange, label, length = 6 }) {
            the value, so pasting "Code: 418205" out of a mail app clipped to
            six characters and the digit filter then left nothing at all.
            Filtering the whole pasted string and slicing after makes it work. */
-        onChange={(e) => onChange(e.target.value.replace(/\D/g, '').slice(0, length))}
+        onChange={(e) => onChange(e.target.value.replace(/\D/g, '').slice(0, OTP_MAX))}
         className="absolute inset-0 h-full w-full cursor-pointer rounded-inner border-0 bg-transparent p-0 text-transparent caret-transparent outline-none focus:ring-0"
       />
     </div>
@@ -243,7 +258,7 @@ export default function SignIn() {
                 </p>
               )}
 
-              <button className="btn-primary press" disabled={busy !== null || code.length < 6}>
+              <button className="btn-primary press" disabled={busy !== null || code.length < OTP_MIN}>
                 {busy === 'code' ? t('signin.verifying') : t('signin.verify')}
               </button>
 
