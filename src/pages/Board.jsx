@@ -4,12 +4,13 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useGroup } from '../context/GroupContext'
 import { cycleEnd, cyclePhase, shortDate, untilLabel } from '../lib/time'
-import { completionRate, groupGoalProgress, rollingRate } from '../lib/stats'
+import { completionRate, groupCycles, groupGoalProgress, rollingRate } from '../lib/stats'
 import { useT } from '../lib/i18n'
 import { Avatar, Empty, Screen, Section, TopBar } from '../components/ui'
 import NudgeBanner from '../components/NudgeBanner'
 import GroupMoods from '../components/GroupMoods'
 import ConsistencyPanel from '../components/ConsistencyPanel'
+import GroupAnalytics from '../components/GroupAnalytics'
 import TodayObjective from '../components/TodayObjective'
 import GroupFeed from '../components/GroupFeed'
 import GoalCard from '../components/GoalCard'
@@ -47,11 +48,19 @@ export default function Board() {
    */
   const past = phase === 'open' && lastCycle?.id !== currentCycle?.id ? lastCycle: null
 
-  /* One read for both periods rather than one per section. */
-  const wanted = useMemo(
-    () => [currentCycle?.id, past?.id].filter(Boolean),
-    [currentCycle?.id, past?.id],
-  )
+  /**
+   * Every period the board holds, in one read.
+   *
+   * This used to fetch exactly the two periods on screen, and then the
+   * analytics section wanted the history as well, which would have been a
+   * third and fourth request for rows the same two queries could return. The
+   * page already loads every member's status for every cycle; the outcomes
+   * behind those statuses are the same order of magnitude.
+   *
+   * Everything downstream already filters by cycle, so widening the window
+   * changes nothing about what the rosters show.
+   */
+  const wanted = useMemo(() => cycles.map((c) => c.id), [cycles])
 
   useEffect(() => {
     if (wanted.length === 0) return
@@ -107,6 +116,10 @@ export default function Board() {
     () => rollingRate(statuses, { window: 3, points: 12 }),
     [statuses],
   )
+  /* The bars are one per day, so they get one row per day. The rate above
+     keeps the raw rows, because a rate wants every member in the denominator
+     and a chart of days does not. */
+  const groupDays = useMemo(() => groupCycles(statuses), [statuses])
 
   const nowItemIds = new Set(now.map((c) => c.id))
 
@@ -271,9 +284,18 @@ export default function Board() {
         <ConsistencyPanel
           rate={groupRate}
           trend={groupTrend}
-          cycles={statuses}
+          cycles={groupDays}
           goalCount={groupGoals.length}
           groupCount={members.length}
+        />
+        {/* Underneath rather than beside: turning up and getting it done are
+            two answers to two questions, and reading them as one row of four
+            numbers invites people to average them into a single verdict. */}
+        <GroupAnalytics
+          members={members}
+          statuses={statuses}
+          items={items}
+          days={cycles.length}
         />
         <p className="mt-4 text-small text-muted">{t('board.rate_note')}</p>
       </Section>

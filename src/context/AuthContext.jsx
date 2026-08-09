@@ -176,15 +176,24 @@ export function AuthProvider({ children }) {
       return { error }
     },
     signOut: () => supabase.auth.signOut(),
+    /**
+     * Returns the failure rather than swallowing it.
+     *
+     * Most callers do not care: setting a flag that has already been set is
+     * not worth an error message. The profile screen does, because a column
+     * that is not there yet is an unrun migration, and "nothing happened when
+     * I typed my birthday" is the one outcome that reads as a broken app.
+     */
     updateProfile: async (patch) => {
-      if (!session?.user) return
-      const { data } = await supabase
+      if (!session?.user) return { error: null }
+      const { data, error } = await supabase
         .from('profiles')
         .update(patch)
         .eq('id', session.user.id)
         .select()
         .maybeSingle()
       if (data) setProfile(data)
+      return { error: error ?? null }
     },
   }
 

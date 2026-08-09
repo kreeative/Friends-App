@@ -1,15 +1,16 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useGroup } from '../context/GroupContext'
 import { completionRate, consecutiveMisses, rollingRate } from '../lib/stats'
+import { dayKey } from '../lib/time'
 import { useT } from '../lib/i18n'
-import { Screen, Section, TopBar } from '../components/ui'
+import { Field, Screen, Section, TopBar } from '../components/ui'
 import ConsistencyPanel from '../components/ConsistencyPanel'
 
 export default function Me() {
-  const { user, profile, signOut } = useAuth()
+  const { user, profile, signOut, updateProfile } = useAuth()
   const { statusesFor, myGoals, soloGoals, groups, reloadGroup } = useGroup()
   const { t } = useT()
   const navigate = useNavigate()
@@ -48,6 +49,48 @@ export default function Me() {
     navigate('/goals/new')
   }
 
+  /**
+   * Date of birth, saved the moment a whole date is in the box.
+   *
+   * No Save button, because a date input only fires a change when the value is
+   * complete, so there is no half-typed state to protect anybody from. The
+   * field is seeded from the profile and then owned locally, otherwise every
+   * keystroke would fight the value coming back from the round trip.
+   *
+   * The year is stored because Postgres has no date-without-year, and it is
+   * never shown: see supabase/20_quiet_and_birthdays.sql, and record_birthdays,
+   * which compares the month and the day only.
+   */
+  const [birthday, setBirthday] = useState('')
+  const [birthdayError, setBirthdayError] = useState(false)
+
+  useEffect(() => {
+    setBirthday(profile?.birthday ?? '')
+  }, [profile?.birthday])
+
+  async function saveBirthday(value) {
+    setBirthday(value)
+    setBirthdayError(false)
+    const { error } = (await updateProfile?.({ birthday: value || null })) ?? {}
+    if (error) setBirthdayError(true)
+  }
+
+  /**
+   * Play the budget intro again.
+   *
+   * The flag is the whole mechanism: Money renders the carousel whenever it is
+   * false, so putting it back is the entire feature. Navigating afterwards is
+   * the difference between a switch and an action, a control that appears to
+   * do nothing until you happen to visit another screen is one people press
+   * twice.
+   */
+  async function rewatchIntro() {
+    setBusy(true)
+    await updateProfile?.({ has_seen_budget_intro: false })
+    setBusy(false)
+    navigate('/money')
+  }
+
   return (
     <Screen>
       <TopBar title={profile?.display_name ?? t('nav.you')} sub={t('me.consistency')} />
@@ -79,6 +122,26 @@ export default function Me() {
         <p className="mt-4 text-small text-muted">{t('me.rate_note')}</p>
       </Section>
 
+      {/* The only thing on this screen that is about who you are rather than
+          about how you are doing, which is why it is its own section and not a
+          row in the account list underneath. */}
+      <Section title={t('me.profile')}>
+        <div className="lg p-6">
+          <Field label={t('me.birthday')} hint={t('me.birthday_hint')}>
+            <input
+              type="date"
+              className="field"
+              value={birthday}
+              max={dayKey()}
+              onChange={(e) => saveBirthday(e.target.value)}
+            />
+          </Field>
+          {birthdayError && (
+            <p className="mt-4 text-small text-negative">{t('me.birthday_failed')}</p>
+          )}
+        </div>
+      </Section>
+
       <Section title={t('me.account')}>
         <div className="lg px-5">
           <div className="list">
@@ -90,6 +153,14 @@ export default function Me() {
               <span className="flex-1 text-body text-ink">{t('nav.library')}</span>
               <span className="text-small text-muted">→</span>
             </Link>
+            <button
+              onClick={rewatchIntro}
+              disabled={busy}
+              className="press flex w-full items-center gap-4 py-5 text-left"
+            >
+              <span className="flex-1 text-body text-ink">{t('settings.rewatch_intro')}</span>
+              <span className="text-small text-muted">→</span>
+            </button>
             <button
               onClick={signOut}
               className="press flex w-full items-center gap-4 py-5 text-left"

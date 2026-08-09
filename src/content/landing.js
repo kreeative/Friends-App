@@ -8,7 +8,7 @@ export const LANDING = {
   en: {
     hero: {
       title: 'Alone we go faster, but together we go further.',
-      body: 'Our environment dictates our output. Stop grinding in isolation, surround yourself with high-caliber peers who force you to level up every single week.',
+      body: 'Our environment dictates our output. Stop grinding in isolation, surround yourself with high-caliber peers who force you to level up every single day.',
       cta: 'Start a group',
       secondary: 'How it works',
       note: 'Ambition Is Contagious.',
@@ -32,7 +32,7 @@ export const LANDING = {
         {
           n: '02',
           title: 'Everyone checks in at the same time',
-          body: 'One shared window each week, not five separate reminders. Results stay sealed until it closes, so there is a moment to come back for rather than a form that is always open.',
+          body: 'One shared window each day, not five separate reminders. Results stay sealed until it closes, so there is a moment to come back for rather than a form that is always open.',
         },
         {
           n: '03',
@@ -50,16 +50,16 @@ export const LANDING = {
         ['AK', 'Ana', 'chip-green', 'Checked in'],
         ['BM', 'Ben', 'chip-green', 'Checked in'],
         ['TO', 'Tomas', 'chip-quiet', 'Not yet'],
-        ['RS', 'Rue', 'chip-quiet', 'Away this week'],
+        ['RS', 'Rue', 'chip-quiet', 'Away today'],
       ],
       items: [
         {
           title: 'A rate, never a streak',
-          body: 'Eleven of the last fourteen. A bad week moves it a few points; nothing ever resets to zero, so restarting never looks worse than quitting.',
+          body: 'Eleven of the last fourteen. A bad day moves it a few points; nothing ever resets to zero, so restarting never looks worse than quitting.',
         },
         {
           title: 'Away is not a miss',
-          body: 'Exams, travel, illness. Say so in advance and the week leaves the maths entirely. Being honest about a hard fortnight should cost nothing.',
+          body: 'Exams, travel, illness. Say so in advance and the day leaves the maths entirely. Being honest about a hard fortnight should cost nothing.',
         },
         {
           title: 'No leaderboard',
@@ -102,13 +102,13 @@ export const LANDING = {
     },
 
     close: {
-      title: 'Two to six people. One evening a week.',
+      title: 'Two to six people. One minute a day.',
       body: 'Bring the friends you would actually be embarrassed to disappoint.',
       cta: 'Start a group',
     },
 
     footer: {
-      tagline: 'A weekly check-in with a few people who know what you are working on.',
+      tagline: 'A daily check-in with a few people who know what you are working on.',
       product: 'Product',
       home: 'Home',
       menu: 'Menu',
@@ -123,7 +123,7 @@ export const LANDING = {
   fr: {
     hero: {
       title: 'Parceque ensemble on construit plus vite.',
-      body: 'Notre environnement dicte nos résultats. Arrêtez de moudre dans l’isolement - entourez-vous d’amis de haut calibre qui vous forcent à monter de niveau chaque semaine',
+      body: 'Notre environnement dicte nos résultats. Arrêtez de moudre dans l’isolement - entourez-vous d’amis de haut calibre qui vous forcent à monter de niveau chaque jour',
       cta: 'Créer un groupe',
       secondary: 'Comment ça marche',
       note: 'L’ambition est contagieuse',
@@ -147,7 +147,7 @@ export const LANDING = {
         {
           n: '02',
           title: 'Tout le monde fait le point en même temps',
-          body: 'Une seule fenêtre partagée chaque semaine, pas cinq rappels séparés. Les réponses restent scellées jusqu’à la fermeture : il y a un moment où revenir, pas un formulaire toujours ouvert.',
+          body: 'Une seule fenêtre partagée chaque jour, pas cinq rappels séparés. Les réponses restent scellées jusqu’à la fermeture : il y a un moment où revenir, pas un formulaire toujours ouvert.',
         },
         {
           n: '03',
@@ -170,11 +170,11 @@ export const LANDING = {
       items: [
         {
           title: 'Un taux, jamais une série',
-          body: 'Onze sur les quatorze derniers. Une mauvaise semaine fait bouger ça de quelques points ; rien ne repart jamais de zéro, donc recommencer n’est jamais pire qu’abandonner.',
+          body: 'Onze sur les quatorze derniers. Une mauvaise journée fait bouger ça de quelques points ; rien ne repart jamais de zéro, donc recommencer n’est jamais pire qu’abandonner.',
         },
         {
           title: 'Absent n’est pas manqué',
-          body: 'Examens, voyage, maladie. Dis-le à l’avance et la semaine sort complètement du calcul. Être honnête sur une quinzaine difficile ne devrait rien coûter.',
+          body: 'Examens, voyage, maladie. Dis-le à l’avance et la journée sort complètement du calcul. Être honnête sur une quinzaine difficile ne devrait rien coûter.',
         },
         {
           title: 'Pas de classement',
@@ -217,13 +217,13 @@ export const LANDING = {
     },
 
     close: {
-      title: 'De deux à six. Un soir par semaine.',
+      title: 'De deux à six. Une minute par jour.',
       body: 'Amène les amis que tu serais vraiment gêné de décevoir.',
       cta: 'Créer un groupe',
     },
 
     footer: {
-      tagline: 'Un point hebdomadaire avec quelques personnes qui savent sur quoi tu travailles.',
+      tagline: 'Un point quotidien avec quelques personnes qui savent sur quoi tu travailles.',
       product: 'Produit',
       links: {
         how: 'Comment ça marche',

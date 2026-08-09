@@ -26,6 +26,11 @@ export default function Settings() {
    * opening the app, and they are the person the group most needs to keep.
    * So the shared number is the group's, and individual histories sit next to
    * each other unsorted rather than in rank order.
+   *
+   * The board has a streak table now, which is a ranking, and the difference
+   * is what is being ranked: a streak is a personal record people already keep
+   * in their heads, and a completion percentage is a verdict. This list stays
+   * unsorted.
    */
   const together = useMemo(() => {
     const done = statuses.filter((s) => s.status === 'submitted').length
