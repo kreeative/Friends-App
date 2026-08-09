@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { useT } from '../lib/i18n'
 import { money } from '../lib/money'
 import { CATEGORIES, summarise } from '../lib/budget'
+import { minorDigits } from '../lib/currency'
 import { loadBudget } from '../lib/budgetData'
 import { Empty, Field, Screen, Section, TopBar } from '../components/ui'
 import BudgetIntro from '../components/BudgetIntro'
@@ -31,9 +32,21 @@ function toCents(text) {
   return Math.round(n * 100)
 }
 
-const fromCents = (c) => (c == null ? '' : (c / 100).toFixed(2))
+/**
+ * Cents back to a typed string, in as many decimals as the currency has.
+ *
+ * toCents above is unchanged and multiplies by a hundred whatever the
+ * currency: every amount in the database is an integer with two implied
+ * decimals, in every currency, so the column never means something different
+ * depending on a setting. See src/lib/currency.js.
+ *
+ * What does change is what a person is shown and asked for. A plan form
+ * offering "500.00" in CFA francs is offering two decimals of a currency that
+ * has none, and the zeros are noise in a field somebody has to type into.
+ */
+const fromCents = (c, digits = 2) => (c == null ? '' : (c / 100).toFixed(digits))
 
-function MoneyInput({ value, onChange, placeholder = '0.00', autoFocus = false }) {
+function MoneyInput({ value, onChange, digits = 2, autoFocus = false }) {
   return (
     <input
       type="text"
@@ -41,7 +54,7 @@ function MoneyInput({ value, onChange, placeholder = '0.00', autoFocus = false }
       autoFocus={autoFocus}
       className="field"
       value={value}
-      placeholder={placeholder}
+      placeholder={digits === 0 ? '0' : `0.${'0'.repeat(digits)}`}
       onChange={(e) => onChange(e.target.value)}
     />
   )
@@ -209,11 +222,12 @@ export default function Money() {
   }, [load])
 
   const s = useMemo(
-    () => summarise({ plan, fixed, entries, today: new Date() }),
-    [plan, fixed, entries],
+    () => summarise({ plan, fixed, entries, today: new Date(), currency: profile?.currency }),
+    [plan, fixed, entries, profile?.currency],
   )
 
   const fmt = (cents) => money(cents, s.currency, locale)
+  const digits = minorDigits(s.currency)
 
   async function addEntry(e) {
     e.preventDefault()
@@ -297,6 +311,7 @@ export default function Money() {
         plan={plan}
         fixed={fixed}
         userId={user?.id}
+        currency={s.currency}
         onCancel={() => setEditing(false)}
         onSaved={async () => {
           setEditing(false)
@@ -400,7 +415,7 @@ export default function Money() {
             ))}
           </div>
 
-          <MoneyInput value={amount} onChange={setAmount} />
+          <MoneyInput value={amount} onChange={setAmount} digits={digits} />
 
           {kind === 'expense' && (
             <div className="flex flex-wrap gap-2">
@@ -511,8 +526,9 @@ export default function Money() {
  * Three questions and a list. Everything else the screen shows is derived, so
  * this is the entire amount of typing the feature ever asks for.
  */
-function PlanForm({ plan, fixed, userId, onCancel, onSaved }) {
+function PlanForm({ plan, fixed, userId, currency, onCancel, onSaved }) {
   const { t } = useT()
+  const digits = minorDigits(currency)
   const [income, setIncome] = useState('')
   const [savings, setSavings] = useState('')
   const [rows, setRows] = useState([])
@@ -520,17 +536,17 @@ function PlanForm({ plan, fixed, userId, onCancel, onSaved }) {
 
   // Re-seeded from the saved plan, so a cancelled edit does not persist.
   useEffect(() => {
-    setIncome(fromCents(plan?.monthly_income_cents) || '')
-    setSavings(fromCents(plan?.savings_target_cents) || '')
+    setIncome(fromCents(plan?.monthly_income_cents, digits) || '')
+    setSavings(fromCents(plan?.savings_target_cents, digits) || '')
     setRows(
       (fixed ?? []).map((f) => ({
         id: f.id,
         label: f.label,
-        amount: fromCents(f.amount_cents),
+        amount: fromCents(f.amount_cents, digits),
         active: f.active !== false,
       })),
     )
-  }, [plan, fixed])
+  }, [plan, fixed, digits])
 
   async function save() {
     if (!userId) return
@@ -586,11 +602,11 @@ function PlanForm({ plan, fixed, userId, onCancel, onSaved }) {
           at the end of the list is reachable rather than sitting under it. */}
       <div className="space-y-8 pb-32 pt-4">
         <Field label={t('money.income')} hint={t('money.income_hint')}>
-          <MoneyInput value={income} onChange={setIncome} autoFocus />
+          <MoneyInput value={income} onChange={setIncome} digits={digits} autoFocus />
         </Field>
 
         <Field label={t('money.savings')} hint={t('money.savings_hint')}>
-          <MoneyInput value={savings} onChange={setSavings} />
+          <MoneyInput value={savings} onChange={setSavings} digits={digits} />
         </Field>
 
         <div>

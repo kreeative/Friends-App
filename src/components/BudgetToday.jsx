@@ -20,7 +20,7 @@ import Sparkline from './Sparkline'
  * money screen has to be reflected here without a reload.
  */
 export default function BudgetToday() {
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const { t, locale } = useT()
   const [state, setState] = useState(null)
 
@@ -44,7 +44,7 @@ export default function BudgetToday() {
 
   if (!state || state.missing) return null
 
-  const s = summarise({ ...state, today: new Date() })
+  const s = summarise({ ...state, today: new Date(), currency: profile?.currency })
   const fmt = (c) => money(c, s.currency, locale)
 
   /**

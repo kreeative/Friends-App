@@ -73,7 +73,7 @@ function DayBadge({ date, isToday, isSelected, isFuture, marked, label, onSelect
 }
 
 export default function WeekStrip({ goals = [], statuses = [] }) {
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const { t, locale } = useT()
 
   const week = useMemo(() => weekOf(new Date()), [])
@@ -145,7 +145,9 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
     return map
   }, [budget])
 
-  const currency = budget?.plan?.currency || 'CAD'
+  /* The person's, not the plan's. See summarise() in budget.js for why the
+     plan's column is not an answer. */
+  const currency = profile?.currency || budget?.plan?.currency || 'CAD'
   const fmt = (cents) => money(cents, currency, locale)
 
   /* What the selected day actually holds. */

@@ -22,18 +22,18 @@
  * The public preview sells the same book at the same price, and two copies of
  * this function is exactly how they would come to disagree.
  */
+import { formatCurrency } from './currency'
+
+/**
+ * The formatting itself lives in currency.js, which is pure and tested. This
+ * is the half that reads the browser, kept apart so the arithmetic can be
+ * checked without one.
+ */
 export function money(cents, currency, locale) {
   const tags = [
     ...(typeof navigator !== 'undefined' ? (navigator.languages ?? [navigator.language]) : []),
     locale === 'fr' ? 'fr-CA' : 'en-CA',
   ].filter(Boolean)
 
-  const code = currency || 'CAD'
-  try {
-    return new Intl.NumberFormat(tags, { style: 'currency', currency: code }).format(
-      (cents ?? 0) / 100,
-    )
-  } catch {
-    return `${((cents ?? 0) / 100).toFixed(2)} ${code}`
-  }
+  return formatCurrency(cents, currency, tags)
 }
