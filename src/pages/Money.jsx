@@ -5,7 +5,7 @@ import { useT } from '../lib/i18n'
 import { money } from '../lib/money'
 import { CATEGORIES, summarise } from '../lib/budget'
 import { loadBudget } from '../lib/budgetData'
-import { Empty, Field, Screen, Section, Sheet, TopBar } from '../components/ui'
+import { Empty, Field, Screen, Section, TopBar } from '../components/ui'
 import BudgetIntro from '../components/BudgetIntro'
 import BudgetTiles from '../components/BudgetTiles'
 
@@ -174,6 +174,30 @@ export default function Money() {
       <Screen>
         <TopBar title={t('money.title')} />
       </Screen>
+    )
+  }
+
+  /**
+   * The plan is a page, not a sheet.
+   *
+   * It was a Sheet, which on a phone is a panel pinned to the bottom of the
+   * viewport with its own scroll. With five fields and a repeating list inside
+   * it, the panel ran past the floating tab bar and the last row and the save
+   * button were behind the chrome, unreachable. A sheet is right for a short
+   * confirmation and wrong for the longest form in the app.
+   */
+  if (editing) {
+    return (
+      <PlanForm
+        plan={plan}
+        fixed={fixed}
+        userId={user?.id}
+        onCancel={() => setEditing(false)}
+        onSaved={async () => {
+          setEditing(false)
+          await load()
+        }}
+      />
     )
   }
 
@@ -373,41 +397,27 @@ export default function Money() {
         </>
       )}
 
-      <PlanSheet
-        open={editing}
-        onClose={() => setEditing(false)}
-        plan={plan}
-        fixed={fixed}
-        userId={user?.id}
-        onSaved={async () => {
-          setEditing(false)
-          await load()
-        }}
-      />
     </Screen>
   )
 }
 
 /**
- * The setup, in a sheet.
+ * The setup.
  *
  * Three questions and a list. Everything else the screen shows is derived, so
  * this is the entire amount of typing the feature ever asks for.
  */
-function PlanSheet({ open, onClose, plan, fixed, userId, onSaved }) {
+function PlanForm({ plan, fixed, userId, onCancel, onSaved }) {
   const { t } = useT()
   const [income, setIncome] = useState('')
   const [savings, setSavings] = useState('')
-  const [day, setDay] = useState('1')
   const [rows, setRows] = useState([])
   const [busy, setBusy] = useState(false)
 
-  // Re-seeded each time it opens so a cancelled edit does not persist.
+  // Re-seeded from the saved plan, so a cancelled edit does not persist.
   useEffect(() => {
-    if (!open) return
     setIncome(fromCents(plan?.monthly_income_cents) || '')
     setSavings(fromCents(plan?.savings_target_cents) || '')
-    setDay(String(plan?.period_start_day ?? 1))
     setRows(
       (fixed ?? []).map((f) => ({
         id: f.id,
@@ -416,7 +426,7 @@ function PlanSheet({ open, onClose, plan, fixed, userId, onSaved }) {
         active: f.active !== false,
       })),
     )
-  }, [open, plan, fixed])
+  }, [plan, fixed])
 
   async function save() {
     if (!userId) return
@@ -427,7 +437,10 @@ function PlanSheet({ open, onClose, plan, fixed, userId, onSaved }) {
         user_id: userId,
         monthly_income_cents: toCents(income) ?? 0,
         savings_target_cents: toCents(savings) ?? 0,
-        period_start_day: Math.min(Math.max(Number.parseInt(day, 10) || 1, 1), 28),
+        /* The period is the calendar month. The column stays at its default
+           of 1 rather than being dropped, so no migration is needed and a
+           payday setting could come back later without a schema change. */
+        period_start_day: 1,
       },
       { onConflict: 'user_id' },
     )
@@ -456,21 +469,20 @@ function PlanSheet({ open, onClose, plan, fixed, userId, onSaved }) {
   }
 
   return (
-    <Sheet open={open} onClose={onClose} title={t('money.plan_title')}>
-      <div className="space-y-6">
+    <Screen>
+      <TopBar
+        title={t('money.plan_title')}
+        right={
+          <button className="btn-ghost press" onClick={onCancel}>
+            {t('money.cancel')}
+          </button>
+        }
+      />
+      {/* pb-32 clears the floating tab bar plus its inset, so the save button
+          at the end of the list is reachable rather than sitting under it. */}
+      <div className="space-y-8 pb-32 pt-4">
         <Field label={t('money.income')} hint={t('money.income_hint')}>
           <MoneyInput value={income} onChange={setIncome} autoFocus />
-        </Field>
-
-        <Field label={t('money.payday')} hint={t('money.payday_hint')}>
-          <input
-            type="number"
-            min="1"
-            max="28"
-            className="field"
-            value={day}
-            onChange={(e) => setDay(e.target.value)}
-          />
         </Field>
 
         <Field label={t('money.savings')} hint={t('money.savings_hint')}>
@@ -523,6 +535,6 @@ function PlanSheet({ open, onClose, plan, fixed, userId, onSaved }) {
           {busy ? t('money.saving') : t('money.save')}
         </button>
       </div>
-    </Sheet>
+    </Screen>
   )
 }

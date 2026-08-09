@@ -269,6 +269,13 @@
   select {
     -webkit-appearance: none;
     appearance: none;
+  }
+
+  /* The radius reset is wrapped in :where() so it contributes no specificity.
+     Written bare it is input:not():not(), which scores 0,2,1 and quietly beat
+     .field at 0,1,0: the fields were being given rounded corners by their own
+     component rule and having them stripped again by this reset. */
+  :where(input:not([type='checkbox']):not([type='radio']), textarea, select) {
     border-radius: 0;
   }
 
@@ -1050,10 +1057,26 @@
   }
 
   /* Inputs are a line, not a box. */
+  /**
+   * A soft box, not an underline.
+   *
+   * The rule under every input was reading as clutter once a form had five of
+   * them stacked up: five horizontal lines down the screen, none of which
+   * carry information. Deleting the border outright was not the answer either,
+   * since an input with no edge at all is invisible and untappable.
+   *
+   * So the affordance moves from a line to a fill. The field is a quiet filled
+   * rectangle, which is what the banking apps this was compared against do,
+   * and focus is a ring rather than a colour change on one edge.
+   */
   .field {
-    @apply w-full border-0 border-b border-hairline bg-transparent px-0 pb-2.5 pt-1
-           text-body text-ink transition-colors duration-200 ease-settle
-           focus:border-accent;
+    @apply w-full rounded-field border-0 px-4 py-3 text-body text-ink
+           transition-shadow duration-200 ease-settle;
+    background-color: rgb(var(--c-raised));
+  }
+  .field:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgb(var(--c-accent) / 0.55);
   }
   .field-soft {
     @apply w-full rounded-field border-0 bg-ink/[0.035] px-4 py-3 text-body text-ink
