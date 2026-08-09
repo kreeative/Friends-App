@@ -647,12 +647,12 @@ const STRINGS = {
     'nav.budget': 'Budget',
     'settings.rewatch_intro': 'Revoir l’intro du budget',
 
-    'banner.budget_title': 'Nouveau : Mon budget',
-    'banner.budget_sub': 'Être riche commence par le planifier.',
+    'banner.budget_title': 'Nouveau : Budget',
+    'banner.budget_sub': 'La richesse commence par la planification.',
     'banner.budget_cta': 'Configurer mon budget →',
     'banner.dismiss': 'Fermer',
-    'money.title': 'Argent',
-    'money.sub_new': 'Être riche commence par le planifier.',
+    'money.title': 'Budget',
+    'money.sub_new': 'La richesse commence par la planification.',
     'money.sub_period': 'Il reste {days} jours dans le mois',
     'money.pitch': 'Trois questions, deux minutes, une seule fois. Ensuite c’est un seul chiffre.',
     'money.step_in': 'Ce qui rentre',
@@ -912,7 +912,7 @@ const STRINGS = {
     'settings.everyone': 'Tout le monde',
     'settings.send_to_friend': 'Envoyer à un ami',
     'settings.invite_note':
-      'Les discussions se passent dans votre groupe habituel, pas ici. Cette appli ne garde que le point.',
+      'Les discussions se passent dans ton groupe habituel, pas ici. Cette appli ne garde que le point.',
     'settings.switch_group': 'Changer de groupe',
     'settings.language': 'Langue',
 

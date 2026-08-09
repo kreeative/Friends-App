@@ -122,15 +122,15 @@ export const LANDING = {
 
   fr: {
     hero: {
-      title: 'Parceque ensemble on construit plus vite.',
-      body: 'Notre environnement dicte nos résultats. Arrêtez de moudre dans l’isolement - entourez-vous d’amis de haut calibre qui vous forcent à monter de niveau chaque jour',
+      title: 'Parce qu’ensemble on construit plus vite.',
+      body: 'Ton entourage décide de tes résultats. Arrête de ramer seul dans ton coin : entoure-toi de gens ambitieux qui te tirent vers le haut, un jour après l’autre.',
       cta: 'Créer un groupe',
       secondary: 'Comment ça marche',
       note: 'L’ambition est contagieuse',
     },
 
     problem: {
-      eyebrow: 'Pourquoi on atteint souvent pas nos objectifs?',
+      eyebrow: 'Pourquoi on n’atteint pas nos objectifs ?',
       title: 'Ces applis n’échouent pas par manque de fonctions.',
       body: 'Elles échouent parce qu’un objectif vague ne peut pas être vérifié, parce que rien ne se passe quand quelqu’un disparaît, et parce qu’un seul jour manqué casse une série, alors les gens abandonnent plutôt que de repartir de zéro. Chaque décision ici a été prise sur un seul critère : est-ce que ça augmente les chances que le groupe soit encore là à la douzième semaine ?',
     },

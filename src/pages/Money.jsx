@@ -323,7 +323,12 @@ export default function Money() {
         title={t('money.title')}
         sub={t('money.sub_period', { days: s.period.daysLeft })}
         right={
-          <button className="btn-ghost press" onClick={() => setEditing(true)}>
+          /* An outlined pill, not btn-ghost. Ghost is edgeless by design,
+             which works underneath a filled primary that has already
+             established the row; alone in the corner of a heading it was
+             indistinguishable from a line of bold text and read as a label
+             rather than as the only control on the screen. */
+          <button className="goal-action press" onClick={() => setEditing(true)}>
             {t('money.edit_plan')}
           </button>
         }
