@@ -141,7 +141,7 @@ const STRINGS = {
     'intro.freedom_title': 'Your path to freedom',
     'intro.freedom_body':
       'Ready to build real wealth? Let us set up your monthly targets.',
-    'nav.budget': 'My Budget',
+    'nav.budget': 'Budget',
     'settings.rewatch_intro': 'Watch the budget intro again',
 
     'money.title': 'Money',
@@ -176,6 +176,9 @@ const STRINGS = {
     'money.cat_health': 'Health',
     'money.cat_other': 'Other',
 
+    'money.tile_pct_of_free': '{pct}% of what was free',
+    'money.tile_no_pool': 'Nothing free to spend',
+    'money.tile_per_day': '{amount} a day from here',
     'money.this_period': 'This period',
     'money.left': 'Left',
     'money.spent': 'Spent',
@@ -583,7 +586,7 @@ const STRINGS = {
     'intro.freedom_title': 'Ton chemin vers la liberté',
     'intro.freedom_body':
       'Prêt à bâtir une vraie richesse ? On configure tes objectifs mensuels.',
-    'nav.budget': 'Mon budget',
+    'nav.budget': 'Budget',
     'settings.rewatch_intro': 'Revoir l’intro du budget',
 
     'money.title': 'Argent',
@@ -618,6 +621,9 @@ const STRINGS = {
     'money.cat_health': 'Santé',
     'money.cat_other': 'Autre',
 
+    'money.tile_pct_of_free': '{pct}% de ce qui était libre',
+    'money.tile_no_pool': 'Rien de libre à dépenser',
+    'money.tile_per_day': '{amount} par jour à partir d’ici',
     'money.this_period': 'Cette période',
     'money.left': 'Restant',
     'money.spent': 'Dépensé',

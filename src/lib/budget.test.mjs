@@ -1,4 +1,4 @@
-import { periodBounds, summarise } from './budget.js'
+import { dailySeries, periodBounds, summarise } from './budget.js'
 let pass = 0, fail = 0
 const iso = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
 const eq = (label, got, want) => {
@@ -75,6 +75,30 @@ eq('perDay goes negative rather than pretending', s.perDay < 0, true)
 eq('no plan is not ready', summarise({ plan: null }).ready, false)
 eq('zero income is not ready', summarise({ plan: { monthly_income_cents: 0 } }).ready, false)
 eq('never divides by zero', Number.isFinite(summarise({ plan, fixed, today: new Date(2026,7,31) }).perDay), true)
+
+
+// ---- the sparkline series --------------------------------------------------
+{
+  const per = periodBounds(new Date(2026, 7, 5), 1)          // 1 Aug period, today the 5th
+  const ent = [
+    { kind: 'expense', amount_cents: 1000, happened_on: '2026-08-01' },
+    { kind: 'expense', amount_cents:  500, happened_on: '2026-08-03' },
+    { kind: 'income',  amount_cents: 9999, happened_on: '2026-08-03' },  // wrong kind
+    { kind: 'expense', amount_cents:  250, happened_on: '2026-08-05' },
+    { kind: 'expense', amount_cents: 7777, happened_on: '2026-08-20' },  // the future
+  ]
+  const ser = dailySeries({ entries: ent, period: per })
+  eq('series runs start..today',      ser.length, 5)
+  eq('series is cumulative',          ser, [1000, 1000, 1500, 1500, 1750])
+  eq('series ignores other kinds',    ser[4], 1750)
+  eq('series ignores future entries', Math.max(...ser), 1750)
+
+  const day1 = dailySeries({ entries: [], period: periodBounds(new Date(2026, 7, 1), 1) })
+  eq('a single day still draws a line', day1.length, 2)
+
+  const inc = dailySeries({ entries: ent, period: per, kind: 'income' })
+  eq('series can follow income too', inc[4], 9999)
+}
 
 console.log(`\n${pass} passed, ${fail} failed`)
 process.exit(fail ? 1 : 0)

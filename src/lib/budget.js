@@ -8,6 +8,37 @@
  * Everything is in cents, integers throughout. See src/lib/money.js for why.
  */
 
+/**
+ * Cumulative spend, one point per day from the start of the period to today.
+ *
+ * Cumulative rather than per-day on purpose. A per-day bar chart of somebody's
+ * spending is mostly noise: it is spiky, it is zero on half the days, and the
+ * shape carries no answer to any question a person actually has. The running
+ * total does: its slope is the rate of spending, and where it sits relative to
+ * the pool is whether the month works. That is a line worth two centimetres of
+ * screen.
+ *
+ * Always at least two points, because one point is not a line and an SVG
+ * polyline with a single coordinate draws nothing.
+ */
+export function dailySeries({ entries = [], period, kind = 'expense' }) {
+  const days = Math.max(1, Math.min(period.daysGone + 1, period.daysTotal))
+  const out = []
+  let running = 0
+
+  for (let d = 0; d < days; d++) {
+    const at = new Date(period.start.getFullYear(), period.start.getMonth(), period.start.getDate() + d)
+    const next = new Date(at.getFullYear(), at.getMonth(), at.getDate() + 1)
+    running += sum(
+      entries.filter((e) => e.kind === kind && inPeriod(e.happened_on, at, next)),
+      (e) => e.amount_cents,
+    )
+    out.push(running)
+  }
+
+  return out.length === 1 ? [out[0], out[0]] : out
+}
+
 /** The six that cover almost everything. Order is the order they render in. */
 export const CATEGORIES = ['food', 'transport', 'home', 'fun', 'health', 'other']
 

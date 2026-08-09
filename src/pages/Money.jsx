@@ -7,6 +7,7 @@ import { CATEGORIES, summarise } from '../lib/budget'
 import { loadBudget } from '../lib/budgetData'
 import { Empty, Field, Screen, Section, Sheet, TopBar } from '../components/ui'
 import BudgetIntro from '../components/BudgetIntro'
+import BudgetTiles from '../components/BudgetTiles'
 
 /**
  * The money screen.
@@ -243,6 +244,13 @@ export default function Money() {
                 <SpendBar spent={s.spent} pool={s.pool} />
               </div>
             )}
+          </Section>
+
+          {/* The two squares. Under the headline because they are the same
+              fact at more resolution, and above the form because a person
+              opening this screen is reading before they are typing. */}
+          <Section>
+            <BudgetTiles s={s} locale={locale} />
           </Section>
 
           {/* Quick add. The whole point is that this is two taps. */}
