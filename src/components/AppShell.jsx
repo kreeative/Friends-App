@@ -1,6 +1,6 @@
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useEffect, useState } from 'react'
-import { onPendingChange, pendingCount, startAutoFlush } from '../lib/queue'
+import { onPendingChange, startAutoFlush } from '../lib/queue'
 import { useAuth } from '../context/AuthContext'
 import { useGroup } from '../context/GroupContext'
 import { useT } from '../lib/i18n'
@@ -39,37 +39,34 @@ const IN_GROUP = (id) => [
   { to: `/g/${id}/settings`, key: 'nav.group' },
 ]
 
-function SyncBadge() {
-  const [pending, setPending] = useState(pendingCount())
-  const [online, setOnline] = useState(navigator.onLine)
+/**
+ * The offline queue, running with nothing on screen.
+ *
+ * There used to be a strip under the header announcing "saved, it will send as
+ * soon as you are back online", and it was the wrong shape of message twice
+ * over. It reported plumbing rather than anything the reader could act on, and
+ * because a queued entry only clears on a successful send, one entry the
+ * server keeps refusing pins the strip to the top of every screen forever.
+ * That is what turns an occasional reassurance into a permanent banner about a
+ * problem nobody can fix from the app.
+ *
+ * The flushing is the part that mattered, and it lives here now rather than
+ * inside the thing that drew the strip. Deleting the component without moving
+ * this would have stopped queued check-ins sending at all.
+ */
+function useAutoFlush() {
   const { reloadGroup } = useGroup()
-  const { t } = useT()
 
   useEffect(() => {
     const stop = startAutoFlush()
-    const off = onPendingChange((n) => {
-      setPending(n)
-      if (n === 0) reloadGroup()
-    })
-    const on = () => setOnline(true)
-    const down = () => setOnline(false)
-    window.addEventListener('online', on)
-    window.addEventListener('offline', down)
+    // Once the queue drains, the group is out of date by exactly the entries
+    // that just went out.
+    const off = onPendingChange((n) => n === 0 && reloadGroup())
     return () => {
       stop()
       off()
-      window.removeEventListener('online', on)
-      window.removeEventListener('offline', down)
     }
   }, [])
-
-  if (pending === 0 && online) return null
-
-  return (
-    <div className="animate-rise border-b border-hairline bg-surface px-6 py-2.5 text-center text-small text-ink">
-      {pending > 0 ? t('sync.queued', { n: pending }) : t('sync.offline')}
-    </div>
-  )
 }
 
 /**
@@ -116,7 +113,12 @@ function TopNav() {
         <div className="px-3 py-2.5">
           <div className="flex items-center gap-2.5">
             <Link to="/" aria-label={t('nav.home')} className="press shrink-0">
-              <LockupInline size={32} hideNameOnMobile />
+              {/* The name is dropped on a narrow screen only when a group name
+                  is also competing for the row. Outside a group there is
+                  nothing else in the bar, and hiding it left a phone with a
+                  small tile at one end, a face at the other and a hand's width
+                  of nothing in between. */}
+              <LockupInline size={32} hideNameOnMobile={Boolean(activeId && group)} />
             </Link>
 
             {/* Inside a group the bar says which one, and the name is the way
@@ -236,6 +238,8 @@ export default function AppShell() {
   const { activeId } = useGroup()
   const { pathname } = useLocation()
 
+  useAutoFlush()
+
   // The reader is full-bleed by design and brings its own chrome.
   const bare = /^\/library\/[^/]+$/.test(pathname)
   if (bare) return <Outlet />
@@ -250,7 +254,6 @@ export default function AppShell() {
 
       <TopNav />
       <div className="relative z-10">
-        <SyncBadge />
         {/* The chrome above and below stays put; only the page moves. */}
         <PageTransition>
           <Outlet />

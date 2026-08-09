@@ -29,13 +29,22 @@ const MARK = {
   sea: '/brand/mark-blue.png', // yellow ground, blue monogram
 }
 
+/**
+ * The corner radius is a proportion, not a number.
+ *
+ * `.brand-tile` rounds at a fixed 22px, which is a gentle chamfer on a 160px
+ * lockup and very nearly a circle on a 32px one. At bar size that was eating
+ * the corners of the lettering, which is most of what made the mark in the
+ * header look like a blob rather than a logo. A quarter of the side is the
+ * app-icon proportion and holds at every size.
+ */
 function Tile({ src, alt, size, className }) {
   return (
     <img
       src={src}
       alt={alt}
       className={`brand-tile select-none ${className}`}
-      style={{ width: size, height: size }}
+      style={{ width: size, height: size, borderRadius: Math.round(size * 0.26) }}
       draggable="false"
     />
   )
@@ -76,13 +85,31 @@ export function Mark({ size = 44, className = '', variant }) {
  */
 export function LockupInline({ size = 32, className = '', hideNameOnMobile = false }) {
   return (
+    /**
+     * The tile is the wordmark artwork, not the ampersand monogram.
+     *
+     * The monogram was here because the wordmark is four lines of lettering in
+     * a square and does not resolve at bar height. That argument was about
+     * legibility, and it was answering a question nobody asks of a logo in a
+     * navigation bar: the name is set beside it in type, so the tile does not
+     * have to be readable, it has to be recognisable. The wordmark is what is
+     * on the app icon, the share card and the sign-in screen, and having the
+     * one place people look at every day show something else meant the brand
+     * had two marks and no logo.
+     *
+     * `leading-none` on the name is the alignment fix. Inherited line height
+     * gives a 16px name a 26px line box, and centring a 26px box against a
+     * 32px tile centres the box rather than the letters, so the word sat low
+     * against the mark and the pair read as slightly tipped over. Collapsing
+     * the box to the glyphs means what gets centred is what you can see.
+     */
     <span className={`inline-flex items-center gap-2.5 ${className}`}>
-      <Mark size={size} />
+      <Wordmark size={size} />
       <span
-        className={`whitespace-nowrap font-bold tracking-[-0.02em] text-ink ${
+        className={`whitespace-nowrap font-bold leading-none tracking-[-0.02em] text-ink ${
           hideNameOnMobile ? 'hidden sm:inline' : ''
         }`}
-        style={{ fontSize: Math.round(size * 0.5) }}
+        style={{ fontSize: Math.round(size * 0.46) }}
       >
         {APP_NAME}
       </span>

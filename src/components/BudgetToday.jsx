@@ -3,9 +3,10 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useT } from '../lib/i18n'
 import { money } from '../lib/money'
-import { summarise } from '../lib/budget'
+import { dailySeries, summarise } from '../lib/budget'
 import { loadBudget } from '../lib/budgetData'
 import { Section } from '../components/ui'
+import Sparkline from './Sparkline'
 
 /**
  * The money feature, reduced to the one line that belongs on the dashboard.
@@ -56,6 +57,12 @@ export default function BudgetToday() {
    */
   if (!s.ready) return null
 
+  /* Cumulative spend read from the other end, so the line falls as the month
+     goes rather than climbing. Same helper the money screen uses. */
+  const remaining = dailySeries({ entries: s.entries, period: s.period }).map(
+    (v) => s.pool + s.extra - v,
+  )
+
   return (
     <Section title={t('money.title')}>
       <Link to="/money" className="block">
@@ -77,6 +84,19 @@ export default function BudgetToday() {
             <p className="lede mt-3 max-w-[32ch]">
               {t('money.today_body', { left: fmt(s.left), days: s.period.daysLeft })}
             </p>
+            {/**
+             * What is left, day by day, under the number that is today's slice
+             * of it.
+             *
+             * The figure alone answers "how much", and a person reading this
+             * card on the 22nd wants the other question: whether the month has
+             * been going well or has been quietly draining. One line answers
+             * that in the space a second sentence would have taken.
+             *
+             * Falling, not rising: the same series the money screen draws in
+             * its "left" tile, so the two cannot disagree about a day.
+             */}
+            <Sparkline points={remaining} tone="accent" height={46} className="mt-4" />
           </>
         )}
       </Link>

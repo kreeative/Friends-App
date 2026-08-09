@@ -37,15 +37,10 @@ const STRINGS = {
     'week.nothing': 'Nothing on this day.',
     'week.not_recorded': 'Not recorded',
 
-    'sync.queued_one': 'Saved. It will send as soon as you’re back online.',
-    'sync.queued_other': 'Saved. They will send as soon as you’re back online.',
-    'sync.offline': 'You’re offline. Anything you write will send itself later.',
-
     'board.open_for': 'Open for another {t}',
     'board.reveals_in': 'Everyone’s day shows in {t}',
     'board.sealed_note':
       'You can check in any time today. Nobody sees anybody’s answers until the day is up.',
-    'board.last_week': 'Previous day, {d}',
     'board.opens_in': 'Opens in {t}',
     'board.next_opens_in': 'Next one opens in {t}',
     'board.closed': 'Closed for now',
@@ -526,15 +521,10 @@ const STRINGS = {
     'week.nothing': 'Rien ce jour-là.',
     'week.not_recorded': 'Non enregistré',
 
-    'sync.queued_one': 'Enregistré. Ça partira dès que tu seras reconnecté.',
-    'sync.queued_other': 'Enregistrés. Ils partiront dès que tu seras reconnecté.',
-    'sync.offline': 'Tu es hors ligne. Ce que tu écris partira tout seul plus tard.',
-
     'board.open_for': 'Encore ouvert {t}',
     'board.reveals_in': 'La journée de tout le monde s’affiche dans {t}',
     'board.sealed_note':
       'Tu peux faire ton point quand tu veux dans la journée. Personne ne voit les réponses des autres avant la fin de la journée.',
-    'board.last_week': 'Jour précédent, {d}',
     'board.opens_in': 'Ouvre dans {t}',
     'board.next_opens_in': 'Le prochain ouvre dans {t}',
     'board.closed': 'Fermé pour l’instant',
