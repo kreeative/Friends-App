@@ -111,10 +111,13 @@ const STRINGS = {
     'signin.google': 'Continue with Google',
     'signin.use_email': 'Use email instead',
     'signin.email': 'Email',
-    'signin.send_link': 'Send me a link',
+    'signin.send_code': 'Send me a code',
     'signin.sending': 'Sending',
-    'signin.link_sent':
-      'Link sent to {email}. Open it on this device. If it opens in a different browser you’ll need to sign in again there.',
+    'signin.code': 'Six-digit code',
+    'signin.code_sent': 'We sent a code to {email}. It expires shortly.',
+    'signin.verify': 'Sign in',
+    'signin.verifying': 'Checking',
+    'signin.wrong_email': 'Use a different address',
 
     'start.new_group': 'New group',
     'start.join_one': 'Join one',
@@ -471,10 +474,13 @@ const STRINGS = {
     'signin.google': 'Continuer avec Google',
     'signin.use_email': 'Utiliser mon e-mail',
     'signin.email': 'E-mail',
-    'signin.send_link': 'Envoyez-moi un lien',
+    'signin.send_code': 'Envoyez-moi un code',
     'signin.sending': 'Envoi',
-    'signin.link_sent':
-      'Lien envoyé à {email}. Ouvrez-le sur cet appareil. S’il s’ouvre dans un autre navigateur, il faudra vous reconnecter là-bas.',
+    'signin.code': 'Code à six chiffres',
+    'signin.code_sent': 'Code envoyé à {email}. Il expire rapidement.',
+    'signin.verify': 'Se connecter',
+    'signin.verifying': 'Vérification',
+    'signin.wrong_email': 'Utiliser une autre adresse',
 
     'start.new_group': 'Nouveau groupe',
     'start.join_one': 'Rejoindre',

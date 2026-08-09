@@ -44,12 +44,13 @@ function ArtRow() {
 }
 
 export default function SignIn() {
-  const { signInWithGoogle, signInWithEmail, authError, clearAuthError } = useAuth()
+  const { signInWithGoogle, signInWithEmail, verifyEmailCode, authError, clearAuthError } = useAuth()
   const { t } = useT()
   const [email, setEmail] = useState('')
+  const [code, setCode] = useState('')
   const [sent, setSent] = useState(false)
   const [showEmail, setShowEmail] = useState(false)
-  const [busy, setBusy] = useState(null) // 'google' | 'email' | null
+  const [busy, setBusy] = useState(null) // 'google' | 'email' | 'code' | null
 
   async function google() {
     clearAuthError()
@@ -59,13 +60,38 @@ export default function SignIn() {
     if (error) setBusy(null)
   }
 
-  async function sendLink(e) {
+  async function sendCode(e) {
     e.preventDefault()
     clearAuthError()
     setBusy('email')
     const { error } = await signInWithEmail(email.trim())
     setBusy(null)
     if (!error) setSent(true)
+  }
+
+  /**
+   * On success nothing is navigated. Verifying writes the session, the auth
+   * listener fires, and the router swaps this whole page out. Setting state
+   * here would be setting state on a component about to unmount.
+   */
+  async function submitCode(e) {
+    e.preventDefault()
+    clearAuthError()
+    setBusy('code')
+    const { error } = await verifyEmailCode(email.trim(), code.trim())
+    if (error) {
+      setBusy(null)
+      setCode('')
+    }
+  }
+
+  // Wrong code, or waited too long. Either way the fix is a fresh one, so
+  // this returns to the address step rather than leaving them stuck on a
+  // code that can no longer work.
+  function startOver() {
+    clearAuthError()
+    setSent(false)
+    setCode('')
   }
 
   return (
@@ -83,7 +109,47 @@ export default function SignIn() {
           <ErrorNote error={authError} />
 
           {sent ? (
-            <p className="text-body text-muted">{t('signin.link_sent', { email })}</p>
+            <form onSubmit={submitCode} className="space-y-5">
+              <p className="text-body text-muted">{t('signin.code_sent', { email })}</p>
+
+              <Field label={t('signin.code')}>
+                {/*
+                  inputMode numeric puts the digit pad up on a phone without
+                  type="number", which would bring spinners and strip a
+                  leading zero. autoComplete one-time-code is what lets iOS
+                  offer the code straight from the notification, which is the
+                  single biggest thing that makes this flow feel quick.
+
+                  Deliberately no maxLength. The browser applies it to a paste
+                  before React sees the value, so pasting "Code: 418205" out
+                  of a mail app would clip to the first six characters and the
+                  digit filter below would then leave nothing at all. Letting
+                  the filter run on the whole pasted string and slicing after
+                  means that paste yields 418205, which is what was meant.
+                */}
+                <input
+                  type="text"
+                  required
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  pattern="[0-9]*"
+                  autoFocus
+                  className="field text-center text-hero tracking-[0.35em]"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  placeholder="000000"
+                  aria-label={t('signin.code')}
+                />
+              </Field>
+
+              <button className="btn-primary press" disabled={busy !== null || code.length < 6}>
+                {busy === 'code' ? t('signin.verifying') : t('signin.verify')}
+              </button>
+
+              <button type="button" className="btn-ghost press" onClick={startOver}>
+                {t('signin.wrong_email')}
+              </button>
+            </form>
           ) : (
             <>
               <button className="btn-primary press" onClick={google} disabled={busy !== null}>
@@ -91,11 +157,12 @@ export default function SignIn() {
               </button>
 
               {showEmail ? (
-                <form onSubmit={sendLink} className="space-y-5 pt-4">
+                <form onSubmit={sendCode} className="space-y-5 pt-4">
                   <Field label={t('signin.email')}>
                     <input
                       type="email"
                       required
+                      autoComplete="email"
                       className="field"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
@@ -103,7 +170,7 @@ export default function SignIn() {
                     />
                   </Field>
                   <button className="btn-ghost press" disabled={busy !== null}>
-                    {busy === 'email' ? t('signin.sending') : t('signin.send_link')}
+                    {busy === 'email' ? t('signin.sending') : t('signin.send_code')}
                   </button>
                 </form>
               ) : (

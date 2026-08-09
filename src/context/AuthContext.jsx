@@ -116,12 +116,15 @@ export function AuthProvider({ children }) {
     clearAuthError: () => setAuthError(null),
 
     /**
-     * OAuth is the primary path deliberately. A magic link opens in whatever
-     * the OS considers the default browser, which is frequently not the one
-     * the person started in, so the session lands somewhere they cannot see
-     * it. For an app meant to be used in under a minute while standing up,
-     * that failure is fatal. The link remains as a fallback for anyone who
-     * would rather not use a Google account.
+     * OAuth is the primary path deliberately. The email fallback used to be a
+     * magic link, which opens in whatever the OS considers the default
+     * browser, frequently not the one the person started in, so the session
+     * landed somewhere they could not see it. For an app meant to be used in
+     * under a minute while standing up, that failure is fatal.
+     *
+     * It is now a six-digit code instead. A code is read in the mail app and
+     * typed into the tab that is already open, so the browser never changes
+     * and the failure mode is gone.
      *
      * Both of these now RETURN their error. Swallowing it was what made a
      * disabled provider look like a dead button.
@@ -134,12 +137,35 @@ export function AuthProvider({ children }) {
       if (error) setAuthError({ code: error.code ?? 'oauth', description: error.message })
       return { error }
     },
+    /**
+     * Sends a six-digit code, not a link.
+     *
+     * Supabase mints both for every request; which one arrives is decided
+     * entirely by the email template. With `{{ .Token }}` in the template and
+     * no `{{ .ConfirmationURL }}`, this is a code.
+     *
+     * `emailRedirectTo` is deliberately gone. It only ever configured where
+     * the link lands, and there is no link now. Leaving it set would imply a
+     * redirect that never happens.
+     */
     signInWithEmail: async (email) => {
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: { emailRedirectTo: window.location.origin },
-      })
+      const { error } = await supabase.auth.signInWithOtp({ email })
       if (error) setAuthError({ code: error.code ?? 'otp', description: error.message })
+      return { error }
+    },
+
+    /**
+     * Second half of the code flow. On success the client writes the session
+     * itself, so the existing onAuthStateChange listener picks it up and the
+     * app swaps to the signed-in tree with no navigation and no reload. That
+     * is the entire reason a code beats a link here: the session is created
+     * in the browser the person is already looking at.
+     *
+     * `type: 'email'` covers both a brand new address and a returning one.
+     */
+    verifyEmailCode: async (email, token) => {
+      const { error } = await supabase.auth.verifyOtp({ email, token, type: 'email' })
+      if (error) setAuthError({ code: error.code ?? 'otp_verify', description: error.message })
       return { error }
     },
     signOut: () => supabase.auth.signOut(),

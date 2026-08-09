@@ -1,8 +1,15 @@
 <!--
-  Magic-link email for Rich & Friends.
+  Sign-in code email for Rich & Friends.
 
-  Paste into Supabase → Authentication → Email Templates → Magic Link.
-  Supabase substitutes {{ .ConfirmationURL }}; leave that token exactly as is.
+  Paste into Supabase → Authentication → Email Templates → Magic Link. That
+  template slot keeps its old name in the dashboard, but it is what
+  signInWithOtp sends whether the body carries a link or a code.
+
+  The body carries the Token variable, in double braces with a leading dot
+  and a space inside each brace. Leave it exactly as written below. It is
+  spelled out in prose here rather than shown literally, because Go templating
+  substitutes inside HTML comments too, and a literal here would put the live
+  code into this paragraph.
 
   Supabase stores ONE template per email type, there is no per-locale
   version, so this is deliberately bilingual, French first, matching the
@@ -44,31 +51,43 @@
         <tr>
           <td style="padding:0 24px;font-family:'DM Sans',Helvetica,Arial,sans-serif;
                      font-size:22px;line-height:1.3;color:#0b0a0d;font-weight:700;">
-            Ton lien de connexion
+            Ton code de connexion
           </td>
         </tr>
 
         <tr>
           <td style="padding:12px 24px 0;font-family:'DM Sans',Helvetica,Arial,sans-serif;
                      font-size:16px;line-height:1.6;color:#6b6b70;">
-            Appuie sur le bouton pour te connecter. Le lien expire vite et ne
-            marche qu’une fois. Ouvre-le sur cet appareil, s’il s’ouvre dans un
-            autre navigateur, il faudra recommencer là-bas.
+            Saisis ce code dans l’onglet où tu as demandé à te connecter. Il
+            expire vite et ne marche qu’une fois.
           </td>
         </tr>
 
+        <!--
+          The code, and no button.
+
+          The Token variable below is the six-digit form of the same one-time
+          password the ConfirmationURL variable used to carry. Supabase mints
+          both on every request, so this is purely a question of which one the
+          template shows. The link is left out on purpose: it opens in the OS
+          default browser, which is often not the tab the person is sitting
+          in, and the session then lands somewhere they cannot see it.
+
+          Letter-spacing puts a trailing gap after the last digit, which
+          pushes centred text visibly off-centre. text-indent of the same
+          amount cancels it.
+        -->
         <tr>
           <td style="padding:28px 24px 0;">
-            <table role="presentation" cellpadding="0" cellspacing="0">
+            <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
               <tr>
-                <td style="background:#de3578;border-radius:999px;">
-                  <a href="{{ .ConfirmationURL }}"
-                     style="display:inline-block;padding:15px 32px;
-                            font-family:'DM Sans',Helvetica,Arial,sans-serif;
-                            font-size:16px;font-weight:700;color:#000000;
-                            text-decoration:none;border-radius:999px;">
-                    Se connecter
-                  </a>
+                <td align="center"
+                    style="background:#fdf2f7;border:1px solid #f3cfe0;border-radius:14px;
+                           padding:22px 12px;
+                           font-family:'DM Sans',Helvetica,Arial,sans-serif;
+                           font-size:34px;line-height:1.1;font-weight:700;
+                           letter-spacing:0.3em;text-indent:0.3em;color:#a91c54;">
+                  {{ .Token }}
                 </td>
               </tr>
             </table>
@@ -84,10 +103,9 @@
         <tr>
           <td style="padding:20px 24px 0;font-family:'DM Sans',Helvetica,Arial,sans-serif;
                      font-size:15px;line-height:1.6;color:#6b6b70;">
-            <strong style="color:#0b0a0d;">Your sign-in link.</strong>
-            Tap the button above to sign in. It expires shortly and works once.
-            Open it on this device, if it opens in a different browser you will
-            need to start again there.
+            <strong style="color:#0b0a0d;">Your sign-in code.</strong>
+            Type the code above into the tab where you asked to sign in. It
+            expires shortly and works once.
           </td>
         </tr>
 
