@@ -6,7 +6,7 @@ import { localeTag, useT } from '../lib/i18n'
 
 /**
  * Finished states. Each gets its own card colour and a chip, rather than the
- * word appended to the cadence line where it was previously. "3 times a week
+ * word appended to the cadence line where it was previously. "3 times a day
  * · done" is the kind of sentence you read past.
  */
 const DONE = {
@@ -33,7 +33,7 @@ export default function GoalCard({
 
   const cadence =
     goal.cadence === 'recurring'
-      ? t('goal.times_a_week', { n: goal.target_per_cycle })
+      ? t('goal.times_a_day', { n: goal.target_per_cycle })
       : t('goal.by_date', { date: shortDate(goal.due_on, localeTag(locale)) })
 
   return (

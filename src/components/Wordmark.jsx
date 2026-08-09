@@ -29,13 +29,22 @@ const MARK = {
   sea: '/brand/mark-blue.png', // yellow ground, blue monogram
 }
 
+/**
+ * The corner radius is a proportion, not a number.
+ *
+ * `.brand-tile` rounds at a fixed 22px, which is a gentle chamfer on a 160px
+ * lockup and very nearly a circle on a 32px one. At bar size that was eating
+ * the corners of the lettering, which is most of what made the mark in the
+ * header look like a blob rather than a logo. A quarter of the side is the
+ * app-icon proportion and holds at every size.
+ */
 function Tile({ src, alt, size, className }) {
   return (
     <img
       src={src}
       alt={alt}
       className={`brand-tile select-none ${className}`}
-      style={{ width: size, height: size }}
+      style={{ width: size, height: size, borderRadius: Math.round(size * 0.26) }}
       draggable="false"
     />
   )
@@ -58,36 +67,21 @@ export function Mark({ size = 44, className = '', variant }) {
 }
 
 /**
- * The name, written out, in a navigation bar.
+ * The bar logo: the wordmark tile, and nothing beside it.
  *
- * Both headers showed the ampersand monogram, which is a square tile with no
- * words in it, so nothing anywhere on the site actually said what the site was
- * called. The obvious fix does not work: the wordmark artwork is four lines of
- * lettering in a square, readable from about 90px up, and a navigation bar is
- * 32 to 44 high. Dropping it in gives an unreadable smudge and a very tall bar.
+ * This was a horizontal lockup, the tile plus the name set in type. That
+ * arrangement made sense while the tile was the ampersand monogram, which has
+ * no words in it, so without the type nothing anywhere said what the site was
+ * called. Once the tile became the wordmark the type was the name printed
+ * twice in the same 200 pixels, which is what "the logo already says Rich &
+ * Friends" means, and it is right.
  *
- * So the lockup goes horizontal. The tile keeps its job as the mark, and the
- * name is set beside it in the site's own type, which reads at any bar height
- * and stays legible when the bar is glass over a photograph.
- *
- * The name can be dropped below the smallest breakpoint on the app side, where
- * the bar also has to hold a group name and a menu. The tile carries it there,
- * and the accessible name comes from the link's aria-label either way.
+ * A little larger than the lockup's tile was, because it is carrying the job
+ * alone now, and the accessible name comes from the aria-label on the link
+ * that wraps it in both headers.
  */
-export function LockupInline({ size = 32, className = '', hideNameOnMobile = false }) {
-  return (
-    <span className={`inline-flex items-center gap-2.5 ${className}`}>
-      <Mark size={size} />
-      <span
-        className={`whitespace-nowrap font-bold tracking-[-0.02em] text-ink ${
-          hideNameOnMobile ? 'hidden sm:inline' : ''
-        }`}
-        style={{ fontSize: Math.round(size * 0.5) }}
-      >
-        {APP_NAME}
-      </span>
-    </span>
-  )
+export function LockupInline({ size = 38, className = '' }) {
+  return <Wordmark size={size} className={className} />
 }
 
 /**

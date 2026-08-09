@@ -1,6 +1,6 @@
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useEffect, useState } from 'react'
-import { onPendingChange, pendingCount, startAutoFlush } from '../lib/queue'
+import { onPendingChange, startAutoFlush } from '../lib/queue'
 import { useAuth } from '../context/AuthContext'
 import { useGroup } from '../context/GroupContext'
 import { useT } from '../lib/i18n'
@@ -39,40 +39,54 @@ const IN_GROUP = (id) => [
   { to: `/g/${id}/settings`, key: 'nav.group' },
 ]
 
-function SyncBadge() {
-  const [pending, setPending] = useState(pendingCount())
-  const [online, setOnline] = useState(navigator.onLine)
+/**
+ * The offline queue, running with nothing on screen.
+ *
+ * There used to be a strip under the header announcing "saved, it will send as
+ * soon as you are back online", and it was the wrong shape of message twice
+ * over. It reported plumbing rather than anything the reader could act on, and
+ * because a queued entry only clears on a successful send, one entry the
+ * server keeps refusing pins the strip to the top of every screen forever.
+ * That is what turns an occasional reassurance into a permanent banner about a
+ * problem nobody can fix from the app.
+ *
+ * The flushing is the part that mattered, and it lives here now rather than
+ * inside the thing that drew the strip. Deleting the component without moving
+ * this would have stopped queued check-ins sending at all.
+ */
+function useAutoFlush() {
   const { reloadGroup } = useGroup()
-  const { t } = useT()
 
   useEffect(() => {
     const stop = startAutoFlush()
-    const off = onPendingChange((n) => {
-      setPending(n)
-      if (n === 0) reloadGroup()
-    })
-    const on = () => setOnline(true)
-    const down = () => setOnline(false)
-    window.addEventListener('online', on)
-    window.addEventListener('offline', down)
+    // Once the queue drains, the group is out of date by exactly the entries
+    // that just went out.
+    const off = onPendingChange((n) => n === 0 && reloadGroup())
     return () => {
       stop()
       off()
-      window.removeEventListener('online', on)
-      window.removeEventListener('offline', down)
     }
   }, [])
-
-  if (pending === 0 && online) return null
-
-  return (
-    <div className="animate-rise border-b border-hairline bg-surface px-6 py-2.5 text-center text-small text-ink">
-      {pending > 0 ? t('sync.queued', { n: pending }) : t('sync.offline')}
-    </div>
-  )
 }
 
-/** Home, who you are, and the way out. Present on every screen. */
+/**
+ * Home, who you are, and the way out. Present on every screen.
+ *
+ * The account menu opens **inside the bar** rather than as a sheet floating
+ * under it. The floating version was a second white card laid over the page,
+ * with its own rim and its own shadow, hanging off the corner of a bar that
+ * already had both. Two stacked sheets for four lines of text reads as a
+ * dialog, and on a narrow phone the 240px panel came within a few pixels of
+ * the opposite edge of the screen it was supposed to be a corner of.
+ *
+ * Expanding the bar keeps one sheet on screen. The name, the address and the
+ * two things you can do sit inside the border and the padding the bar already
+ * has, so nothing new is drawn, the chrome simply gets taller.
+ *
+ * The animation is the same CSS grid trick MoodToday uses: grid-template-rows
+ * from 0fr to 1fr resolves to the content's real height with nothing measured
+ * and no dependency. See that file for the longer argument.
+ */
 function TopNav() {
   const { user, profile, signOut } = useAuth()
   const { activeId, group } = useGroup()
@@ -93,74 +107,75 @@ function TopNav() {
   return (
     <header className="sticky top-0 z-40 px-4 pt-4">
       <nav className="lg lg-chrome mx-auto w-full max-w-content">
-        <div className="flex items-center gap-2.5 px-3 py-2.5">
-          <Link to="/" aria-label={t('nav.home')} className="press shrink-0">
-            <LockupInline size={32} hideNameOnMobile />
-          </Link>
+        {/* One padded box for both halves. The row used to carry the padding
+            itself, which left the panel below it no way to line up with the
+            logo without repeating the same numbers. */}
+        <div className="px-3 py-2.5">
+          <div className="flex items-center gap-2.5">
+            <Link to="/" aria-label={t('nav.home')} className="press shrink-0">
+              <LockupInline size={36} />
+            </Link>
 
-          {/* Inside a group the bar says which one, and the name is the way
-              back out. Without it every group looks identical from the
-              chrome down. */}
-          {activeId && group && (
-            <>
-              <span aria-hidden="true" className="shrink-0 text-muted/40">
-                /
-              </span>
-              <span className="truncate text-small font-semibold tracking-tight text-ink">
-                {group.name}
-              </span>
-            </>
-          )}
+            {/* Inside a group the bar says which one, and the name is the way
+                back out. Without it every group looks identical from the
+                chrome down. */}
+            {activeId && group && (
+              <>
+                <span aria-hidden="true" className="shrink-0 text-muted/40">
+                  /
+                </span>
+                <span className="truncate text-small font-semibold tracking-tight text-ink">
+                  {group.name}
+                </span>
+              </>
+            )}
 
-          <div className="relative ml-auto shrink-0">
             <button
               onClick={() => setMenu((v) => !v)}
-              aria-haspopup="menu"
               aria-expanded={menu}
+              aria-controls="account-panel"
               aria-label={t('nav.you')}
-              className="press block rounded-pill"
+              className="press ml-auto block shrink-0 rounded-pill"
             >
               <Avatar profile={profile} size={32} />
             </button>
+          </div>
 
-            {menu && (
-              <>
-                {/* Catches the click that closes it, at a z-index below the
-                    menu but above everything else. */}
-                <button
-                  className="fixed inset-0 z-40 cursor-default"
-                  aria-hidden="true"
-                  tabIndex={-1}
-                  onClick={() => setMenu(false)}
-                />
-                <div
-                  role="menu"
-                  className="lg absolute right-0 z-50 mt-2 w-60 animate-rise overflow-hidden p-1.5"
-                >
-                  <div className="px-3 py-2.5">
-                    <p className="truncate text-small font-semibold text-ink">
-                      {profile?.display_name}
-                    </p>
-                    <p className="truncate text-small text-muted">{user?.email}</p>
-                  </div>
-                  <div className="my-1 h-px bg-hairline" />
+          <div
+            id="account-panel"
+            className={`grid transition-[grid-template-rows,opacity] duration-300 ease-settle motion-reduce:transition-none ${
+              menu ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+            }`}
+            aria-hidden={!menu}
+          >
+            {/* The clip is what makes the closed state actually zero-height
+                rather than squashed, and it takes the spacing with it, so a
+                shut panel adds nothing at all to the bar. */}
+            <div className="overflow-hidden">
+              {/* inert while collapsed, so a closed panel is not a tab stop */}
+              <fieldset disabled={!menu} className="mt-2.5 border-0 border-t border-hairline p-0 pt-2.5">
+                <p className="truncate px-3 text-small font-semibold text-ink">
+                  {profile?.display_name}
+                </p>
+                <p className="truncate px-3 text-small text-muted">{user?.email}</p>
+
+                <div className="mt-2">
                   <Link
                     to="/me"
-                    role="menuitem"
-                    className="block rounded-inner px-3 py-2.5 text-small text-ink transition-colors hover:bg-ink/[0.06]"
+                    tabIndex={menu ? undefined : -1}
+                    className="block rounded-inner px-3 py-2.5 text-small text-ink no-underline transition-colors hover:bg-ink/[0.06]"
                   >
-                    {t('nav.you')}
+                    {t('me.profile_settings')}
                   </Link>
                   <button
-                    role="menuitem"
                     onClick={signOut}
                     className="block w-full rounded-inner px-3 py-2.5 text-left text-small text-ink transition-colors hover:bg-ink/[0.06]"
                   >
                     {t('me.sign_out')}
                   </button>
                 </div>
-              </>
-            )}
+              </fieldset>
+            </div>
           </div>
         </div>
       </nav>
@@ -218,6 +233,8 @@ export default function AppShell() {
   const { activeId } = useGroup()
   const { pathname } = useLocation()
 
+  useAutoFlush()
+
   // The reader is full-bleed by design and brings its own chrome.
   const bare = /^\/library\/[^/]+$/.test(pathname)
   if (bare) return <Outlet />
@@ -232,7 +249,6 @@ export default function AppShell() {
 
       <TopNav />
       <div className="relative z-10">
-        <SyncBadge />
         {/* The chrome above and below stays put; only the page moves. */}
         <PageTransition>
           <Outlet />

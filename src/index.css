@@ -146,25 +146,38 @@
     --c-raised: 246 246 247;
     --c-hairline: 232 232 235;
 
-    --e-raised: 0 1px 2px rgb(0 0 0 / 0.06), 0 4px 12px rgb(0 0 0 / 0.07);
+    /**
+     * Two shadows, both soft, both tinted.
+     *
+     * These were neutral grey and fairly dense: three stacked layers running
+     * to 10% black across 64px. Under a translucent sheet that does not read
+     * as depth, it reads as a grey edge drawn around the card, which is half
+     * of the "double outline" this pass exists to remove. The other half was
+     * a stroke; see --glass-edge and the .lg rim below.
+     *
+     * Tinted with the accent rather than with black, at an alpha low enough
+     * that it is a glow rather than a colour. A shadow the same hue as the
+     * ground it falls on is the difference between a card floating above the
+     * page and a card cut out of it.
+     */
+    --e-raised: 0 1px 2px rgb(16 14 20 / 0.03), 0 6px 20px rgb(var(--c-accent) / 0.09);
     --e-float:
-      0 2px 4px rgb(0 0 0 / 0.05), 0 12px 28px rgb(0 0 0 / 0.09),
-      0 32px 64px rgb(0 0 0 / 0.1);
+      0 1px 2px rgb(16 14 20 / 0.03),
+      0 8px 32px rgb(var(--c-accent) / 0.14),
+      0 24px 56px rgb(16 14 20 / 0.05);
 
     --glass-tint: 255 255 255;
     --glass-alpha: 0.74;
     --glass-alpha-strong: 0.86;
-    --glass-edge: rgb(255 255 255 / 0.85);
-    --glass-edge-hover: rgb(255 255 255 / 1);
-    --glass-underedge: rgb(0 0 0 / 0.05);
+    /* One stroke per sheet, and it is nearly invisible. 0.85 white on a pale
+       ground was a hard line; at 0.5 it catches the edge without drawing it. */
+    --glass-edge: rgb(255 255 255 / 0.5);
+    --glass-edge-hover: rgb(255 255 255 / 0.8);
 
     --lg-a: 0.68;
     --lg-blur: 24px;
     --lg-sat: 180%;
     --lg-bright: 1.04;
-    --lg-rim-hi: rgb(16 14 20 / 0.24);
-    --lg-rim-lo: rgb(16 14 20 / 0.11);
-    --lg-rim-w: 1px;
     --lg-spec: rgb(255 255 255 / 0.55);
 
     /**
@@ -186,7 +199,6 @@
     --c-on-pop: 255 255 255;
     --c-on-accent: 0 0 0;
     --c-on-field: 0 0 0;
-    --glass-sheen: rgb(var(--c-accent) / 0.22);
   }
 
   /* sun, pink type, yellow field. The warm one. */
@@ -339,9 +351,7 @@
     background: rgb(var(--glass-tint) / 0.96);
     border: 1px solid var(--glass-edge);
     box-shadow:
-      var(--e-float),
-      inset 0 1px 0 var(--glass-sheen),
-      inset 0 -1px 0 var(--glass-underedge);
+      var(--e-float);
   }
 
   /**
@@ -355,9 +365,7 @@
     background: rgb(var(--glass-tint) / 0.98);
     border: 1px solid var(--glass-edge);
     box-shadow:
-      var(--e-float),
-      inset 0 1px 0 var(--glass-sheen),
-      inset 0 -1px 0 var(--glass-underedge);
+      var(--e-float);
   }
 
   @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
@@ -388,20 +396,28 @@
   /**
    * The sheet, in the Apple sense rather than the 2014 sense.
    *
-   * `.glass` above is a tinted panel with a stroke. This is a piece of
-   * material, and the difference is four things layered in this order:
+   * Three things, and the order matters:
    *
    *   1  the blur, saturated and brightened, so what is behind blooms
    *      through instead of turning to fog
-   *   2  a refracted rim, a gradient border, bright at the corners the light
-   *      comes from and almost gone at the ones it does not, drawn with a
-   *      mask so it is only the rim and never a fill
+   *   2  one hairline of white at the edge, which is where the sheet stops
    *   3  a specular sweep across the top-left, from an implied source above
-   *      and left of the page
-   *   4  a cast shadow plus a dark under-edge, which is what gives the sheet
-   *      a thickness rather than making it look printed on
+   *      and left of the page, plus a soft tinted shadow under it
    *
-   * Drop any one and it reads as a grey box. The rim is the one people skip.
+   * THE RIM IS GONE, AND THAT IS THE POINT OF THIS VERSION.
+   *
+   * There used to be a fourth layer: a masked gradient border, dark ink at
+   * 24% on the corners the light came from, on top of the white edge, on top
+   * of an accent-coloured 1px inset along the top, on top of a dense grey cast
+   * shadow. That is four separate lines within two pixels of each other around
+   * the same rectangle, and no amount of care about each one individually
+   * stops the result reading as a card with two outlines drawn round it: a
+   * pink one inside a grey one.
+   *
+   * A frosted sheet is made by the blur and by what the blur does to the
+   * colour behind it. The edge only has to say where the sheet ends, and one
+   * hairline of half-transparent white says it. Everything the rim was doing
+   * is now done by the shadow being the same hue as the page.
    */
   .lg {
     @apply relative rounded-card;
@@ -409,36 +425,12 @@
     /* Solid first. An unsupported browser gets a readable surface rather
        than text floating on nothing. */
     background: rgb(var(--glass-tint) / 0.94);
-    box-shadow:
-      var(--e-float),
-      inset 0 -1px 0 var(--glass-underedge);
+    border: 1px solid var(--glass-edge);
+    box-shadow: var(--e-float);
     transition:
       transform 320ms cubic-bezier(0.22, 0.61, 0.36, 1),
-      box-shadow 320ms ease;
-  }
-
-  /* The rim. `padding` sets its width; the two masks cancel out everything
-     but the ring, so this is a border that can hold a gradient. */
-  .lg::before {
-    content: '';
-    @apply pointer-events-none absolute inset-0 z-[1];
-    border-radius: inherit;
-    padding: var(--lg-rim-w);
-    background: linear-gradient(
-      135deg,
-      var(--lg-rim-hi) 0%,
-      var(--lg-rim-lo) 38%,
-      var(--lg-rim-lo) 62%,
-      var(--lg-rim-hi) 100%
-    );
-    -webkit-mask:
-      linear-gradient(#000 0 0) content-box,
-      linear-gradient(#000 0 0);
-    mask:
-      linear-gradient(#000 0 0) content-box,
-      linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
+      box-shadow 320ms ease,
+      border-color 320ms ease;
   }
 
   /* The specular sweep. Sits under the content (z-0 against the content's
@@ -483,7 +475,6 @@
     --lg-blur: 6px;
     --lg-sat: 230%;
     --lg-bright: 1.16;
-    --lg-rim-w: 1.5px;
   }
 
   .lg-frost {
@@ -498,8 +489,6 @@
     --lg-blur: 48px;
     --lg-sat: 160%;
     --lg-bright: 1.02;
-    --lg-rim-hi: rgb(255 255 255 / 0.22);
-    --lg-rim-lo: rgb(255 255 255 / 0.02);
   }
 
   /* Chrome floating over arbitrary content, a nav, a sheet. Denser, because
@@ -515,7 +504,7 @@
   @media (hover: hover) {
     .lg-interactive:hover {
       transform: translateY(-2px);
-      --lg-rim-hi: rgb(16 14 20 / 0.3);
+      border-color: var(--glass-edge-hover);
     }
 
   }
@@ -531,11 +520,11 @@
    */
   .lg-pill {
     @apply relative rounded-pill;
-    background: rgb(255 255 255 / 0.6);
-    box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 0.9),
-      inset 0 -1px 0 rgb(0 0 0 / 0.06),
-      0 2px 12px rgb(0 0 0 / 0.08);
+    /* Was a bright inset top and a dark inset bottom, which is a second and
+       third stroke inside a bar that already has one. It is a slightly
+       brighter piece of the same glass now, and nothing else. */
+    background: rgb(255 255 255 / 0.72);
+    box-shadow: 0 2px 10px rgb(var(--c-accent) / 0.12);
     -webkit-backdrop-filter: blur(8px) brightness(1.2) saturate(150%);
     backdrop-filter: blur(8px) brightness(1.2) saturate(150%);
   }
@@ -566,9 +555,7 @@
     background: rgb(var(--glass-tint) / 0.96);
     border: 1px solid var(--glass-edge);
     box-shadow:
-      var(--e-float),
-      inset 0 1px 0 var(--glass-sheen),
-      inset 0 -1px 0 var(--glass-underedge);
+      var(--e-float);
     transition:
       transform 260ms cubic-bezier(0.22, 0.61, 0.36, 1),
       border-color 260ms ease,
@@ -591,8 +578,7 @@
     background: rgb(var(--glass-tint) / 0.55);
     border: 1px solid var(--glass-edge);
     box-shadow:
-      var(--e-raised),
-      inset 0 1px 0 var(--glass-sheen);
+      var(--e-raised);
   }
 
   /* Full-bleed glass, so the footer reads as a floor the page rests on rather
@@ -601,7 +587,7 @@
   .footer-glass {
     background: rgb(var(--glass-tint) / 0.92);
     border-top: 1px solid var(--glass-edge);
-    box-shadow: inset 0 1px 0 var(--glass-sheen);
+    box-shadow: none;
   }
 
   /**

@@ -71,6 +71,111 @@ function SpendBar({ spent, pool }) {
   )
 }
 
+/**
+ * The three icons for the three steps.
+ *
+ * Drawn here rather than pulled from a set, and deliberately not emoji: the
+ * emoji came out of the budget banner one commit ago because it sat at a
+ * different weight and colour from everything around it and read as clip art
+ * stuck to a card. A stroked glyph inherits the ink colour, scales with the
+ * type and belongs to the same drawing as the rest of the screen.
+ */
+const stroke = {
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 1.75,
+  strokeLinecap: 'round',
+  strokeLinejoin: 'round',
+}
+
+const ICONS = {
+  in: (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-[18px] w-[18px]" {...stroke}>
+      <path d="M12 3v10" />
+      <path d="m8 9 4 4 4-4" />
+      <path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" />
+    </svg>
+  ),
+  promised: (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-[18px] w-[18px]" {...stroke}>
+      <path d="M11 3H5a2 2 0 0 0-2 2v6l10 10 8-8L11 3Z" />
+      <circle cx="7.6" cy="7.6" r="1.15" />
+    </svg>
+  ),
+  keep: (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-[18px] w-[18px]" {...stroke}>
+      <rect x="3" y="6" width="18" height="13" rx="2.5" />
+      <path d="M3 10.5h18" />
+      <circle cx="16.5" cy="15" r="1.15" />
+    </svg>
+  ),
+}
+
+/** One of the three things the plan asks for. */
+function Step({ icon, title, body }) {
+  return (
+    <li className="flex items-start gap-3.5">
+      {/* The accent at low opacity rather than at full strength. Three
+          saturated discs down the left of a card is a colour scheme, not a
+          list, and the glyph is the thing meant to be read. */}
+      <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-pill bg-accent/20 text-ink">
+        {ICONS[icon]}
+      </span>
+      <span className="min-w-0">
+        <span className="block text-body font-semibold text-ink">{title}</span>
+        <span className="mt-0.5 block text-small text-muted">{body}</span>
+      </span>
+    </li>
+  )
+}
+
+/**
+ * Nothing set up yet, as one card.
+ *
+ * This screen used to be a page heading, a centred paragraph of six lines and
+ * a button, all of it floating on the ground with no container. Centred prose
+ * of that length is the hardest arrangement to read there is, every line
+ * starts in a different place, and a screen whose only job is to get somebody
+ * to press one button should not open with a paragraph.
+ *
+ * So the whole thing is one glass card, the heading included, everything left
+ * aligned against a single edge, and the paragraph is broken into the three
+ * questions the plan form actually asks. Reading the three tells you what the
+ * next two minutes involve, which is the only thing the paragraph was for.
+ *
+ * The card is capped and centred rather than filling the column: at the shell
+ * width the lines would run past a comfortable measure and the button would
+ * be a stripe across the whole screen.
+ */
+function BudgetEmpty({ onStart }) {
+  const { t } = useT()
+
+  return (
+    <div className="mx-auto w-full max-w-md pt-10">
+      <div className="lg p-6 sm:p-8">
+        <h1 className="text-h1 text-ink">{t('money.title')}</h1>
+        <p className="mt-1.5 text-body font-semibold text-ink">{t('money.sub_new')}</p>
+        <p className="mt-4 text-small text-muted">{t('money.pitch')}</p>
+
+        <ul className="mt-7 space-y-5">
+          <Step icon="in" title={t('money.step_in')} body={t('money.step_in_body')} />
+          <Step
+            icon="promised"
+            title={t('money.step_promised')}
+            body={t('money.step_promised_body')}
+          />
+          <Step icon="keep" title={t('money.step_keep')} body={t('money.step_keep_body')} />
+        </ul>
+
+        {/* Full width, because it is the only thing on the card you can do. */}
+        <button className="btn-primary press mt-8" onClick={onStart}>
+          {t('money.set_up')}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export default function Money() {
   const { user, profile, updateProfile } = useAuth()
   const { t, locale } = useT()
@@ -201,202 +306,201 @@ export default function Money() {
     )
   }
 
+  /* No plan yet, so no page heading either: the card carries its own, and a
+     screen with one card on it does not need a title above the card saying
+     the same word. */
+  if (!s.ready) {
+    return (
+      <Screen>
+        <BudgetEmpty onStart={() => setEditing(true)} />
+      </Screen>
+    )
+  }
+
   return (
     <Screen>
       <TopBar
         title={t('money.title')}
-        sub={s.ready ? t('money.sub_period', { days: s.period.daysLeft }) : t('money.sub_new')}
+        sub={t('money.sub_period', { days: s.period.daysLeft })}
         right={
-          s.ready ? (
-            <button className="btn-ghost press" onClick={() => setEditing(true)}>
-              {t('money.edit_plan')}
-            </button>
-          ) : null
+          /* An outlined pill, not btn-ghost. Ghost is edgeless by design,
+             which works underneath a filled primary that has already
+             established the row; alone in the corner of a heading it was
+             indistinguishable from a line of bold text and read as a label
+             rather than as the only control on the screen. */
+          <button className="goal-action press" onClick={() => setEditing(true)}>
+            {t('money.edit_plan')}
+          </button>
         }
       />
 
-      {!s.ready ? (
-        <Empty
-          action={
-            <button className="btn-primary press" onClick={() => setEditing(true)}>
-              {t('money.set_up')}
-            </button>
-          }
-        >
-          {t('money.pitch')}
-        </Empty>
-      ) : (
-        <>
-          {/**
-           * The headline. Two failure states are called out by name rather
-           * than left for the reader to infer from a negative number.
-           *
-           * Overcommitted is the important one and it is not the same as
-           * overspent: it means the plan itself does not close, so no amount
-           * of careful spending fixes it. Saying "you can spend 4 dollars a
-           * day" to somebody whose rent already exceeds their pay would be
-           * arithmetically defensible and useless.
-           */}
-          <Section>
-            {s.overcommitted ? (
-              <div className="card-warn">
-                <div className="text-h2 text-ink">{t('money.overcommitted_title')}</div>
-                <p className="mt-2 text-body text-muted">
-                  {t('money.overcommitted_body', {
-                    over: fmt(Math.abs(s.pool)),
-                    fixed: fmt(s.committed + s.savings),
-                    income: fmt(s.income),
+      {/**
+       * The headline. Two failure states are called out by name rather
+       * than left for the reader to infer from a negative number.
+       *
+       * Overcommitted is the important one and it is not the same as
+       * overspent: it means the plan itself does not close, so no amount
+       * of careful spending fixes it. Saying "you can spend 4 dollars a
+       * day" to somebody whose rent already exceeds their pay would be
+       * arithmetically defensible and useless.
+       */}
+      <Section>
+        {s.overcommitted ? (
+          <div className="card-warn">
+            <div className="text-h2 text-ink">{t('money.overcommitted_title')}</div>
+            <p className="mt-2 text-body text-muted">
+              {t('money.overcommitted_body', {
+                over: fmt(Math.abs(s.pool)),
+                fixed: fmt(s.committed + s.savings),
+                income: fmt(s.income),
+              })}
+            </p>
+          </div>
+        ) : (
+          <div>
+            <div className="eyebrow">
+              {s.overspent ? t('money.over_label') : t('money.today_label')}
+            </div>
+            <div className="font-display text-hero leading-none text-ink [font-variant-numeric:tabular-nums]">
+              {fmt(s.overspent ? s.left : s.perDay)}
+            </div>
+            <p className="lede mt-3 max-w-[32ch]">
+              {s.overspent
+                ? t('money.over_body', { days: s.period.daysLeft })
+                : t('money.today_body', {
+                    left: fmt(s.left),
+                    days: s.period.daysLeft,
                   })}
-                </p>
-              </div>
-            ) : (
-              <div>
-                <div className="eyebrow">
-                  {s.overspent ? t('money.over_label') : t('money.today_label')}
-                </div>
-                <div className="font-display text-hero leading-none text-ink [font-variant-numeric:tabular-nums]">
-                  {fmt(s.overspent ? s.left : s.perDay)}
-                </div>
-                <p className="lede mt-3 max-w-[32ch]">
-                  {s.overspent
-                    ? t('money.over_body', { days: s.period.daysLeft })
-                    : t('money.today_body', {
-                        left: fmt(s.left),
-                        days: s.period.daysLeft,
-                      })}
-                </p>
-                <SpendBar spent={s.spent} pool={s.pool} />
-              </div>
-            )}
-          </Section>
+            </p>
+            <SpendBar spent={s.spent} pool={s.pool} />
+          </div>
+        )}
+      </Section>
 
-          {/* The two squares. Under the headline because they are the same
-              fact at more resolution, and above the form because a person
-              opening this screen is reading before they are typing. */}
-          <Section>
-            <BudgetTiles s={s} locale={locale} />
-          </Section>
+      {/* The two squares. Under the headline because they are the same
+          fact at more resolution, and above the form because a person
+          opening this screen is reading before they are typing. */}
+      <Section>
+        <BudgetTiles s={s} locale={locale} />
+      </Section>
 
-          {/* Quick add. The whole point is that this is two taps. */}
-          <Section title={t('money.add_title')}>
-            <form onSubmit={addEntry} className="space-y-4">
-              <div className="flex gap-2">
-                {['expense', 'income'].map((k) => (
-                  <button
-                    key={k}
-                    type="button"
-                    onClick={() => setKind(k)}
-                    className={kind === k ? 'chip-accent' : 'chip'}
-                  >
-                    {t(`money.kind_${k}`)}
-                  </button>
-                ))}
-              </div>
-
-              <MoneyInput value={amount} onChange={setAmount} />
-
-              {kind === 'expense' && (
-                <div className="flex flex-wrap gap-2">
-                  {CATEGORIES.map((c) => (
-                    <button
-                      key={c}
-                      type="button"
-                      onClick={() => setCategory(c)}
-                      className={category === c ? 'chip-accent' : 'chip'}
-                    >
-                      {t(`money.cat_${c}`)}
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              <button className="btn-primary press" disabled={busy || !toCents(amount)}>
-                {t('money.add')}
+      {/* Quick add. The whole point is that this is two taps. */}
+      <Section title={t('money.add_title')}>
+        <form onSubmit={addEntry} className="space-y-4">
+          <div className="flex gap-2">
+            {['expense', 'income'].map((k) => (
+              <button
+                key={k}
+                type="button"
+                onClick={() => setKind(k)}
+                className={kind === k ? 'chip-accent' : 'chip'}
+              >
+                {t(`money.kind_${k}`)}
               </button>
-            </form>
-          </Section>
+            ))}
+          </div>
 
-          {/**
-           * Rows, not columns, and not the shared Stat component.
-           *
-           * Stat renders at text-metric, 3rem, sized for a percentage or a
-           * count. Three formatted currency amounts at that size ran straight
-           * through each other on a phone. Dropping to heading size stopped
-           * the overlap but they still touched, because "CA$1,367.00" is
-           * eleven characters and a third of a 420px screen is not enough for
-           * it at any size worth reading.
-           *
-           * Currency width is not predictable: the code, the thousands
-           * separator and the locale all move it, and fr-CA writes the symbol
-           * on the other end. So the amounts get a full line each and the
-           * columns problem stops existing. It also matches the "where it
-           * went" list further down, which is the same shape of information.
-           */}
-          <Section title={t('money.this_period')}>
-            <dl className="space-y-3">
-              {[
-                [t('money.left'), fmt(s.left)],
-                [t('money.spent'), fmt(s.spent)],
-                [t('money.days_left'), String(s.period.daysLeft)],
-              ].map(([label, value]) => (
-                <div key={label} className="flex items-baseline justify-between gap-4">
-                  <dt className="text-body text-ink">{label}</dt>
-                  <dd className="text-body font-bold text-ink [font-variant-numeric:tabular-nums]">
-                    {value}
-                  </dd>
-                </div>
+          <MoneyInput value={amount} onChange={setAmount} />
+
+          {kind === 'expense' && (
+            <div className="flex flex-wrap gap-2">
+              {CATEGORIES.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setCategory(c)}
+                  className={category === c ? 'chip-accent' : 'chip'}
+                >
+                  {t(`money.cat_${c}`)}
+                </button>
               ))}
-            </dl>
-          </Section>
-
-          {s.byCategory.length > 0 && (
-            <Section title={t('money.where')}>
-              <ul className="space-y-3">
-                {s.byCategory.map((c) => (
-                  <li key={c.key} className="flex items-baseline justify-between gap-4">
-                    <span className="text-body text-ink">{t(`money.cat_${c.key}`)}</span>
-                    <span className="text-body font-bold text-ink [font-variant-numeric:tabular-nums]">
-                      {fmt(c.cents)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </Section>
+            </div>
           )}
 
-          <Section title={t('money.recent')}>
-            {s.entries.length === 0 ? (
-              <Empty>{t('money.no_entries')}</Empty>
-            ) : (
-              <ul className="space-y-3">
-                {s.entries.slice(0, 20).map((r) => (
-                  <li key={r.id} className="flex items-baseline justify-between gap-4">
-                    <span className="min-w-0 text-body text-ink">
-                      {r.kind === 'income'
-                        ? t('money.kind_income')
-                        : t(`money.cat_${r.category ?? 'other'}`)}
-                      <span className="pl-2 text-small text-muted">{r.happened_on}</span>
-                    </span>
-                    <span className="flex items-baseline gap-3">
-                      <span className="text-body font-bold text-ink [font-variant-numeric:tabular-nums]">
-                        {r.kind === 'income' ? '+' : ''}
-                        {fmt(r.amount_cents)}
-                      </span>
-                      <button
-                        className="text-small text-muted underline"
-                        onClick={() => removeEntry(r.id)}
-                      >
-                        {t('money.remove')}
-                      </button>
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Section>
-        </>
+          <button className="btn-primary press" disabled={busy || !toCents(amount)}>
+            {t('money.add')}
+          </button>
+        </form>
+      </Section>
+
+      {/**
+       * Rows, not columns, and not the shared Stat component.
+       *
+       * Stat renders at text-metric, 3rem, sized for a percentage or a
+       * count. Three formatted currency amounts at that size ran straight
+       * through each other on a phone. Dropping to heading size stopped
+       * the overlap but they still touched, because "CA$1,367.00" is
+       * eleven characters and a third of a 420px screen is not enough for
+       * it at any size worth reading.
+       *
+       * Currency width is not predictable: the code, the thousands
+       * separator and the locale all move it, and fr-CA writes the symbol
+       * on the other end. So the amounts get a full line each and the
+       * columns problem stops existing. It also matches the "where it
+       * went" list further down, which is the same shape of information.
+       */}
+      <Section title={t('money.this_period')}>
+        <dl className="space-y-3">
+          {[
+            [t('money.left'), fmt(s.left)],
+            [t('money.spent'), fmt(s.spent)],
+            [t('money.days_left'), String(s.period.daysLeft)],
+          ].map(([label, value]) => (
+            <div key={label} className="flex items-baseline justify-between gap-4">
+              <dt className="text-body text-ink">{label}</dt>
+              <dd className="text-body font-bold text-ink [font-variant-numeric:tabular-nums]">
+                {value}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </Section>
+
+      {s.byCategory.length > 0 && (
+        <Section title={t('money.where')}>
+          <ul className="space-y-3">
+            {s.byCategory.map((c) => (
+              <li key={c.key} className="flex items-baseline justify-between gap-4">
+                <span className="text-body text-ink">{t(`money.cat_${c.key}`)}</span>
+                <span className="text-body font-bold text-ink [font-variant-numeric:tabular-nums]">
+                  {fmt(c.cents)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Section>
       )}
 
+      <Section title={t('money.recent')}>
+        {s.entries.length === 0 ? (
+          <Empty>{t('money.no_entries')}</Empty>
+        ) : (
+          <ul className="space-y-3">
+            {s.entries.slice(0, 20).map((r) => (
+              <li key={r.id} className="flex items-baseline justify-between gap-4">
+                <span className="min-w-0 text-body text-ink">
+                  {r.kind === 'income'
+                    ? t('money.kind_income')
+                    : t(`money.cat_${r.category ?? 'other'}`)}
+                  <span className="pl-2 text-small text-muted">{r.happened_on}</span>
+                </span>
+                <span className="flex items-baseline gap-3">
+                  <span className="text-body font-bold text-ink [font-variant-numeric:tabular-nums]">
+                    {r.kind === 'income' ? '+' : ''}
+                    {fmt(r.amount_cents)}
+                  </span>
+                  <button
+                    className="text-small text-muted underline"
+                    onClick={() => removeEntry(r.id)}
+                  >
+                    {t('money.remove')}
+                  </button>
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Section>
     </Screen>
   )
 }

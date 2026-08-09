@@ -3,20 +3,22 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useGroup } from '../context/GroupContext'
-import { cycleEnd, cyclePhase, shortDate, untilLabel } from '../lib/time'
-import { completionRate, groupGoalProgress, rollingRate } from '../lib/stats'
+import { cycleEnd, cyclePhase, untilLabel } from '../lib/time'
+import { completionRate, groupCycles, groupGoalProgress, rollingRate } from '../lib/stats'
 import { useT } from '../lib/i18n'
 import { Avatar, Empty, Screen, Section, TopBar } from '../components/ui'
+import BirthdayBanner from '../components/BirthdayBanner'
 import NudgeBanner from '../components/NudgeBanner'
 import GroupMoods from '../components/GroupMoods'
 import ConsistencyPanel from '../components/ConsistencyPanel'
+import GroupAnalytics from '../components/GroupAnalytics'
 import TodayObjective from '../components/TodayObjective'
 import GroupFeed from '../components/GroupFeed'
 import GoalCard from '../components/GoalCard'
 
 export default function Board() {
   const { user } = useAuth()
-  const { t, locale } = useT()
+  const { t } = useT()
   const {
     group,
     activeId,
@@ -24,7 +26,6 @@ export default function Board() {
     cycles,
     cadence,
     currentCycle,
-    lastCycle,
     nextCycle,
     groupGoals,
     myGoals,
@@ -37,21 +38,18 @@ export default function Board() {
   const phase = cyclePhase(currentCycle, cycles, cadence)
 
   /**
-   * The period that just ended, shown underneath the one you are in.
+   * Every period the board holds, in one read.
    *
-   * It is only a separate thing when a period is open. Once a week runs from
-   * one meeting to the next, last week's results unseal at the same instant
-   * this week begins, so a board that could only hold one period would throw
-   * away the reveal at the moment it arrived. When nothing is open the two
-   * are the same row and the section below is skipped.
+   * This used to fetch exactly the two periods on screen, and then the
+   * analytics section wanted the history as well, which would have been a
+   * third and fourth request for rows the same two queries could return. The
+   * page already loads every member's status for every cycle; the outcomes
+   * behind those statuses are the same order of magnitude.
+   *
+   * Everything downstream already filters by cycle, so widening the window
+   * changes nothing about what the rosters show.
    */
-  const past = phase === 'open' && lastCycle?.id !== currentCycle?.id ? lastCycle: null
-
-  /* One read for both periods rather than one per section. */
-  const wanted = useMemo(
-    () => [currentCycle?.id, past?.id].filter(Boolean),
-    [currentCycle?.id, past?.id],
-  )
+  const wanted = useMemo(() => cycles.map((c) => c.id), [cycles])
 
   useEffect(() => {
     if (wanted.length === 0) return
@@ -107,6 +105,10 @@ export default function Board() {
     () => rollingRate(statuses, { window: 3, points: 12 }),
     [statuses],
   )
+  /* The bars are one per day, so they get one row per day. The rate above
+     keeps the raw rows, because a rate wants every member in the denominator
+     and a chart of days does not. */
+  const groupDays = useMemo(() => groupCycles(statuses), [statuses])
 
   const nowItemIds = new Set(now.map((c) => c.id))
 
@@ -142,6 +144,10 @@ export default function Board() {
   return (
     <Screen>
       <TopBar title={group.name} sub={status} />
+
+      {/* Above the nudge, because a nudge waits for whoever gets to it and a
+          birthday does not wait at all. */}
+      <BirthdayBanner people={members.map((m) => m.profile)} />
 
       <NudgeBanner />
 
@@ -205,34 +211,18 @@ export default function Board() {
       </Section>
 
       {/**
-       * Last week, revealed, underneath this week.
+       * Yesterday's roster used to sit here, revealed, under today's.
        *
-       * This is the payoff for the seal above, and it used to be reachable
-       * only in the day and a half between a window closing and its
-       * replacement. Everything anyone wrote is worth more read together a
-       * week later than it is read alone the night it was written.
+       * It was written when a period was a week, and read as the payoff for
+       * the seal: everything the group wrote, together, once a week. At a
+       * daily cadence it is a second copy of the same five names one day
+       * older, on a page that already has today's roster above it and the
+       * feed below it saying who missed what. Three passes over the same
+       * question, and the middle one is the least useful.
+       *
+       * The history has not gone anywhere: the feed reports the misses and
+       * the analytics further down carry every day the group has had.
        */}
-      {past && (
-        <Section title={t('board.last_week', { d: shortDate(past.opens_at, locale) })}>
-          <Roster
-            members={members}
-            checkins={checkins.filter((c) => c.cycle_id === past.id)}
-            items={items}
-            awayIds={
-              new Set(
-                statuses
-                  .filter((s) => s.cycle_id === past.id && s.status === 'away')
-                  .map((s) => s.user_id),
-              )
-            }
-            revealed
-            settled
-            me={user?.id}
-            t={t}
-          />
-        </Section>
-      )}
-
       <GroupFeed groupId={activeId} />
 
       {/**
@@ -271,9 +261,18 @@ export default function Board() {
         <ConsistencyPanel
           rate={groupRate}
           trend={groupTrend}
-          cycles={statuses}
+          cycles={groupDays}
           goalCount={groupGoals.length}
           groupCount={members.length}
+        />
+        {/* Underneath rather than beside: turning up and getting it done are
+            two answers to two questions, and reading them as one row of four
+            numbers invites people to average them into a single verdict. */}
+        <GroupAnalytics
+          members={members}
+          statuses={statuses}
+          items={items}
+          days={cycles.length}
         />
         <p className="mt-4 text-small text-muted">{t('board.rate_note')}</p>
       </Section>

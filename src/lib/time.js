@@ -28,6 +28,34 @@ export function shortDate(iso, locale) {
   return new Date(iso).toLocaleDateString(locale, { month: 'short', day: 'numeric' })
 }
 
+/**
+ * A local calendar day as YYYY-MM-DD.
+ *
+ * Deliberately not toISOString().slice(0, 10), which is UTC: anybody west of
+ * Greenwich gets yesterday's key for most of their evening, which is precisely
+ * when this app is used. "Which day is it" is a question about the person's
+ * own clock.
+ */
+export function dayKey(d = new Date()) {
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
+/**
+ * The seven days of the week `on` falls in, Sunday first.
+ *
+ * Sunday because that is the end the rest of the app counts from: DAYS above
+ * is indexed by getDay(), and groups store checkin_dow the same way. One
+ * convention, so a Wednesday is column four everywhere.
+ */
+export function weekOf(on = new Date()) {
+  const start = new Date(on.getFullYear(), on.getMonth(), on.getDate() - on.getDay())
+  return Array.from(
+    { length: 7 },
+    (_, i) => new Date(start.getFullYear(), start.getMonth(), start.getDate() + i),
+  )
+}
+
 const ms = (iso) => new Date(iso).getTime()
 
 /**

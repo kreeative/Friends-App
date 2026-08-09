@@ -70,7 +70,10 @@ export default function CycleChart({ rows, count = 12, tone = 'light', className
           const b = (newest && c.status === 'submitted' ? T.latest : T[c.status]) ?? T.missed
           return (
             <span
-              key={c.cycle_id}
+              /* A person's rows are one per cycle, so cycle_id alone is unique
+                 for them. A group's are one per member per cycle, and React
+                 was being handed the same key several times over. */
+              key={`${c.cycle_id}-${c.user_id ?? ''}`}
               title={`#${c.seq + 1} · ${c.status}`}
               style={{ height: b.h }}
               className={`flex-1 rounded-pill transition-[height] duration-500 ease-settle ${b.cls}`}
