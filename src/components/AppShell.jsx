@@ -44,6 +44,7 @@ const IN_GROUP = (id) => [
   { to: `/g/${id}`, key: 'nav.board', end: true },
   { to: `/g/${id}/checkin`, key: 'board.check_in' },
   { to: `/g/${id}/goals`, key: 'nav.goals' },
+  { to: `/g/${id}/proofs`, key: 'proof.tab' },
   { to: `/g/${id}/settings`, key: 'nav.group' },
 ]
 

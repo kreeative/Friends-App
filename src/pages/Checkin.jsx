@@ -7,6 +7,7 @@ import { enqueue, flush } from '../lib/queue'
 import { cycleEnd, cyclePhase, untilLabel } from '../lib/time'
 import { useT } from '../lib/i18n'
 import { Field, Screen, Section, TopBar } from '../components/ui'
+import ProofPicker from '../components/ProofPicker'
 
 export default function Checkin() {
   const navigate = useNavigate()
@@ -51,6 +52,7 @@ export default function Checkin() {
         outcome: a.outcome ?? outcomeFor(g, count),
         count_done: count,
         evidence: a.evidence || null,
+        photo_url: a.photo_url || null,
       }
     })
 
@@ -212,6 +214,15 @@ export default function Checkin() {
                       onChange={(e) => set(g.id, { evidence: e.target.value })}
                     />
                   )}
+
+                  {/* A line of text describing a photograph is not a
+                      photograph, and the thing a group actually wants is to
+                      see it. Offered on every goal, not only the ones with a
+                      proof sentence configured. */}
+                  <ProofPicker
+                    url={a.photo_url ?? null}
+                    onChange={(photo_url) => set(g.id, { photo_url })}
+                  />
                 </div>
               )
             })}
