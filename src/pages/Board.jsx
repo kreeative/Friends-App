@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
@@ -51,23 +51,43 @@ export default function Board() {
    */
   const wanted = useMemo(() => cycles.map((c) => c.id), [cycles])
 
-  useEffect(() => {
-    if (wanted.length === 0) return
-    let cancelled = false
-    ;(async () => {
-      const { data: cks } = await supabase.from('checkins').select('*').in('cycle_id', wanted)
-      if (cancelled) return
-      setCheckins(cks ?? [])
+  /**
+   * WHY "MARQUER FAIT" APPEARED TO DO NOTHING.
+   *
+   * The tap wrote to the database correctly every time. What did not happen
+   * was this page noticing. reloadGroup refreshes what GroupContext owns, and
+   * the roster, the "X sur Y" counter and the button all read `checkins` and
+   * `items`, which are local to this component. They were loaded by an effect
+   * keyed on the list of cycle ids, and a check-in does not create a cycle, so
+   * the key never changed and the effect never ran again.
+   *
+   * Everything on screen was therefore drawn from state captured before the
+   * tap: still nobody checked in, still "Pas encore", still 0 of 7. Reload the
+   * page and it was all correct, which is the signature of a stale read rather
+   * than a failed write.
+   *
+   * So the fetch is a function that can be called again, and the sequence
+   * counter drops a response that arrives after a newer one was asked for.
+   */
+  const seq = useRef(0)
 
-      const ids = (cks ?? []).map((c) => c.id)
-      if (ids.length === 0) return setItems([])
-      const { data: its } = await supabase.from('checkin_items').select('*').in('checkin_id', ids)
-      if (!cancelled) setItems(its ?? [])
-    })()
-    return () => {
-      cancelled = true
-    }
+  const loadCheckins = useCallback(async () => {
+    if (wanted.length === 0) return
+    const mine = ++seq.current
+
+    const { data: cks } = await supabase.from('checkins').select('*').in('cycle_id', wanted)
+    if (mine !== seq.current) return
+    setCheckins(cks ?? [])
+
+    const ids = (cks ?? []).map((c) => c.id)
+    if (ids.length === 0) return setItems([])
+    const { data: its } = await supabase.from('checkin_items').select('*').in('checkin_id', ids)
+    if (mine === seq.current) setItems(its ?? [])
   }, [wanted.join(',')])
+
+  useEffect(() => {
+    loadCheckins()
+  }, [loadCheckins])
 
   const now = checkins.filter((c) => c.cycle_id === currentCycle?.id)
   const submittedIds = new Set(now.map((c) => c.user_id))
@@ -130,6 +150,56 @@ export default function Board() {
   const meAway = awayIds.has(user?.id)
   const openCount = [...myGoals, ...groupGoals].filter((g) => g.status === 'active').length
 
+  /**
+   * The tap, before the network has answered.
+   *
+   * Written into the same local state the roster and the counter read, so the
+   * button, your own row and "X sur Y" all move on the tap rather than after a
+   * round trip. The refetch that follows replaces these with the real rows; if
+   * the write failed, they go back to what the server says, which is the
+   * correct thing for an optimistic update to do.
+   *
+   * The synthetic ids are prefixed so nothing downstream mistakes them for
+   * rows it could update or delete.
+   */
+  const markOptimistically = useCallback(
+    (goalId) => {
+      if (!currentCycle || !user) return
+      const existing = checkins.find(
+        (c) => c.cycle_id === currentCycle.id && c.user_id === user.id,
+      )
+      const checkinId = existing?.id ?? `local-${currentCycle.id}`
+
+      if (!existing) {
+        setCheckins((prev) => [
+          ...prev,
+          {
+            id: checkinId,
+            cycle_id: currentCycle.id,
+            user_id: user.id,
+            submitted_at: new Date().toISOString(),
+          },
+        ])
+      }
+
+      setItems((prev) =>
+        prev.some((i) => i.checkin_id === checkinId && i.goal_id === goalId)
+          ? prev
+          : [
+              ...prev,
+              {
+                id: `local-${goalId}`,
+                checkin_id: checkinId,
+                goal_id: goalId,
+                outcome: 'done',
+                count_done: 1,
+              },
+            ],
+      )
+    },
+    [checkins, currentCycle?.id, user?.id],
+  )
+
   const status = useMemo(() => {
     if (!currentCycle) return t('board.getting_ready')
     if (phase === 'open')
@@ -173,7 +243,12 @@ export default function Board() {
             cycle={currentCycle}
             goals={[...myGoals, ...groupGoals].filter((g) => g.status === 'active')}
             doneGoalIds={doneToday}
-            onDone={reloadGroup}
+            onMarked={markOptimistically}
+            onDone={async () => {
+              /* Both: the local rows this page draws from, and the context
+                 that owns statuses and the analytics underneath. */
+              await Promise.all([loadCheckins(), reloadGroup()])
+            }}
           />
           {!iHaveChecked && openCount > 0 && (
             <div className="mt-4">
