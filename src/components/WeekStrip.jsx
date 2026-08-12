@@ -5,6 +5,7 @@ import { localeTag, useT } from '../lib/i18n'
 import { money } from '../lib/money'
 import { loadBudget } from '../lib/budgetData'
 import { dayKey, weekOf } from '../lib/time'
+import { MoodBadge } from './MoodBoard'
 
 /**
  * The week, as seven circles.
@@ -85,6 +86,7 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
      day it was for, not to the one the clock had just rolled into. */
   const [itemsByCycle, setItemsByCycle] = useState({})
   const [budget, setBudget] = useState(null)
+  const [moodByDay, setMoodByDay] = useState({})
 
   const from = week[0]
   const to = week[6]
@@ -102,16 +104,47 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
           .gte('submitted_at', new Date(from.getFullYear(), from.getMonth(), from.getDate()).toISOString())
           .lt('submitted_at', new Date(to.getFullYear(), to.getMonth(), to.getDate() + 1).toISOString())
 
-        if (dead || error) return
-        const map = {}
-        for (const c of data ?? []) map[c.cycle_id] = c.checkin_items ?? []
-        setItemsByCycle(map)
+        /* Not an early return. This sits above the budget and the mood, and
+           `return` here exits the whole of run(), so one failing query was
+           quietly cancelling two unrelated ones. */
+        if (!dead && !error) {
+          const map = {}
+          for (const c of data ?? []) map[c.cycle_id] = c.checkin_items ?? []
+          setItemsByCycle(map)
+        }
       } catch {
         /* Offline. The strip still draws; the day panel just has less in it. */
       }
 
       const b = await loadBudget(user.id).catch(() => null)
       if (!dead) setBudget(b)
+
+      /**
+       * How the week felt, alongside how it went.
+       *
+       * daily_mood has stored this per day since migration 12 and nothing has
+       * ever read it back except today's own card, so the record existed and
+       * was invisible the moment the day turned over. A mood the app tells you
+       * it is keeping had better be somewhere you can find it.
+       *
+       * A missing table is a state, not an error: the mood line simply does
+       * not appear, exactly as MoodToday handles it.
+       */
+      try {
+        const { data, error } = await supabase
+          .from('daily_mood')
+          .select('day, mood')
+          .eq('user_id', user.id)
+          .gte('day', dayKey(from))
+          .lte('day', dayKey(to))
+
+        if (dead || error) return
+        const byDay = {}
+        for (const row of data ?? []) if (row.mood) byDay[row.day] = row.mood
+        setMoodByDay(byDay)
+      } catch {
+        /* Offline. The rest of the panel still draws. */
+      }
     }
 
     run()
@@ -171,7 +204,8 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
 
   const selectedDate = new Date(`${selected}T00:00:00`)
   const isFutureDay = selected > todayKey
-  const nothing = live.length === 0 && entries.length === 0
+  const mood = moodByDay[selected] ?? null
+  const nothing = live.length === 0 && entries.length === 0 && !mood
 
   return (
     <div className="lg overflow-hidden p-4 sm:p-5">
@@ -180,7 +214,8 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
           const k = dayKey(d)
           const marked =
             (cyclesByDay[k] ?? []).some((s) => s.status === 'submitted') ||
-            (entriesByDay[k] ?? []).length > 0
+            (entriesByDay[k] ?? []).length > 0 ||
+            Boolean(moodByDay[k])
           return (
             <DayBadge
               key={k}
@@ -218,6 +253,16 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
           <p className="mt-2 text-small text-muted">{t('week.nothing')}</p>
         ) : (
           <>
+            {/* First, because the day's mood is the frame the rest of it is
+                read in. Asking how somebody was before what they got done is
+                the order this whole product argues for. */}
+            {mood && (
+              <p className="mt-3 flex items-center gap-2.5 text-small text-ink">
+                <MoodBadge id={mood} size={22} />
+                {t(`mood.${mood}`)}
+              </p>
+            )}
+
             {live.length > 0 && (
               <div className="mt-3 space-y-2">
                 {live.map((g) => {
