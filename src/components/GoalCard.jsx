@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useGroup } from '../context/GroupContext'
 import { shortDate } from '../lib/time'
 import { localeTag, useT } from '../lib/i18n'
+import { Avatar } from './ui'
 
 /**
  * Finished states. Each gets its own card colour and a chip, rather than the
@@ -36,38 +37,82 @@ export default function GoalCard({
       ? t('goal.times_a_day', { n: goal.target_per_cycle })
       : t('goal.by_date', { date: shortDate(goal.due_on, localeTag(locale)) })
 
+  const when = [goal.trigger_when, goal.trigger_where].filter(Boolean).join(', ')
+
   return (
+    /**
+     * Four levels, where there used to be one.
+     *
+     * Every line on this card was the same size and the same colour: the
+     * title, the cadence, the trigger, the proof and the owner's name, five
+     * stacked sentences in identical type. Nothing was findable, because
+     * finding something in a list requires the list to have a shape.
+     *
+     * So: who it belongs to is a badge above, the commitment is the one big
+     * thing, and everything that used to be a sentence underneath is a pill.
+     * Pills work here because these facts are short, unordered and scanned
+     * rather than read, which is exactly the case running text handles worst.
+     */
     <article
-      className={`${finished?.card ?? 'card'} transition-opacity duration-200 ease-settle ${
+      className={`${finished?.card ?? 'lg p-5'} transition-opacity duration-200 ease-settle ${
         paused ? 'opacity-55' : ''
       }`}
     >
-      <div className="flex items-start justify-between gap-4">
-        <h3 className="text-h2 text-ink">{goal.commitment}</h3>
+      <div className="flex items-start justify-between gap-3">
+        {/* Whose goal it is, first and quietly. It was the last line on the
+            card, under the buttons, which is where you put something nobody
+            needs; in a shared list it is the first thing you check. */}
+        <span className="inline-flex min-w-0 items-center gap-2 rounded-pill bg-accent/[0.14] py-1 pl-1 pr-3">
+          {owner ? (
+            <Avatar profile={owner} size={20} />
+          ) : (
+            <span className="h-5 w-5 shrink-0 rounded-pill bg-accent/30" aria-hidden="true" />
+          )}
+          <span className="truncate text-label font-bold uppercase tracking-[0.06em] text-ink">
+            {owner ? owner.display_name : t('goal.everyone')}
+          </span>
+        </span>
+
         {finished && <span className={`${finished.chip} shrink-0`}>{t(finished.label)}</span>}
       </div>
 
-      <p className="mt-1.5 text-small text-muted">
-        {cadence}
-        {paused && ` · ${t('goal.paused')}`}
-      </p>
+      <h3 className="mt-3 text-h2 font-bold text-ink">{goal.commitment}</h3>
 
-      {(goal.trigger_when || goal.trigger_where) && (
-        <p className="mt-4 text-small text-muted">
-          {[goal.trigger_when, goal.trigger_where].filter(Boolean).join(', ')}
-        </p>
-      )}
+      {/**
+       * Two tones, not one. The cadence is the goal's own rule and carries the
+       * accent; when, where, proof and stake are circumstances and sit on ink.
+       * A row of five identical pills would be the same flatness the sentences
+       * had, in a rounder shape.
+       */}
+      <div className="mt-3 flex flex-wrap gap-2">
+        <span className="inline-flex items-center rounded-pill bg-accent/[0.14] px-3 py-1 text-label font-bold text-ink ring-1 ring-inset ring-accent/25">
+          {cadence}
+        </span>
 
-      {/* Not muted/75. --c-muted is already tuned to sit just above 4.5:1, so
-          three quarters of it measured 3.0:1 on a plain white card, the
-          quietest line on the card was the one that failed. The "Proof:"
-          prefix distinguishes it from the trigger line above without needing
-          a second, lighter grey to do it. */}
-      {goal.evidence_def && (
-        <p className="mt-1 text-small text-muted">
-          {t('goal.proof', { text: goal.evidence_def })}
-        </p>
-      )}
+        {when && (
+          <span className="inline-flex items-center rounded-pill bg-ink/[0.055] px-3 py-1 text-label font-semibold text-muted">
+            {when}
+          </span>
+        )}
+
+        {goal.evidence_def && (
+          <span className="inline-flex items-center rounded-pill bg-ink/[0.055] px-3 py-1 text-label font-semibold text-muted">
+            {t('goal.proof', { text: goal.evidence_def })}
+          </span>
+        )}
+
+        {goal.stake_text && (
+          <span className="inline-flex items-center rounded-pill bg-ink/[0.055] px-3 py-1 text-label font-semibold text-muted">
+            {goal.stake_text}
+          </span>
+        )}
+
+        {paused && (
+          <span className="inline-flex items-center rounded-pill bg-ink/[0.055] px-3 py-1 text-label font-semibold text-muted">
+            {t('goal.paused')}
+          </span>
+        )}
+      </div>
 
       {progress && (
         <div className="mt-6">
@@ -85,48 +130,37 @@ export default function GoalCard({
       )}
 
       {/**
-       * Wraps as a column below `sm`. Three controls and an owner name do not
-       * fit on one phone-width line, and as a single flex row the buttons
-       * wrapped underneath each other while the name stayed put, so they
-       * overlapped, which is what it looked like: a pile.
+       * Three tiers, left to right in increasing weight: outline to edit, a
+       * tint to pause, filled to finish. The owner's name has moved to the
+       * badge at the top, so this row is only controls and can simply wrap.
        */}
-      <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <span className="text-small text-muted">
-          {owner ? owner.display_name : t('goal.everyone')}
-          {goal.stake_text && ` · ${goal.stake_text}`}
-        </span>
-
-        {showControls && !finished && (
-          <div className="flex flex-wrap gap-2 sm:justify-end">
-            {editHref && (
-              <Link to={editHref} className="goal-action press">
-                {t('goal.edit')}
-              </Link>
-            )}
-            <button
-              onClick={() => setStatus(paused ? 'active' : 'paused')}
-              className="goal-action-fill press"
-            >
-              {paused ? t('goal.resume') : t('goal.pause')}
-            </button>
-            <button onClick={() => setStatus('completed')} className="goal-action-done press">
-              {t('goal.mark_done')}
-            </button>
-          </div>
-        )}
-
-        {/* An archived goal keeps one control: putting it back. Nothing else
-            makes sense on a record, and a finished goal you want to restart is
-            common enough to be worth one tap. */}
-        {showControls && finished && (
+      {showControls && !finished && (
+        <div className="mt-5 flex flex-wrap gap-2">
+          {editHref && (
+            <Link to={editHref} className="goal-action press">
+              {t('goal.edit')}
+            </Link>
+          )}
           <button
-            onClick={() => setStatus('active')}
-            className="goal-action-fill press self-start"
+            onClick={() => setStatus(paused ? 'active' : 'paused')}
+            className="goal-action-soft press"
           >
-            {t('goal.reopen')}
+            {paused ? t('goal.resume') : t('goal.pause')}
           </button>
-        )}
-      </div>
+          <button onClick={() => setStatus('completed')} className="goal-action-done press">
+            {t('goal.mark_done')}
+          </button>
+        </div>
+      )}
+
+      {/* An archived goal keeps one control: putting it back. Nothing else
+          makes sense on a record, and a finished goal you want to restart is
+          common enough to be worth one tap. */}
+      {showControls && finished && (
+        <button onClick={() => setStatus('active')} className="goal-action-soft press mt-5">
+          {t('goal.reopen')}
+        </button>
+      )}
     </article>
   )
 }

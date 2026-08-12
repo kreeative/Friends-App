@@ -968,6 +968,18 @@
            text-small font-bold text-muted no-underline transition-colors
            duration-200 ease-settle hover:border-ink/20 hover:text-ink;
   }
+  /* The middle tier: softer than the filled primary, louder than the outline,
+     and in the theme's hue so the three read as one family rather than as an
+     accent button next to two grey ones. */
+  .goal-action-soft {
+    @apply inline-flex items-center rounded-pill px-4 py-2 text-small font-bold
+           text-ink no-underline transition-colors duration-200 ease-settle;
+    background: rgb(var(--c-accent) / 0.14);
+  }
+  .goal-action-soft:hover {
+    background: rgb(var(--c-accent) / 0.22);
+  }
+
   .goal-action-fill {
     @apply inline-flex items-center rounded-pill bg-ink/[0.06] px-4 py-2 text-small
            font-bold text-ink no-underline transition-colors duration-200

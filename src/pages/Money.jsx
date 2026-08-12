@@ -477,14 +477,17 @@ export default function Money() {
        * columns problem stops existing. It also matches the "where it
        * went" list further down, which is the same shape of information.
        */}
+      {/* Three figures inside one sheet rather than three lines lying on the
+          page. Divided rather than spaced: the hairlines are what say these
+          are one set of related numbers and not three unrelated ones. */}
       <Section title={t('money.this_period')}>
-        <dl className="space-y-3">
+        <dl className="lg divide-y divide-hairline px-5">
           {[
             [t('money.left'), fmt(s.left)],
             [t('money.spent'), fmt(s.spent)],
             [t('money.days_left'), String(s.period.daysLeft)],
           ].map(([label, value]) => (
-            <div key={label} className="flex items-baseline justify-between gap-4">
+            <div key={label} className="flex items-baseline justify-between gap-4 py-4">
               <dt className="text-body text-ink">{label}</dt>
               <dd className="text-body font-bold text-ink [font-variant-numeric:tabular-nums]">
                 {value}
@@ -496,9 +499,9 @@ export default function Money() {
 
       {s.byCategory.length > 0 && (
         <Section title={t('money.where')}>
-          <ul className="space-y-3">
+          <ul className="lg divide-y divide-hairline px-5">
             {s.byCategory.map((c) => (
-              <li key={c.key} className="flex items-baseline justify-between gap-4">
+              <li key={c.key} className="flex items-baseline justify-between gap-4 py-4">
                 <span className="text-body text-ink">{t(`money.cat_${c.key}`)}</span>
                 <span className="text-body font-bold text-ink [font-variant-numeric:tabular-nums]">
                   {fmt(c.cents)}
@@ -509,13 +512,18 @@ export default function Money() {
         </Section>
       )}
 
+      {/* The empty state gets a card too. A lone sentence on the page ground
+          reads as a section that failed to load; inside the container it is
+          the section, saying it is empty. */}
       <Section title={t('money.recent')}>
         {s.entries.length === 0 ? (
-          <Empty>{t('money.no_entries')}</Empty>
+          <div className="lg px-5 py-2">
+            <Empty>{t('money.no_entries')}</Empty>
+          </div>
         ) : (
-          <ul className="space-y-3">
+          <ul className="lg divide-y divide-hairline px-5">
             {s.entries.slice(0, 20).map((r) => (
-              <li key={r.id} className="flex items-baseline justify-between gap-4">
+              <li key={r.id} className="flex items-baseline justify-between gap-4 py-4">
                 <span className="min-w-0 text-body text-ink">
                   {r.kind === 'income'
                     ? t('money.kind_income')

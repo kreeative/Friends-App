@@ -275,8 +275,8 @@ const STRINGS = {
     'mood.choose': 'Choose mood',
     'mood.change': 'Change',
     'mood.clear': 'Clear it',
-    'mood.optional': 'Optional, and never counted either way.',
-    'mood.hint': 'Optional, and not counted either way. Tap again to unpick.',
+    'mood.optional': 'One tap, and it stays in your history.',
+    'mood.hint': 'Kept in your daily history, so you can see how you felt alongside how you did.',
     'mood.when':
       'This is the first thing your check-in asks. It unlocks when the new day starts, and it is always optional.',
     'mood.share': 'Let my groups see this',
@@ -769,8 +769,8 @@ const STRINGS = {
     'mood.choose': 'Choisir',
     'mood.change': 'Changer',
     'mood.clear': 'Effacer',
-    'mood.optional': 'Facultatif, et jamais compté d’une façon ou d’une autre.',
-    'mood.hint': 'Facultatif, et jamais compté. Retape dessus pour l’enlever.',
+    'mood.optional': 'Un geste, et ça reste dans ton historique.',
+    'mood.hint': 'Enregistré dans ton historique quotidien pour suivre ton bien-être et ta régularité.',
     'mood.when':
       'C’est la première question du point. Ça s’ouvre quand la nouvelle journée commence, et c’est toujours facultatif.',
     'mood.share': 'Laisser mes groupes le voir',
