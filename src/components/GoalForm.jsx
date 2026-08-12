@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useGroup } from '../context/GroupContext'
-import { useT } from '../lib/i18n'
+import { localeTag, useT } from '../lib/i18n'
 import { Field } from './ui'
 import { Slider, useSlider } from './Segmented'
 
@@ -107,6 +107,61 @@ function Toggle({ options, value, onChange }) {
  *                 no group is private to you and is the whole point of being
  *                 able to use this without joining anybody.
  */
+/**
+ * Which days of the week a routine runs on.
+ *
+ * Seven toggles rather than a multi-select, because the answer is looked at as
+ * a shape ("weekdays", "Mon and Thu") rather than read as a list, and a shape
+ * is what a row of seven pills gives you.
+ *
+ * The last day cannot be turned off. A goal due on no day is due never, which
+ * renders as a goal that has quietly disappeared from the check-in with no
+ * explanation, and "I do not want this any more" is what pausing is for.
+ */
+function DayPicker({ value, onChange }) {
+  const { t, locale } = useT()
+  const tag = localeTag(locale)
+
+  /* 7 January 2024 was a Sunday, so this walks the week in getDay() order and
+     the labels come out in the reader's own language. */
+  const labels = Array.from({ length: 7 }, (_, i) =>
+    new Date(2024, 0, 7 + i).toLocaleDateString(tag, { weekday: 'narrow' }),
+  )
+
+  const toggle = (day) => {
+    const on = value.includes(day)
+    if (on && value.length === 1) return
+    onChange(on ? value.filter((d) => d !== day) : [...value, day])
+  }
+
+  return (
+    <div>
+      <span className="field-label">{t('form.on_days')}</span>
+      <div className="mt-2 flex gap-1.5">
+        {labels.map((label, day) => {
+          const on = value.includes(day)
+          return (
+            <button
+              key={day}
+              type="button"
+              onClick={() => toggle(day)}
+              aria-pressed={on}
+              className={`press h-11 flex-1 rounded-pill text-small font-bold transition-colors ${
+                on ? 'bg-accent text-on-accent' : 'bg-ink/[0.06] text-muted'
+              }`}
+            >
+              {label}
+            </button>
+          )
+        })}
+      </div>
+      <span className="field-note">
+        {value.length === 7 ? t('form.every_day') : t('form.on_days_hint')}
+      </span>
+    </div>
+  )
+}
+
 export default function GoalForm({ onDone, onCancel, initial = null, groupId = null }) {
   const { user } = useAuth()
   const { reloadGroup } = useGroup()
@@ -116,6 +171,14 @@ export default function GoalForm({ onDone, onCancel, initial = null, groupId = n
   const [commitment, setCommitment] = useState(initial?.commitment ?? '')
   const [cadence, setCadence] = useState(initial?.cadence ?? 'recurring')
   const [target, setTarget] = useState(initial?.target_per_cycle ?? 3)
+  /* Null means every day, which is what every goal written before this field
+     existed is. An empty set is refused below rather than stored, because a
+     goal due on no day at all looks exactly like a goal that vanished. */
+  const [days, setDays] = useState(() =>
+    Array.isArray(initial?.active_days) && initial.active_days.length
+      ? initial.active_days
+      : [0, 1, 2, 3, 4, 5, 6],
+  )
   const [dueOn, setDueOn] = useState(initial?.due_on ?? '')
   const [endsOn, setEndsOn] = useState(initial?.ends_on ?? '')
   const [when, setWhen] = useState(initial?.trigger_when ?? '')
@@ -164,6 +227,10 @@ export default function GoalForm({ onDone, onCancel, initial = null, groupId = n
       evidence_def: evidence.trim() || null,
       cadence,
       target_per_cycle: cadence === 'recurring' ? Number(target) || 1 : 1,
+      /* Every day is stored as null rather than as all seven, so "no
+         restriction" has one representation instead of two. */
+      active_days:
+        cadence === 'recurring' && days.length > 0 && days.length < 7 ? [...days].sort() : null,
       due_on: cadence === 'once' ? dueOn || null : null,
       ends_on: cadence === 'recurring' ? endsOn || null : null,
       stake_text: stake.trim() || null,
@@ -245,14 +312,23 @@ export default function GoalForm({ onDone, onCancel, initial = null, groupId = n
           value={cadence}
           onChange={setCadence}
           options={[
-            ['recurring', t('form.every_cycle')],
-            ['once', t('form.one_off')],
+            ['recurring', t('form.routine')],
+            ['once', t('form.milestone')],
           ]}
         />
 
+        {/* Said in words under the switch, because "recurring" and "one-off"
+            are the app's vocabulary and not anybody else's. */}
+        <p className="text-small text-muted">
+          {cadence === 'recurring' ? t('form.routine_hint') : t('form.milestone_hint')}
+        </p>
+
         {cadence === 'recurring' ? (
-          <div className="grid gap-6 sm:grid-cols-2">
-            <Field label={t('form.times_per_cycle')} hint={t('form.times_hint')}>
+          <>
+            <DayPicker value={days} onChange={setDays} />
+
+            <div className="grid gap-6 sm:grid-cols-2">
+            <Field label={t('form.times_per_day')} hint={t('form.times_hint')}>
               <input
                 type="number"
                 min={1}
@@ -271,9 +347,10 @@ export default function GoalForm({ onDone, onCancel, initial = null, groupId = n
                 onChange={(e) => setEndsOn(e.target.value)}
               />
             </Field>
-          </div>
+            </div>
+          </>
         ) : (
-          <Field label={t('form.due_by')}>
+          <Field label={t('form.due_by')} hint={t('form.due_by_hint')}>
             <input
               type="date"
               className="field"

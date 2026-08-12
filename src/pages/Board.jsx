@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import { useGroup } from '../context/GroupContext'
 import { cycleEnd, cyclePhase, untilLabel } from '../lib/time'
 import { completionRate, groupCycles, groupGoalProgress, rollingRate } from '../lib/stats'
+import { dueOn } from '../lib/schedule'
 import { useT } from '../lib/i18n'
 import { Avatar, Empty, Screen, Section, TopBar } from '../components/ui'
 import BirthdayBanner from '../components/BirthdayBanner'
@@ -241,7 +242,7 @@ export default function Board() {
         <>
           <TodayObjective
             cycle={currentCycle}
-            goals={[...myGoals, ...groupGoals].filter((g) => g.status === 'active')}
+            goals={dueOn([...myGoals, ...groupGoals].filter((g) => g.status === 'active'))}
             doneGoalIds={doneToday}
             onMarked={markOptimistically}
             onDone={async () => {

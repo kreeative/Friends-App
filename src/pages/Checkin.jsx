@@ -6,6 +6,7 @@ import { useGroup } from '../context/GroupContext'
 import { enqueue, flush } from '../lib/queue'
 import { cycleEnd, cyclePhase, untilLabel } from '../lib/time'
 import { useT } from '../lib/i18n'
+import { dueOn, outcomeFor, targetFor } from '../lib/schedule'
 import { Field, Screen, Section, TopBar } from '../components/ui'
 import ProofPicker from '../components/ProofPicker'
 
@@ -16,8 +17,11 @@ export default function Checkin() {
   const { activeId, cycles, cadence, currentCycle, nextCycle, myGoals, groupGoals, reloadGroup } =
     useGroup()
 
+  /* Only what is actually due. A twice-a-week goal on a Thursday and a
+     one-off due in October are not questions today has an answer to, and a
+     form that asks them anyway is one people learn to scroll past. */
   const goals = useMemo(
-    () => [...myGoals, ...groupGoals].filter((g) => g.status === 'active'),
+    () => dueOn([...myGoals, ...groupGoals].filter((g) => g.status === 'active')),
     [myGoals, groupGoals],
   )
 
@@ -30,14 +34,6 @@ export default function Checkin() {
 
   function set(goalId, patch) {
     setAnswers((a) => ({ ...a, [goalId]: { ...(a[goalId] ?? {}), ...patch } }))
-  }
-
-  function outcomeFor(goal, count) {
-    if (goal.cadence === 'once') return count > 0 ? 'done' : 'missed'
-    const target = goal.target_per_cycle || 1
-    if (count >= target) return 'done'
-    if (count > 0) return 'partial'
-    return 'missed'
   }
 
   async function submit() {
@@ -145,7 +141,7 @@ export default function Checkin() {
             {goals.map((g) => {
               const a = answers[g.id] ?? {}
               const count = a.count ?? 0
-              const target = g.target_per_cycle || 1
+              const target = targetFor(g)
 
               return (
                 <div key={g.id} className="card">
@@ -172,12 +168,20 @@ export default function Checkin() {
                         −
                       </button>
                       <div className="flex-1 text-center">
-                        <span className="font-display text-metric text-ink">{count}</span>
+                        {/* Green once it is met, so the number itself says so
+                            rather than leaving it to be worked out from two
+                            digits that happen to match. */}
+                        <span
+                          className={`font-display text-metric ${count >= target ? 'text-green' : 'text-ink'}`}
+                        >
+                          {count}
+                        </span>
                         <span className="text-h2 text-muted"> / {target}</span>
                       </div>
                       <button
-                        onClick={() => set(g.id, { count: Math.min(99, count + 1) })}
-                        className="press h-14 w-14 shrink-0 rounded-pill bg-ink/[0.07] text-h2 leading-none text-ink"
+                        onClick={() => set(g.id, { count: Math.min(target, count + 1) })}
+                        disabled={count >= target}
+                        className="press h-14 w-14 shrink-0 rounded-pill bg-ink/[0.07] text-h2 leading-none text-ink disabled:opacity-40"
                         aria-label={t('checkin.more')}
                       >
                         +

@@ -5,6 +5,7 @@ import { localeTag, useT } from '../lib/i18n'
 import { money } from '../lib/money'
 import { loadBudget } from '../lib/budgetData'
 import { dayKey, weekOf } from '../lib/time'
+import { isDueOn } from '../lib/schedule'
 import { MoodBadge } from './MoodBoard'
 
 /**
@@ -190,11 +191,12 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
     for (const item of itemsByCycle[s.cycle_id] ?? []) outcomes.set(item.goal_id, item)
   }
 
-  const live = goals.filter((g) => {
-    if (g.starts_on && dayKey(new Date(`${g.starts_on}T00:00:00`)) > selected) return false
-    if (g.ends_on && dayKey(new Date(`${g.ends_on}T00:00:00`)) < selected) return false
-    return true
-  })
+  const selectedDate = new Date(`${selected}T00:00:00`)
+
+  /* What that particular day was actually asking for, which is the same rule
+     the check-in uses. A Thursday should not list a Monday-and-Wednesday goal
+     and then show it as unrecorded. */
+  const live = goals.filter((g) => isDueOn(g, selectedDate))
 
   const entries = entriesByDay[selected] ?? []
   const total = (kind) =>
@@ -202,7 +204,6 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
   const spent = total('expense')
   const earned = total('income')
 
-  const selectedDate = new Date(`${selected}T00:00:00`)
   const isFutureDay = selected > todayKey
   const mood = moodByDay[selected] ?? null
   const nothing = live.length === 0 && entries.length === 0 && !mood
