@@ -163,9 +163,17 @@ export function goalSuccessRate(items) {
   }
 }
 
-/** Progress on a group goal: how much of the collective target is in. */
+/**
+ * Progress on a group goal: how much of the collective target is in.
+ *
+ * The count is capped at the target as well as the percentage. It was capped
+ * only in the bar, so a group that between them logged six of a target of
+ * three read "6 sur 3" underneath a full bar, which looks like the counter
+ * and the bar disagreeing rather than like anybody over-delivering.
+ */
 export function groupGoalProgress(goal, items, memberCount) {
   const target = (goal.target_per_cycle || 1) * Math.max(1, memberCount)
-  const actual = items.reduce((sum, i) => sum + (i.count_done || 0), 0)
-  return { actual, target, pct: target ? Math.min(100, Math.round((actual / target) * 100)) : 0 }
+  const raw = items.reduce((sum, i) => sum + (i.count_done || 0), 0)
+  const actual = Math.min(raw, target)
+  return { actual, target, pct: target ? Math.round((actual / target) * 100) : 0 }
 }

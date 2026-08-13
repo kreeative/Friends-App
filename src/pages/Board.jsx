@@ -4,14 +4,13 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useGroup } from '../context/GroupContext'
 import { cycleEnd, cyclePhase, untilLabel } from '../lib/time'
-import { completionRate, groupCycles, groupGoalProgress, rollingRate } from '../lib/stats'
+import { groupGoalProgress } from '../lib/stats'
 import { dueOn } from '../lib/schedule'
 import { useT } from '../lib/i18n'
 import { Avatar, Empty, Screen, Section, TopBar } from '../components/ui'
 import BirthdayBanner from '../components/BirthdayBanner'
 import NudgeBanner from '../components/NudgeBanner'
 import GroupMoods from '../components/GroupMoods'
-import ConsistencyPanel from '../components/ConsistencyPanel'
 import GroupAnalytics from '../components/GroupAnalytics'
 import TodayObjective from '../components/TodayObjective'
 import GroupFeed from '../components/GroupFeed'
@@ -28,6 +27,7 @@ export default function Board() {
     cadence,
     currentCycle,
     nextCycle,
+    goals,
     groupGoals,
     myGoals,
     statuses,
@@ -110,26 +110,6 @@ export default function Board() {
    * waits. You write whenever the week gives you a minute.
    */
   const revealed = phase === 'closed' || allIn
-
-  /**
-   * The group's consistency, computed exactly as the dashboard computes
-   * yours, from the same helpers, over the same view.
-   *
-   * `statuses` is every member's row for every cycle of this group, so
-   * completionRate over it is the share of the whole group's check-ins that
-   * actually happened, and the trend is that number rolling. Passing the
-   * group's rows into the same functions is what keeps the two screens
-   * agreeing about what a percentage means.
-   */
-  const groupRate = useMemo(() => completionRate(statuses, 14), [statuses])
-  const groupTrend = useMemo(
-    () => rollingRate(statuses, { window: 3, points: 12 }),
-    [statuses],
-  )
-  /* The bars are one per day, so they get one row per day. The rate above
-     keeps the raw rows, because a rate wants every member in the denominator
-     and a chart of days does not. */
-  const groupDays = useMemo(() => groupCycles(statuses), [statuses])
 
   const nowItemIds = new Set(now.map((c) => c.id))
 
@@ -287,6 +267,49 @@ export default function Board() {
       </Section>
 
       {/**
+       * How everyone is, first, ahead of how everyone is doing.
+       *
+       * This used to sit below the feed, which put two screens of who-missed-
+       * what between the roster and the one thing on the page that is about
+       * the people rather than their output. The order is the argument: a
+       * group where the first thing you read is a percentage is a group that
+       * has quietly become a scoreboard.
+       *
+       * Deliberately not sealed with the rest of the board either. A mood is
+       * shared on purpose, by somebody who pressed a switch to share it, and
+       * the point of that switch is that a group-mate sees it now rather than
+       * at the end of the week.
+       *
+       * Renders nothing at all when nobody has shared. See GroupMoods.
+       */}
+      <GroupMoods groupId={activeId} members={members} />
+
+      {/**
+       * One table where there were three cards.
+       *
+       * This was the dark consistency panel, its fourteen status dots, the
+       * twelve-point curve beside it and a streak leaderboard underneath. All
+       * four counted the same thing, whether people opened the app, and none
+       * of them counted whether the goals happened. On a group with no history
+       * they also reported "0%" and "0/14", which is a measured failure where
+       * the truth was an empty week, and the curve card's "7 Groupes" was the
+       * member count wearing the dashboard's label.
+       *
+       * GroupAnalytics now answers the one question the screen is for, over a
+       * window the reader picks. See the file for why the rows are neither
+       * ranked nor sorted.
+       */}
+      <Section title={t('board.how_we_are')}>
+        <GroupAnalytics
+          members={members}
+          goals={goals}
+          cycles={cycles}
+          checkins={checkins}
+          items={items}
+        />
+      </Section>
+
+      {/**
        * Yesterday's roster used to sit here, revealed, under today's.
        *
        * It was written when a period was a week, and read as the payoff for
@@ -297,61 +320,9 @@ export default function Board() {
        * question, and the middle one is the least useful.
        *
        * The history has not gone anywhere: the feed reports the misses and
-       * the analytics further down carry every day the group has had.
+       * the table above carries every day the group has had.
        */}
       <GroupFeed groupId={activeId} />
-
-      {/**
-       * How everyone is today, above the goals.
-       *
-       * Deliberately not sealed with the rest of the board. A mood is shared
-       * on purpose, by somebody who pressed a switch to share it, and the
-       * point of that switch is that a group-mate sees it now rather than at
-       * the end of the week. It is also the one thing here that is about the
-       * person and not about their performance, which is why it sits above
-       * the goals rather than under them.
-       *
-       * Renders nothing at all when nobody has shared. See GroupMoods.
-       */}
-      <GroupMoods groupId={activeId} members={members} />
-
-      {/**
-       * The same panel the dashboard and the "You" screen use.
-       *
-       * The group page had no analytics on it at all: two of the three screens
-       * that show a number showed it in the dark panel with the trend beside
-       * it, and the group, the one place where the number is about a shared
-       * thing, showed nothing. That reads as an unfinished screen rather than
-       * a deliberate omission, and it is why the group data "looks different
-       * from the other analytics UI": there was no group data.
-       *
-       * Deliberately one component rather than a second one that looks like
-       * it. Two implementations of the same chart is how the two come to
-       * disagree about what a percentage means.
-       *
-       * The rows are the whole group's, not yours. On the dashboard the number
-       * answers "how am I doing"; here it answers "how are we doing", which is
-       * the question this page exists for.
-       */}
-      <Section title={t('board.how_we_are')}>
-        <ConsistencyPanel
-          rate={groupRate}
-          trend={groupTrend}
-          cycles={groupDays}
-          goalCount={groupGoals.length}
-          groupCount={members.length}
-        />
-        {/* Underneath rather than beside: turning up and getting it done are
-            two answers to two questions, and reading them as one row of four
-            numbers invites people to average them into a single verdict. */}
-        <GroupAnalytics
-          members={members}
-          statuses={statuses}
-          items={items}
-          days={cycles.length}
-        />
-        <p className="mt-4 text-small text-muted">{t('board.rate_note')}</p>
-      </Section>
 
       {groupGoals.length > 0 && (
         <Section title={t('board.together')}>
