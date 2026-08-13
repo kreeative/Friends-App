@@ -882,6 +882,28 @@
   }
 
   /**
+   * Text that runs past its box fades out instead of being guillotined.
+   *
+   * For the journal cards, where a square preview holds an entry of unknown
+   * length. The alternatives were both worse: -webkit-line-clamp draws its
+   * ellipsis and then paints another line underneath it in this layout, and a
+   * character budget tight enough for a 163px phone card leaves a 200px
+   * desktop card two-thirds empty.
+   *
+   * A mask has no such argument with the width. Short text sits in the opaque
+   * top and is untouched; long text dissolves at the bottom edge, which is the
+   * one visual that says "there is more of this" without a widget saying it.
+   *
+   * The mask is on the box rather than on the text, so the gradient is
+   * measured against the card and not against however many lines happen to be
+   * in it. Both spellings: Safari still wants the prefix.
+   */
+  .fade-b {
+    -webkit-mask-image: linear-gradient(to bottom, #000 62%, transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 62%, transparent 100%);
+  }
+
+  /**
    * A card carrying a finding the reader will not enjoy.
    *
    * Used by the money screen when a plan does not close: fixed costs plus

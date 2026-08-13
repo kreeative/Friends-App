@@ -17,25 +17,36 @@ import { Slider, useSlider } from './Segmented'
  * like a room you were shut into. Wherever you are, the logo goes home and
  * your face is one tap from sign-out.
  *
- * The bottom bar is contextual. Outside a group it is the four things that
- * belong to you; inside one it is the four things that belong to the group.
- * A single flat tab bar could not do both without either hiding the
- * dashboard behind a group or listing check-in when there is no group to
- * check into.
+ * The bottom bar is contextual. Outside a group it is the things that belong
+ * to you; inside one it is the four that belong to the group. A single flat
+ * tab bar could not do both without either hiding the dashboard behind a
+ * group or listing check-in when there is no group to check into.
  *
- * FOUR, NOT FIVE. "You" has left the bar.
+ * "YOU" IS STILL NOT IN THE BAR, AND THE JOURNAL NOW IS.
  *
- * It was the only tab that was a settings screen rather than a place, and it
- * was competing for width with the four things people actually move between.
- * There is already a way in that says the same thing more directly: your own
- * face, in the top corner of every screen, which opens the account panel with
- * Profile & Settings in it. Two doors to one room, and the one in the bar was
- * the one that cost a fifth of the row. The /me route is untouched.
+ * "You" was the only tab that was a settings screen rather than a place, and
+ * it competed for width with the things people actually move between. There is
+ * already a way in that says the same thing more directly: your own face, in
+ * the top corner of every screen, which opens the account panel with Profile &
+ * Settings in it. The /me route is untouched.
+ *
+ * The journal is the opposite case and that is why it took the width instead.
+ * It is a place, it is meant to be opened daily, and it was reachable only
+ * through the account list, which is where settings live. Something you are
+ * supposed to do every day cannot be two taps down a menu.
+ *
+ * Five did cost something, and the cost was paid in the label size rather
+ * than by dropping a tab: see the measurements in TabBar below.
  */
 const MINE = [
   { to: '/', key: 'nav.home', end: true },
   // Your own goals, which no longer require a group to exist in.
   { to: '/goals', key: 'nav.goals' },
+  /* Between the doing and the money, because it is the other half of the
+     doing. It was reachable only through the account list, which is where
+     settings live, and a journal is not a setting: something you are meant to
+     open daily cannot be two taps down a menu. */
+  { to: '/journal', key: 'nav.journal' },
   { to: '/money', key: 'nav.budget' },
   { to: '/library', key: 'nav.library' },
 ]
@@ -225,9 +236,29 @@ function TabBar({ tabs }) {
       className="lg lg-chrome fixed inset-x-4 bottom-4 z-30 mx-auto max-w-content"
       style={{ marginBottom: 'env(safe-area-inset-bottom)' }}
     >
-      <div ref={ref} className="relative flex gap-1 p-1.5">
+      {/**
+       * gap-0.5 rather than gap-1, and the tabs size to their labels.
+       *
+       * WHY THIS CHANGED WHEN THE JOURNAL ARRIVED.
+       *
+       * Every tab was flex-1, so all of them took the same width whatever
+       * their label. That is fine at four and breaks at five: measured in a
+       * browser, French "Objectifs" wants 70px and an equal fifth of a 390px
+       * phone gives it 66, so the tab people press most read "Objectif…" while
+       * "Budget" sat in 66px it did not need. Equal columns are only fair when
+       * the words are the same length.
+       *
+       * flex-auto shares the leftover space out from each label's own width
+       * instead, so "Objectifs" keeps the room it needs and "Budget" gives up
+       * the room it does not. Under real pressure they shrink in proportion
+       * rather than all at once, which is the correct way round: the longest
+       * word should be the last to lose a letter, not the first.
+       */}
+      <div ref={ref} className="relative flex gap-0.5 p-1.5">
         {/* The active tab used to be a second sheet stuck to whichever link
-            was current. It is one sheet now, and it travels. */}
+            was current. It is one sheet now, and it travels. Slider measures
+            the live box, so a pill that is now a different width per tab
+            follows without anything else changing. */}
         <Slider box={box} className="lg-pill" />
 
         {tabs.map((tab, i) => (
@@ -240,7 +271,15 @@ function TabBar({ tabs }) {
             // muted over glass drops to 2.5:1 when the accent button passes
             // underneath. ink/70 holds above 4.5:1 in the worst case.
             className={({ isActive }) =>
-              `press relative z-10 flex-1 truncate rounded-pill px-1 py-3 text-center text-small transition-colors duration-200 ease-settle ${
+              /* 13px rather than the 14px of text-small, with the line height
+                 kept so the bar does not change height. The last four pixels
+                 had to come from somewhere and the type is where they cost
+                 least: a tab label is a signpost read at a glance, not copy,
+                 and 13px is still above what iOS and Android set theirs at.
+                 Written as an arbitrary size rather than text-label because
+                 that token carries +0.02em tracking for uppercase, which would
+                 have given back most of what the smaller size just bought. */
+              `press relative z-10 flex-auto truncate rounded-pill px-1 py-3 text-center text-[0.8125rem] leading-[1.58] transition-colors duration-200 ease-settle ${
                 isActive ? 'text-ink' : 'text-ink/70'
               }`
             }

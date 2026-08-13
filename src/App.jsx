@@ -15,6 +15,7 @@ import Proofs from './pages/Proofs'
 import Goals from './pages/Goals'
 import GoalEditor from './pages/GoalEditor'
 import Me from './pages/Me'
+import Journal from './pages/Journal'
 import Money from './pages/Money'
 import Settings from './pages/Settings'
 import Legal from './pages/Legal'
@@ -145,6 +146,10 @@ function Gate() {
         <Route index element={memberships.length === 0 ? <Start /> : <Dashboard />} />
         <Route path="start" element={<Start />} />
         <Route path="me" element={<Me />} />
+        {/* Personal, and deliberately not under /g/:groupId. A journal that
+            lived inside a group would be one URL away from looking like it
+            belonged to the group. */}
+        <Route path="journal" element={<Journal />} />
         <Route path="money" element={<Money />} />
         <Route path="library" element={<Library />} />
         <Route path="library/:slug" element={<Reader />} />
