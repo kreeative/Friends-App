@@ -19,7 +19,7 @@ import { Empty, Screen, Section, Sheet, TopBar } from '../components/ui'
 import { MoodBadge } from '../components/MoodBoard'
 import InkPreview from '../components/InkPreview'
 import JournalIntro from '../components/JournalIntro'
-import JournalEntrySheet from '../components/JournalEntrySheet'
+import JournalEditor from '../components/JournalEditor'
 import PasscodePad from '../components/PasscodePad'
 
 /**
@@ -257,7 +257,7 @@ export default function Journal() {
         </>
       )}
 
-      <JournalEntrySheet
+      <JournalEditor
         open={sheetOpen}
         entry={editing}
         seedText={seedText}
