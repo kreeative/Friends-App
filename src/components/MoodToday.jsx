@@ -201,10 +201,18 @@ export default function MoodToday({ groupCount = 0 }) {
         <div className="overflow-hidden">
           {/* inert while collapsed, so a closed panel is not a tab stop */}
           <fieldset disabled={!open} className="border-0 p-0">
-            <div className="border-t border-hairline pt-6">
+            {/**
+             * Scrolls inside itself rather than pushing the page.
+             *
+             * Twelve faces at three across is four rows, and with the sharing
+             * checkbox and the two buttons under them the open panel is taller
+             * than a phone in landscape or a short browser window. The floating
+             * nav bar sits over the bottom of the viewport, so the last thing
+             * to be clipped is the Save button, which is the one control the
+             * panel exists to reach.
+             */}
+            <div className="max-h-[70vh] overflow-y-auto overscroll-contain border-t border-hairline pt-6">
               <MoodBoard value={draft} onChange={(id) => setDraft(id)} />
-
-              <p className="mt-6 text-small text-muted">{t('mood.hint')}</p>
 
               {/**
                * Appears the moment a face is tapped, not before. Asking

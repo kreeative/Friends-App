@@ -17,11 +17,20 @@ import { Slider, useSlider } from './Segmented'
  * like a room you were shut into. Wherever you are, the logo goes home and
  * your face is one tap from sign-out.
  *
- * The bottom bar is contextual. Outside a group it is the three things that
+ * The bottom bar is contextual. Outside a group it is the four things that
  * belong to you; inside one it is the four things that belong to the group.
  * A single flat tab bar could not do both without either hiding the
  * dashboard behind a group or listing check-in when there is no group to
  * check into.
+ *
+ * FOUR, NOT FIVE. "You" has left the bar.
+ *
+ * It was the only tab that was a settings screen rather than a place, and it
+ * was competing for width with the four things people actually move between.
+ * There is already a way in that says the same thing more directly: your own
+ * face, in the top corner of every screen, which opens the account panel with
+ * Profile & Settings in it. Two doors to one room, and the one in the bar was
+ * the one that cost a fifth of the row. The /me route is untouched.
  */
 const MINE = [
   { to: '/', key: 'nav.home', end: true },
@@ -29,13 +38,13 @@ const MINE = [
   { to: '/goals', key: 'nav.goals' },
   { to: '/money', key: 'nav.budget' },
   { to: '/library', key: 'nav.library' },
-  { to: '/me', key: 'nav.you' },
 ]
 
 const IN_GROUP = (id) => [
   { to: `/g/${id}`, key: 'nav.board', end: true },
   { to: `/g/${id}/checkin`, key: 'board.check_in' },
   { to: `/g/${id}/goals`, key: 'nav.goals' },
+  { to: `/g/${id}/proofs`, key: 'proof.tab' },
   { to: `/g/${id}/settings`, key: 'nav.group' },
 ]
 

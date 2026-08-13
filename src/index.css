@@ -159,12 +159,32 @@
      * that it is a glow rather than a colour. A shadow the same hue as the
      * ground it falls on is the difference between a card floating above the
      * page and a card cut out of it.
+     *
+     * WHY THE ACCENT ALPHAS CAME BACK DOWN.
+     *
+     * The first version of this idea carried the whole shadow on the accent,
+     * at 0.09 and 0.14. One card on its own looked right. A list of them did
+     * not: on a screen of stacked cards every gap gets a glow from the card
+     * above it and the card below it, the two alphas compound, and the white
+     * page turns pink. Measured in the gap between two goal cards it was
+     * rgb(244 227 235), which is not a glow, that is a background colour, and
+     * it is what "the photos page and the goals page have a pink background
+     * instead of white" was.
+     *
+     * So the weight went back to neutral, at an alpha far below the 0.10-
+     * across-three-layers that read as a drawn edge, and the accent stayed on
+     * only as a whisper: enough to keep the shadow from going grey, too
+     * little to paint the page even where two of them overlap. Same fix in
+     * sea, where the same bug was a yellow haze rather than a pink one.
      */
-    --e-raised: 0 1px 2px rgb(16 14 20 / 0.03), 0 6px 20px rgb(var(--c-accent) / 0.09);
+    --e-raised:
+      0 1px 2px rgb(16 14 20 / 0.04),
+      0 4px 12px rgb(16 14 20 / 0.035),
+      0 6px 20px rgb(var(--c-accent) / 0.025);
     --e-float:
-      0 1px 2px rgb(16 14 20 / 0.03),
-      0 8px 32px rgb(var(--c-accent) / 0.14),
-      0 24px 56px rgb(16 14 20 / 0.05);
+      0 1px 2px rgb(16 14 20 / 0.04),
+      0 8px 24px rgb(16 14 20 / 0.05),
+      0 20px 48px rgb(var(--c-accent) / 0.04);
 
     --glass-tint: 255 255 255;
     --glass-alpha: 0.74;
@@ -968,6 +988,18 @@
            text-small font-bold text-muted no-underline transition-colors
            duration-200 ease-settle hover:border-ink/20 hover:text-ink;
   }
+  /* The middle tier: softer than the filled primary, louder than the outline,
+     and in the theme's hue so the three read as one family rather than as an
+     accent button next to two grey ones. */
+  .goal-action-soft {
+    @apply inline-flex items-center rounded-pill px-4 py-2 text-small font-bold
+           text-ink no-underline transition-colors duration-200 ease-settle;
+    background: rgb(var(--c-accent) / 0.14);
+  }
+  .goal-action-soft:hover {
+    background: rgb(var(--c-accent) / 0.22);
+  }
+
   .goal-action-fill {
     @apply inline-flex items-center rounded-pill bg-ink/[0.06] px-4 py-2 text-small
            font-bold text-ink no-underline transition-colors duration-200

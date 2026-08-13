@@ -19,7 +19,7 @@ import { enqueue, flush } from '../lib/queue'
  * already have further down the page, and the whole point of this card is to
  * be the single thing you can act on without deciding anything first.
  */
-export default function TodayObjective({ cycle, goals, doneGoalIds, onDone }) {
+export default function TodayObjective({ cycle, goals, doneGoalIds, onMarked, onDone }) {
   const { t } = useT()
   const [busy, setBusy] = useState(false)
 
@@ -44,6 +44,18 @@ export default function TodayObjective({ cycle, goals, doneGoalIds, onDone }) {
       cycle_id: cycle.id,
       items: [{ goal_id: next.id, outcome: 'done', count_done: 1 }],
     })
+
+    /**
+     * Said done before it has been sent.
+     *
+     * The queue has already accepted it, so it is going to happen whether or
+     * not the network is having a good day: waiting for a round trip to admit
+     * that is a button that feels broken on the underground. The parent moves
+     * its roster and its counter on the same call, and the refetch afterwards
+     * either confirms all of it or puts it back.
+     */
+    onMarked?.(next.id)
+
     await flush()
     await onDone?.()
     setBusy(false)

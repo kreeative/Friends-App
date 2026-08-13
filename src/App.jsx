@@ -11,6 +11,7 @@ import Start from './pages/Start'
 import Dashboard from './pages/Dashboard'
 import Board from './pages/Board'
 import Checkin from './pages/Checkin'
+import Proofs from './pages/Proofs'
 import Goals from './pages/Goals'
 import GoalEditor from './pages/GoalEditor'
 import Me from './pages/Me'
@@ -177,6 +178,7 @@ function Gate() {
         <Route path="g/:groupId">
           <Route index element={<Board />} />
           <Route path="checkin" element={<Checkin />} />
+        <Route path="proofs" element={<Proofs />} />
           <Route path="goals" element={<Goals />} />
           <Route path="goals/new" element={<GoalEditor />} />
           <Route path="goals/:goalId/edit" element={<GoalEditor />} />
