@@ -40,11 +40,26 @@ const MINE = [
   { to: '/library', key: 'nav.library' },
 ]
 
+/**
+ * Four tabs, and Proof is not one of them.
+ *
+ * It was a fifth, and a fifth is where a bar of this width starts truncating:
+ * "Faire le p…", "Object…". It also described a place rather than a thing you
+ * do, which is the odd one out here, and it split a single act in two. A photo
+ * is proof OF a check-in. Attaching one belongs in the same screen as the
+ * thing it is evidence for, and the gallery belongs directly under the form
+ * that fills it.
+ *
+ * The route stays. Anybody with the page open or a link to it still gets it,
+ * and the check-in links straight through for the full grid.
+ */
 const IN_GROUP = (id) => [
   { to: `/g/${id}`, key: 'nav.board', end: true },
-  { to: `/g/${id}/checkin`, key: 'board.check_in' },
+  /* Its own key rather than the chip's. "Faire le point" is the right words
+     on a button and two characters too many in a tab, where it truncated to
+     "Faire le p…" at 390px. */
+  { to: `/g/${id}/checkin`, key: 'nav.checkin' },
   { to: `/g/${id}/goals`, key: 'nav.goals' },
-  { to: `/g/${id}/proofs`, key: 'proof.tab' },
   { to: `/g/${id}/settings`, key: 'nav.group' },
 ]
 

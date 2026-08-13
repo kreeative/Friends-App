@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { celebrate } from '../lib/celebrations'
@@ -11,6 +11,7 @@ import { dueOn, outcomeFor, targetFor } from '../lib/schedule'
 import { Field, Screen, Section, TopBar } from '../components/ui'
 import ProofPicker from '../components/ProofPicker'
 import CelebrateStep from '../components/CelebrateStep'
+import ProofGallery from '../components/ProofGallery'
 
 export default function Checkin() {
   const navigate = useNavigate()
@@ -35,6 +36,12 @@ export default function Checkin() {
      step has no button of its own on purpose: a second Send in a form with one
      Submit is two ways to finish and a good chance of doing neither. */
   const [party, setParty] = useState({ receiverId: null, message: '' })
+
+  /* Bumped whenever something happened that the gallery below cannot know
+     about. See ProofGallery's refreshToken: without it a check-in filed on
+     this very screen left the strip showing the set it loaded on mount, which
+     is the whole of "my photo did not appear". */
+  const [proofTick, setProofTick] = useState(0)
 
   const phase = cyclePhase(currentCycle, cycles, cadence)
   const ends = cycleEnd(currentCycle, cycles, cadence)
@@ -88,6 +95,7 @@ export default function Checkin() {
     }
 
     await reloadGroup()
+    setProofTick((n) => n + 1)
     setBusy(false)
     navigate(`/g/${activeId}`)
   }
@@ -100,6 +108,7 @@ export default function Checkin() {
       { onConflict: 'cycle_id,user_id' },
     )
     await reloadGroup()
+    setProofTick((n) => n + 1)
     setBusy(false)
     navigate(`/g/${activeId}`)
   }
@@ -260,6 +269,32 @@ export default function Checkin() {
           </div>
         </Section>
       )}
+
+      {/**
+       * The proof, directly under the form that fills it.
+       *
+       * This was a fifth tab of its own, which put a place in the navigation
+       * bar next to four things you do, and split one act across two screens:
+       * you attached a photograph here and then went somewhere else to find
+       * out whether it had arrived. A photo is proof OF a check-in. It belongs
+       * in the same screen as the thing it is evidence for.
+       *
+       * A screenful rather than the whole archive, with a way through to the
+       * full grid, so the check-in stays a form rather than becoming a feed.
+       */}
+      <Section
+        title={t('proof.title')}
+        action={
+          <Link
+            to={`/g/${activeId}/proofs`}
+            className="text-small text-ink underline-offset-4 hover:underline"
+          >
+            {t('proof.see_all')}
+          </Link>
+        }
+      >
+        <ProofGallery groupId={activeId} limit={9} refreshToken={proofTick} />
+      </Section>
 
       <CelebrateStep members={members} value={party} onChange={setParty} />
 

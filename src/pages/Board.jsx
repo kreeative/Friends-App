@@ -203,6 +203,19 @@ export default function Board() {
           wrote by hand outranks good news the calendar worked out. */}
       <CelebrationBanner />
 
+      {/**
+       * How everyone is, at the very top, above everything about performance.
+       *
+       * The order is the argument. A mood is the one thing on this page that
+       * is about the person rather than their output, it is shared on purpose
+       * by somebody who pressed a switch to share it, and the point of that
+       * switch is that a group-mate sees it now. A group where the first thing
+       * you read is a completion figure has quietly become a scoreboard.
+       *
+       * Renders nothing at all when nobody has shared. See GroupMoods.
+       */}
+      <GroupMoods groupId={activeId} members={members} />
+
       <BirthdayBanner people={members.map((m) => m.profile)} />
 
       <NudgeBanner />
@@ -249,14 +262,8 @@ export default function Board() {
         </>
       )}
 
-      <Section
-        title={
-          revealed
-            ? t('board.this_week')
-            : t('board.checked_in_count', { n: submittedIds.size, total: expected.length })
-        }
-      >
-        <Roster
+      <Section title={t('board.this_week')}>
+        <Leaderboard
           members={members}
           checkins={now}
           items={items}
@@ -270,24 +277,6 @@ export default function Board() {
             left for someone to work out from a chip that never changes. */}
         {!revealed && <p className="mt-5 text-small text-muted">{t('board.sealed_note')}</p>}
       </Section>
-
-      {/**
-       * How everyone is, first, ahead of how everyone is doing.
-       *
-       * This used to sit below the feed, which put two screens of who-missed-
-       * what between the roster and the one thing on the page that is about
-       * the people rather than their output. The order is the argument: a
-       * group where the first thing you read is a percentage is a group that
-       * has quietly become a scoreboard.
-       *
-       * Deliberately not sealed with the rest of the board either. A mood is
-       * shared on purpose, by somebody who pressed a switch to share it, and
-       * the point of that switch is that a group-mate sees it now rather than
-       * at the end of the week.
-       *
-       * Renders nothing at all when nobody has shared. See GroupMoods.
-       */}
-      <GroupMoods groupId={activeId} members={members} />
 
       {/**
        * One table where there were three cards.
@@ -367,69 +356,144 @@ export default function Board() {
 }
 
 /**
- * Who is in, and what they said once it is safe to say it.
+ * Who is in, as a leaderboard rather than as a roster.
  *
- * Pulled out of the page because the board renders it twice: sealed for the
- * period you are in, open for the one that just ended. It was written inline
- * when there was only ever one of them.
+ * This was one row per person at the full width of the column: an avatar, a
+ * name, and a chip. On a group of nine that is a screen and a half of the same
+ * sentence nine times, and eight of those chips said "Pas encore", which is
+ * the app telling eight people they have not done something yet by name, in a
+ * list, every time anybody opens the board.
+ *
+ * So the count moves to the top where a count belongs, the bar carries it, and
+ * the people become a row of faces. The waiting state is now the absence of a
+ * tick rather than a label: eight faces without a mark reads as "the day is
+ * young", and eight badges reading "not yet" reads as an audit.
+ *
+ * What is NOT here is a ranking. Faces are in roster order, no numbers, no
+ * positions. See GroupAnalytics for the longer version of that argument.
  *
  * `settled` is separate from `revealed` on purpose. Revealed decides whether
- * you can read someone's answers; settled decides whether an empty row means
- * "has not yet" or "did not". Once everyone is in, a period is revealed while
+ * you can read somebody's answers; settled decides whether a missing row means
+ * "has not yet" or "did not". Once everybody is in, a period is revealed while
  * still running, and calling a missing row a miss at that point would be
  * wrong: the period has not ended.
  */
-function Roster({ members, checkins, items, awayIds, revealed, settled, me, t }) {
+function Leaderboard({ members, checkins, items, awayIds, revealed, settled, me, t }) {
+  const [open, setOpen] = useState(null)
+
+  const inIds = new Set(checkins.map((c) => c.user_id))
+  const expected = members.filter((m) => !awayIds.has(m.user_id))
+  const done = expected.filter((m) => inIds.has(m.user_id)).length
+  const pct = expected.length ? Math.round((done / expected.length) * 100) : 0
+
   return (
-    /* In a card, like everything else on the page now that the page has a
-       colour. A bare list on a tinted ground reads as content that has fallen
-       out of its container rather than as a deliberately plain list. */
-    <div className="lg px-5">
-      <div className="list">
-      {members.map((m) => {
-        const ck = checkins.find((c) => c.user_id === m.user_id)
-        const isAway = awayIds.has(m.user_id)
-        const mine = m.user_id === me
+    <div className="lg p-5 sm:p-6">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+        <span className="eyebrow">{t('board.progress')}</span>
+        <span className="text-small font-semibold text-muted [font-variant-numeric:tabular-nums]">
+          {t('board.progress_count', { n: done, total: expected.length })}
+        </span>
+      </div>
+
+      <div className="mt-3 h-2 overflow-hidden rounded-pill bg-ink/[0.07]">
+        <div
+          className="h-full rounded-pill bg-green transition-[width] duration-500 ease-out"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+
+      {/**
+       * A row of faces, wrapping. Not a stack with a "+3": the whole question
+       * this answers is who, and an avatar stack hides exactly the people
+       * whose absence you were looking for.
+       */}
+      <div className="mt-5 flex flex-wrap gap-x-3 gap-y-4">
+        {members.map((m) => {
+          const ck = checkins.find((c) => c.user_id === m.user_id)
+          const isAway = awayIds.has(m.user_id)
+          const readable = revealed && ck
+          const label = `${m.profile?.display_name ?? ''} · ${
+            isAway
+              ? t('board.state_away')
+              : ck
+                ? t('board.state_in')
+                : settled
+                  ? t('board.state_quiet')
+                  : t('board.state_waiting')
+          }`
+
+          return (
+            <button
+              key={m.user_id}
+              type="button"
+              disabled={!readable}
+              aria-label={label}
+              title={label}
+              onClick={() => setOpen(open === m.user_id ? null : m.user_id)}
+              className="press flex w-[3.75rem] flex-col items-center gap-1.5 rounded-inner disabled:cursor-default"
+            >
+              <span className="relative">
+                <span className={isAway ? 'block opacity-45' : 'block'}>
+                  <Avatar profile={m.profile} size={44} />
+                </span>
+                {/* A mark, not a word. Present for in and for away, absent for
+                    everybody else, so nothing on this card says "not yet" to
+                    eight people at nine in the morning. */}
+                {(ck || isAway) && (
+                  <span
+                    aria-hidden="true"
+                    className={`absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-pill text-[0.5rem] font-bold ring-2 ring-[rgb(var(--glass-tint))] ${
+                      ck ? 'bg-green text-white' : 'bg-ink/25 text-white'
+                    }`}
+                  >
+                    {ck ? '✓' : '–'}
+                  </span>
+                )}
+              </span>
+              <span
+                className={`w-full truncate text-center text-label font-semibold ${
+                  ck ? 'text-ink' : 'text-muted'
+                }`}
+              >
+                {(m.profile?.display_name ?? '').split(/\s+/)[0]}
+                {m.user_id === me ? ` · ${t('board.you')}` : ''}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+
+      {/**
+       * What somebody actually wrote, on demand.
+       *
+       * The reveal is the payoff for the seal and it is not being thrown away,
+       * it is being asked for. Every answer from every member laid out at once
+       * was the wall this card replaced; one tap on a face is the same
+       * information with the reader choosing when to read it.
+       */}
+      {open && (() => {
+        const m = members.find((x) => x.user_id === open)
+        const ck = checkins.find((c) => c.user_id === open)
+        if (!m || !ck) return null
 
         return (
-          <div key={m.user_id} className="py-5">
-            <div className="flex items-center gap-4">
-              <Avatar profile={m.profile} />
-              <span className="flex-1 text-body text-ink">
-                {m.profile?.display_name}
-                {mine && <span className="text-muted"> · {t('board.you')}</span>}
-              </span>
-              {/* A filled chip, not coloured text: green at full saturation
-                  cannot pass contrast as type, and the block reads louder. */}
-              <span className={ck ? 'chip-green': 'chip-quiet'}>
-                {isAway
-                  ? t('board.state_away')
-: ck
-                    ? t('board.state_in')
-: settled
-                      ? t('board.state_quiet')
-: t('board.state_waiting')}
-              </span>
+          <div className="mt-5 border-t border-hairline pt-4">
+            <p className="text-small font-semibold text-ink">{m.profile?.display_name}</p>
+            <div className="mt-3 space-y-2">
+              {items
+                .filter((i) => i.checkin_id === ck.id)
+                .map((i) => (
+                  <ItemLine key={i.id} item={i} />
+                ))}
+              {ck.next_commitment && (
+                <p className="pt-1 text-small text-muted">
+                  {t('board.next', { text: ck.next_commitment })}
+                </p>
+              )}
             </div>
-
-            {revealed && ck && (
-              <div className="mt-4 space-y-2 pl-[3.5rem]">
-                {items
-                  .filter((i) => i.checkin_id === ck.id)
-                  .map((i) => (
-                    <ItemLine key={i.id} item={i} />
-                  ))}
-                {ck.next_commitment && (
-                  <p className="pt-1 text-small text-muted">
-                    {t('board.next', { text: ck.next_commitment })}
-                  </p>
-                )}
-              </div>
-            )}
           </div>
         )
-      })}
-      </div>
+      })()}
     </div>
   )
 }

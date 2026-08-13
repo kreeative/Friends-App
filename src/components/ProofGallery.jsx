@@ -166,7 +166,16 @@ function Viewer({ proof, onClose, onReact, locale }) {
   )
 }
 
-export default function ProofGallery({ groupId }) {
+/**
+ * @param limit         how many to show. The full screen wants everything; the
+ *                      strip under the check-in wants one screenful.
+ * @param refreshToken  any value that changes when the caller knows there is
+ *                      something new. This is the fix for "the photo I just
+ *                      submitted is not here": the gallery had no reason to
+ *                      re-read, so a check-in filed on the same screen left it
+ *                      showing the set it loaded on mount.
+ */
+export default function ProofGallery({ groupId, limit, refreshToken = 0 }) {
   const { user } = useAuth()
   const { t, locale } = useT()
 
@@ -175,13 +184,21 @@ export default function ProofGallery({ groupId }) {
   const [open, setOpen] = useState(null)
 
   const load = useCallback(async () => {
-    const r = await loadProofs(groupId)
+    const r = await loadProofs(groupId, limit)
     setProofs(r.proofs)
     setMissing(r.missing)
-  }, [groupId])
+  }, [groupId, limit])
 
   useEffect(() => {
     load()
+  }, [load, refreshToken])
+
+  /* Coming back to the tab, because a photograph gets there by somebody else
+     posting one and nothing in this browser will hear about that. */
+  useEffect(() => {
+    const onWake = () => document.visibilityState === 'visible' && load()
+    document.addEventListener('visibilitychange', onWake)
+    return () => document.removeEventListener('visibilitychange', onWake)
   }, [load])
 
   const months = useMemo(() => byMonth(proofs, localeTag(locale)), [proofs, locale])
