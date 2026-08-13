@@ -65,7 +65,11 @@ export default function BudgetToday() {
 
   return (
     <Section title={t('money.title')}>
-      <Link to="/money" className="block">
+      {/* In a card, now that the page has a colour of its own. This was the
+          one block on the dashboard still sitting straight on the ground, and
+          on a tinted ground that reads as content that has escaped its
+          container rather than as a deliberately plain block. */}
+      <Link to="/money" className="lg block p-5 no-underline sm:p-6">
         {s.overcommitted ? (
           <>
             <div className="text-h2 text-ink">{t('money.overcommitted_title')}</div>

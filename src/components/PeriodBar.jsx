@@ -44,7 +44,7 @@ export default function PeriodBar({ value, onChange }) {
      */
     <div
       role="tablist"
-      className="flex gap-0.5 overflow-x-auto rounded-pill bg-ink/[0.055] p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      className="flex gap-0.5 overflow-x-auto rounded-pill bg-ink/[0.055] p-[3px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
     >
       {PERIODS.map((p) => {
         const on = p.id === value
@@ -59,8 +59,15 @@ export default function PeriodBar({ value, onChange }) {
                to this page wants read to them. */
             aria-label={t(`analytics.period_${p.id}`)}
             onClick={() => onChange(p.id)}
-            className={`press min-w-0 flex-1 whitespace-nowrap rounded-pill px-1 py-2 text-label font-bold uppercase tracking-[0.02em] transition-colors duration-200 ${
-              on ? 'bg-ink text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.14)]' : 'text-muted hover:text-ink'
+            /* Deliberately small. This is a control in a card header, not a
+               row of buttons: it sits beside an eyebrow at 11px and reading
+               larger than the thing it qualifies is what made it look bolted
+               on. py-1 rather than py-2 takes about a third off the height of
+               the whole bar. */
+            className={`press min-w-0 flex-1 whitespace-nowrap rounded-pill px-1 py-1 text-[0.6875rem] font-semibold uppercase leading-5 tracking-[0.02em] transition-colors duration-200 ${
+              on
+                ? 'bg-ink text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.16)]'
+                : 'text-muted hover:text-ink'
             }`}
           >
             {t(`analytics.short_${p.id}`)}

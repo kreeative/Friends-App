@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import { celebrate } from '../lib/celebrations'
 import { useGroup } from '../context/GroupContext'
 import { enqueue, flush } from '../lib/queue'
 import { cycleEnd, cyclePhase, untilLabel } from '../lib/time'
@@ -9,12 +10,13 @@ import { useT } from '../lib/i18n'
 import { dueOn, outcomeFor, targetFor } from '../lib/schedule'
 import { Field, Screen, Section, TopBar } from '../components/ui'
 import ProofPicker from '../components/ProofPicker'
+import CelebrateStep from '../components/CelebrateStep'
 
 export default function Checkin() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { t } = useT()
-  const { activeId, cycles, cadence, currentCycle, nextCycle, myGoals, groupGoals, reloadGroup } =
+  const { activeId, cycles, cadence, currentCycle, nextCycle, members, myGoals, groupGoals, reloadGroup } =
     useGroup()
 
   /* Only what is actually due. A twice-a-week goal on a Thursday and a
@@ -28,6 +30,11 @@ export default function Checkin() {
   const [answers, setAnswers] = useState({})
   const [next, setNext] = useState('')
   const [busy, setBusy] = useState(false)
+
+  /* Kept here rather than inside CelebrateStep so that Submit sends it. The
+     step has no button of its own on purpose: a second Send in a form with one
+     Submit is two ways to finish and a good chance of doing neither. */
+  const [party, setParty] = useState({ receiverId: null, message: '' })
 
   const phase = cyclePhase(currentCycle, cycles, cadence)
   const ends = cycleEnd(currentCycle, cycles, cadence)
@@ -60,6 +67,26 @@ export default function Checkin() {
       items,
     })
     await flush()
+
+    /**
+     * The celebration, after the check-in and never instead of it.
+     *
+     * Deliberately outside the offline queue. That queue replays a check-in
+     * against a cycle, which is a fact about a day and is still true an hour
+     * later; a compliment that turns up whenever the network happens to come
+     * back is a stranger thing, and a failed one is better dropped than
+     * delivered at midnight with no context. It also must never be able to
+     * fail the submit: the day's record is the thing that matters here.
+     */
+    if (party.receiverId && party.message.trim()) {
+      await celebrate({
+        groupId: activeId,
+        senderId: user.id,
+        receiverId: party.receiverId,
+        message: party.message,
+      }).catch(() => {})
+    }
+
     await reloadGroup()
     setBusy(false)
     navigate(`/g/${activeId}`)
@@ -233,6 +260,8 @@ export default function Checkin() {
           </div>
         </Section>
       )}
+
+      <CelebrateStep members={members} value={party} onChange={setParty} />
 
       <Section title={t('checkin.one_thing')}>
         <Field>

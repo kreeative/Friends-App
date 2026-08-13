@@ -9,6 +9,7 @@ import { dueOn } from '../lib/schedule'
 import { useT } from '../lib/i18n'
 import { Avatar, Empty, Screen, Section, TopBar } from '../components/ui'
 import BirthdayBanner from '../components/BirthdayBanner'
+import CelebrationBanner from '../components/CelebrationBanner'
 import NudgeBanner from '../components/NudgeBanner'
 import GroupMoods from '../components/GroupMoods'
 import GroupAnalytics from '../components/GroupAnalytics'
@@ -198,6 +199,10 @@ export default function Board() {
 
       {/* Above the nudge, because a nudge waits for whoever gets to it and a
           birthday does not wait at all. */}
+      {/* Above the birthday, which is above the nudge. Good news somebody
+          wrote by hand outranks good news the calendar worked out. */}
+      <CelebrationBanner />
+
       <BirthdayBanner people={members.map((m) => m.profile)} />
 
       <NudgeBanner />
@@ -376,7 +381,11 @@ export default function Board() {
  */
 function Roster({ members, checkins, items, awayIds, revealed, settled, me, t }) {
   return (
-    <div className="list">
+    /* In a card, like everything else on the page now that the page has a
+       colour. A bare list on a tinted ground reads as content that has fallen
+       out of its container rather than as a deliberately plain list. */
+    <div className="lg px-5">
+      <div className="list">
       {members.map((m) => {
         const ck = checkins.find((c) => c.user_id === m.user_id)
         const isAway = awayIds.has(m.user_id)
@@ -420,6 +429,7 @@ function Roster({ members, checkins, items, awayIds, revealed, settled, me, t })
           </div>
         )
       })}
+      </div>
     </div>
   )
 }

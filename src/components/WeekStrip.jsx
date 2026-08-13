@@ -142,28 +142,51 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
    * did not ask for and did not see the start of.
    */
   const track = useRef(null)
-  const [page, setPage] = useState(CURRENT)
+
+  /**
+   * Also re-aligned whenever the track changes width.
+   *
+   * scrollLeft is a number of pixels, and the slide it points at is that
+   * number divided by the track's width. Change the width and the division
+   * lands somewhere else, so rotating a phone, opening the keyboard or
+   * dragging a desktop window moved the strip to a week nobody asked for.
+   * `page` is the truth here; the pixel offset is derived from it.
+   *
+   * The ref is read inside rather than closed over, so the observer survives
+   * every re-render without being torn down and rebuilt.
+   */
+  const page = useRef(CURRENT)
+  const [shown, setShown] = useState(CURRENT)
 
   useLayoutEffect(() => {
     const el = track.current
     if (!el) return
-    el.scrollTo({ left: el.clientWidth * CURRENT, behavior: 'instant' })
+
+    const align = () => el.scrollTo({ left: el.clientWidth * page.current, behavior: 'instant' })
+    align()
+
+    const ro = new ResizeObserver(align)
+    ro.observe(el)
+    return () => ro.disconnect()
   }, [])
 
   /* Which week is under the reader, for the label above the dates. Read off
-     the scroll position rather than tracked as state per slide: the whole
-     point of a snap track is that the browser owns the position. */
+     the scroll position rather than tracked per slide: the whole point of a
+     snap track is that the browser owns the position. The ref is what the
+     resize handler needs; the state is what the label renders from. */
   const onScroll = () => {
     const el = track.current
     if (!el || el.clientWidth === 0) return
     const i = Math.round(el.scrollLeft / el.clientWidth)
-    setPage((prev) => (prev === i ? prev : i))
+    if (i === page.current) return
+    page.current = i
+    setShown(i)
   }
 
   const step = (delta) => {
     const el = track.current
     if (!el) return
-    const next = Math.min(weeks.length - 1, Math.max(0, page + delta))
+    const next = Math.min(weeks.length - 1, Math.max(0, page.current + delta))
     el.scrollTo({ left: el.clientWidth * next, behavior: 'smooth' })
   }
 
@@ -296,7 +319,7 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
   const mood = moodByDay[selected] ?? null
   const nothing = live.length === 0 && entries.length === 0 && !mood
 
-  const shownWeek = weeks[page] ?? week
+  const shownWeek = weeks[shown] ?? week
   const monthLabel = shownWeek[3].toLocaleDateString(localeTag(locale), {
     month: 'long',
     year: shownWeek[3].getFullYear() === new Date().getFullYear() ? undefined : 'numeric',
@@ -322,7 +345,7 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
           <button
             type="button"
             onClick={() => step(-1)}
-            disabled={page === 0}
+            disabled={shown === 0}
             aria-label={t('week.previous')}
             className="press flex h-8 w-8 items-center justify-center rounded-pill text-muted transition-colors hover:bg-ink/[0.05] hover:text-ink disabled:opacity-30 disabled:hover:bg-transparent"
           >
@@ -331,7 +354,7 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
           <button
             type="button"
             onClick={() => step(1)}
-            disabled={page >= weeks.length - 1}
+            disabled={shown >= weeks.length - 1}
             aria-label={t('week.next')}
             className="press flex h-8 w-8 items-center justify-center rounded-pill text-muted transition-colors hover:bg-ink/[0.05] hover:text-ink disabled:opacity-30 disabled:hover:bg-transparent"
           >
@@ -357,7 +380,7 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
       <div
         ref={track}
         onScroll={onScroll}
-        className="-mx-1 flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {weeks.map((w) => (
           <div
