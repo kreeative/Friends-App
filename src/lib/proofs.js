@@ -144,6 +144,33 @@ export async function toggleReaction(itemId, userId, emoji, isOn) {
 }
 
 /**
+ * Change a proof you already sent.
+ *
+ * Written straight to checkin_items rather than through submit_checkin,
+ * because that function rewrites the whole check-in from a payload and this is
+ * one field of one item: routing an edit through it would mean reconstructing
+ * every other goal's answer from the gallery, and getting one wrong would
+ * silently overwrite a count somebody entered days ago.
+ *
+ * No ownership check here, on purpose. checkin_items_write in 03_policies is
+ * scoped to check-ins you own, so an attempt on somebody else's row matches
+ * nothing and updates nothing. A second check in the client would be a second
+ * place to get it wrong, and the one that matters is the one in the database.
+ */
+export async function updateProof(itemId, patch) {
+  if (!itemId) return { error: new Error('no item') }
+
+  const { data, error } = await supabase
+    .from('checkin_items')
+    .update(patch)
+    .eq('id', itemId)
+    .select('id, photo_url, link_url, evidence')
+    .maybeSingle()
+
+  return { row: data ?? null, error }
+}
+
+/**
  * Photographs bucketed by the month they belong to, newest month first.
  *
  * Grouped on the cycle's own day rather than on when the file was uploaded: a
