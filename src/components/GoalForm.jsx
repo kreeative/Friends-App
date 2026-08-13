@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useGroup } from '../context/GroupContext'
 import { localeTag, useT } from '../lib/i18n'
+import { PROOF_TYPES, proofTypeOf } from '../lib/proofKinds'
 import { Field } from './ui'
 import { Slider, useSlider } from './Segmented'
 
@@ -244,6 +245,10 @@ export default function GoalForm({ onDone, onCancel, initial = null, groupId = n
   const [when, setWhen] = useState(initial?.trigger_when ?? '')
   const [where, setWhere] = useState(initial?.trigger_where ?? '')
   const [evidence, setEvidence] = useState(initial?.evidence_def ?? '')
+  /* What the check-in will draw on this goal's card. proofTypeOf rather than a
+     bare read, so a goal written before migration 28 opens on the photograph
+     it has always offered instead of on an empty select. */
+  const [proofType, setProofType] = useState(() => proofTypeOf(initial))
   const [stake, setStake] = useState(initial?.stake_text ?? '')
   const [remind, setRemind] = useState(initial?.remind ?? true)
   const [goalType, setGoalType] = useState(initial?.goal_type ?? 'process')
@@ -294,6 +299,7 @@ export default function GoalForm({ onDone, onCancel, initial = null, groupId = n
       trigger_when: when.trim() || null,
       trigger_where: where.trim() || null,
       evidence_def: evidence.trim() || null,
+      proof_type: proofType,
       cadence,
       target_per_cycle: cadence === 'recurring' ? Number(target) || 1 : 1,
       /* Every day is stored as null rather than as all seven, so "no
@@ -458,14 +464,47 @@ export default function GoalForm({ onDone, onCancel, initial = null, groupId = n
       </Step>
 
       <Step n={4} title={t('form.step_proof')} hint={t('form.optional_step')}>
-        <Field label={t('form.evidence')} hint={t('form.evidence_hint')}>
-          <input
-            className="field"
-            value={evidence}
-            onChange={(e) => setEvidence(e.target.value)}
-            placeholder={t('form.evidence_ph')}
-          />
+        {/**
+         * What the check-in will ask for.
+         *
+         * Four buttons rather than a select, because this decides what control
+         * appears on the card every single day and it is worth seeing all the
+         * options at once rather than opening a menu to find out what they are.
+         *
+         * The evidence sentence underneath stays, and the two are not the same
+         * question. This one is the widget; that one is the note you leave
+         * yourself about what would actually count.
+         */}
+        <Field label={t('form.proof_type')} hint={t('form.proof_type_hint')}>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {PROOF_TYPES.map((p) => (
+              <button
+                key={p}
+                type="button"
+                onClick={() => setProofType(p)}
+                aria-pressed={proofType === p}
+                className={`press rounded-inner px-3 py-3 text-small font-semibold transition-colors ${
+                  proofType === p
+                    ? 'bg-ink text-surface'
+                    : 'bg-ink/[0.06] text-ink hover:bg-ink/[0.1]'
+                }`}
+              >
+                {t(`form.proof_${p}`)}
+              </button>
+            ))}
+          </div>
         </Field>
+
+        {proofType !== 'none' && (
+          <Field label={t('form.evidence')} hint={t('form.evidence_hint')}>
+            <input
+              className="field"
+              value={evidence}
+              onChange={(e) => setEvidence(e.target.value)}
+              placeholder={t('form.evidence_ph')}
+            />
+          </Field>
+        )}
 
         {groupId && (
           <Field label={t('form.stake')} hint={t('form.stake_hint')}>

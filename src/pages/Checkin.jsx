@@ -8,8 +8,9 @@ import { cheer } from '../lib/burst'
 import { cycleEnd, cyclePhase, untilLabel } from '../lib/time'
 import { useT } from '../lib/i18n'
 import { dueOn, outcomeFor, targetFor } from '../lib/schedule'
+import { proofFields, proofFilled, proofTypeOf } from '../lib/proofKinds'
 import { Field, Screen, Section, TopBar } from '../components/ui'
-import ProofPicker from '../components/ProofPicker'
+import ProofField from '../components/ProofField'
 import CelebrateStep from '../components/CelebrateStep'
 import ProofGallery from '../components/ProofGallery'
 import ActionBar, { CameraIcon, ForwardIcon, PartyIcon, TargetIcon } from '../components/ActionBar'
@@ -74,6 +75,10 @@ export default function Checkin() {
     if (busy || !currentCycle) return
     setBusy(true)
 
+    /* One payload, carrying the count and whatever proof the goal asked for.
+       proofFields sends only the field matching the goal's own proof_type, so
+       a goal switched from link to photo does not keep posting whatever was
+       left in the link box before the switch. See lib/proofKinds.js. */
     const items = goals.map((g) => {
       const a = answers[g.id] ?? {}
       const count = a.count ?? 0
@@ -81,8 +86,7 @@ export default function Checkin() {
         goal_id: g.id,
         outcome: a.outcome ?? outcomeFor(g, count),
         count_done: count,
-        evidence: a.evidence || null,
-        photo_url: a.photo_url || null,
+        ...proofFields(a, proofTypeOf(g)),
       }
     })
 
@@ -206,22 +210,35 @@ export default function Checkin() {
     if (g.cadence === 'once') return Boolean(a.outcome)
     return (a.count ?? 0) > 0
   }).length
-  const photos = goals.filter((g) => answers[g.id]?.photo_url).length
-
+  /* Goals whose proof control has something in it. Counted with proofFilled
+     rather than by looking for a photo_url, because proof is now three
+     different things and a link is as filled in as a photograph. */
+  const proved = goals.filter((g) => proofFilled(answers[g.id], proofTypeOf(g))).length
+  const wantProof = goals.filter((g) => proofTypeOf(g) !== 'none').length
 
   const tiles = [
     {
       id: 'goals',
       icon: <TargetIcon />,
       label: t('checkin.tab_goals'),
-      badge: goals.length ? `${logged}/${goals.length}` : null,
+      /* Proof is filled in on this pane now, so its count belongs on this
+         tile. Only shown once something is counted: "0/3 proved" on an
+         untouched form is the app opening with a complaint. */
+      badge: goals.length
+        ? logged > 0 && wantProof > 0
+          ? `${logged}/${goals.length} · ${proved}/${wantProof}`
+          : `${logged}/${goals.length}`
+        : null,
       done: goals.length > 0 && logged === goals.length,
     },
     {
       id: 'proof',
       icon: <CameraIcon />,
       label: t('checkin.tab_proof'),
-      badge: photos > 0 ? String(photos) : null,
+      /* No badge. This tile is a gallery of what the group has done, not a
+         list of things waiting to be filled in, and a count here would read as
+         the second. */
+      badge: null,
       done: true,
     },
     {
@@ -338,13 +355,32 @@ export default function Checkin() {
                       </div>
                     )}
 
-                    {g.evidence_def && (
-                      <input
-                        className="field mt-6"
-                        placeholder={g.evidence_def}
-                        value={a.evidence ?? ''}
-                        onChange={(e) => set(g.id, { evidence: e.target.value })}
-                      />
+                    {/**
+                     * The proof, here, on the card it is proof of.
+                     *
+                     * It used to be a second list of the same goals on a
+                     * different pane, which is how somebody could count three
+                     * gym sessions and send a check-in with no photograph
+                     * without ever seeing a control that would have taken one.
+                     *
+                     * evidence_def is still the prompt: it is the sentence
+                     * somebody wrote to their future self about what would
+                     * count, so it becomes the hint above the control rather
+                     * than a text box of its own. proof_type decides which
+                     * control gets drawn. See lib/proofKinds.js.
+                     */}
+                    {proofTypeOf(g) !== 'none' && (
+                      <div className="mt-6 border-t border-hairline pt-5">
+                        <p className="field-label">
+                          {g.evidence_def || t(`proof.want_${proofTypeOf(g)}`)}
+                        </p>
+                        <ProofField
+                          type={proofTypeOf(g)}
+                          value={a}
+                          goalTitle={g.commitment}
+                          onChange={(patch) => set(g.id, patch)}
+                        />
+                      </div>
                     )}
                   </div>
                 )
@@ -354,48 +390,32 @@ export default function Checkin() {
         )}
 
         {/**
-         * Proof: attaching, and then everything the group has.
+         * Proof: a gallery, and nothing you can put anything into.
          *
-         * The picker used to sit at the bottom of every goal card, which is
-         * where it belongs logically and is exactly what made the Goals pane
-         * twice as tall as it needed to be. Here the same control is a row per
-         * goal, no counters, no chips, just the title and the photograph, and
-         * the gallery underneath answers the question the old separate tab
-         * existed for.
+         * This pane used to be both at once. It listed every goal again with a
+         * photo picker beside it, and then showed the group's gallery
+         * underneath, so one screen was "attach something" and "look at what
+         * everyone did" with no line between them. People read it as the
+         * second, which is the one it looks like, and never found the first.
+         *
+         * The pickers now live on the goal cards where the answers are. What
+         * is left here is a feed: everything the group has proved, in every
+         * kind, with your own entries editable in place.
          */}
         {pane === 'proof' && (
-          <div className="space-y-6">
-            {goals.length > 0 && (
-              <div className="lg divide-y divide-hairline px-5">
-                {goals.map((g) => {
-                  const a = answers[g.id] ?? {}
-                  return (
-                    <div key={g.id} className="py-4">
-                      <p className="text-small font-semibold text-ink">{g.commitment}</p>
-                      <ProofPicker
-                        url={a.photo_url ?? null}
-                        onChange={(photo_url) => set(g.id, { photo_url })}
-                      />
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-
-            <Section
-              title={t('proof.title')}
-              action={
-                <Link
-                  to={`/g/${activeId}/proofs`}
-                  className="text-small text-ink underline-offset-4 hover:underline"
-                >
-                  {t('proof.see_all')}
-                </Link>
-              }
-            >
-              <ProofGallery groupId={activeId} limit={9} refreshToken={proofTick} />
-            </Section>
-          </div>
+          <Section
+            title={t('proof.title')}
+            action={
+              <Link
+                to={`/g/${activeId}/proofs`}
+                className="text-small text-ink underline-offset-4 hover:underline"
+              >
+                {t('proof.see_all')}
+              </Link>
+            }
+          >
+            <ProofGallery groupId={activeId} limit={9} refreshToken={proofTick} />
+          </Section>
         )}
 
         {pane === 'celebrate' && (
