@@ -395,7 +395,21 @@ export default function Money() {
             </p>
           </div>
         ) : (
-          <div>
+          /**
+           * In a card, like everything under it.
+           *
+           * The headline was the one block on this screen sitting loose on the
+           * page: the tiles below it are cards, the three lists below those are
+           * cards, and the warning branch of this very conditional is a card.
+           * So the most important number on the screen was the only thing with
+           * no container, which reads as a heading for the tiles rather than as
+           * the answer the screen exists to give.
+           *
+           * The other branch already has `card-warn`, which is the same shape
+           * in the alarmed colourway, so the two states now swap one card for
+           * another rather than a card for a bare div.
+           */
+          <div className="lg p-6 sm:p-7">
             <div className="eyebrow">
               {s.overspent ? t('money.over_label') : t('money.today_label')}
             </div>
