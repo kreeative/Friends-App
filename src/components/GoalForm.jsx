@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { useGroup } from '../context/GroupContext'
 import { localeTag, useT } from '../lib/i18n'
 import { PROOF_TYPES, proofTypeOf } from '../lib/proofKinds'
+import { errorText, isMissingColumn, isNetworkError } from '../lib/dberr'
 import { Field } from './ui'
 import { Slider, useSlider } from './Segmented'
 
@@ -312,15 +313,54 @@ export default function GoalForm({ onDone, onCancel, initial = null, groupId = n
       remind,
     }
 
-    const q = initial
-      ? supabase.from('goals').update(payload).eq('id', initial.id)
-      : supabase.from('goals').insert(payload)
+    const write = (row) =>
+      initial
+        ? supabase.from('goals').update(row).eq('id', initial.id)
+        : supabase.from('goals').insert(row)
 
-    const { error: err } = await q
+    let { error: err } = await write(payload)
+
+    /**
+     * A goal must not depend on a migration having been run.
+     *
+     * proof_type arrived with migration 28, and this form started sending it
+     * on every save the moment the field existed in the code. On a project
+     * where 28 has not landed, that made *every* goal unsavable: the whole
+     * form, correctly filled in, refused because of one column nobody had
+     * asked for. Adding a feature is not a reason to break the screen that
+     * existed before it.
+     *
+     * So a save that fails specifically because the database has no such
+     * column goes again without it. Everything else the person typed is
+     * still good, the goal is created, and it behaves exactly as goals did
+     * before 28: proofTypeOf() falls back to a photograph.
+     *
+     * Narrow on purpose. Only a missing-column error retries, and only after
+     * checking the name, so a constraint violation or a permission error is
+     * still reported rather than being silently retried into a second
+     * identical failure.
+     */
+    if (err && isMissingColumn(err, 'proof_type')) {
+      const { proof_type: _dropped, ...withoutProof } = payload
+      ;({ error: err } = await write(withoutProof))
+    }
+
+    /* One retry on a connection that dropped. A phone on a lift or a train
+       loses a request and gets it back a second later, and asking somebody to
+       refill a five-step form because of that is the app blaming them for
+       their signal. Only once: a second failure is a real one. */
+    if (err && isNetworkError(err)) {
+      await new Promise((r) => setTimeout(r, 700))
+      ;({ error: err } = await write(payload))
+    }
+
     setSaving(false)
 
     if (err) {
-      setError(err.message)
+      /* The whole error, code included. "TypeError: Load failed" on its own
+         is a sentence nobody can act on; with the code and the hint beside it
+         there is something to search for and something to tell somebody. */
+      setError(errorText(err))
       return
     }
     await reloadGroup()
