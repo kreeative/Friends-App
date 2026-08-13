@@ -904,6 +904,50 @@
   }
 
   /**
+   * A surface a hand can rest on.
+   *
+   * Four declarations, and Tailwind's `select-none` is only the first of them,
+   * which is why this is a class rather than a utility on the element.
+   *
+   * user-select stops the palm resting under a stylus from starting a text
+   * selection and dragging a highlight across the interface. Autoprefixer adds
+   * the -webkit- form, which is the one iOS actually reads.
+   *
+   * -webkit-touch-callout is the one that matters most on an iPad and the one
+   * no autoprefixer will add, because it is not a standard property. Without
+   * it a resting palm counts as a long press and iOS raises the Copy / Look Up
+   * / Share callout over the page mid-sentence. This is the whole fix for that
+   * popover.
+   *
+   * touch-action: none routes every touch to the pointer handlers instead of
+   * to the scroller. Without it the first stroke anybody attempts throws the
+   * page down instead of drawing a line.
+   *
+   * tap-highlight-color removes the grey flash Safari paints over a tapped
+   * element, which on a drawing surface reads as the canvas blinking.
+   */
+  .ink-surface {
+    user-select: none;
+    -webkit-touch-callout: none;
+    touch-action: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /**
+   * Ruled paper, drawn in CSS rather than baked into the strokes.
+   *
+   * The line height is set from --rule so the text editor and the handwriting
+   * canvas can share one ruling and actually line up with each other.
+   */
+  .ruled {
+    background-image: repeating-linear-gradient(
+      to bottom,
+      transparent 0 calc(var(--rule) - 1px),
+      rgb(var(--c-ink) / 0.08) calc(var(--rule) - 1px) var(--rule)
+    );
+  }
+
+  /**
    * A card carrying a finding the reader will not enjoy.
    *
    * Used by the money screen when a plan does not close: fixed costs plus
