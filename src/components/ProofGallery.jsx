@@ -241,23 +241,32 @@ export default function ProofGallery({ groupId, limit, refreshToken = 0 }) {
     [user?.id, load],
   )
 
+  /**
+   * No heading of its own, in any state.
+   *
+   * This used to wrap its empty and missing states in a Section titled
+   * "Proof", and the check-in wraps the whole component in a Section titled
+   * "Proof" as well, so the screen showed the word twice, one under the other,
+   * with nothing between them. The /proofs screen has the same title in its
+   * TopBar.
+   *
+   * A component that renders into somebody else's section should not name
+   * itself. The caller owns the heading and the "See all" beside it; this owns
+   * the photographs and the month labels between them.
+   */
   if (missing) {
     return (
-      <Section title={t('proof.title')}>
-        <div className="lg px-5 py-2">
-          <Empty>{t('proof.not_installed')}</Empty>
-        </div>
-      </Section>
+      <div className="lg px-5 py-2">
+        <Empty>{t('proof.not_installed')}</Empty>
+      </div>
     )
   }
 
   if (proofs.length === 0) {
     return (
-      <Section title={t('proof.title')}>
-        <div className="lg px-5 py-2">
-          <Empty>{t('proof.empty')}</Empty>
-        </div>
-      </Section>
+      <div className="lg px-5 py-2">
+        <Empty>{t('proof.empty')}</Empty>
+      </div>
     )
   }
 

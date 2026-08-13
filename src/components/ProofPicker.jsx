@@ -47,8 +47,25 @@ export default function ProofPicker({ url, onChange }) {
     setFailed(null)
 
     const { url: next, error } = await uploadProof(user.id, file)
-    if (error) setFailed(isMissingProofs(error) ? 'missing' : 'failed')
-    else onChange(next)
+    if (error) {
+      /**
+       * The reason, verbatim, under the friendly line.
+       *
+       * "That did not upload" is the right sentence for somebody who wants to
+       * try again and the wrong one for anybody trying to find out why. Every
+       * failure mode here is something a person can act on once they can read
+       * it: "Bucket not found" is a migration that has not been run, "new row
+       * violates row-level security policy" is the storage policies missing,
+       * "exceeded the maximum allowed size" is a photograph the client failed
+       * to downscale. All three were previously the same six words.
+       */
+      setFailed({
+        kind: isMissingProofs(error) ? 'missing' : 'failed',
+        detail: error?.message ?? String(error),
+      })
+    } else {
+      onChange(next)
+    }
 
     setBusy(false)
   }
@@ -102,9 +119,14 @@ export default function ProofPicker({ url, onChange }) {
       </label>
 
       {failed && (
-        <p className="mt-2 text-small text-negative">
-          {failed === 'missing' ? t('proof.not_installed') : t('proof.failed')}
-        </p>
+        <div className="mt-2">
+          <p className="text-small text-negative">
+            {failed.kind === 'missing' ? t('proof.not_installed') : t('proof.failed')}
+          </p>
+          {failed.detail && (
+            <p className="mt-1 break-words text-label text-muted">{failed.detail}</p>
+          )}
+        </div>
       )}
     </div>
   )

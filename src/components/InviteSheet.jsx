@@ -107,7 +107,6 @@ export default function InviteSheet({ group, open, onClose }) {
         </button>
       </div>
 
-      <p className="mt-7 text-small text-muted">{t('settings.invite_note')}</p>
     </Sheet>
   )
 }

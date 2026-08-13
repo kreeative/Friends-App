@@ -345,6 +345,7 @@ const STRINGS = {
     'checkin.one_thing_ph': 'The single thing you’ll do',
     'checkin.submit': 'Submit check-in',
     'checkin.sending': 'Sending',
+    'checkin.queued': 'That did not go through. It is saved on this device and will send when you are back online. You can press send again.',
     'checkin.away': 'I’m away this cycle',
     'checkin.away_note': 'Away days don’t count against you. They’re not misses.',
     'checkin.fewer': 'One fewer',
@@ -525,8 +526,6 @@ const STRINGS = {
     'settings.people': 'People',
     'settings.everyone': 'Everyone',
     'settings.send_to_friend': 'Send to a friend',
-    'settings.invite_note':
-      'Conversation lives in your group chat, not here. This app only holds the check-in.',
     'settings.switch_group': 'Switch group',
     'settings.language': 'Language',
 
@@ -936,6 +935,7 @@ const STRINGS = {
     'checkin.one_thing_ph': 'La seule chose que tu feras',
     'checkin.submit': 'Envoyer',
     'checkin.sending': 'Envoi',
+    'checkin.queued': 'Ça n’est pas passé. C’est gardé sur cet appareil et ça partira dès que tu seras reconnecté. Tu peux réappuyer sur envoyer.',
     'checkin.away': 'Je suis absent ce cycle',
     'checkin.away_note': 'Les jours d’absence ne comptent pas contre toi. Ce ne sont pas des oublis.',
     'checkin.fewer': 'Un de moins',
@@ -1119,8 +1119,6 @@ const STRINGS = {
     'settings.people': 'Membres',
     'settings.everyone': 'Tout le monde',
     'settings.send_to_friend': 'Envoyer à un ami',
-    'settings.invite_note':
-      'Les discussions se passent dans ton groupe habituel, pas ici. Cette appli ne garde que le point.',
     'settings.switch_group': 'Changer de groupe',
     'settings.language': 'Langue',
 

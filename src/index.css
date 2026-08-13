@@ -252,6 +252,24 @@
     --c-green: 21 128 61; /* darkened to 4.8:1 on white, since it labels too */
     --c-negative: 190 30 45;
     --c-on-pop: 255 255 255;
+    /**
+     * What goes on top of a fill, and why it is not one value any more.
+     *
+     * Black on everything was the rule, and it is right for yellow and wrong
+     * for a saturated pink: black on a deep pink is two dark colours sharing a
+     * button, which reads as heavy rather than as legible. Light type on a
+     * dark fill and dark type on a light one is the actual rule, and it needs
+     * a value per theme because the two accents sit at opposite ends of the
+     * scale.
+     *
+     * Measured, not chosen by eye. The sun accent had to come down one step
+     * for this to be honest: white on #DE3578 is 4.30:1, which fails AA for
+     * button text at 16px, and white on #D42C6F is 4.78:1, which passes. The
+     * deeper pink is also what "quand le rose est très foncé" describes.
+     *
+     * --c-on-field stays black in both. The field is a wash in both themes now
+     * and black on it measures 15:1 or better.
+     */
     --c-on-accent: 0 0 0;
     --c-on-field: 0 0 0;
   }
@@ -282,8 +300,9 @@
     --c-loud: 222 53 120;    /* #DE3578, 4.30:1, display sizes only */
     --c-field: 254 249 195;  /* #FEF9C3, black on it 18:1 */
     --c-field-deep: 234 179 8;
-    --c-accent: 222 53 120;
-    --c-accent-pressed: 232 90 147;
+    --c-accent: 212 44 111;  /* #D42C6F, white on it 4.78:1 */
+    --c-accent-pressed: 190 31 99;
+    --c-on-accent: 255 255 255;
   }
 
   /**
@@ -308,6 +327,9 @@
     --c-field-deep: 234 179 8;
     --c-accent: 248 203 2;   /* yellow, as a fill carrying black: 13.5:1 */
     --c-accent-pressed: 255 219 61;
+    /* Said here rather than inherited, so the pair is visible in both blocks
+       and neither theme can be changed without the question being asked. */
+    --c-on-accent: 0 0 0;
 
     --c-bg: 240 249 255;     /* ice */
     --c-raised: 224 242 254; /* sky, the soft well inside a card */
