@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useGroup } from '../context/GroupContext'
 import { DAYS, localTimezone } from '../lib/time'
@@ -11,11 +11,25 @@ export default function Start() {
   const { reload } = useGroup()
   const navigate = useNavigate()
   const { t, locale } = useT()
-  const [mode, setMode] = useState('create')
+  /**
+   * A link can carry the code, and then this screen is already filled in.
+   *
+   * /start?join=RF7K2Q is what the invite sheet shares. Reading it here is the
+   * difference between "tap this and you are in" and "tap this, then find the
+   * Join tab, then retype six characters somebody read out to you".
+   *
+   * Seeded from the URL once rather than watched: after the first render this
+   * is a form somebody is typing in, and a value that kept reasserting itself
+   * from the address bar would fight them.
+   */
+  const [params] = useSearchParams()
+  const invited = (params.get('join') ?? '').trim()
+
+  const [mode, setMode] = useState(invited ? 'join' : 'create')
   const [name, setName] = useState('')
   const [dow, setDow] = useState(0)
   const [hour, setHour] = useState(18)
-  const [code, setCode] = useState('')
+  const [code, setCode] = useState(invited)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
 

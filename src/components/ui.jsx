@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useT } from '../lib/i18n'
 
 export function Screen({ children, className = '' }) {
@@ -148,10 +149,32 @@ export function Avatar({ profile, size = 40 }) {
   )
 }
 
+/**
+ * A bottom sheet, and the reason it is a portal.
+ *
+ * WHY IT WAS RENDERING OFF SCREEN.
+ *
+ * Every page in this app is wrapped in `.page-enter`, whose animation ends on
+ * `transform: none` with `animation-fill-mode: both`. Filling forever means the
+ * element keeps a transform animation applied forever, and an element with an
+ * animated transform is a containing block for fixed-position descendants even
+ * when the value resolves to none. So `position: fixed` inside a page was
+ * positioned against the page, not the viewport, and `justify-end` put the
+ * panel at the bottom of the whole scrolling document.
+ *
+ * The scrim covered the screen, because the page is roughly screen-sized, and
+ * the sheet itself was somewhere below the fold. Tapping a member opened a
+ * dialog nobody could see.
+ *
+ * A portal to the body is the fix, and it is the right shape anyway: a sheet
+ * belongs to the app, not to the paragraph it happened to be declared next to,
+ * and hoisting it out means no future page wrapper can capture it either.
+ */
 export function Sheet({ open, onClose, title, children }) {
   const { t } = useT()
   if (!open) return null
-  return (
+
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex flex-col justify-end bg-ink/25 backdrop-blur-[2px]"
       onClick={onClose}
@@ -170,6 +193,7 @@ export function Sheet({ open, onClose, title, children }) {
           {children}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
