@@ -102,7 +102,8 @@ export function isMissingProofs(error) {
  * a state rather than an error: the screen says so instead of showing a
  * PostgREST code to somebody who cannot act on one.
  */
-export async function loadProofs(groupId, limit = 120) {
+export async function loadProofs(groupId, limit) {
+  const cap = limit ?? 120
   if (!groupId) return { proofs: [], missing: false }
 
   const { data, error } = await supabase
@@ -110,7 +111,7 @@ export async function loadProofs(groupId, limit = 120) {
     .select('*')
     .eq('group_id', groupId)
     .order('submitted_at', { ascending: false })
-    .limit(limit)
+    .limit(cap)
 
   if (error) return { proofs: [], missing: isMissingProofs(error) }
   return { proofs: data ?? [], missing: false }
