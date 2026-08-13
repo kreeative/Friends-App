@@ -12,6 +12,7 @@ import { Field, Screen, Section, TopBar } from '../components/ui'
 import ProofPicker from '../components/ProofPicker'
 import CelebrateStep from '../components/CelebrateStep'
 import ProofGallery from '../components/ProofGallery'
+import ActionBar, { CameraIcon, ForwardIcon, PartyIcon, TargetIcon } from '../components/ActionBar'
 
 export default function Checkin() {
   const navigate = useNavigate()
@@ -42,6 +43,10 @@ export default function Checkin() {
      this very screen left the strip showing the set it loaded on mount, which
      is the whole of "my photo did not appear". */
   const [proofTick, setProofTick] = useState(0)
+
+  /* Which of the four jobs is on screen. Goals first, because it is the only
+     one that is not optional and the only one most days need. */
+  const [pane, setPane] = useState('goals')
 
   const phase = cyclePhase(currentCycle, cycles, cadence)
   const ends = cycleEnd(currentCycle, cycles, cadence)
@@ -160,6 +165,44 @@ export default function Checkin() {
     )
   }
 
+  /* What each tile says about itself. Computed here rather than inside the bar
+     because it is all state this page owns, and a bar that fetched its own
+     answers would be a second source of truth for what has been filled in. */
+  const logged = goals.filter((g) => {
+    const a = answers[g.id] ?? {}
+    if (g.cadence === 'once') return Boolean(a.outcome)
+    return (a.count ?? 0) > 0
+  }).length
+  const photos = goals.filter((g) => answers[g.id]?.photo_url).length
+  const partyReady = Boolean(party.receiverId && party.message.trim())
+
+  const tiles = [
+    {
+      id: 'goals',
+      icon: <TargetIcon />,
+      label: t('checkin.tab_goals'),
+      badge: goals.length ? `${logged}/${goals.length}` : null,
+    },
+    {
+      id: 'proof',
+      icon: <CameraIcon />,
+      label: t('checkin.tab_proof'),
+      badge: photos > 0 ? String(photos) : null,
+    },
+    {
+      id: 'celebrate',
+      icon: <PartyIcon />,
+      label: t('checkin.tab_celebrate'),
+      badge: partyReady ? '✓' : null,
+    },
+    {
+      id: 'next',
+      icon: <ForwardIcon />,
+      label: t('checkin.tab_next'),
+      badge: next.trim() ? '✓' : null,
+    },
+  ]
+
   return (
     <Screen>
       <TopBar
@@ -167,148 +210,174 @@ export default function Checkin() {
         sub={t('board.reveals_in', { t: untilLabel(ends) })}
       />
 
-      {goals.length === 0 ? (
-        <Section>
-          <p className="card text-body text-muted">{t('checkin.no_goals')}</p>
-        </Section>
-      ) : (
-        <Section title={t('checkin.what_happened')}>
-          <div className="space-y-4">
-            {goals.map((g) => {
-              const a = answers[g.id] ?? {}
-              const count = a.count ?? 0
-              const target = targetFor(g)
-
-              return (
-                <div key={g.id} className="card">
-                  <div className="flex items-start justify-between gap-4">
-                    <h3 className="text-h2 text-ink">{g.commitment}</h3>
-                    {g.kind === 'group' && (
-                      <span className="chip-quiet shrink-0">{t('checkin.shared')}</span>
-                    )}
-                  </div>
-                  <p className="mt-1.5 text-small text-muted">
-                    {g.cadence === 'recurring'
-                      ? t('checkin.committed', { n: target })
-                      : t('checkin.committed_once')}
-                    {g.trigger_when ? ` · ${g.trigger_when}` : ''}
-                  </p>
-
-                  {g.cadence === 'recurring' ? (
-                    <div className="mt-6 flex items-center gap-4">
-                      <button
-                        onClick={() => set(g.id, { count: Math.max(0, count - 1) })}
-                        className="press h-14 w-14 shrink-0 rounded-pill bg-ink/[0.07] text-h2 leading-none text-ink"
-                        aria-label={t('checkin.fewer')}
-                      >
-                        −
-                      </button>
-                      <div className="flex-1 text-center">
-                        {/* Green once it is met, so the number itself says so
-                            rather than leaving it to be worked out from two
-                            digits that happen to match. */}
-                        <span
-                          className={`font-display text-metric ${count >= target ? 'text-green' : 'text-ink'}`}
-                        >
-                          {count}
-                        </span>
-                        <span className="text-h2 text-muted"> / {target}</span>
-                      </div>
-                      <button
-                        onClick={() => set(g.id, { count: Math.min(target, count + 1) })}
-                        disabled={count >= target}
-                        className="press h-14 w-14 shrink-0 rounded-pill bg-ink/[0.07] text-h2 leading-none text-ink disabled:opacity-40"
-                        aria-label={t('checkin.more')}
-                      >
-                        +
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="mt-6 flex gap-2">
-                      {[
-                        ['done', t('checkin.did_it')],
-                        ['missed', t('checkin.not_yet')],
-                      ].map(([v, label]) => (
-                        <button
-                          key={v}
-                          onClick={() => set(g.id, { outcome: v, count: v === 'done' ? 1 : 0 })}
-                          className={
-                            (a.outcome ?? '') === v
-                              ? v === 'done'
-                                ? 'chip-green press'
-                                : 'chip-accent press'
-                              : 'chip-quiet press'
-                          }
-                        >
-                          {label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-
-                  {g.evidence_def && (
-                    <input
-                      className="field mt-6"
-                      placeholder={g.evidence_def}
-                      value={a.evidence ?? ''}
-                      onChange={(e) => set(g.id, { evidence: e.target.value })}
-                    />
-                  )}
-
-                  {/* A line of text describing a photograph is not a
-                      photograph, and the thing a group actually wants is to
-                      see it. Offered on every goal, not only the ones with a
-                      proof sentence configured. */}
-                  <ProofPicker
-                    url={a.photo_url ?? null}
-                    onChange={(photo_url) => set(g.id, { photo_url })}
-                  />
-                </div>
-              )
-            })}
-          </div>
-        </Section>
-      )}
+      <ActionBar items={tiles} value={pane} onChange={setPane} />
 
       {/**
-       * The proof, directly under the form that fills it.
+       * One pane at a time, and Submit outside all of them.
        *
-       * This was a fifth tab of its own, which put a place in the navigation
-       * bar next to four things you do, and split one act across two screens:
-       * you attached a photograph here and then went somewhere else to find
-       * out whether it had arrived. A photo is proof OF a check-in. It belongs
-       * in the same screen as the thing it is evidence for.
-       *
-       * A screenful rather than the whole archive, with a way through to the
-       * full grid, so the check-in stays a form rather than becoming a feed.
+       * The button belongs to the check-in, not to whichever tile happens to be
+       * open: there is one submission and it carries everything, so hiding it
+       * behind the Goals tile would mean somebody who finished on the Celebrate
+       * pane had to navigate back to a tab to send. Everything filled in on any
+       * pane goes out together whichever one is showing.
        */}
-      <Section
-        title={t('proof.title')}
-        action={
-          <Link
-            to={`/g/${activeId}/proofs`}
-            className="text-small text-ink underline-offset-4 hover:underline"
-          >
-            {t('proof.see_all')}
-          </Link>
-        }
-      >
-        <ProofGallery groupId={activeId} limit={9} refreshToken={proofTick} />
-      </Section>
+      <div className="mt-6">
+        {pane === 'goals' && (
+          goals.length === 0 ? (
+            <p className="lg p-5 text-body text-muted">{t('checkin.no_goals')}</p>
+          ) : (
+            <div className="space-y-4">
+              {goals.map((g) => {
+                const a = answers[g.id] ?? {}
+                const count = a.count ?? 0
+                const target = targetFor(g)
 
-      <CelebrateStep members={members} value={party} onChange={setParty} />
+                return (
+                  <div key={g.id} className="card">
+                    <div className="flex items-start justify-between gap-4">
+                      <h3 className="text-h2 text-ink">{g.commitment}</h3>
+                      {g.kind === 'group' && (
+                        <span className="chip-quiet shrink-0">{t('checkin.shared')}</span>
+                      )}
+                    </div>
+                    <p className="mt-1.5 text-small text-muted">
+                      {g.cadence === 'recurring'
+                        ? t('checkin.committed', { n: target })
+                        : t('checkin.committed_once')}
+                      {g.trigger_when ? ` · ${g.trigger_when}` : ''}
+                    </p>
 
-      <Section title={t('checkin.one_thing')}>
-        <Field>
-          <input
-            className="field"
-            value={next}
-            onChange={(e) => setNext(e.target.value)}
-            placeholder={t('checkin.one_thing_ph')}
-            maxLength={280}
-          />
-        </Field>
-      </Section>
+                    {g.cadence === 'recurring' ? (
+                      <div className="mt-6 flex items-center gap-4">
+                        <button
+                          onClick={() => set(g.id, { count: Math.max(0, count - 1) })}
+                          className="press h-14 w-14 shrink-0 rounded-pill bg-ink/[0.07] text-h2 leading-none text-ink"
+                          aria-label={t('checkin.fewer')}
+                        >
+                          −
+                        </button>
+                        <div className="flex-1 text-center">
+                          {/* Green once it is met, so the number itself says so
+                              rather than leaving it to be worked out from two
+                              digits that happen to match. */}
+                          <span
+                            className={`font-display text-metric ${count >= target ? 'text-green' : 'text-ink'}`}
+                          >
+                            {count}
+                          </span>
+                          <span className="text-h2 text-muted"> / {target}</span>
+                        </div>
+                        <button
+                          onClick={() => set(g.id, { count: Math.min(target, count + 1) })}
+                          disabled={count >= target}
+                          className="press h-14 w-14 shrink-0 rounded-pill bg-ink/[0.07] text-h2 leading-none text-ink disabled:opacity-40"
+                          aria-label={t('checkin.more')}
+                        >
+                          +
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="mt-6 flex gap-2">
+                        {[
+                          ['done', t('checkin.did_it')],
+                          ['missed', t('checkin.not_yet')],
+                        ].map(([v, label]) => (
+                          <button
+                            key={v}
+                            onClick={() => set(g.id, { outcome: v, count: v === 'done' ? 1 : 0 })}
+                            className={
+                              (a.outcome ?? '') === v
+                                ? v === 'done'
+                                  ? 'chip-green press'
+                                  : 'chip-accent press'
+                                : 'chip-quiet press'
+                            }
+                          >
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {g.evidence_def && (
+                      <input
+                        className="field mt-6"
+                        placeholder={g.evidence_def}
+                        value={a.evidence ?? ''}
+                        onChange={(e) => set(g.id, { evidence: e.target.value })}
+                      />
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )
+        )}
+
+        {/**
+         * Proof: attaching, and then everything the group has.
+         *
+         * The picker used to sit at the bottom of every goal card, which is
+         * where it belongs logically and is exactly what made the Goals pane
+         * twice as tall as it needed to be. Here the same control is a row per
+         * goal, no counters, no chips, just the title and the photograph, and
+         * the gallery underneath answers the question the old separate tab
+         * existed for.
+         */}
+        {pane === 'proof' && (
+          <div className="space-y-6">
+            {goals.length > 0 && (
+              <div className="lg divide-y divide-hairline px-5">
+                {goals.map((g) => {
+                  const a = answers[g.id] ?? {}
+                  return (
+                    <div key={g.id} className="py-4">
+                      <p className="text-small font-semibold text-ink">{g.commitment}</p>
+                      <ProofPicker
+                        url={a.photo_url ?? null}
+                        onChange={(photo_url) => set(g.id, { photo_url })}
+                      />
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
+            <Section
+              title={t('proof.title')}
+              action={
+                <Link
+                  to={`/g/${activeId}/proofs`}
+                  className="text-small text-ink underline-offset-4 hover:underline"
+                >
+                  {t('proof.see_all')}
+                </Link>
+              }
+            >
+              <ProofGallery groupId={activeId} limit={9} refreshToken={proofTick} />
+            </Section>
+          </div>
+        )}
+
+        {pane === 'celebrate' && (
+          <CelebrateStep members={members} value={party} onChange={setParty} />
+        )}
+
+        {pane === 'next' && (
+          <div className="lg p-5 sm:p-6">
+            <p className="text-small text-muted">{t('checkin.one_thing')}</p>
+            <Field>
+              <input
+                className="field mt-3"
+                value={next}
+                onChange={(e) => setNext(e.target.value)}
+                placeholder={t('checkin.one_thing_ph')}
+                maxLength={280}
+              />
+            </Field>
+          </div>
+        )}
+      </div>
 
       <Section>
         <button onClick={submit} disabled={busy} className="btn-primary press">
