@@ -58,6 +58,10 @@ export default function Checkin() {
      one that is not optional and the only one most days need. */
   const [pane, setPane] = useState('goals')
 
+  /* Set when a submit went into the queue and did not come back out. See
+     submit() for why that must not look like success. */
+  const [stuck, setStuck] = useState(false)
+
   const phase = cyclePhase(currentCycle, cycles, cadence)
   const ends = cycleEnd(currentCycle, cycles, cadence)
 
@@ -88,7 +92,29 @@ export default function Checkin() {
       note: null,
       items,
     })
-    await flush()
+
+    /**
+     * A queued check-in is not a sent one, and the difference is visible.
+     *
+     * This used to fire and forget: enqueue, flush, navigate. When the flush
+     * did not go through, the entry stayed in the queue and the app still
+     * moved to the board and showed nothing new, which is exactly the shape of
+     * "I attached a photo and it never appeared". Nothing was lost, but a
+     * failure that looks like a success is worse than one that looks like a
+     * failure, because there is nothing to try again.
+     *
+     * So a submit that is still queued stays on this screen and says so. The
+     * queue keeps retrying underneath either way, and pressing Send again is
+     * safe: submit_checkin upserts on (cycle_id, user_id).
+     */
+    const { failed } = await flush()
+    if (failed > 0) {
+      setStuck(true)
+      setBusy(false)
+      return
+    }
+
+    setStuck(false)
     await reloadGroup()
     setProofTick((n) => n + 1)
     setBusy(false)
@@ -382,6 +408,7 @@ export default function Checkin() {
       </div>
 
       <Section>
+        {stuck && <p className="mb-4 text-small text-negative">{t('checkin.queued')}</p>}
         <button onClick={submit} disabled={busy} className="btn-primary press">
           {busy ? t('checkin.sending') : t('checkin.submit')}
         </button>
