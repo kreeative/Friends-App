@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
-import { DEFAULT_PERIOD, PERIODS, memberRates, windowDays } from '../lib/completion'
+import { DEFAULT_PERIOD, memberRates } from '../lib/completion'
 import { useT } from '../lib/i18n'
 import PeriodBar from './PeriodBar'
 
@@ -22,9 +22,9 @@ import PeriodBar from './PeriodBar'
  * WHY IT DOES ITS OWN FETCHING.
  *
  * GroupContext holds one group at a time, and this number is about the person
- * across all of them. Two small queries, once, over the longest window the
- * filter offers, and then every period is computed from what is already in
- * memory: switching from six months to today does not touch the network.
+ * across all of them. Two queries, once, reaching back as far as the oldest
+ * goal, and then every period is computed from what is already in memory:
+ * switching from all-time to today does not touch the network.
  *
  * Solo goals are deliberately not counted. A goal with no group has no cycles
  * to be checked in against, so it can only ever sit in the denominator and
@@ -42,32 +42,47 @@ export default function MyCompletion() {
     let dead = false
 
     ;(async () => {
-      const longest = PERIODS[PERIODS.length - 1].days
-      const days = windowDays(PERIODS[PERIODS.length - 1].id)
-      const from = days[0].toISOString()
-
       try {
         /* Every goal in every group I am in that is either mine or the whole
            group's. RLS already limits this to my groups, so there is no group
            id to pass and nothing here can reach somebody else's. */
-        const [g, c] = await Promise.all([
-          supabase
-            .from('goals')
-            .select('*')
-            .not('group_id', 'is', null)
-            .or(`owner_id.eq.${user.id},kind.eq.group`),
-          supabase
-            .from('checkins')
-            .select('id, cycle_id, cycles(opens_at), checkin_items(goal_id, outcome, count_done)')
-            .eq('user_id', user.id)
-            .gte('submitted_at', from),
-        ])
+        const g = await supabase
+          .from('goals')
+          .select('*')
+          .not('group_id', 'is', null)
+          .or(`owner_id.eq.${user.id},kind.eq.group`)
 
+        if (dead) return
+        const goals = g.data ?? []
+
+        /**
+         * The check-ins go back exactly as far as the goals do.
+         *
+         * Deliberately sequential rather than a parallel pair, which is one
+         * extra round trip and buys the thing that matters: "all time" means
+         * all of it. Fetching a fixed six months in parallel would have made
+         * ALL a second copy of 6M on any account older than that, and pulling
+         * everything unbounded grows without limit on an account that keeps
+         * going. The oldest goal is the real floor, because a day before the
+         * first goal existed is a day nothing was scheduled on.
+         */
+        const born = goals
+          .map((x) => x.created_at)
+          .filter(Boolean)
+          .sort()[0]
+
+        let q = supabase
+          .from('checkins')
+          .select('id, cycle_id, submitted_at, cycles(opens_at), checkin_items(goal_id, outcome, count_done)')
+          .eq('user_id', user.id)
+        if (born) q = q.gte('submitted_at', born)
+
+        const c = await q
         if (dead) return
 
         const rows = c.data ?? []
         setData({
-          goals: g.data ?? [],
+          goals,
           /* Anchored on the cycle the check-in was filed against, not on when
              it was typed. Something recorded at ten past midnight belongs to
              the day it was about. submitted_at is the fallback for a row whose
@@ -80,7 +95,6 @@ export default function MyCompletion() {
           items: rows.flatMap((r) =>
             (r.checkin_items ?? []).map((i) => ({ ...i, checkin_id: r.id })),
           ),
-          longest,
         })
       } catch {
         /* Offline. The card says it has nothing rather than showing a zero. */

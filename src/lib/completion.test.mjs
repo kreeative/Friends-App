@@ -1,4 +1,4 @@
-import { PERIODS, firstName, groupRate, memberRates, windowDays } from './completion.js'
+import { MAX_SPAN_DAYS, PERIODS, firstName, groupRate, memberRates, windowDays } from './completion.js'
 let pass = 0, fail = 0
 const eq = (label, got, want) => {
   const ok = JSON.stringify(got) === JSON.stringify(want)
@@ -9,7 +9,7 @@ const eq = (label, got, want) => {
 const wed = new Date(2026, 7, 12)   // Wednesday 12 August 2026
 
 // ---- the windows -----------------------------------------------------------
-eq('five periods', PERIODS.map((p) => p.id), ['day', 'week', 'month', 'quarter', 'half'])
+eq('six periods', PERIODS.map((p) => p.id), ['day', 'week', 'month', 'quarter', 'half', 'all'])
 eq('a day is today',      windowDays('day', wed).length, 1)
 eq('a week is seven',     windowDays('week', wed).length, 7)
 eq('six months is 180',   windowDays('half', wed).length, 180)
@@ -19,6 +19,15 @@ eq('an unknown period falls back to the week', windowDays('nope', wed).length, 7
 
 // Crossing a month boundary is the case that breaks a naive subtraction.
 eq('a window crosses months', windowDays('week', new Date(2026, 8, 2))[0].getMonth(), 7)
+
+// ---- the open-ended window -------------------------------------------------
+eq('all time spans from the date given', windowDays('all', wed, '2026-08-06T00:00:00').length, 7)
+eq('all time includes both ends',        windowDays('all', wed, '2026-08-12T00:00:00').length, 1)
+eq('all time with nothing is one day',   windowDays('all', wed, null).length, 1)
+eq('all time with rubbish is one day',   windowDays('all', wed, 'not a date').length, 1)
+// A goal dated in the future cannot open a negative window.
+eq('all time never runs backwards', windowDays('all', wed, '2027-01-01T00:00:00').length, 1)
+eq('all time is bounded', windowDays('all', wed, '2001-01-01T00:00:00').length, MAX_SPAN_DAYS)
 
 // ---- the shape of the maths ------------------------------------------------
 const members = [
@@ -125,6 +134,12 @@ eq('a distant one-off is scheduled nowhere', memberRates({
   ...base,
   goals: [{ ...daily, cadence: 'once', due_on: '2026-12-25' }],
 }).find((r) => r.id === 'a').target, 0)
+
+// All time reaches back to the oldest goal, so a goal born on 11 August has
+// a two-day denominator on the 12th however far back the account goes.
+eq('all time starts at the oldest goal', memberRates({
+  ...base, period: 'all', goals: [{ ...daily, created_at: '2026-08-11' }],
+}).find((r) => r.id === 'a').target, 4)
 
 // ---- the group's own figure ------------------------------------------------
 eq('the group total is the two sums', groupRate([

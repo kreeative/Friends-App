@@ -36,16 +36,39 @@
    this file directly for the tests, resolves only the explicit one. */
 import { isDueOn, targetFor } from './schedule.js'
 
-/** The filter bar, in order. Days are calendar days including today. */
+/**
+ * The filter bar, in order. Days are calendar days including today.
+ *
+ * `all` has no fixed length: it runs from the oldest thing there is back to,
+ * which is the day the earliest goal in scope was created. A fixed large
+ * number would be the easy version and it is wrong in both directions, either
+ * short enough to silently cut history off or long enough to walk ten years of
+ * empty days on every render.
+ *
+ * It is still bounded. See MAX_SPAN_DAYS.
+ */
 export const PERIODS = [
   { id: 'day', days: 1 },
   { id: 'week', days: 7 },
   { id: 'month', days: 30 },
   { id: 'quarter', days: 90 },
   { id: 'half', days: 180 },
+  { id: 'all', days: null },
 ]
 
 export const DEFAULT_PERIOD = 'week'
+
+/**
+ * The ceiling on "all", in days.
+ *
+ * The window is walked one day at a time per goal, so an account with a goal
+ * created in 2019 would otherwise loop a couple of thousand times per goal on
+ * every period change. Two years is longer than this app has existed and far
+ * longer than anybody reads back, and a bound that can never be hit in
+ * practice is still worth having: the alternative is an unbounded loop over a
+ * date somebody could put in by hand.
+ */
+export const MAX_SPAN_DAYS = 730
 
 const pad = (n) => String(n).padStart(2, '0')
 
@@ -59,11 +82,31 @@ const dateKey = (value) => (value ? String(value).slice(0, 10) : null)
  *
  * Built by subtracting from the day-of-month rather than from a timestamp, so
  * the clocks going back does not produce two of one day and none of another.
+ *
+ * `since` is only consulted by the open-ended period, and only to decide where
+ * to start. A missing or future one collapses the window to today, which is
+ * the honest answer for an account with nothing in it: "all of your history"
+ * over no history is one day, not two years of blanks.
  */
-export function windowDays(periodId, today = new Date()) {
+export function windowDays(periodId, today = new Date(), since = null) {
   const period = PERIODS.find((p) => p.id === periodId) ?? PERIODS[1]
+
+  let span = period.days
+  if (span === null) {
+    const start = since ? new Date(since) : null
+    if (!start || Number.isNaN(start.getTime())) span = 1
+    else {
+      const a = new Date(start.getFullYear(), start.getMonth(), start.getDate())
+      const b = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+      /* Divided at midday to stay clear of the hour a DST shift adds or
+         removes, which would otherwise round a whole day off the count. */
+      const diff = Math.round((b - a) / 86400000)
+      span = Math.min(MAX_SPAN_DAYS, Math.max(1, diff + 1))
+    }
+  }
+
   const out = []
-  for (let i = period.days - 1; i >= 0; i -= 1) {
+  for (let i = span - 1; i >= 0; i -= 1) {
     out.push(new Date(today.getFullYear(), today.getMonth(), today.getDate() - i))
   }
   return out
@@ -101,7 +144,16 @@ export function memberRates({
   period = DEFAULT_PERIOD,
   today = new Date(),
 } = {}) {
-  const days = windowDays(period, today)
+  /* Where "all" starts: the oldest goal still in scope. Not the oldest cycle,
+     which for a group somebody joined late runs back before any of their goals
+     existed and would open the window on a stretch nobody was ever on the hook
+     for. */
+  const born = goals
+    .map((g) => dateKey(g.created_at))
+    .filter(Boolean)
+    .sort()[0]
+
+  const days = windowDays(period, today, born ? `${born}T00:00:00` : null)
   const first = key(days[0])
   const last = key(days[days.length - 1])
 

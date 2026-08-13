@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { localeTag, useT } from '../lib/i18n'
@@ -34,6 +34,38 @@ const OUTCOME_TONE = {
   done: 'chip-green',
   partial: 'chip-accent',
   missed: 'chip-quiet',
+}
+
+/**
+ * How far back the slider goes, and how far forward.
+ *
+ * Six weeks of history is about as far as anybody swipes before they would
+ * rather tap a date, and it is a bounded number of DOM nodes: rendering every
+ * week since the account opened would grow the strip forever on exactly the
+ * accounts that use the app most.
+ *
+ * One week forward, not none. A track that refuses to move in one direction
+ * reads as broken rather than as finished, and next week is a real answer:
+ * these are the days you have coming.
+ */
+const WEEKS_BACK = 6
+const WEEKS_FORWARD = 1
+const CURRENT = WEEKS_BACK
+
+/** Drawn, one path, so it inherits the ink colour and the type's weight. */
+function Chevron({ dir }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4">
+      <path
+        d={dir === 'left' ? 'M15 5l-7 7 7 7' : 'M9 5l7 7-7 7'}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
 }
 
 /** One date. The circle is the target; the label and the dot ride with it. */
@@ -78,9 +110,62 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
   const { user, profile } = useAuth()
   const { t, locale } = useT()
 
-  const week = useMemo(() => weekOf(new Date()), [])
+  /**
+   * Eight weeks, one per slide, oldest first.
+   *
+   * Built from the current week's Sunday by stepping the day-of-month, which
+   * is the same trick weekOf uses and for the same reason: adding multiples of
+   * 604800000 to a timestamp gets a week wrong twice a year.
+   */
+  const weeks = useMemo(() => {
+    const base = weekOf(new Date())[0]
+    return Array.from({ length: WEEKS_BACK + 1 + WEEKS_FORWARD }, (_, i) =>
+      weekOf(
+        new Date(base.getFullYear(), base.getMonth(), base.getDate() + (i - CURRENT) * 7),
+      ),
+    )
+  }, [])
+
+  const week = weeks[CURRENT]
   const todayKey = dayKey()
   const [selected, setSelected] = useState(todayKey)
+
+  /**
+   * The track, and where it starts.
+   *
+   * Scrolled to the current week before the browser paints, so the strip is
+   * never briefly showing six weeks ago. useLayoutEffect rather than useEffect
+   * for exactly that: an effect that ran after paint would show the jump.
+   *
+   * `behavior: 'instant'` because this is not a movement, it is the initial
+   * position. Smooth-scrolling on arrival would animate a journey the reader
+   * did not ask for and did not see the start of.
+   */
+  const track = useRef(null)
+  const [page, setPage] = useState(CURRENT)
+
+  useLayoutEffect(() => {
+    const el = track.current
+    if (!el) return
+    el.scrollTo({ left: el.clientWidth * CURRENT, behavior: 'instant' })
+  }, [])
+
+  /* Which week is under the reader, for the label above the dates. Read off
+     the scroll position rather than tracked as state per slide: the whole
+     point of a snap track is that the browser owns the position. */
+  const onScroll = () => {
+    const el = track.current
+    if (!el || el.clientWidth === 0) return
+    const i = Math.round(el.scrollLeft / el.clientWidth)
+    setPage((prev) => (prev === i ? prev : i))
+  }
+
+  const step = (delta) => {
+    const el = track.current
+    if (!el) return
+    const next = Math.min(weeks.length - 1, Math.max(0, page + delta))
+    el.scrollTo({ left: el.clientWidth * next, behavior: 'smooth' })
+  }
 
   /* Outcomes, keyed by the cycle they were filed against rather than by when
      they were typed. A check-in submitted at ten past midnight belongs to the
@@ -89,8 +174,11 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
   const [budget, setBudget] = useState(null)
   const [moodByDay, setMoodByDay] = useState({})
 
-  const from = week[0]
-  const to = week[6]
+  /* The whole slider, not the visible week. One read covering every slide,
+     because a fetch per swipe would mean an empty strip for a moment every
+     time somebody flicked back through a month. */
+  const from = weeks[0][0]
+  const to = weeks[weeks.length - 1][6]
 
   useEffect(() => {
     if (!user) return
@@ -208,32 +296,99 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
   const mood = moodByDay[selected] ?? null
   const nothing = live.length === 0 && entries.length === 0 && !mood
 
+  const shownWeek = weeks[page] ?? week
+  const monthLabel = shownWeek[3].toLocaleDateString(localeTag(locale), {
+    month: 'long',
+    year: shownWeek[3].getFullYear() === new Date().getFullYear() ? undefined : 'numeric',
+  })
+
   return (
     <div className="lg overflow-hidden p-4 sm:p-5">
-      <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
-        {week.map((d) => {
-          const k = dayKey(d)
-          const marked =
-            (cyclesByDay[k] ?? []).some((s) => s.status === 'submitted') ||
-            (entriesByDay[k] ?? []).length > 0 ||
-            Boolean(moodByDay[k])
-          return (
-            <DayBadge
-              key={k}
-              date={d}
-              isToday={k === todayKey}
-              isSelected={k === selected}
-              isFuture={k > todayKey}
-              marked={marked}
-              label={d.toLocaleDateString(localeTag(locale), {
-                weekday: 'long',
-                day: 'numeric',
-                month: 'long',
-              })}
-              onSelect={() => setSelected(k)}
-            />
-          )
-        })}
+      {/**
+       * Which week you are looking at, and two ways to leave it.
+       *
+       * The dates alone cannot say this: "9 10 11 12" is the same row of
+       * numbers in August as it is in September, and once the strip can move,
+       * a reader who has swiped twice has no way to know where they landed.
+       *
+       * The arrows are not the primary control, the swipe is. They are here
+       * because a swipe is invisible until somebody tries it, and because a
+       * mouse has no swipe at all.
+       */}
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <span className="eyebrow">{monthLabel}</span>
+
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => step(-1)}
+            disabled={page === 0}
+            aria-label={t('week.previous')}
+            className="press flex h-8 w-8 items-center justify-center rounded-pill text-muted transition-colors hover:bg-ink/[0.05] hover:text-ink disabled:opacity-30 disabled:hover:bg-transparent"
+          >
+            <Chevron dir="left" />
+          </button>
+          <button
+            type="button"
+            onClick={() => step(1)}
+            disabled={page >= weeks.length - 1}
+            aria-label={t('week.next')}
+            className="press flex h-8 w-8 items-center justify-center rounded-pill text-muted transition-colors hover:bg-ink/[0.05] hover:text-ink disabled:opacity-30 disabled:hover:bg-transparent"
+          >
+            <Chevron dir="right" />
+          </button>
+        </div>
+      </div>
+
+      {/**
+       * The slider.
+       *
+       * One slide per week, each exactly the track's width, with mandatory
+       * snapping so a flick always lands on a week rather than halfway between
+       * two. The browser does the whole of the gesture: there is no drag
+       * handler, no velocity maths and no library, which is why it feels right
+       * on a phone and works with a trackpad, a shift-wheel and a keyboard
+       * without any of them being handled separately.
+       *
+       * overscroll-x-contain stops a swipe past the last week from turning
+       * into the browser's back gesture, which on iOS would navigate away from
+       * the dashboard entirely.
+       */}
+      <div
+        ref={track}
+        onScroll={onScroll}
+        className="-mx-1 flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        {weeks.map((w) => (
+          <div
+            key={dayKey(w[0])}
+            className="grid w-full shrink-0 snap-center grid-cols-7 gap-0.5 sm:gap-1"
+          >
+            {w.map((d) => {
+              const k = dayKey(d)
+              const marked =
+                (cyclesByDay[k] ?? []).some((s) => s.status === 'submitted') ||
+                (entriesByDay[k] ?? []).length > 0 ||
+                Boolean(moodByDay[k])
+              return (
+                <DayBadge
+                  key={k}
+                  date={d}
+                  isToday={k === todayKey}
+                  isSelected={k === selected}
+                  isFuture={k > todayKey}
+                  marked={marked}
+                  label={d.toLocaleDateString(localeTag(locale), {
+                    weekday: 'long',
+                    day: 'numeric',
+                    month: 'long',
+                  })}
+                  onSelect={() => setSelected(k)}
+                />
+              )
+            })}
+          </div>
+        ))}
       </div>
 
       {/* Always open, never a disclosure. There is always a selected day, so a
