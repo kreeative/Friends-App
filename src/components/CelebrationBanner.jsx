@@ -75,7 +75,14 @@ export default function CelebrationBanner() {
             />
             <div className="min-w-0 flex-1">
               <p className="text-small font-semibold text-ink">
-                {t('celebrate.banner', { name: r.sender_name ?? '', group: r.group_name ?? '' })}
+                {/* You, about yourself. Rare, and "you celebrated you in Les
+                    Ambitieux" is not a sentence anybody should read. */}
+                {r.sender_id === r.receiver_id
+                  ? t('celebrate.banner_self', { group: r.group_name ?? '' })
+                  : t('celebrate.banner', {
+                      name: r.sender_name ?? '',
+                      group: r.group_name ?? '',
+                    })}
               </p>
               {/* The message itself in full ink and a size up. The line above
                   is the envelope; this is the thing somebody actually wrote. */}

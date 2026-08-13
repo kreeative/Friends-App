@@ -83,6 +83,7 @@ export default function GroupFeed({ groupId, limit = 12 }) {
           avatar_url: c.sender_avatar,
           receiver_name: c.receiver_name,
           receiver_avatar: c.receiver_avatar,
+          self: c.sender_id === c.receiver_id,
           message: c.message,
         })),
       ]
@@ -130,10 +131,15 @@ export default function GroupFeed({ groupId, limit = 12 }) {
                     />
                     <div className="min-w-0 flex-1">
                       <p className="text-label font-bold uppercase tracking-[0.06em] text-muted">
-                        {t('celebrate.feed_from', {
-                          name: r.display_name ?? '',
-                          about: r.receiver_name ?? '',
-                        })}
+                        {/* Somebody celebrating themselves gets its own line.
+                            "Rue on Rue" reads as a bug in the join rather than
+                            as a person being pleased with their own week. */}
+                        {r.self
+                          ? t('celebrate.feed_self', { name: r.display_name ?? '' })
+                          : t('celebrate.feed_from', {
+                              name: r.display_name ?? '',
+                              about: r.receiver_name ?? '',
+                            })}
                       </p>
                       <p className="mt-1.5 text-small leading-snug text-ink">{r.message}</p>
                     </div>

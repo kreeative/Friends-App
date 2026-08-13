@@ -7,6 +7,7 @@ import { consecutiveMisses } from '../lib/stats'
 import { dayKey } from '../lib/time'
 import { ACCEPT, isMissingBucket, removeAvatar, uploadAvatar } from '../lib/avatar'
 import { CURRENCIES, FALLBACK, currencyName } from '../lib/currency'
+import { DECLINED, PRONOUN_OPTIONS } from '../lib/pronouns'
 import { localeTag, useT } from '../lib/i18n'
 import { Avatar, Field, Screen, Section, TopBar } from '../components/ui'
 import MyCompletion from '../components/MyCompletion'
@@ -163,6 +164,54 @@ export default function Me() {
   }
 
   /**
+   * The words other people's screens should use about you.
+   *
+   * The app writes sentences about people who are not reading them, and every
+   * one of them was they/them. That is the right default and it is not an
+   * answer for somebody who has told you otherwise.
+   *
+   * FIVE OPTIONS, ONE OF WHICH IS A TEXT BOX.
+   *
+   * Three sets covers most people; a free text box covers the rest without
+   * this app deciding in advance which sets exist. "Prefer not to say" is
+   * stored rather than left blank, because declining is an answer and a
+   * profile that has been asked is a different state from one that has not.
+   *
+   * The select is saved on change like the currency above. Custom is not:
+   * saving on every keystroke would write "s", "sh", "she" as three separate
+   * values, so it saves on blur, when the person has stopped typing.
+   */
+  const [pronounError, setPronounError] = useState(false)
+  const stored = profile?.pronouns ?? ''
+  const isCustom = Boolean(stored) && !PRONOUN_OPTIONS.includes(stored)
+  const [custom, setCustom] = useState(isCustom ? stored : '')
+  const [customOpen, setCustomOpen] = useState(isCustom)
+
+  useEffect(() => {
+    const next = profile?.pronouns ?? ''
+    const free = Boolean(next) && !PRONOUN_OPTIONS.includes(next)
+    setCustom(free ? next : '')
+    setCustomOpen(free)
+  }, [profile?.pronouns])
+
+  async function savePronouns(value) {
+    setPronounError(false)
+    const { error } = (await updateProfile?.({ pronouns: value || null })) ?? {}
+    if (error) setPronounError(true)
+  }
+
+  function pickPronouns(choice) {
+    if (choice === 'custom') {
+      setCustomOpen(true)
+      return
+    }
+    setCustomOpen(false)
+    /* The empty option means "has not said", which is null rather than a
+       string, so the column can tell the two apart. */
+    savePronouns(choice)
+  }
+
+  /**
    * Play the budget intro again.
    *
    * The flag is the whole mechanism: Money renders the carousel whenever it is
@@ -293,6 +342,39 @@ export default function Me() {
             </select>
           </Field>
           {currencyError && <p className="text-small text-negative">{t('me.currency_failed')}</p>}
+
+          <Field label={t('me.pronouns')} hint={t('me.pronouns_hint')}>
+            <select
+              className="field"
+              value={customOpen ? 'custom' : stored}
+              onChange={(e) => pickPronouns(e.target.value)}
+            >
+              <option value="">{t('me.pronouns_unset')}</option>
+              {PRONOUN_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option === 'custom'
+                    ? t('me.pronouns_custom')
+                    : option === DECLINED
+                      ? t('me.pronouns_declined')
+                      : option}
+                </option>
+              ))}
+            </select>
+          </Field>
+
+          {customOpen && (
+            <input
+              className="field"
+              value={custom}
+              maxLength={40}
+              placeholder={t('me.pronouns_ph')}
+              onChange={(e) => setCustom(e.target.value)}
+              onBlur={() => savePronouns(custom.trim())}
+              onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+            />
+          )}
+
+          {pronounError && <p className="text-small text-negative">{t('me.pronouns_failed')}</p>}
         </div>
       </Section>
 

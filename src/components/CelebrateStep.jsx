@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { celebrate } from '../lib/celebrations'
+import { getUserPronoun, isPluralPronoun } from '../lib/pronouns'
 import { useT } from '../lib/i18n'
 import { Avatar } from './ui'
 
@@ -47,9 +48,22 @@ export default function CelebrateStep({ groupId, members = [], value, onChange, 
   const [error, setError] = useState(false)
   const [sent, setSent] = useState(null)
 
-  /* Everybody but you. Celebrating yourself is refused by the database, and
-     offering it here and then failing would be a poor way to say so. */
-  const others = members.filter((m) => m.user_id !== user?.id)
+  /**
+   * Everybody, including you.
+   *
+   * Yourself used to be filtered out, and the database refused it too. Both
+   * were the app deciding what somebody is allowed to be pleased about: "I
+   * passed my driving test" is a real thing to say to a group of friends, and
+   * the alternative was waiting for somebody else to notice it.
+   *
+   * You sort last. Not hidden, not first: the common case is still somebody
+   * else, and putting your own face at the head of the row would suggest
+   * otherwise.
+   */
+  const others = [
+    ...members.filter((m) => m.user_id !== user?.id),
+    ...members.filter((m) => m.user_id === user?.id),
+  ]
   if (others.length === 0) {
     return <p className="lg p-5 text-small text-muted">{t('celebrate.alone')}</p>
   }
@@ -62,7 +76,7 @@ export default function CelebrateStep({ groupId, members = [], value, onChange, 
     setBusy(true)
     setError(false)
 
-    const name = others.find((m) => m.user_id === value.receiverId)?.profile?.display_name ?? ''
+    const to = others.find((m) => m.user_id === value.receiverId)
     const { error: err } = await celebrate({
       groupId,
       senderId: user.id,
@@ -74,7 +88,7 @@ export default function CelebrateStep({ groupId, members = [], value, onChange, 
     if (err) return setError(true)
 
     onChange({ receiverId: null, message: '' })
-    setSent(name)
+    setSent({ profile: to?.profile ?? null, self: to?.user_id === user.id })
     onSent?.()
   }
 
@@ -85,7 +99,26 @@ export default function CelebrateStep({ groupId, members = [], value, onChange, 
           for "your friend has been told". */}
       {sent && (
         <p className="mb-5 rounded-inner bg-green/10 p-4 text-small font-semibold text-green">
-          {t('celebrate.sent', { name: sent })}
+          {/**
+           * The words the person themselves asked for.
+           *
+           * "{name} will see it when they open the app" was hard-coded to
+           * they/them, which is the right default and is not an answer for
+           * somebody who has told you otherwise. `n` picks the verb: "they
+           * open" against "she opens", which is the half of this a pronoun
+           * alone cannot carry. See lib/pronouns.js.
+           *
+           * A celebration addressed to yourself gets its own sentence rather
+           * than "you will see it when you open the app", which is a thing to
+           * tell somebody who is already looking at it.
+           */}
+          {sent.self
+            ? t('celebrate.sent_self')
+            : t('celebrate.sent', {
+                n: isPluralPronoun(sent.profile) ? 2 : 1,
+                name: sent.profile?.display_name ?? '',
+                p: getUserPronoun(sent.profile, 'subject'),
+              })}
         </p>
       )}
 
@@ -122,7 +155,9 @@ export default function CelebrateStep({ groupId, members = [], value, onChange, 
                   on ? 'text-ink' : 'text-muted'
                 }`}
               >
-                {(m.profile?.display_name ?? '').split(/\s+/)[0]}
+                {m.user_id === user?.id
+                  ? t('board.you')
+                  : (m.profile?.display_name ?? '').split(/\s+/)[0]}
               </span>
             </button>
           )
