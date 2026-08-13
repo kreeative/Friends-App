@@ -153,7 +153,24 @@ $$;
 -- goal_proof_type comes along so the gallery can tell an entry that is a note
 -- because the goal asks for notes from one that is a caption somebody added to
 -- a photograph that failed to upload.
+--
+-- DROPPED FIRST, AND IT HAS TO BE.
+--
+-- `create or replace view` may only append columns to the end of an existing
+-- view; it cannot insert one in the middle or rename one. This adds link_url
+-- next to photo_url, where it belongs, which lands on the position `outcome`
+-- used to hold, and Postgres refuses with
+--
+--   42P16: cannot change name of view column "outcome" to "link_url"
+--
+-- The alternative was to bolt the new columns onto the end and keep an order
+-- nobody would choose. A view holds no data, nothing else in this schema reads
+-- this one (only the client does, through PostgREST), and dropping without
+-- CASCADE means that if that ever stops being true the migration fails loudly
+-- instead of quietly taking a dependent with it.
 -- ---------------------------------------------------------------------------
+drop view if exists group_proofs;
+
 create or replace view group_proofs
 with (security_invoker = on)
 as
