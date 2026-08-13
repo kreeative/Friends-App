@@ -1,190 +1,200 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useGroup } from '../context/GroupContext'
-import { completionRate } from '../lib/stats'
 import { DAYS } from '../lib/time'
 import { useT } from '../lib/i18n'
-import { Avatar, Screen, Section, Stat, TopBar } from '../components/ui'
-import HistoryStrip from '../components/HistoryStrip'
+import { Avatar, Screen, Section } from '../components/ui'
+import GroupHeader from '../components/GroupHeader'
+import InviteSheet from '../components/InviteSheet'
+import MemberSheet from '../components/MemberSheet'
 import ThemePicker from '../components/ThemePicker'
 import DangerZone from '../components/DangerZone'
 import { LegalLinks } from './Legal'
 
 const DAYS_FR = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi']
 
+/** A row in the quick actions card. One line, one icon, one job. */
+function ActionRow({ icon, label, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="press flex w-full items-center gap-4 py-4 text-left"
+    >
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-pill bg-ink/[0.06] text-ink">
+        {icon}
+      </span>
+      <span className="flex-1 text-body text-ink">{label}</span>
+      <span aria-hidden="true" className="shrink-0 text-muted/60">
+        <Chevron />
+      </span>
+    </button>
+  )
+}
+
+function Chevron() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4">
+      <path
+        d="M9 5l7 7-7 7"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+function PlusIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5">
+      <path
+        d="M12 5v14M5 12h14"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.9"
+        strokeLinecap="round"
+      />
+    </svg>
+  )
+}
+
+function LinkIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5">
+      <g fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+        <path d="M10.5 13.5a4 4 0 0 0 5.7 0l2.3-2.3a4 4 0 0 0-5.7-5.7l-1.3 1.3" />
+        <path d="M13.5 10.5a4 4 0 0 0-5.7 0l-2.3 2.3a4 4 0 0 0 5.7 5.7l1.3-1.3" />
+      </g>
+    </svg>
+  )
+}
+
 export default function Settings() {
   const { user } = useAuth()
-  const { group, members, statuses, groups, activeId, myRole, reload } = useGroup()
+  const { group, members, groups, activeId, myRole, reload } = useGroup()
   const { t, locale, setLocale } = useT()
 
-  /**
-   * Collective progress, deliberately not a ranking.
-   *
-   * In a friend group a leaderboard mostly teaches whoever is last to stop
-   * opening the app, and they are the person the group most needs to keep.
-   * So the shared number is the group's, and individual histories sit next to
-   * each other unsorted rather than in rank order.
-   *
-   * The board has a streak table now, which is a ranking, and the difference
-   * is what is being ranked: a streak is a personal record people already keep
-   * in their heads, and a completion percentage is a verdict. This list stays
-   * unsorted.
-   */
-  const together = useMemo(() => {
-    const done = statuses.filter((s) => s.status === 'submitted').length
-    const counted = statuses.filter((s) => s.status !== 'pending' && s.status !== 'away').length
-    return { done, counted, pct: counted ? Math.round((done / counted) * 100) : null }
-  }, [statuses])
+  const [inviting, setInviting] = useState(false)
+  const [tapped, setTapped] = useState(null)
+  const [error, setError] = useState(null)
 
   if (!group) return null
 
-  const dayName = (locale === 'fr' ? DAYS_FR : DAYS)[group.checkin_dow]
-  const shareText = `${group.name}. Rich & Friends. ${t('start.invite_code')}: ${group.invite_code}`
-
-  const [roleBusy, setRoleBusy] = useState(null)
-  const [roleError, setRoleError] = useState(null)
-
   /**
-   * Promote or demote, through the database function.
+   * When the day turns, said only when it is actually known.
    *
-   * Every rule about who may do this lives in set_member_role, not here.
-   * Hiding the button from a non-creator is courtesy; the refusal is enforced
-   * server-side, so a crafted call from a console gets the same answer.
+   * These three columns arrive with the group row, and a render between the
+   * route resolving and that row landing, or a group written before one of
+   * them existed, produced the literal string "undefined undefined:00 ·
+   * undefined" under the group's name. A missing schedule is a state; a line
+   * of the word "undefined" is a bug wearing a sentence.
    */
-  async function changeRole(userId, role) {
-    setRoleBusy(userId)
-    setRoleError(null)
-    const { error } = await supabase.rpc('set_member_role', {
-      p_group: activeId,
-      p_user: userId,
-      p_role: role,
-    })
-    if (error) {
-      /* The likely failure is that 18_daily_roles_and_feed.sql has not been
-         run, which PostgREST reports as a missing function: a message about a
-         schema cache, which reads like an application bug rather than an
-         unrun migration. */
-      const raw = `${error.code ?? ''} ${error.message ?? ''}`.toLowerCase()
-      const notInstalled =
-        raw.includes('pgrst202') || raw.includes('could not find the function')
-      setRoleError(notInstalled ? t('settings.roles_not_installed') : error.message)
-    } else {
-      await reload()
-    }
-    setRoleBusy(null)
-  }
+  const dayName = (locale === 'fr' ? DAYS_FR : DAYS)[group.checkin_dow]
+  const hour = Number.isFinite(group.opens_hour) ? String(group.opens_hour).padStart(2, '0') : null
+  const when = dayName && hour ? `${dayName} ${hour}:00` : null
+  const sub = [when, group.timezone].filter(Boolean).join(' · ') || null
+
+  const isAdmin = myRole === 'creator' || myRole === 'admin'
 
   async function setAdminsCanDelete(next) {
-    setRoleError(null)
-    const { error } = await supabase
+    setError(null)
+    const { error: err } = await supabase
       .from('groups')
       .update({ admins_can_delete: next })
       .eq('id', activeId)
-    if (error) setRoleError(error.message)
+    if (err) setError(err.message)
     else await reload()
-  }
-
-  async function share() {
-    if (navigator.share) {
-      await navigator.share({ text: shareText }).catch(() => {})
-    } else {
-      await navigator.clipboard.writeText(shareText).catch(() => {})
-    }
   }
 
   return (
     <Screen>
-      <TopBar
-        title={group.name}
-        sub={`${dayName} ${String(group.opens_hour).padStart(2, '0')}:00 · ${group.timezone}`}
+      {/**
+       * No TopBar, and no numbers.
+       *
+       * This screen used to open with the group name in the chrome, then a
+       * completion percentage and a head count, then a roster carrying a
+       * fourteen-day history strip and an "X/Y" per person. That is three
+       * different reports of the same thing the board already leads with, on
+       * the one page in the app whose job is not reporting but changing.
+       *
+       * It is a settings page now: what this group is called, how somebody
+       * else gets in, who is in it, and the switches. Every metric has gone
+       * back to the board, which is where a metric belongs.
+       */}
+      <GroupHeader
+        group={group}
+        canEdit={isAdmin}
+        sub={sub}
       />
 
-      <Section title={t('board.together')}>
-        <div className="flex gap-6">
-          {/* '-', not '0%'. A blind em-dash removal pass turned the "no data
-              yet" glyph into a literal zero percent, which asserts a measured
-              rate for a group that has not had a cycle yet. */}
-          <Stat
-            value={together.pct === null ? '-' : `${together.pct}%`}
-            label={t('settings.group_rate')}
-            hint={`${together.done} / ${together.counted}`}
+      <Section>
+        <div className="lg divide-y divide-hairline px-5">
+          <ActionRow
+            icon={<PlusIcon />}
+            label={t('settings.add_members')}
+            onClick={() => setInviting(true)}
           />
-          {/* No hint. It read "2 to 6 works best", which stopped being true
-              when the cap was lifted, and telling a group of nine it is the
-              wrong size is worse than saying nothing. */}
-          <Stat value={members.length} label={t('settings.people')} />
+          <ActionRow
+            icon={<LinkIcon />}
+            label={t('settings.invite_link')}
+            onClick={() => setInviting(true)}
+          />
         </div>
       </Section>
 
-      <Section title={t('settings.everyone')}>
-        <div className="lg px-5">
-          <div className="list">
-          {members.map((m) => {
-            const rows = statuses.filter((s) => s.user_id === m.user_id)
-            const r = completionRate(rows, 14)
-            return (
-              <div key={m.user_id} className="py-5">
-                <div className="flex items-center gap-4">
-                  <Avatar profile={m.profile} />
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-body text-ink">
-                      {m.profile?.display_name}
-                      {m.user_id === user?.id && (
-                        <span className="text-muted"> · {t('board.you')}</span>
-                      )}
-                    </span>
-                    {/* Under the name rather than beside it: inline, a long
-                        name and a badge compete for one row and something
-                        truncates, and roles are scanned down a column rather
-                        than read in a sentence. */}
-                    {m.role !== 'member' && (
-                      <span
-                        className={`mt-1 inline-flex items-center rounded-pill px-2.5 py-0.5 text-label font-bold uppercase tracking-[0.08em] ${
-                          m.role === 'creator'
-                            ? 'bg-accent text-on-accent'
-                            : 'bg-ink/[0.08] text-ink'
-                        }`}
-                      >
-                        {m.role === 'creator'
-                          ? t('settings.role_creator')
-                          : t('settings.role_admin')}
-                      </span>
-                    )}
-                  </span>
-                  {/* '-', not '0/0'. "0 of 0" reads as attempted-and-failed
-                      rather than as nobody having had a cycle yet. */}
-                  <span className="text-small text-muted">
-                    {r.total ? `${r.done}/${r.total}` : '-'}
-                  </span>
-                </div>
-                {/* Only the creator sees these, because only the creator can
-                    act on them. A control that always errors reads as a bug
-                    rather than as a permission. */}
-                {myRole === 'creator' && m.user_id !== user?.id && (
-                  <div className="mt-3 pl-[3.5rem]">
-                    <button
-                      onClick={() => changeRole(m.user_id, m.role === 'admin' ? 'member' : 'admin')}
-                      disabled={roleBusy === m.user_id}
-                      className="goal-action press disabled:opacity-60"
-                    >
-                      {roleBusy === m.user_id
-                        ? '…'
-                        : m.role === 'admin'
-                          ? t('settings.demote')
-                          : t('settings.promote')}
-                    </button>
-                  </div>
-                )}
+      {/**
+       * The roster, as a contact list.
+       *
+       * Avatar, name, role. Nothing else: no rate, no strip of the last ten
+       * days, no controls sitting under every row waiting to be used twice in
+       * the life of the group. Tapping somebody opens what you can do about
+       * them, which is where those controls went.
+       */}
+      <Section title={t('settings.members_count', { n: members.length })}>
+        <div className="lg divide-y divide-hairline px-5">
+          {members.map((m) => (
+            <button
+              key={m.user_id}
+              type="button"
+              onClick={() => setTapped(m)}
+              className="press flex w-full items-center gap-4 py-4 text-left"
+            >
+              <Avatar profile={m.profile} size={44} />
 
-                <div className="mt-4 pl-[3.5rem]">
-                  <HistoryStrip rows={rows} count={10} />
-                </div>
-              </div>
-            )
-          })}
-          </div>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-body text-ink">
+                  {m.profile?.display_name}
+                  {m.user_id === user?.id && (
+                    <span className="text-muted"> · {t('board.you')}</span>
+                  )}
+                </span>
+              </span>
+
+              {m.role !== 'member' && (
+                <span
+                  className={`shrink-0 rounded-pill px-2.5 py-0.5 text-label font-bold uppercase tracking-[0.06em] ${
+                    m.role === 'creator' ? 'bg-accent text-on-accent' : 'bg-ink/[0.08] text-ink'
+                  }`}
+                >
+                  {/* The short form. "Créateur du groupe" beside a name in a
+                      44px row eats the name, and the row's job is the name.
+                      The sheet says it in full. */}
+                  {m.role === 'creator'
+                    ? t('settings.role_creator_short')
+                    : t('settings.role_admin')}
+                </span>
+              )}
+
+              <span aria-hidden="true" className="shrink-0 text-muted/60">
+                <Chevron />
+              </span>
+            </button>
+          ))}
         </div>
       </Section>
 
@@ -214,21 +224,9 @@ export default function Settings() {
               </span>
             </span>
           </label>
-          {roleError && <p className="mt-4 text-small text-negative">{roleError}</p>}
+          {error && <p className="mt-4 text-small text-negative">{error}</p>}
         </Section>
       )}
-
-      <Section title={t('board.invite')}>
-        <div className="card">
-          <p className="font-display text-metric tracking-[0.12em] text-ink">
-            {group.invite_code}
-          </p>
-          <button onClick={share} className="btn-primary press mt-6">
-            {t('settings.send_to_friend')}
-          </button>
-          <p className="mt-4 text-small text-muted">{t('settings.invite_note')}</p>
-        </div>
-      </Section>
 
       <Section title={t('theme.title')}>
         <ThemePicker />
@@ -279,6 +277,16 @@ export default function Settings() {
       <Section>
         <LegalLinks />
       </Section>
+
+      <InviteSheet group={group} open={inviting} onClose={() => setInviting(false)} />
+      {tapped && (
+        <MemberSheet
+          member={tapped}
+          myRole={myRole}
+          meId={user?.id}
+          onClose={() => setTapped(null)}
+        />
+      )}
     </Screen>
   )
 }
