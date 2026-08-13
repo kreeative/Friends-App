@@ -557,6 +557,7 @@ const STRINGS = {
     'err.loading': 'Loading',
 
     'nav.library': 'Library',
+    'nav.journal': 'Journal',
     'library.sub': 'Three books, read here',
     'library.empty':
       'The catalogue is empty. In Supabase, open the SQL Editor and run supabase/07_books_all_in_one.sql. It adds the three books.',
@@ -1228,6 +1229,7 @@ const STRINGS = {
     'err.loading': 'Chargement',
 
     'nav.library': 'Lectures',
+    'nav.journal': 'Journal',
     'library.sub': 'Trois livres, à lire ici',
     'library.empty':
       'Le catalogue est vide. Dans Supabase, ouvre l’éditeur SQL et exécute supabase/07_books_all_in_one.sql. Il ajoute les trois livres.',
