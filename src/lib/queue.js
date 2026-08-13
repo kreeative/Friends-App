@@ -49,10 +49,46 @@ export function enqueue(entry) {
 
 let flushing = false
 
+/** A refusal that will never succeed on retry, however many times it is sent. */
+function isPermanent(error) {
+  return error?.code === '42501' || error?.code === '23514' || error?.code === '23503'
+}
+
+/**
+ * Send everything queued, and say what happened.
+ *
+ * TWO THINGS WERE WRONG HERE.
+ *
+ * The error was thrown away. Every caller got back a count and nothing else,
+ * so a check-in the server had refused produced "kept on this device, it will
+ * send when you are back online" no matter what the server had actually said.
+ * That sentence is right for a dead connection and a lie for a constraint
+ * violation, and there was no way to tell them apart from the outside. The
+ * last error now comes back with the counts.
+ *
+ * And a permanent refusal counted as a success. The old loop dropped the
+ * entry, as it should, and then fell through to `sent += 1`, so a check-in
+ * that Postgres had rejected outright was reported as sent, the screen
+ * celebrated, and the row was never written. That is the worst of the three
+ * outcomes because nothing anywhere says it happened. Rejections are now
+ * counted separately and returned.
+ */
 export async function flush() {
-  if (flushing || !navigator.onLine) return { sent: 0, failed: read().length }
+  if (flushing) return { sent: 0, rejected: 0, failed: read().length, error: null }
+  if (!navigator.onLine) {
+    return {
+      sent: 0,
+      rejected: 0,
+      failed: read().length,
+      /* Shaped like a Postgres error so callers have one thing to format. */
+      error: read().length ? { code: 'OFFLINE', message: 'The device reports no connection.' } : null,
+    }
+  }
+
   flushing = true
   let sent = 0
+  let rejected = 0
+  let last = null
 
   try {
     for (const entry of read()) {
@@ -65,11 +101,16 @@ export async function flush() {
       })
 
       if (error) {
-        // A rejected write (closed cycle, revoked membership) will never
-        // succeed on retry. Drop it rather than looping on it forever.
-        const permanent = error.code === '42501' || error.code === '23514' || error.code === '23503'
-        if (!permanent) break
+        last = error
+        /* A rejected write (closed cycle, revoked membership, a constraint)
+           will never succeed on retry, so it comes out of the queue rather
+           than looping on it forever. It is not a send, and it is reported. */
+        if (!isPermanent(error)) break
+        write(read().filter((i) => i.cycle_id !== entry.cycle_id))
+        rejected += 1
+        continue
       }
+
       write(read().filter((i) => i.cycle_id !== entry.cycle_id))
       sent += 1
     }
@@ -77,7 +118,7 @@ export async function flush() {
     flushing = false
   }
 
-  return { sent, failed: read().length }
+  return { sent, rejected, failed: read().length, error: last }
 }
 
 /** Try to drain whenever the browser says we are back online. */

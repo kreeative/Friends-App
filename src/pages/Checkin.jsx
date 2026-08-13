@@ -9,6 +9,7 @@ import { cycleEnd, cyclePhase, untilLabel } from '../lib/time'
 import { useT } from '../lib/i18n'
 import { dueOn, outcomeFor, targetFor } from '../lib/schedule'
 import { proofFields, proofFilled, proofTypeOf } from '../lib/proofKinds'
+import { errorText } from '../lib/dberr'
 import { Field, Screen, Section, TopBar } from '../components/ui'
 import ProofField from '../components/ProofField'
 import CelebrateStep from '../components/CelebrateStep'
@@ -60,9 +61,10 @@ export default function Checkin() {
      one that is not optional and the only one most days need. */
   const [pane, setPane] = useState('goals')
 
-  /* Set when a submit went into the queue and did not come back out. See
-     submit() for why that must not look like success. */
-  const [stuck, setStuck] = useState(false)
+  /* Set when a submit did not land: `{ rejected, detail }`. See submit() for
+     why that must not look like success, and why the server's own words are
+     carried rather than replaced with a friendly guess. */
+  const [stuck, setStuck] = useState(null)
 
   const phase = cyclePhase(currentCycle, cycles, cadence)
   const ends = cycleEnd(currentCycle, cycles, cadence)
@@ -112,9 +114,13 @@ export default function Checkin() {
      * queue keeps retrying underneath either way, and pressing Send again is
      * safe: submit_checkin upserts on (cycle_id, user_id).
      */
-    const { failed } = await flush()
-    if (failed > 0) {
-      setStuck(true)
+    const { failed, rejected, error } = await flush()
+    if (failed > 0 || rejected > 0) {
+      /* The server's own words, kept. "It will send when you are back online"
+         is right for a dead connection and a lie for a constraint violation,
+         and the two were indistinguishable from this screen. A rejection is a
+         different sentence again: it is not queued, it is refused. */
+      setStuck({ rejected: rejected > 0, detail: errorText(error) })
       setBusy(false)
       return
     }
@@ -135,7 +141,7 @@ export default function Checkin() {
      */
     if (logged > 0) cheer()
 
-    setStuck(false)
+    setStuck(null)
     await reloadGroup()
     setProofTick((n) => n + 1)
     setBusy(false)
@@ -445,7 +451,16 @@ export default function Checkin() {
       </div>
 
       <Section>
-        {stuck && <p className="mb-4 text-small text-negative">{t('checkin.queued')}</p>}
+        {stuck && (
+          <div className="mb-4">
+            <p className="text-small text-negative">
+              {stuck.rejected ? t('checkin.refused') : t('checkin.queued')}
+            </p>
+            {stuck.detail && (
+              <p className="mt-1 break-words text-label text-muted">{stuck.detail}</p>
+            )}
+          </div>
+        )}
         <button onClick={submit} disabled={busy} className="btn-primary press">
           {busy ? t('checkin.sending') : t('checkin.submit')}
         </button>
