@@ -240,6 +240,7 @@ export default function Board() {
         <>
           <TodayObjective
             cycle={currentCycle}
+            groupId={activeId}
             goals={dueOn([...myGoals, ...groupGoals].filter((g) => g.status === 'active'))}
             doneGoalIds={doneToday}
             onMarked={markOptimistically}

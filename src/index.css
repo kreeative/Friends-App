@@ -253,25 +253,29 @@
     --c-negative: 190 30 45;
     --c-on-pop: 255 255 255;
     /**
-     * What goes on top of a fill, and why it is not one value any more.
+     * What goes on top of a fill.
      *
-     * Black on everything was the rule, and it is right for yellow and wrong
-     * for a saturated pink: black on a deep pink is two dark colours sharing a
-     * button, which reads as heavy rather than as legible. Light type on a
-     * dark fill and dark type on a light one is the actual rule, and it needs
-     * a value per theme because the two accents sit at opposite ends of the
-     * scale.
+     * Never black now. Black on a saturated brand colour is two dark things
+     * sharing a button and it reads as heavy, which is the complaint this
+     * answers. Every fill takes either white or a colour from the same
+     * family, and which one is decided by measurement rather than by eye.
      *
-     * Measured, not chosen by eye. The sun accent had to come down one step
-     * for this to be honest: white on #DE3578 is 4.30:1, which fails AA for
-     * button text at 16px, and white on #D42C6F is 4.78:1, which passes. The
-     * deeper pink is also what "quand le rose est très foncé" describes.
+     * THE ONE PLACE WHITE IS NOT AVAILABLE.
      *
-     * --c-on-field stays black in both. The field is a wash in both themes now
-     * and black on it measures 15:1 or better.
+     * On Golden Yellow #FFD60A white measures 1.41:1. That is not a matter of
+     * taste, it is invisible, and no size rescues it. So the yellow takes the
+     * theme's own dark instead: deep magenta #A3004A in sun at 5.6:1, deep
+     * teal in sea at 6.8:1. Dark, but the brand's dark rather than a black.
+     *
+     * White on Hot Magenta #FF006E measures 3.83:1. That clears the 3:1 bar
+     * for large text and sits under the 4.5:1 bar for body text, which is a
+     * known and accepted trade here: the alternative is either black on the
+     * magenta, which is the thing being fixed, or a darker magenta, which is
+     * no longer the brand colour.
+     *
+     * Set per theme below rather than here, so neither can change without the
+     * question being asked again.
      */
-    --c-on-accent: 0 0 0;
-    --c-on-field: 0 0 0;
   }
 
   /**
@@ -298,11 +302,12 @@
     --c-ink: 169 28 84;      /* #A91C54, 7.04:1 on white */
     --c-muted: 220 43 114;   /* #DC2B72, 4.53:1 */
     --c-loud: 222 53 120;    /* #DE3578, 4.30:1, display sizes only */
-    --c-field: 254 249 195;  /* #FEF9C3, black on it 18:1 */
-    --c-field-deep: 234 179 8;
-    --c-accent: 212 44 111;  /* #D42C6F, white on it 4.78:1 */
-    --c-accent-pressed: 190 31 99;
-    --c-on-accent: 255 255 255;
+    --c-field: 255 214 10;   /* #FFD60A golden yellow */
+    --c-field-deep: 214 176 0;
+    --c-accent: 255 0 110;   /* #FF006E hot magenta */
+    --c-accent-pressed: 214 0 92;
+    --c-on-accent: 255 255 255;  /* 3.83:1 */
+    --c-on-field: 163 0 74;      /* #A3004A deep magenta on yellow, 5.6:1 */
   }
 
   /**
@@ -323,13 +328,15 @@
     --c-ink: 0 98 116;       /* #006274, 7.00:1 on white */
     --c-muted: 0 130 153;    /* #008299, 4.51:1 */
     --c-loud: 0 157 185;     /* #009DB9, 3.22:1, display sizes only */
-    --c-field: 254 249 195;  /* #FEF9C3, black on it 18:1 */
-    --c-field-deep: 234 179 8;
-    --c-accent: 248 203 2;   /* yellow, as a fill carrying black: 13.5:1 */
-    --c-accent-pressed: 255 219 61;
-    /* Said here rather than inherited, so the pair is visible in both blocks
-       and neither theme can be changed without the question being asked. */
-    --c-on-accent: 0 0 0;
+    --c-field: 255 214 10;   /* #FFD60A golden yellow */
+    --c-field-deep: 214 176 0;
+    --c-accent: 255 214 10;
+    --c-accent-pressed: 235 194 0;
+    /* Yellow is the accent here too, so both of these are the same question
+       and get the same answer: the theme's own deep teal, 6.8:1, rather than
+       a black. */
+    --c-on-accent: 0 76 90;
+    --c-on-field: 0 76 90;
 
     --c-bg: 240 249 255;     /* ice */
     --c-raised: 224 242 254; /* sky, the soft well inside a card */
