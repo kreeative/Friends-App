@@ -4,12 +4,11 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useGroup } from '../context/GroupContext'
 import { listBooks } from '../lib/library'
-import { completionRate, rollingRate } from '../lib/stats'
 import { cycleEnd, cyclePhase, soonestUpcoming, untilLabel } from '../lib/time'
 import { useT } from '../lib/i18n'
 import { Screen, Section, TopBar } from '../components/ui'
 import BirthdayBanner from '../components/BirthdayBanner'
-import ConsistencyPanel from '../components/ConsistencyPanel'
+import MyCompletion from '../components/MyCompletion'
 import WeekStrip from '../components/WeekStrip'
 import MoodToday from '../components/MoodToday'
 import BudgetToday from '../components/BudgetToday'
@@ -170,11 +169,10 @@ export default function Dashboard() {
     }
   }, [user?.id])
 
-  // Consistency across every group, not per group. Someone in two groups has
-  // one habit, and splitting the number in two only flatters the better half.
+  /* Your own rows, across every group. Someone in two groups has one habit,
+     and splitting the history in two only flatters the better half. The week
+     strip and the "waiting on you" line both read this. */
   const mine = useMemo(() => rows.filter((r) => r.user_id === user?.id), [rows, user?.id])
-  const rate = completionRate(mine, 14)
-  const trend = useMemo(() => rollingRate(mine, { window: 3, points: 12 }), [mine])
 
   const owned = books.filter((b) => b.owned)
 
@@ -323,15 +321,9 @@ export default function Dashboard() {
         )}
       </Section>
 
+      {/* One card where two saturated panels were. See MyCompletion. */}
       <Section title={t('home.you_overall')}>
-        <ConsistencyPanel
-          rate={rate}
-          trend={trend}
-          cycles={mine}
-          goalCount={goals.length}
-          groupCount={memberships.length}
-        />
-        <p className="mt-4 text-small text-muted">{t('me.rate_note')}</p>
+        <MyCompletion />
       </Section>
 
       <Section

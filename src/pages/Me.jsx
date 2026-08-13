@@ -3,13 +3,13 @@ import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useGroup } from '../context/GroupContext'
-import { completionRate, consecutiveMisses, rollingRate } from '../lib/stats'
+import { consecutiveMisses } from '../lib/stats'
 import { dayKey } from '../lib/time'
 import { ACCEPT, isMissingBucket, removeAvatar, uploadAvatar } from '../lib/avatar'
 import { CURRENCIES, FALLBACK, currencyName } from '../lib/currency'
 import { localeTag, useT } from '../lib/i18n'
 import { Avatar, Field, Screen, Section, TopBar } from '../components/ui'
-import ConsistencyPanel from '../components/ConsistencyPanel'
+import MyCompletion from '../components/MyCompletion'
 
 export default function Me() {
   const { user, profile, signOut, updateProfile } = useAuth()
@@ -19,9 +19,7 @@ export default function Me() {
   const [busy, setBusy] = useState(false)
 
   const rows = statusesFor(user?.id)
-  const rate = completionRate(rows, 14)
   const quiet = consecutiveMisses(rows)
-  const trend = useMemo(() => rollingRate(rows, { window: 3, points: 12 }), [rows])
 
   /* Both kinds count. Someone running three solo goals and none in a group is
      not a person with no goals, which is what this said before. */
@@ -197,18 +195,10 @@ export default function Me() {
         </div>
       )}
 
-      {/* The same two cards as the dashboard. This screen was still three
-          plain numbers with a yellow rule under each and a bare strip of
-          circles, the old design, left behind when the dashboard moved. */}
+      {/* The same card as the dashboard. See MyCompletion for why the two
+          saturated chart panels that used to fill this screen are gone. */}
       <Section title={t('me.consistency')}>
-        <ConsistencyPanel
-          rate={rate}
-          trend={trend}
-          cycles={rows}
-          goalCount={liveGoals}
-          groupCount={groups.length}
-        />
-        <p className="mt-4 text-small text-muted">{t('me.rate_note')}</p>
+        <MyCompletion />
       </Section>
 
       {/* The only thing on this screen that is about who you are rather than

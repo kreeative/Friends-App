@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
-import { DEFAULT_PERIOD, PERIODS, firstName, groupRate, memberRates } from '../lib/completion'
+import { DEFAULT_PERIOD, firstName, groupRate, memberRates } from '../lib/completion'
 import { useT } from '../lib/i18n'
+import PeriodBar from './PeriodBar'
 import { Avatar } from './ui'
 
 /**
@@ -29,43 +30,6 @@ import { Avatar } from './ui'
  * green for a high one. A bar that turns red at 40% is the app raising its
  * voice at somebody who can already read the number.
  */
-
-/**
- * The filter bar, as a segmented control rather than a scrolling row.
- *
- * Five pills at a comfortable size come to about 400px, which does not fit
- * inside a card on a 390px phone, and the version that scrolled hid "6 mois"
- * off the right edge entirely: a filter nobody can see is a filter nobody
- * uses. Sharing the width equally fits all five at every size this app runs
- * at, and the equal widths are honest anyway, these are five peers.
- *
- * overflow-x-auto stays as the floor. If a translation ever makes the labels
- * longer than the row, it scrolls rather than squashing the text to nothing.
- */
-function PeriodBar({ value, onChange }) {
-  const { t } = useT()
-
-  return (
-    <div className="flex gap-1 overflow-x-auto rounded-pill bg-ink/[0.05] p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-      {PERIODS.map((p) => {
-        const on = p.id === value
-        return (
-          <button
-            key={p.id}
-            type="button"
-            onClick={() => onChange(p.id)}
-            aria-pressed={on}
-            className={`press flex-1 whitespace-nowrap rounded-pill px-1 py-2 text-label font-bold transition-colors duration-200 ${
-              on ? 'bg-ink text-white' : 'text-muted hover:text-ink'
-            }`}
-          >
-            {t(`analytics.period_${p.id}`)}
-          </button>
-        )
-      })}
-    </div>
-  )
-}
 
 /**
  * One person's row.
