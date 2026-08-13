@@ -44,7 +44,7 @@ function inline(text, key) {
     if (m.index > last) out.push(text.slice(last, m.index))
     out.push(
       m[1] !== undefined ? (
-        <strong key={`${key}b${m.index}`} className="font-bold text-ink">
+        <strong key={`${key}b${m.index}`} className="font-semibold text-ink">
           {m[1]}
         </strong>
       ) : (

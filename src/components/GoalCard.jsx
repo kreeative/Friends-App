@@ -68,7 +68,7 @@ export default function GoalCard({
           ) : (
             <span className="h-5 w-5 shrink-0 rounded-pill bg-accent/30" aria-hidden="true" />
           )}
-          <span className="truncate text-label font-bold uppercase tracking-[0.06em] text-ink">
+          <span className="truncate text-label font-semibold uppercase tracking-[0.06em] text-ink">
             {owner ? owner.display_name : t('goal.everyone')}
           </span>
         </span>
@@ -76,7 +76,7 @@ export default function GoalCard({
         {finished && <span className={`${finished.chip} shrink-0`}>{t(finished.label)}</span>}
       </div>
 
-      <h3 className="mt-3 text-h2 font-bold text-ink">{goal.commitment}</h3>
+      <h3 className="mt-3 text-h2 font-semibold text-ink">{goal.commitment}</h3>
 
       {/**
        * Two tones, not one. The cadence is the goal's own rule and carries the
@@ -85,7 +85,7 @@ export default function GoalCard({
        * had, in a rounder shape.
        */}
       <div className="mt-3 flex flex-wrap gap-2">
-        <span className="inline-flex items-center rounded-pill bg-accent/[0.14] px-3 py-1 text-label font-bold text-ink ring-1 ring-inset ring-accent/25">
+        <span className="inline-flex items-center rounded-pill bg-accent/[0.14] px-3 py-1 text-label font-semibold text-ink ring-1 ring-inset ring-accent/25">
           {cadence}
         </span>
 

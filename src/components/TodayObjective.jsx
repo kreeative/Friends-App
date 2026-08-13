@@ -63,7 +63,7 @@ export default function TodayObjective({ cycle, goals, doneGoalIds, onMarked, on
 
   return (
     <div className="mt-8 rounded-card bg-field p-6 text-on-field sm:p-7">
-      <span className="block text-label font-bold uppercase tracking-[0.14em] text-on-field/70">
+      <span className="block text-label font-semibold uppercase tracking-[0.14em] text-on-field/70">
         {t('board.today_objective')}
       </span>
 
@@ -79,7 +79,7 @@ export default function TodayObjective({ cycle, goals, doneGoalIds, onMarked, on
           <button
             onClick={markDone}
             disabled={busy}
-            className="press mt-6 inline-flex items-center gap-2 rounded-pill bg-on-field px-6 py-3 text-small font-bold text-field transition-opacity hover:opacity-90 disabled:opacity-60"
+            className="press mt-6 inline-flex items-center gap-2 rounded-pill bg-on-field px-6 py-3 text-small font-semibold text-field transition-opacity hover:opacity-90 disabled:opacity-60"
           >
             {busy ? '…' : t('board.one_tap_done')}
           </button>

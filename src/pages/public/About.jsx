@@ -31,7 +31,7 @@ export default function About() {
       <div className="stagger max-w-[42rem]">
         <h1
           style={{ '--i': 0 }}
-          className="max-w-[16ch] text-[clamp(2.25rem,7vw,4rem)] font-bold leading-[0.98] tracking-[-0.03em] text-ink"
+          className="max-w-[16ch] text-[clamp(2.25rem,7vw,4rem)] font-semibold leading-[0.98] tracking-[-0.03em] text-ink"
         >
           {c.title}
         </h1>
@@ -55,7 +55,7 @@ export default function About() {
         <div style={{ '--i': 3 }} className="mt-14 flex items-center gap-4 border-t border-hairline pt-8">
           <Mark size={56} />
           <div>
-            <p className="text-body font-bold text-ink">{c.signature}</p>
+            <p className="text-body font-semibold text-ink">{c.signature}</p>
             <p className="text-small text-muted">{c.signatureNote}</p>
           </div>
         </div>

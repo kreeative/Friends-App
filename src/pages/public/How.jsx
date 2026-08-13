@@ -20,9 +20,9 @@ export default function How() {
         <div className="mt-12 grid gap-4 md:grid-cols-3">
           {c.steps.items.map((s) => (
             <div key={s.n} className="panel p-7">
-              <p className="text-small font-bold text-muted">{s.n}</p>
+              <p className="text-small font-semibold text-muted">{s.n}</p>
               <span className="mt-3 block h-1 w-8 rounded-pill bg-accent" aria-hidden="true" />
-              <h2 className="mt-5 text-h2 font-bold text-ink">{s.title}</h2>
+              <h2 className="mt-5 text-h2 font-semibold text-ink">{s.title}</h2>
               <p className="lede mt-3 text-small">{s.body}</p>
             </div>
           ))}
@@ -35,7 +35,7 @@ export default function How() {
           <div className="mt-8 space-y-7">
             {c.different.items.map((d) => (
               <div key={d.title}>
-                <h2 className="text-h2 font-bold text-ink">{d.title}</h2>
+                <h2 className="text-h2 font-semibold text-ink">{d.title}</h2>
                 <p className="lede mt-2 max-w-[44ch]">{d.body}</p>
               </div>
             ))}

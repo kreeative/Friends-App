@@ -36,7 +36,7 @@ export default function BudgetTiles({ s, locale }) {
     <div className="grid grid-cols-2 gap-3">
       <div className="glass flex aspect-square flex-col justify-between rounded-card p-5">
         <div>
-          <div className="text-small font-bold text-muted">{t('money.spent')}</div>
+          <div className="text-small font-semibold text-muted">{t('money.spent')}</div>
           <div className="mt-2 font-display text-h2 leading-none text-ink [font-variant-numeric:tabular-nums]">
             {fmt(s.spent)}
           </div>
@@ -53,7 +53,7 @@ export default function BudgetTiles({ s, locale }) {
 
       <div className="glass flex aspect-square flex-col justify-between rounded-card p-5">
         <div>
-          <div className="text-small font-bold text-muted">{t('money.left')}</div>
+          <div className="text-small font-semibold text-muted">{t('money.left')}</div>
           <div className="mt-2 font-display text-h2 leading-none text-ink [font-variant-numeric:tabular-nums]">
             {fmt(s.left)}
           </div>

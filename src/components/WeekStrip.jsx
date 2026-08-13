@@ -71,9 +71,9 @@ function Chevron({ dir }) {
 /** One date. The circle is the target; the label and the dot ride with it. */
 function DayBadge({ date, isToday, isSelected, isFuture, marked, label, onSelect }) {
   const circle = isToday
-    ? 'bg-accent text-on-accent font-bold'
+    ? 'bg-accent text-on-accent font-semibold'
     : isSelected
-      ? 'bg-ink text-white font-bold'
+      ? 'bg-ink text-white font-semibold'
       : isFuture
         ? 'text-muted/60'
         : 'text-ink'
@@ -86,7 +86,7 @@ function DayBadge({ date, isToday, isSelected, isFuture, marked, label, onSelect
       aria-label={label}
       className="press flex flex-col items-center gap-1.5 rounded-card py-1"
     >
-      <span className="text-label font-bold uppercase tracking-[0.08em] text-muted">
+      <span className="text-label font-semibold uppercase tracking-[0.08em] text-muted">
         {date.toLocaleDateString(undefined, { weekday: 'narrow' })}
       </span>
       <span
@@ -500,7 +500,7 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
                     [t('money.kind_income'), earned],
                   ].map(([label, cents]) => (
                     <div key={label} className="rounded-inner bg-ink/[0.035] px-4 py-3">
-                      <div className="text-small font-bold text-muted">{label}</div>
+                      <div className="text-small font-semibold text-muted">{label}</div>
                       <div className="mt-1 font-display text-h2 leading-none text-ink [font-variant-numeric:tabular-nums]">
                         {fmt(cents)}
                       </div>

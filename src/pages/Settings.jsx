@@ -177,7 +177,7 @@ export default function Settings() {
 
               {m.role !== 'member' && (
                 <span
-                  className={`shrink-0 rounded-pill px-2.5 py-0.5 text-label font-bold uppercase tracking-[0.06em] ${
+                  className={`shrink-0 rounded-pill px-2.5 py-0.5 text-label font-semibold uppercase tracking-[0.06em] ${
                     m.role === 'creator' ? 'bg-accent text-on-accent' : 'bg-ink/[0.08] text-ink'
                   }`}
                 >

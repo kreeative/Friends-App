@@ -32,7 +32,27 @@ export default function InviteSheet({ group, open, onClose }) {
   if (!group) return null
 
   const link = `${window.location.origin}/start?join=${encodeURIComponent(group.invite_code)}`
-  const text = `${group.name} · Rich & Friends\n${link}`
+
+  /**
+   * One string, carrying the link exactly once.
+   *
+   * WHY IT ARRIVED TWICE.
+   *
+   * navigator.share was handed both `text` (which already ended with the link)
+   * and `url`. The spec does not say what a target should do with that, and
+   * what most of them do is paste both, so the message came out as the address
+   * followed by the same address again.
+   *
+   * The fix is not to shorten `text`, it is to stop sending the link in two
+   * fields. `url` is gone and the sentence carries it, which is one thing the
+   * receiving app cannot get wrong. The cost is that a target which would have
+   * built a rich preview from `url` now sees a plain URL in a body of text,
+   * and every one of them linkifies that anyway.
+   *
+   * The clipboard gets the identical string, so the message somebody pastes by
+   * hand and the message the share sheet sends are the same message.
+   */
+  const invite = t('settings.invite_share', { group: group.name, link })
 
   async function copy(what, value) {
     try {
@@ -49,10 +69,10 @@ export default function InviteSheet({ group, open, onClose }) {
 
   async function share() {
     if (navigator.share) {
-      await navigator.share({ title: group.name, text, url: link }).catch(() => {})
+      await navigator.share({ title: group.name, text: invite }).catch(() => {})
       return
     }
-    copy('link', link)
+    copy('link', invite)
   }
 
   return (

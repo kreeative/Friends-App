@@ -64,7 +64,7 @@ export default function Goals() {
             to={`${base}/new`}
             aria-label={t('goals.new_goal')}
             title={t('goals.new_goal')}
-            className="press flex h-11 w-11 shrink-0 items-center justify-center rounded-pill bg-accent text-[1.375rem] font-bold leading-none text-on-accent"
+            className="press flex h-11 w-11 shrink-0 items-center justify-center rounded-pill bg-accent text-[1.375rem] font-semibold leading-none text-on-accent"
           >
             +
           </Link>

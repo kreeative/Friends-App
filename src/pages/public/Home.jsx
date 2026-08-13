@@ -36,7 +36,7 @@ export default function Home() {
               the page itself. */}
           <h1
             style={{ '--i': 0 }}
-            className="max-w-[13ch] text-[clamp(2.75rem,9vw,5.75rem)] font-bold leading-[0.94] tracking-[-0.03em] text-ink"
+            className="max-w-[13ch] text-[clamp(2.75rem,9vw,5.75rem)] font-semibold leading-[0.94] tracking-[-0.03em] text-ink"
           >
             {c.hero.title}
           </h1>
@@ -90,7 +90,7 @@ export default function Home() {
        */}
       <section className="relative mx-auto w-full max-w-5xl px-6 pb-20">
         <div className="relative overflow-hidden rounded-card bg-field px-6 py-20 text-center">
-          <h2 className="mx-auto max-w-[18ch] text-[clamp(1.875rem,5vw,3rem)] font-bold leading-[1.02] tracking-[-0.024em] text-on-field">
+          <h2 className="mx-auto max-w-[18ch] text-[clamp(1.875rem,5vw,3rem)] font-semibold leading-[1.02] tracking-[-0.024em] text-on-field">
             {c.close.title}
           </h2>
           <p className="mx-auto mt-5 max-w-[40ch] text-body text-on-field/75">{c.close.body}</p>

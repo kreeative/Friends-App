@@ -270,13 +270,13 @@ export default function Dashboard() {
             to={`/g/${waiting.group.id}/checkin`}
             className="press group block rounded-card bg-accent p-6 no-underline transition-transform duration-200 ease-settle hover:-translate-y-0.5 sm:p-7"
           >
-            <span className="block text-label font-bold uppercase tracking-[0.14em] text-on-accent/70">
+            <span className="block text-label font-semibold uppercase tracking-[0.14em] text-on-accent/70">
               {t('board.reveals_in', { t: untilLabel(waiting.ends) })}
             </span>
             <span className="mt-3 block text-h1 font-bold leading-[1.05] tracking-[-0.024em] text-on-accent">
               {t('home.waiting_on_you', { group: waiting.group.name })}
             </span>
-            <span className="mt-5 inline-flex items-center gap-2 rounded-pill bg-on-accent px-5 py-2.5 text-small font-bold text-accent">
+            <span className="mt-5 inline-flex items-center gap-2 rounded-pill bg-on-accent px-5 py-2.5 text-small font-semibold text-accent">
               {t('board.check_in')}
               <span aria-hidden="true" className="transition-transform duration-200 group-hover:translate-x-0.5">
                 →
