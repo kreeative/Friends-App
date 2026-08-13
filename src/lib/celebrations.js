@@ -83,7 +83,9 @@ export async function loadUnseen(userId) {
 export async function celebrate({ groupId, senderId, receiverId, message }) {
   const text = (message ?? '').trim()
   if (!groupId || !senderId || !receiverId || !text) return { error: 'incomplete' }
-  if (senderId === receiverId) return { error: 'self' }
+  /* Yourself is allowed. See migration 26: refusing it was the app deciding
+     what somebody is allowed to be pleased about, and "I passed my driving
+     test" is a real thing to say to a group of friends. */
 
   const { error } = await supabase.from('celebrations').insert({
     group_id: groupId,

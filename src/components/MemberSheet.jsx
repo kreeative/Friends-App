@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useGroup } from '../context/GroupContext'
 import { useT } from '../lib/i18n'
+import { pronounLabel } from '../lib/pronouns'
 import { Avatar, Sheet } from './ui'
 
 /**
@@ -89,12 +90,21 @@ export default function MemberSheet({ member, myRole, meId, onClose }) {
         <Avatar profile={member.profile} size={56} />
         <div className="min-w-0">
           <p className="truncate text-body text-ink">{member.profile?.display_name}</p>
+          {/* Role and pronouns on one line, in that order: the role is why
+              you opened this sheet, the pronouns are how to talk about them.
+              Nothing at all when they have not said, rather than the app
+              asserting a set on somebody's behalf. */}
           <p className="mt-0.5 text-small text-muted">
-            {isCreator
-              ? t('settings.role_creator')
-              : member.role === 'admin'
-                ? t('settings.role_admin')
-                : t('settings.role_member')}
+            {[
+              isCreator
+                ? t('settings.role_creator')
+                : member.role === 'admin'
+                  ? t('settings.role_admin')
+                  : t('settings.role_member'),
+              pronounLabel(member.profile),
+            ]
+              .filter(Boolean)
+              .join(' · ')}
           </p>
         </div>
       </div>
