@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useT } from '../lib/i18n'
 import { enqueue } from '../lib/queue'
+import { cheer } from '../lib/burst'
 
 /**
  * Today's goal, and one tap to say it happened.
@@ -77,6 +78,10 @@ export default function TodayObjective({ cycle, goals, doneGoalIds, groupId, onM
       /* Only now, because now it is true. The parent moves its roster and its
          counter on this call, and the refetch underneath confirms it. */
       onMarked?.(next.id)
+      /* Same event, same celebration. A goal marked from the board is a goal
+         done, and having it be quiet here and loud in the check-in would make
+         the two feel like different things. */
+      cheer()
       await onDone?.()
     } catch (e) {
       /* Kept, not dropped. The queue retries on its own schedule and on the

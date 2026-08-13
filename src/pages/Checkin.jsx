@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useGroup } from '../context/GroupContext'
 import { enqueue, flush } from '../lib/queue'
+import { cheer } from '../lib/burst'
 import { cycleEnd, cyclePhase, untilLabel } from '../lib/time'
 import { useT } from '../lib/i18n'
 import { dueOn, outcomeFor, targetFor } from '../lib/schedule'
@@ -113,6 +114,22 @@ export default function Checkin() {
       setBusy(false)
       return
     }
+
+    /**
+     * The one moment this app is allowed to make a noise.
+     *
+     * Fired here rather than on the board, because this is where the server
+     * said yes: anywhere later and it would be celebrating a page load. It
+     * runs before the navigation on purpose, and the canvas lives on the body
+     * rather than in this component, so it carries over and plays across the
+     * board somebody lands on. See lib/burst.js.
+     *
+     * Only when something was actually recorded. Sending a check-in where
+     * every goal is a nought is an honest thing to do and confetti over it
+     * would be the app congratulating somebody for a day they just said went
+     * badly.
+     */
+    if (logged > 0) cheer()
 
     setStuck(false)
     await reloadGroup()
