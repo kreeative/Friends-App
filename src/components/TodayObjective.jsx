@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { useT } from '../lib/i18n'
 import { enqueue } from '../lib/queue'
 import { cheer } from '../lib/burst'
+import { errorText } from '../lib/dberr'
 
 /**
  * Today's goal, and one tap to say it happened.
@@ -88,7 +89,7 @@ export default function TodayObjective({ cycle, goals, doneGoalIds, groupId, onM
          next reconnect, so the tap is not lost; it is just not done yet, and
          the card says which of those it is. */
       enqueue({ cycle_id: cycle.id, items: [item] })
-      setFailed(e?.message ?? String(e))
+      setFailed(errorText(e) || String(e))
     }
 
     setBusy(false)
@@ -141,9 +142,16 @@ export default function TodayObjective({ cycle, goals, doneGoalIds, groupId, onM
           </div>
 
           {failed && (
-            <p className="mt-3 text-small text-on-field/80">
-              {t('board.mark_queued')}
-            </p>
+            <div className="mt-3">
+              <p className="text-small text-on-field/80">{t('board.mark_queued')}</p>
+              {/* The reason, verbatim. This component already had the error in
+                  hand and printed a reassurance instead, so "it will send when
+                  you are back online" was shown to somebody whose connection
+                  was fine and whose write the server had refused. There is
+                  nothing to try again when the app will not say what went
+                  wrong. */}
+              <p className="mt-1 break-words text-label text-on-field/70">{failed}</p>
+            </div>
           )}
         </>
       )}
