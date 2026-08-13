@@ -130,7 +130,7 @@ export default function GroupFeed({ groupId, limit = 12 }) {
                       size={32}
                     />
                     <div className="min-w-0 flex-1">
-                      <p className="text-label font-bold uppercase tracking-[0.06em] text-muted">
+                      <p className="text-label font-semibold uppercase tracking-[0.06em] text-muted">
                         {/* Somebody celebrating themselves gets its own line.
                             "Rue on Rue" reads as a bug in the join rather than
                             as a person being pleased with their own week. */}

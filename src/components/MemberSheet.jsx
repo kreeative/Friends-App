@@ -137,14 +137,14 @@ export default function MemberSheet({ member, myRole, meId, onClose }) {
                   type="button"
                   disabled={busy}
                   onClick={remove}
-                  className="press rounded-pill bg-negative px-6 py-2.5 text-small font-bold text-white disabled:opacity-60 sm:w-auto"
+                  className="press rounded-pill bg-negative px-6 py-2.5 text-small font-semibold text-white disabled:opacity-60 sm:w-auto"
                 >
                   {busy ? '…' : t('settings.remove_yes')}
                 </button>
                 <button
                   type="button"
                   onClick={() => setConfirming(false)}
-                  className="press rounded-pill px-6 py-2.5 text-small font-bold text-muted transition-colors hover:text-ink sm:w-auto"
+                  className="press rounded-pill px-6 py-2.5 text-small font-semibold text-muted transition-colors hover:text-ink sm:w-auto"
                 >
                   {t('ui.close')}
                 </button>

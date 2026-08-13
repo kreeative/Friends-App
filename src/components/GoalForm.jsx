@@ -56,7 +56,7 @@ function Step({ n, title, hint, children }) {
      */
     <section className="pt-10 first:pt-0">
       <div className="flex items-baseline gap-3">
-        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-pill bg-ink text-[0.6875rem] font-bold text-white">
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-pill bg-ink text-[0.6875rem] font-semibold text-white">
           {n}
         </span>
         <div>
@@ -90,7 +90,7 @@ function Toggle({ options, value, onChange }) {
           type="button"
           data-active={value === v}
           onClick={() => onChange(v)}
-          className={`relative z-10 rounded-pill px-4 py-1.5 text-small font-bold transition-colors duration-200 ease-settle ${
+          className={`relative z-10 rounded-pill px-4 py-1.5 text-small font-semibold transition-colors duration-200 ease-settle ${
             value === v ? 'text-on-accent' : 'text-muted hover:text-ink'
           }`}
         >
@@ -146,7 +146,7 @@ function DayPicker({ value, onChange }) {
               type="button"
               onClick={() => toggle(day)}
               aria-pressed={on}
-              className={`press h-11 flex-1 rounded-pill text-small font-bold transition-colors ${
+              className={`press h-11 flex-1 rounded-pill text-small font-semibold transition-colors ${
                 on ? 'bg-accent text-on-accent' : 'bg-ink/[0.06] text-muted'
               }`}
             >

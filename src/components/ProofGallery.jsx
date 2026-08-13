@@ -47,7 +47,7 @@ function Tile({ proof, onOpen }) {
 
       {/* Only when there are any. A zero on every tile is ninety zeroes. */}
       {proof.reaction_count > 0 && (
-        <span className="absolute right-1.5 top-1.5 inline-flex items-center gap-1 rounded-pill bg-ink/70 px-2 py-0.5 text-label font-bold text-white backdrop-blur-sm">
+        <span className="absolute right-1.5 top-1.5 inline-flex items-center gap-1 rounded-pill bg-ink/70 px-2 py-0.5 text-label font-semibold text-white backdrop-blur-sm">
           <span aria-hidden="true">{REACTION_GLYPH.heart}</span>
           {proof.reaction_count}
         </span>
@@ -115,7 +115,7 @@ function Viewer({ proof, onClose, onReact, locale }) {
             <button
               onClick={onClose}
               aria-label={t('ui.close')}
-              className="press rounded-pill bg-white/15 px-3 py-1.5 text-small font-bold text-white"
+              className="press rounded-pill bg-white/15 px-3 py-1.5 text-small font-semibold text-white"
             >
               {t('ui.close')}
             </button>
@@ -130,7 +130,7 @@ function Viewer({ proof, onClose, onReact, locale }) {
           />
 
           {proof.goal_title && (
-            <p className="mt-3 inline-flex items-center rounded-pill bg-white/15 px-3 py-1 text-label font-bold text-white">
+            <p className="mt-3 inline-flex items-center rounded-pill bg-white/15 px-3 py-1 text-label font-semibold text-white">
               {proof.goal_title}
             </p>
           )}
@@ -147,7 +147,7 @@ function Viewer({ proof, onClose, onReact, locale }) {
                   key={emoji}
                   onClick={() => onReact(proof, emoji, on)}
                   aria-pressed={on}
-                  className={`press inline-flex items-center gap-2 rounded-pill px-4 py-2 text-small font-bold transition-colors ${
+                  className={`press inline-flex items-center gap-2 rounded-pill px-4 py-2 text-small font-semibold transition-colors ${
                     on ? 'bg-accent text-on-accent' : 'bg-white/15 text-white hover:bg-white/25'
                   }`}
                 >

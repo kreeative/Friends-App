@@ -49,7 +49,7 @@ function Row({ row }) {
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline justify-between gap-3">
           <span className="min-w-0 truncate text-small font-semibold text-ink">{name}</span>
-          <span className="shrink-0 text-small font-bold text-ink [font-variant-numeric:tabular-nums]">
+          <span className="shrink-0 text-small font-semibold text-ink [font-variant-numeric:tabular-nums]">
             {/* A dash, not a zero. Nothing scheduled is not a measured zero,
                 and "0%" beside somebody who had no goals this week is the app
                 accusing them of something they were never asked to do. */}

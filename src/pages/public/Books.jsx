@@ -27,7 +27,7 @@ export default function Books() {
         {c.books.map((b, i) => (
           <article key={b.title} className="panel flex flex-col p-7">
             <span className="h-1.5 w-12 rounded-pill bg-accent" aria-hidden="true" />
-            <h2 className="mt-5 text-h2 font-bold text-ink">{b.title}</h2>
+            <h2 className="mt-5 text-h2 font-semibold text-ink">{b.title}</h2>
             <p className="mt-2 text-small text-muted">{b.sub}</p>
             <p className="lede mt-4 flex-1 text-small">{b.line}</p>
             {/* Straight into the writing, with no account. The whole argument

@@ -91,7 +91,7 @@ export default function BudgetBanner() {
           thing in the card that did not look drawn by the same hand. The
           gradient and the border already say "this is new". */}
       <div className="pr-8">
-        <div className="text-body font-bold text-ink">{t('banner.budget_title')}</div>
+        <div className="text-body font-semibold text-ink">{t('banner.budget_title')}</div>
         <p className="mt-1 text-small leading-snug text-muted">{t('banner.budget_sub')}</p>
       </div>
 

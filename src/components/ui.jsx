@@ -76,7 +76,7 @@ export function Stat({ value, label, hint }) {
       <div className="font-display text-metric leading-none text-ink [font-variant-numeric:tabular-nums]">
         {value}
       </div>
-      <div className="mt-3 text-small font-bold leading-snug text-ink">{label}</div>
+      <div className="mt-3 text-small font-semibold leading-snug text-ink">{label}</div>
       {hint && <div className="mt-1 text-small leading-snug text-muted">{hint}</div>}
     </div>
   )

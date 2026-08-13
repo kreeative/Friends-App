@@ -329,11 +329,23 @@
     padding-bottom: env(safe-area-inset-bottom);
   }
 
+  /**
+   * 600, not 700.
+   *
+   * Poppins is a geometric face and its bold is genuinely bold: at 700 the
+   * bowls close up and a heading stops being a heading and starts being a
+   * block of ink. Set against a body already running at 500, the jump was two
+   * full steps, which is what made every screen read as shouting.
+   *
+   * 600 against 500 is one step, and one step is all a heading needs: it is
+   * also bigger, and size is doing most of the work already. The weight file
+   * is one this app already ships, so nothing new is downloaded.
+   */
   h1,
   h2,
   h3 {
     @apply text-ink;
-    font-weight: 700;
+    font-weight: 600;
   }
 
   ::placeholder {
@@ -866,7 +878,7 @@
    * text. Each chip carries a word, so nothing depends on hue alone.
    */
   .chip {
-    @apply inline-flex items-center rounded-pill px-3 py-1 text-small font-bold;
+    @apply inline-flex items-center rounded-pill px-3 py-1 text-small font-semibold;
   }
   .chip-accent {
     @apply chip bg-accent text-on-accent;
@@ -1061,14 +1073,14 @@
    */
   .goal-action {
     @apply inline-flex items-center rounded-pill border border-hairline px-4 py-2
-           text-small font-bold text-muted no-underline transition-colors
+           text-small font-semibold text-muted no-underline transition-colors
            duration-200 ease-settle hover:border-ink/20 hover:text-ink;
   }
   /* The middle tier: softer than the filled primary, louder than the outline,
      and in the theme's hue so the three read as one family rather than as an
      accent button next to two grey ones. */
   .goal-action-soft {
-    @apply inline-flex items-center rounded-pill px-4 py-2 text-small font-bold
+    @apply inline-flex items-center rounded-pill px-4 py-2 text-small font-semibold
            text-ink no-underline transition-colors duration-200 ease-settle;
     background: rgb(var(--c-accent) / 0.14);
   }
@@ -1078,12 +1090,12 @@
 
   .goal-action-fill {
     @apply inline-flex items-center rounded-pill bg-ink/[0.06] px-4 py-2 text-small
-           font-bold text-ink no-underline transition-colors duration-200
+           font-semibold text-ink no-underline transition-colors duration-200
            ease-settle hover:bg-ink/[0.11];
   }
   .goal-action-done {
     @apply inline-flex items-center rounded-pill bg-accent px-4 py-2 text-small
-           font-bold text-on-accent no-underline transition-opacity duration-200
+           font-semibold text-on-accent no-underline transition-opacity duration-200
            ease-settle hover:opacity-90;
   }
 
@@ -1120,13 +1132,13 @@
    * smaller, at body sizes this tracking would close the words up.
    */
   .display {
-    @apply font-sans font-bold leading-[1.08] tracking-[-0.024em] text-ink;
+    @apply font-sans font-semibold leading-[1.08] tracking-[-0.024em] text-ink;
   }
 
   /* --- controls ------------------------------------------------------- */
   .btn {
     @apply inline-flex min-h-[3rem] w-full items-center justify-center gap-2
-           rounded-pill px-6 py-3 text-body font-bold
+           rounded-pill px-6 py-3 text-body font-semibold
            transition-all duration-200 ease-settle
            disabled:pointer-events-none disabled:opacity-40;
   }
@@ -1185,7 +1197,7 @@
    * hierarchy: what this is, then why, then an example inside the box.
    */
   .field-label {
-    @apply mb-1.5 block text-small font-bold text-ink;
+    @apply mb-1.5 block text-small font-semibold text-ink;
   }
 
   /* Guidance that earns its place: the two or three notes in the goal form

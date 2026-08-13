@@ -172,7 +172,7 @@ export default function MoodToday({ groupCount = 0 }) {
         <button
           onClick={toggle}
           aria-expanded={open}
-          className={`press w-auto shrink-0 rounded-pill px-6 py-2.5 text-small font-bold transition-colors ${
+          className={`press w-auto shrink-0 rounded-pill px-6 py-2.5 text-small font-semibold transition-colors ${
             chosen || open
               ? 'border border-ink/15 text-ink hover:bg-ink/[0.05]'
               : 'bg-accent text-on-accent'

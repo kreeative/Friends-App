@@ -62,7 +62,7 @@ export default function ActionBar({ items, value, onChange }) {
                   than as part of its name. */}
               {item.badge && (
                 <span
-                  className={`absolute -right-1.5 -top-1.5 flex h-5 min-w-[1.25rem] items-center justify-center rounded-pill px-1 text-[0.625rem] font-bold leading-none [font-variant-numeric:tabular-nums] ring-2 ring-[rgb(var(--c-bg))] ${
+                  className={`absolute -right-1.5 -top-1.5 flex h-5 min-w-[1.25rem] items-center justify-center rounded-pill px-1 text-[0.625rem] font-semibold leading-none [font-variant-numeric:tabular-nums] ring-2 ring-[rgb(var(--c-bg))] ${
                     item.done ? 'bg-green text-white' : 'bg-accent text-on-accent'
                   }`}
                 >
@@ -72,7 +72,7 @@ export default function ActionBar({ items, value, onChange }) {
             </span>
 
             <span
-              className={`text-center text-label font-bold leading-tight transition-colors ${
+              className={`text-center text-label font-semibold leading-tight transition-colors ${
                 on ? 'text-ink' : 'text-muted group-hover:text-ink'
               }`}
             >

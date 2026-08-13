@@ -41,7 +41,7 @@ function inline(text, key) {
     if (m.index > last) out.push(text.slice(last, m.index))
     out.push(
       m[1] !== undefined ? (
-        <strong key={`${key}b${m.index}`} className="font-bold text-ink">
+        <strong key={`${key}b${m.index}`} className="font-semibold text-ink">
           {m[1]}
         </strong>
       ) : (
@@ -142,7 +142,7 @@ export default function Preview() {
         <p className="eyebrow mt-10">
           {book.title} · {t('reader.free_preview')}
         </p>
-        <h1 className="mt-3 text-[clamp(2rem,5vw,3rem)] font-bold leading-[1.04] tracking-[-0.03em] text-ink">
+        <h1 className="mt-3 text-[clamp(2rem,5vw,3rem)] font-semibold leading-[1.04] tracking-[-0.03em] text-ink">
           {book.chapters[0]}
         </h1>
 

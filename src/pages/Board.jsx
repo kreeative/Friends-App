@@ -442,7 +442,7 @@ function Leaderboard({ members, checkins, items, awayIds, revealed, settled, me,
                 {(ck || isAway) && (
                   <span
                     aria-hidden="true"
-                    className={`absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-pill text-[0.5rem] font-bold ring-2 ring-[rgb(var(--glass-tint))] ${
+                    className={`absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-pill text-[0.5rem] font-semibold ring-2 ring-[rgb(var(--glass-tint))] ${
                       ck ? 'bg-green text-white' : 'bg-ink/25 text-white'
                     }`}
                   >

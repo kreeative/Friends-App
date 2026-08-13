@@ -503,7 +503,7 @@ export default function Money() {
           ].map(([label, value]) => (
             <div key={label} className="flex items-baseline justify-between gap-4 py-4">
               <dt className="text-body text-ink">{label}</dt>
-              <dd className="text-body font-bold text-ink [font-variant-numeric:tabular-nums]">
+              <dd className="text-body font-semibold text-ink [font-variant-numeric:tabular-nums]">
                 {value}
               </dd>
             </div>
@@ -517,7 +517,7 @@ export default function Money() {
             {s.byCategory.map((c) => (
               <li key={c.key} className="flex items-baseline justify-between gap-4 py-4">
                 <span className="text-body text-ink">{t(`money.cat_${c.key}`)}</span>
-                <span className="text-body font-bold text-ink [font-variant-numeric:tabular-nums]">
+                <span className="text-body font-semibold text-ink [font-variant-numeric:tabular-nums]">
                   {fmt(c.cents)}
                 </span>
               </li>
@@ -545,7 +545,7 @@ export default function Money() {
                   <span className="pl-2 text-small text-muted">{r.happened_on}</span>
                 </span>
                 <span className="flex items-baseline gap-3">
-                  <span className="text-body font-bold text-ink [font-variant-numeric:tabular-nums]">
+                  <span className="text-body font-semibold text-ink [font-variant-numeric:tabular-nums]">
                     {r.kind === 'income' ? '+' : ''}
                     {fmt(r.amount_cents)}
                   </span>
