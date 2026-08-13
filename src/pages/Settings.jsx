@@ -119,7 +119,8 @@ export default function Settings() {
       </Section>
 
       <Section title={t('settings.everyone')}>
-        <div className="list">
+        <div className="lg px-5">
+          <div className="list">
           {members.map((m) => {
             const rows = statuses.filter((s) => s.user_id === m.user_id)
             const r = completionRate(rows, 14)
@@ -183,6 +184,7 @@ export default function Settings() {
               </div>
             )
           })}
+          </div>
         </div>
       </Section>
 

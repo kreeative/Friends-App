@@ -162,6 +162,66 @@ function DayPicker({ value, onChange }) {
   )
 }
 
+/**
+ * A date you can actually take back.
+ *
+ * `<input type="date">` has a clear control of its own in exactly one browser
+ * family and nowhere else: Chrome puts a small cross in the field, Safari and
+ * Firefox on a phone give you a wheel with no way out of it once a date is
+ * on it. So "stop after (optional)" was optional only until you touched it,
+ * and the way back was to select the text and delete it, which on a native
+ * date wheel is not a thing you can do.
+ *
+ * Hence an explicit button, drawn by us, present exactly when there is
+ * something to clear. It sets the value to the empty string, which is what the
+ * payload turns into `null`, so "no end date" is one value in the database
+ * rather than an empty string in some rows and a null in others.
+ *
+ * BESIDE THE FIELD, NOT FLOATING INSIDE IT.
+ *
+ * Inside was the first version and it does not survive contact with the three
+ * browsers. `::-webkit-calendar-picker-indicator` sits at the end of the
+ * input's content box, so where it lands depends on padding-right, and an
+ * absolutely positioned cross measured from the border box either overlapped
+ * it or left forty pixels of dead air to clear it. Firefox puts nothing there
+ * at all, so the same padding that fits Chrome's glyph is just a hole. A
+ * sibling button in a flex row is the same gesture, one tap, immediately to
+ * the right of the value, and it is in the same place in every browser.
+ */
+function DateField({ value, onChange }) {
+  const { t } = useT()
+
+  return (
+    <div className="flex items-center gap-2">
+      <input
+        type="date"
+        className="field min-w-0 flex-1"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
+      {value && (
+        <button
+          type="button"
+          onClick={() => onChange('')}
+          aria-label={t('form.clear_date')}
+          title={t('form.clear_date')}
+          className="press flex h-9 w-9 shrink-0 items-center justify-center rounded-pill bg-ink/[0.06] text-muted transition-colors hover:bg-ink/[0.12] hover:text-ink"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4">
+            <path
+              d="M6 6l12 12M18 6L6 18"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+            />
+          </svg>
+        </button>
+      )}
+    </div>
+  )
+}
+
 export default function GoalForm({ onDone, onCancel, initial = null, groupId = null }) {
   const { user } = useAuth()
   const { reloadGroup } = useGroup()
@@ -196,13 +256,22 @@ export default function GoalForm({ onDone, onCancel, initial = null, groupId = n
     [commitment, dismissedHint, goalType],
   )
 
-  /* Evidence is no longer required. It is the right thing to write when other
-     people are going to see it; on a goal only you can read, insisting on it
-     was a gate with nothing behind it. */
-  const canSave =
-    commitment.trim().length > 2 &&
-    when.trim().length > 0 &&
-    (cadence === 'recurring' || dueOn)
+  /**
+   * One required field, and it is the goal itself.
+   *
+   * Evidence went first: it is the right thing to write when other people are
+   * going to see it, and on a goal only you can read it was a gate with
+   * nothing behind it. "When" follows for the same reason and a worse one. It
+   * is a sentence you write to yourself about your own Tuesday, nothing in the
+   * app reads it, and blocking Save on it meant somebody who knew exactly what
+   * they wanted to commit to could not write it down until they had also
+   * decided what time of day they would do it.
+   *
+   * A deadline on a one-off is no longer required either. isDueOn already
+   * treats a milestone with no date as always due, which is the honest reading
+   * of "at some point", and demanding a date invites a made-up one.
+   */
+  const canSave = commitment.trim().length > 2
 
   async function save(e) {
     e.preventDefault()
@@ -340,23 +409,13 @@ export default function GoalForm({ onDone, onCancel, initial = null, groupId = n
               />
             </Field>
             <Field label={t('form.until')} hint={t('form.until_hint')}>
-              <input
-                type="date"
-                className="field"
-                value={endsOn}
-                onChange={(e) => setEndsOn(e.target.value)}
-              />
+              <DateField value={endsOn} onChange={setEndsOn} />
             </Field>
             </div>
           </>
         ) : (
           <Field label={t('form.due_by')} hint={t('form.due_by_hint')}>
-            <input
-              type="date"
-              className="field"
-              value={dueOn}
-              onChange={(e) => setDueOn(e.target.value)}
-            />
+            <DateField value={dueOn} onChange={setDueOn} />
           </Field>
         )}
       </Step>

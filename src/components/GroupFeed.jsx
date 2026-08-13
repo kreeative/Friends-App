@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useT } from '../lib/i18n'
+import { loadCelebrations } from '../lib/celebrations'
 import { Avatar, Section } from './ui'
+import Confetti from './Confetti'
 
 /**
  * What the group did, and did not do, said once and quietly.
@@ -26,6 +28,18 @@ import { Avatar, Section } from './ui'
  * Deliberately not styled as an alert. No red, no warning icon, no count
  * badge. A daily cadence generates these constantly, and a feed that treats
  * every ordinary human gap as an incident is one people learn to stop reading.
+ *
+ * CELEBRATIONS ARE THE THIRD KIND, AND THE ONLY ONE A PERSON WRITES.
+ *
+ * They come from their own table rather than from a new `kind` on group_feed,
+ * because group_feed is readable by the group and writable by nobody, which is
+ * a property worth keeping exactly as it is. Two reads merged by time here,
+ * which costs one request and keeps that invariant intact.
+ *
+ * They are also the one row here that gets a card of its own. The misses and
+ * the birthdays are lines in a list on purpose, easy to skim and easy to skip;
+ * a celebration is the thing on this page most worth stopping at, and it is
+ * the only place in the app where the visual weight is allowed to go up.
  */
 export default function GroupFeed({ groupId, limit = 12 }) {
   const { t } = useT()
@@ -35,25 +49,47 @@ export default function GroupFeed({ groupId, limit = 12 }) {
   const load = useCallback(async () => {
     if (!groupId) return
     try {
-      const { data, error } = await supabase
-        .from('group_feed_detail')
-        .select('id, user_id, kind, goal_title, display_name, avatar_url, created_at')
-        .eq('group_id', groupId)
-        .order('created_at', { ascending: false })
-        .limit(limit)
+      /* Both in flight at once. A celebration failing because 25 has not been
+         run must not cost the misses and the birthdays, and vice versa. */
+      const [feed, party] = await Promise.all([
+        supabase
+          .from('group_feed_detail')
+          .select('id, user_id, kind, goal_title, display_name, avatar_url, created_at')
+          .eq('group_id', groupId)
+          .order('created_at', { ascending: false })
+          .limit(limit),
+        loadCelebrations(groupId, limit).catch(() => ({ rows: [], missing: true })),
+      ])
 
-      if (error) {
+      if (feed.error) {
         /* The view arrives with 18_daily_roles_and_feed.sql. Until that has
            been run this section is simply absent, rather than an error about
            a relation nobody reading the board has heard of. */
-        const raw = `${error.code ?? ''} ${error.message ?? ''}`.toLowerCase()
+        const raw = `${feed.error.code ?? ''} ${feed.error.message ?? ''}`.toLowerCase()
         setMissing(
           raw.includes('pgrst205') || raw.includes('42p01') || raw.includes('schema cache'),
         )
-        return
+      } else {
+        setMissing(false)
       }
-      setMissing(false)
-      setRows(data ?? [])
+
+      const merged = [
+        ...(feed.data ?? []),
+        ...party.rows.map((c) => ({
+          id: `celebration-${c.id}`,
+          kind: 'celebration',
+          created_at: c.created_at,
+          display_name: c.sender_name,
+          avatar_url: c.sender_avatar,
+          receiver_name: c.receiver_name,
+          receiver_avatar: c.receiver_avatar,
+          message: c.message,
+        })),
+      ]
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+        .slice(0, limit)
+
+      setRows(merged)
     } catch {
       /* Offline. Leave whatever is already on screen. */
     }
@@ -71,13 +107,42 @@ export default function GroupFeed({ groupId, limit = 12 }) {
     return () => document.removeEventListener('visibilitychange', onWake)
   }, [load])
 
-  if (missing || rows.length === 0) return null
+  /* `missing` is only about the feed view. A group with no feed but a
+     celebration in it still has something to say. */
+  if (rows.length === 0) return null
 
   return (
     <Section title={t('board.feed')}>
-      <div className="list">
+      <div className="lg px-5">
+        <div className="list">
         {rows.map((r) => {
           const birthday = r.kind === 'birthday'
+
+          if (r.kind === 'celebration') {
+            return (
+              <div key={r.id} className="py-3">
+                <div className="lg relative overflow-hidden p-4">
+                  <Confetti />
+                  <div className="relative flex items-start gap-3.5">
+                    <Avatar
+                      profile={{ display_name: r.display_name, avatar_url: r.avatar_url }}
+                      size={32}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-label font-bold uppercase tracking-[0.06em] text-muted">
+                        {t('celebrate.feed_from', {
+                          name: r.display_name ?? '',
+                          about: r.receiver_name ?? '',
+                        })}
+                      </p>
+                      <p className="mt-1.5 text-small leading-snug text-ink">{r.message}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )
+          }
+
           return (
             <div key={r.id} className="flex items-start gap-3.5 py-4">
               <Avatar
@@ -102,6 +167,7 @@ export default function GroupFeed({ groupId, limit = 12 }) {
             </div>
           )
         })}
+        </div>
       </div>
     </Section>
   )

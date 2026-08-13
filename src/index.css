@@ -141,10 +141,34 @@
    * that; it is a field colour and a fill, and that is all.
    */
   :root {
-    --c-bg: 255 255 255;
+    /**
+     * A tinted ground under crisp white cards.
+     *
+     * The page was white and the cards were white, which meant the only thing
+     * separating a card from the page was its shadow. That is why every
+     * attempt to give the cards presence turned into a complaint about the
+     * background: the shadow was doing a job that a change of ground should
+     * have been doing, and the only way to make it louder was to bleed colour
+     * across the page.
+     *
+     * So the ground takes a colour and the cards go white. Both directions
+     * work as a design; this one is chosen because the cards are where the
+     * reading happens, and white paper under text beats tinted paper under
+     * text every time. It also means the shadow can stay as quiet as it now
+     * is: the separation is carried by the two grounds being different
+     * colours, which is a difference that cannot pool or compound.
+     *
+     * The tints are deliberately at the very top of the scale. Blush and ice
+     * at this strength read as "warm paper" and "cool paper" rather than as
+     * pink and blue, and every contrast ratio measured against white in this
+     * file still holds within a rounding error.
+     *
+     * Overridden per theme below.
+     */
+    --c-bg: 255 245 247;      /* blush */
     --c-surface: 255 255 255;
-    --c-raised: 246 246 247;
-    --c-hairline: 232 232 235;
+    --c-raised: 255 236 239;  /* warm rose, the soft well inside a card */
+    --c-hairline: 240 226 231;
 
     /**
      * Two shadows, both soft, both tinted.
@@ -187,14 +211,25 @@
       0 20px 48px rgb(var(--c-accent) / 0.04);
 
     --glass-tint: 255 255 255;
-    --glass-alpha: 0.74;
-    --glass-alpha-strong: 0.86;
-    /* One stroke per sheet, and it is nearly invisible. 0.85 white on a pale
-       ground was a hard line; at 0.5 it catches the edge without drawing it. */
-    --glass-edge: rgb(255 255 255 / 0.5);
-    --glass-edge-hover: rgb(255 255 255 / 0.8);
+    --glass-alpha: 0.9;
+    --glass-alpha-strong: 0.96;
+    /**
+     * The card's edge, now that there is a ground to have an edge against.
+     *
+     * It used to be white at half alpha, which was the only thing available:
+     * a white stroke on a white card over a white page is invisible by
+     * construction, and every attempt to make it visible produced the hard
+     * line that got reported as a double outline.
+     *
+     * With a tinted ground it can be a real hairline again, and it takes the
+     * theme's own ink rather than a grey. That is what makes it read as
+     * rose in sun and as teal in sea without either being named here: one
+     * rule, two colours, because --c-ink already differs.
+     */
+    --glass-edge: rgb(var(--c-ink) / 0.07);
+    --glass-edge-hover: rgb(var(--c-ink) / 0.13);
 
-    --lg-a: 0.68;
+    --lg-a: 0.92;
     --lg-blur: 24px;
     --lg-sat: 180%;
     --lg-bright: 1.04;
@@ -221,25 +256,62 @@
     --c-on-field: 0 0 0;
   }
 
-  /* sun, pink type, yellow field. The warm one. */
+  /**
+   * sun, pink type, butter field. The warm one.
+   *
+   * WHY THE YELLOW CAME DOWN.
+   *
+   * --c-field was #F8CB02, which is a traffic sign. As a block behind black
+   * type it measures 13.5:1 and is entirely legible, and it was still wrong:
+   * on a screen whose every other surface is paper, one panel at full
+   * saturation stops being a card and becomes the thing the page is about,
+   * whatever it happens to say.
+   *
+   * #FEF9C3 is the same colour with the volume off. Black on it is 18:1, it
+   * still reads unmistakably as yellow next to blush, and a hero card in it
+   * belongs to the page instead of shouting over it.
+   *
+   * The full-strength yellow has not gone away. It is --c-field-deep below,
+   * for the places a wash cannot carry: a 4px rule, a small mark, anything
+   * that has to be seen at two millimetres wide.
+   */
   :root,
   :root[data-theme='sun'] {
-    --c-ink: 169 28 84;    /* #A91C54, 7.04:1 on white */
-    --c-muted: 220 43 114; /* #DC2B72, 4.53:1 */
-    --c-loud: 222 53 120;  /* #DE3578, 4.30:1, display sizes only */
-    --c-field: 248 203 2;  /* #F8CB02, black on it 13.5:1 */
+    --c-ink: 169 28 84;      /* #A91C54, 7.04:1 on white */
+    --c-muted: 220 43 114;   /* #DC2B72, 4.53:1 */
+    --c-loud: 222 53 120;    /* #DE3578, 4.30:1, display sizes only */
+    --c-field: 254 249 195;  /* #FEF9C3, black on it 18:1 */
+    --c-field-deep: 234 179 8;
     --c-accent: 222 53 120;
     --c-accent-pressed: 232 90 147;
   }
 
-  /* sea, blue type, yellow field. The cool one. */
+  /**
+   * sea, blue type, butter field, ice ground. The cool one.
+   *
+   * The field used to be the brand blue, which put a saturated blue panel on
+   * a white page beside blue type: one hue doing the ground, the block and
+   * the words, and the block winning. Warm pastel yellow against the ice
+   * ground is the contrast this theme never had, and it is the same butter as
+   * sun's, so a hero card is the same object in both themes rather than two
+   * different ideas that happen to share a layout.
+   *
+   * --c-accent stays the full-strength yellow. It is the interactive colour
+   * here, it carries black at 13.5:1, and a selected day badge in #FEF9C3 on
+   * an ice ground would be a white circle on a white page.
+   */
   :root[data-theme='sea'] {
-    --c-ink: 0 98 116;     /* #006274, 7.00:1 on white */
-    --c-muted: 0 130 153;  /* #008299, 4.51:1 */
-    --c-loud: 0 157 185;   /* #009DB9, 3.22:1, display sizes only */
-    --c-field: 0 157 185;
-    --c-accent: 248 203 2; /* yellow, as a fill carrying black: 13.5:1 */
+    --c-ink: 0 98 116;       /* #006274, 7.00:1 on white */
+    --c-muted: 0 130 153;    /* #008299, 4.51:1 */
+    --c-loud: 0 157 185;     /* #009DB9, 3.22:1, display sizes only */
+    --c-field: 254 249 195;  /* #FEF9C3, black on it 18:1 */
+    --c-field-deep: 234 179 8;
+    --c-accent: 248 203 2;   /* yellow, as a fill carrying black: 13.5:1 */
     --c-accent-pressed: 255 219 61;
+
+    --c-bg: 240 249 255;     /* ice */
+    --c-raised: 224 242 254; /* sky, the soft well inside a card */
+    --c-hairline: 219 234 242;
   }
 
 
@@ -779,7 +851,11 @@
    * both for contrast and for anyone who cannot separate the two.
    */
   .card-warn {
-    @apply rounded-card border-l-4 border-field bg-field/15 p-6;
+    /* The rule takes the deep yellow and the wash takes the pale one. A 4px
+       stripe in #FEF9C3 on a blush page is not a stripe, it is nothing, which
+       is the one thing a warning must not be. The wash goes to full strength
+       for the same reason in reverse: at 15% the new field is invisible. */
+    @apply rounded-card border-l-4 border-field-deep bg-field p-6;
   }
 
   /* --- chips ------------------------------------------------------------ */

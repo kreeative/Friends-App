@@ -102,24 +102,50 @@ export default function GroupMoods({ groupId, members = [] }) {
      space on every day nobody had shared, which reads as something broken. */
   if (shown.length === 0) return null
 
+  /**
+   * One card per person, rather than one card of rows.
+   *
+   * This was a single panel with hairlines between the names, which is the
+   * right shape for a list of the same kind of thing: a roster, a ledger, a
+   * set of categories. A mood is not that. It is one person saying something
+   * about their own day, and stacking four of them inside one container reads
+   * as a table of results, which is exactly the register this part of the app
+   * is trying not to be in.
+   *
+   * Separate cards also mean the mood glyph sits on its own ground with its
+   * own edge, so four saturated colours in a column stop competing across the
+   * hairlines between them.
+   */
   return (
     <Section title={t('board.moods_today')}>
-      <div className="list">
-      {shown.map((m) => {
-        const mood = byUser.get(m.user_id)
-        return (
-          <div key={m.user_id} className="flex items-center gap-4 py-4">
-            <Avatar profile={m.profile} size={36} />
-            <span className="min-w-0 flex-1 truncate text-body text-ink">
-              {m.profile?.display_name}
-            </span>
-            <span className="flex shrink-0 items-center gap-2.5">
-              <MoodBadge id={mood.mood} size={26} />
-              <span className="text-small text-muted">{t(`mood.${mood.mood}`)}</span>
-            </span>
-          </div>
-        )
-      })}
+      <div className="space-y-3">
+        {shown.map((m) => {
+          const mood = byUser.get(m.user_id)
+          return (
+            <div key={m.user_id} className="lg flex items-center gap-4 p-4">
+              <Avatar profile={m.profile} size={40} />
+
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-body font-semibold text-ink">
+                  {m.profile?.display_name}
+                </div>
+                {/* The word under the name rather than beside the glyph. Beside
+                    it, a long label like "Reconnaissant" pushed the name into
+                    an ellipsis on a phone, so the row lost the one thing it
+                    has to say first. */}
+                <div className="mt-0.5 truncate text-small text-muted">
+                  {t(`mood.${mood.mood}`)}
+                </div>
+              </div>
+
+              {/* Its own soft well, so the glyph reads as a badge on the card
+                  rather than as an image floating at the end of a line. */}
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-pill bg-ink/[0.04]">
+                <MoodBadge id={mood.mood} size={26} />
+              </span>
+            </div>
+          )
+        })}
       </div>
     </Section>
   )

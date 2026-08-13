@@ -8,6 +8,7 @@ import { cycleEnd, cyclePhase, soonestUpcoming, untilLabel } from '../lib/time'
 import { useT } from '../lib/i18n'
 import { Screen, Section, TopBar } from '../components/ui'
 import BirthdayBanner from '../components/BirthdayBanner'
+import CelebrationBanner from '../components/CelebrationBanner'
 import MyCompletion from '../components/MyCompletion'
 import WeekStrip from '../components/WeekStrip'
 import MoodToday from '../components/MoodToday'
@@ -215,8 +216,12 @@ export default function Dashboard() {
         sub={waiting ? undefined : t('home.sub')}
       />
 
-      {/* First, and only for the week it is true. Everything else on this page
-          is still here tomorrow. */}
+      {/* Above the birthday, because good news somebody wrote by hand outranks
+          good news the calendar worked out. */}
+      <CelebrationBanner />
+
+      {/* Only for the week it is true. Everything else on this page is still
+          here tomorrow. */}
       <BirthdayBanner people={friends} />
 
       {/**

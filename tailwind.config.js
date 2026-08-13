@@ -26,6 +26,10 @@ export default {
         // The theme's field, large blocks. Also a fill, also carries black.
         field: c('field'),
         'on-field': c('on-field'),
+        // The same yellow at full strength, for the places a wash cannot be
+        // seen: a 4px rule, a small mark, anything a couple of millimetres
+        // wide. Never a large block, which is what `field` is for.
+        'field-deep': c('field-deep'),
 
         // The highlight on the dark card, yellow in both themes, because it
         // is the one colour both palettes already contain.
