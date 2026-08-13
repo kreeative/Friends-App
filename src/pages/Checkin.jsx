@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
-import { celebrate } from '../lib/celebrations'
 import { useGroup } from '../context/GroupContext'
 import { enqueue, flush } from '../lib/queue'
 import { cycleEnd, cyclePhase, untilLabel } from '../lib/time'
@@ -33,10 +32,21 @@ export default function Checkin() {
   const [next, setNext] = useState('')
   const [busy, setBusy] = useState(false)
 
-  /* Kept here rather than inside CelebrateStep so that Submit sends it. The
-     step has no button of its own on purpose: a second Send in a form with one
-     Submit is two ways to finish and a good chance of doing neither. */
+  /**
+   * The celebration draft, and a count of what has actually gone out.
+   *
+   * It used to ride along with Submit. That was defensible while this was one
+   * scrolling form and became wrong the moment it got a pane of its own: with
+   * Submit off screen, the only button in front of somebody who had just
+   * written a compliment was "Skip". It also coupled two unrelated things, a
+   * compliment is not a fact about your day and should not need a check-in to
+   * be sent.
+   *
+   * So CelebrateStep posts it itself, and this page only keeps the draft
+   * between pane switches and counts what went out, for the tile's badge.
+   */
   const [party, setParty] = useState({ receiverId: null, message: '' })
+  const [partySent, setPartySent] = useState(0)
 
   /* Bumped whenever something happened that the gallery below cannot know
      about. See ProofGallery's refreshToken: without it a check-in filed on
@@ -79,26 +89,6 @@ export default function Checkin() {
       items,
     })
     await flush()
-
-    /**
-     * The celebration, after the check-in and never instead of it.
-     *
-     * Deliberately outside the offline queue. That queue replays a check-in
-     * against a cycle, which is a fact about a day and is still true an hour
-     * later; a compliment that turns up whenever the network happens to come
-     * back is a stranger thing, and a failed one is better dropped than
-     * delivered at midnight with no context. It also must never be able to
-     * fail the submit: the day's record is the thing that matters here.
-     */
-    if (party.receiverId && party.message.trim()) {
-      await celebrate({
-        groupId: activeId,
-        senderId: user.id,
-        receiverId: party.receiverId,
-        message: party.message,
-      }).catch(() => {})
-    }
-
     await reloadGroup()
     setProofTick((n) => n + 1)
     setBusy(false)
@@ -174,7 +164,7 @@ export default function Checkin() {
     return (a.count ?? 0) > 0
   }).length
   const photos = goals.filter((g) => answers[g.id]?.photo_url).length
-  const partyReady = Boolean(party.receiverId && party.message.trim())
+
 
   const tiles = [
     {
@@ -182,24 +172,30 @@ export default function Checkin() {
       icon: <TargetIcon />,
       label: t('checkin.tab_goals'),
       badge: goals.length ? `${logged}/${goals.length}` : null,
+      done: goals.length > 0 && logged === goals.length,
     },
     {
       id: 'proof',
       icon: <CameraIcon />,
       label: t('checkin.tab_proof'),
       badge: photos > 0 ? String(photos) : null,
+      done: true,
     },
     {
       id: 'celebrate',
       icon: <PartyIcon />,
       label: t('checkin.tab_celebrate'),
-      badge: partyReady ? '✓' : null,
+      /* What went out, not what is typed. A tick on a half-written draft would
+         say something had been sent that had not. */
+      badge: partySent > 0 ? String(partySent) : null,
+      done: true,
     },
     {
       id: 'next',
       icon: <ForwardIcon />,
       label: t('checkin.tab_next'),
       badge: next.trim() ? '✓' : null,
+      done: true,
     },
   ]
 
@@ -360,7 +356,13 @@ export default function Checkin() {
         )}
 
         {pane === 'celebrate' && (
-          <CelebrateStep members={members} value={party} onChange={setParty} />
+          <CelebrateStep
+            groupId={activeId}
+            members={members}
+            value={party}
+            onChange={setParty}
+            onSent={() => setPartySent((n) => n + 1)}
+          />
         )}
 
         {pane === 'next' && (

@@ -1,5 +1,5 @@
 /**
- * The check-in's four jobs, as a row of tiles.
+ * The check-in's four jobs, as a row of quick actions.
  *
  * The screen was one long form: every goal with a counter, then a photo
  * gallery, then a person to celebrate, then a text field, then Submit. Four
@@ -8,27 +8,33 @@
  * nobody had asked for. The length of the page was the argument against using
  * it daily.
  *
- * One tile per job, and only the chosen one is on screen. That is the same
- * total content, minus the obligation to scroll through the parts you are not
- * doing today.
+ * One action per job, and only the chosen one is on screen.
+ *
+ * THE LABEL SITS UNDER THE TILE, NOT INSIDE IT.
+ *
+ * The first version put the icon, the word and the badge inside one card, which
+ * meant the card had to be as wide as the longest word. "Objectifs" and
+ * "Féliciter" then set the width of all four, four of them did not fit on a
+ * 320px screen, and the only fix available was cutting words down to
+ * "Objecti…".
+ *
+ * A square tile with the word underneath, the way every banking app's action
+ * row does it, removes that constraint entirely. The tile is the tap target and
+ * stays a fixed comfortable size; the word is free text below it that wraps to
+ * a second line rather than being cut. Nothing truncates at any width this app
+ * runs at, and the row is shorter than it was.
  *
  * TILES CARRY THEIR OWN STATE.
  *
- * This is the thing that makes hiding content safe. A tab bar that hides three
- * quarters of a form leaves the reader with no way to know whether the hidden
- * parts are done, half-filled or untouched, so each tile says: how many goals
- * are logged, how many photos are attached, whether there is a celebration
- * waiting to send. Submit then never sends anything invisible.
- *
- * All four always visible, never a scroll. A tile clipped at the right edge is
- * a tile nobody presses, which is the mistake the period filter made when it
- * was five words wide. They share the width equally and the label truncates on
- * the narrowest phones rather than the last tile sliding off. The overflow
- * stays as the floor, for a fifth tile or a much longer translation.
+ * This is what makes hiding three quarters of a form safe. A bar that hides
+ * content leaves the reader no way to know whether the hidden parts are done,
+ * half-filled or untouched, so each tile says: how many goals are logged, how
+ * many photos are attached, whether a celebration has gone out. Submit then
+ * never sends anything invisible.
  */
 export default function ActionBar({ items, value, onChange }) {
   return (
-    <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <div className="flex gap-2 sm:gap-3">
       {items.map((item) => {
         const on = item.id === value
         return (
@@ -37,29 +43,40 @@ export default function ActionBar({ items, value, onChange }) {
             type="button"
             onClick={() => onChange(item.id)}
             aria-pressed={on}
-            /* Ink when active, paper when not. The same active treatment as the
-               period filter and the day badge, rather than a fourth idea about
-               what "selected" looks like in this app. */
-            className={`press flex min-w-0 flex-1 basis-0 flex-col items-center justify-center gap-1.5 rounded-card px-1.5 py-3.5 transition-[background-color,color,box-shadow] duration-200 ${
-              on
-                ? 'bg-ink text-white shadow-float'
-                : 'border border-hairline bg-[rgb(var(--glass-tint))] text-muted hover:text-ink'
-            }`}
+            className="press group flex min-w-0 flex-1 flex-col items-center gap-2"
           >
-            <span className={on ? 'text-white' : 'text-muted'}>{item.icon}</span>
-            {/* Truncating rather than widening. On a 320px screen four tiles
-                at a comfortable width do not fit, and the choice is between a
-                shortened word and a fourth tile half off the edge. A word you
-                can still recognise beats a button you cannot see. */}
-            <span className="w-full truncate text-center text-label font-bold">{item.label}</span>
-            {/* Reserved whether or not there is a badge, so the tiles are the
-                same height and the row does not jump as answers come in. */}
             <span
-              className={`h-4 text-[0.625rem] font-bold leading-4 [font-variant-numeric:tabular-nums] ${
-                on ? 'text-white/70' : 'text-muted/70'
+              /* Ink when active, paper when not. The same active treatment as
+                 the period filter and the day badge, rather than a fourth idea
+                 about what "selected" looks like in this app. */
+              className={`relative flex h-14 w-14 items-center justify-center rounded-[1.15rem] transition-[background-color,color,box-shadow] duration-200 ${
+                on
+                  ? 'bg-ink text-white shadow-float'
+                  : 'border border-hairline bg-[rgb(var(--glass-tint))] text-muted shadow-raised group-hover:text-ink'
               }`}
             >
-              {item.badge ?? ''}
+              {item.icon}
+
+              {/* On the corner of the tile, so the word underneath stays a
+                  word. A count up here reads as a state of the thing rather
+                  than as part of its name. */}
+              {item.badge && (
+                <span
+                  className={`absolute -right-1.5 -top-1.5 flex h-5 min-w-[1.25rem] items-center justify-center rounded-pill px-1 text-[0.625rem] font-bold leading-none [font-variant-numeric:tabular-nums] ring-2 ring-[rgb(var(--c-bg))] ${
+                    item.done ? 'bg-green text-white' : 'bg-accent text-on-accent'
+                  }`}
+                >
+                  {item.badge}
+                </span>
+              )}
+            </span>
+
+            <span
+              className={`text-center text-label font-bold leading-tight transition-colors ${
+                on ? 'text-ink' : 'text-muted group-hover:text-ink'
+              }`}
+            >
+              {item.label}
             </span>
           </button>
         )
