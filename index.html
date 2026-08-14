@@ -3,7 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#FFFFFF" />
+    <!--
+      Rewritten by the inline script below, before first paint, to the ground
+      the chosen theme actually paints. The value here is only what a crawler
+      or a browser with JavaScript off sees, so it is sun's, the default.
+
+      It was #FFFFFF while the manifest said #DE3578: three values, two of them
+      colours the app paints nowhere. See GROUND in src/lib/theme.jsx.
+    -->
+    <meta name="theme-color" content="#FFF5F7" />
     <meta name="description" content="A daily check-in with a few people who know what you are working on. One minute an evening, two to six people, sixty seconds. Ambition is contagious." />
     <link rel="canonical" href="https://richandfriends.xyz/" />
 
@@ -70,6 +78,14 @@
           /* Private modes can throw on read; the default above stands. */
         }
         d.setAttribute('data-theme', theme)
+
+        /* And the browser chrome, so an installed app does not open with a
+           white bar above a blush page. Same two values as GROUND in
+           src/lib/theme.jsx and --c-bg in src/index.css; it has to be a
+           literal because a meta tag cannot hold a custom property. */
+        var ground = { sun: '#FFF5F7', sea: '#F0F9FF' }
+        var meta = document.querySelector('meta[name="theme-color"]')
+        if (meta) meta.setAttribute('content', ground[theme] || ground.sun)
       })()
     </script>
     <!--

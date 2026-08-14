@@ -146,21 +146,33 @@ export default function Welcome() {
 
   return (
     <div
-      className="relative flex min-h-dvh w-full flex-col overflow-hidden bg-bg"
+      /**
+       * h-dvh, not min-h-dvh, and this is the difference between the two CTAs
+       * being on screen and being below the fold.
+       *
+       * With min-h the column grows to whatever its children want, so on a
+       * 568px phone the header, the slide and the footer summed to 719px, the
+       * page scrolled, and the primary button of an onboarding deck was
+       * somewhere under the bottom edge. A fixed viewport height plus a
+       * shrinkable track means the SLIDE gives up the space instead of the
+       * page taking it, and the header and the buttons are always where they
+       * were put.
+       */
+      className="relative flex h-dvh w-full flex-col overflow-hidden bg-bg"
       style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <Stickers set="welcome" />
 
       {/* Above the stickers, which sit at z-20 and deliberately overlap the
           column. Everything readable or tappable has to clear them. */}
-      <div className="relative z-30 flex min-h-dvh flex-col">
+      <div className="relative z-30 flex min-h-0 flex-1 flex-col">
         {/* The logo centred, with Skip taken out of the flow so it cannot
             push the logo off the middle. Wordmark sizes itself from `size`
             and ignores a height class, so the tile has to be asked for at
             the size it should be rather than constrained afterwards. */}
         <header className="relative shrink-0 px-6 pt-6">
           <div className="flex justify-center">
-            <Wordmark size={72} />
+            <Wordmark size={60} />
           </div>
           {/* Skip goes where "continue on my own" goes. It is the same
               decision, and a Skip that dumped somebody on the group form
@@ -184,10 +196,21 @@ export default function Welcome() {
           {SLIDES.map((key, n) => (
             <section
               key={key}
-              className="flex w-full shrink-0 snap-center flex-col justify-center px-8"
+              /* The slide scrolls inside itself rather than pushing the page.
+                 On a short screen with the text at its longest, something has
+                 to give, and it should be the part somebody is reading rather
+                 than the part they are meant to press. */
+              className="flex w-full shrink-0 snap-center flex-col overflow-y-auto px-8 py-4"
               aria-label={t('welcome.step', { n: n + 1, total: SLIDES.length })}
             >
-              <div className="mx-auto w-full max-w-content">
+              {/* my-auto rather than justify-center on the parent. Both
+                  centre the slide when it fits; only this one degrades
+                  properly when it does not. Auto margins collapse to zero
+                  once the content is taller than the box, so a long slide on
+                  a short phone starts at the top and scrolls, instead of
+                  being centred and clipped at BOTH ends with the heading
+                  half off the top. */}
+              <div className="mx-auto my-auto w-full max-w-content">
                 <span className="block h-16 w-16 text-accent">
                   <SlideGlyph name={key} />
                 </span>
@@ -205,7 +228,7 @@ export default function Welcome() {
           ))}
         </div>
 
-        <div className="shrink-0 px-8 pb-10 pt-6">
+        <div className="shrink-0 px-8 pb-8 pt-5">
           <div className="mx-auto w-full max-w-content">
             {/* Dots are buttons, not decoration. They are the only way back to
                 a slide for somebody who is not dragging. */}
