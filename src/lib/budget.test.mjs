@@ -100,5 +100,45 @@ eq('never divides by zero', Number.isFinite(summarise({ plan, fixed, today: new 
   eq('series can follow income too', inc[4], 9999)
 }
 
+// ---- entries marked as not counting ------------------------------------------
+// A refund, a transfer between your own pockets, an expense being paid back.
+// All worth a record; none of them should move what is left this period.
+{
+  const plan = { monthly_income_cents: 300000, savings_target_cents: 0, period_start_day: 1 }
+  const today = new Date(2026, 6, 15)
+  const day = '2026-07-10'
+
+  const plain = summarise({ plan, fixed: [], today, entries: [
+    { kind: 'expense', amount_cents: 5000, category: 'food', happened_on: day },
+  ]})
+  const withRefund = summarise({ plan, fixed: [], today, entries: [
+    { kind: 'expense', amount_cents: 5000, category: 'food', happened_on: day },
+    { kind: 'expense', amount_cents: 90000, category: 'other', happened_on: day, excluded: true },
+  ]})
+
+  eq('an excluded expense does not spend', withRefund.spent, plain.spent)
+  eq('nor does it move what is left',      withRefund.left, plain.left)
+  eq('and it stays out of the breakdown',  withRefund.byCategory.length, plain.byCategory.length)
+
+  const withIncome = summarise({ plan, fixed: [], today, entries: [
+    { kind: 'income', amount_cents: 90000, happened_on: day, excluded: true },
+  ]})
+  eq('an excluded income does not add', withIncome.left, summarise({ plan, fixed: [], today, entries: [] }).left)
+
+  // The curve has to agree with the total sitting above it.
+  const period = periodBounds(today, 1)
+  const curve = dailySeries({ period, kind: 'expense', entries: [
+    { kind: 'expense', amount_cents: 5000, happened_on: day },
+    { kind: 'expense', amount_cents: 90000, happened_on: day, excluded: true },
+  ]})
+  eq('the curve excludes it too', curve[curve.length - 1], 5000)
+
+  // Absent means counting: every row written before migration 29 has no flag.
+  const legacy = summarise({ plan, fixed: [], today, entries: [
+    { kind: 'expense', amount_cents: 5000, category: 'food', happened_on: day },
+  ]})
+  eq('a row with no flag still counts', legacy.spent, 5000)
+}
+
 console.log(`\n${pass} passed, ${fail} failed`)
 process.exit(fail ? 1 : 0)

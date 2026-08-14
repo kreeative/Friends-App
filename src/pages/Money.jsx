@@ -3,13 +3,16 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useT } from '../lib/i18n'
 import { money } from '../lib/money'
-import { CATEGORIES, summarise } from '../lib/budget'
+import { summarise } from '../lib/budget'
 import { minorDigits } from '../lib/currency'
 import { clearDraft, hasFreshDraft, readDraft, useDraft } from '../lib/draft'
 import { loadBudget } from '../lib/budgetData'
+import { errorText, isMissingColumn, isNetworkError } from '../lib/dberr'
+import { fromCents, localISO, toCents, txnPayload, withoutField } from '../lib/txn'
 import { Empty, Field, Screen, Section, TopBar } from '../components/ui'
 import BudgetIntro from '../components/BudgetIntro'
 import BudgetTiles from '../components/BudgetTiles'
+import TransactionSheet from '../components/TransactionSheet'
 
 /**
  * The money screen.
@@ -23,32 +26,27 @@ import BudgetTiles from '../components/BudgetTiles'
  * Setting up is the only part that takes real effort, and it is asked for once.
  */
 
-/** Cents from a typed string, tolerating "12,50", "$12.50" and "12.5". */
-function toCents(text) {
-  const cleaned = String(text ?? '')
-    .replace(/[^0-9.,-]/g, '')
-    .replace(/,/g, '.')
-  const n = Number.parseFloat(cleaned)
-  if (!Number.isFinite(n)) return null
-  return Math.round(n * 100)
-}
-
 /**
- * Cents back to a typed string, in as many decimals as the currency has.
+ * toCents and fromCents now live in src/lib/txn.js.
  *
- * toCents above is unchanged and multiplies by a hundred whatever the
- * currency: every amount in the database is an integer with two implied
- * decimals, in every currency, so the column never means something different
- * depending on a setting. See src/lib/currency.js.
+ * They moved so they could be tested. toCents in particular had a fault
+ * nobody could see from here: it turned every separator into a decimal point,
+ * so "1,000" typed by anyone using English grouping parsed as one dollar and
+ * a rent of 1,850 was stored as 1.85. See the file for what replaced it and
+ * why the ambiguous case is resolved the way it is.
  *
- * What does change is what a person is shown and asked for. A plan form
- * offering "500.00" in CFA francs is offering two decimals of a currency that
- * has none, and the zeros are noise in a field somebody has to type into.
+ * Every amount in the database is an integer with two implied decimals in
+ * every currency, so the column never means something different depending on
+ * a setting. What changes per currency is only how many decimals a person is
+ * shown and asked for: a plan form offering "500.00" in CFA francs is offering
+ * two decimals of a currency that has none. See src/lib/currency.js.
  */
-const fromCents = (c, digits = 2) => (c == null ? '' : (c / 100).toFixed(digits))
 
 /* Unsubmitted plan input, per person. See PlanForm and src/lib/draft.js. */
 const DRAFT_KEY = 'rich_friends_budget_draft'
+
+/** The sheet is open, on nothing yet. See the `sheet` state below. */
+const NEW = 'new'
 
 function MoneyInput({ value, onChange, digits = 2, autoFocus = false }) {
   return (
@@ -206,10 +204,13 @@ export default function Money() {
   const [busy, setBusy] = useState(false)
   const [introDone, setIntroDone] = useState(false)
 
-  // Quick add
-  const [amount, setAmount] = useState('')
-  const [category, setCategory] = useState('food')
-  const [kind, setKind] = useState('expense')
+  /* The transaction sheet. `sheet` is null when it is closed, a row when it is
+     open on something that exists, and NEW when it is open on nothing. Three
+     states in one value rather than an `open` boolean beside a `row`, which is
+     two values that can disagree: closing while a row is selected leaves the
+     row behind, and the next Add opens prefilled with it. */
+  const [sheet, setSheet] = useState(null)
+  const [saveError, setSaveError] = useState(null)
 
   const load = useCallback(async () => {
     if (!user) return
@@ -250,32 +251,130 @@ export default function Money() {
   )
 
   const fmt = (cents) => money(cents, s.currency, locale)
-  const digits = minorDigits(s.currency)
 
-  async function addEntry(e) {
-    e.preventDefault()
-    const cents = toCents(amount)
-    if (!cents || cents <= 0) return
-    setBusy(true)
-    // Written optimistically, then reconciled by the reload below, so the
-    // number under your thumb moves the instant you tap.
-    const row = {
-      user_id: user.id,
-      kind,
-      amount_cents: cents,
-      category: kind === 'expense' ? category : null,
-      happened_on: new Date().toISOString().slice(0, 10),
-    }
-    setEntries((prev) => [{ ...row, id: `local-${Date.now()}` }, ...prev])
-    setAmount('')
-    await supabase.from('budget_entry').insert(row)
-    await load()
-    setBusy(false)
+  /**
+   * A date somebody would say out loud.
+   *
+   * The list printed the column raw, so every row carried "2026-08-14". That
+   * is the storage format, not a date: it is the one shape of date nobody
+   * writes by hand, and twenty of them stacked up is a machine's log rather
+   * than a list of things you bought.
+   *
+   * Split rather than `new Date(iso)`, which parses a bare ISO date as UTC and
+   * then renders it in local time, so the row would name the previous day for
+   * everybody west of Greenwich. The same trap as localISO, from the other end.
+   */
+  const dayFmt = useMemo(
+    () =>
+      new Intl.DateTimeFormat(locale === 'fr' ? 'fr-CA' : 'en-CA', {
+        day: 'numeric',
+        month: 'short',
+      }),
+    [locale],
+  )
+  const day = (iso) => {
+    const [y, m, d] = String(iso ?? '').slice(0, 10).split('-').map(Number)
+    if (!y || !m || !d) return iso ?? ''
+    return dayFmt.format(new Date(y, m - 1, d))
   }
 
-  async function removeEntry(id) {
-    if (String(id).startsWith('local-')) return
+  /**
+   * What the list shows: this period, counted or not.
+   *
+   * `s.entries` is the arithmetic set and drops anything flagged excluded,
+   * which is correct for every total on the screen and wrong for a list of
+   * what you logged. A row that disappears the moment you tick a box is
+   * indistinguishable from one you deleted by accident.
+   *
+   * String comparison rather than Date parsing: both sides are ISO dates, and
+   * ISO dates sort lexically, which is most of the reason the format exists.
+   */
+  const recent = useMemo(() => {
+    const from = localISO(s.period.start)
+    const to = localISO(s.period.end)
+    return entries.filter((r) => {
+      const d = String(r.happened_on ?? '').slice(0, 10)
+      return d >= from && d < to
+    })
+  }, [entries, s.period.start, s.period.end])
+
+  /**
+   * Write one transaction, new or changed.
+   *
+   * Optimistic, then reconciled by the reload, so the number under your thumb
+   * moves the instant you tap rather than after a round trip.
+   *
+   * THE THREE WAYS THIS FAILS, AND WHAT EACH ONE DESERVES.
+   *
+   * The screen used to ignore the result of the insert entirely: `await` with
+   * no destructuring, so a refusal from Postgres closed the form, cleared the
+   * field and left the optimistic row on screen until the next reload wiped
+   * it. Money you thought you had logged, quietly gone. Every branch below
+   * exists because of a way that has already happened somewhere in this app.
+   *
+   * MISSING COLUMN is migration 29 not having been run yet. Sending `excluded`
+   * to a database that has never heard of it fails the whole row over a
+   * checkbox nobody touched, so it is dropped and sent again. The flag is lost
+   * and everything the person typed survives, which is the right way round.
+   *
+   * NETWORK is worth exactly one retry: the payload was never the problem.
+   *
+   * ANYTHING ELSE is a real refusal and the only useful thing to do with it is
+   * show it, code and all, with the sheet still open and still holding what
+   * was typed. See src/lib/dberr.js.
+   */
+  async function saveEntry(form) {
+    const payload = txnPayload(form, user?.id)
+    if (!payload) return
+
+    setBusy(true)
+    setSaveError(null)
+
+    const editingId = form.id ?? null
+    const write = (body) =>
+      editingId
+        ? supabase.from('budget_entry').update(body).eq('id', editingId)
+        : supabase.from('budget_entry').insert(body)
+
+    /* On screen before the request goes out. An edit replaces its own row in
+       place so the list does not jump; a new one goes to the top. */
+    const optimistic = { ...payload, id: editingId ?? `local-${Date.now()}` }
+    setEntries((prev) =>
+      editingId
+        ? prev.map((r) => (r.id === editingId ? { ...r, ...payload } : r))
+        : [optimistic, ...prev],
+    )
+
+    let { error } = await write(payload)
+
+    if (isMissingColumn(error, 'excluded')) {
+      ;({ error } = await write(withoutField(payload, 'excluded')))
+    } else if (isNetworkError(error)) {
+      ;({ error } = await write(payload))
+    }
+
+    setBusy(false)
+
+    if (error) {
+      setSaveError(errorText(error))
+      /* Put the list back. The optimistic row is a promise about what the
+         database now holds, and it does not. */
+      await load()
+      return
+    }
+
+    setSheet(null)
+    await load()
+  }
+
+  async function removeEntry(row) {
+    const id = row?.id ?? row
+    if (!id || String(id).startsWith('local-')) return
+
     setEntries((prev) => prev.filter((r) => r.id !== id))
+    setSheet(null)
+    setSaveError(null)
+
     await supabase.from('budget_entry').delete().eq('id', id)
     await load()
   }
@@ -436,43 +535,22 @@ export default function Money() {
         <BudgetTiles s={s} locale={locale} />
       </Section>
 
-      {/* Quick add. The whole point is that this is two taps. */}
-      <Section title={t('money.add_title')}>
-        <form onSubmit={addEntry} className="space-y-4">
-          <div className="flex gap-2">
-            {['expense', 'income'].map((k) => (
-              <button
-                key={k}
-                type="button"
-                onClick={() => setKind(k)}
-                className={kind === k ? 'chip-accent' : 'chip'}
-              >
-                {t(`money.kind_${k}`)}
-              </button>
-            ))}
-          </div>
-
-          <MoneyInput value={amount} onChange={setAmount} digits={digits} />
-
-          {kind === 'expense' && (
-            <div className="flex flex-wrap gap-2">
-              {CATEGORIES.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => setCategory(c)}
-                  className={category === c ? 'chip-accent' : 'chip'}
-                >
-                  {t(`money.cat_${c}`)}
-                </button>
-              ))}
-            </div>
-          )}
-
-          <button className="btn-primary press" disabled={busy || !toCents(amount)}>
-            {t('money.add')}
-          </button>
-        </form>
+      {/**
+       * One button where the form used to be.
+       *
+       * The form was three controls and a submit, permanently open, sitting
+       * between the summary and the totals. Permanently open is the problem:
+       * it is a piece of furniture on a screen people mostly come to read,
+       * and it pushed the numbers it exists to change below the fold.
+       *
+       * It also could not grow. Adding a date to it, or a note, or a way back
+       * into a row, meant three more permanently-open controls. In a sheet
+       * those cost nothing until somebody wants them.
+       */}
+      <Section>
+        <button className="btn-primary press w-full" onClick={() => setSheet(NEW)}>
+          {t('txn.open')}
+        </button>
       </Section>
 
       {/**
@@ -526,41 +604,81 @@ export default function Money() {
         </Section>
       )}
 
-      {/* The empty state gets a card too. A lone sentence on the page ground
-          reads as a section that failed to load; inside the container it is
-          the section, saying it is empty. */}
+      {/**
+       * The empty state gets a card too. A lone sentence on the page ground
+       * reads as a section that failed to load; inside the container it is
+       * the section, saying it is empty.
+       *
+       * `recent` rather than `s.entries`, because the summary only returns
+       * rows inside the period and only the ones that count. Both are right
+       * for arithmetic and wrong for a list: a transaction you left out of
+       * the budget is still a transaction you logged, and one that vanishes
+       * from the list the moment you flip the switch reads as a delete.
+       */}
       <Section title={t('money.recent')}>
-        {s.entries.length === 0 ? (
+        {recent.length === 0 ? (
           <div className="lg px-5 py-2">
             <Empty>{t('money.no_entries')}</Empty>
           </div>
         ) : (
           <ul className="lg divide-y divide-hairline px-5">
-            {s.entries.slice(0, 20).map((r) => (
-              <li key={r.id} className="flex items-baseline justify-between gap-4 py-4">
-                <span className="min-w-0 text-body text-ink">
-                  {r.kind === 'income'
-                    ? t('money.kind_income')
-                    : t(`money.cat_${r.category ?? 'other'}`)}
-                  <span className="pl-2 text-small text-muted">{r.happened_on}</span>
-                </span>
-                <span className="flex items-baseline gap-3">
-                  <span className="text-body font-semibold text-ink [font-variant-numeric:tabular-nums]">
+            {recent.slice(0, 20).map((r) => (
+              <li key={r.id}>
+                {/* The row is the way back in. Remove used to be the only
+                    thing you could do to a transaction from here, sitting as
+                    an underlined word at the end of every line: twenty
+                    invitations to delete something, and no way to fix a typo
+                    short of taking one of them. */}
+                <button
+                  type="button"
+                  onClick={() => setSheet(r)}
+                  className="press flex w-full items-baseline justify-between gap-4 py-4 text-left"
+                >
+                  <span className="min-w-0 flex-1 text-body text-ink">
+                    <span className="truncate">
+                      {r.note ||
+                        (r.kind === 'income'
+                          ? t('money.kind_income')
+                          : t(`money.cat_${r.category ?? 'other'}`))}
+                    </span>
+                    <span className="block text-small text-muted">
+                      {day(r.happened_on)}
+                      {r.note && r.kind === 'expense' && ` · ${t(`money.cat_${r.category ?? 'other'}`)}`}
+                      {r.excluded && ` · ${t('txn.excluded_badge')}`}
+                    </span>
+                  </span>
+                  {/* Struck through when it does not count, so the reason the
+                      total ignores it is legible from the list rather than
+                      only from inside the sheet. The word is there too: a
+                      line through text is not something everyone can see. */}
+                  <span
+                    className={`shrink-0 text-body font-semibold text-ink [font-variant-numeric:tabular-nums] ${
+                      r.excluded ? 'text-muted line-through' : ''
+                    }`}
+                  >
                     {r.kind === 'income' ? '+' : ''}
                     {fmt(r.amount_cents)}
                   </span>
-                  <button
-                    className="text-small text-muted underline"
-                    onClick={() => removeEntry(r.id)}
-                  >
-                    {t('money.remove')}
-                  </button>
-                </span>
+                </button>
               </li>
             ))}
           </ul>
         )}
       </Section>
+
+      <TransactionSheet
+        open={sheet !== null}
+        row={sheet === NEW ? null : sheet}
+        currency={s.currency}
+        busy={busy}
+        error={saveError}
+        onClose={() => {
+          setSheet(null)
+          setSaveError(null)
+        }}
+        onSave={saveEntry}
+        onDelete={removeEntry}
+      />
     </Screen>
   )
 }

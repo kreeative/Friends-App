@@ -30,7 +30,9 @@ export function dailySeries({ entries = [], period, kind = 'expense' }) {
     const at = new Date(period.start.getFullYear(), period.start.getMonth(), period.start.getDate() + d)
     const next = new Date(at.getFullYear(), at.getMonth(), at.getDate() + 1)
     running += sum(
-      entries.filter((e) => e.kind === kind && inPeriod(e.happened_on, at, next)),
+      /* Same exclusion as summarise. A curve that counted a refund would
+         disagree with the total sitting above it. */
+      entries.filter((e) => !e.excluded && e.kind === kind && inPeriod(e.happened_on, at, next)),
       (e) => e.amount_cents,
     )
     out.push(running)
@@ -116,7 +118,13 @@ export function summarise({ plan, fixed = [], entries = [], today = new Date(), 
     (f) => f.amount_cents,
   )
 
-  const mine = entries.filter((e) => inPeriod(e.happened_on, period.start, period.end))
+  /* Excluded rows are records, not spending. A refund, a transfer between
+     your own pockets, an expense somebody else is paying back: all worth
+     keeping and none of them should move what you have left. Filtered here,
+     once, so every number below inherits it rather than each remembering. */
+  const mine = entries.filter(
+    (e) => !e.excluded && inPeriod(e.happened_on, period.start, period.end),
+  )
   const spent = sum(
     mine.filter((e) => e.kind === 'expense'),
     (e) => e.amount_cents,

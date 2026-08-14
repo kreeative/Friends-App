@@ -1283,6 +1283,66 @@
     outline: none;
     box-shadow: 0 0 0 2px rgb(var(--c-accent) / 0.55);
   }
+  /**
+   * The amount, which is the whole reason the sheet is open.
+   *
+   * Not a `.field`. A filled rectangle around this would put a box around the
+   * only thing on the screen that does not need one: it is set at the hero
+   * size, it is centred, it has the currency symbol standing next to it and
+   * the caret is already blinking in it. Nothing else on the panel is
+   * competing for the tap, so the box would be an edge drawn for its own sake.
+   *
+   * Tabular figures because the field is width-sized to its own content as
+   * you type. With proportional digits a 1 is half the width of a 4 and the
+   * whole line would twitch sideways on every keystroke.
+   */
+  .amount-hero {
+    @apply min-w-0 border-0 bg-transparent p-0 text-center font-display text-hero
+           font-semibold leading-none text-ink;
+    outline: none;
+    font-variant-numeric: tabular-nums;
+  }
+  .amount-hero::placeholder {
+    color: rgb(var(--c-ink) / 0.2);
+  }
+  /* Number-ish input chrome that only ever gets in the way at this size. */
+  .amount-hero::-webkit-outer-spin-button,
+  .amount-hero::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  /**
+   * A switch, for the one setting on the sheet that is genuinely binary.
+   *
+   * A checkbox would have done, and is what the rest of the app uses, but
+   * every row around this one is "label on the left, value on the right" and
+   * a native checkbox at the end of that run reads as a form control that
+   * escaped from a different screen. The state is announced by role rather
+   * than by the colour, so the fill is not carrying it alone.
+   */
+  .switch {
+    @apply relative h-[30px] w-[52px] shrink-0 rounded-pill transition-colors duration-200 ease-settle;
+    background-color: rgb(var(--c-ink) / 0.15);
+  }
+  .switch[aria-checked='true'] {
+    background-color: rgb(var(--c-accent));
+  }
+  .switch > span {
+    @apply absolute top-[3px] h-6 w-6 rounded-pill bg-white shadow-raised
+           transition-transform duration-200 ease-settle;
+    left: 3px;
+  }
+  .switch[aria-checked='true'] > span {
+    transform: translateX(22px);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .switch,
+    .switch > span {
+      transition: none;
+    }
+  }
+
   .field-soft {
     @apply w-full rounded-field border-0 bg-ink/[0.035] px-4 py-3 text-body text-ink
            transition-colors duration-200 ease-settle focus:bg-ink/[0.06];
@@ -1364,6 +1424,44 @@
 }
 
 /**
+ * A panel that actually comes up from the bottom edge.
+ *
+ * `animate-rise` moves six pixels, which is the right amount for a card
+ * fading into a list and the wrong amount for a sheet: a full-height panel
+ * appearing six pixels below where it lands reads as a pop, not as something
+ * being pulled up, and the gesture the sheet is imitating has no pop in it.
+ *
+ * The curve is the sheet curve, cubic-bezier(0.32, 0.72, 0, 1): most of the
+ * distance in the first third and the last few pixels taking the rest of the
+ * time, which is what makes it read as settling rather than as arriving.
+ */
+@keyframes sheet-up {
+  from {
+    transform: translate3d(0, 100%, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.animate-sheet {
+  animation: sheet-up 340ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+@keyframes scrim-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-scrim {
+  animation: scrim-in 240ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+/**
  * Reduced motion keeps the fades and drops the movement, a cross-fade still
  * communicates that content arrived, without anything sliding or scaling.
  */
@@ -1378,6 +1476,16 @@
   }
 
   @keyframes page-enter {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  /* The sheet still has to say it arrived, it just stops travelling to do it. */
+  @keyframes sheet-up {
     from {
       opacity: 0;
     }

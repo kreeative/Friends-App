@@ -1,4 +1,4 @@
-import { CURRENCIES, FALLBACK, detectCurrency, formatCurrency, minorDigits } from './currency.js'
+import { CURRENCIES, FALLBACK, currencySymbol, detectCurrency, formatCurrency, minorDigits } from './currency.js'
 let pass = 0, fail = 0
 const eq = (label, got, want) => {
   const ok = JSON.stringify(got) === JSON.stringify(want)
@@ -64,6 +64,42 @@ eq('zero is a real amount', norm(formatCurrency(0, 'CAD', ['en-CA'])), '$0.00')
 eq('missing amount is zero', norm(formatCurrency(null, 'CAD', ['en-CA'])), '$0.00')
 eq('missing code is the fallback', formatCurrency(50000, null, ['en-CA']), formatCurrency(50000, FALLBACK, ['en-CA']))
 eq('an unknown code still shows the number', formatCurrency(50000, 'ZZZ', ['en-CA']).includes('500'), true)
+
+// ---- the symbol beside a field ---------------------------------------------
+// Compared against what formatCurrency does with the same inputs rather than
+// against a literal, so the assertions are about the two agreeing and not about
+// which ICU version the machine happens to ship.
+const sideOf = (code, tags) => {
+  const s = currencySymbol(code, tags)
+  const full = norm(formatCurrency(100, code, tags))
+  return { s, full }
+}
+
+{
+  const { s, full } = sideOf('CAD', ['en-CA'])
+  eq('en-CA symbol', s.symbol, '$')
+  eq('en-CA puts it in front', s.before, true)
+  eq('en-CA agrees with the formatter', full.startsWith(s.symbol), true)
+}
+{
+  const { s, full } = sideOf('CAD', ['fr-CA'])
+  eq('fr-CA puts it after', s.before, false)
+  eq('fr-CA agrees with the formatter', full.trimEnd().endsWith(s.symbol), true)
+}
+{
+  const { s } = sideOf('EUR', ['fr-FR'])
+  eq('euro in france trails', s.before, false)
+  eq('euro symbol', s.symbol, '€')
+}
+{
+  const { s } = sideOf('EUR', ['en-CA'])
+  eq('euro read in canada leads', s.before, true)
+}
+
+eq('an unknown code falls back to the code itself', currencySymbol('ZZZ', ['en-CA']).symbol.length > 0, true)
+eq('no code is the fallback currency', currencySymbol(null, ['en-CA']).symbol, currencySymbol(FALLBACK, ['en-CA']).symbol)
+eq('no locale still answers', currencySymbol('CAD', []).symbol.length > 0, true)
+eq('every offered code has a symbol', CURRENCIES.every((c) => currencySymbol(c, ['fr-CA']).symbol.length > 0), true)
 
 // ---- the list --------------------------------------------------------------
 eq('the fallback is offered in the picker', CURRENCIES.includes(FALLBACK), true)
