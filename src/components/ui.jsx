@@ -113,7 +113,19 @@ export function Field({ label, hint, children }) {
  * Decorative in every placement here: the name is always next to it in text,
  * so an alt would be the same words read twice.
  */
-export function Avatar({ profile, size = 40 }) {
+/**
+ * @param onDark  set when the avatar sits on a dark ground, which currently
+ *                means the proof viewer's scrim and nothing else.
+ *
+ *                The fallback is initials on `bg-ink/[0.06]` in `text-muted`,
+ *                which is correct everywhere in the app except on top of a
+ *                photograph viewer: dark ink at six percent over a near-black
+ *                backdrop is a disc nobody can see, and the person's initials
+ *                were effectively missing from the one screen that names who
+ *                posted the proof. A prop rather than a second component,
+ *                because everything else about it is the same.
+ */
+export function Avatar({ profile, size = 40, onDark = false }) {
   const [broken, setBroken] = useState(false)
   const url = profile?.avatar_url
 
@@ -133,7 +145,10 @@ export function Avatar({ profile, size = 40 }) {
         alt=""
         loading="lazy"
         onError={() => setBroken(true)}
-        className="shrink-0 rounded-pill bg-ink/[0.06] object-cover"
+        className={`shrink-0 rounded-pill bg-ink/[0.06] object-cover ${
+          /* A rim, so a dark photograph does not dissolve into a dark scrim. */
+          onDark ? 'ring-1 ring-inset ring-white/25' : ''
+        }`}
         style={{ width: size, height: size }}
       />
     )
@@ -141,7 +156,9 @@ export function Avatar({ profile, size = 40 }) {
 
   return (
     <div
-      className="flex shrink-0 items-center justify-center rounded-pill bg-ink/[0.06] text-small text-muted"
+      className={`flex shrink-0 items-center justify-center rounded-pill text-small ${
+        onDark ? 'bg-white/20 font-semibold text-white' : 'bg-ink/[0.06] text-muted'
+      }`}
       style={{ width: size, height: size }}
     >
       {initials}

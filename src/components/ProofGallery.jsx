@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useAuth } from '../context/AuthContext'
 import { localeTag, useT } from '../lib/i18n'
 import { REACTIONS, REACTION_GLYPH, byMonth, loadProofs, toggleReaction } from '../lib/proofs'
@@ -100,12 +101,33 @@ function LinkGlyph() {
 }
 
 /**
- * One photograph, full size, with the four ways to say something about it.
+ * One proof, full size, with the four ways to say something about it.
  *
- * Not a route. A photograph is something you look at and dismiss, and pushing
- * a screen for it means the back button leaves the gallery rather than the
+ * Not a route. A photograph is something you look at and dismiss, and pushing a
+ * screen for it means the back button leaves the gallery rather than the
  * picture. Escape and the backdrop both close it, and the body does not scroll
  * behind it.
+ *
+ * PORTALLED, AND THAT IS THE WHOLE OF THE OVERLAP BUG.
+ *
+ * It was `fixed inset-0 z-50` rendered where it sits in the tree, and that is
+ * not the same thing as covering the viewport. position:fixed resolves against
+ * the nearest ancestor with a transform, filter or backdrop-filter, not against
+ * the window, and this component renders inside `.page-enter`, which animates
+ * in with a transform. So the overlay was fixed to a card-sized box partway
+ * down the page, its header sat underneath the app bar, and no amount of
+ * z-index could help: the two were never in the same stacking context to begin
+ * with. Out at the body there is nothing above it to capture the positioning.
+ *
+ * Third time this exact bug has appeared in this repo. The bottom sheets had
+ * it, the journal editor had it, and now this.
+ *
+ * A COLUMN THAT SCROLLS, NOT A BLOCK THAT IS CENTRED.
+ *
+ * The old layout centred one tall stack in a flex box, so on a short screen the
+ * reactions were simply below the fold with nothing to scroll. Now the header
+ * and the picture are fixed height, and everything under them scrolls, so the
+ * bottom row is always reachable however tall the photograph is.
  */
 function Viewer({ proof, onClose, onReact, onEdit, locale, mine }) {
   const { t } = useT()
@@ -128,102 +150,136 @@ function Viewer({ proof, onClose, onReact, onEdit, locale, mine }) {
   const when = new Date(proof.submitted_at)
   const kind = proofOf(proof)?.kind ?? 'text'
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex flex-col bg-ink/90 backdrop-blur-sm"
+      className="fixed inset-0 z-[70] flex flex-col bg-ink/90 backdrop-blur-md"
       onClick={onClose}
     >
       <div
-        className="flex min-h-0 flex-1 flex-col justify-center p-4"
+        className="mx-auto flex min-h-0 w-full max-w-md flex-1 flex-col px-4"
         onClick={(e) => e.stopPropagation()}
+        /* The notch, the status bar and the home indicator. Without the top
+           inset the avatar sits under the clock on a notched phone; without
+           the bottom one the last reaction row sits under the home bar. */
+        style={{
+          paddingTop: 'max(1rem, env(safe-area-inset-top))',
+          paddingBottom: 'max(1rem, env(safe-area-inset-bottom))',
+        }}
       >
-        <div className="mx-auto w-full max-w-md">
-          <div className="flex items-center gap-3 pb-3">
-            <Avatar
-              profile={{ display_name: proof.display_name, avatar_url: proof.avatar_url }}
-              size={36}
-            />
-            <span className="min-w-0 flex-1">
-              <span className="block truncate text-small font-semibold text-white">
-                {proof.display_name}
-              </span>
-              <span className="block text-label text-white/60">
-                {when.toLocaleString(localeTag(locale), {
-                  day: 'numeric',
-                  month: 'long',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
-              </span>
+        {/* ---- who and when, and the way out ---------------------------- */}
+        <div className="flex shrink-0 items-center gap-3 pb-3">
+          <Avatar
+            profile={{ display_name: proof.display_name, avatar_url: proof.avatar_url }}
+            size={36}
+            onDark
+          />
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-small font-semibold text-white">
+              {proof.display_name}
             </span>
-            <button
-              onClick={onClose}
-              aria-label={t('ui.close')}
-              className="press rounded-pill bg-white/15 px-3 py-1.5 text-small font-semibold text-white"
-            >
-              {t('ui.close')}
-            </button>
-          </div>
+            <span className="block text-label text-white/60">
+              {when.toLocaleString(localeTag(locale), {
+                day: 'numeric',
+                month: 'long',
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
+            </span>
+          </span>
+          <button
+            onClick={onClose}
+            aria-label={t('ui.close')}
+            className="press shrink-0 rounded-pill bg-white/15 px-3.5 py-2 text-small font-semibold text-white backdrop-blur-md transition-colors hover:bg-white/25"
+          >
+            {t('ui.close')}
+          </button>
+        </div>
 
-          {kind === 'photo' && (
-            /* contain, not cover. The modal is where the whole frame is shown;
-               cropping here would mean the picture is never seen intact. */
+        {/* ---- the proof itself ------------------------------------------ */}
+        {kind === 'photo' && (
+          /**
+           * A frame, not a bare image.
+           *
+           * `contain` inside a fixed 4:3 box rather than an image left to its
+           * own dimensions: the whole frame is always visible, nothing is
+           * cropped, and the card underneath keeps the same shape whether
+           * somebody photographed a page in portrait or a gym in landscape.
+           * A layout that changes height per photo makes the reactions jump.
+           *
+           * The white hairline is what separates a dark photograph from the
+           * dark scrim behind it; without it a night shot bleeds into the
+           * background and the card stops existing.
+           */
+          <div className="aspect-[4/3] w-full shrink-0 overflow-hidden rounded-3xl bg-black/30 ring-1 ring-inset ring-white/15 shadow-float">
             <img
               src={proof.photo_url}
               alt=""
-              className="max-h-[58dvh] w-full rounded-card object-contain"
+              className="h-full w-full object-contain"
             />
-          )}
+          </div>
+        )}
 
-          {kind === 'link' && (
-            /**
-             * An anchor, opening away from the app.
-             *
-             * noreferrer as well as noopener: without the second the target
-             * page learns which app sent it, and a proof link is somebody's
-             * private Strava or a work document. The href has already been
-             * through normaliseLink on the way in, which is what stops a
-             * javascript: URL ever reaching an href here, and the check
-             * constraint in migration 28 is the second wall.
-             */
-            <a
-              href={proof.link_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="press flex items-center gap-3 rounded-card bg-white/15 p-4 no-underline"
-            >
-              <span className="text-white/70">
-                <LinkGlyph />
+        {kind === 'link' && (
+          /**
+           * An anchor, opening away from the app.
+           *
+           * noreferrer as well as noopener: without the second the target page
+           * learns which app sent it, and a proof link is somebody's private
+           * Strava or a work document. The href has already been through
+           * normaliseLink on the way in, which is what stops a javascript: URL
+           * ever reaching an href here, and the check constraint in migration
+           * 28 is the second wall.
+           */
+          <a
+            href={proof.link_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="press flex shrink-0 items-center gap-3 rounded-3xl bg-white/10 p-4 no-underline ring-1 ring-inset ring-white/15 backdrop-blur-md"
+          >
+            <span className="text-white/70">
+              <LinkGlyph />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-small font-semibold text-white">
+                {linkHost(proof.link_url)}
               </span>
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-small font-semibold text-white">
-                  {linkHost(proof.link_url)}
-                </span>
-                <span className="block truncate text-label text-white/60">{proof.link_url}</span>
-              </span>
-              <span aria-hidden="true" className="text-small text-white/70">
-                ↗
-              </span>
-            </a>
-          )}
+              <span className="block truncate text-label text-white/60">{proof.link_url}</span>
+            </span>
+            <span aria-hidden="true" className="text-small text-white/70">
+              ↗
+            </span>
+          </a>
+        )}
 
-          {kind === 'text' && (
-            <p className="whitespace-pre-wrap rounded-card bg-white/10 p-4 text-body leading-relaxed text-white">
-              {proof.evidence}
-            </p>
-          )}
+        {kind === 'text' && (
+          <p className="shrink-0 whitespace-pre-wrap rounded-3xl bg-white/10 p-5 text-body leading-relaxed text-white ring-1 ring-inset ring-white/15 backdrop-blur-md">
+            {proof.evidence}
+          </p>
+        )}
 
-          {proof.goal_title && (
-            <p className="mt-3 inline-flex items-center rounded-pill bg-white/15 px-3 py-1 text-label font-semibold text-white">
-              {proof.goal_title}
-            </p>
-          )}
-
-          {/* The caption, when it is one. On a text proof the evidence IS the
-              proof and has already been rendered above; repeating it here was
-              the same sentence twice. */}
-          {proof.evidence && kind !== 'text' && (
-            <p className="mt-2 text-small text-white/75">{proof.evidence}</p>
+        {/**
+         * ---- everything else, in rows, scrolling -----------------------
+         *
+         * Three separate rows with real space between them, because they are
+         * three different kinds of thing: what this was for, what you can do
+         * to it, and what you can say about it. They used to run together with
+         * 8px between them and read as one paragraph of buttons.
+         */}
+        <div className="no-scrollbar mt-4 min-h-0 flex-1 space-y-3 overflow-y-auto">
+          {(proof.goal_title || (proof.evidence && kind !== 'text')) && (
+            <div className="space-y-2">
+              {proof.goal_title && (
+                <p className="inline-flex items-center rounded-pill bg-white/10 px-3.5 py-1.5 text-label font-semibold text-white backdrop-blur-md">
+                  {proof.goal_title}
+                </p>
+              )}
+              {/* The caption, when it is one. On a text proof the evidence IS
+                  the proof and has already been rendered above; repeating it
+                  here was the same sentence twice. */}
+              {proof.evidence && kind !== 'text' && (
+                <p className="text-small leading-relaxed text-white/80">{proof.evidence}</p>
+              )}
+            </div>
           )}
 
           {/**
@@ -234,16 +290,18 @@ function Viewer({ proof, onClose, onReact, onEdit, locale, mine }) {
            * you own, so hiding this button is a courtesy and not the control.
            */}
           {mine && (
-            <button
-              type="button"
-              onClick={() => onEdit(proof)}
-              className="press mt-3 inline-flex items-center gap-1.5 rounded-pill bg-white/15 px-3.5 py-1.5 text-small font-semibold text-white transition-colors hover:bg-white/25"
-            >
-              {t('proof.edit')}
-            </button>
+            <div>
+              <button
+                type="button"
+                onClick={() => onEdit(proof)}
+                className="press inline-flex items-center gap-1.5 rounded-pill bg-white/10 px-4 py-2 text-small font-semibold text-white ring-1 ring-inset ring-white/20 backdrop-blur-md transition-colors hover:bg-white/20"
+              >
+                {t('proof.edit')}
+              </button>
+            </div>
           )}
 
-          <div className="mt-4 flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 pt-1">
             {REACTIONS.map((emoji) => {
               const on = reacted.has(emoji)
               return (
@@ -251,8 +309,13 @@ function Viewer({ proof, onClose, onReact, onEdit, locale, mine }) {
                   key={emoji}
                   onClick={() => onReact(proof, emoji, on)}
                   aria-pressed={on}
-                  className={`press inline-flex items-center gap-2 rounded-pill px-4 py-2 text-small font-semibold transition-colors ${
-                    on ? 'bg-accent text-on-accent' : 'bg-white/15 text-white hover:bg-white/25'
+                  /* The chosen one is solid rather than another pane of glass:
+                     at 10% white on 10% white, "I reacted" and "I did not" were
+                     the same button twice. */
+                  className={`press inline-flex items-center gap-2 rounded-pill px-4 py-2.5 text-small font-semibold transition-colors ${
+                    on
+                      ? 'bg-white text-ink'
+                      : 'bg-white/10 text-white ring-1 ring-inset ring-white/20 backdrop-blur-md hover:bg-white/20'
                   }`}
                 >
                   <span aria-hidden="true">{REACTION_GLYPH[emoji]}</span>
@@ -266,7 +329,8 @@ function Viewer({ proof, onClose, onReact, onEdit, locale, mine }) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
 
