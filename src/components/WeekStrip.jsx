@@ -7,6 +7,9 @@ import { loadBudget } from '../lib/budgetData'
 import { dayKey, weekOf } from '../lib/time'
 import { isDueOn } from '../lib/schedule'
 import { isMissingColumn } from '../lib/dberr'
+import { rectOf } from '../lib/gesture'
+import { useLongPress } from '../lib/useLongPress'
+import { isOpen as journalUnlocked, loadLock } from '../lib/journal'
 import {
   CURRENT_MONTH,
   calendarRange,
@@ -78,17 +81,44 @@ function Chevron({ dir }) {
 }
 
 /**
- * One date in the month grid.
+ * One date, in either view.
  *
- * The same circle as the week strip, without the weekday letter above it: in a
- * grid the column already says which day it is, and repeating it forty-two
- * times is a wall of tiny type over the numbers people are actually reading.
+ * TAP SELECTS. HOLD OPENS.
  *
- * Days from the neighbouring months are drawn rather than blanked. A grid with
- * holes at both ends is harder to read than one that shows the tail of last
- * month greyed out, and those days are real and tappable.
+ * Two things on one square, which works because they are the same intent at
+ * two depths: a tap says "tell me about this day" and answers in the panel
+ * below, a hold says "tell me everything" and answers in a card grown out of
+ * the square itself. Nobody has to learn a second control, and the tap is
+ * untouched for anybody who never discovers the hold.
+ *
+ * The ring under the finger is not decoration. A gesture with a delay in it
+ * has to say it has started, or the half second before anything happens is
+ * indistinguishable from a control that does not work. It fills over exactly
+ * HOLD_MS, so what the reader sees is the actual remaining wait rather than a
+ * generic pulse.
+ *
+ * `weekday` is what tells the two views apart. In the month grid the column
+ * already says which day it is, and repeating it forty-two times is a wall of
+ * tiny type over the numbers people came to read.
  */
-function MonthCell({ date, isToday, isSelected, isFuture, outside, marked, label, onSelect }) {
+function DayCell({
+  date,
+  isToday,
+  isSelected,
+  isFuture,
+  outside = false,
+  marked,
+  label,
+  weekday = false,
+  onSelect,
+  onOpen,
+}) {
+  /* The element is passed through, not dropped. It is the rectangle the card
+     grows out of, and `() => onOpen?.()` silently discards it: the card then
+     appears from nowhere, which looks exactly like a transition that was never
+     applied and is nothing of the sort. */
+  const { holding, handlers, consumedClick } = useLongPress((el) => onOpen?.(el))
+
   const circle = isToday
     ? 'bg-accent text-on-accent font-semibold'
     : isSelected
@@ -102,54 +132,49 @@ function MonthCell({ date, isToday, isSelected, isFuture, outside, marked, label
   return (
     <button
       type="button"
-      onClick={onSelect}
+      {...handlers}
+      onClick={() => {
+        /* The hold already opened the card. Letting the click through as well
+           would move the selection to whatever the finger was over, so the
+           sheet would be about one day while the strip highlighted another. */
+        if (consumedClick()) return
+        onSelect?.()
+      }}
       aria-pressed={isSelected}
       aria-label={label}
-      className="press flex flex-col items-center gap-1 py-1"
+      className={`press relative flex touch-manipulation select-none flex-col items-center rounded-card py-1 [-webkit-touch-callout:none] ${
+        weekday ? 'gap-1.5' : 'gap-1'
+      }`}
     >
-      <span
-        className={`flex h-9 w-9 items-center justify-center rounded-pill text-small [font-variant-numeric:tabular-nums] transition-colors duration-200 ${circle} ${
-          isSelected && isToday ? 'ring-2 ring-ink/25 ring-offset-2 ring-offset-transparent' : ''
-        }`}
-      >
-        {date.getDate()}
-      </span>
-      <span
-        aria-hidden="true"
-        className={`h-1.5 w-1.5 rounded-pill ${marked ? 'bg-green' : 'bg-transparent'}`}
-      />
-    </button>
-  )
-}
+      {weekday && (
+        <span className="text-label font-semibold uppercase tracking-[0.08em] text-muted">
+          {date.toLocaleDateString(undefined, { weekday: 'narrow' })}
+        </span>
+      )}
 
-/** One date. The circle is the target; the label and the dot ride with it. */
-function DayBadge({ date, isToday, isSelected, isFuture, marked, label, onSelect }) {
-  const circle = isToday
-    ? 'bg-accent text-on-accent font-semibold'
-    : isSelected
-      ? 'bg-ink text-white font-semibold'
-      : isFuture
-        ? 'text-muted/60'
-        : 'text-ink'
+      <span className="relative flex items-center justify-center">
+        {/* Drawn behind the number and outside its box, so a circle that is
+            already filled does not have to give up any of itself to show the
+            hold. Pointer events off, or the ring would steal the pointermove
+            events the hold is watching for drift. */}
+        {holding && (
+          <span
+            aria-hidden="true"
+            className="hold-ring pointer-events-none absolute inset-[-5px] rounded-pill"
+          />
+        )}
+        <span
+          className={`flex items-center justify-center rounded-pill text-small [font-variant-numeric:tabular-nums] transition-transform duration-300 ease-settle ${
+            weekday ? 'h-10 w-10' : 'h-9 w-9'
+          } ${circle} ${holding ? 'scale-95' : ''} ${
+            isSelected && isToday ? 'ring-2 ring-ink/25 ring-offset-2 ring-offset-transparent' : ''
+          }`}
+          style={{ transitionProperty: 'transform, background-color, color' }}
+        >
+          {date.getDate()}
+        </span>
+      </span>
 
-  return (
-    <button
-      type="button"
-      onClick={onSelect}
-      aria-pressed={isSelected}
-      aria-label={label}
-      className="press flex flex-col items-center gap-1.5 rounded-card py-1"
-    >
-      <span className="text-label font-semibold uppercase tracking-[0.08em] text-muted">
-        {date.toLocaleDateString(undefined, { weekday: 'narrow' })}
-      </span>
-      <span
-        className={`flex h-10 w-10 items-center justify-center rounded-pill text-small [font-variant-numeric:tabular-nums] transition-colors duration-200 ${circle} ${
-          isSelected && isToday ? 'ring-2 ring-ink/25 ring-offset-2 ring-offset-transparent' : ''
-        }`}
-      >
-        {date.getDate()}
-      </span>
       {/* Presence, not performance. One dot means the day has something in it,
           which is all a badge this size can honestly carry. */}
       <span
@@ -275,7 +300,14 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
    */
   const [expanded, setExpanded] = useState(false)
   const [wide, setWide] = useState(false)
+
+  /* The recap, and the square it grows out of. The rectangle is measured at
+     the moment of the press rather than looked up later, because by the time
+     the card is closing the track may have been paged and the cell that
+     opened it may not be on screen at all. */
   const [recap, setRecap] = useState(false)
+  const [origin, setOrigin] = useState(null)
+  const [journal, setJournal] = useState({ entry: null, locked: false })
 
   /**
    * The two tracks.
@@ -516,6 +548,47 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
    * March and then asking to see the month takes you to the current one, which
    * is the opposite of what the tap meant.
    */
+  /**
+   * Held a date: select it, remember the square, and open the day.
+   *
+   * The journal is fetched here rather than with everything else, and only for
+   * a day that has one. Two reasons, and the second is the important one.
+   *
+   * COST. Nobody who never holds a date should pay for a passcode lookup and a
+   * body fetch on every dashboard load.
+   *
+   * THE LOCK. The entry is only read when the journal is actually open: no
+   * passcode set, or the passcode already given this session. Otherwise the
+   * text is never fetched at all, so it is not sitting in memory on a screen
+   * reached by holding a square, and the card says an entry exists and offers
+   * the route that asks for four digits. Deciding this before the request
+   * rather than at render is deliberate: a component that has the text and
+   * chooses not to draw it is one careless change away from drawing it.
+   */
+  async function openDay(k, el) {
+    setSelected(k)
+    setOrigin(rectOf(el))
+    setJournal({ entry: null, locked: false })
+    setRecap(true)
+
+    if (!user || !journalDays.has(k)) return
+
+    const { lock, missing } = await loadLock(user.id)
+    if (missing) return
+    if (lock && !journalUnlocked()) return setJournal({ entry: null, locked: true })
+
+    const { data, error } = await supabase
+      .from('journal_entries')
+      .select('id, day, kind, body, ink')
+      .eq('user_id', user.id)
+      .eq('day', k)
+      .order('created_at', { ascending: false })
+      .limit(1)
+
+    if (error) return
+    setJournal({ entry: data?.[0] ?? null, locked: false })
+  }
+
   const toggleExpanded = () => {
     const target = new Date(`${selected}T00:00:00`)
     if (!expanded) {
@@ -612,7 +685,7 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
                 {monthGrid(m).map((d) => {
                   const k = dayKey(d)
                   return (
-                    <MonthCell
+                    <DayCell
                       key={k}
                       date={d}
                       isToday={k === todayKey}
@@ -622,6 +695,7 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
                       marked={isMarked(k)}
                       label={dayLabel(d)}
                       onSelect={() => setSelected(k)}
+                      onOpen={(el) => openDay(k, el)}
                     />
                   )
                 })}
@@ -643,15 +717,17 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
               {w.map((d) => {
                 const k = dayKey(d)
                 return (
-                  <DayBadge
+                  <DayCell
                     key={k}
                     date={d}
+                    weekday
                     isToday={k === todayKey}
                     isSelected={k === selected}
                     isFuture={k > todayKey}
                     marked={isMarked(k)}
                     label={dayLabel(d)}
                     onSelect={() => setSelected(k)}
+                    onOpen={(el) => openDay(k, el)}
                   />
                 )
               })}
@@ -713,7 +789,11 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
           {!nothing && (
             <button
               type="button"
-              onClick={() => setRecap(true)}
+              /* The same card the hold opens, grown out of this button when it
+                 is the thing that was pressed. A tap here is not a hold, so
+                 there is no cell rectangle to use, and the button's own is
+                 the honest origin: the card comes from what you touched. */
+              onClick={(e) => openDay(selected, e.currentTarget)}
               className="goal-action press shrink-0"
             >
               {t('recap.open')}
@@ -824,6 +904,7 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
 
       <DayRecap
         open={recap}
+        origin={origin}
         date={selectedDate}
         isFuture={isFutureDay}
         mood={mood}
@@ -832,6 +913,8 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
         entries={entries}
         currency={currency}
         hasJournal={hasJournal}
+        journal={journal.entry}
+        journalLocked={journal.locked}
         onClose={() => setRecap(false)}
       />
     </div>

@@ -1,12 +1,14 @@
-import { useEffect } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { localeTag, useT } from '../lib/i18n'
 import { money } from '../lib/money'
+import { dragOffset, flipTransform, rectOf, shouldDismiss } from '../lib/gesture'
 import { MoodBadge } from './MoodBoard'
+import InkPreview from './InkPreview'
 
 /**
- * One day, in full.
+ * One day, in full, grown out of the square you held.
  *
  * The panel under the calendar answers "what happened on Tuesday" in about
  * five lines, which is the right size for something permanently open under a
@@ -14,23 +16,45 @@ import { MoodBadge } from './MoodBoard'
  * panel that grows to forty lines when you tap a busy day pushes everything
  * below it off the screen.
  *
- * So the detail moved here. This is the same day with the parts the panel
- * cannot afford: the proof attached to each commitment rather than only the
- * outcome chip, every transaction with its note rather than its category, and
- * the day's net rather than two totals to subtract in your head.
+ * So the detail is here, and it arrives from the date you pressed rather than
+ * from the bottom of the screen. That is not decoration. A sheet that slides
+ * up from the edge is a new place; a card that grows out of the tile under
+ * your thumb is the same object, larger, and the difference is whether the
+ * reader has to work out where they now are.
  *
- * WHY THE PROOF IS THE POINT.
+ * HOW THE MORPH WORKS.
  *
- * A photograph, a link or a note is attached to a check-in and then, until
- * now, was only ever visible from the group's proof gallery, filed under the
- * goal. Nobody thinks in goals when they are looking back. They think in days:
- * what did I do on the Tuesday I remember being hard. This is the first screen
- * that answers that with the evidence in it.
+ * FLIP, in about fifteen lines, in src/lib/gesture.js. The panel is laid out
+ * where it finally belongs, the transform that would put it back on top of the
+ * date cell is computed and applied for one frame, and then removed with a
+ * transition on it. Only transform and opacity animate, so the compositor
+ * carries the whole thing and nothing re-lays-out for the duration.
+ *
+ * Framer Motion's `layoutId` is this with a library around it. See flipFrom for
+ * why it is not a dependency here.
+ *
+ * WHY THE PROOF AND THE JOURNAL ARE THE POINT.
+ *
+ * A photograph, a link or a note is attached to a check-in and was only ever
+ * visible from the group's proof gallery, filed under the goal. Nobody thinks
+ * in goals when they are looking back. They think in days: what did I do on
+ * the Tuesday I remember being hard.
  *
  * Portalled to the body for the reason every overlay in this app is: the page
  * wrapper keeps an animated transform forever, which makes it the containing
  * block for anything positioned fixed inside it. See components/ui.jsx.
  */
+
+/**
+ * Long enough to read as one movement, short enough not to be waited on.
+ *
+ * Matched by the transition on the panel below. Kept here rather than in the
+ * stylesheet because the exit has to be timed in JavaScript: the component
+ * cannot unmount until the morph back into the tile has finished, and a
+ * duration that lived in two places would eventually disagree.
+ */
+const MORPH_MS = 380
+const CURVE = 'cubic-bezier(0.32, 0.72, 0, 1)'
 
 const OUTCOME_TONE = {
   done: 'chip-green',
@@ -52,6 +76,22 @@ const CloseIcon = () => (
   </svg>
 )
 
+const LockIcon = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4 shrink-0" {...stroke}>
+    <rect x="4.5" y="10.5" width="15" height="10" rx="2.5" />
+    <path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" />
+  </svg>
+)
+
+/** Movement is a preference, not a given. */
+const stillness = () => {
+  try {
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  } catch {
+    return false
+  }
+}
+
 /** A titled block, or nothing at all when there is nothing to put in it. */
 function Part({ title, children }) {
   if (!children) return null
@@ -65,6 +105,7 @@ function Part({ title, children }) {
 
 export default function DayRecap({
   open,
+  origin = null,
   date,
   isFuture = false,
   mood = null,
@@ -73,14 +114,115 @@ export default function DayRecap({
   entries = [],
   currency = 'CAD',
   hasJournal = false,
+  journal = null,
+  journalLocked = false,
   onClose,
 }) {
   const { t, locale } = useT()
   const tag = localeTag(locale)
 
+  /**
+   * closed, coming in, sitting there, going out.
+   *
+   * A fourth state rather than rendering straight from `open`, because the
+   * component cannot unmount the moment the parent says to: the morph back
+   * into the tile takes 380ms and there is nothing to animate once the panel
+   * is gone. `open` still owns the decision; this owns the timing.
+   */
+  const [phase, setPhase] = useState('closed')
+  const panel = useRef(null)
+  const exiting = useRef(null)
+
+  /* How far the finger has dragged the panel down, and where it started. */
+  const [drag, setDrag] = useState(0)
+  const dragFrom = useRef(null)
+
   useEffect(() => {
-    if (!open) return
-    const onKey = (e) => e.key === 'Escape' && onClose?.()
+    if (open && phase === 'closed') {
+      setDrag(0)
+      setPhase('in')
+      return
+    }
+    if (!open && (phase === 'in' || phase === 'idle')) {
+      setPhase('out')
+      if (exiting.current) window.clearTimeout(exiting.current)
+      exiting.current = window.setTimeout(
+        () => setPhase('closed'),
+        stillness() ? 0 : MORPH_MS,
+      )
+    }
+  }, [open, phase])
+
+  useEffect(() => () => exiting.current && window.clearTimeout(exiting.current), [])
+
+  /**
+   * Invert, then play.
+   *
+   * Measured and applied in a layout effect so the panel is never painted at
+   * full size for even one frame before being put back on the tile, which is
+   * exactly the flash this is meant to avoid. The second half waits for a
+   * frame, because setting a transform and removing it in the same tick is
+   * one style computation and animates nothing.
+   */
+  useLayoutEffect(() => {
+    const el = panel.current
+    if (phase !== 'in' || !el) return
+
+    const to = rectOf(el)
+    const from = origin
+    const still = stillness()
+
+    if (!still && from) {
+      el.style.transition = 'none'
+      el.style.transform = flipTransform(from, to)
+      el.style.opacity = '0.4'
+      /* Read back, so the browser commits the frame above before the frame
+         below replaces it. Without it the two are coalesced and there is no
+         movement at all, which is the classic way a FLIP silently does
+         nothing. */
+      void el.offsetWidth
+    }
+
+    const id = window.requestAnimationFrame(() => {
+      if (!panel.current) return
+      panel.current.style.transition = still
+        ? 'opacity 140ms linear'
+        : `transform ${MORPH_MS}ms ${CURVE}, opacity ${Math.round(MORPH_MS * 0.55)}ms linear`
+      panel.current.style.transform = 'none'
+      panel.current.style.opacity = '1'
+      setPhase('idle')
+    })
+
+    return () => window.cancelAnimationFrame(id)
+  }, [phase, origin])
+
+  /** And back into the tile it came from. */
+  useLayoutEffect(() => {
+    const el = panel.current
+    if (phase !== 'out' || !el) return
+
+    const still = stillness()
+    if (still) {
+      el.style.transition = 'opacity 120ms linear'
+      el.style.opacity = '0'
+      return
+    }
+
+    el.style.transition = `transform ${MORPH_MS}ms ${CURVE}, opacity ${MORPH_MS}ms linear`
+    /* Dragged away rather than dismissed: it leaves the way the finger was
+       already taking it. Morphing back up into a tile from under a thumb that
+       is pushing it down is the animation arguing with the gesture. */
+    el.style.transform = dragFrom.current?.dismissed
+      ? `translateY(${Math.max(drag, 40)}px) translateY(100%)`
+      : flipTransform(origin, rectOf(el))
+    el.style.opacity = '0'
+  }, [phase, origin, drag])
+
+  const close = useCallback(() => onClose?.(), [onClose])
+
+  useEffect(() => {
+    if (phase === 'closed') return
+    const onKey = (e) => e.key === 'Escape' && close()
     const previous = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     window.addEventListener('keydown', onKey)
@@ -88,9 +230,9 @@ export default function DayRecap({
       document.body.style.overflow = previous
       window.removeEventListener('keydown', onKey)
     }
-  }, [open, onClose])
+  }, [phase, close])
 
-  if (!open || !date) return null
+  if (phase === 'closed' || !date) return null
 
   const fmt = (cents) => money(cents, currency, locale)
 
@@ -109,25 +251,112 @@ export default function DayRecap({
 
   const empty = !mood && goals.length === 0 && entries.length === 0 && !hasJournal
 
+  /* --- swipe down to dismiss ------------------------------------------- */
+  /**
+   * WHY THE POINTER IS NOT CAPTURED HERE UNTIL THE DRAG IS REAL.
+   *
+   * The close button lives inside the drag handle, because the whole header
+   * is the handle and a four-pixel grabber is a target most thumbs miss.
+   * Capturing on pointerdown retargets the following mouse events to the
+   * element that captured, so both ends of the press land on the header and
+   * the browser issues the click there instead of on the button inside it.
+   * The close button stopped closing anything, and nothing anywhere threw.
+   *
+   * So capture waits until the finger has actually travelled. A tap on the
+   * button never reaches that threshold and behaves like an ordinary button;
+   * a drag captures on its first few pixels and keeps receiving events even
+   * after the finger leaves the header.
+   */
+  const CAPTURE_AFTER = 4
+
+  const onGrabDown = (e) => {
+    if (e.button != null && e.button !== 0) return
+    dragFrom.current = { y: e.clientY, at: Date.now(), dismissed: false, held: false }
+  }
+
+  const onGrabMove = (e) => {
+    const from = dragFrom.current
+    if (!from) return
+
+    const dy = dragOffset(from.y, e.clientY)
+
+    if (!from.held && Math.abs(e.clientY - from.y) > CAPTURE_AFTER) {
+      from.held = true
+      try {
+        e.currentTarget.setPointerCapture?.(e.pointerId)
+      } catch {
+        /* Uncapturable pointer. pointerup on the header still ends the drag. */
+      }
+      if (panel.current) panel.current.style.transition = 'none'
+    }
+
+    if (from.held) setDrag(dy)
+  }
+
+  const onGrabUp = (e) => {
+    const from = dragFrom.current
+    if (!from) return
+
+    /* Never moved: that was a tap on the header, not a drag. Whatever was
+       under it, a button or nothing, gets to be a tap. */
+    if (!from.held) {
+      dragFrom.current = null
+      return
+    }
+
+    const dy = dragOffset(from.y, e.clientY)
+    if (shouldDismiss(dy, Date.now() - from.at)) {
+      dragFrom.current = { ...from, dismissed: true }
+      setDrag(dy)
+      close()
+      return
+    }
+
+    dragFrom.current = null
+    if (panel.current) {
+      panel.current.style.transition = `transform ${MORPH_MS}ms ${CURVE}`
+    }
+    setDrag(0)
+  }
+
+  /* The drag rides on top of whatever the morph is doing, so it is only
+     written while the panel is sitting still. During the two morphs the
+     transform belongs to the effects above. */
+  const panelStyle = phase === 'idle' && drag !== 0 ? { transform: `translateY(${drag}px)` } : undefined
+
   return createPortal(
     <div
-      className="animate-scrim fixed inset-0 z-50 flex flex-col justify-end bg-ink/40 backdrop-blur-[2px]"
-      onClick={onClose}
+      className="fixed inset-0 z-50 flex flex-col justify-end bg-ink/40 backdrop-blur-[2px] transition-opacity duration-300 ease-settle"
+      style={{ opacity: phase === 'in' || phase === 'out' ? 0 : 1 }}
+      onClick={close}
       role="presentation"
     >
       <div
+        ref={panel}
         role="dialog"
         aria-modal="true"
         aria-label={t('recap.title')}
         onClick={(e) => e.stopPropagation()}
-        className="animate-sheet flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-3xl bg-surface"
+        style={panelStyle}
+        /* origin at the top left, because that is the corner FLIP measures
+           from. Any other origin and the two rectangles do not line up. */
+        className="flex max-h-[92dvh] w-full origin-top-left flex-col overflow-hidden rounded-t-3xl bg-surface will-change-transform"
       >
-        <div className="shrink-0 px-5 pt-3">
+        {/* The whole header is the drag handle, not only the four-pixel bar.
+            A grabber that small is a target most thumbs miss, and everything
+            in this strip is either the handle or the close button anyway. */}
+        <div
+          className="shrink-0 cursor-grab touch-none select-none px-5 pt-3 active:cursor-grabbing"
+          onPointerDown={onGrabDown}
+          onPointerMove={onGrabMove}
+          onPointerUp={onGrabUp}
+          onPointerCancel={onGrabUp}
+        >
           <div className="mx-auto h-1 w-10 rounded-pill bg-ink/15" aria-hidden="true" />
           <div className="mx-auto mt-3 flex w-full max-w-content items-start gap-3 pb-4">
             <button
               type="button"
-              onClick={onClose}
+              onClick={close}
               aria-label={t('ui.close')}
               className="press -ml-2 mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-pill text-muted transition-colors hover:bg-ink/[0.05] hover:text-ink"
             >
@@ -144,7 +373,17 @@ export default function DayRecap({
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-[calc(env(safe-area-inset-bottom,0px)+2rem)]">
+        {/* The contents arrive a beat after the box does. Fading them in over
+            a shape that is still growing is what makes the morph land as one
+            object arriving rather than as two things happening at once. */}
+        <div
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-[calc(env(safe-area-inset-bottom,0px)+2rem)] transition-opacity"
+          style={{
+            opacity: phase === 'idle' ? 1 : 0,
+            transitionDuration: `${Math.round(MORPH_MS * 0.6)}ms`,
+            transitionDelay: phase === 'idle' ? `${Math.round(MORPH_MS * 0.35)}ms` : '0ms',
+          }}
+        >
           <div className="mx-auto w-full max-w-content">
             {empty ? (
               <p className="py-6 text-body text-muted">
@@ -161,6 +400,12 @@ export default function DayRecap({
                       <MoodBadge id={mood} size={28} />
                       {t(`mood.${mood}`)}
                     </p>
+                  ) : null}
+                </Part>
+
+                <Part title={t('recap.journal')}>
+                  {hasJournal ? (
+                    <JournalPart entry={journal} locked={journalLocked} t={t} onLeave={close} />
                   ) : null}
                 </Part>
 
@@ -194,14 +439,11 @@ export default function DayRecap({
                               )}
                             </div>
 
-                            {/* The evidence, which is the whole reason this
-                                sheet exists. Only for a day that was actually
+                            {/* The evidence. Only for a day that was actually
                                 recorded: "no proof attached" under a goal
                                 nobody has checked in on yet is a complaint
                                 about something that was never due. */}
-                            {item && (
-                              <Proof item={item} t={t} />
-                            )}
+                            {item && <Proof item={item} t={t} />}
                           </li>
                         )
                       })}
@@ -261,21 +503,6 @@ export default function DayRecap({
                     </>
                   ) : null}
                 </Part>
-
-                {/* Said, never shown. The journal is behind a passcode by
-                    design, and a recap that printed the entry would be a way
-                    around the lock reached by tapping a date. That there IS
-                    one is not private; what is in it is. */}
-                <Part title={t('recap.journal')}>
-                  {hasJournal ? (
-                    <div className="lg flex flex-wrap items-center justify-between gap-3 px-5 py-4">
-                      <span className="text-body text-ink">{t('recap.journal_has')}</span>
-                      <Link to="/journal" className="goal-action press" onClick={onClose}>
-                        {t('recap.journal_open')}
-                      </Link>
-                    </div>
-                  ) : null}
-                </Part>
               </>
             )}
           </div>
@@ -283,6 +510,79 @@ export default function DayRecap({
       </div>
     </div>,
     document.body,
+  )
+}
+
+/**
+ * What was written that day, if the journal is open.
+ *
+ * THIS IS THE ONE PLACE IN THE APP WHERE A LOCK COULD BE WALKED AROUND.
+ *
+ * The journal is behind a passcode by design and this screen is reached by
+ * holding a square on the dashboard. If the entry rendered here regardless,
+ * the four digits would protect one route into the same text and not the
+ * other, which is not a lock, it is a speed bump.
+ *
+ * So the rule is the same one the journal itself uses, and it is decided by
+ * the caller before a single character is fetched: no passcode set, or the
+ * passcode already given this session, and the entry is here. Otherwise the
+ * day says an entry exists and offers the way to it, which asks for the code.
+ * That an entry exists was already public on this screen, it is the dot under
+ * the date.
+ *
+ * The body is clamped rather than shown whole. This is a recap of a day, not
+ * the reader, and three thousand words of somebody's diary inside a card
+ * between "the mood" and "the money" is the wrong shape for both.
+ */
+function JournalPart({ entry, locked, t, onLeave }) {
+  const body = String(entry?.body ?? '').trim()
+  const ink = entry?.kind === 'ink' && entry?.ink ? entry.ink : null
+
+  /* Nothing to draw is not the same as nothing to say. An entry with neither
+     a body nor strokes should be impossible, the not-empty constraint in
+     migration 27 refuses one, but a row that arrives thinner than expected
+     would otherwise render as a card containing only a link, which reads as a
+     rendering fault. It falls back to the sentence, which is still true. */
+  if (locked || !entry || (!body && !ink)) {
+    return (
+      <div className="lg flex flex-wrap items-center justify-between gap-3 px-5 py-4">
+        <span className="flex min-w-0 items-center gap-2 text-body text-ink">
+          {locked && <LockIcon />}
+          {locked ? t('recap.journal_locked') : t('recap.journal_has')}
+        </span>
+        <Link to="/journal" className="goal-action press shrink-0" onClick={onLeave}>
+          {locked ? t('recap.journal_unlock') : t('recap.journal_open')}
+        </Link>
+      </div>
+    )
+  }
+
+  return (
+    <div className="lg overflow-hidden">
+      {ink ? (
+        /* The handwriting itself, cropped to what was written. An SVG from the
+           stored strokes, which is the whole reason they are stored as numbers
+           rather than as an image: this is sharp here and sharp again on the
+           full page, from the same few kilobytes. */
+        <InkPreview
+          ink={entry.ink}
+          crop
+          className="block max-h-56 w-full bg-white/60 px-5 py-4"
+        />
+      ) : null}
+
+      {body ? (
+        <p className="fade-b max-h-40 overflow-hidden whitespace-pre-wrap px-5 py-4 text-body text-ink">
+          {body}
+        </p>
+      ) : null}
+
+      <div className="flex justify-end border-t border-hairline px-5 py-3">
+        <Link to="/journal" className="goal-action press" onClick={onLeave}>
+          {t('recap.journal_open')}
+        </Link>
+      </div>
+    </div>
   )
 }
 

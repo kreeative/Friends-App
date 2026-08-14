@@ -1424,6 +1424,60 @@
 }
 
 /**
+ * The ring that fills while a date is being held.
+ *
+ * WHY IT SWEEPS RATHER THAN PULSES.
+ *
+ * A pulse says "something is happening". A sweep says "this much longer", and
+ * the whole problem with a gesture that has a delay in it is that the delay is
+ * indistinguishable from a control that does not work. The reader can see the
+ * end of the wait, so they hold on to reach it.
+ *
+ * A conic-gradient mask rather than an SVG circle with a dash offset: it is
+ * one element with no viewBox to keep in step with the size, and it animates
+ * a custom property on the compositor. The mask is what makes it a ring rather
+ * than a filling pie, and it is doubled with the -webkit- prefix because Safari
+ * still wants it there.
+ *
+ * `--sweep` is animated through @property, which is what makes an angle
+ * interpolate at all. Without the registration the browser treats it as a
+ * string and jumps from 0 to 360 in one frame. Progressive: an engine that has
+ * no @property draws a static ring, which still says the press registered.
+ *
+ * The duration is HOLD_MS from src/lib/gesture.js. Two places, said in both
+ * comments, because CSS cannot import it.
+ */
+@property --sweep {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes hold-sweep {
+  from {
+    --sweep: 0deg;
+  }
+  to {
+    --sweep: 360deg;
+  }
+}
+
+.hold-ring {
+  background: conic-gradient(rgb(var(--c-ink) / 0.55) var(--sweep), rgb(var(--c-ink) / 0.12) 0);
+  animation: hold-sweep 550ms linear both;
+  /* A 2px band at the edge. The mask cuts the middle out of the gradient. */
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 2px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 2px));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hold-ring {
+    animation: none;
+    background: rgb(var(--c-ink) / 0.35);
+  }
+}
+
+/**
  * A panel that actually comes up from the bottom edge.
  *
  * `animate-rise` moves six pixels, which is the right amount for a card
