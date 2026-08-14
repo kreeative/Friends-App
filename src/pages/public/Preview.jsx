@@ -5,7 +5,7 @@ import { PREVIEW_BOOKS, localChapterBody } from '../../content/previews'
 import { livePrice, startCheckout } from '../../lib/library'
 import { useT } from '../../lib/i18n'
 import { money } from '../../lib/money'
-import { usePageMeta } from '../../lib/seo'
+import { usePageMeta } from '../../lib/pageMeta'
 
 /**
  * Chapter one, in public.

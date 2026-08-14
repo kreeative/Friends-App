@@ -1,51 +1,169 @@
-import { useEffect } from 'react'
+/**
+ * What each URL should tell a crawler about itself.
+ *
+ * Pure and importless, like budget.js and calendar.js, so `npm test` runs it
+ * under plain node.
+ *
+ * WHY THIS HAD TO EXIST BEFORE THE SITE WAS SUBMITTED ANYWHERE.
+ *
+ * index.html carries `<link rel="canonical" href="https://richandfriends.xyz/">`,
+ * and vercel.json rewrites every path that is not /api to that same file. So
+ * /about, /books and /how-it-works were each served HTML declaring that the
+ * canonical version of the page was the HOME PAGE.
+ *
+ * That is not a missing optimisation, it is an instruction. A canonical tag
+ * pointing somewhere else tells Google "do not index this, index that", and
+ * Google obeys it. Submitting the sitemap in that state would have listed
+ * seven URLs, six of which asked to be dropped, and Search Console would have
+ * reported every one of them back as "Alternate page with proper canonical
+ * tag" — a report that looks like a crawling problem and is actually the site
+ * doing exactly what it was told.
+ *
+ * og:url had the same fault, so every page shared on a phone previewed as the
+ * home page whatever it actually was.
+ *
+ * A single-page app cannot fix this in static HTML: there is one file. It has
+ * to be set per route once React knows the route, which Google's renderer
+ * does process. That is weaker than serving it correctly per URL and it is
+ * what this architecture allows.
+ *
+ * THREE PATHS REACH THE SAME CHAPTER.
+ *
+ * /books/:slug is the real one. /library/:slug is what the signed-in app
+ * links to and /lectures/:slug is the French word people type. All three
+ * render the same words, which without a canonical is three copies of one
+ * page competing with each other. They now all name /books/:slug.
+ */
+
+/** Where the site actually lives. One place, so a move is one line. */
+export const ORIGIN = 'https://richandfriends.xyz'
 
 /**
- * Per-page title and description, for a site that has one HTML file.
+ * Pages behind the sign-in.
  *
- * A single-page app serves the same <head> for every route, so without this
- * every page in a search result carries the home page's title and every link
- * shared in a message previews as the home page. Google runs the JavaScript
- * and reads what it finds afterwards, so setting these on mount is enough for
- * search; it is not enough for the crawlers that do not execute scripts,
- * Facebook's and Slack's among them, which is a real limitation and the
- * reason the important ones are also hard-coded in index.html.
+ * Listed as prefixes rather than exact paths because most of them have
+ * children: /goals/new, /g/<id>, /legal is not one of these but /goals/x/edit
+ * is. They are noindex rather than merely absent from the sitemap, because a
+ * URL can be found without a sitemap — a shared link, a browser's history sync,
+ * a referrer header — and "not advertised" is not "not indexed".
  *
- * Kept deliberately small: no library, no context, no <head> manager. Two tags
- * and an og:title, restored on unmount so a page cannot leak its title into
- * the next one.
+ * The app requires a session anyway, so a crawler that follows one gets the
+ * sign-in screen. What it must not do is file that screen under six different
+ * URLs as six thin duplicate pages.
  */
-function setMeta(selector, attr, value) {
-  const el = document.head.querySelector(selector)
-  if (el) el.setAttribute(attr, value)
-  return el
+export const PRIVATE_PREFIXES = [
+  '/signin',
+  '/start',
+  '/me',
+  '/settings',
+  '/journal',
+  '/money',
+  '/goals',
+  '/checkin',
+  '/proofs',
+  '/g/',
+]
+
+/** Aliases, and the one URL they should all point at. */
+const ALIAS = {
+  '/library': '/books',
+  '/lectures': '/books',
 }
 
-export function usePageMeta({ title, description }) {
-  useEffect(() => {
-    const previousTitle = document.title
-    const descEl = document.head.querySelector('meta[name="description"]')
-    const ogTitleEl = document.head.querySelector('meta[property="og:title"]')
-    const ogDescEl = document.head.querySelector('meta[property="og:description"]')
+/**
+ * TITLES AND DESCRIPTIONS ARE NOT HERE.
+ *
+ * They were, briefly, as a table of English strings. They belong to the pages,
+ * because they come from the page's own content in the reader's own language:
+ * About takes them from the essay it is showing, a chapter from the book, and
+ * the marketing pages from src/content/landing.js, which has a French half.
+ * A table here would be a second copy in one language, drifting from the first
+ * the day anybody edited the copy.
+ *
+ * usePageMeta in src/lib/pageMeta.js is where that lives. This module answers
+ * only what is true of the URL rather than of the words on it.
+ */
 
-    const previousDesc = descEl?.getAttribute('content')
-    const previousOgTitle = ogTitleEl?.getAttribute('content')
-    const previousOgDesc = ogDescEl?.getAttribute('content')
+/**
+ * Strip the noise a URL picks up on its way to a crawler.
+ *
+ * A trailing slash, a utm tag from a shared link, a #section from a table of
+ * contents. All three make the same page look like a different one, and the
+ * canonical exists precisely to say that they are not.
+ *
+ * The root is the one path that keeps its slash: "" is not a URL.
+ */
+export function normalisePath(pathname) {
+  let path = String(pathname ?? '/')
 
-    if (title) {
-      document.title = title
-      setMeta('meta[property="og:title"]', 'content', title)
-    }
-    if (description) {
-      setMeta('meta[name="description"]', 'content', description)
-      setMeta('meta[property="og:description"]', 'content', description)
-    }
+  const cut = Math.min(
+    ...[path.indexOf('?'), path.indexOf('#')].filter((i) => i >= 0).concat([path.length]),
+  )
+  path = path.slice(0, cut)
 
-    return () => {
-      document.title = previousTitle
-      if (descEl && previousDesc != null) descEl.setAttribute('content', previousDesc)
-      if (ogTitleEl && previousOgTitle != null) ogTitleEl.setAttribute('content', previousOgTitle)
-      if (ogDescEl && previousOgDesc != null) ogDescEl.setAttribute('content', previousOgDesc)
-    }
-  }, [title, description])
+  if (!path.startsWith('/')) path = `/${path}`
+  path = path.replace(/\/{2,}/g, '/')
+  if (path.length > 1) path = path.replace(/\/+$/, '')
+
+  return path || '/'
+}
+
+/** Is this one of the signed-in screens? */
+export function isPrivate(pathname) {
+  const path = normalisePath(pathname)
+  return PRIVATE_PREFIXES.some((p) =>
+    p.endsWith('/') ? path.startsWith(p) : path === p || path.startsWith(`${p}/`),
+  )
+}
+
+/**
+ * The one URL that should represent this page.
+ *
+ * Aliases fold onto /books, both bare and with a slug. Everything else is
+ * itself, normalised.
+ */
+export function canonicalPath(pathname) {
+  const path = normalisePath(pathname)
+
+  for (const [alias, real] of Object.entries(ALIAS)) {
+    if (path === alias) return real
+    if (path.startsWith(`${alias}/`)) return `${real}${path.slice(alias.length)}`
+  }
+
+  return path
+}
+
+/** The two facts about this URL that the head has to carry. */
+export function seoFor(pathname) {
+  const path = canonicalPath(pathname)
+
+  return {
+    path,
+    canonical: `${ORIGIN}${path}`,
+    noindex: isPrivate(path),
+  }
+}
+
+/**
+ * Every URL worth putting in a sitemap.
+ *
+ * Built here rather than typed into the XML by hand, so the file and the
+ * router cannot drift: the last sitemap listed seven URLs and missed the
+ * legal pages entirely, which are public, linked from every footer, and the
+ * only pages on the site anybody is ever required to read.
+ *
+ * @param slugs the chapter slugs, passed in because they live in
+ *              src/content/previews.js and this module has no imports.
+ */
+export function sitemapPaths(slugs = []) {
+  return [
+    '/',
+    '/how-it-works',
+    '/about',
+    '/books',
+    ...slugs.map((s) => `/books/${s}`),
+    '/legal/terms',
+    '/legal/privacy',
+    '/legal/notice',
+  ]
 }

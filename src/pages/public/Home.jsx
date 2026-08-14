@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { LANDING } from '../../content/landing'
 import { useT } from '../../lib/i18n'
+import { usePageMeta } from '../../lib/pageMeta'
 import { Mark } from '../../components/Wordmark'
 
 /**
@@ -13,6 +14,11 @@ import { Mark } from '../../components/Wordmark'
 export default function Home() {
   const { locale } = useT()
   const c = LANDING[locale] ?? LANDING.en
+
+  /* The one page whose title is the product's name alone. Everything else on
+     the site is "<page> · Rich & Friends"; the home page being that too would
+     put the name in twice for no reader's benefit. */
+  usePageMeta({ title: 'Rich & Friends', description: c.hero.body })
 
   return (
     <>

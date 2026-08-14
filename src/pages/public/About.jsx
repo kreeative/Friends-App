@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { ABOUT } from '../../content/about'
 import { LANDING } from '../../content/landing'
 import { useT } from '../../lib/i18n'
-import { usePageMeta } from '../../lib/seo'
+import { usePageMeta } from '../../lib/pageMeta'
 import { Mark } from '../../components/Wordmark'
 
 /**
