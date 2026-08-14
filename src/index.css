@@ -934,17 +934,21 @@
   }
 
   /**
-   * Ruled paper, drawn in CSS rather than baked into the strokes.
+   * Paper.
    *
-   * The line height is set from --rule so the text editor and the handwriting
-   * canvas can share one ruling and actually line up with each other.
+   * This was ruled, on the reasoning that an unlined white box invites a
+   * drawing and a ruled one invites writing. True of an empty page and wrong
+   * once anything is on it: the lines compete with the handwriting they were meant to
+   * guide, they cannot line up with typed text and ink at the same time, and on
+   * a page carrying both they read as a third thing nobody put there.
+   *
+   * A warm off-white instead, constant across both themes for the same reason
+   * the ink colours are: what somebody wrote is theirs, and having the page go
+   * from cream to pale blue because they switched to sea would be the app
+   * redecorating their notebook.
    */
-  .ruled {
-    background-image: repeating-linear-gradient(
-      to bottom,
-      transparent 0 calc(var(--rule) - 1px),
-      rgb(var(--c-ink) / 0.08) calc(var(--rule) - 1px) var(--rule)
-    );
+  .paper {
+    background-color: #faf8f5;
   }
 
   /**

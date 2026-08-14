@@ -60,6 +60,7 @@ export default function JournalEditor({ open, entry, seedText, onClose, onSaved 
   const [color, setColor] = useState(INK_COLORS[0])
   const [erasing, setErasing] = useState(false)
   const historyRef = useRef(null)
+  const textRef = useRef(null)
   const [, forceHistory] = useState(0)
 
   useEffect(() => {
@@ -160,19 +161,30 @@ export default function JournalEditor({ open, entry, seedText, onClose, onSaved 
    */
   return createPortal(
     <div className="ink-surface fixed inset-0 z-50 flex flex-col bg-bg">
-      {/* ---- header ---------------------------------------------------- */}
-      <header className="flex shrink-0 items-center gap-2 border-b border-hairline bg-surface px-3 py-2.5">
+      {/**
+       * ---- header: one row -------------------------------------------
+       *
+       * It was two: a bar with Close / date / mood / Done, then a second bar
+       * carrying the two mode pills. On a phone that is about a hundred pixels
+       * of chrome above a page whose entire job is to be as big as possible,
+       * for four controls and a choice. One row, and the mode moves down onto
+       * the paper itself where the writing is.
+       */}
+      <header
+        className="flex shrink-0 items-center gap-2 bg-surface px-3 py-2.5"
+        style={{ paddingTop: 'max(0.625rem, env(safe-area-inset-top))' }}
+      >
         <button
           type="button"
           onClick={tryClose}
-          className="press rounded-pill px-3 py-2 text-small font-semibold text-muted transition-colors hover:text-ink"
+          className="press rounded-full px-3 py-2 text-small font-semibold text-muted transition-colors hover:text-ink"
         >
           {t('ui.close')}
         </button>
 
         <div className="flex min-w-0 flex-1 items-center justify-center gap-1.5">
           {/* Date and mood, one tap each, no gate in front of the page. */}
-          <label className="press relative inline-flex shrink-0 items-center whitespace-nowrap rounded-pill bg-ink/[0.06] px-3 py-1.5 text-small font-semibold text-ink">
+          <label className="press relative inline-flex shrink-0 items-center whitespace-nowrap rounded-full bg-ink/[0.06] px-3 py-1.5 text-small font-semibold text-ink">
             {dayLabel}
             <input
               type="date"
@@ -187,7 +199,7 @@ export default function JournalEditor({ open, entry, seedText, onClose, onSaved 
           <button
             type="button"
             onClick={() => setSheet('mood')}
-            className="press inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-pill bg-ink/[0.06] px-3 py-1.5 text-small font-semibold text-ink"
+            className="press inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-ink/[0.06] px-3 py-1.5 text-small font-semibold text-ink"
           >
             {mood ? <MoodBadge id={mood} size={18} /> : <span>{t('journal.mood_add')}</span>}
           </button>
@@ -197,70 +209,129 @@ export default function JournalEditor({ open, entry, seedText, onClose, onSaved 
           type="button"
           onClick={save}
           disabled={!canSave || busy}
-          className="press rounded-pill bg-accent px-4 py-2 text-small font-semibold text-on-accent transition-opacity hover:opacity-90 disabled:opacity-40"
+          className="press rounded-full bg-accent px-4 py-2 text-small font-semibold text-on-accent transition-opacity hover:opacity-90 disabled:opacity-40"
         >
           {busy ? '…' : t('journal.done')}
         </button>
       </header>
 
-      {/* ---- mode ------------------------------------------------------- */}
-      <div
-        role="tablist"
-        aria-label={t('journal.mode')}
-        className="flex shrink-0 items-center gap-2 border-b border-hairline bg-surface px-3 pb-2.5"
-      >
-        {[
-          { id: 'text', label: t('journal.mode_text'), filled: body.trim().length > 0 },
-          { id: 'ink', label: t('journal.mode_ink'), filled: hasInk },
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            role="tab"
-            type="button"
-            aria-selected={mode === tab.id}
-            onClick={() => setMode(tab.id)}
-            className={`press flex flex-1 items-center justify-center gap-2 rounded-pill py-2 text-small font-semibold transition-colors ${
-              mode === tab.id ? 'bg-ink text-surface' : 'bg-ink/[0.06] text-ink hover:bg-ink/[0.1]'
-            }`}
-          >
-            {tab.label}
-            {/* A dot on the one holding something, so switching away from a
-                half-drawn page and forgetting it is there cannot happen
-                quietly. */}
-            {tab.filled && (
-              <span
-                aria-hidden="true"
-                className={`h-1.5 w-1.5 rounded-pill ${mode === tab.id ? 'bg-surface' : 'bg-accent'}`}
-              />
-            )}
-          </button>
-        ))}
-      </div>
+      {/**
+       * ---- the page: one surface, both kinds of mark ------------------
+       *
+       * These used to be two mutually exclusive editors, and switching mode
+       * swapped one for the other. The data survived the switch, but from the
+       * outside going to handwriting on a page you had just typed showed a
+       * blank sheet, which is indistinguishable from having lost it. It also
+       * unmounted the canvas, so the undo history was thrown away every time
+       * somebody looked at their own text.
+       *
+       * Now the text sits on the paper and the canvas lies on top of it,
+       * transparent, always mounted. The mode decides which of the two takes
+       * the pointer, not which one exists. Writing over your own typing is the
+       * thing a paper notebook does and the reason people ask for both.
+       */}
+      <div className="paper relative min-h-0 flex-1">
+        <textarea
+          ref={textRef}
+          readOnly={mode === 'ink'}
+          /* pt-16 is the row of floating controls above it. Without it the
+             first line of a typed entry sits under the mode switch. */
+          className="absolute inset-0 h-full w-full resize-none border-0 bg-transparent px-5 pb-4 pt-16 text-body leading-relaxed text-ink outline-none placeholder:text-muted"
+          value={body}
+          placeholder={mode === 'text' ? t('journal.text_ph') : ''}
+          onChange={touch((e) => setBody(e.target.value))}
+          /* Out of the way entirely while drawing: a read-only textarea still
+             takes focus and still shows a caret, and on a tablet that means
+             the keyboard opens under a stylus. */
+          style={{ pointerEvents: mode === 'ink' ? 'none' : 'auto' }}
+        />
 
-      {/* ---- the page --------------------------------------------------- */}
-      <div className="relative min-h-0 flex-1">
-        {mode === 'text' ? (
-          <textarea
-            className="ruled h-full w-full resize-none border-0 bg-white px-5 py-3 text-body text-ink outline-none placeholder:text-muted"
-            style={{ '--rule': '2.25rem', lineHeight: '2.25rem' }}
-            value={body}
-            placeholder={t('journal.text_ph')}
-            onChange={touch((e) => setBody(e.target.value))}
-            autoFocus={!entry}
-          />
-        ) : (
+        <div
+          className="absolute inset-0"
+          style={{ pointerEvents: mode === 'ink' ? 'auto' : 'none' }}
+        >
           <InkCanvas
             value={ink}
             onChange={touch(setInk)}
             tool={tool}
             color={color}
             erasing={erasing}
+            disabled={mode !== 'ink'}
             historyRef={historyRef}
           />
+        </div>
+
+        {/**
+         * The mode, on the paper rather than in a bar of its own.
+         *
+         * Top left, and that is not the first place it was put. Bottom left
+         * looked right in the abstract and collided with the tool palette the
+         * moment it was rendered: the palette defaults to bottom centre and is
+         * 366px wide, which on a 390px phone is the whole width. The bottom
+         * belongs to the palette, so everything else lives at the top and the
+         * text starts below it.
+         *
+         * A dot marks the one holding something, so switching away from a
+         * half-drawn page and forgetting it is there cannot happen quietly.
+         */}
+        <div
+          role="tablist"
+          aria-label={t('journal.mode')}
+          className="lg absolute left-3 top-3 z-10 flex items-center gap-0.5 rounded-full p-1 shadow-float"
+        >
+          {[
+            { id: 'text', label: t('journal.mode_text'), filled: body.trim().length > 0 },
+            { id: 'ink', label: t('journal.mode_ink'), filled: hasInk },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              role="tab"
+              type="button"
+              aria-selected={mode === tab.id}
+              onClick={() => setMode(tab.id)}
+              className={`press flex items-center gap-1.5 rounded-full px-3 py-1.5 text-label font-semibold transition-colors ${
+                mode === tab.id ? 'bg-ink text-surface' : 'text-ink hover:bg-ink/[0.08]'
+              }`}
+            >
+              {tab.label}
+              {tab.filled && (
+                <span
+                  aria-hidden="true"
+                  className={`h-1.5 w-1.5 rounded-full ${mode === tab.id ? 'bg-surface' : 'bg-accent'}`}
+                />
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/**
+         * Delete, as quietly as a destructive action can be put on a screen.
+         *
+         * It had a bar of its own across the bottom of the editor, which gave
+         * the one irreversible control on the page more room than the mode
+         * switch. A ghost icon in the header's own row would crowd Done, so it
+         * sits bottom right, over the paper, at the weight of a hint. Still two
+         * presses: the second one names what it does.
+         */}
+        {entry?.id && !sheet && (
+        <button
+          type="button"
+          onClick={remove}
+          disabled={busy}
+          aria-label={t('journal.delete')}
+          className={`press absolute right-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-label font-semibold transition-colors ${
+            confirmDelete
+              ? 'bg-negative text-white shadow-float'
+              : 'text-muted hover:bg-ink/[0.06] hover:text-negative'
+          }`}
+        >
+          <TrashGlyph />
+          {confirmDelete && <span>{t('journal.delete_sure')}</span>}
+        </button>
         )}
 
         {error && (
-          <p className="absolute inset-x-4 bottom-4 rounded-inner bg-negative px-4 py-2 text-small text-white">
+          <p className="absolute inset-x-4 top-16 z-20 rounded-inner bg-negative px-4 py-2 text-small text-white">
             {error}
           </p>
         )}
@@ -348,22 +419,6 @@ export default function JournalEditor({ open, entry, seedText, onClose, onSaved 
         </Overlay>
       )}
 
-      {/* Delete lives at the bottom of an existing entry, out of the way of
-          everything somebody opened this screen to do. */}
-      {entry?.id && !sheet && (
-        <div className="shrink-0 border-t border-hairline bg-surface px-3 py-2 text-center">
-          <button
-            type="button"
-            onClick={remove}
-            disabled={busy}
-            className={`press rounded-pill px-4 py-1.5 text-small font-semibold transition-colors ${
-              confirmDelete ? 'bg-negative text-white' : 'text-muted hover:text-negative'
-            }`}
-          >
-            {confirmDelete ? t('journal.delete_sure') : t('journal.delete')}
-          </button>
-        </div>
-      )}
     </div>,
     document.body,
   )
@@ -390,5 +445,19 @@ function Overlay({ children, onClose }) {
         {children}
       </div>
     </div>
+  )
+}
+
+function TrashGlyph() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+      <path
+        d="M3 5h12M7.5 5V3.5h3V5M4.5 5l.8 9.5h7.4L13.5 5"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   )
 }
