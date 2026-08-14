@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useT } from '../lib/i18n'
+import { BRAND, useTheme } from '../lib/theme'
 import { SLIDES, soloKeyFor } from '../lib/onboarding'
 import { isMissingColumn, isNetworkError } from '../lib/dberr'
 import Stickers from '../components/Stickers'
@@ -30,13 +31,23 @@ import Wordmark from '../components/Wordmark'
  * it would put the same form in front of both of them every morning. See
  * supabase/30_solo_mode.sql and landing() in src/lib/onboarding.js.
  *
- * THE BACKGROUND IS THE THEME'S, NOT A COLOUR.
+ * THE POSTER COLOUR, AND WHAT IT COSTS.
  *
- * `bg-bg` already resolves to #FFF5F7 under sun and #F0F9FF under sea, which
- * is the soft pink and the pale blue this screen wanted. Hard-coding either
- * one would give half the audience a background that fights every card,
- * button and sticker on top of it, and would stop following the theme the
- * moment somebody changed it.
+ * The whole screen is the brand tile's own ground: #DE3578 under sun,
+ * #009DB9 under sea, sampled from the artwork rather than guessed. The logo
+ * tile shares that colour exactly, so it dissolves and only the yellow
+ * lettering floats. This is the one screen in the app allowed to be a poster.
+ *
+ * It costs something and the cost is not negotiable: white measures 4.30:1 on
+ * the pink and 3.22:1 on the teal, both under the 4.5 that body copy needs.
+ * A deck with its paragraphs set straight onto the colour would be a deck a
+ * good proportion of people cannot comfortably read, on the first screen they
+ * ever see.
+ *
+ * So the words go on a white card and the colour holds it. Everything left on
+ * the colour is either not text at all (the logo, the stickers, the dots) or
+ * large enough for the 3:1 bar. The screen still reads as pink or teal,
+ * because the card is a panel in the middle of it rather than the page.
  *
  * Scroll-snap rather than a transform and a drag handler, exactly as
  * JournalIntro and BudgetIntro do. The browser owns the physics, the momentum
@@ -52,6 +63,7 @@ export default function Welcome() {
   const { t } = useT()
   const navigate = useNavigate()
   const { user, profile, updateProfile } = useAuth()
+  const { theme } = useTheme()
 
   const trackRef = useRef(null)
   const [i, setI] = useState(0)
@@ -158,8 +170,12 @@ export default function Welcome() {
        * page taking it, and the header and the buttons are always where they
        * were put.
        */
-      className="relative flex h-dvh w-full flex-col overflow-hidden bg-bg"
-      style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}
+      className="relative flex h-dvh w-full flex-col overflow-hidden"
+      style={{
+        backgroundColor: BRAND[theme] ?? BRAND.sun,
+        paddingTop: 'env(safe-area-inset-top)',
+        paddingBottom: 'env(safe-area-inset-bottom)',
+      }}
     >
       <Stickers set="welcome" />
 
@@ -180,7 +196,11 @@ export default function Welcome() {
           <button
             onClick={goSolo}
             disabled={busy}
-            className="press absolute right-6 top-1/2 -translate-y-1/2 text-small text-muted underline underline-offset-4 disabled:opacity-50"
+            /* On the poster colour, so white. It is the same decision as the
+               ghost CTA on the last slide, which is set large enough to pass
+               on its own; this one is a shortcut to it rather than the only
+               way to it, which is why a small label is acceptable here. */
+            className="press absolute right-6 top-1/2 -translate-y-1/2 text-small font-semibold text-white underline underline-offset-4 disabled:opacity-50"
           >
             {t('welcome.skip')}
           </button>
@@ -210,19 +230,49 @@ export default function Welcome() {
                   a short phone starts at the top and scrolls, instead of
                   being centred and clipped at BOTH ends with the heading
                   half off the top. */}
-              <div className="mx-auto my-auto w-full max-w-content">
-                <span className="block h-16 w-16 text-accent">
+              {/**
+               * The card, and why the words are on it rather than on the
+               * colour.
+               *
+               * White on #DE3578 is 4.30:1 and on #009DB9 is 3.22:1. Body
+               * copy needs 4.5. Set straight onto the poster colour this
+               * paragraph would be a paragraph a lot of people squint at, on
+               * the first screen of the app.
+               *
+               * On white it is the same ink as every other screen, 7:1, and
+               * the colour is still the page: the card is a panel in the
+               * middle of it, with the ground showing all round.
+               */}
+              <div className="mx-auto my-auto w-full max-w-content rounded-[1.75rem] bg-surface p-7 shadow-float sm:p-8">
+                <span className="block h-14 w-14 text-accent">
                   <SlideGlyph name={key} />
                 </span>
-                <div className="eyebrow mt-7">
+                <div className="eyebrow mt-6">
                   {t('welcome.step', { n: n + 1, total: SLIDES.length })}
                 </div>
                 <h1 className="mt-3 text-h1 leading-tight text-ink">
                   {t(n === 0 ? 'welcome.hi' : `welcome.${key}_title`)}
                 </h1>
-                <p className="lede mt-5 max-w-[34ch]">
+                <p className="lede mt-4 max-w-[34ch]">
                   {t(n === 0 ? 'welcome.hi_body' : `welcome.${key}_body`)}
                 </p>
+
+                {/**
+                 * "You can start a group later" belongs here, not under the
+                 * buttons where it began.
+                 *
+                 * Two reasons, and they agree. Editorially it is the end of
+                 * this slide's sentence: keep it to yourself, and it is not a
+                 * door closing. And at 14px it is body copy, which on the
+                 * poster colour measures 4.30:1 under sun and 3.22:1 under
+                 * sea, both under the 4.5 it needs. On the card it is the
+                 * same muted grey as every hint in the app, at 4.82:1.
+                 */}
+                {key === 'solo' && (
+                  <p className="mt-4 max-w-[34ch] text-small text-muted">
+                    {t('welcome.solo_note')}
+                  </p>
+                )}
               </div>
             </section>
           ))}
@@ -240,7 +290,7 @@ export default function Welcome() {
                   aria-label={t('welcome.step', { n: n + 1, total: SLIDES.length })}
                   aria-current={n === i}
                   className={`h-2 rounded-pill transition-all duration-300 ease-settle ${
-                    n === i ? 'w-6 bg-accent' : 'w-2 bg-ink/20'
+                    n === i ? 'w-6 bg-white' : 'w-2 bg-white/40'
                   }`}
                 />
               ))}
@@ -257,20 +307,40 @@ export default function Welcome() {
              */}
             {last ? (
               <div className="animate-rise space-y-3">
-                <button className="btn-primary press w-full" onClick={() => navigate('/start')}>
+                {/* White fill, ink label: 17.4:1 on itself, and the fill is
+                    4.30:1 against the pink ground and 3.22:1 against the
+                    teal, both over the 3:1 a control's own edge needs. The
+                    app's accent button cannot be used here, it is the same
+                    pink as the ground. */}
+                <button
+                  className="btn press w-full bg-surface text-ink hover:opacity-90 active:scale-[0.97]"
+                  onClick={() => navigate('/start')}
+                >
                   {t('welcome.cta_group')}
                 </button>
+                {/**
+                 * The second answer, and the one place white type sits
+                 * directly on the colour.
+                 *
+                 * At 1.25rem and 700 it is large text by the standard's own
+                 * definition, so the bar is 3:1 rather than 4.5, which white
+                 * clears on both grounds. Sized up rather than boxed in
+                 * because a filled second button competes with the first, and
+                 * this is deliberately the quieter of the two.
+                 */}
                 <button
-                  className="btn-ghost press w-full"
+                  className="press w-full rounded-pill px-6 py-3 text-[1.25rem] font-bold leading-tight text-white transition-opacity hover:opacity-80 disabled:opacity-50"
                   onClick={goSolo}
                   disabled={busy}
                 >
                   {busy ? t('welcome.saving') : t('welcome.cta_solo')}
                 </button>
-                <p className="pt-1 text-center text-small text-muted">{t('welcome.solo_note')}</p>
               </div>
             ) : (
-              <button className="btn-primary press w-full" onClick={() => go(i + 1)}>
+              <button
+                className="btn press w-full bg-surface text-ink hover:opacity-90 active:scale-[0.97]"
+                onClick={() => go(i + 1)}
+              >
                 {t('welcome.next')}
               </button>
             )}
