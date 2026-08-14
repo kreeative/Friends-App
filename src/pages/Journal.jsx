@@ -183,10 +183,47 @@ export default function Journal() {
     refresh()
   }
 
-  const showIntro = !profile?.has_seen_journal_intro && !missing
+  /**
+   * The deck, and the way back to it.
+   *
+   * It shows itself once, off the profile flag, and it can be asked for again
+   * from the grid. That second half is not decoration: the deck is where the
+   * writing prompts live, and it used to be a banner that sat there until it
+   * was dismissed. Turning it into a screen that plays once would have deleted
+   * the prompts for everybody who had already seen it, and "I do not know what
+   * to write" does not stop being true after the first week.
+   *
+   * `replay` is local rather than another profile column, because asking to
+   * see it again is a thing you do now, not a thing about you.
+   */
+  const [replay, setReplay] = useState(false)
+
+  /**
+   * Closed here, now, whatever the server says.
+   *
+   * Without this the deck stayed on screen after the button was pressed
+   * whenever updateProfile came back with nothing to merge, because the only
+   * thing hiding it was a profile field that had not changed yet. That is a
+   * full-screen takeover sitting over the editor it just opened, and it made
+   * the CTA look broken on exactly the connections where it matters. The flag
+   * is still written; it is simply not what closes the door.
+   */
+  const [closed, setClosed] = useState(false)
+  const showIntro =
+    !missing && (replay || (!closed && profile != null && !profile.has_seen_journal_intro))
 
   async function dismissIntro() {
-    await updateProfile?.({ has_seen_journal_intro: true })
+    setClosed(true)
+    setReplay(false)
+    if (!profile?.has_seen_journal_intro) await updateProfile?.({ has_seen_journal_intro: true })
+  }
+
+  /* Skip and Start both close it for good; the difference is only whether a
+     page opens behind. Somebody who read three slides about journalling and
+     pressed the button should land on paper, not back on an empty grid. */
+  async function startFromIntro(seed) {
+    await dismissIntro()
+    openNew(seed)
   }
 
   // ---- locked ---------------------------------------------------------------
@@ -237,11 +274,19 @@ export default function Journal() {
         </div>
       ) : (
         <>
-          {showIntro && <JournalIntro onDismiss={dismissIntro} onPickPrompt={(p) => openNew(`${p}\n\n`)} />}
+          {showIntro && <JournalIntro onSkip={dismissIntro} onStart={startFromIntro} />}
 
-          <div className="mt-6">
+          <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-3">
             <button onClick={() => openNew()} className="btn-primary press w-full sm:w-auto">
               {t('journal.new_entry')}
+            </button>
+            {/* The way back to the prompts. See `replay` above for why this
+                exists at all rather than the deck simply playing once. */}
+            <button
+              onClick={() => setReplay(true)}
+              className="press text-small text-muted underline-offset-4 hover:text-ink hover:underline"
+            >
+              {t('journal.need_ideas')}
             </button>
           </div>
 
