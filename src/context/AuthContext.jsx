@@ -188,11 +188,20 @@ export function AuthProvider({ children }) {
      * error handling, same return. The provider name is the only difference,
      * so there is no second code path to keep in step.
      *
-     * NEEDS CONFIGURATION BEFORE IT WORKS. Supabase dashboard, Authentication,
-     * Providers, Apple: a Services ID, a Team ID, a Key ID and the .p8 key,
-     * all from an Apple Developer account. Until that is filled in this
-     * returns a provider-not-enabled error, which the sign-in screen shows
-     * rather than swallows.
+     * NOTHING CALLS THIS RIGHT NOW, ON PURPOSE. The button was taken off the
+     * sign-in screen because the provider cannot be configured without a paid
+     * Apple Developer account, and a button that answers every tap with
+     * provider-not-enabled is a worse first screen than one option fewer.
+     *
+     * TO TURN IT BACK ON: Supabase dashboard, Authentication, Providers,
+     * Apple, which wants a Services ID, a Team ID, a Key ID and the .p8 key,
+     * all from an enrolled Apple Developer account. Then put the button back
+     * in SignIn.jsx, where the comment marking its place says the same.
+     *
+     * Kept rather than deleted because guideline 4.8 makes it mandatory the
+     * day this app goes to the App Store: offering Google obliges offering
+     * Apple. This is fifteen working lines against having to rediscover the
+     * shape of it later.
      */
     signInWithApple: async () => {
       const { error } = await supabase.auth.signInWithOAuth({
