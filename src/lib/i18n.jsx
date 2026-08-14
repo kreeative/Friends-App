@@ -667,13 +667,18 @@ const STRINGS = {
     'journal.redo': 'Redo',
     'journal.clear': 'Clear page',
 
-    'journal.intro_eyebrow': 'About this',
-    'journal.intro_dismiss': 'Got it',
-    'journal.intro_slide': 'Slide {n}',
-    'journal.why_title': 'Why write anything down?',
-    'journal.why_clarity': 'It sorts out what you are actually thinking, which is rarely what you thought you were thinking.',
-    'journal.why_reflection': 'It shows you why a goal worked, so the next one can work the same way.',
-    'journal.why_checkin': 'It gives the hard days somewhere to go that is not a group chat.',
+    'journal.pillar_clarity_title': 'Mental clarity',
+    'journal.pillar_clarity_body':
+      'Writing sorts out what you are actually thinking, which is rarely what you thought you were thinking.',
+    'journal.pillar_success_title': 'Why it worked',
+    'journal.pillar_success_body':
+      'When a goal goes well, the reason is worth keeping. Written down, it is something you can do again on purpose.',
+    'journal.pillar_refuge_title': 'Somewhere private',
+    'journal.pillar_refuge_body':
+      'Nobody in your groups can see any of this. It gives the hard days somewhere to go that is not a group chat.',
+    'journal.prompts_body': 'Four openings, if the page is staring back at you. Tap one to start with it.',
+    'journal.intro_start': 'Start a new page',
+    'journal.need_ideas': 'Need an idea?',
     'journal.prompts_title': 'If the page is blank',
     'journal.prompt_gratitude': 'Three things you are grateful for today',
     'journal.prompt_goals': 'How did today’s goals feel?',
@@ -1374,16 +1379,18 @@ const STRINGS = {
     'journal.redo': 'Refaire',
     'journal.clear': 'Tout effacer',
 
-    'journal.intro_eyebrow': 'À propos',
-    'journal.intro_dismiss': 'Compris',
-    'journal.intro_slide': 'Écran {n}',
-    'journal.why_title': 'Pourquoi écrire ?',
-    'journal.why_clarity':
-      'Ça met au clair ce que tu penses vraiment, qui est rarement ce que tu croyais penser.',
-    'journal.why_reflection':
-      'Ça te montre pourquoi un objectif a marché, pour que le suivant marche pareil.',
-    'journal.why_checkin':
-      'Ça donne aux jours difficiles un endroit qui n’est pas une conversation de groupe.',
+    'journal.pillar_clarity_title': 'Clarté mentale',
+    'journal.pillar_clarity_body':
+      'Écrire met au clair ce que tu penses vraiment, qui est rarement ce que tu croyais penser.',
+    'journal.pillar_success_title': 'Analyse des succès',
+    'journal.pillar_success_body':
+      'Quand un objectif marche, la raison mérite d’être gardée. Écrite, c’est quelque chose que tu peux refaire exprès.',
+    'journal.pillar_refuge_title': 'Espace refuge',
+    'journal.pillar_refuge_body':
+      'Personne dans tes groupes ne voit quoi que ce soit ici. Ça donne aux jours difficiles un endroit qui n’est pas une conversation de groupe.',
+    'journal.prompts_body': 'Quatre débuts, si la page te regarde fixement. Touche-en un pour commencer avec.',
+    'journal.intro_start': 'Commencer une nouvelle page',
+    'journal.need_ideas': 'Besoin d’une idée ?',
     'journal.prompts_title': 'Si la page reste blanche',
     'journal.prompt_gratitude': 'Trois choses pour lesquelles tu es reconnaissante aujourd’hui',
     'journal.prompt_goals': 'Comment se sont passés tes objectifs du jour ?',
