@@ -45,6 +45,24 @@ export const THEMES = ['sun', 'sea']
 export const GROUND = { sun: '#FFF5F7', sea: '#F0F9FF' }
 
 /**
+ * The brand tile's own ground, per theme.
+ *
+ * Sampled from the corner pixel of public/brand/wordmark-pink.png and
+ * wordmark-blue.png, so it is the artwork's colour rather than a guess at it.
+ * Used by the welcome deck, which paints the whole screen this colour so the
+ * logo tile dissolves into it and only the yellow lettering floats.
+ *
+ * NOT the app's ground. --c-bg is the near-white the product is read on all
+ * day; this is the poster colour, and it is used on exactly one screen.
+ *
+ * Text cannot sit on it unaided: white measures 4.30:1 on the pink and
+ * 3.22:1 on the teal, both under the 4.5 body copy needs. The deck puts its
+ * words on a white card for that reason and keeps to white only where the
+ * type is large enough for the 3:1 bar.
+ */
+export const BRAND = { sun: '#DE3578', sea: '#009DB9' }
+
+/**
  * Stamp the theme onto the document.
  *
  * Both halves together, because they are one fact about the page and splitting
