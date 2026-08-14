@@ -3,9 +3,9 @@
   "short_name": "Rich & Friends",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#FFFFFF",
-  "theme_color": "#DE3578",
-  "description": "A weekly check-in with a few people who know what you're working on.",
+  "background_color": "#FFF5F7",
+  "theme_color": "#FFF5F7",
+  "description": "A daily check-in with a few people who know what you're working on.",
   "icons": [
     {
       "src": "/icon-192.png?v=2",

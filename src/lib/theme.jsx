@@ -19,6 +19,45 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
  */
 export const THEMES = ['sun', 'sea']
 
+/**
+ * The ground each theme paints, as a literal hex.
+ *
+ * The same two values as --c-bg in index.css, and the duplication is not an
+ * oversight: this one is read by JavaScript to write a `theme-color` meta tag,
+ * and a meta tag cannot hold `rgb(var(--c-bg))`. It wants a colour.
+ *
+ * WHAT theme-color ACTUALLY DOES, AND WHY IT WAS WRONG.
+ *
+ * It colours the browser toolbar on Android and the status bar of an installed
+ * app. It was hard-coded to #FFFFFF in index.html while the manifest declared
+ * #DE3578, which is neither of these and is not a colour the app paints
+ * anywhere. Three values, two of them wrong: an installed app opened with a
+ * white bar above a blush page, and a saturated pink one the moment anything
+ * read the manifest instead.
+ *
+ * The right answer is the top of the page, so the bar and the page are one
+ * surface and the seam disappears. That is --c-bg, and it changes with the
+ * theme, which is why this is set from JavaScript rather than left in the HTML.
+ *
+ * KEEP IN STEP WITH: the inline script in index.html, which does the same
+ * thing before React exists, and the two --c-bg declarations in index.css.
+ */
+export const GROUND = { sun: '#FFF5F7', sea: '#F0F9FF' }
+
+/**
+ * Stamp the theme onto the document.
+ *
+ * Both halves together, because they are one fact about the page and splitting
+ * them is how they came to disagree in the first place.
+ */
+export function applyTheme(theme) {
+  const key = THEMES.includes(theme) ? theme : 'sun'
+  document.documentElement.dataset.theme = key
+
+  const meta = document.head.querySelector('meta[name="theme-color"]')
+  if (meta) meta.setAttribute('content', GROUND[key])
+}
+
 const KEY_THEME = 'rf.theme'
 
 /* localStorage throws outright in a few privacy configurations rather than
@@ -51,8 +90,11 @@ export function ThemeProvider({ children }) {
     return read('rf.accent', ['pink', 'yellow', 'blue'], 'pink') === 'blue' ? 'sea' : 'sun'
   })
 
+  /* The status bar follows the theme too, so switching from sun to sea in
+     Settings changes the bar with the page rather than leaving a pink strip
+     above a blue app until the next reload. */
   useEffect(() => {
-    document.documentElement.dataset.theme = theme
+    applyTheme(theme)
   }, [theme])
 
   const setTheme = useCallback((next) => {
