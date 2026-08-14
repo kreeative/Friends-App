@@ -87,6 +87,83 @@ function Tile({ proof, onOpen }) {
   )
 }
 
+/**
+ * The photograph, framed to its own shape.
+ *
+ * THE DARK BARS, AND WHY `cover` ALONE IS THE WRONG ANSWER.
+ *
+ * This was a fixed 4:3 box with `object-contain`, which meant a photo taken in
+ * portrait, which is most of them, sat in the middle of two large dark bars.
+ * That is the reported bug and it looked terrible.
+ *
+ * The obvious fix is `object-cover`, and on its own it trades one fault for a
+ * worse one: filling a landscape box with a portrait photo throws away the top
+ * and bottom of it. On an ordinary gallery that is a crop. Here the picture IS
+ * the evidence, and cropping a photo of a gym floor or a finished page can
+ * remove the very thing somebody posted it to show.
+ *
+ * So the box takes the photo's shape instead of the photo taking the box's.
+ * The natural ratio is read on load and becomes the frame's aspect-ratio, so a
+ * portrait photo gets a portrait frame and fills it edge to edge with nothing
+ * cropped and no bars anywhere. `cover` then has nothing to cut, and stays as
+ * the belt for the two cases below.
+ *
+ * TWO LIMITS, AND BOTH EARN THEIR PLACE.
+ *
+ * The ratio is clamped, because a panorama or a full-page screenshot would
+ * otherwise produce a frame the shape of a letterbox or a drainpipe. Outside
+ * those bounds `cover` crops, which is the right behaviour for a shape nothing
+ * sensible can be done with.
+ *
+ * And the height is capped in viewport units, because the whole point of the
+ * previous fixed box was that the reactions underneath stay reachable. A tall
+ * portrait photo on a short phone hits the cap, and `cover` crops it there
+ * rather than pushing everything else off the screen.
+ */
+function PhotoFrame({ url }) {
+  /* 4:3 until the image says otherwise. A frame that starts at zero height and
+     jumps once the photo decodes is a page that moves under a thumb. */
+  const [ratio, setRatio] = useState(4 / 3)
+
+  return (
+    <div
+      className="relative w-full shrink-0 overflow-hidden rounded-3xl bg-black/30 shadow-float"
+      /* Capped by the room actually left rather than by a share of the
+         screen. The chrome above and below the picture is a fixed twenty rem
+         (header, the goal pill, the edit button, the reaction row, the safe
+         areas), so subtracting it is what keeps the reactions above the fold
+         on a short phone while letting a tall one show the photograph whole.
+         At 62dvh the same phone photo was uncropped on a 844px screen and
+         pushed the reactions off a 667px one. */
+      style={{ aspectRatio: ratio, maxHeight: 'calc(100dvh - 20rem)' }}
+    >
+      <img
+        src={url}
+        alt=""
+        onLoad={(e) => {
+          const { naturalWidth: w, naturalHeight: h } = e.currentTarget
+          if (!w || !h) return
+          setRatio(Math.min(1.6, Math.max(0.62, w / h)))
+        }}
+        className="h-full w-full object-cover object-center"
+      />
+
+      {/**
+       * The rim, drawn over the photograph rather than around it.
+       *
+       * `ring-inset` on the frame itself is painted under the image, so on a
+       * photo that fills its box the edge was invisible, which is exactly when
+       * a dark photograph needs separating from the dark scrim behind it. An
+       * overlay with pointer-events off sits on top and always shows.
+       */}
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 rounded-3xl ring-1 ring-inset ring-white/20"
+      />
+    </div>
+  )
+}
+
 function LinkGlyph() {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="text-muted">
@@ -196,28 +273,7 @@ function Viewer({ proof, onClose, onReact, onEdit, locale, mine }) {
         </div>
 
         {/* ---- the proof itself ------------------------------------------ */}
-        {kind === 'photo' && (
-          /**
-           * A frame, not a bare image.
-           *
-           * `contain` inside a fixed 4:3 box rather than an image left to its
-           * own dimensions: the whole frame is always visible, nothing is
-           * cropped, and the card underneath keeps the same shape whether
-           * somebody photographed a page in portrait or a gym in landscape.
-           * A layout that changes height per photo makes the reactions jump.
-           *
-           * The white hairline is what separates a dark photograph from the
-           * dark scrim behind it; without it a night shot bleeds into the
-           * background and the card stops existing.
-           */
-          <div className="aspect-[4/3] w-full shrink-0 overflow-hidden rounded-3xl bg-black/30 ring-1 ring-inset ring-white/15 shadow-float">
-            <img
-              src={proof.photo_url}
-              alt=""
-              className="h-full w-full object-contain"
-            />
-          </div>
-        )}
+        {kind === 'photo' && <PhotoFrame url={proof.photo_url} />}
 
         {kind === 'link' && (
           /**
