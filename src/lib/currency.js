@@ -133,6 +133,43 @@ export function currencyName(code, tag) {
 }
 
 /**
+ * The symbol, and which side of the number it belongs on.
+ *
+ * For the one place an amount is being TYPED rather than read. formatCurrency
+ * cannot help there: it returns a finished string, and a finished string is not
+ * something you can put a caret in the middle of. So the field holds the bare
+ * number the person is typing and the symbol sits beside it as its own element.
+ *
+ * The side is not decoration. "$12.50" and "12,50 $" are the same money in the
+ * two halves of this app's audience, and a symbol nailed to the left is wrong
+ * in Montréal in French. Asked of Intl by looking at where the currency part
+ * falls relative to the digits, so it stays right for a currency nobody here
+ * thought about.
+ *
+ * @returns {{symbol: string, before: boolean}}
+ */
+export function currencySymbol(code, tags = []) {
+  const currency = code || FALLBACK
+
+  try {
+    const parts = new Intl.NumberFormat(tags.filter(Boolean), {
+      style: 'currency',
+      currency,
+    }).formatToParts(1)
+
+    const at = parts.findIndex((p) => p.type === 'currency')
+    if (at < 0) return { symbol: currency, before: true }
+
+    return {
+      symbol: parts[at].value,
+      before: !parts.slice(0, at).some((p) => p.type === 'integer'),
+    }
+  } catch {
+    return { symbol: currency, before: true }
+  }
+}
+
+/**
  * The whole point: an amount, written the way the reader's device would.
  *
  * The currency is the person's; the formatting is the browser's, and those are
