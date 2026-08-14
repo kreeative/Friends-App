@@ -375,6 +375,18 @@ const STRINGS = {
     'txn.delete_yes': 'Yes, delete',
     'txn.delete_no': 'Keep it',
 
+    'signin.apple': 'Continue with Apple',
+
+    'danger.title': 'Delete your account',
+    'danger.body': 'Your journal, your budget, your goals and your check-ins are removed. Groups you created are handed to whoever has been in them longest, so nobody else loses their history. This cannot be undone.',
+    'danger.start': 'Delete my account',
+    'danger.confirm_label': 'Type {word} to confirm',
+    'danger.word': 'DELETE',
+    'danger.go': 'Delete for good',
+    'danger.cancel': 'Keep my account',
+    'danger.working': 'Deleting',
+    'danger.failed': 'It could not be deleted. Nothing has been removed.',
+
     'welcome.hi': 'Welcome to Rich & Friends',
     'welcome.hi_body': 'Track your goals, your budget and your thoughts. One place, sixty seconds a day.',
     'welcome.together_title': 'Better with a few people',
@@ -1147,6 +1159,18 @@ const STRINGS = {
     'txn.delete_sure': 'Supprimer ?',
     'txn.delete_yes': 'Oui, supprimer',
     'txn.delete_no': 'Garder',
+
+    'signin.apple': 'Continuer avec Apple',
+
+    'danger.title': 'Supprimer ton compte',
+    'danger.body': 'Ton journal, ton budget, tes objectifs et tes check-ins sont effacés. Les groupes que tu as créés passent à la personne qui y est depuis le plus longtemps, pour que personne d’autre ne perde son historique. C’est irréversible.',
+    'danger.start': 'Supprimer mon compte',
+    'danger.confirm_label': 'Tape {word} pour confirmer',
+    'danger.word': 'SUPPRIMER',
+    'danger.go': 'Supprimer définitivement',
+    'danger.cancel': 'Garder mon compte',
+    'danger.working': 'Suppression',
+    'danger.failed': 'La suppression n’a pas pu se faire. Rien n’a été effacé.',
 
     'welcome.hi': 'Bienvenue sur Rich & Friends',
     'welcome.hi_body': 'Suis tes objectifs, ton budget et tes pensées. Un seul endroit, soixante secondes par jour.',
