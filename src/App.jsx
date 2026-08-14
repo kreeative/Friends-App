@@ -9,6 +9,7 @@ import AppShell from './components/AppShell'
 import SignIn from './pages/SignIn'
 import Start from './pages/Start'
 import Dashboard from './pages/Dashboard'
+import Seo from './components/Seo'
 import Board from './pages/Board'
 import Checkin from './pages/Checkin'
 import Proofs from './pages/Proofs'
@@ -205,6 +206,16 @@ export default function App() {
         <ThemeProvider>
           <AuthProvider>
             <GroupProvider>
+              {/**
+               * Above every route and inside the router, so it sees each one.
+               *
+               * index.html carries a single canonical link and vercel.json
+               * rewrites every path to that one file, so /about and /books
+               * were both served HTML declaring the HOME PAGE as their
+               * canonical. That is not a missing tag, it is an instruction to
+               * Google not to index them. See src/lib/seo.js.
+               */}
+              <Seo />
               {/**
                * The legal routes sit above the auth gate: nobody can be asked
                * to accept terms they are not allowed to read until after

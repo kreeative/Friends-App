@@ -2,10 +2,13 @@ import { Link } from 'react-router-dom'
 import { LANDING } from '../../content/landing'
 import { PREVIEW_BOOKS } from '../../content/previews'
 import { useT } from '../../lib/i18n'
+import { usePageMeta } from '../../lib/pageMeta'
 
 export default function Books() {
   const { locale, t } = useT()
   const c = (LANDING[locale] ?? LANDING.en).library
+
+  usePageMeta({ title: `${c.eyebrow} · Rich & Friends`, description: c.body })
 
   /* The landing copy and the catalogue are two lists written at different
      times, so they are matched by position rather than by title. Three books

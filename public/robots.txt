@@ -1,11 +1,34 @@
-# Everything public is crawlable. The signed-in app is not linked from
-# anywhere a crawler can reach and needs a session regardless, but it is
-# named here so nobody has to guess.
+# Everything public is crawlable. The signed-in app needs a session and is not
+# linked from anywhere a crawler can reach, but it is named here so nobody has
+# to guess, and because a URL can be found without being linked: a shared
+# message, a browser's history sync, a referrer header.
+#
+# Disallow is a request not to FETCH, not a promise not to index. A URL that
+# is disallowed here can still appear in results, titleless, if Google finds
+# it elsewhere. The second half of the job is the noindex tag the app sets on
+# these same routes at runtime. See src/lib/seo.js.
 User-agent: *
 Allow: /
-Disallow: /g/
-Disallow: /checkin
+
+# The signed-in app.
+Disallow: /signin
+Disallow: /start
 Disallow: /me
-Disallow: /library/
+Disallow: /settings
+Disallow: /journal
+Disallow: /money
+Disallow: /goals
+Disallow: /checkin
+Disallow: /proofs
+Disallow: /g/
+
+# Two spellings of one library. /books is the canonical one and the only one
+# in the sitemap; these render the same chapters and now say so in a canonical
+# tag. Kept out of the crawl so the budget goes on the page that counts.
+Disallow: /library
+Disallow: /lectures
+
+# Tracking parameters make one page look like several.
+Disallow: /*?utm_
 
 Sitemap: https://richandfriends.xyz/sitemap.xml

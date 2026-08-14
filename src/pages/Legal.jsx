@@ -1,6 +1,7 @@
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { DOC_ORDER, LAST_UPDATED, LEGAL, APP_NAME } from '../legal/content'
 import { useT } from '../lib/i18n'
+import { usePageMeta } from '../lib/pageMeta'
 import Footer from '../components/Footer'
 
 /**
@@ -13,6 +14,14 @@ export default function Legal() {
 
   const docs = LEGAL[locale] ?? LEGAL.en
   const doc = docs[slug]
+
+  /* Three legal pages that all carried the home page's title, which in a
+     search result is three identical blue links. From the document itself, so
+     it is the reader's language and cannot drift from the words on the page. */
+  usePageMeta({
+    title: doc ? `${doc.title} · ${APP_NAME}` : undefined,
+    description: doc?.intro,
+  })
 
   if (!doc) return <Navigate to="/legal/terms" replace />
 

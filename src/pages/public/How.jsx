@@ -1,11 +1,24 @@
 import { Link } from 'react-router-dom'
 import { LANDING } from '../../content/landing'
 import { useT } from '../../lib/i18n'
+import { usePageMeta } from '../../lib/pageMeta'
 import PreviewCard from '../../components/PreviewCard'
 
 export default function How() {
   const { locale } = useT()
   const c = LANDING[locale] ?? LANDING.en
+
+  /* From the page's own content and the reader's own language, like About
+     does, rather than from a table of English strings kept somewhere else
+     that would drift the first time this copy is edited. */
+  usePageMeta({
+    title: `${c.steps.eyebrow} · Rich & Friends`,
+    /* The three step headings, not just the section title. "Three moving
+       parts, and no fourth." is thirty-four characters, which is a true
+       sentence and a thin search result; naming the three parts is what
+       somebody scanning a results page actually needs. */
+    description: `${c.steps.title} ${c.steps.items.map((i) => i.title).join('. ')}.`,
+  })
 
   return (
     <>
