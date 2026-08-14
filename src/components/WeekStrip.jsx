@@ -6,7 +6,16 @@ import { money } from '../lib/money'
 import { loadBudget } from '../lib/budgetData'
 import { dayKey, weekOf } from '../lib/time'
 import { isDueOn } from '../lib/schedule'
+import { isMissingColumn } from '../lib/dberr'
+import {
+  CURRENT_MONTH,
+  calendarRange,
+  monthGrid,
+  monthsAround,
+  sameMonth,
+} from '../lib/calendar'
 import { MoodBadge } from './MoodBoard'
+import DayRecap from './DayRecap'
 
 /**
  * The week, as seven circles.
@@ -68,6 +77,51 @@ function Chevron({ dir }) {
   )
 }
 
+/**
+ * One date in the month grid.
+ *
+ * The same circle as the week strip, without the weekday letter above it: in a
+ * grid the column already says which day it is, and repeating it forty-two
+ * times is a wall of tiny type over the numbers people are actually reading.
+ *
+ * Days from the neighbouring months are drawn rather than blanked. A grid with
+ * holes at both ends is harder to read than one that shows the tail of last
+ * month greyed out, and those days are real and tappable.
+ */
+function MonthCell({ date, isToday, isSelected, isFuture, outside, marked, label, onSelect }) {
+  const circle = isToday
+    ? 'bg-accent text-on-accent font-semibold'
+    : isSelected
+      ? 'bg-ink text-white font-semibold'
+      : outside
+        ? 'text-muted/40'
+        : isFuture
+          ? 'text-muted/60'
+          : 'text-ink'
+
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      aria-pressed={isSelected}
+      aria-label={label}
+      className="press flex flex-col items-center gap-1 py-1"
+    >
+      <span
+        className={`flex h-9 w-9 items-center justify-center rounded-pill text-small [font-variant-numeric:tabular-nums] transition-colors duration-200 ${circle} ${
+          isSelected && isToday ? 'ring-2 ring-ink/25 ring-offset-2 ring-offset-transparent' : ''
+        }`}
+      >
+        {date.getDate()}
+      </span>
+      <span
+        aria-hidden="true"
+        className={`h-1.5 w-1.5 rounded-pill ${marked ? 'bg-green' : 'bg-transparent'}`}
+      />
+    </button>
+  )
+}
+
 /** One date. The circle is the target; the label and the dot ride with it. */
 function DayBadge({ date, isToday, isSelected, isFuture, marked, label, onSelect }) {
   const circle = isToday
@@ -106,6 +160,74 @@ function DayBadge({ date, isToday, isSelected, isFuture, marked, label, onSelect
   )
 }
 
+/**
+ * A horizontal snap track, and where in it the reader is.
+ *
+ * One slide per page, each exactly the track's width, with mandatory snapping
+ * so a flick always lands on a slide rather than halfway between two. The
+ * browser does the whole gesture: no drag handler, no velocity maths and no
+ * library, which is why it works with a finger, a trackpad, a shift-wheel and
+ * a keyboard without any of them being handled separately.
+ *
+ * Extracted because there are two of these now, weeks and months, and the part
+ * that is easy to get wrong is not the markup. scrollLeft is a number of
+ * pixels and the slide it points at is that number divided by the track's
+ * width, so any change of width relocates the reader: rotating a phone,
+ * opening the keyboard or dragging a desktop window used to move the strip to
+ * a week nobody asked for. `page` is the truth; the pixel offset is derived
+ * from it, and the observer restores it whenever the width moves.
+ *
+ * @param active false while the track is unmounted, so the alignment runs on
+ *               the render it first appears in rather than never.
+ */
+function useSnapTrack(initial, active = true) {
+  const ref = useRef(null)
+  const page = useRef(initial)
+  const [shown, setShown] = useState(initial)
+
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!active || !el) return
+
+    const align = () => el.scrollTo({ left: el.clientWidth * page.current, behavior: 'instant' })
+    align()
+
+    const ro = new ResizeObserver(align)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [active])
+
+  /* Read off the scroll position rather than tracked per slide: the whole
+     point of a snap track is that the browser owns the position. */
+  const onScroll = () => {
+    const el = ref.current
+    if (!el || el.clientWidth === 0) return
+    const i = Math.round(el.scrollLeft / el.clientWidth)
+    if (i === page.current) return
+    page.current = i
+    setShown(i)
+  }
+
+  /**
+   * Jump to a slide.
+   *
+   * `page` is written here rather than left to the scroll handler, because a
+   * track that is not on screen yet fires no scroll event: expanding the card
+   * sets the month before the month track has ever been scrolled, and without
+   * this the arrows would then be disabled against the wrong index.
+   */
+  const goTo = (i, count, behavior = 'instant') => {
+    const next = Math.min(count - 1, Math.max(0, i))
+    page.current = next
+    setShown(next)
+    ref.current?.scrollTo({ left: ref.current.clientWidth * next, behavior })
+  }
+
+  const step = (delta, count) => goTo(page.current + delta, count, 'smooth')
+
+  return { ref, page, shown, onScroll, goTo, step }
+}
+
 export default function WeekStrip({ goals = [], statuses = [] }) {
   const { user, profile } = useAuth()
   const { t, locale } = useT()
@@ -126,69 +248,45 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
     )
   }, [])
 
+  /**
+   * The months, for when the card is opened out.
+   *
+   * A separate track from the weeks rather than one grid clipped to a row.
+   * Clipping is the prettier animation and it makes the two modes disagree
+   * about what a swipe means: collapsed, a flick has always moved a week, and
+   * a single month grid can only page by month. Two tracks keeps the gesture
+   * that already works and adds the one the month view wants.
+   */
+  const months = useMemo(() => monthsAround(new Date()), [])
+
   const week = weeks[CURRENT]
   const todayKey = dayKey()
   const [selected, setSelected] = useState(todayKey)
 
   /**
-   * The track, and where it starts.
+   * Open or shut, and what that costs to fetch.
    *
-   * Scrolled to the current week before the browser paints, so the strip is
-   * never briefly showing six weeks ago. useLayoutEffect rather than useEffect
-   * for exactly that: an effect that ran after paint would show the jump.
-   *
-   * `behavior: 'instant'` because this is not a movement, it is the initial
-   * position. Smooth-scrolling on arrival would animate a journey the reader
-   * did not ask for and did not see the start of.
+   * The strip reads eight weeks. The calendar can page a year back, and doing
+   * that read on every dashboard load would slow the first screen of the app
+   * down for the majority of people who never open the calendar at all. So the
+   * wide read happens the first time somebody expands, and never unhappens:
+   * collapsing again keeps what was already fetched rather than throwing it
+   * away and refetching on the next tap.
    */
-  const track = useRef(null)
+  const [expanded, setExpanded] = useState(false)
+  const [wide, setWide] = useState(false)
+  const [recap, setRecap] = useState(false)
 
   /**
-   * Also re-aligned whenever the track changes width.
+   * The two tracks.
    *
-   * scrollLeft is a number of pixels, and the slide it points at is that
-   * number divided by the track's width. Change the width and the division
-   * lands somewhere else, so rotating a phone, opening the keyboard or
-   * dragging a desktop window moved the strip to a week nobody asked for.
-   * `page` is the truth here; the pixel offset is derived from it.
-   *
-   * The ref is read inside rather than closed over, so the observer survives
-   * every re-render without being torn down and rebuilt.
+   * Both scrolled to the current period before the browser paints, so neither
+   * is ever briefly showing a year ago. useLayoutEffect inside the hook rather
+   * than useEffect for exactly that: an effect that ran after paint would show
+   * the jump.
    */
-  const page = useRef(CURRENT)
-  const [shown, setShown] = useState(CURRENT)
-
-  useLayoutEffect(() => {
-    const el = track.current
-    if (!el) return
-
-    const align = () => el.scrollTo({ left: el.clientWidth * page.current, behavior: 'instant' })
-    align()
-
-    const ro = new ResizeObserver(align)
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [])
-
-  /* Which week is under the reader, for the label above the dates. Read off
-     the scroll position rather than tracked per slide: the whole point of a
-     snap track is that the browser owns the position. The ref is what the
-     resize handler needs; the state is what the label renders from. */
-  const onScroll = () => {
-    const el = track.current
-    if (!el || el.clientWidth === 0) return
-    const i = Math.round(el.scrollLeft / el.clientWidth)
-    if (i === page.current) return
-    page.current = i
-    setShown(i)
-  }
-
-  const step = (delta) => {
-    const el = track.current
-    if (!el) return
-    const next = Math.min(weeks.length - 1, Math.max(0, page.current + delta))
-    el.scrollTo({ left: el.clientWidth * next, behavior: 'smooth' })
-  }
+  const weekTrack = useSnapTrack(CURRENT, !expanded)
+  const monthTrack = useSnapTrack(CURRENT_MONTH, expanded)
 
   /* Outcomes, keyed by the cycle they were filed against rather than by when
      they were typed. A check-in submitted at ten past midnight belongs to the
@@ -196,25 +294,57 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
   const [itemsByCycle, setItemsByCycle] = useState({})
   const [budget, setBudget] = useState(null)
   const [moodByDay, setMoodByDay] = useState({})
+  const [journalDays, setJournalDays] = useState(() => new Set())
+
+  /* Which select shape this database can answer. A ref rather than state: it
+     changes at most once per session and nothing renders from it. */
+  const proofShape = useRef(null)
 
   /* The whole slider, not the visible week. One read covering every slide,
      because a fetch per swipe would mean an empty strip for a moment every
-     time somebody flicked back through a month. */
-  const from = weeks[0][0]
-  const to = weeks[weeks.length - 1][6]
+     time somebody flicked back through a month.
+
+     Which slider depends on whether the calendar has ever been opened. See
+     `wide` above: the dashboard's first load stays at eight weeks. */
+  const span = wide ? calendarRange(months) : { from: weeks[0][0], to: weeks[weeks.length - 1][6] }
+  const from = span.from
+  const to = span.to
 
   useEffect(() => {
     if (!user) return
     let dead = false
 
+    /**
+     * The proof columns, if the database has them.
+     *
+     * link_url and photo_url arrived with migration 28, and a select naming a
+     * column that does not exist is a 400 for the whole query: on a database
+     * that has not run it, asking for the proof would take the entire calendar
+     * down rather than just the proof. So it asks once, and if the answer is
+     * that the column is unknown, asks again for what has always been there.
+     *
+     * The narrow shape is remembered for the rest of the session, so the
+     * fallback costs one extra request and not one per refetch.
+     */
+    const FULL = 'id, cycle_id, checkin_items(goal_id, outcome, count_done, evidence, link_url, photo_url)'
+    const SAFE = 'id, cycle_id, checkin_items(goal_id, outcome, count_done, evidence)'
+
+    const readCheckins = async (shape) =>
+      supabase
+        .from('checkins')
+        .select(shape)
+        .eq('user_id', user.id)
+        .gte('submitted_at', new Date(from.getFullYear(), from.getMonth(), from.getDate()).toISOString())
+        .lt('submitted_at', new Date(to.getFullYear(), to.getMonth(), to.getDate() + 1).toISOString())
+
     const run = async () => {
       try {
-        const { data, error } = await supabase
-          .from('checkins')
-          .select('id, cycle_id, checkin_items(goal_id, outcome, count_done, evidence)')
-          .eq('user_id', user.id)
-          .gte('submitted_at', new Date(from.getFullYear(), from.getMonth(), from.getDate()).toISOString())
-          .lt('submitted_at', new Date(to.getFullYear(), to.getMonth(), to.getDate() + 1).toISOString())
+        let { data, error } = await readCheckins(proofShape.current ?? FULL)
+
+        if (error && isMissingColumn(error)) {
+          proofShape.current = SAFE
+          ;({ data, error } = await readCheckins(SAFE))
+        }
 
         /* Not an early return. This sits above the budget and the mood, and
            `return` here exits the whole of run(), so one failing query was
@@ -250,12 +380,39 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
           .gte('day', dayKey(from))
           .lte('day', dayKey(to))
 
-        if (dead || error) return
-        const byDay = {}
-        for (const row of data ?? []) if (row.mood) byDay[row.day] = row.mood
-        setMoodByDay(byDay)
+        if (!dead && !error) {
+          const byDay = {}
+          for (const row of data ?? []) if (row.mood) byDay[row.day] = row.mood
+          setMoodByDay(byDay)
+        }
       } catch {
         /* Offline. The rest of the panel still draws. */
+      }
+
+      /**
+       * Which days have a journal entry. The days only, never the entries.
+       *
+       * `select('day')` is the whole of it, deliberately. The journal sits
+       * behind a passcode, and a dashboard that had already fetched the bodies
+       * would be holding the private text in memory on a screen anybody
+       * glancing over a shoulder can see, one careless render away from being
+       * on it. That an entry exists is not the secret; what is in it is.
+       *
+       * A missing table is a state, not an error: migration 27 may not have
+       * been run, in which case no day is ever marked and nothing else changes.
+       */
+      try {
+        const { data, error } = await supabase
+          .from('journal_entries')
+          .select('day')
+          .eq('user_id', user.id)
+          .gte('day', dayKey(from))
+          .lte('day', dayKey(to))
+
+        if (dead || error) return
+        setJournalDays(new Set((data ?? []).map((r) => String(r.day).slice(0, 10))))
+      } catch {
+        /* Offline, or no journal table. Nothing else on the card depends on it. */
       }
     }
 
@@ -317,13 +474,61 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
 
   const isFutureDay = selected > todayKey
   const mood = moodByDay[selected] ?? null
-  const nothing = live.length === 0 && entries.length === 0 && !mood
+  const hasJournal = journalDays.has(selected)
+  const nothing = live.length === 0 && entries.length === 0 && !mood && !hasJournal
 
-  const shownWeek = weeks[shown] ?? week
-  const monthLabel = shownWeek[3].toLocaleDateString(localeTag(locale), {
+  /**
+   * Which month the header names, in whichever mode is showing.
+   *
+   * A week's month is taken from its middle day rather than its first: the
+   * week of 29 September to 5 October is mostly October, and labelling it
+   * September because of where it starts is the answer nobody means.
+   */
+  const shownWeek = weeks[weekTrack.shown] ?? week
+  const shownMonth = months[monthTrack.shown] ?? months[CURRENT_MONTH]
+  const labelDate = expanded ? shownMonth : shownWeek[3]
+  const monthLabel = labelDate.toLocaleDateString(localeTag(locale), {
     month: 'long',
-    year: shownWeek[3].getFullYear() === new Date().getFullYear() ? undefined : 'numeric',
+    year: labelDate.getFullYear() === new Date().getFullYear() ? undefined : 'numeric',
   })
+
+  const track = expanded ? monthTrack : weekTrack
+  const slides = expanded ? months.length : weeks.length
+
+  /* Whether a day has anything on it at all, which is what the dot under it
+     means. Presence, not performance: one dot is all a badge that size can
+     honestly carry, and it must not become a score. */
+  const isMarked = (k) =>
+    (cyclesByDay[k] ?? []).some((s) => s.status === 'submitted') ||
+    (entriesByDay[k] ?? []).length > 0 ||
+    Boolean(moodByDay[k]) ||
+    journalDays.has(k)
+
+  const dayLabel = (d) =>
+    d.toLocaleDateString(localeTag(locale), { weekday: 'long', day: 'numeric', month: 'long' })
+
+  /**
+   * Opening out, and folding back, without losing your place.
+   *
+   * Expanding pages the month track to the month the selected day is in, and
+   * collapsing pages the week track to its week. Without this the calendar
+   * opens on today no matter which day you were reading, so tapping a date in
+   * March and then asking to see the month takes you to the current one, which
+   * is the opposite of what the tap meant.
+   */
+  const toggleExpanded = () => {
+    const target = new Date(`${selected}T00:00:00`)
+    if (!expanded) {
+      setWide(true)
+      const i = months.findIndex((m) => sameMonth(m, target))
+      monthTrack.goTo(i < 0 ? CURRENT_MONTH : i, months.length)
+      setExpanded(true)
+      return
+    }
+    const i = weeks.findIndex((w) => w.some((d) => dayKey(d) === selected))
+    weekTrack.goTo(i < 0 ? CURRENT : i, weeks.length)
+    setExpanded(false)
+  }
 
   return (
     <div className="lg overflow-hidden p-4 sm:p-5">
@@ -344,18 +549,18 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
         <div className="flex items-center gap-1">
           <button
             type="button"
-            onClick={() => step(-1)}
-            disabled={shown === 0}
-            aria-label={t('week.previous')}
+            onClick={() => track.step(-1, slides)}
+            disabled={track.shown === 0}
+            aria-label={expanded ? t('week.previous_month') : t('week.previous')}
             className="press flex h-8 w-8 items-center justify-center rounded-pill text-muted transition-colors hover:bg-ink/[0.05] hover:text-ink disabled:opacity-30 disabled:hover:bg-transparent"
           >
             <Chevron dir="left" />
           </button>
           <button
             type="button"
-            onClick={() => step(1)}
-            disabled={shown >= weeks.length - 1}
-            aria-label={t('week.next')}
+            onClick={() => track.step(1, slides)}
+            disabled={track.shown >= slides - 1}
+            aria-label={expanded ? t('week.next_month') : t('week.next')}
             className="press flex h-8 w-8 items-center justify-center rounded-pill text-muted transition-colors hover:bg-ink/[0.05] hover:text-ink disabled:opacity-30 disabled:hover:bg-transparent"
           >
             <Chevron dir="right" />
@@ -377,56 +582,144 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
        * into the browser's back gesture, which on iOS would navigate away from
        * the dashboard entirely.
        */}
-      <div
-        ref={track}
-        onScroll={onScroll}
-        className="flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-      >
-        {weeks.map((w) => (
-          <div
-            key={dayKey(w[0])}
-            className="grid w-full shrink-0 snap-center grid-cols-7 gap-0.5 sm:gap-1"
-          >
-            {w.map((d) => {
-              const k = dayKey(d)
-              const marked =
-                (cyclesByDay[k] ?? []).some((s) => s.status === 'submitted') ||
-                (entriesByDay[k] ?? []).length > 0 ||
-                Boolean(moodByDay[k])
-              return (
-                <DayBadge
-                  key={k}
-                  date={d}
-                  isToday={k === todayKey}
-                  isSelected={k === selected}
-                  isFuture={k > todayKey}
-                  marked={marked}
-                  label={d.toLocaleDateString(localeTag(locale), {
-                    weekday: 'long',
-                    day: 'numeric',
-                    month: 'long',
-                  })}
-                  onSelect={() => setSelected(k)}
-                />
-              )
-            })}
+      {expanded ? (
+        <>
+          {/* The weekday letters, once at the top, rather than above all
+              forty-two cells. In a grid the column is what says which day it
+              is; repeating it in every cell is a wall of small type over the
+              numbers people came to read. */}
+          <div className="grid grid-cols-7 gap-0.5 pb-1 sm:gap-1" aria-hidden="true">
+            {week.map((d) => (
+              <span
+                key={d.getDay()}
+                className="text-center text-label font-semibold uppercase tracking-[0.08em] text-muted"
+              >
+                {d.toLocaleDateString(localeTag(locale), { weekday: 'narrow' })}
+              </span>
+            ))}
           </div>
-        ))}
-      </div>
+
+          <div
+            ref={monthTrack.ref}
+            onScroll={monthTrack.onScroll}
+            className="animate-rise flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
+            {months.map((m) => (
+              <div
+                key={dayKey(m)}
+                className="grid w-full shrink-0 snap-center grid-cols-7 gap-0.5 sm:gap-1"
+              >
+                {monthGrid(m).map((d) => {
+                  const k = dayKey(d)
+                  return (
+                    <MonthCell
+                      key={k}
+                      date={d}
+                      isToday={k === todayKey}
+                      isSelected={k === selected}
+                      isFuture={k > todayKey}
+                      outside={!sameMonth(m, d)}
+                      marked={isMarked(k)}
+                      label={dayLabel(d)}
+                      onSelect={() => setSelected(k)}
+                    />
+                  )
+                })}
+              </div>
+            ))}
+          </div>
+        </>
+      ) : (
+        <div
+          ref={weekTrack.ref}
+          onScroll={weekTrack.onScroll}
+          className="flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          {weeks.map((w) => (
+            <div
+              key={dayKey(w[0])}
+              className="grid w-full shrink-0 snap-center grid-cols-7 gap-0.5 sm:gap-1"
+            >
+              {w.map((d) => {
+                const k = dayKey(d)
+                return (
+                  <DayBadge
+                    key={k}
+                    date={d}
+                    isToday={k === todayKey}
+                    isSelected={k === selected}
+                    isFuture={k > todayKey}
+                    marked={isMarked(k)}
+                    label={dayLabel(d)}
+                    onSelect={() => setSelected(k)}
+                  />
+                )
+              })}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/**
+       * The handle that opens the card out.
+       *
+       * At the bottom edge of the dates rather than beside the month name,
+       * because that is the edge the card grows from and a control that lives
+       * where the movement happens needs no explaining. The grabber is the
+       * same one every sheet in this app puts at its top edge, which is
+       * already the app's word for "this thing can be dragged open".
+       *
+       * It is a button and not a drag. A one-directional drag gesture on a
+       * card that also scrolls horizontally is two gestures competing for the
+       * same pixels, and the loser is whichever one the reader meant.
+       */}
+      <button
+        type="button"
+        onClick={toggleExpanded}
+        aria-expanded={expanded}
+        aria-label={expanded ? t('week.show_week') : t('week.show_month')}
+        className="press group mt-1 flex w-full items-center justify-center gap-1.5 rounded-inner py-2 transition-colors hover:bg-ink/[0.035]"
+      >
+        <span className="h-1 w-8 rounded-pill bg-ink/20 transition-colors group-hover:bg-ink/35" />
+        <span className="text-label font-semibold uppercase tracking-[0.08em] text-muted">
+          {expanded ? t('week.week') : t('week.month')}
+        </span>
+        <span className="h-1 w-8 rounded-pill bg-ink/20 transition-colors group-hover:bg-ink/35" />
+      </button>
 
       {/* Always open, never a disclosure. There is always a selected day, so a
           panel that had to be opened would be a second tap between you and the
           only thing the strip is for. */}
-      <div className="mt-4 border-t border-hairline pt-4">
-        <p className="text-small font-semibold text-ink">
-          {selected === todayKey
-            ? t('week.today')
-            : selectedDate.toLocaleDateString(localeTag(locale), {
-                weekday: 'long',
-                day: 'numeric',
-                month: 'long',
-              })}
-        </p>
+      <div className="mt-2 border-t border-hairline pt-4">
+        <div className="flex items-center justify-between gap-3">
+          <p className="min-w-0 text-small font-semibold text-ink first-letter:uppercase">
+            {selected === todayKey
+              ? t('week.today')
+              : selectedDate.toLocaleDateString(localeTag(locale), {
+                  weekday: 'long',
+                  day: 'numeric',
+                  month: 'long',
+                })}
+          </p>
+
+          {/**
+           * The way to the whole day.
+           *
+           * Offered only when there is something to open. A card that always
+           * shows a button leading to "nothing was recorded on this day" is a
+           * card that teaches people the button is not worth pressing, and
+           * they stop pressing it on the days it would have paid off.
+           */}
+          {!nothing && (
+            <button
+              type="button"
+              onClick={() => setRecap(true)}
+              className="goal-action press shrink-0"
+            >
+              {t('recap.open')}
+            </button>
+          )}
+        </div>
 
         {nothing ? (
           <p className="mt-2 text-small text-muted">{t('week.nothing')}</p>
@@ -528,6 +821,19 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
           </>
         )}
       </div>
+
+      <DayRecap
+        open={recap}
+        date={selectedDate}
+        isFuture={isFutureDay}
+        mood={mood}
+        goals={live}
+        outcomes={outcomes}
+        entries={entries}
+        currency={currency}
+        hasJournal={hasJournal}
+        onClose={() => setRecap(false)}
+      />
     </div>
   )
 }
