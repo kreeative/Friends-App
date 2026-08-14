@@ -173,6 +173,56 @@ export function AuthProvider({ children }) {
       return { error }
     },
     /**
+     * Sign in with Apple, which is not optional once Google is offered.
+     *
+     * Guideline 4.8: an app that offers any third-party sign-in must offer
+     * Apple's alongside it. Not a nicety, a condition of being on the store,
+     * and a rejection that costs a review cycle to discover.
+     *
+     * It is also the better option for a good number of people regardless of
+     * any store, because Hide My Email means signing up without handing over
+     * an address, which for an app holding a private journal is the kind of
+     * thing somebody might reasonably want.
+     *
+     * Identical shape to Google's above, deliberately: same redirect, same
+     * error handling, same return. The provider name is the only difference,
+     * so there is no second code path to keep in step.
+     *
+     * NEEDS CONFIGURATION BEFORE IT WORKS. Supabase dashboard, Authentication,
+     * Providers, Apple: a Services ID, a Team ID, a Key ID and the .p8 key,
+     * all from an Apple Developer account. Until that is filled in this
+     * returns a provider-not-enabled error, which the sign-in screen shows
+     * rather than swallows.
+     */
+    signInWithApple: async () => {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'apple',
+        options: { redirectTo: window.location.origin },
+      })
+      if (error) setAuthError({ code: error.code ?? 'oauth', description: error.message })
+      return { error }
+    },
+    /**
+     * Close the account, for good.
+     *
+     * One RPC. Everything it does is in supabase/31_delete_account.sql: the
+     * groups this person created are handed to somebody else or wound up, the
+     * avatar is removed from storage, and the auth.users row goes, taking
+     * forty-seven cascading tables with it.
+     *
+     * The sign-out afterwards is not tidiness. The session's token is still in
+     * this tab and still looks valid to the client until it expires; without
+     * this the app would sit there holding a session for a user that no longer
+     * exists, and every request would start failing in a way that reads as a
+     * bug rather than as "your account is gone".
+     */
+    deleteAccount: async () => {
+      const { error } = await supabase.rpc('delete_account')
+      if (error) return { error }
+      await supabase.auth.signOut()
+      return { error: null }
+    },
+    /**
      * Sends a six-digit code, not a link.
      *
      * Supabase mints both for every request; which one arrives is decided

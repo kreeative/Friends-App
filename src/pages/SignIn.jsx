@@ -123,13 +123,14 @@ function CodeBoxes({ value, onChange, label, length = OTP_MIN }) {
 }
 
 export default function SignIn() {
-  const { signInWithGoogle, signInWithEmail, verifyEmailCode, authError, clearAuthError } = useAuth()
+  const { signInWithGoogle, signInWithApple, signInWithEmail, verifyEmailCode, authError, clearAuthError } =
+    useAuth()
   const { t } = useT()
   const [email, setEmail] = useState('')
   const [code, setCode] = useState('')
   const [sent, setSent] = useState(false)
   const [showEmail, setShowEmail] = useState(false)
-  const [busy, setBusy] = useState(null) // 'google' | 'email' | 'code' | null
+  const [busy, setBusy] = useState(null) // 'google' | 'apple' | 'email' | 'code' | null
   const [codeError, setCodeError] = useState(false)
   const [cooldown, setCooldown] = useState(0)
 
@@ -154,6 +155,14 @@ export default function SignIn() {
     clearAuthError()
     setBusy('google')
     const { error } = await signInWithGoogle()
+    // On success the browser leaves the page, so only a failure lands here.
+    if (error) setBusy(null)
+  }
+
+  async function apple() {
+    clearAuthError()
+    setBusy('apple')
+    const { error } = await signInWithApple()
     // On success the browser leaves the page, so only a failure lands here.
     if (error) setBusy(null)
   }
@@ -281,6 +290,29 @@ export default function SignIn() {
                 {busy === 'google' ? t('signin.sending') : t('signin.google')}
               </button>
 
+              {/**
+                * Sign in with Apple, and it is not decoration.
+                *
+                * Guideline 4.8: offering any third-party sign-in obliges an
+                * app to offer Apple's beside it. Under the Google button
+                * rather than above it because Google is what this app's
+                * people already use; the rule is about it being there and
+                * equally usable, not about which comes first.
+                *
+                * The mark is drawn rather than an image, so it takes the
+                * button's own colour and stays sharp at every density.
+                */}
+              <button
+                className="btn press mt-3 w-full bg-ink text-white hover:opacity-90 active:scale-[0.97]"
+                onClick={apple}
+                disabled={busy !== null}
+              >
+                <span className="inline-flex items-center justify-center gap-2.5">
+                  <AppleMark />
+                  {busy === 'apple' ? t('signin.sending') : t('signin.apple')}
+                </span>
+              </button>
+
               {showEmail ? (
                 <form onSubmit={sendCode} className="space-y-5 pt-4">
                   <Field label={t('signin.email')}>
@@ -314,5 +346,21 @@ export default function SignIn() {
         </div>
       </main>
     </div>
+  )
+}
+
+/**
+ * Apple's mark, drawn.
+ *
+ * Their guidelines require the logo be shown at the correct proportions and
+ * not redrawn freehand; this is the standard path, scaled with the type and
+ * taking currentColor so it is white on the dark button without a second
+ * asset to ship or a PNG to go soft on a retina screen.
+ */
+function AppleMark() {
+  return (
+    <svg viewBox="0 0 384 512" aria-hidden="true" className="h-[1.05em] w-auto" fill="currentColor">
+      <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z" />
+    </svg>
   )
 }

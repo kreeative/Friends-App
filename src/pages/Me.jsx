@@ -10,6 +10,7 @@ import { CURRENCIES, FALLBACK, currencyName } from '../lib/currency'
 import { DECLINED, PRONOUN_OPTIONS } from '../lib/pronouns'
 import { localeTag, useT } from '../lib/i18n'
 import { offerGroup } from '../lib/onboarding'
+import DeleteAccount from '../components/DeleteAccount'
 import { Avatar, Field, Screen, Section, TopBar } from '../components/ui'
 import MyCompletion from '../components/MyCompletion'
 
@@ -443,6 +444,24 @@ export default function Me() {
             </button>
           </div>
         </div>
+      </Section>
+
+      {/**
+       * Closing the account, last on the page and on its own.
+       *
+       * Below signing out, because it is the same shelf of things and this is
+       * the far end of it, and outside that card rather than a fourteenth row
+       * in it: a row that looks like "Your goals" and destroys everything is a
+       * row somebody taps on the way to something else.
+       *
+       * HERE AND NOT IN /g/:id/settings. That page is the group's settings and
+       * is unreachable to anybody without a group, which since solo mode
+       * includes people who will never have one. An account you can open and
+       * cannot close is not really yours, and Apple's guideline 5.1.1(v) says
+       * the same thing with more words.
+       */}
+      <Section title={t('danger.title')}>
+        <DeleteAccount />
       </Section>
     </Screen>
   )
