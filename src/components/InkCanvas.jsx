@@ -67,7 +67,6 @@ export default function InkCanvas({
   color = '#1B1B1F',
   erasing = false,
   disabled = false,
-  ruled = true,
   historyRef,
 }) {
   const ink = value ?? emptyInk(PAGE_W, 620)
@@ -345,12 +344,12 @@ export default function InkCanvas({
   }
 
   return (
+    /* Transparent, and that is the point now. This used to be an opaque white
+       page that replaced the typed text; it sits over it instead, so a page
+       carrying both shows both. See JournalEditor. */
     <div
       ref={boxRef}
-      className={`ink-surface relative h-full w-full overflow-hidden bg-white ${
-        ruled ? 'ruled' : ''
-      }`}
-      style={{ '--rule': '2.25rem' }}
+      className="ink-surface relative h-full w-full overflow-hidden"
       onContextMenu={(e) => e.preventDefault()}
     >
       <canvas
