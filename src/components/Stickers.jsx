@@ -87,6 +87,25 @@ const SETS = {
       size: 60,
     }),
   },
+
+  /**
+   * The welcome deck: the loudest set, because it is the one screen that is
+   * allowed to be a poster.
+   *
+   * Six rather than four and larger than the app's, spread from nearer the
+   * top and nearer the bottom, because this screen is a full viewport with no
+   * chrome to compete with and a narrow column of type in the middle of it.
+   * The same rail rule as everywhere else, so it reads as the same product
+   * rather than as a splash screen somebody else designed.
+   */
+  welcome: {
+    column: '34rem',
+    items: rail(pickStickers(['fire', 'coin', 'unicorn', 'cloudguy', 'doitnow', 'daisy']), {
+      from: 6,
+      to: 92,
+      size: 72,
+    }),
+  },
 }
 
 export default function Stickers({ set = 'page' }) {

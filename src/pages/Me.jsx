@@ -9,6 +9,7 @@ import { ACCEPT, isMissingBucket, removeAvatar, uploadAvatar } from '../lib/avat
 import { CURRENCIES, FALLBACK, currencyName } from '../lib/currency'
 import { DECLINED, PRONOUN_OPTIONS } from '../lib/pronouns'
 import { localeTag, useT } from '../lib/i18n'
+import { offerGroup } from '../lib/onboarding'
 import { Avatar, Field, Screen, Section, TopBar } from '../components/ui'
 import MyCompletion from '../components/MyCompletion'
 
@@ -377,6 +378,37 @@ export default function Me() {
           {pronounError && <p className="text-small text-negative">{t('me.pronouns_failed')}</p>}
         </div>
       </Section>
+
+      {/**
+       * The way back out of solo mode.
+       *
+       * Choosing "continue on my own" at sign-up is remembered, which is the
+       * whole point of it, and a remembered choice with no way to change it
+       * is a trap rather than a preference.
+       *
+       * HERE AND NOT IN SETTINGS. /settings is nested under /g/:groupId: it
+       * is the GROUP's settings, and somebody with no group can never reach
+       * it. This page is what the profile menu calls "Profile and settings"
+       * and is the only settings screen a solo person actually has.
+       *
+       * Shown only to somebody with no group. Offering "create or join a
+       * group" to a person already in three is offering them a thing they
+       * are already doing, and the dashboard has that link anyway.
+       *
+       * Nothing here clears solo_mode, and nothing needs to: the app checks
+       * for a real membership first and the flag only ever decides what to
+       * show somebody who has none. See landing() in src/lib/onboarding.js.
+       */}
+      {offerGroup({ memberships: groups }) && (
+        <Section title={t('settings.group_title')}>
+          <div className="lg p-6">
+            <p className="max-w-[38ch] text-body text-muted">{t('settings.group_none')}</p>
+            <Link to="/start" className="btn-primary press mt-6 inline-flex">
+              {t('settings.group_start')}
+            </Link>
+          </div>
+        </Section>
+      )}
 
       <Section title={t('me.account')}>
         <div className="lg px-5">
