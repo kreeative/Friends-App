@@ -4,12 +4,14 @@ import { GroupProvider, useGroup } from './context/GroupContext'
 import { I18nProvider, useT } from './lib/i18n'
 import { ThemeProvider } from './lib/theme'
 import { configured } from './lib/supabase'
+import { landing, soloKeyFor } from './lib/onboarding'
 import ErrorNote from './components/ErrorNote'
 import AppShell from './components/AppShell'
 import SignIn from './pages/SignIn'
 import Start from './pages/Start'
 import Dashboard from './pages/Dashboard'
 import Seo from './components/Seo'
+import Welcome from './pages/Welcome'
 import Board from './pages/Board'
 import Checkin from './pages/Checkin'
 import Proofs from './pages/Proofs'
@@ -91,7 +93,7 @@ const PUBLIC_ROUTES = (
 )
 
 function Gate() {
-  const { user, loading, authError } = useAuth()
+  const { user, profile, loading, authError } = useAuth()
   const { loading: groupsLoading, memberships, error: groupError, reload } = useGroup()
   const { t } = useT()
 
@@ -134,6 +136,47 @@ function Gate() {
   if (authError && !user) return <SignIn />
 
   /**
+   * The first screen, for somebody who belongs to no group.
+   *
+   * This used to be `memberships.length === 0 ? <Start /> : <Dashboard />`,
+   * which put a form asking you to name a group in front of every new account
+   * with no way past it. The journal, the budget and your own goals all work
+   * alone; none of them were reachable until you had invented a group.
+   *
+   * Three answers, not two, and the third is the important one: WAIT. The
+   * decision needs the memberships and the profile, which arrive from two
+   * independent fetches, and guessing before both land shows the welcome deck
+   * to a solo user for a few hundred milliseconds on every single load. See
+   * landing() in src/lib/onboarding.js, which has that case under test.
+   */
+  const local = (() => {
+    try {
+      const k = soloKeyFor(user?.id)
+      return Boolean(k && localStorage.getItem(k) === '1')
+    } catch {
+      /* Private mode. The profile column is the real record. */
+      return false
+    }
+  })()
+
+  const where = landing({ loading: groupsLoading, memberships, profile, local })
+  if (where === 'wait') return <Splash>{t('err.loading')}</Splash>
+
+  /**
+   * Outside the AppShell on purpose. The deck is the whole screen: a tab bar
+   * offering Journal, Budget and Goals underneath it would be four ways out
+   * of a screen whose entire job is to ask one question.
+   */
+  if (where === 'welcome') {
+    return (
+      <Routes>
+        <Route path="/start" element={<Start />} />
+        <Route path="*" element={<Welcome />} />
+      </Routes>
+    )
+  }
+
+  /**
    * Signing in lands on the dashboard, never inside a group.
    *
    * Which group is open is carried by /g/:id rather than by state seeded
@@ -144,7 +187,7 @@ function Gate() {
   return (
     <Routes>
       <Route element={<AppShell />}>
-        <Route index element={memberships.length === 0 ? <Start /> : <Dashboard />} />
+        <Route index element={<Dashboard />} />
         <Route path="start" element={<Start />} />
         <Route path="me" element={<Me />} />
         {/* Personal, and deliberately not under /g/:groupId. A journal that
