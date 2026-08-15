@@ -14,6 +14,8 @@ import BudgetIntro from '../components/BudgetIntro'
 import BudgetTiles from '../components/BudgetTiles'
 import TransactionSheet from '../components/TransactionSheet'
 import PlanVsActual from '../components/PlanVsActual'
+import Envelopes, { SpendableBar } from '../components/Envelopes'
+import { allocationsFor, spendable } from '../lib/envelope'
 import FixedCharges from '../components/FixedCharges'
 
 /**
@@ -61,30 +63,6 @@ function MoneyInput({ value, onChange, digits = 2, autoFocus = false }) {
       placeholder={digits === 0 ? '0' : `0.${'0'.repeat(digits)}`}
       onChange={(e) => onChange(e.target.value)}
     />
-  )
-}
-
-/**
- * How much of what was free has already gone.
- *
- * A bar that actually moves, unlike the fixed rule that used to sit under
- * every Stat. Over 100% it stays full and turns to the warning treatment
- * rather than overflowing its track.
- */
-function SpendBar({ spent, pool }) {
-  const pct = pool > 0 ? Math.min(100, Math.round((spent / pool) * 100)) : 100
-  const over = pool <= 0 || spent > pool
-  return (
-    <div
-      className="mt-5 h-2 w-full overflow-hidden rounded-pill bg-ink/10"
-      role="img"
-      aria-label={`${pct}%`}
-    >
-      <div
-        className={`h-full rounded-pill transition-[width] duration-500 ${over ? 'bg-ink' : 'bg-accent'}`}
-        style={{ width: `${Math.max(pct, 2)}%` }}
-      />
-    </div>
   )
 }
 
@@ -213,6 +191,10 @@ export default function Money() {
      row behind, and the next Add opens prefilled with it. */
   const [sheet, setSheet] = useState(null)
   const [saveError, setSaveError] = useState(null)
+  /* The envelopes. Their own fetch rather than part of loadBudget, because
+     migration 37 may not have been run and a missing table must not take the
+     whole money screen down with it. */
+  const [allocRows, setAllocRows] = useState([])
 
   const load = useCallback(async () => {
     if (!user) return
@@ -222,6 +204,15 @@ export default function Money() {
     setFixed(r.fixed)
     setEntries(r.entries)
     setLoading(false)
+
+    /* Soft, deliberately. Without migration 37 this comes back with an error
+       and the screen carries on with no envelopes rather than an error page for
+       a feature somebody has not installed. */
+    const { data } = await supabase
+      .from('budget_allocation')
+      .select('period_start, category, amount_cents')
+      .eq('user_id', user.id)
+    setAllocRows(data ?? [])
   }, [user])
 
   useEffect(() => {
@@ -299,6 +290,14 @@ export default function Money() {
       return d >= from && d < to
     })
   }, [entries, s.period.start, s.period.end])
+
+  /* The envelopes for THIS period, and the one bar above them. Both read the
+     real, logged figures: summarise.earned and summarise.spent. */
+  const allocations = useMemo(
+    () => allocationsFor(allocRows, localISO(s.period.start)),
+    [allocRows, s.period.start],
+  )
+  const bar = useMemo(() => spendable({ earned: s.earned, spent: s.spent }), [s.earned, s.spent])
 
   /**
    * Write one transaction, new or changed.
@@ -497,78 +496,18 @@ export default function Money() {
           </div>
         ) : (
           /**
-           * In a card, like everything under it.
+           * The headline is now "what is left to spend", against real income.
            *
-           * The headline was the one block on this screen sitting loose on the
-           * page: the tiles below it are cards, the three lists below those are
-           * cards, and the warning branch of this very conditional is a card.
-           * So the most important number on the screen was the only thing with
-           * no container, which reads as a heading for the tiles rather than as
-           * the answer the screen exists to give.
+           * It used to be a day rate: what is free, divided by the days
+           * remaining. That answers a question about pace, and pace is not the
+           * question a zero-based budget asks. The question here is how much of
+           * what actually arrived is still there, so the number is income minus
+           * spending and the bar fills as the month runs down.
            *
-           * The other branch already has `card-warn`, which is the same shape
-           * in the alarmed colourway, so the two states now swap one card for
-           * another rather than a card for a bare div.
+           * The day rate has not been thrown away, it is in the tiles below,
+           * where a secondary figure belongs.
            */
-          <div className="lg p-6 sm:p-7">
-            {/**
-             * The label, the number, the sentence, with air between them.
-             *
-             * The label and the number were touching: a measured gap of
-             * exactly 0px, because the eyebrow carried no bottom margin and
-             * the number's line box began where the label's ended. At 13px
-             * against 56px that reads as one clipped block rather than as a
-             * caption over an answer.
-             *
-             * The tracking is opened past what .eyebrow gives everywhere else.
-             * Uppercase has no descenders to separate the letters, so caps
-             * need more space than lowercase at the same size, and Poppins'
-             * caps are the widest glyphs in the set. Scoped to this card
-             * rather than pushed into .eyebrow, which 38 other places use.
-             */}
-            <div className="eyebrow mb-2 !text-[0.75rem] !font-medium !tracking-[0.05em]">
-              {!s.logged
-                ? t('money.balance_label')
-                : s.overspent
-                  ? t('money.over_label')
-                  : t('money.today_label')}
-            </div>
-            {/**
-             * leading-none is gone, so `hero`'s own 1.05 applies.
-             *
-             * The token sets that line height deliberately: Poppins has a tall
-             * x-height and short descenders, and 1.0 gives the glyphs a line
-             * box shorter than the space they occupy. Nothing was visibly
-             * clipped here because "108,37 $" has no descender, but a currency
-             * that renders one, or a negative sign on the overspent branch,
-             * would have been sitting in the label above it.
-             */}
-            <div className="font-display text-hero text-ink [font-variant-numeric:tabular-nums]">
-              {fmt(s.logged ? (s.overspent ? s.available : s.perDay) : 0)}
-            </div>
-            {/**
-             * Nothing logged gets a sentence, not a number pretending to be
-             * one. This is where the bug was visible: the setup form's figures
-             * were divided by the days left and printed as an allowance, so a
-             * salary that had not arrived and a rent that had not gone out were
-             * both being spent on screen.
-             *
-             * The plan is still named, because somebody who has just typed it
-             * in should see it acknowledged. It is named as a plan.
-             */}
-            <p className="lede mt-2 max-w-[32ch]">
-              {!s.logged
-                ? t('money.nothing_logged', { planned: fmt(s.plannedPerDay) })
-                : s.overspent
-                  ? t('money.over_body', { days: s.period.daysLeft })
-                  : t('money.today_body', {
-                      left: fmt(s.available),
-                      days: s.period.daysLeft,
-                    })}
-            </p>
-            {/* Against the plan, which is what a spend bar is measured on. */}
-            <SpendBar spent={s.spent} pool={s.plannedPool} />
-          </div>
+          <SpendableBar bar={bar} currency={s.currency} locale={locale} />
         )}
       </Section>
 
@@ -595,6 +534,12 @@ export default function Money() {
         <button className="btn-primary press w-full" onClick={() => setSheet(NEW)}>
           {t('txn.open')}
         </button>
+      </Section>
+
+      {/* Every dollar that arrived, given a job. Above the plan because this is
+          about money that is really there, and the plan is an estimate. */}
+      <Section title={t('env.title')}>
+        <Envelopes s={s} allocations={allocations} locale={locale} onChange={load} />
       </Section>
 
       {/* What was meant to happen, against what has. The gap between the two
