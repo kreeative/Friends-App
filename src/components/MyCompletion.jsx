@@ -134,7 +134,7 @@ export default function MyCompletion() {
         {/* A dash, not a zero. Nothing scheduled in the window is not a
             measured failure, and a big 0% is the app telling somebody they
             failed at something it never asked them to do. */}
-        <span className="font-display text-[3.25rem] font-bold leading-none tracking-[-0.03em] text-ink [font-variant-numeric:tabular-nums]">
+        <span className="font-display text-metric font-bold text-ink [font-variant-numeric:tabular-nums]">
           {has ? me.pct : '-'}
         </span>
         <span className="font-display text-h1 font-bold leading-none text-accent">%</span>

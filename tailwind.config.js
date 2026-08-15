@@ -59,11 +59,35 @@ export default {
          *
          * Line height goes up rather than down for the same reason: the tall
          * x-height and short descenders make tightly-led Poppins look packed.
+         *
+         * BROUGHT DOWN A STEP, AND WHY.
+         *
+         * The top of this scale was built for impact and tuned against English
+         * headings. It did not survive French, which is reliably a third
+         * longer: "Rejoins des gens qui avancent." at the old 56px took three
+         * lines of a 390px screen before anything else could be said. iOS sets
+         * its own large title at 34px, so the old hero was 1.6x the platform's
+         * loudest voice, on a phone.
+         *
+         * h2 mattered most and was the least obvious. At 22px it was the size
+         * of a section heading AND the size of a goal card's title, so a list
+         * of five goals rendered as five headings instead of five items. At
+         * 18px a card title is a card title again.
+         *
+         * Only the display end moved. body, small and label are unchanged: 16px
+         * is a floor rather than a preference, because iOS Safari zooms the
+         * whole page when a focused input is smaller than that, which would
+         * break every form in the app.
+         *
+         * Tracking follows the size rather than staying put. Negative tracking
+         * is a correction for optical looseness at display sizes, so it has to
+         * shrink as the sizes do or 40px ends up set as tightly as 56px was.
+         * Leading goes the other way, up, for the same reason.
          */
-        hero: ['3.5rem', { lineHeight: '1.05', letterSpacing: '-0.03em' }],
-        metric: ['3rem', { lineHeight: '1.04', letterSpacing: '-0.028em' }],
-        h1: ['2rem', { lineHeight: '1.2', letterSpacing: '-0.024em' }],
-        h2: ['1.375rem', { lineHeight: '1.34', letterSpacing: '-0.016em' }],
+        hero: ['2.5rem', { lineHeight: '1.1', letterSpacing: '-0.026em' }],
+        metric: ['2.25rem', { lineHeight: '1.08', letterSpacing: '-0.024em' }],
+        h1: ['1.625rem', { lineHeight: '1.26', letterSpacing: '-0.02em' }],
+        h2: ['1.125rem', { lineHeight: '1.42', letterSpacing: '-0.011em' }],
         body: ['1rem', { lineHeight: '1.65', letterSpacing: '-0.006em' }],
         small: ['0.875rem', { lineHeight: '1.58', letterSpacing: '-0.002em' }],
         // Uppercase stays open rather than going negative: caps have no
