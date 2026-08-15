@@ -1,5 +1,5 @@
 /**
- * The twelve moods.
+ * The moods.
  *
  * On colour, and the rule this appears to break:
  *
@@ -32,18 +32,38 @@
  * corners modelled.
  */
 
-/** valence orders the grid: pleasant → flat → sharp, left to right, top to bottom. */
+/**
+ * Grouped, and the grouping is what the grid is drawn from.
+ *
+ * It used to be one run of twelve ordered by valence, pleasant to sharp, and
+ * the order carried the meaning implicitly. Fifteen is too many for that: an
+ * unbroken grid of fifteen faces is a wall, and the eye has nowhere to land.
+ * Three named bands give it somewhere, and they say out loud what the ordering
+ * was only implying.
+ *
+ * `group` is for the layout and nothing else. No row stores it, nothing
+ * downstream asks which band a mood is in, so regrouping later changes a
+ * heading and no data.
+ */
+export const MOOD_GROUPS = ['positive', 'neutral', 'hard']
+
+/**
+ * THE ARRAY ORDER IS THE BAND ORDER, and that is load-bearing now.
+ *
+ * It used to be valence, pleasant to sharp, which said the same thing
+ * implicitly. Keeping the three new moods at the end of the file would have
+ * been the easy edit and would have broken it: `serene` would sort after
+ * `guilty`, so a day tagged serene and stressed would show the hard face
+ * first, and primaryMood would hand that face to the group board.
+ *
+ * cleanMoods sorts by this order, so it decides the order badges are drawn in
+ * and which mood stands for the rest. Positive first, then the middle, then
+ * the hard ones, matching MOOD_GROUPS.
+ */
 export const MOODS = [
   {
-    id: 'excited',
-    color: '#F79AC0',
-    eyes: 'closed',
-    mouth: 'smile',
-    // circle
-    path: 'M6 50a44 44 0 1 1 88 0a44 44 0 1 1-88 0Z',
-  },
-  {
     id: 'joyful',
+    group: 'positive',
     color: '#F2569F',
     eyes: 'closed',
     mouth: 'smile',
@@ -52,6 +72,7 @@ export const MOODS = [
   },
   {
     id: 'grateful',
+    group: 'positive',
     color: '#8B5CD6',
     eyes: 'closed',
     mouth: 'smile',
@@ -60,6 +81,7 @@ export const MOODS = [
   },
   {
     id: 'energized',
+    group: 'positive',
     color: '#A78BDA',
     eyes: 'closed',
     mouth: 'smile',
@@ -70,7 +92,27 @@ export const MOODS = [
     path: 'M4 36a15.3 24 0 0 1 30.7 0a15.3 24 0 0 1 30.7 0a15.3 24 0 0 1 30.6 0v48a12 12 0 0 1-12 12H16A12 12 0 0 1 4 84Z',
   },
   {
+    id: 'serene',
+    group: 'positive',
+    color: '#3FBFB0',
+    eyes: 'closed',
+    mouth: 'smile',
+    // capsule, lying down. The only horizontal shape in the set, which is what
+    // makes calm read as calm before the label is read.
+    path: 'M36 20h28a30 30 0 0 1 0 60H36a30 30 0 0 1 0-60Z',
+  },
+  {
+    id: 'excited',
+    group: 'neutral',
+    color: '#F79AC0',
+    eyes: 'closed',
+    mouth: 'smile',
+    // circle
+    path: 'M6 50a44 44 0 1 1 88 0a44 44 0 1 1-88 0Z',
+  },
+  {
     id: 'sensitive',
+    group: 'neutral',
     color: '#0BA5EC',
     eyes: 'closed',
     mouth: 'flat',
@@ -78,7 +120,26 @@ export const MOODS = [
     path: 'M50 6a44 44 0 0 1 44 44v28a18 18 0 0 1-18 18H24A18 18 0 0 1 6 78V50A44 44 0 0 1 50 6Z',
   },
   {
+    id: 'neutral',
+    group: 'neutral',
+    color: '#8797A6',
+    eyes: 'dots',
+    mouth: 'flat',
+    // octagon: the most even-sided thing available, which is the point.
+    path: 'M32 8h36l24 24v36l-24 24H32L8 68V32Z',
+  },
+  {
+    id: 'nostalgic',
+    group: 'neutral',
+    color: '#B384BC',
+    eyes: 'closed',
+    mouth: 'flat',
+    // pentagon, point up. Leaning without falling either way.
+    path: 'M50 6 92 38 76 92H24L8 38Z',
+  },
+  {
     id: 'confused',
+    group: 'hard',
     color: '#1B58D9',
     eyes: 'dots',
     mouth: 'flat',
@@ -87,6 +148,7 @@ export const MOODS = [
   },
   {
     id: 'bored',
+    group: 'hard',
     color: '#0F8A3D',
     eyes: 'dots',
     mouth: 'flat',
@@ -95,6 +157,7 @@ export const MOODS = [
   },
   {
     id: 'stressed',
+    group: 'hard',
     color: '#17A55C',
     eyes: 'squint',
     mouth: 'flat',
@@ -103,6 +166,7 @@ export const MOODS = [
   },
   {
     id: 'angry',
+    group: 'hard',
     color: '#E8500F',
     eyes: 'squint',
     mouth: 'frown',
@@ -111,6 +175,7 @@ export const MOODS = [
   },
   {
     id: 'insecure',
+    group: 'hard',
     color: '#F07C1E',
     eyes: 'dots',
     mouth: 'frown',
@@ -119,6 +184,7 @@ export const MOODS = [
   },
   {
     id: 'hurt',
+    group: 'hard',
     color: '#F5A623',
     eyes: 'closed',
     mouth: 'frown',
@@ -127,6 +193,7 @@ export const MOODS = [
   },
   {
     id: 'guilty',
+    group: 'hard',
     color: '#FBC02D',
     eyes: 'dots',
     mouth: 'frown',
@@ -137,5 +204,60 @@ export const MOODS = [
 ]
 
 export const MOOD_IDS = MOODS.map((m) => m.id)
+
+/** The moods in one band, in catalogue order. */
+export const inMoodGroup = (group) => MOODS.filter((m) => m.group === group)
+
+/**
+ * How many one day may carry.
+ *
+ * The whole set, so this can only be hit by something that is not a person
+ * tapping faces. An unbounded array in a row anybody can create for free is
+ * the shape of a table that grows in a way nobody planned.
+ */
+export const MAX_MOODS = MOODS.length
+
+/**
+ * A stored value, made safe to render.
+ *
+ * Anything can be in that column: a row from before the array existed, an id a
+ * later build knows and this one does not, or something edited by hand.
+ * Unknown ids are dropped rather than drawn, because moodById returns null for
+ * them and a badge that renders nothing beside three that do reads as a
+ * rendering fault.
+ *
+ * Order is the catalogue's, not the tap order, so two days carrying the same
+ * two moods look identical whichever way round they were chosen.
+ */
+export function cleanMoods(raw) {
+  const list = Array.isArray(raw) ? raw : raw ? [raw] : []
+  const seen = new Set()
+  for (const id of list) if (MOOD_IDS.includes(id)) seen.add(id)
+  return MOOD_IDS.filter((id) => seen.has(id))
+}
+
+/**
+ * Tapping a face.
+ *
+ * On when it was off, off when it was on. Unknown ids are refused rather than
+ * added, so a stale tab cannot write a value the check constraint will reject.
+ */
+export function toggleMood(list, id) {
+  if (!MOOD_IDS.includes(id)) return cleanMoods(list)
+  const now = cleanMoods(list)
+  return cleanMoods(now.includes(id) ? now.filter((x) => x !== id) : [...now, id])
+}
+
+/**
+ * The one that stands for the rest.
+ *
+ * daily_mood.mood is `not null` and has been read as a single value by the
+ * week strip and the group board since migration 12. Rather than making every
+ * one of those handle an array, the first of the set stays in that column and
+ * the full set lives beside it. First in CATALOGUE order, not tap order, so
+ * the face somebody's group sees does not depend on which one they happened to
+ * press first.
+ */
+export const primaryMood = (list) => cleanMoods(list)[0] ?? null
 
 export const moodById = (id) => MOODS.find((m) => m.id === id) ?? null
