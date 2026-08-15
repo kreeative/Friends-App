@@ -28,7 +28,15 @@ import { NOTE_MAX, isValidLink, linkHost } from '../lib/proofKinds'
  * in proofs.js: a check-in goes out through the offline queue, which replays
  * JSON and cannot carry a File.
  */
-export default function ProofField({ type, value, onChange, goalTitle }) {
+/**
+ * @param onRemovePhoto  What "remove the photo" should do beyond clearing it.
+ *   The check-in passes nothing and gets the old behaviour, which is right
+ *   there: the goal asked for a photograph and the next step is another one.
+ *   The edit sheet passes a handler so it can ask what should stand in its
+ *   place, because there removing one is a thing somebody may want to finish
+ *   rather than a step on the way to attaching another.
+ */
+export default function ProofField({ type, value, onChange, goalTitle, onRemovePhoto }) {
   const { user } = useAuth()
   const { t } = useT()
   const [busy, setBusy] = useState(false)
@@ -92,7 +100,7 @@ export default function ProofField({ type, value, onChange, goalTitle }) {
                 </label>
                 <button
                   type="button"
-                  onClick={() => onChange({ photo_url: null })}
+                  onClick={() => (onRemovePhoto ? onRemovePhoto() : onChange({ photo_url: null }))}
                   className="text-small text-muted underline-offset-4 hover:underline"
                 >
                   {t('proof.remove')}

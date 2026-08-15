@@ -162,10 +162,12 @@ export default function MoodToday({ groupCount = 0 }) {
               </p>
             </>
           ) : (
-            <>
-              <p className="text-h2 text-ink">{t('mood.question_day')}</p>
-              <p className="mt-1 text-small text-muted">{t('mood.optional')}</p>
-            </>
+            /* The question, and nothing under it. There was a second line
+               here ("Un geste, et ça reste dans ton historique") explaining
+               what tapping a face would do, which is a sentence about a
+               feature rather than about the person, on a card whose whole job
+               is one small question. The faces below say the rest. */
+            <p className="text-h2 text-ink">{t('mood.question_day')}</p>
           )}
         </div>
 
@@ -228,16 +230,21 @@ export default function MoodToday({ groupCount = 0 }) {
                     {t('mood.share_unavailable')}
                   </p>
                 ) : (
-                  <label className="press mt-6 flex cursor-pointer items-start gap-3 rounded-inner bg-ink/[0.035] p-4">
+                  /* No inner card. A tinted, padded box around one checkbox
+                     made a single optional choice look like a section of the
+                     form, on a panel that is already a panel. The checkbox
+                     sits inline with its label and the state is one short line
+                     under it, which is all it ever needed to be. */
+                  <label className="press mt-6 flex cursor-pointer items-center gap-3">
                     <input
                       type="checkbox"
                       checked={draftShared}
                       onChange={(e) => setDraftShared(e.target.checked)}
-                      className="mt-0.5 h-5 w-5 shrink-0 accent-[rgb(var(--c-accent))]"
+                      className="h-5 w-5 shrink-0 accent-[rgb(var(--c-accent))]"
                     />
-                    <span>
+                    <span className="min-w-0">
                       <span className="block text-body text-ink">{t('mood.share')}</span>
-                      <span className="mt-1 block text-small text-muted">
+                      <span className="mt-0.5 block text-small text-muted">
                         {draftShared ? t('mood.share_on') : t('mood.share_off')}
                       </span>
                     </span>
