@@ -545,6 +545,15 @@ const STRINGS = {
 
     /* The daily tick, on goals kept alone. */
     'goal.mark_today': 'Mark today',
+    'goal.stats': 'Where it stands',
+    'goal.stat_total': 'Days kept',
+    'goal.stat_streak': 'In a row',
+    'goal.stat_since': 'Started',
+    'goal.last_days': 'The last {n} days.',
+    'goal.prev_month': 'Previous month',
+    'goal.next_month': 'Next month',
+    'goal.history': 'History',
+    'goal.history_empty': 'Nothing recorded yet.',
     'goal.done_today': 'Done today',
     'goal.today_count': '{done} of {total} today',
     'goal.not_due_today': 'Not due today.',
@@ -860,6 +869,7 @@ const STRINGS = {
       'This browser will not do the maths a passcode needs. It usually means the page is on http rather than https.',
 
     'ui.close': 'Close',
+    'ui.back': 'Back',
     'ui.save': 'Save',
   },
 
@@ -1400,6 +1410,15 @@ const STRINGS = {
 
     /* La coche du jour, sur les objectifs tenus seul. */
     'goal.mark_today': 'Marquer aujourd’hui',
+    'goal.stats': 'Où ça en est',
+    'goal.stat_total': 'Jours tenus',
+    'goal.stat_streak': 'D’affilée',
+    'goal.stat_since': 'Depuis le',
+    'goal.last_days': 'Les {n} derniers jours.',
+    'goal.prev_month': 'Mois précédent',
+    'goal.next_month': 'Mois suivant',
+    'goal.history': 'Historique',
+    'goal.history_empty': 'Rien d’enregistré pour l’instant.',
     'goal.done_today': 'Fait aujourd’hui',
     'goal.today_count': '{done} sur {total} aujourd’hui',
     'goal.not_due_today': 'Pas prévu aujourd’hui.',
@@ -1718,6 +1737,7 @@ const STRINGS = {
       'Ce navigateur ne fait pas le calcul qu’un code demande. En général c’est que la page est en http et pas en https.',
 
     'ui.close': 'Fermer',
+    'ui.back': 'Retour',
     'ui.save': 'Enregistrer',
   },
 }

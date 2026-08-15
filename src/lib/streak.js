@@ -211,3 +211,79 @@ export function recentDays(goal, index, days = 7, today = new Date()) {
 export function since(today = new Date()) {
   return dayKey(shiftDay(today, -LOOKBACK_DAYS))
 }
+
+/**
+ * One day, as the full page needs to draw it.
+ *
+ * Four states, not two, and the extra pair is the whole reason this is a
+ * function rather than a boolean:
+ *
+ *   due      the goal actually runs on this day. A Mon/Wed goal drawn as
+ *            "missed" on a Thursday is a picture of failing at something
+ *            nobody asked for.
+ *   future   a day that has not happened. Undone and not-yet are the same
+ *            absence of a row and must not be the same square on a calendar,
+ *            or the rest of the month reads as a month already lost.
+ *   partial  something was done and it was not the whole target. Rounding it
+ *            into done or missed is the thing checkin_items has carried a
+ *            count for since the beginning to avoid.
+ */
+export function dayStatus(goal, index, date, today = new Date()) {
+  const day = dayKey(date)
+  const target = targetFor(goal)
+  const done = countOn(index, goal?.id, day)
+  const born = dateKey(goal?.created_at) ?? dateKey(goal?.starts_on)
+
+  return {
+    day,
+    done,
+    target,
+    due: dueThatDay(goal, date),
+    future: day > dayKey(today),
+    /* Before the goal existed. Not a miss, and not a day it can be marked on
+       either: a goal created on Thursday cannot be behind by Monday. */
+    before: Boolean(born) && day < born,
+    complete: done >= target,
+    partial: done > 0 && done < target,
+  }
+}
+
+/**
+ * How many days this goal has been kept, all told.
+ *
+ * Only days at full target. A goal done once out of three is a day something
+ * happened on and is not a day the goal was kept, and a "total" that counted
+ * it would be a number that means neither one thing nor the other.
+ *
+ * Bounded by the same window as the streak, and for the same reason: the index
+ * only ever holds LOOKBACK_DAYS of rows, so counting the whole Map would
+ * silently mean "since we started fetching" while claiming to mean "ever".
+ * Counting the Map is nonetheless what this does, because the Map IS that
+ * window, and saying so here is cheaper than walking four hundred days.
+ */
+export function totalDone(goal, index, today = new Date()) {
+  if (!goal?.id || !index) return 0
+  const target = targetFor(goal)
+  const floor = since(today)
+  let n = 0
+  for (const [key, count] of index) {
+    const cut = key.lastIndexOf('|')
+    if (cut < 0 || key.slice(0, cut) !== goal.id) continue
+    const day = key.slice(cut + 1)
+    if (day < floor || day > dayKey(today)) continue
+    if (count >= target) n += 1
+  }
+  return n
+}
+
+/**
+ * The day this goal started, as YYYY-MM-DD, or null.
+ *
+ * starts_on first, then created_at. They are usually the same day and are not
+ * the same fact: starts_on is when the person said the goal begins, created_at
+ * is when they typed it in. A goal written on Sunday to start on Monday should
+ * say Monday, which is the answer the person would give.
+ */
+export function startedOn(goal) {
+  return dateKey(goal?.starts_on) ?? dateKey(goal?.created_at)
+}
