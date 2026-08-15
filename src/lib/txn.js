@@ -13,10 +13,6 @@
  * "transfer" with no two sides is a spend wearing a different word.
  */
 
-/* Extension included deliberately. Vite resolves either way; node, running
-   this file directly for the tests, resolves only the explicit one. */
-import { DEFAULT_EMOTIONS, cleanEmotions } from './emotions.js'
-
 /** The two directions money moves. There is no third, see above. */
 export const KINDS = ['expense', 'income']
 
@@ -123,10 +119,6 @@ export function blankTxn(today = new Date()) {
     note: '',
     happened_on: localISO(today),
     excluded: false,
-    /* Neutral, pre-selected. See DEFAULT_EMOTIONS: the point of the tags is
-       that they cost nothing, and an empty selector asks a question before the
-       amount has even been typed. */
-    emotions: [...DEFAULT_EMOTIONS],
   }
 }
 
@@ -147,12 +139,6 @@ export function txnFromRow(row, digits = 2) {
     note: row.note ?? '',
     happened_on: String(row.happened_on ?? '').slice(0, 10) || localISO(),
     excluded: row.excluded === true,
-    /* Cleaned, not trusted, and NOT defaulted. A row written before migration
-       33 has no feelings on it, and seeding neutral here would mean opening an
-       old transaction to fix a typo silently tags it, so the history would
-       record a change the person never made. Empty is the truth about those
-       rows and has to stay empty until somebody says otherwise. */
-    emotions: cleanEmotions(row.emotions),
   }
 }
 
@@ -190,11 +176,6 @@ export function txnPayload(form, userId) {
     note: note || null,
     happened_on: form.happened_on,
     excluded: form.excluded === true,
-    /* Through the sanitiser on the way out as well as on the way in. The
-       check constraint in migration 33 names its thirteen values, so a stale
-       tab holding an id this build has dropped would otherwise fail the whole
-       save on a chip nobody touched. */
-    emotions: cleanEmotions(form.emotions),
   }
 }
 
