@@ -23,7 +23,7 @@ const LIVE = new Set(['active', 'paused'])
 export default function Goals() {
   const { user } = useAuth()
   const { groupId } = useParams()
-  const { goals, soloGoals, members } = useGroup()
+  const { goals, soloGoals, members, myRole } = useGroup()
   const { t } = useT()
   /**
    * Open by default.
@@ -46,6 +46,28 @@ export default function Goals() {
   const others = live.filter((g) => g.kind === 'personal' && g.owner_id !== user?.id)
 
   const ownerOf = (id) => members.find((m) => m.user_id === id)?.profile
+
+  /**
+   * Who may delete what, matching goals_delete in supabase/09 exactly:
+   *
+   *   owner_id = auth.uid() or (group_id is not null and is_group_admin(...))
+   *
+   * A goal you own is yours to remove wherever it lives. A group goal has no
+   * owner, so it belongs to the group and only an admin may take it away from
+   * four other people.
+   *
+   * Mirrored here rather than shown to everybody and left to fail, because a
+   * delete that RLS refuses does not raise: Postgres deletes nothing and
+   * reports success. A button that silently does nothing is worse than no
+   * button. removeGoal checks the returned rows as well, so the two have to
+   * both be wrong for anything to go unnoticed.
+   */
+  const canDelete = (g) => g.owner_id === user?.id || (Boolean(groupId) && myRole === 'admin')
+
+  /* The daily tick belongs to goals with no group. Inside a group the check-in
+     already asks this question, and answering it twice would be two records of
+     one day that can disagree. */
+  const tracks = !groupId
 
   return (
     <Screen>
@@ -90,6 +112,8 @@ export default function Goals() {
                 goal={g}
                 owner={ownerOf(g.owner_id)}
                 showControls
+                track={tracks}
+                deletable={canDelete(g)}
                 editHref={`${base}/${g.id}/edit`}
               />
             ))}
@@ -101,7 +125,13 @@ export default function Goals() {
         <Section title={t('board.together')}>
           <div className="space-y-4">
             {shared.map((g) => (
-              <GoalCard key={g.id} goal={g} showControls editHref={`${base}/${g.id}/edit`} />
+              <GoalCard
+                key={g.id}
+                goal={g}
+                showControls
+                deletable={canDelete(g)}
+                editHref={`${base}/${g.id}/edit`}
+              />
             ))}
           </div>
         </Section>
@@ -144,6 +174,7 @@ export default function Goals() {
                   /* Restarting is only yours to offer on your own goals and on
                      the group's. Someone else's finished goal is a record. */
                   showControls={g.kind === 'group' || g.owner_id === user?.id}
+                  deletable={canDelete(g)}
                 />
               ))}
             </div>

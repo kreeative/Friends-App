@@ -1,9 +1,13 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useGroup } from '../context/GroupContext'
 import { shortDate } from '../lib/time'
 import { localeTag, useT } from '../lib/i18n'
+import { errorText } from '../lib/dberr'
+import { countOn, nextCount, progressFor, recentDays, streakOf } from '../lib/streak'
 import { Avatar } from './ui'
+import ConfirmDialog from './ConfirmDialog'
 
 /**
  * Finished states. Each gets its own card colour and a chip, rather than the
@@ -15,21 +19,114 @@ const DONE = {
   abandoned: { label: 'goal.dropped', card: 'card-dropped', chip: 'chip-quiet' },
 }
 
+/**
+ * Seven days of dots, oldest on the left.
+ *
+ * The streak is one number and a number is a claim; this is the evidence for
+ * it, and it is the part that makes a broken streak feel recoverable rather
+ * than final. A day the goal was never due is drawn as a gap rather than a
+ * miss, because a Mon/Wed goal showing five empty circles is a picture of
+ * failing at something nobody asked for.
+ */
+function DayDots({ days }) {
+  return (
+    <div className="flex items-center gap-1.5" aria-hidden="true">
+      {days.map((d) =>
+        !d.due ? (
+          <span key={d.day} className="h-1 w-1 rounded-pill bg-ink/15" />
+        ) : (
+          <span
+            key={d.day}
+            className={`h-2.5 w-2.5 rounded-pill transition-colors duration-200 ease-settle ${
+              d.done ? 'bg-accent' : 'bg-ink/[0.13]'
+            }`}
+          />
+        ),
+      )}
+    </div>
+  )
+}
+
 export default function GoalCard({
   goal,
   owner,
   showControls = false,
   progress = null,
   editHref = null,
+  /**
+   * Whether this card carries the daily tick.
+   *
+   * On for a goal with no group, which has nowhere else to be marked done: the
+   * check-in runs off cycles, and cycles belong to groups. Off for a goal
+   * inside a group, where the check-in already owns this question and a second
+   * private tick would be two answers to it.
+   */
+  track = false,
+  /** Whether the person looking at this may delete it. See canDelete in Goals. */
+  deletable = false,
 }) {
-  const { reloadGroup } = useGroup()
+  const { reloadGroup, dayIndex, setGoalDay, removeGoal } = useGroup()
   const { t, locale } = useT()
   const paused = goal.status === 'paused'
   const finished = DONE[goal.status] ?? null
 
+  const [asking, setAsking] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState(null)
+  const [ticking, setTicking] = useState(false)
+  /**
+   * The optimistic half of deleting, and it lives here rather than in the list
+   * for one reason: this component owns the dialog. Removing the goal from the
+   * list first is the obvious build and it unmounts the only thing capable of
+   * saying the delete failed, so a refusal looked like the card blinking out
+   * and returning with no explanation. Hiding itself keeps it mounted.
+   */
+  const [gone, setGone] = useState(false)
+
   async function setStatus(status) {
     await supabase.from('goals').update({ status }).eq('id', goal.id)
     await reloadGroup()
+  }
+
+  const today = progressFor(goal, dayIndex, new Date())
+  const streak = track ? streakOf(goal, dayIndex, new Date()) : 0
+
+  /**
+   * One tap, and the count it produces is worked out from the same index the
+   * card is drawn from rather than from a piece of local state. Two components
+   * showing one goal would otherwise disagree, and the tick would fight the
+   * refetch.
+   */
+  async function tick() {
+    if (ticking) return
+    setTicking(true)
+    const current = countOn(dayIndex, goal.id, today.day)
+    await setGoalDay(goal, nextCount(goal, current))
+    setTicking(false)
+  }
+
+  async function confirmDelete() {
+    setDeleting(true)
+    setDeleteError(null)
+    /* The card goes now, before the request. The question has been answered
+       and waiting on a round trip to acknowledge it is what makes an app feel
+       slow on a phone with two bars. */
+    setGone(true)
+
+    const { error } = await removeGoal(goal)
+
+    if (error) {
+      /* Back on screen, dialog still open, reason printed. Nothing was
+         changed in the database, so putting the card back is the whole of the
+         rollback: there is no stale value to reconcile. */
+      setGone(false)
+      setDeleting(false)
+      setDeleteError(errorText(error))
+      return
+    }
+    /* Deliberately not closing the dialog or clearing state: the goal has left
+       the list, so this component is about to unmount, and setting state on
+       the way out is a warning for nothing. */
   }
 
   const cadence =
@@ -39,7 +136,16 @@ export default function GoalCard({
 
   const when = [goal.trigger_when, goal.trigger_where].filter(Boolean).join(', ')
 
+  /**
+   * The card and the dialog are siblings, not parent and child, and that is
+   * deliberate: `gone` hides the article while leaving the dialog mounted, so
+   * a delete that comes back refused still has somewhere to print why. The
+   * dialog portals to the body regardless, so nothing about its position
+   * depends on the article being here.
+   */
   return (
+    <>
+      {!gone && (
     /**
      * Four levels, where there used to be one.
      *
@@ -58,25 +164,48 @@ export default function GoalCard({
         paused ? 'opacity-55' : ''
       }`}
     >
-      <div className="flex items-start justify-between gap-3">
-        {/* Whose goal it is, first and quietly. It was the last line on the
-            card, under the buttons, which is where you put something nobody
-            needs; in a shared list it is the first thing you check. */}
-        <span className="inline-flex min-w-0 items-center gap-2 rounded-pill bg-accent/[0.14] py-1 pl-1 pr-3">
-          {owner ? (
-            <Avatar profile={owner} size={20} />
-          ) : (
-            <span className="h-5 w-5 shrink-0 rounded-pill bg-accent/30" aria-hidden="true" />
-          )}
-          <span className="truncate text-label font-semibold uppercase tracking-[0.06em] text-ink">
-            {owner ? owner.display_name : t('goal.everyone')}
+      {/**
+       * Whose goal it is, first and quietly. It was the last line on the card,
+       * under the buttons, which is where you put something nobody needs; in a
+       * shared list it is the first thing you check.
+       *
+       * SHOWN ONLY WHEN IT HAS SOMETHING TO SAY. The badge used to render
+       * unconditionally and fell back to "everyone" whenever the owner's
+       * profile could not be resolved. On /goals there is no group and so no
+       * roster to resolve anybody against, which labelled every private goal
+       * TOUT LE MONDE: the exact opposite of what that page is, printed on the
+       * one screen whose promise is that nobody else can see it.
+       *
+       * Three cases, and now each says the true thing: a named owner gets
+       * their name, a goal belonging to the group gets "everyone", and a goal
+       * of your own on a page with only your own gets no badge, because there
+       * is nobody it could belong to but you.
+       */}
+      {(owner || goal.kind === 'group') && (
+        <div className="mb-3 flex items-start justify-between gap-3">
+          <span className="inline-flex min-w-0 items-center gap-2 rounded-pill bg-accent/[0.14] py-1 pl-1 pr-3">
+            {owner ? (
+              <Avatar profile={owner} size={20} />
+            ) : (
+              <span className="h-5 w-5 shrink-0 rounded-pill bg-accent/30" aria-hidden="true" />
+            )}
+            <span className="truncate text-label font-semibold uppercase tracking-[0.06em] text-ink">
+              {owner ? owner.display_name : t('goal.everyone')}
+            </span>
           </span>
-        </span>
 
-        {finished && <span className={`${finished.chip} shrink-0`}>{t(finished.label)}</span>}
+          {finished && <span className={`${finished.chip} shrink-0`}>{t(finished.label)}</span>}
+        </div>
+      )}
+
+      {/* Without the badge above there is nowhere else for the finished chip to
+          go, so it sits beside the title instead of disappearing with it. */}
+      <div className="flex items-start justify-between gap-3">
+        <h3 className="text-h2 font-semibold text-ink">{goal.commitment}</h3>
+        {finished && !owner && goal.kind !== 'group' && (
+          <span className={`${finished.chip} shrink-0`}>{t(finished.label)}</span>
+        )}
       </div>
-
-      <h3 className="mt-3 text-h2 font-semibold text-ink">{goal.commitment}</h3>
 
       {/**
        * Two tones, not one. The cadence is the goal's own rule and carries the
@@ -130,12 +259,84 @@ export default function GoalCard({
       )}
 
       {/**
+       * The daily tick, for a goal with no group behind it.
+       *
+       * This is the whole of what was missing. Migration 09 let a goal exist
+       * without a group; nothing let it be marked done, because every path to
+       * "I did it" ran through cycles, and cycles belong to groups. So a solo
+       * goal sat on the screen unticked forever.
+       *
+       * A checkbox and a streak rather than the check-in screen: the check-in
+       * asks for a mood, a note, a proof and a next commitment, which is the
+       * right ceremony for five people meeting once a day and far too much to
+       * ask of somebody ticking off "drink water" on their own.
+       */}
+      {track && !finished && (
+        <div className="mt-5 border-t border-hairline pt-4">
+          {today.due ? (
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={tick}
+                disabled={ticking}
+                aria-pressed={today.complete}
+                className={`press inline-flex items-center gap-2.5 rounded-pill py-2 pl-2 pr-4 text-small font-semibold transition-colors duration-200 ease-settle disabled:opacity-60 ${
+                  today.complete ? 'bg-accent text-on-accent' : 'bg-ink/[0.06] text-ink hover:bg-ink/[0.11]'
+                }`}
+              >
+                {/* A box that fills, not an icon font. It has to read as
+                    checked from arm's length and in both themes, and a tick
+                    drawn in currentColor does that at any density. */}
+                <span
+                  className={`flex h-6 w-6 items-center justify-center rounded-[0.5rem] border-2 transition-colors duration-200 ease-settle ${
+                    today.complete ? 'border-on-accent' : 'border-ink/25'
+                  }`}
+                >
+                  {today.complete && (
+                    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" aria-hidden="true">
+                      <path
+                        d="M5 12.5l4.5 4.5L19 7.5"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  )}
+                </span>
+                {today.target > 1
+                  ? t('goal.today_count', { done: today.done, total: today.target })
+                  : today.complete
+                    ? t('goal.done_today')
+                    : t('goal.mark_today')}
+              </button>
+
+              {streak > 0 && (
+                <span className="text-small font-semibold text-muted">
+                  {t('goal.streak', { n: streak })}
+                </span>
+              )}
+            </div>
+          ) : (
+            /* Not due is not the same as not done, and must not look like it.
+               No checkbox at all, because offering one would invite a tick on
+               a day the goal does not run and quietly corrupt the streak. */
+            <p className="text-small text-muted">{t('goal.not_due_today')}</p>
+          )}
+
+          <div className="mt-4">
+            <DayDots days={recentDays(goal, dayIndex, 7, new Date())} />
+          </div>
+        </div>
+      )}
+
+      {/**
        * Three tiers, left to right in increasing weight: outline to edit, a
        * tint to pause, filled to finish. The owner's name has moved to the
        * badge at the top, so this row is only controls and can simply wrap.
        */}
       {showControls && !finished && (
-        <div className="mt-5 flex flex-wrap gap-2">
+        <div className="mt-5 flex flex-wrap items-center gap-2">
           {editHref && (
             <Link to={editHref} className="goal-action press">
               {t('goal.edit')}
@@ -150,6 +351,7 @@ export default function GoalCard({
           <button onClick={() => setStatus('completed')} className="goal-action-done press">
             {t('goal.mark_done')}
           </button>
+          {deletable && <DeleteButton onClick={() => setAsking(true)} label={t('goal.delete')} />}
         </div>
       )}
 
@@ -157,10 +359,57 @@ export default function GoalCard({
           makes sense on a record, and a finished goal you want to restart is
           common enough to be worth one tap. */}
       {showControls && finished && (
-        <button onClick={() => setStatus('active')} className="goal-action-soft press mt-5">
-          {t('goal.reopen')}
-        </button>
+        <div className="mt-5 flex flex-wrap items-center gap-2">
+          <button onClick={() => setStatus('active')} className="goal-action-soft press">
+            {t('goal.reopen')}
+          </button>
+          {deletable && <DeleteButton onClick={() => setAsking(true)} label={t('goal.delete')} />}
+        </div>
       )}
+
     </article>
+      )}
+
+      <ConfirmDialog
+        open={asking}
+        title={t('goal.delete_title')}
+        body={t('goal.delete_body')}
+        cancelLabel={t('goal.delete_cancel')}
+        confirmLabel={deleting ? t('goal.deleting') : t('goal.delete_confirm')}
+        busy={deleting}
+        error={deleteError}
+        onCancel={() => {
+          setAsking(false)
+          setDeleteError(null)
+        }}
+        onConfirm={confirmDelete}
+      />
+    </>
+  )
+}
+
+/**
+ * The destructive one, and it is the only control on the card that does not
+ * look like the others.
+ *
+ * Pushed to the far end of the row by ml-auto rather than sitting fourth in
+ * line, so the tap that deletes is never adjacent to the tap that pauses. It
+ * carries no fill and no border until you are on it: three filled pills and a
+ * fourth in red would make the row look like four equal choices, and this one
+ * is not equal to the others.
+ *
+ * `text-negative` rather than a raw red: the app has two themes and the token
+ * is the red that has been checked against both grounds. A fixed red-500 is
+ * the correct colour on exactly one of them.
+ */
+function DeleteButton({ onClick, label }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="press ml-auto inline-flex items-center rounded-pill px-4 py-2 text-small font-semibold text-negative transition-colors duration-200 ease-settle hover:bg-negative/[0.09]"
+    >
+      {label}
+    </button>
   )
 }

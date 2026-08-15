@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from './AuthContext'
 import { cyclePhase, lastClosed, soonestUpcoming } from '../lib/time'
+import { dayKey, indexDays, since } from '../lib/streak'
 
 /* Exported so a test or a preview can supply a value without standing up a
    Supabase client. Application code should use the hook. */
@@ -35,6 +36,7 @@ export function GroupProvider({ children }) {
   const [cycles, setCycles] = useState([])
   const [goals, setGoals] = useState([])
   const [soloGoals, setSoloGoals] = useState([])
+  const [goalDays, setGoalDays] = useState([])
   const [statuses, setStatuses] = useState([])
   const [nudges, setNudges] = useState([])
   const [loading, setLoading] = useState(true)
@@ -52,7 +54,11 @@ export function GroupProvider({ children }) {
    * migration yet should still get their groups rather than an error screen.
    */
   const loadSolo = useCallback(async () => {
-    if (!user) return setSoloGoals([])
+    if (!user) {
+      setSoloGoals([])
+      setGoalDays([])
+      return
+    }
     const { data } = await supabase
       .from('goals')
       .select('*')
@@ -60,6 +66,25 @@ export function GroupProvider({ children }) {
       .eq('owner_id', user.id)
       .order('created_at')
     setSoloGoals(data ?? [])
+
+    /**
+     * The ticks, bounded by the same number the streak walk uses.
+     *
+     * Not `select('*')` over all of history: this table gets one row per goal
+     * per day forever, and the only thing that reads it looks back at most
+     * LOOKBACK_DAYS. Asking for exactly that is the difference between a few
+     * hundred rows and an unbounded fetch that grows every day the app is used.
+     *
+     * Soft failure, like the goals above. Migration 32 may not have been run
+     * yet, and somebody who has not run it should still get their goals, just
+     * without the ticks, rather than an error screen.
+     */
+    const { data: days } = await supabase
+      .from('goal_days')
+      .select('goal_id, on_date, count_done')
+      .eq('user_id', user.id)
+      .gte('on_date', since())
+    setGoalDays(days ?? [])
   }, [user?.id])
 
   useEffect(() => {
@@ -198,6 +223,91 @@ export function GroupProvider({ children }) {
     [statuses],
   )
 
+  /* Built once here rather than per card. Five goals against a year of ticks
+     is five scans of a couple of thousand rows on every render if each card
+     filters for itself; this is one pass and a Map lookup. */
+  const dayIndex = useMemo(() => indexDays(goalDays), [goalDays])
+
+  /**
+   * Tick a goal for a day, or take the tick back.
+   *
+   * Optimistic, and the local state is written first on purpose: this is a
+   * checkbox, and a checkbox that waits for a network round trip before
+   * changing feels broken on a phone with two bars. `count` of 0 means the row
+   * goes, because a row saying zero and no row are the same statement, and
+   * migration 32 refuses the former.
+   *
+   * On failure the true rows are refetched rather than the previous value being
+   * restored from a variable. Reverting from a snapshot is what puts a stale
+   * count on screen when two taps are in flight and the first one fails.
+   */
+  const setGoalDay = useCallback(
+    async (goal, count, date = new Date()) => {
+      if (!user || !goal?.id) return { error: { message: 'not signed in' } }
+      const on_date = dayKey(date)
+      const n = Math.max(0, Math.floor(Number(count) || 0))
+
+      setGoalDays((rows) => {
+        const without = rows.filter((r) => !(r.goal_id === goal.id && String(r.on_date).slice(0, 10) === on_date))
+        return n > 0 ? [...without, { goal_id: goal.id, on_date, count_done: n }] : without
+      })
+
+      const { error } = n > 0
+        ? await supabase
+            .from('goal_days')
+            .upsert({ goal_id: goal.id, user_id: user.id, on_date, count_done: n },
+                    { onConflict: 'goal_id,user_id,on_date' })
+        : await supabase
+            .from('goal_days')
+            .delete()
+            .eq('goal_id', goal.id)
+            .eq('user_id', user.id)
+            .eq('on_date', on_date)
+
+      if (error) {
+        await loadSolo()
+        return { error }
+      }
+      return { error: null }
+    },
+    [user?.id, loadSolo],
+  )
+
+  /**
+   * Delete a goal, for good.
+   *
+   * THE `.select()` IS THE LOAD-BEARING PART. Postgres row-level security does
+   * not raise on a delete it refuses: it deletes nothing and reports success.
+   * Proved in supabase, where an ordinary member deleting the group's goal
+   * returns zero rows and no error at all. Without asking for the deleted rows
+   * back, that silence is indistinguishable from success, the card vanishes,
+   * and it reappears on the next load with nothing said about why.
+   *
+   * WHY THIS DOES NOT REMOVE THE ROW FROM STATE FIRST.
+   *
+   * It did, and that was a bug: stripping the goal from the list unmounted the
+   * card, and the card is what owns the confirmation dialog, so a refused
+   * delete had nowhere left to print its reason. The person saw the card
+   * blink out and come back with no explanation.
+   *
+   * The optimism lives in GoalCard instead, which hides itself the instant you
+   * confirm and un-hides if this comes back with an error. Same feel, and the
+   * thing that has to report the failure is still on screen to do it.
+   */
+  const removeGoal = useCallback(async (goal) => {
+    if (!goal?.id) return { error: { message: 'no goal' } }
+
+    const { data, error } = await supabase.from('goals').delete().eq('id', goal.id).select('id')
+
+    if (error || !data || data.length === 0) {
+      return { error: error ?? { code: '42501', message: 'not allowed' } }
+    }
+
+    setGoals((rows) => rows.filter((g) => g.id !== goal.id))
+    setSoloGoals((rows) => rows.filter((g) => g.id !== goal.id))
+    return { error: null }
+  }, [])
+
   const value = {
     loading,
     error,
@@ -215,6 +325,10 @@ export function GroupProvider({ children }) {
     myGoals,
     groupGoals,
     soloGoals,
+    goalDays,
+    dayIndex,
+    setGoalDay,
+    removeGoal,
     myRole,
     statuses,
     statusesFor,
