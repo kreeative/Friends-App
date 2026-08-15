@@ -3,7 +3,9 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useT } from '../lib/i18n'
 import { isMissingTable, readLocal, today, writeLocal } from '../lib/moodStore'
-import MoodBoard, { MoodBadge } from './MoodBoard'
+import { isMissingColumn } from '../lib/dberr'
+import { cleanMoods, primaryMood } from '../lib/moods'
+import MoodBoard, { MoodBadges } from './MoodBoard'
 
 /**
  * How you are today, on the dashboard.
@@ -48,15 +50,17 @@ export default function MoodToday({ groupCount = 0 }) {
    * `local` starts true and is only cleared once a real row comes back, so the
    * sharing choice can never appear before there is somewhere to share to.
    */
+  /* An array now. readLocal predates multi-select and returns a single id, so
+     cleanMoods reads it as a list of one rather than needing its own branch. */
   const saved = useState(() => readLocal())[0]
-  const [mood, setMood] = useState(saved?.mood ?? null)
+  const [moods, setMoods] = useState(() => cleanMoods(saved?.mood ?? null))
   const [shared, setShared] = useState(false)
   const [local, setLocal] = useState(true) // until the database says otherwise
 
   /* `draft` is what has been tapped but not saved, so closing the panel
      leaves today's mood exactly as it was. */
   const [open, setOpen] = useState(false)
-  const [draft, setDraft] = useState(null)
+  const [draft, setDraft] = useState([])
   const [draftShared, setDraftShared] = useState(false)
   const [saving, setSaving] = useState(false)
 
@@ -70,7 +74,7 @@ export default function MoodToday({ groupCount = 0 }) {
       try {
         const { data, error } = await supabase
           .from('daily_mood')
-          .select('mood, shared')
+          .select('mood, moods, shared')
           .eq('user_id', user.id)
           .eq('day', today())
           .maybeSingle()
@@ -79,9 +83,14 @@ export default function MoodToday({ groupCount = 0 }) {
 
         setLocal(false)
         setShared(data?.shared ?? false)
-        // Only adopt the server's mood if there is one. A row that does not
+        /* `moods` first, falling back to `mood`. A row written before migration
+           36, or by a client that has not been reloaded since, has an empty
+           array and a single value, and reading the array alone would show
+           somebody nothing where they had answered. */
+        const back = cleanMoods(data?.moods?.length ? data.moods : data?.mood)
+        // Only adopt the server's answer if there is one. A row that does not
         // exist yet must not wipe a face tapped a moment ago offline.
-        if (data?.mood) setMood(data.mood)
+        if (back.length) setMoods(back)
       } catch {
         /* Device copy stands. */
       }
@@ -92,28 +101,50 @@ export default function MoodToday({ groupCount = 0 }) {
   }, [user?.id])
 
   const persist = useCallback(
-    async (nextMood, nextShared) => {
+    async (nextMoods, nextShared) => {
+      const primary = primaryMood(nextMoods)
       /* The device copy is written first and unconditionally. Whatever the
-         network does next, the tap is not lost. */
-      writeLocal(nextMood)
+         network does next, the tap is not lost. It stores the primary, because
+         that is the shape readLocal has always had and the only thing the
+         offline path ever showed. */
+      writeLocal(primary)
       if (local || !user) return
 
       try {
-        if (nextMood === null) {
+        if (primary === null) {
           await supabase.from('daily_mood').delete().eq('user_id', user.id).eq('day', today())
           return
         }
 
-        const { error } = await supabase.from('daily_mood').upsert(
-          {
-            user_id: user.id,
-            day: today(),
-            mood: nextMood,
-            shared: nextShared,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: 'user_id,day' },
-        )
+        /**
+         * Both columns, every time.
+         *
+         * `mood` is not null and is what the week strip and the group board
+         * read, so it keeps being written: the first of the set in catalogue
+         * order, which is what primaryMood returns. `moods` carries all of
+         * them. Writing one without the other would leave the two disagreeing
+         * about the same day.
+         */
+        const row = {
+          user_id: user.id,
+          day: today(),
+          mood: primary,
+          moods: cleanMoods(nextMoods),
+          shared: nextShared,
+          updated_at: new Date().toISOString(),
+        }
+
+        let { error } = await supabase.from('daily_mood').upsert(row, { onConflict: 'user_id,day' })
+
+        /* Migration 36 not run yet. Dropping the array and sending the primary
+           alone keeps the tap, loses only the extra faces, and is the right way
+           round: a mood recorded as one of the four is better than a mood not
+           recorded at all. */
+        if (isMissingColumn(error, 'moods')) {
+          const { moods: _drop, ...legacy } = row
+          ;({ error } = await supabase.from('daily_mood').upsert(legacy, { onConflict: 'user_id,day' }))
+        }
+
         // The table was never there, or went away mid-session. Keep what was
         // tapped and stop claiming it is shared.
         if (error && isMissingTable(error)) {
@@ -130,7 +161,7 @@ export default function MoodToday({ groupCount = 0 }) {
 
   function toggle() {
     if (open) return setOpen(false)
-    setDraft(mood)
+    setDraft(moods)
     setDraftShared(shared)
     setOpen(true)
   }
@@ -138,14 +169,16 @@ export default function MoodToday({ groupCount = 0 }) {
   async function save() {
     if (saving) return
     setSaving(true)
-    setMood(draft)
+    setMoods(draft)
     setShared(draftShared)
     await persist(draft, draftShared)
     setSaving(false)
     setOpen(false)
   }
 
-  const chosen = mood ? t(`mood.${mood}`) : null
+  /* Every name, joined. Four faces with one word under them would be a caption
+     for the first of them. */
+  const chosen = moods.length ? moods.map((id) => t(`mood.${id}`)).join(' · ') : null
 
   return (
     <div className="lg overflow-hidden p-6">
@@ -156,8 +189,8 @@ export default function MoodToday({ groupCount = 0 }) {
           {chosen ? (
             <>
               <p className="text-small text-muted">{t('mood.today_is')}</p>
-              <p className="mt-1.5 flex items-center gap-2.5 text-h2 text-ink">
-                <MoodBadge id={mood} size={30} />
+              <p className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-h2 text-ink">
+                <MoodBadges ids={moods} size={30} />
                 {chosen}
               </p>
             </>
@@ -214,14 +247,14 @@ export default function MoodToday({ groupCount = 0 }) {
              * panel exists to reach.
              */}
             <div className="max-h-[70vh] overflow-y-auto overscroll-contain border-t border-hairline pt-6">
-              <MoodBoard value={draft} onChange={(id) => setDraft(id)} />
+              <MoodBoard value={draft} onChange={setDraft} />
 
               {/**
                * Appears the moment a face is tapped, not before. Asking
                * whether to share a mood that has not been picked is asking
                * about a decision that has not come up yet.
                */}
-              {draft &&
+              {draft.length > 0 &&
                 groupCount > 0 &&
                 (local ? (
                   /* Not a disabled checkbox. A control you can see and cannot
@@ -262,8 +295,8 @@ export default function MoodToday({ groupCount = 0 }) {
                 {/* Clearing is its own button. Tapping the chosen face again
                     also clears it, but that is a gesture you have to know
                     about, and "none of these" is a real answer here. */}
-                {draft && (
-                  <button onClick={() => setDraft(null)} className="btn-ghost press sm:w-auto sm:px-7">
+                {draft.length > 0 && (
+                  <button onClick={() => setDraft([])} className="btn-ghost press sm:w-auto sm:px-7">
                     {t('mood.clear')}
                   </button>
                 )}
@@ -274,7 +307,7 @@ export default function MoodToday({ groupCount = 0 }) {
       </div>
 
       {/* Said once, quietly, and only when it is true. */}
-      {local && mood && !open && (
+      {local && moods.length > 0 && !open && (
         <p className="mt-4 text-small text-muted/80">{t('mood.local_note')}</p>
       )}
     </div>

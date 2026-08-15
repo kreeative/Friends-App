@@ -368,7 +368,10 @@ export default function JournalEditor({ open, entry, seedText, onClose, onSaved 
         <Overlay onClose={() => setSheet(null)}>
           <h2 className="text-h2 text-ink">{t('journal.mood')}</h2>
           <div className="mt-5">
-            <MoodBoard value={mood} onChange={touch(setMood)} />
+            {/* One, not several. journal_entries.mood is a single text column and an
+                entry is about one moment rather than a whole day; the daily
+                card on the dashboard is the multi-select one. */}
+            <MoodBoard multiple={false} value={mood} onChange={touch(setMood)} />
           </div>
           <button
             onClick={() => setSheet(null)}
