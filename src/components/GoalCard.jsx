@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useGroup } from '../context/GroupContext'
@@ -6,8 +6,10 @@ import { shortDate } from '../lib/time'
 import { localeTag, useT } from '../lib/i18n'
 import { errorText } from '../lib/dberr'
 import { countOn, nextCount, progressFor, recentDays, streakOf } from '../lib/streak'
+import { rectOf } from '../lib/gesture'
 import { Avatar } from './ui'
 import ConfirmDialog from './ConfirmDialog'
+import GoalDetail from './GoalDetail'
 
 /**
  * Finished states. Each gets its own card colour and a chip, rather than the
@@ -83,6 +85,17 @@ export default function GoalCard({
    */
   const [gone, setGone] = useState(false)
 
+  /**
+   * The rectangle this card occupied when it was tapped, and null when the
+   * full page is shut.
+   *
+   * The rect and the open flag are one piece of state on purpose: the morph
+   * needs the geometry of the card AT THE MOMENT OF THE TAP, and measuring it
+   * later gets the wrong answer, because by then the page behind has a dialog
+   * over it and the body has had its scrolling locked.
+   */
+  const [origin, setOrigin] = useState(null)
+
   async function setStatus(status) {
     await supabase.from('goals').update({ status }).eq('id', goal.id)
     await reloadGroup()
@@ -136,6 +149,13 @@ export default function GoalCard({
 
   const when = [goal.trigger_when, goal.trigger_where].filter(Boolean).join(', ')
 
+  /* Measured from the article, not from the button inside it: the thing that
+     should appear to grow is the card, and the tappable region is only its
+     upper half. Growing from the header alone lands the page's top-left corner
+     in the middle of where the card was. */
+  const article = useRef(null)
+  const expand = () => setOrigin(rectOf(article.current))
+
   /**
    * The card and the dialog are siblings, not parent and child, and that is
    * deliberate: `gone` hides the article while leaving the dialog mounted, so
@@ -160,10 +180,30 @@ export default function GoalCard({
      * rather than read, which is exactly the case running text handles worst.
      */
     <article
+      ref={article}
       className={`${finished?.card ?? 'lg p-5'} transition-opacity duration-200 ease-settle ${
         paused ? 'opacity-55' : ''
       }`}
     >
+      {/**
+       * The upper half of the card is the way in, and only the upper half.
+       *
+       * Not the whole article: the tick, the three status controls and the
+       * delete are all buttons, and a button inside a button is invalid HTML
+       * that browsers resolve by dropping one of them. So the region that
+       * opens the page is the part that is pure description, which is also the
+       * part somebody reaching for "tell me more about this" aims at.
+       *
+       * A real button rather than a div with a click handler: it needs to be
+       * reachable by keyboard, announce itself, and take the focus ring, and
+       * all three come free from the element that already means this.
+       */}
+      <button
+        type="button"
+        onClick={expand}
+        aria-haspopup="dialog"
+        className="press -m-1 block w-full rounded-inner p-1 text-left transition-colors hover:bg-ink/[0.02]"
+      >
       {/**
        * Whose goal it is, first and quietly. It was the last line on the card,
        * under the buttons, which is where you put something nobody needs; in a
@@ -241,7 +281,8 @@ export default function GoalCard({
             {t('goal.paused')}
           </span>
         )}
-      </div>
+        </div>
+      </button>
 
       {progress && (
         <div className="mt-6">
@@ -369,6 +410,19 @@ export default function GoalCard({
 
     </article>
       )}
+
+      {/* The full page. Rendered per card so it carries this card's own
+          rectangle without a list-level registry mapping ids to elements, and
+          only one can be open at a time because only one card can be tapped. */}
+      <GoalDetail
+        goal={origin ? goal : null}
+        origin={origin}
+        owner={owner}
+        track={track}
+        deletable={deletable}
+        editHref={editHref}
+        onClose={() => setOrigin(null)}
+      />
 
       <ConfirmDialog
         open={asking}

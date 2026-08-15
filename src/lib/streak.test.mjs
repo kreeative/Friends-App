@@ -12,13 +12,16 @@ import {
   LOOKBACK_DAYS,
   countOn,
   dayKey,
+  dayStatus,
   indexDays,
   nextCount,
   progressFor,
   recentDays,
   shiftDay,
   since,
+  startedOn,
   streakOf,
+  totalDone,
 } from './streak.js'
 
 let pass = 0
@@ -236,6 +239,74 @@ eq('no goal at all has no streak', streakOf(null, indexDays([]), WED), 0)
 /* --- since -------------------------------------------------------------- */
 eq('the fetch window matches the walk', since(WED), dayKey(shiftDay(WED, -LOOKBACK_DAYS)))
 ok('and it is a plain date string', /^\d{4}-\d{2}-\d{2}$/.test(since(WED)))
+
+/* --- dayStatus: the four states a calendar square can be in ------------- */
+{
+  const ix = indexDays([tick(daily, 0), tick(daily, -2)])
+  eq('today, done', dayStatus(daily, ix, WED, WED).complete, true)
+  eq('and due', dayStatus(daily, ix, WED, WED).due, true)
+  eq('and not future', dayStatus(daily, ix, WED, WED).future, false)
+  eq('yesterday, missed', dayStatus(daily, ix, d(-1), WED).complete, false)
+  eq('tomorrow is future, not missed', dayStatus(daily, ix, d(1), WED).future, true)
+  ok('a future day is not complete either', !dayStatus(daily, ix, d(1), WED).complete)
+}
+{
+  const ix = indexDays([tick(thrice, 0, 2)])
+  const st = dayStatus(thrice, ix, WED, WED)
+  ok('two of three is partial', st.partial)
+  ok('and not complete', !st.complete)
+  /* eq compares with ===, which is never true for two arrays. */
+  ok('with both numbers on it', st.done === 2 && st.target === 3, `${st.done}/${st.target}`)
+}
+{
+  const ix = indexDays([tick(thrice, 0, 3)])
+  ok('three of three is not partial', !dayStatus(thrice, ix, WED, WED).partial)
+}
+{
+  const st = dayStatus(monWed, indexDays([]), d(1), WED)
+  ok('a Thursday on a Mon/Wed goal is not due', !st.due)
+  ok('and so is not a miss', !st.complete && !st.partial)
+}
+{
+  const born = { ...daily, created_at: dayKey(d(-2)) }
+  ok('a day before the goal existed is marked', dayStatus(born, indexDays([]), d(-5), WED).before)
+  ok('and a day after it is not', !dayStatus(born, indexDays([]), d(-1), WED).before)
+}
+{
+  const paused = { ...daily, status: 'paused' }
+  ok('pausing does not make past days stop being due', dayStatus(paused, indexDays([]), d(-3), WED).due)
+}
+
+/* --- totalDone ---------------------------------------------------------- */
+{
+  const ix = indexDays([tick(daily, 0), tick(daily, -1), tick(daily, -40)])
+  eq('every day at target counts, however scattered', totalDone(daily, ix, WED), 3)
+}
+{
+  const ix = indexDays([tick(thrice, 0, 3), tick(thrice, -1, 2), tick(thrice, -2, 1)])
+  eq('a partial day is not a day the goal was kept', totalDone(thrice, ix, WED), 1)
+}
+{
+  const ix = indexDays([tick(daily, 0), { goal_id: 'other', on_date: dayKey(WED), count_done: 1 }])
+  eq('another goal is not counted', totalDone(daily, ix, WED), 1)
+}
+{
+  const ix = indexDays([tick(daily, 1), tick(daily, 0)])
+  eq('a day in the future is not a completion yet', totalDone(daily, ix, WED), 1)
+}
+{
+  const ix = indexDays([tick(daily, -(LOOKBACK_DAYS + 5)), tick(daily, 0)])
+  eq('and nothing outside the window it can see', totalDone(daily, ix, WED), 1)
+}
+eq('nothing is zero', totalDone(daily, indexDays([]), WED), 0)
+eq('no goal is zero', totalDone(null, indexDays([]), WED), 0)
+eq('no index is zero', totalDone(daily, null, WED), 0)
+
+/* --- startedOn ---------------------------------------------------------- */
+eq('starts_on wins', startedOn({ starts_on: '2026-03-01', created_at: '2026-02-28T10:00:00Z' }), '2026-03-01')
+eq('created_at stands in', startedOn({ created_at: '2026-02-28T10:00:00Z' }), '2026-02-28')
+eq('neither is null', startedOn({}), null)
+eq('no goal is null', startedOn(null), null)
 
 console.log(`\n  ${pass} passed, ${fail} failed\n`)
 process.exit(fail === 0 ? 0 : 1)
