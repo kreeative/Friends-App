@@ -7,6 +7,7 @@ import { localeTag, useT } from '../lib/i18n'
 import { errorText } from '../lib/dberr'
 import { dragOffset, flipTransform, rectOf, shouldDismiss } from '../lib/gesture'
 import { monthGrid, monthStart, sameMonth } from '../lib/calendar'
+import { dateCaps, dateFull } from '../lib/datecaps'
 import {
   countOn,
   dayKey,
@@ -459,7 +460,18 @@ export default function GoalDetail({
                 <div className="mt-3 grid grid-cols-3 gap-2">
                   <Stat value={total} label={t('goal.stat_total')} />
                   <Stat value={streak} label={t('goal.stat_streak')} />
-                  <Stat value={started ? fmtDay(started, tag) : '—'} label={t('goal.stat_since')} small />
+                  {/* The date is set as a figure, not as a caption. It sat at
+                      text-body next to two numbers at text-h1 and wrapped onto
+                      two lines inside a 111px tile, so one of three equal
+                      cards read as a different component. dateCaps caps the
+                      month at four characters in both languages, which is a
+                      width this tile can be sized for and never exceed. */}
+                  <Stat
+                    value={dateCaps(started, tag) ?? '—'}
+                    title={dateFull(started, tag) ?? undefined}
+                    label={t('goal.stat_since')}
+                    date
+                  />
                 </div>
 
                 {/* Two weeks of dots, the same row the card shows, at a size
@@ -605,14 +617,45 @@ export default function GoalDetail({
   )
 }
 
-/** One figure and what it is. */
-function Stat({ value, label, small = false }) {
+/**
+ * One figure and what it is.
+ *
+ * `date` is the third tile rather than a size prop, because what makes it
+ * different is not only that it is smaller. A date is letters, so it takes the
+ * uppercase treatment and the tracking that caps want, and it must not break
+ * mid-string: nowrap is what keeps "17 SEPT 2025" on one line instead of
+ * hyphenating a month across two. The number tiles keep tabular figures, which
+ * a date has no use for.
+ */
+function Stat({ value, label, title, date = false }) {
   return (
-    <div className="rounded-card bg-surface px-3 py-4 text-center">
+    /* px-2 rather than px-3: at 320px the three tiles are 88px each, and four
+       pixels a side is the difference between the widest month fitting and
+       not. Restored above 640px, where there is room to spare. */
+    <div className="rounded-card bg-surface px-2 py-4 text-center sm:px-3">
       <div
-        className={`font-display font-semibold leading-none text-ink [font-variant-numeric:tabular-nums] ${
-          small ? 'text-body' : 'text-h1'
-        }`}
+        title={title}
+        /**
+         * 18px, not the 22 the neighbours use, and the number is measured
+         * rather than chosen. Poppins at this weight sets "17 SEPT" to 86px,
+         * against 95px of tile at 390px wide; at 20px it is 95px and at 22px
+         * it is 105px, so the tile that started this was overflowing at every
+         * size that looked right next to a one-digit number. Below 360px the
+         * tile is 72px and only 14px goes in.
+         *
+         * A date cannot be set at the size of the figure beside it in a third
+         * of a phone. Matching the neighbours means taking their treatment,
+         * bold and uppercase and tracked, not their pixels.
+         *
+         * No nowrap. It was there and it turned a wrap into a clip, which is
+         * worse: the year simply vanished off the edge of the tile. The break
+         * is controlled in dateCaps instead, by which space is a normal one.
+         */
+        className={
+          date
+            ? 'font-display text-small font-bold uppercase leading-tight tracking-[0.03em] text-ink min-[360px]:text-[1.125rem]'
+            : 'font-display text-h1 font-semibold leading-none text-ink [font-variant-numeric:tabular-nums]'
+        }
       >
         {value}
       </div>
