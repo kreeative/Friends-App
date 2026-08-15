@@ -493,6 +493,24 @@ const STRINGS = {
     'goal.dropped': 'dropped',
     'goal.reopen': 'Start it again',
 
+    /* The daily tick, on goals kept alone. */
+    'goal.mark_today': 'Mark today',
+    'goal.done_today': 'Done today',
+    'goal.today_count': '{done} of {total} today',
+    'goal.not_due_today': 'Not due today.',
+    'goal.streak_one': '{n} day in a row',
+    'goal.streak_other': '{n} days in a row',
+
+    /* Deleting. The confirmation copy was specified in French by the person
+       who asked for it; this is the same thing said in English. */
+    'goal.delete': 'Delete',
+    'goal.delete_title': 'Delete this goal?',
+    'goal.delete_body':
+      'Are you sure you want to delete this goal? This action cannot be undone.',
+    'goal.delete_cancel': 'Cancel',
+    'goal.delete_confirm': 'Delete permanently',
+    'goal.deleting': 'Deleting...',
+
     'me.consistency_title': 'Your consistency',
     'me.account': 'Your account',
     'me.your_goals': 'Your own goals',
@@ -1279,6 +1297,25 @@ const STRINGS = {
     'goal.done': 'terminé',
     'goal.dropped': 'abandonné',
     'goal.reopen': 'Relancer',
+
+    /* La coche du jour, sur les objectifs tenus seul. */
+    'goal.mark_today': 'Marquer aujourd’hui',
+    'goal.done_today': 'Fait aujourd’hui',
+    'goal.today_count': '{done} sur {total} aujourd’hui',
+    'goal.not_due_today': 'Pas prévu aujourd’hui.',
+    'goal.streak_one': '{n} jour d’affilée',
+    'goal.streak_other': '{n} jours d’affilée',
+
+    /* Suppression. Le texte de la confirmation est mot pour mot celui qui a
+       été demandé, y compris le vouvoiement, alors que le reste de
+       l'application tutoie. Voir la note dans la revue. */
+    'goal.delete': 'Supprimer',
+    'goal.delete_title': 'Supprimer cet objectif ?',
+    'goal.delete_body':
+      'Êtes-vous sûr de vouloir supprimer cet objectif ? Cette action est irréversible.',
+    'goal.delete_cancel': 'Annuler',
+    'goal.delete_confirm': 'Supprimer définitivement',
+    'goal.deleting': 'Suppression...',
 
     'me.consistency_title': 'Ta régularité',
     'me.account': 'Ton compte',
