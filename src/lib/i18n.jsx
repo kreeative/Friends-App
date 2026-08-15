@@ -311,6 +311,20 @@ const STRINGS = {
     'money.not_installed': 'The money tables are not in the database yet.',
 
     'money.today_label': 'Safe to spend today',
+    'money.balance_label': 'Logged this period',
+    'money.nothing_logged':
+      'Nothing logged yet. Your plan works out at {planned} a day; log what you actually earn and spend and this becomes real.',
+    'money.plan_vs_actual': 'Planned and actual',
+    'money.planned': 'Planned',
+    'money.actual': 'Actual',
+    'money.planned_badge': 'Planned',
+    'money.paid': 'Paid',
+    'money.paid_unavailable': 'Run supabase/35_fixed_paid.sql to mark charges as paid.',
+    'money.fixed_title': 'Fixed charges',
+    'money.row_income': 'Income',
+    'money.row_fixed': 'Fixed charges',
+    'money.row_savings': 'Savings',
+    'money.row_free': 'Free',
     'money.today_body': '{left} left, over {days} days.',
     'money.over_label': 'Over by',
     'money.over_body':
@@ -1132,6 +1146,20 @@ const STRINGS = {
     'money.not_installed': 'Les tables budget ne sont pas encore dans la base.',
 
     'money.today_label': 'Disponible aujourd’hui',
+    'money.balance_label': 'Enregistré cette période',
+    'money.nothing_logged':
+      'Rien d’enregistré pour l’instant. Ton plan donne {planned} par jour ; enregistre ce que tu gagnes et ce que tu dépenses vraiment et ce chiffre devient réel.',
+    'money.plan_vs_actual': 'Prévu et réel',
+    'money.planned': 'Prévu',
+    'money.actual': 'Réel',
+    'money.planned_badge': 'Prévu',
+    'money.paid': 'Payé',
+    'money.paid_unavailable': 'Lance supabase/35_fixed_paid.sql pour pouvoir marquer les charges comme payées.',
+    'money.fixed_title': 'Charges fixes',
+    'money.row_income': 'Revenus',
+    'money.row_fixed': 'Charges fixes',
+    'money.row_savings': 'Épargne',
+    'money.row_free': 'Libre',
     'money.today_body': '{left} restants, sur {days} jours.',
     'money.over_label': 'Dépassement de',
     'money.over_body':

@@ -102,6 +102,39 @@ const sum = (rows, pick) => rows.reduce((n, r) => n + (Number(pick(r)) || 0), 0)
 /**
  * Everything the money screen shows, derived in one place.
  *
+ * PLANNED AND ACTUAL ARE TWO DIFFERENT THINGS, AND CONFLATING THEM WAS A BUG.
+ *
+ * This function used to compute one number:
+ *
+ *   pool = income - committed - savings
+ *   left = pool + logged income - logged spending
+ *
+ * which reads as arithmetic and is a claim about the world. It says the salary
+ * has arrived and the rent has gone out. Neither is true at the moment somebody
+ * finishes the setup form, so an account thirty seconds old reported having
+ * fifteen hundred dollars available, and a person who set the app up on the
+ * 20th was told they had a full month's free money left with ten days to go.
+ *
+ * The setup form collects estimates. An estimate is a target, not a
+ * transaction. So there are now two sets of numbers here and they never mix:
+ *
+ *   PLANNED   income, committed, savings, plannedPool, plannedPerDay.
+ *             Everything derived from the setup form and nothing else. This is
+ *             what you meant to do.
+ *
+ *   ACTUAL    earned, spent, balance, fixedPaid, fixedDue, available, perDay.
+ *             Everything derived from rows somebody actually logged. This is
+ *             what happened.
+ *
+ * `balance` is `earned - spent`, so it is exactly zero on a fresh setup, which
+ * is the honest starting point and the thing that was asked for.
+ *
+ * A fixed charge is planned until it is paid. `last_paid_on` (migration 35)
+ * records when, and a charge counts as paid when that date falls inside the
+ * current period, so the whole set becomes due again by itself when the period
+ * rolls over. Whatever is still due is subtracted from what is available,
+ * because money earmarked for rent is not money you can spend today.
+ *
  * @param plan    a budget_plan row, or null when nothing is set up yet
  * @param fixed   budget_fixed rows
  * @param entries budget_entry rows
@@ -111,12 +144,17 @@ export function summarise({ plan, fixed = [], entries = [], today = new Date(), 
   const startDay = plan?.period_start_day ?? 1
   const period = periodBounds(today, startDay)
 
+  /* ---- planned. The setup form, and nothing that has happened. ---------- */
   const income = Number(plan?.monthly_income_cents) || 0
   const savings = Number(plan?.savings_target_cents) || 0
-  const committed = sum(
-    fixed.filter((f) => f.active !== false),
-    (f) => f.amount_cents,
-  )
+
+  const live = fixed.filter((f) => f.active !== false)
+  const committed = sum(live, (f) => f.amount_cents)
+
+  /** What the plan says is free, if every part of the plan comes true. */
+  const plannedPool = income - committed - savings
+
+  /* ---- actual. Rows somebody logged, and nothing they intended. --------- */
 
   /* Excluded rows are records, not spending. A refund, a transfer between
      your own pockets, an expense somebody else is paying back: all worth
@@ -129,16 +167,37 @@ export function summarise({ plan, fixed = [], entries = [], today = new Date(), 
     mine.filter((e) => e.kind === 'expense'),
     (e) => e.amount_cents,
   )
-  // Money that arrived unplanned. A tracker that can only subtract makes
-  // people stop entering the good months, and then it is wrong all year.
-  const extra = sum(
+  const earned = sum(
     mine.filter((e) => e.kind === 'income'),
     (e) => e.amount_cents,
   )
 
-  /** What was ever free, before any of this period's spending. */
-  const pool = income - committed - savings
-  const left = pool + extra - spent
+  /* Paid means paid IN THIS PERIOD. A date from last month is a charge that
+     has come round again, which is what makes this reset itself with no job
+     to run and no flag for anybody to clear. */
+  const paidRows = live.filter((f) => inPeriod(f.last_paid_on, period.start, period.end))
+  const fixedPaid = sum(paidRows, (f) => f.amount_cents)
+  const fixedDue = Math.max(0, committed - fixedPaid)
+
+  /**
+   * What is actually in hand: logged in, minus logged out.
+   *
+   * Zero on a fresh setup, by construction, because there is nothing to add up.
+   * That is the whole point of this rewrite.
+   */
+  const balance = earned - spent
+
+  /**
+   * And what is free of it, once what is still owed is set aside.
+   *
+   * A charge already paid is not subtracted twice: it has left through `spent`
+   * if it was logged as a transaction, or it is simply not in `fixedDue` any
+   * more. Only what is still coming is held back.
+   */
+  const available = balance - fixedDue
+
+  /** Has anything real happened this period? Drives the empty headline. */
+  const logged = mine.length > 0
 
   const byCategory = CATEGORIES.map((key) => ({
     key,
@@ -164,40 +223,60 @@ export function summarise({ plan, fixed = [], entries = [], today = new Date(), 
      */
     currency: currency || plan?.currency || 'CAD',
 
+    /* ---- planned ------------------------------------------------------- */
     income,
     committed,
     savings,
-    pool,
+    plannedPool,
+    /** What the plan implies you may spend a day, if it all comes true. */
+    plannedPerDay: Math.floor(plannedPool / Math.max(1, period.daysTotal)),
+
+    /* ---- actual -------------------------------------------------------- */
+    earned,
     spent,
-    extra,
-    left,
+    balance,
+    fixedPaid,
+    fixedDue,
+    available,
+    logged,
 
     /**
      * The headline. Floor rather than round, because a number rounded up is a
      * number that overspends by a cent a day and then blames the app.
      */
-    perDay: Math.floor(left / period.daysLeft),
-
-    /** What the plan implied before this period's spending started. */
-    perDayPlanned: Math.floor(pool / Math.max(1, period.daysTotal)),
+    perDay: Math.floor(available / period.daysLeft),
 
     /**
      * The plan does not close. Fixed costs plus savings exceed income, so no
      * amount of careful spending makes the month work, and the honest thing is
      * to say so rather than to show a small daily allowance that is a lie.
      * This is the single most useful thing the feature can tell somebody.
+     *
+     * Still a fact about the PLAN, deliberately. It is knowable the moment the
+     * form is saved and does not wait for a transaction to prove it.
      */
-    overcommitted: pool < 0,
+    overcommitted: plannedPool < 0,
 
-    /** Spent everything that was free, with days still to go. */
-    overspent: pool >= 0 && left < 0,
+    /**
+     * In the red on real money, with days still to go.
+     *
+     * Gated on something having been logged. Without that gate a fresh setup
+     * with rent still due would report being overspent before the account was
+     * a minute old, which is the same lie as before with the sign flipped.
+     */
+    overspent: plannedPool >= 0 && logged && available < 0,
 
     /**
      * Pace, for the ring. Where you would be if the period's free money were
      * spread evenly and you had spent exactly on plan up to today. Above 1
      * means ahead of pace, which is the polite way of saying too fast.
+     *
+     * Measured against the PLAN, because that is what a pace is compared to.
      */
-    pace: pool > 0 ? spent / Math.max(1, (pool * period.daysGone) / period.daysTotal) : 0,
+    pace:
+      plannedPool > 0
+        ? spent / Math.max(1, (plannedPool * period.daysGone) / period.daysTotal)
+        : 0,
 
     byCategory,
     entries: mine,

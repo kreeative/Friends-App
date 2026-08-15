@@ -754,6 +754,29 @@
    */
   .ground {
     background: rgb(var(--c-bg));
+
+    /**
+     * `clip`, not `hidden`, and the distinction is the whole reason this line
+     * can exist at all.
+     *
+     * The sticker rail below already clips on its own wrapper, and that holds
+     * while the wrapper is as tall as the page. It is `absolute inset-0` of
+     * this element, which is `min-h-dvh`, so on a page taller than the
+     * viewport the wrapper stops short and a sticker positioned further down
+     * escapes it. That is latent on every long page: it showed up the day the
+     * money screen grew two sections and went from 3086px to 3739px tall, and
+     * it added seven pixels of horizontal scroll on a 320px screen.
+     *
+     * `overflow: hidden` here would fix it and break something worse:
+     * a hidden ancestor silently kills `position: sticky`, and the app's
+     * header is sticky. `overflow: clip` does the clipping without
+     * establishing a scroll container, so sticky keeps working. See the note
+     * in components/Stickers.jsx, which chose its clipping wrapper for the
+     * same reason and could only reach so far.
+     *
+     * x only. Clipping y would cut the page off at the fold.
+     */
+    overflow-x: clip;
   }
 
   /**

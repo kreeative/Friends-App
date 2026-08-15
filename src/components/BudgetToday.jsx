@@ -60,7 +60,7 @@ export default function BudgetToday() {
   /* Cumulative spend read from the other end, so the line falls as the month
      goes rather than climbing. Same helper the money screen uses. */
   const remaining = dailySeries({ entries: s.entries, period: s.period }).map(
-    (v) => s.pool + s.extra - v,
+    (v) => s.earned - s.fixedDue - v,
   )
 
   return (
@@ -74,7 +74,7 @@ export default function BudgetToday() {
           <>
             <div className="text-h2 text-ink">{t('money.overcommitted_title')}</div>
             <p className="lede mt-2 max-w-[32ch]">
-              {t('money.overcommitted_short', { over: fmt(Math.abs(s.pool)) })}
+              {t('money.overcommitted_short', { over: fmt(Math.abs(s.plannedPool)) })}
             </p>
           </>
         ) : (
@@ -85,15 +85,24 @@ export default function BudgetToday() {
                 Money.jsx deliberately, this is one card that appears twice
                 rather than two cards that look alike. */}
             <div className="eyebrow mb-2 !text-[0.75rem] !font-medium !tracking-[0.05em]">
-              {s.overspent ? t('money.over_label') : t('money.today_label')}
+              {!s.logged
+                ? t('money.balance_label')
+                : s.overspent
+                  ? t('money.over_label')
+                  : t('money.today_label')}
             </div>
             {/* leading-none removed so `metric`'s own 1.04 applies. See the
                 note on the twin in Money.jsx. */}
             <div className="font-display text-metric text-ink [font-variant-numeric:tabular-nums]">
-              {fmt(s.overspent ? s.left : s.perDay)}
+              {fmt(s.logged ? (s.overspent ? s.available : s.perDay) : 0)}
             </div>
+            {/* Nothing logged is its own sentence, not a number dressed as one.
+                The plan is named beside it so the setup is not invisible, but
+                it is named AS a plan. */}
             <p className="lede mt-2 max-w-[32ch]">
-              {t('money.today_body', { left: fmt(s.left), days: s.period.daysLeft })}
+              {s.logged
+                ? t('money.today_body', { left: fmt(s.available), days: s.period.daysLeft })
+                : t('money.nothing_logged', { planned: fmt(s.plannedPerDay) })}
             </p>
             {/**
              * What is left, day by day, under the number that is today's slice
