@@ -79,13 +79,20 @@ export default function BudgetToday() {
           </>
         ) : (
           <>
-            <div className="eyebrow">
+            {/* The same three lines as the money screen's headline card, and
+                the same fix: the label carried no bottom margin, so it and the
+                number were touching at a measured 0px. Kept in step with
+                Money.jsx deliberately, this is one card that appears twice
+                rather than two cards that look alike. */}
+            <div className="eyebrow mb-2 !text-[0.75rem] !font-medium !tracking-[0.05em]">
               {s.overspent ? t('money.over_label') : t('money.today_label')}
             </div>
-            <div className="font-display text-metric leading-none text-ink [font-variant-numeric:tabular-nums]">
+            {/* leading-none removed so `metric`'s own 1.04 applies. See the
+                note on the twin in Money.jsx. */}
+            <div className="font-display text-metric text-ink [font-variant-numeric:tabular-nums]">
               {fmt(s.overspent ? s.left : s.perDay)}
             </div>
-            <p className="lede mt-3 max-w-[32ch]">
+            <p className="lede mt-2 max-w-[32ch]">
               {t('money.today_body', { left: fmt(s.left), days: s.period.daysLeft })}
             </p>
             {/**
