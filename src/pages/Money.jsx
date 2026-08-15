@@ -13,6 +13,8 @@ import { Empty, Field, Screen, Section, TopBar } from '../components/ui'
 import BudgetIntro from '../components/BudgetIntro'
 import BudgetTiles from '../components/BudgetTiles'
 import TransactionSheet from '../components/TransactionSheet'
+import PlanVsActual from '../components/PlanVsActual'
+import FixedCharges from '../components/FixedCharges'
 
 /**
  * The money screen.
@@ -487,7 +489,7 @@ export default function Money() {
             <div className="text-h2 text-ink">{t('money.overcommitted_title')}</div>
             <p className="mt-2 text-body text-muted">
               {t('money.overcommitted_body', {
-                over: fmt(Math.abs(s.pool)),
+                over: fmt(Math.abs(s.plannedPool)),
                 fixed: fmt(s.committed + s.savings),
                 income: fmt(s.income),
               })}
@@ -525,7 +527,11 @@ export default function Money() {
              * rather than pushed into .eyebrow, which 38 other places use.
              */}
             <div className="eyebrow mb-2 !text-[0.75rem] !font-medium !tracking-[0.05em]">
-              {s.overspent ? t('money.over_label') : t('money.today_label')}
+              {!s.logged
+                ? t('money.balance_label')
+                : s.overspent
+                  ? t('money.over_label')
+                  : t('money.today_label')}
             </div>
             {/**
              * leading-none is gone, so `hero`'s own 1.05 applies.
@@ -538,17 +544,30 @@ export default function Money() {
              * would have been sitting in the label above it.
              */}
             <div className="font-display text-hero text-ink [font-variant-numeric:tabular-nums]">
-              {fmt(s.overspent ? s.left : s.perDay)}
+              {fmt(s.logged ? (s.overspent ? s.available : s.perDay) : 0)}
             </div>
+            {/**
+             * Nothing logged gets a sentence, not a number pretending to be
+             * one. This is where the bug was visible: the setup form's figures
+             * were divided by the days left and printed as an allowance, so a
+             * salary that had not arrived and a rent that had not gone out were
+             * both being spent on screen.
+             *
+             * The plan is still named, because somebody who has just typed it
+             * in should see it acknowledged. It is named as a plan.
+             */}
             <p className="lede mt-2 max-w-[32ch]">
-              {s.overspent
-                ? t('money.over_body', { days: s.period.daysLeft })
-                : t('money.today_body', {
-                    left: fmt(s.left),
-                    days: s.period.daysLeft,
-                  })}
+              {!s.logged
+                ? t('money.nothing_logged', { planned: fmt(s.plannedPerDay) })
+                : s.overspent
+                  ? t('money.over_body', { days: s.period.daysLeft })
+                  : t('money.today_body', {
+                      left: fmt(s.available),
+                      days: s.period.daysLeft,
+                    })}
             </p>
-            <SpendBar spent={s.spent} pool={s.pool} />
+            {/* Against the plan, which is what a spend bar is measured on. */}
+            <SpendBar spent={s.spent} pool={s.plannedPool} />
           </div>
         )}
       </Section>
@@ -578,6 +597,22 @@ export default function Money() {
         </button>
       </Section>
 
+      {/* What was meant to happen, against what has. The gap between the two
+          columns is the interesting part, and it is the thing the old single
+          column could not show because it had already merged them. */}
+      <Section title={t('money.plan_vs_actual')}>
+        <PlanVsActual s={s} locale={locale} />
+      </Section>
+
+      {/* And the charges themselves, each one planned until you say it went
+          out. This is the control the app never had: with no way to mark a
+          charge paid, the arithmetic had to assume always or never. */}
+      {fixed.filter((f) => f.active !== false).length > 0 && (
+        <Section title={t('money.fixed_title')}>
+          <FixedCharges fixed={fixed} s={s} locale={locale} onChange={load} />
+        </Section>
+      )}
+
       {/**
        * Rows, not columns, and not the shared Stat component.
        *
@@ -600,7 +635,7 @@ export default function Money() {
       <Section title={t('money.this_period')}>
         <dl className="lg divide-y divide-hairline px-5">
           {[
-            [t('money.left'), fmt(s.left)],
+            [t('money.left'), fmt(s.available)],
             [t('money.spent'), fmt(s.spent)],
             [t('money.days_left'), String(s.period.daysLeft)],
           ].map(([label, value]) => (

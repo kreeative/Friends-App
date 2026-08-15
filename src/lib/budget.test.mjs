@@ -43,9 +43,18 @@ const fixed = [ { amount_cents: 140000, active: true }, { amount_cents: 6500, ac
 
 let s = summarise({ plan, fixed, entries: [], today: new Date(2026, 7, 1) })  // 1 Aug, 31 days
 eq('committed excludes paused', s.committed, 146500)
-eq('pool = income - fixed - savings', s.pool, 320000 - 146500 - 40000)
-eq('nothing spent yet, left = pool', s.left, 133500)
-eq('perDay on day one', s.perDay, Math.floor(133500 / 31))
+eq('the PLAN still says what it always said', s.plannedPool, 320000 - 146500 - 40000)
+eq('and what it implies per day', s.plannedPerDay, Math.floor(133500 / 31))
+
+// THE BUG. Saving the setup form used to make `left` 133500 on a day when no
+// salary had arrived and no rent had gone out. Actual money starts at zero.
+eq('a fresh setup has a balance of nothing', s.balance, 0)
+eq('because nothing has been earned', s.earned, 0)
+eq('or spent', s.spent, 0)
+eq('and nothing has been logged', s.logged, false)
+eq('so it is not "overspent" either', s.overspent, false)
+eq('the fixed charges are all still due', s.fixedDue, 146500)
+eq('and none are paid', s.fixedPaid, 0)
 
 s = summarise({ plan, fixed, today: new Date(2026, 7, 16),
   entries: [
@@ -56,15 +65,19 @@ s = summarise({ plan, fixed, today: new Date(2026, 7, 16),
     { kind: 'expense', amount_cents: 88888, category: 'home', happened_on: '2026-09-02' }, // next period
   ] })
 eq('spend outside the period is excluded', s.spent, 5550)
-eq('unplanned income adds to the pool',    s.extra, 20000)
-eq('left = pool + extra - spent',          s.left, 133500 + 20000 - 5550)
+eq('logged income is counted as earned',   s.earned, 20000)
+eq('balance = earned - spent',             s.balance, 20000 - 5550)
+eq('available holds back what is still due', s.available, 20000 - 5550 - 146500)
+eq('and something has been logged',        s.logged, true)
 eq('entries in period', s.entries.length, 3)
 eq('categories ranked, empties dropped', s.byCategory.map(c => c.key), ['food', 'fun'])
 
 // ---- the states that matter ------------------------------------------------
 s = summarise({ plan: { ...plan, monthly_income_cents: 150000 }, fixed, today: new Date(2026, 7, 5) })
 eq('overcommitted when fixed+savings > income', s.overcommitted, true)
-eq('overcommitted pool is negative', s.pool < 0, true)
+eq('overcommitted is a fact about the plan', s.plannedPool < 0, true)
+// Knowable the moment the form is saved, so it does NOT wait for a transaction.
+eq('and it does not need anything logged', s.logged, false)
 
 s = summarise({ plan, fixed, today: new Date(2026, 7, 20),
   entries: [{ kind: 'expense', amount_cents: 200000, happened_on: '2026-08-03' }] })
@@ -117,13 +130,13 @@ eq('never divides by zero', Number.isFinite(summarise({ plan, fixed, today: new 
   ]})
 
   eq('an excluded expense does not spend', withRefund.spent, plain.spent)
-  eq('nor does it move what is left',      withRefund.left, plain.left)
+  eq('nor does it move what is left',      withRefund.available, plain.available)
   eq('and it stays out of the breakdown',  withRefund.byCategory.length, plain.byCategory.length)
 
   const withIncome = summarise({ plan, fixed: [], today, entries: [
     { kind: 'income', amount_cents: 90000, happened_on: day, excluded: true },
   ]})
-  eq('an excluded income does not add', withIncome.left, summarise({ plan, fixed: [], today, entries: [] }).left)
+  eq('an excluded income does not add', withIncome.balance, 0)
 
   // The curve has to agree with the total sitting above it.
   const period = periodBounds(today, 1)
@@ -138,6 +151,81 @@ eq('never divides by zero', Number.isFinite(summarise({ plan, fixed, today: new 
     { kind: 'expense', amount_cents: 5000, category: 'food', happened_on: day },
   ]})
   eq('a row with no flag still counts', legacy.spent, 5000)
+}
+
+// ---- planned vs actual, which is the whole point of this rewrite ----------
+{
+  const plan = { monthly_income_cents: 200000, savings_target_cents: 0, period_start_day: 1 }
+  const rent = { id: 'r', label: 'Rent', amount_cents: 50000, active: true }
+  const today = new Date(2026, 7, 15)                       // 15 Aug, 17 days left
+
+  // 1. Thirty seconds after finishing setup.
+  const fresh = summarise({ plan, fixed: [rent], entries: [], today })
+  eq('setup alone puts no cash in hand', fresh.balance, 0)
+  eq('the plan is still readable beside it', fresh.plannedPool, 150000)
+  eq('and the plan is untouched by there being no transactions', fresh.plannedPerDay, Math.floor(150000 / 31))
+  eq('rent is planned, not paid', fresh.fixedDue, 50000)
+
+  // 2. The salary lands and is logged.
+  const paid = summarise({ plan, fixed: [rent], today, entries: [
+    { kind: 'income', amount_cents: 200000, happened_on: '2026-08-01' },
+  ]})
+  eq('now there is real money', paid.balance, 200000)
+  eq('but rent is still owed out of it', paid.available, 150000)
+  eq('and the day rate comes off the real figure', paid.perDay, Math.floor(150000 / 17))
+
+  // 3. Rent is marked paid. It stops being held back.
+  const rentPaid = summarise({
+    plan, today,
+    fixed: [{ ...rent, last_paid_on: '2026-08-02' }],
+    entries: [{ kind: 'income', amount_cents: 200000, happened_on: '2026-08-01' }],
+  })
+  eq('a paid charge is counted paid', rentPaid.fixedPaid, 50000)
+  eq('and stops being due', rentPaid.fixedDue, 0)
+  eq('so nothing is held back any more', rentPaid.available, 200000)
+
+  // 4. Paid, AND logged as a transaction. It must not come off twice: it is
+  //    out of fixedDue and out through spent, which is one subtraction each of
+  //    two different things, not two of the same.
+  const both = summarise({
+    plan, today,
+    fixed: [{ ...rent, last_paid_on: '2026-08-02' }],
+    entries: [
+      { kind: 'income', amount_cents: 200000, happened_on: '2026-08-01' },
+      { kind: 'expense', amount_cents: 50000, category: 'home', happened_on: '2026-08-02' },
+    ],
+  })
+  eq('the money really left', both.balance, 150000)
+  eq('and it is not withheld a second time', both.available, 150000)
+
+  // 5. Last month's date does not count as this month's payment. This is what
+  //    makes the whole set come due again with no job to run and no flag to
+  //    reset.
+  const stale = summarise({
+    plan, today,
+    fixed: [{ ...rent, last_paid_on: '2026-07-02' }],
+    entries: [],
+  })
+  eq('a payment from last period does not carry over', stale.fixedPaid, 0)
+  eq('so the charge is due again', stale.fixedDue, 50000)
+
+  // 6. A paused charge is neither due nor payable.
+  const paused = summarise({
+    plan, today,
+    fixed: [{ ...rent, active: false, last_paid_on: '2026-08-02' }],
+    entries: [],
+  })
+  eq('a paused charge is not committed', paused.committed, 0)
+  eq('nor due', paused.fixedDue, 0)
+  eq('nor counted as paid', paused.fixedPaid, 0)
+
+  // 7. fixedDue never goes negative, however the numbers are edited.
+  const over = summarise({
+    plan, today,
+    fixed: [{ ...rent, last_paid_on: '2026-08-02' }, { id: 'x', amount_cents: 1, active: false }],
+    entries: [],
+  })
+  eq('fixedDue has a floor of zero', over.fixedDue >= 0, true)
 }
 
 console.log(`\n${pass} passed, ${fail} failed`)
