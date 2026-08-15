@@ -367,42 +367,29 @@
 
   body {
     @apply bg-bg font-sans text-body text-ink;
-    /**
-     * Regular, not medium.
-     *
-     * It was 500, and the comment here defended that against DM Sans going
-     * thin at small sizes. DM Sans is not the typeface any more; Poppins is,
-     * and Poppins at 400 has a tall x-height and closed apertures that hold up
-     * at 14px in a way DM Sans did not. The note had outlived the font it was
-     * written about.
-     *
-     * At 500 every paragraph in the app was set one step above regular, which
-     * is the weight a UI uses for emphasis. Nothing could be emphasised
-     * against it without going to 600, so the whole page sat at the volume
-     * that a single important line should have had to itself.
-     */
-    font-weight: 400;
+    /* Medium rather than regular. DM Sans at 400 goes thin at small sizes,
+       and the secondary greys were the worst of it. */
+    font-weight: 500;
     padding-bottom: env(safe-area-inset-bottom);
   }
 
   /**
-   * One step above the body, whatever the body is.
+   * 600, not 700.
    *
-   * This was 600 against a body of 500, and the reasoning was that one step is
-   * all a heading needs, because size is doing most of the work. That
-   * reasoning is still right and the numbers had to move with the body: 600
-   * against 400 is two steps, which is the gap this rule was written to avoid
-   * in the first place.
+   * Poppins is a geometric face and its bold is genuinely bold: at 700 the
+   * bowls close up and a heading stops being a heading and starts being a
+   * block of ink. Set against a body already running at 500, the jump was two
+   * full steps, which is what made every screen read as shouting.
    *
-   * Poppins at 700 is genuinely bold, the bowls close up and a heading stops
-   * being a heading and becomes a block of ink, which is why the ceiling here
-   * has never been the obvious one.
+   * 600 against 500 is one step, and one step is all a heading needs: it is
+   * also bigger, and size is doing most of the work already. The weight file
+   * is one this app already ships, so nothing new is downloaded.
    */
   h1,
   h2,
   h3 {
     @apply text-ink;
-    font-weight: 500;
+    font-weight: 600;
   }
 
   ::placeholder {
