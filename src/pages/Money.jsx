@@ -509,13 +509,38 @@ export default function Money() {
            * another rather than a card for a bare div.
            */
           <div className="lg p-6 sm:p-7">
-            <div className="eyebrow">
+            {/**
+             * The label, the number, the sentence, with air between them.
+             *
+             * The label and the number were touching: a measured gap of
+             * exactly 0px, because the eyebrow carried no bottom margin and
+             * the number's line box began where the label's ended. At 13px
+             * against 56px that reads as one clipped block rather than as a
+             * caption over an answer.
+             *
+             * The tracking is opened past what .eyebrow gives everywhere else.
+             * Uppercase has no descenders to separate the letters, so caps
+             * need more space than lowercase at the same size, and Poppins'
+             * caps are the widest glyphs in the set. Scoped to this card
+             * rather than pushed into .eyebrow, which 38 other places use.
+             */}
+            <div className="eyebrow mb-2 !text-[0.75rem] !font-medium !tracking-[0.05em]">
               {s.overspent ? t('money.over_label') : t('money.today_label')}
             </div>
-            <div className="font-display text-hero leading-none text-ink [font-variant-numeric:tabular-nums]">
+            {/**
+             * leading-none is gone, so `hero`'s own 1.05 applies.
+             *
+             * The token sets that line height deliberately: Poppins has a tall
+             * x-height and short descenders, and 1.0 gives the glyphs a line
+             * box shorter than the space they occupy. Nothing was visibly
+             * clipped here because "108,37 $" has no descender, but a currency
+             * that renders one, or a negative sign on the overspent branch,
+             * would have been sitting in the label above it.
+             */}
+            <div className="font-display text-hero text-ink [font-variant-numeric:tabular-nums]">
               {fmt(s.overspent ? s.left : s.perDay)}
             </div>
-            <p className="lede mt-3 max-w-[32ch]">
+            <p className="lede mt-2 max-w-[32ch]">
               {s.overspent
                 ? t('money.over_body', { days: s.period.daysLeft })
                 : t('money.today_body', {
