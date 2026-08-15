@@ -9,13 +9,10 @@ import { clearDraft, hasFreshDraft, readDraft, useDraft } from '../lib/draft'
 import { loadBudget } from '../lib/budgetData'
 import { errorText, isMissingColumn, isNetworkError } from '../lib/dberr'
 import { fromCents, localISO, toCents, txnPayload, withoutField } from '../lib/txn'
-import { emotionTotals, filterByEmotion } from '../lib/emotions'
 import { Empty, Field, Screen, Section, TopBar } from '../components/ui'
 import BudgetIntro from '../components/BudgetIntro'
 import BudgetTiles from '../components/BudgetTiles'
 import TransactionSheet from '../components/TransactionSheet'
-import EmotionFilter from '../components/EmotionFilter'
-import { EmotionBadges } from '../components/EmotionPicker'
 
 /**
  * The money screen.
@@ -214,11 +211,6 @@ export default function Money() {
      row behind, and the next Add opens prefilled with it. */
   const [sheet, setSheet] = useState(null)
   const [saveError, setSaveError] = useState(null)
-  /* Which feeling the list is narrowed to, or null for all of them. Held here
-     rather than in the filter bar so that saving a transaction cannot reset
-     it: somebody who filtered to 'impulse' to go through those rows is still
-     doing that after they fix one of them. */
-  const [emotion, setEmotion] = useState(null)
 
   const load = useCallback(async () => {
     if (!user) return
@@ -307,27 +299,6 @@ export default function Money() {
   }, [entries, s.period.start, s.period.end])
 
   /**
-   * What each feeling cost, over the same window the list shows.
-   *
-   * `recent` and not `entries`, so the bar answers a question about the period
-   * on screen rather than about all of history, and not `s.entries`, because
-   * emotionTotals drops the excluded rows itself and doing it twice is one
-   * place too many for that rule to live.
-   */
-  const totals = useMemo(() => emotionTotals(recent), [recent])
-
-  /* A filter that finds nothing leaves the bar visible: it is the only way
-     back out, and hiding it would strand somebody on an empty list. */
-  const shown = useMemo(() => filterByEmotion(recent, emotion), [recent, emotion])
-
-  /* A feeling nobody used this period is not a filter any more. Without this,
-     narrowing to 'gift' and then moving to a month with no gifts in it leaves
-     an empty list, no chip to un-press, and no explanation. */
-  useEffect(() => {
-    if (emotion && !totals.some((x) => x.id === emotion)) setEmotion(null)
-  }, [emotion, totals])
-
-  /**
    * Write one transaction, new or changed.
    *
    * Optimistic, then reconciled by the reload, so the number under your thumb
@@ -353,7 +324,7 @@ export default function Money() {
    * was typed. See src/lib/dberr.js.
    */
   async function saveEntry(form) {
-    let payload = txnPayload(form, user?.id)
+    const payload = txnPayload(form, user?.id)
     if (!payload) return
 
     setBusy(true)
@@ -376,21 +347,9 @@ export default function Money() {
 
     let { error } = await write(payload)
 
-    /* Two columns can be absent, from two different migrations, and either one
-       fails the whole row over something nobody touched. `excluded` is 29 and
-       `emotions` is 33, so a database at 28 is missing both and dropping one
-       at a time would need two round trips to discover the second. The retry
-       drops whichever the database just complained about and tries again,
-       which converges in at most two extra writes and loses only the flags.
-       Everything the person actually typed survives, which is the right way
-       round. See src/lib/dberr.js. */
-    for (const column of ['excluded', 'emotions']) {
-      if (!isMissingColumn(error, column)) continue
-      payload = withoutField(payload, column)
-      ;({ error } = await write(payload))
-    }
-
-    if (isNetworkError(error)) {
+    if (isMissingColumn(error, 'excluded')) {
+      ;({ error } = await write(withoutField(payload, 'excluded')))
+    } else if (isNetworkError(error)) {
       ;({ error } = await write(payload))
     }
 
@@ -657,28 +616,13 @@ export default function Money() {
        * from the list the moment you flip the switch reads as a delete.
        */}
       <Section title={t('money.recent')}>
-        {/* Above the list, because it changes what the list is. Drawn only
-            when something in the period carries a feeling, so a person who
-            never taps a chip never meets this control at all. */}
-        {totals.length > 0 && (
-          <div className="mb-4">
-            <EmotionFilter
-              totals={totals}
-              active={emotion}
-              onChange={setEmotion}
-              currency={s.currency}
-              matched={shown.length}
-            />
-          </div>
-        )}
-
-        {shown.length === 0 ? (
+        {recent.length === 0 ? (
           <div className="lg px-5 py-2">
-            <Empty>{emotion ? t('emo.none_match') : t('money.no_entries')}</Empty>
+            <Empty>{t('money.no_entries')}</Empty>
           </div>
         ) : (
           <ul className="lg divide-y divide-hairline px-5">
-            {shown.slice(0, 20).map((r) => (
+            {recent.slice(0, 20).map((r) => (
               <li key={r.id}>
                 {/* The row is the way back in. Remove used to be the only
                     thing you could do to a transaction from here, sitting as
@@ -707,20 +651,17 @@ export default function Money() {
                       total ignores it is legible from the list rather than
                       only from inside the sheet. The word is there too: a
                       line through text is not something everyone can see. */}
-                  {/* Emoji only, next to the amount, which is where the eye
-                      already is. The words are on the title and in a
-                      screen-reader label: spelling out "Impulsif, Stress" on
-                      the line turns a list you scan into one you read. */}
-                  <span className="flex shrink-0 items-baseline gap-2">
-                    <EmotionBadges value={r.emotions} />
-                    <span
-                      className={`text-body font-semibold text-ink [font-variant-numeric:tabular-nums] ${
-                        r.excluded ? 'text-muted line-through' : ''
-                      }`}
-                    >
-                      {r.kind === 'income' ? '+' : ''}
-                      {fmt(r.amount_cents)}
-                    </span>
+                  {/* Struck through when it does not count, so the reason the
+                      total ignores it is legible from the list rather than
+                      only from inside the sheet. The word is there too: a
+                      line through text is not something everyone can see. */}
+                  <span
+                    className={`shrink-0 text-body font-semibold text-ink [font-variant-numeric:tabular-nums] ${
+                      r.excluded ? 'text-muted line-through' : ''
+                    }`}
+                  >
+                    {r.kind === 'income' ? '+' : ''}
+                    {fmt(r.amount_cents)}
                   </span>
                 </button>
               </li>

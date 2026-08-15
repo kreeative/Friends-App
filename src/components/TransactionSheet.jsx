@@ -4,8 +4,6 @@ import { useT } from '../lib/i18n'
 import { CATEGORIES } from '../lib/budget'
 import { currencySymbol, minorDigits } from '../lib/currency'
 import { KINDS, NOTE_MAX, blankTxn, localISO, toCents, txnFromRow, txnValid } from '../lib/txn'
-import EmotionPicker from './EmotionPicker'
-import TxnHistory from './TxnHistory'
 
 /**
  * One transaction, as a sheet you pull up.
@@ -455,32 +453,6 @@ export default function TransactionSheet({
                 )}
               </div>
             </div>
-
-            {/**
-             * How it felt.
-             *
-             * Below the facts and above the destructive controls, because it
-             * is the only optional thing on this sheet and the amount is what
-             * people came for. Outside the divided list rather than as another
-             * Row: a wrapping grid of thirteen chips is not a label-and-value
-             * line, and squeezing it into one would put a three-line control
-             * in a container built for single-line ones.
-             *
-             * Offered on income too. "Célébration" on money arriving is a real
-             * thing to record, and only the spending insights read the tags,
-             * so nothing downstream is confused by it. See emotionTotals.
-             */}
-            <div className="mt-6">
-              <p className="text-body text-ink">{t('txn.emotions')}</p>
-              <div className="mt-3">
-                <EmotionPicker value={form.emotions} onChange={(next) => set({ emotions: next })} />
-              </div>
-            </div>
-
-            {/* Only on something that exists. A transaction being typed for
-                the first time has no history, and a drawer promising one is a
-                drawer that opens on a sentence apologising for itself. */}
-            {editing && <TxnHistory entryId={row?.id} currency={currency} />}
 
             {error && (
               <p className="mt-4 break-words text-small text-negative" role="alert">
