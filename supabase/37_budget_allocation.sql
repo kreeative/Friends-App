@@ -17,7 +17,7 @@
 --
 -- Because a transaction carries a category and carries no link to a named
 -- fixed charge. Spent-against-allocated is arithmetic on the first and is
--- impossible on the second: an envelope called "Téléphone" could be given
+-- impossible on the second: an envelope called "Phone" could be given
 -- money and could never be shown as spent, so its bar would be decoration.
 -- Envelopes have to be the thing the ledger already files against.
 --
