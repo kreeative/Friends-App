@@ -421,6 +421,7 @@ const STRINGS = {
     'signin.apple': 'Continue with Apple',
 
     'danger.title': 'Delete your account',
+    'danger.zone': 'Danger zone',
     'danger.body': 'Your journal, your budget, your goals and your check-ins are removed. Groups you created are handed to whoever has been in them longest, so nobody else loses their history. This cannot be undone.',
     'danger.start': 'Delete my account',
     'danger.confirm_label': 'Type {word} to confirm',
@@ -570,6 +571,7 @@ const STRINGS = {
 
     'me.consistency_title': 'Your consistency',
     'me.account': 'Your account',
+    'me.preferences': 'Preferences',
     'me.your_goals': 'Your own goals',
     'me.profile': 'Profile',
     'me.name': 'Your name',
@@ -1282,6 +1284,7 @@ const STRINGS = {
     'signin.apple': 'Continuer avec Apple',
 
     'danger.title': 'Supprimer ton compte',
+    'danger.zone': 'Zone sensible',
     'danger.body': 'Ton journal, ton budget, tes objectifs et tes check-ins sont effacés. Les groupes que tu as créés passent à la personne qui y est depuis le plus longtemps, pour que personne d’autre ne perde son historique. C’est irréversible.',
     'danger.start': 'Supprimer mon compte',
     'danger.confirm_label': 'Tape {word} pour confirmer',
@@ -1434,6 +1437,7 @@ const STRINGS = {
 
     'me.consistency_title': 'Ta régularité',
     'me.account': 'Ton compte',
+    'me.preferences': 'Préférences',
     'me.your_goals': 'Tes propres objectifs',
     'me.profile': 'Profil',
     'me.name': 'Ton nom',
