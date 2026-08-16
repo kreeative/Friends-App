@@ -11,6 +11,8 @@ import { DECLINED, PRONOUN_OPTIONS } from '../lib/pronouns'
 import { localeTag, useT } from '../lib/i18n'
 import { offerGroup } from '../lib/onboarding'
 import DeleteAccount from '../components/DeleteAccount'
+import ThemePicker from '../components/ThemePicker'
+import LanguagePicker from '../components/LanguagePicker'
 import { Avatar, Field, Screen, Section, TopBar } from '../components/ui'
 import MyCompletion from '../components/MyCompletion'
 
@@ -447,6 +449,25 @@ export default function Me() {
       </Section>
 
       {/**
+       * How the app looks and what language it speaks.
+       *
+       * Both controls already existed, on /g/:groupId/settings, which is the
+       * GROUP's settings page and is unreachable to anybody without a group.
+       * So the two preferences that are purely about this person and this
+       * device were behind a door that solo users cannot open, on a screen
+       * otherwise full of things that belong to everybody.
+       *
+       * They are shared components rather than a second copy, so the two
+       * screens cannot drift apart the next time a theme or a locale is added.
+       */}
+      <Section title={t('me.preferences')}>
+        <div className="lg space-y-7 p-6">
+          <ThemePicker />
+          <LanguagePicker />
+        </div>
+      </Section>
+
+      {/**
        * Closing the account, last on the page and on its own.
        *
        * Below signing out, because it is the same shelf of things and this is
@@ -460,7 +481,7 @@ export default function Me() {
        * cannot close is not really yours, and Apple's guideline 5.1.1(v) says
        * the same thing with more words.
        */}
-      <Section title={t('danger.title')}>
+      <Section title={t('danger.zone')}>
         <DeleteAccount />
       </Section>
     </Screen>

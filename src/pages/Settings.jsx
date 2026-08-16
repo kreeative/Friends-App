@@ -10,6 +10,7 @@ import GroupHeader from '../components/GroupHeader'
 import InviteSheet from '../components/InviteSheet'
 import MemberSheet from '../components/MemberSheet'
 import ThemePicker from '../components/ThemePicker'
+import LanguagePicker from '../components/LanguagePicker'
 import DangerZone from '../components/DangerZone'
 import { LegalLinks } from './Legal'
 
@@ -77,7 +78,7 @@ function LinkIcon() {
 export default function Settings() {
   const { user } = useAuth()
   const { group, members, groups, activeId, myRole, reload } = useGroup()
-  const { t, locale, setLocale } = useT()
+  const { t, locale } = useT()
 
   const [inviting, setInviting] = useState(false)
   const [tapped, setTapped] = useState(null)
@@ -233,20 +234,7 @@ export default function Settings() {
       </Section>
 
       <Section title={t('settings.language')}>
-        <div className="flex gap-2">
-          {[
-            ['en', 'English'],
-            ['fr', 'Français'],
-          ].map(([code, label]) => (
-            <button
-              key={code}
-              onClick={() => setLocale(code)}
-              className={locale === code ? 'chip-accent press' : 'chip-quiet press'}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+        <LanguagePicker />
       </Section>
 
       {groups.length > 1 && (
