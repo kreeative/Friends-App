@@ -13,42 +13,53 @@ import { isMissingTable } from '../lib/moodStore'
 import { allocationsFor, envelopes, toAllocate, totalAllocated } from '../lib/envelope'
 
 /**
- * One hue per envelope, and why these particular values.
+ * One SHADE per envelope, from the theme's own family.
  *
- * The screen was a wall of one colour. Not by accident: this app's ink is
- * #A91C54 in the sun theme, a deep magenta, so a card whose title, amount and
- * field are all "ink" is three pinks stacked, and six of those is a page with
- * no variety in it at all.
+ * This was a rainbow: rose, sky, emerald, violet, amber, slate, one unrelated
+ * hue each. Six hues with nothing to do with the theme, or with one another,
+ * is decoration rather than a scale, and next to a palette as deliberate as
+ * the rest of this app it read as noise. Now the six are six lightnesses of a
+ * single family, and the family follows the theme, so the money screen belongs
+ * to whichever one is painting the way every other screen does.
  *
- * THE GAUGE SHADE IS NOT THE PASTEL, AND THAT IS THE WHOLE TRICK.
+ * THE PALE PARTNER IS THE POINT, NOT A LEFTOVER.
  *
- * A pastel gauge is an invisible gauge. Measured on this card, rose-500 is
- * 3.67:1 but sky-500 is 2.77, emerald-500 2.54, amber-500 2.15 and slate-400
- * 2.56, all under the 3:1 WCAG 1.4.11 asks of a graphic you need in order to
- * read a screen, and this arc is the only thing carrying the proportion. The
- * 600s clear it across the board: 4.70, 4.10, 3.77, 5.70, 3.19, 4.76.
+ * Each ring draws its unspent part in `-soft`, the same hue up at 92%
+ * lightness. That is what makes a ring read as two shades of one colour rather
+ * than a colour and a grey, and it is the thing that was missing when the
+ * track was a flat slate tint under six different arcs.
  *
- * So the pastel is the track and the arc on top of it is saturated. The CARD
- * itself is white now rather than tinted: six pastel blocks competing with six
- * saturated arcs was two colour systems doing the same job, and the reference
- * this is drawn from keeps its surfaces quiet and spends the colour on the
- * gauges. One loud card on the page, and it is the pool.
+ * Where the ramp stops is set by the gauge, not by taste: every one of these
+ * is an arc, so every one needs 3:1 on the white card. See the note beside the
+ * values in index.css.
  *
- * Fixed values rather than theme variables, like `green` and `negative`
- * already are here: which colour means "transport" is a fact about the
- * category, not a matter of taste.
- *
- * Written out as whole class strings because Tailwind scans source text. A
- * template like `stroke-${hue}-600` produces nothing at build time.
+ * Whole class strings because Tailwind scans source text. A template like
+ * `stroke-cat-${n}` produces nothing at build time.
  */
 const TONE = {
-  food:      { arc: 'stroke-rose-600',    track: 'stroke-rose-100' },
-  transport: { arc: 'stroke-sky-600',     track: 'stroke-sky-100' },
-  home:      { arc: 'stroke-emerald-600', track: 'stroke-emerald-100' },
-  fun:       { arc: 'stroke-violet-600',  track: 'stroke-violet-100' },
-  health:    { arc: 'stroke-amber-600',   track: 'stroke-amber-100' },
-  other:     { arc: 'stroke-slate-500',   track: 'stroke-slate-200' },
+  food:      { arc: 'stroke-cat-1', track: 'stroke-cat-1-soft' },
+  transport: { arc: 'stroke-cat-2', track: 'stroke-cat-2-soft' },
+  home:      { arc: 'stroke-cat-3', track: 'stroke-cat-3-soft' },
+  fun:       { arc: 'stroke-cat-4', track: 'stroke-cat-4-soft' },
+  health:    { arc: 'stroke-cat-5', track: 'stroke-cat-5-soft' },
+  other:     { arc: 'stroke-cat-6', track: 'stroke-cat-6-soft' },
 }
+
+/**
+ * The family colour for TEXT on a card, and why it is one value and not six.
+ *
+ * A shade ramp differentiates by lightness. Text contrast also constrains
+ * lightness, and the two pull against each other: measured on white, cat-6 is
+ * 3.87:1 in sun, and cat-5 and cat-6 are 4.37 and 3.58 in sea, all under the
+ * 4.5 small text needs even though every one of them clears the 3:1 an arc
+ * needs. So the lighter half of the ramp can be an arc and cannot be a word.
+ *
+ * Which means the differentiation has to live in the arc, where there is room
+ * for it, and the words take the darkest step of the family: 13.90:1 in sun,
+ * 10.76:1 in sea, safe at any size. Everything still belongs to the theme's
+ * palette, which is the point; only the arc carries which envelope it is.
+ */
+const FAMILY_INK = 'text-cat-1'
 
 /**
  * A ring with something in the middle of it.
@@ -337,13 +348,25 @@ export default function Envelopes({ s, allocations, locale, onChange }) {
                 track={e.over > 0 ? 'stroke-rose-100' : tone.track}
               >
                 {inUse && (
-                  <span className="text-label font-bold leading-none text-slate-700 [font-variant-numeric:tabular-nums]">
+                  /* The family's dark step, not this card's own. See
+                     FAMILY_INK: the lighter half of the ramp is legal as an arc
+                     and illegal as a word. Overspent overrides either way,
+                     because that is a state rather than an identity. */
+                  <span
+                    className={`text-label font-bold leading-none [font-variant-numeric:tabular-nums] ${
+                      e.over > 0 ? 'text-rose-700' : FAMILY_INK
+                    }`}
+                  >
                     {e.pct}%
                   </span>
                 )}
               </Gauge>
 
-              <span className="mt-3 block truncate text-label font-semibold uppercase tracking-wider text-slate-500">
+              <span
+                className={`mt-3 block truncate text-label font-semibold uppercase tracking-wider ${
+                  e.over > 0 ? 'text-rose-700' : FAMILY_INK
+                }`}
+              >
                 {t(`money.cat_${e.key}`)}
               </span>
 
