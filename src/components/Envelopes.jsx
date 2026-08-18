@@ -62,23 +62,35 @@ const TONE = {
 const FAMILY_INK = 'text-cat-1'
 
 /**
- * A ring with something in the middle of it.
+ * An arc with something in the middle of it.
  *
- * Thick, and that is the point of this version: 6 to 18px of stroke depending
- * on the size, where the first attempt drew 4px and read as a wireframe. A
- * gauge is a shape, not a line.
+ * `sweep` is the fraction of the circle the gauge occupies. At 1 it is a
+ * closed ring; at 0.75 it is the open arch a calorie tracker draws, with the
+ * gap centred at the bottom so the shape has a mouth rather than a seam.
  *
- * The hole is not decoration either. Putting the figure inside the ring is
- * what makes the two one object instead of a chart with a caption underneath,
- * and it is the single thing every reference for this screen has in common.
+ * The open version reads as a DIAL: it has a beginning and an end, so a value
+ * has somewhere to travel to. A closed ring has neither, which is why a full
+ * circle at 99% and one at 1% look so alike at a glance.
  *
- * Drawn rather than pulled from a chart library. It is two circles and a dash
- * offset, and the app already refuses a dependency for less.
+ * The rotation is derived, not typed. Starting the path half a gap past six
+ * o'clock is what centres the opening at the bottom, and hard-coding 135deg
+ * would silently be wrong the moment sweep changed.
+ *
+ * Thick, and that is the point: 7 to 14px depending on size, where the first
+ * attempt drew 4px and read as a wireframe. A gauge is a shape, not a line.
+ * Round caps at both ends, so the arc looks drawn rather than clipped.
  */
-function Gauge({ pct, size, stroke, arc, track, dim = false, children }) {
+function Gauge({ pct, size, stroke, arc, track, dim = false, sweep = 1, children }) {
   const r = (size - stroke) / 2
   const circumference = 2 * Math.PI * r
+  const span = circumference * sweep
   const mid = size / 2
+  /* Half the missing wedge, past the bottom of the circle. */
+  const rotation = 90 + (1 - sweep) * 180
+
+  /* One dash of `span` followed by a gap longer than the path, so exactly the
+     swept portion is painted and nothing wraps around to overlap it. */
+  const dash = (fraction) => `${span * fraction} ${circumference}`
 
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
@@ -91,8 +103,22 @@ function Gauge({ pct, size, stroke, arc, track, dim = false, children }) {
         aria-hidden="true"
         focusable="false"
       >
-        <circle cx={mid} cy={mid} r={r} fill="none" strokeWidth={stroke} className={track} />
-        {!dim && (
+        <circle
+          cx={mid}
+          cy={mid}
+          r={r}
+          fill="none"
+          strokeWidth={stroke}
+          strokeLinecap="round"
+          className={track}
+          strokeDasharray={dash(1)}
+          transform={`rotate(${rotation} ${mid} ${mid})`}
+        />
+        {/* Nothing drawn at zero. A round cap on a zero-length dash still
+            paints a dot, so an untouched envelope would show a bead sitting at
+            the start of its own track and read as "barely spent" rather than
+            "not spent". */}
+        {!dim && pct > 0 && (
           <circle
             cx={mid}
             cy={mid}
@@ -101,17 +127,14 @@ function Gauge({ pct, size, stroke, arc, track, dim = false, children }) {
             strokeWidth={stroke}
             strokeLinecap="round"
             className={arc}
-            strokeDasharray={circumference}
-            /* Clockwise from twelve o'clock, which is where an arc meaning
-               "how far through" is read from. */
-            strokeDashoffset={circumference - (circumference * Math.min(100, Math.max(0, pct))) / 100}
-            transform={`rotate(-90 ${mid} ${mid})`}
-            style={{ transition: 'stroke-dashoffset 600ms cubic-bezier(0.22, 0.61, 0.36, 1)' }}
+            strokeDasharray={dash(Math.min(100, Math.max(0, pct)) / 100)}
+            transform={`rotate(${rotation} ${mid} ${mid})`}
+            style={{ transition: 'stroke-dasharray 600ms cubic-bezier(0.22, 0.61, 0.36, 1)' }}
           />
         )}
       </svg>
       {children != null && (
-        /* inset to the stroke plus a hair, so a long amount wraps inside the
+        /* Inset to the stroke plus a hair, so a long value wraps inside the
            hole rather than running under the arc. */
         <div
           className="absolute flex flex-col items-center justify-center text-center"
@@ -180,6 +203,13 @@ export default function Envelopes({ s, allocations, locale, onChange }) {
   }, [allocations, draft])
 
   const pool = toAllocate({ earned: s.earned, allocations: live })
+  /* How much of what came in has been given a job, capped so over-allocating
+     fills the arch rather than drawing past its own end. The overshoot is
+     carried by the colour and by the words, which is where a reader looks for
+     it anyway. */
+  const placedPct = s.earned > 0
+    ? Math.min(100, Math.round((totalAllocated(live) / s.earned) * 100))
+    : 0
   const rows = envelopes({
     allocations: live,
     spentByCategory: Object.fromEntries(s.byCategory.map((c) => [c.key, c.cents])),
@@ -224,68 +254,64 @@ export default function Envelopes({ s, allocations, locale, onChange }) {
   return (
     <div className="space-y-3">
       {/**
-       * --- the pool, and the one loud thing on the page ----------------
+       * --- the pool ------------------------------------------------------
        *
-       * A big gauge with the figure inside it, on the app's own golden block.
-       * --c-field is #FFD60A in BOTH themes and --c-on-field is the text
-       * colour designed to sit on it, 5.60:1 in sun and 6.82:1 in sea, so this
-       * is the one large colour block the palette already sanctions rather
-       * than a lime borrowed from a fitness app that would fight both themes.
+       * A neutral card, not a colour block. The yellow version of this was the
+       * app's own --c-field and it passed every contrast check, but a full
+       * panel of #FFD60A is the loudest thing on any screen it lands on, and
+       * the palette this is meant to sit in is pastels and neutrals. Slate
+       * gives the arc somewhere quiet to be the brightest thing.
        *
-       * The figure goes IN the ring rather than beside it. That is what makes
-       * the two read as one object instead of a chart with a caption, and it
-       * is the single thing every reference for this screen has in common.
+       * The gauge is an arch rather than a ring: three quarters of a circle
+       * with the gap at the bottom. A dial has a beginning and an end, so a
+       * value has somewhere to travel to, where a closed ring at 99% and one
+       * at 1% look alike at a glance.
        *
-       * It also used to be four stacked lines, two of which named the same
-       * total: "Encore a placer, sur les 3 000,00 $ rentres" with "1 830,00 $
-       * places sur 3 000,00 $" directly beneath it. The ring is now the second
-       * of those, so the card says each thing once.
+       * The percentage goes in the hole and the amount sits under it. That way
+       * round because a percentage is four characters in every currency and an
+       * amount is not, so the hole never has to be sized for the long case.
        */}
-      {/* NO OPACITY ON ANY TEXT HERE. Softening secondary lines with opacity is
-          how the references get their hierarchy, and on a surface this
-          saturated it costs too much: the eyebrow at 70% measured 3.72:1 and
-          the sentence at 80% measured 4.40:1, both under the 4.5 body text
-          needs. Full --c-on-field is 5.60:1 in sun and 6.82:1 in sea, and size
-          and weight carry the hierarchy on their own. */}
-      <div
-        /* A stable hook for anything that needs to find this card. The class
-           list is styling and has already changed three times; a test keyed to
-           it breaks on every restyle and says nothing about the app. */
-        data-card="pool"
-        className="overflow-hidden rounded-[2rem] bg-field px-6 py-7 text-on-field shadow-sm"
-      >
-        <p className="text-label font-semibold uppercase tracking-wider">
+      <div data-card="pool" className="rounded-3xl border border-slate-200/80 bg-slate-50 p-6 shadow-sm">
+        <p className="text-label font-semibold uppercase tracking-wider text-slate-500">
           {t('env.to_allocate')}
         </p>
 
         <div className="mt-4 flex justify-center">
           <Gauge
-            pct={s.earned > 0 ? Math.round((Math.min(totalAllocated(live), s.earned) / s.earned) * 100) : 0}
-            size={156}
-            stroke={15}
+            pct={placedPct}
+            size={184}
+            stroke={14}
+            sweep={0.75}
             dim={!s.earned}
-            /* currentColor both, so the gauge follows --c-on-field into
-               whichever theme is painting and never needs a second value. */
-            arc="stroke-current"
-            track="stroke-current opacity-20"
+            arc={pool < 0 ? 'stroke-negative' : 'stroke-cat-3'}
+            track={pool < 0 ? 'stroke-negative/15' : 'stroke-cat-3-soft'}
           >
             <span
-              className={`font-display text-h2 font-bold leading-tight [font-variant-numeric:tabular-nums] ${
-                pool < 0 ? 'text-rose-700' : ''
+              className={`font-display text-h1 font-bold leading-none [font-variant-numeric:tabular-nums] ${
+                pool < 0 ? 'text-negative' : 'text-cat-1'
               }`}
             >
-              {fmt(pool)}
+              {s.earned ? `${placedPct} %` : '—'}
             </span>
-            <span className="mt-1 text-label">
-              {pool < 0 ? t('env.over_word') : t('env.to_place')}
-            </span>
+            <span className="mt-1.5 text-label text-slate-500">{t('env.placed_word')}</span>
           </Gauge>
         </div>
 
-        {/* One sentence, and a pill for the running total. The pill is the
-            shape the references use for a secondary fact on a colour block:
-            it survives the busy background where loose small text does not. */}
-        <p className="mt-5 text-center text-small leading-relaxed">
+        {/* The amount, then the sentence. Two lines where there used to be
+            three, and the middle one no longer repeats the total the sentence
+            under it already names. */}
+        <p
+          className={`mt-4 text-center font-display text-h2 font-bold leading-none [font-variant-numeric:tabular-nums] ${
+            pool < 0 ? 'text-negative' : 'text-slate-800'
+          }`}
+        >
+          {fmt(Math.abs(pool))}{' '}
+          <span className="text-body font-semibold text-slate-500">
+            {pool < 0 ? t('env.over_word') : t('env.to_place')}
+          </span>
+        </p>
+
+        <p className="mx-auto mt-2.5 max-w-[34ch] text-center text-small leading-relaxed text-slate-500">
           {!s.earned
             ? t('env.no_income')
             : pool > 0
@@ -294,30 +320,15 @@ export default function Envelopes({ s, allocations, locale, onChange }) {
                 ? t('env.pool_over', { over: fmt(Math.abs(pool)) })
                 : t('env.pool_done')}
         </p>
-
-        {s.earned > 0 && (
-          <p className="mt-4 flex justify-center">
-            <span className="rounded-pill bg-on-field/10 px-3.5 py-1.5 text-label font-semibold [font-variant-numeric:tabular-nums]">
-              {t('env.allocated_of', {
-                allocated: fmt(Math.min(totalAllocated(live), s.earned)),
-                total: fmt(s.earned),
-              })}
-            </span>
-          </p>
-        )}
       </div>
 
       {/**
        * --- one card per envelope ---------------------------------------
        *
-       * Quiet surfaces, colour in the gauges. Six tinted cards behind six
-       * saturated arcs was two colour systems doing one job, and every
-       * reference for this screen keeps its cards white and spends the colour
-       * on the rings.
-       *
-       * Two columns and no more, at every width. Three would fit a tablet and
-       * would shrink the gauge past the size at which a few degrees of arc is
-       * a visible difference, which is the only thing a gauge is for.
+       * White, quiet, and the colour lives in the gauge. Two columns and no
+       * more at every width: three would fit a tablet and would shrink the
+       * gauge past the size at which a few degrees of arc is a visible
+       * difference, which is the only thing a gauge is for.
        */}
       <div className="grid grid-cols-2 gap-3">
         {rows.map((e) => {
@@ -331,40 +342,35 @@ export default function Envelopes({ s, allocations, locale, onChange }) {
             <div
               key={e.key}
               data-envelope={e.key}
-              className={`flex flex-col rounded-[1.75rem] border bg-white/90 p-4 shadow-sm ${
-                e.over > 0 ? 'border-rose-200' : 'border-slate-200/70'
-              }`}
+              className="flex flex-col rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm"
             >
-              {/* The percentage lives in the hole, not the amount: "100 %" is
-                  four characters in every currency on earth, where "1 200,00
-                  $" is not, and a hole sized for the long case is a hole with
-                  nothing in it the rest of the time. */}
+              {/**
+               * Gauge, then the name underneath it.
+               *
+               * Beside it is the nicer shape and it does not fit, which I have
+               * now measured twice rather than guessed: "NOURRITURE" renders at
+               * 86px, and a 46px arch plus its gap leaves 75px of a 390px card
+               * and 40px of a 320px one. A single word has nowhere to wrap, so
+               * inline did not truncate, it silently SPILLED over the card edge
+               * into the gap beside it, which looks fine in a screenshot and is
+               * broken everywhere the next word is longer.
+               *
+               * Underneath, the name has the whole card: 131px at 390 and 96px
+               * at 320, against the 86 it wants. Costs one line of height and
+               * cannot go wrong.
+               */}
               <Gauge
                 pct={e.pct}
-                size={62}
+                size={46}
                 stroke={7}
+                sweep={0.75}
                 dim={!inUse}
-                arc={e.over > 0 ? 'stroke-rose-600' : tone.arc}
-                track={e.over > 0 ? 'stroke-rose-100' : tone.track}
-              >
-                {inUse && (
-                  /* The family's dark step, not this card's own. See
-                     FAMILY_INK: the lighter half of the ramp is legal as an arc
-                     and illegal as a word. Overspent overrides either way,
-                     because that is a state rather than an identity. */
-                  <span
-                    className={`text-label font-bold leading-none [font-variant-numeric:tabular-nums] ${
-                      e.over > 0 ? 'text-rose-700' : FAMILY_INK
-                    }`}
-                  >
-                    {e.pct}%
-                  </span>
-                )}
-              </Gauge>
-
+                arc={e.over > 0 ? 'stroke-negative' : tone.arc}
+                track={e.over > 0 ? 'stroke-negative/15' : tone.track}
+              />
               <span
-                className={`mt-3 block truncate text-label font-semibold uppercase tracking-wider ${
-                  e.over > 0 ? 'text-rose-700' : FAMILY_INK
+                className={`mt-2.5 block text-label font-bold uppercase leading-tight tracking-wide ${
+                  e.over > 0 ? 'text-negative' : FAMILY_INK
                 }`}
               >
                 {t(`money.cat_${e.key}`)}
@@ -383,20 +389,14 @@ export default function Envelopes({ s, allocations, locale, onChange }) {
                 {inUse ? ` ${t('env.spent_of', { spent: fmt(e.spent) })}` : ''}
               </p>
 
-              {/**
-               * The loud line, and the one the card exists to say.
-               *
-               * Overspent is rose and says "de trop"; the badge is gone now
-               * that the card behind it is white, because a coloured pill on a
-               * coloured card was the thing making this look busy. The colour
-               * sits on the paragraph in both branches, so the amount line is
-               * the same shape either way and anything reading the card finds
-               * it in the same place.
-               */}
+              {/* The loud line, and the one the card exists to say. The colour
+                  sits on the paragraph in both branches, so the amount is the
+                  same shape either way and anything reading the card finds it
+                  in the same place. */}
               <p
                 aria-hidden="true"
-                className={`mt-1 font-display font-bold leading-none [font-variant-numeric:tabular-nums] ${
-                  !inUse ? 'text-body text-slate-400' : e.over > 0 ? 'text-h2 text-rose-600' : 'text-h2 text-slate-800'
+                className={`mt-2 font-display font-bold leading-none [font-variant-numeric:tabular-nums] ${
+                  !inUse ? 'text-body text-slate-400' : e.over > 0 ? 'text-h2 text-negative' : 'text-h2 text-slate-800'
                 }`}
               >
                 {!inUse ? t('env.unused') : fmt(e.over > 0 ? e.over : e.remaining)}
@@ -404,7 +404,7 @@ export default function Envelopes({ s, allocations, locale, onChange }) {
               {inUse && (
                 <p
                   aria-hidden="true"
-                  className={`mt-1 text-label ${e.over > 0 ? 'font-semibold text-rose-600' : 'text-slate-500'}`}
+                  className={`mt-1 text-label ${e.over > 0 ? 'font-semibold text-negative' : 'text-slate-500'}`}
                 >
                   {e.over > 0 ? t('env.over_word') : t('env.remaining_word')}
                 </p>
