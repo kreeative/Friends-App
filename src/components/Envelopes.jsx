@@ -342,7 +342,23 @@ export default function Envelopes({ s, allocations, locale, onChange }) {
             <div
               key={e.key}
               data-envelope={e.key}
-              className="flex flex-col rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm"
+              /**
+               * The overspent card is tinted, not just its arc.
+               *
+               * The sun family is deep pinks now, and --c-negative measures
+               * 1.07:1 against cat-4 and 1.14 against cat-5: in that theme an
+               * over-budget arc is the same colour as an ordinary one, so an
+               * arc alone cannot carry the one state worth interrupting
+               * somebody for. The card's own ground can, at any hue.
+               *
+               * WCAG 1.4.1 wants the same thing for a different reason: colour
+               * must not be the only signal. The word "de trop" was always
+               * there; this makes the card legible as a group at a glance
+               * rather than one row at a time.
+               */
+              className={`flex flex-col rounded-2xl border p-4 shadow-sm ${
+                e.over > 0 ? 'border-negative/25 bg-negative/[0.045]' : 'border-slate-200/70 bg-white'
+              }`}
             >
               {/**
                * Gauge, then the name underneath it.
