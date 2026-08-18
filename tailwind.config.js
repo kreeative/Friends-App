@@ -40,6 +40,19 @@ export default {
         green: c('green'),
         'on-pop': c('on-pop'),
         negative: c('negative'),
+
+        /**
+         * The six envelope shades and their pale partners, per theme. Declared
+         * here so `stroke-cat-3` and `stroke-cat-3-soft` exist as real classes
+         * rather than arbitrary values, and so the alpha modifier still works.
+         * Values live in index.css with the reasoning; see the note there.
+         */
+        cat: {
+          1: c('cat-1'), 2: c('cat-2'), 3: c('cat-3'),
+          4: c('cat-4'), 5: c('cat-5'), 6: c('cat-6'),
+          '1-soft': c('cat-1-soft'), '2-soft': c('cat-2-soft'), '3-soft': c('cat-3-soft'),
+          '4-soft': c('cat-4-soft'), '5-soft': c('cat-5-soft'), '6-soft': c('cat-6-soft'),
+        },
       },
       fontFamily: {
         // One typeface. `display` is kept as a name because the app's metrics

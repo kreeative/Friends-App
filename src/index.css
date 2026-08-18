@@ -321,6 +321,42 @@
     --c-accent-pressed: 214 0 92;
     --c-on-accent: 255 255 255;  /* 3.83:1 */
     --c-on-field: 163 0 74;      /* #A3004A deep magenta on yellow, 5.6:1 */
+
+    /**
+     * The six envelope shades: one family, six lightnesses.
+     *
+     * The categories used to be a rainbow, one unrelated hue each. Six hues
+     * that have nothing to do with the theme, or with one another, is a
+     * decoration rather than a scale, and it read as noise next to a palette
+     * this deliberate everywhere else.
+     *
+     * These are shades of the theme's OWN family, so the money screen belongs
+     * to the theme the way every other screen does. sun is the magenta the ink
+     * is drawn from; sea is the blue its teal sits beside.
+     *
+     * THE CEILING IS THE GAUGE, NOT TASTE. Every one of these is a gauge arc,
+     * so every one needs 3:1 on the white card that WCAG 1.4.11 asks of a
+     * graphic you cannot read the screen without. On white that caps luminance
+     * near L*50, so the ramp runs dark to mid rather than dark to pastel.
+     * Measured here: 13.90, 10.92, 8.39, 6.45, 4.85, 3.87 to one.
+     *
+     * The pastel end of the family is not wasted, it is the -soft pair below,
+     * which paints the unspent part of each ring. That is what makes the ring
+     * read as two shades of one colour instead of a colour and a grey.
+     */
+    --c-cat-1: 88 14 42;      /* #580E2A  13.90:1 */
+    --c-cat-2: 118 19 57;     /* #761339  10.92:1 */
+    --c-cat-3: 149 24 72;     /* #951848   8.39:1 */
+    --c-cat-4: 180 29 87;     /* #B41D57   6.45:1 */
+    --c-cat-5: 215 35 104;    /* #D72368   4.85:1 */
+    --c-cat-6: 225 71 130;    /* #E14782   3.87:1 */
+
+    --c-cat-1-soft: 243 226 233;
+    --c-cat-2-soft: 241 220 228;
+    --c-cat-3-soft: 239 214 224;
+    --c-cat-4-soft: 236 208 219;
+    --c-cat-5-soft: 234 202 215;
+    --c-cat-6-soft: 232 197 210;
   }
 
   /**
@@ -352,6 +388,23 @@
        a black. */
     --c-on-accent: 0 76 90;
     --c-on-field: 0 76 90;
+
+    /* The same six steps in the sea family. See the note in the sun block for
+       why they are shades rather than hues, and why the ramp stops at mid.
+       Measured on white: 10.76, 8.56, 6.81, 5.40, 4.37, 3.58 to one. */
+    --c-cat-1: 6 65 101;      /* #064165  10.76:1 */
+    --c-cat-2: 8 80 125;      /* #08507D   8.56:1 */
+    --c-cat-3: 9 95 149;      /* #095F95   6.81:1 */
+    --c-cat-4: 11 111 173;    /* #0B6FAD   5.40:1 */
+    --c-cat-5: 13 126 197;    /* #0D7EC5   4.37:1 */
+    --c-cat-6: 14 141 221;    /* #0E8DDD   3.58:1 */
+
+    --c-cat-1-soft: 224 237 245;
+    --c-cat-2-soft: 218 234 243;
+    --c-cat-3-soft: 211 230 242;
+    --c-cat-4-soft: 205 226 240;
+    --c-cat-5-soft: 199 223 238;
+    --c-cat-6-soft: 193 219 236;
 
     --c-bg: 240 249 255;     /* ice */
     --c-raised: 224 242 254; /* sky, the soft well inside a card */
