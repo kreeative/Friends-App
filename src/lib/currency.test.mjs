@@ -1,4 +1,4 @@
-import { CURRENCIES, FALLBACK, currencySymbol, detectCurrency, formatCurrency, minorDigits } from './currency.js'
+import { CURRENCIES, FALLBACK, currencySymbol, detectCurrency, formatCurrency, minorDigits, splitAmount } from './currency.js'
 let pass = 0, fail = 0
 const eq = (label, got, want) => {
   const ok = JSON.stringify(got) === JSON.stringify(want)
@@ -105,6 +105,46 @@ eq('every offered code has a symbol', CURRENCIES.every((c) => currencySymbol(c, 
 eq('the fallback is offered in the picker', CURRENCIES.includes(FALLBACK), true)
 eq('every offered code formats', CURRENCIES.every((c) => formatCurrency(100, c, ['en-CA']).length > 0), true)
 eq('no duplicates in the picker', CURRENCIES.length, new Set(CURRENCIES).size)
+
+
+
+
+/* --- splitAmount ---------------------------------------------------------- */
+{
+  const j = (c, code, tags) => { const s = splitAmount(c, code, tags); return [s.head, s.cents] }
+
+  eq('en-CA cuts before the point', j(1524500, 'CAD', ['en-CA']), ['$15,245', '.00'])
+  eq('fr-CA cuts before the comma', j(1524500, 'CAD', ['fr-CA'])[1], ',00')
+  /* And the symbol that trails the decimals in French is its own part, not
+     lost and not swept into the small type. */
+  eq('fr-CA keeps the trailing symbol', splitAmount(1524500, 'CAD', ['fr-CA']).suffix.trim(), '$')
+  /* head + tail must always rebuild exactly what formatCurrency produced,
+     across locales that put the symbol and the separators in different
+     places. Reported as the list of mismatches so a failure names them. */
+  eq('the two halves rebuild the original', (() => {
+    const bad = []
+    for (const tag of ['en-CA', 'fr-CA', 'en-GB', 'de-DE']) {
+      for (const c of [0, 5, 1234, 1524500, -990]) {
+        const s = splitAmount(c, 'CAD', [tag])
+        if (s.head + s.cents + s.suffix !== formatCurrency(c, 'CAD', [tag])) bad.push(`${tag}:${c}`)
+      }
+    }
+    return bad
+  })(), [])
+
+  /* A currency with no minor unit has nothing to tuck away, and must not have
+     its thousands separator mistaken for a decimal one. */
+  eq('XOF has no cents part at all', j(1200000, 'XOF', ['fr-CA'])[1], '')
+  eq('and XOF head is the entire string',
+     splitAmount(1200000, 'XOF', ['fr-CA']).head, formatCurrency(1200000, 'XOF', ['fr-CA']))
+
+  /* The trap: a thousands separator looks the same as a decimal one, so a
+     naive first-match split would cut "15,245.00" at the comma. */
+  eq('thousands separators are not mistaken for decimals',
+     j(1524500, 'CAD', ['en-CA'])[0], '$15,245')
+  eq('nor in the other direction', j(1524500, 'CAD', ['de-DE'])[1], ',00')
+}
+
 
 console.log(`\n${pass} passed, ${fail} failed`)
 process.exit(fail ? 1 : 0)

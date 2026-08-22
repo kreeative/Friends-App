@@ -11,6 +11,8 @@ import { errorText, isMissingColumn, isNetworkError } from '../lib/dberr'
 import { fromCents, localISO, toCents, txnPayload, withoutField } from '../lib/txn'
 import { Empty, Field, Screen, Section, TopBar } from '../components/ui'
 import ActionBar, { EnvelopeIcon, GaugeIcon, ListIcon, PlanIcon } from '../components/ActionBar'
+import CatDisc from '../components/CatDisc'
+import SpendDonut from '../components/SpendDonut'
 import BudgetIntro from '../components/BudgetIntro'
 import BudgetTiles from '../components/BudgetTiles'
 import TransactionSheet from '../components/TransactionSheet'
@@ -695,16 +697,7 @@ export default function Money() {
         <>
       {s.byCategory.length > 0 && (
         <Section title={t('money.where')}>
-          <ul className="lg divide-y divide-hairline px-5">
-            {s.byCategory.map((c) => (
-              <li key={c.key} className="flex items-baseline justify-between gap-4 py-4">
-                <span className="text-body text-ink">{t(`money.cat_${c.key}`)}</span>
-                <span className="text-body font-semibold text-ink [font-variant-numeric:tabular-nums]">
-                  {fmt(c.cents)}
-                </span>
-              </li>
-            ))}
-          </ul>
+          <SpendDonut byCategory={s.byCategory} total={s.spent} currency={s.currency} locale={locale} />
         </Section>
       )}
 
@@ -725,7 +718,13 @@ export default function Money() {
             <Empty>{t('money.no_entries')}</Empty>
           </div>
         ) : (
-          <ul className="lg divide-y divide-hairline px-5">
+          <ul
+            /* A stable hook. This list has been ul.lg and is now a slate card;
+               anything keyed to the class breaks on the next restyle and says
+               nothing about the app when it does. */
+            data-ledger=""
+            className="divide-y divide-slate-200/70 rounded-3xl border border-slate-200/70 bg-white px-4 shadow-sm"
+          >
             {recent.slice(0, 20).map((r) => (
               <li key={r.id}>
                 {/* The row is the way back in. Remove used to be the only
@@ -736,16 +735,25 @@ export default function Money() {
                 <button
                   type="button"
                   onClick={() => setSheet(r)}
-                  className="press flex w-full items-baseline justify-between gap-4 py-4 text-left"
+                  className="press flex w-full items-center gap-3 py-3.5 text-left"
                 >
-                  <span className="min-w-0 flex-1 text-body text-ink">
+                  {/* The mark lands before the word does, which is what turns
+                      a column of text into a list you can scan. Income gets
+                      its own, because it is the one row here that is not a
+                      spend and should not borrow a category's colour. */}
+                  <CatDisc category={r.kind === 'income' ? 'income' : (r.category ?? 'other')} />
+                  {/* Slate, like the donut card above it. The budget's own
+                      surfaces are neutral now, and a ledger set in the theme's
+                      pink beside a legend set in slate reads as two lists from
+                      two different screens. */}
+                  <span className="min-w-0 flex-1 text-body text-slate-800">
                     <span className="truncate">
                       {r.note ||
                         (r.kind === 'income'
                           ? t('money.kind_income')
                           : t(`money.cat_${r.category ?? 'other'}`))}
                     </span>
-                    <span className="block text-small text-muted">
+                    <span className="block text-small text-slate-500">
                       {day(r.happened_on)}
                       {r.note && r.kind === 'expense' && ` · ${t(`money.cat_${r.category ?? 'other'}`)}`}
                       {r.excluded && ` · ${t('txn.excluded_badge')}`}
@@ -760,8 +768,8 @@ export default function Money() {
                       only from inside the sheet. The word is there too: a
                       line through text is not something everyone can see. */}
                   <span
-                    className={`shrink-0 text-body font-semibold text-ink [font-variant-numeric:tabular-nums] ${
-                      r.excluded ? 'text-muted line-through' : ''
+                    className={`shrink-0 text-body font-semibold [font-variant-numeric:tabular-nums] ${
+                      r.excluded ? 'text-slate-400 line-through' : r.kind === 'income' ? 'text-green' : 'text-slate-800'
                     }`}
                   >
                     {r.kind === 'income' ? '+' : ''}
