@@ -38,24 +38,45 @@ const MARK = {
  * header look like a blob rather than a logo. A quarter of the side is the
  * app-icon proportion and holds at every size.
  */
-function Tile({ src, alt, size, className }) {
+function Tile({ src, alt, size, className, flat = false }) {
   return (
     <img
       src={src}
       alt={alt}
-      className={`brand-tile select-none ${className}`}
-      style={{ width: size, height: size, borderRadius: Math.round(size * 0.26) }}
+      /**
+       * `flat` drops the raised shadow.
+       *
+       * Everywhere else the tile sits ON something and the shadow is what
+       * lifts it off. On the splash the page is painted the tile's own ground,
+       * so the artwork is meant to dissolve into the screen, and the shadow is
+       * then the only thing drawing a card around it. See BrandSplash.
+       */
+      className={`${flat ? 'object-contain' : 'brand-tile'} select-none ${className}`}
+      style={{
+        width: size,
+        height: size,
+        /* A number keeps the exact pixel radius it always had. A CSS length
+           cannot be multiplied in JS, and the splash sizes itself off the
+           viewport, so the same proportion is expressed against the box. */
+        borderRadius: typeof size === 'number' ? Math.round(size * 0.26) : '26%',
+      }}
       draggable="false"
     />
   )
 }
 
 /** The full lockup. Readable from about 90px up. */
-export default function Wordmark({ size = 160, className = '', variant }) {
+export default function Wordmark({ size = 160, className = '', variant, flat = false }) {
   const { theme } = useTheme()
   const key = variant ?? theme
   return (
-    <Tile src={WORDMARK[key] ?? WORDMARK.sun} alt={APP_NAME} size={size} className={className} />
+    <Tile
+      src={WORDMARK[key] ?? WORDMARK.sun}
+      alt={APP_NAME}
+      size={size}
+      className={className}
+      flat={flat}
+    />
   )
 }
 
