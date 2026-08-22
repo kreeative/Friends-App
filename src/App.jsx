@@ -64,6 +64,13 @@ function Splash({ children }) {
  * Sized off the viewport rather than fixed, because this is the only place in
  * the app where the mark is the entire composition.
  *
+ * 36vw, and the number is measured rather than chosen. The lettering fills
+ * 84.7% of its square tile, and the reference art puts the mark at 30.2% of
+ * the screen width, so the tile has to be 30.2 / 0.847 = 35.7. The first pass
+ * used 46vw, which rendered the mark at 38.7% -- the same artwork on the same
+ * ground, a quarter too large, which is exactly the sort of difference that is
+ * obvious side by side and invisible on its own.
+ *
  * The word did not disappear, it moved. A splash with no text at all tells a
  * screen reader nothing is happening, so `err.loading` is still announced,
  * with role="status" so it is read when it appears rather than interrupting.
@@ -76,7 +83,7 @@ function BrandSplash() {
       className="flex min-h-dvh items-center justify-center"
       style={{ backgroundColor: BRAND[theme] ?? BRAND.sun }}
     >
-      <Wordmark size="min(46vw, 240px)" flat />
+      <Wordmark size="min(36vw, 220px)" flat />
       <p className="sr-only" role="status">
         {t('err.loading')}
       </p>
