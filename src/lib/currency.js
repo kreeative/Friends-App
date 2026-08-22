@@ -196,3 +196,42 @@ export function formatCurrency(cents, code, tags = []) {
     return `${amount.toFixed(minorDigits(currency))} ${currency}`
   }
 }
+
+/**
+ * A formatted amount, split so the cents can be set smaller than the dollars.
+ *
+ * Every reference for this screen writes a balance that way: "$15,245" at full
+ * size with ".00" tucked in beside it, lighter and smaller. It reads as one
+ * number and puts the weight on the part somebody actually reads, which for a
+ * balance is never the cents.
+ *
+ * Split off the RENDERED string rather than computed from the cents, because
+ * where the decimals sit is a property of the locale and the currency
+ * together, and there are three arrangements, not one:
+ *
+ *   en-CA   $15,245.00      decimals last
+ *   fr-CA   15 245,00 $     decimals in the MIDDLE, symbol after
+ *   XOF     1 200 000 F     no decimals at all
+ *
+ * So it returns THREE parts. A two-part version looked right in English and
+ * silently dropped the trailing symbol in French, which the round-trip
+ * assertion in the tests is there to catch.
+ *
+ * head + cents + suffix is always exactly what formatCurrency produced.
+ * `cents` is '' when the currency has no minor unit.
+ */
+export function splitAmount(cents, code, tags = []) {
+  const text = formatCurrency(cents, code, tags)
+  const digits = minorDigits(code)
+  if (digits === 0) return { head: text, cents: '', suffix: '' }
+
+  /* The LAST separator followed by exactly the right number of digits, and no
+     more. Last, because a thousands separator is the same character in most
+     locales and there may be several before the real one. */
+  const all = text.match(new RegExp(`[.,]\\d{${digits}}(?!\\d)`, 'g'))
+  if (!all) return { head: text, cents: '', suffix: '' }
+
+  const last = all[all.length - 1]
+  const at = text.lastIndexOf(last)
+  return { head: text.slice(0, at), cents: last, suffix: text.slice(at + last.length) }
+}

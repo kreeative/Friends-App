@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useT } from '../lib/i18n'
-import { money } from '../lib/money'
+import { money, moneyParts } from '../lib/money'
 import { minorDigits } from '../lib/currency'
 import { fromCents, localISO, toCents } from '../lib/txn'
 import { errorText } from '../lib/dberr'
@@ -170,6 +170,19 @@ export default function Envelopes({ s, allocations, locale, onChange }) {
   const { user } = useAuth()
   const { t } = useT()
   const fmt = (c) => money(c, s.currency, locale)
+  /* The dollars at full size, the cents tucked in beside them. Every
+     reference for this screen writes a balance that way, and for a figure
+     this large the cents are the part nobody reads. */
+  const Amount = ({ cents, className = '', ...rest }) => {
+    const a = moneyParts(cents, s.currency, locale)
+    return (
+      <span className={`[font-variant-numeric:tabular-nums] ${className}`} {...rest}>
+        {a.head}
+        {a.cents && <span className="text-[0.62em] align-baseline opacity-70">{a.cents}</span>}
+        {a.suffix}
+      </span>
+    )
+  }
 
   /* How many decimals this currency actually has. The CFA francs have none, so
      a hard-coded two would print "20000.00" in a field where every other money
@@ -305,7 +318,7 @@ export default function Envelopes({ s, allocations, locale, onChange }) {
             pool < 0 ? 'text-negative' : 'text-slate-800'
           }`}
         >
-          {fmt(Math.abs(pool))}{' '}
+          <Amount cents={Math.abs(pool)} data-hook="pool-amount" />{' '}
           <span className="text-body font-semibold text-slate-500">
             {pool < 0 ? t('env.over_word') : t('env.to_place')}
           </span>

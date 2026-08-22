@@ -22,7 +22,7 @@
  * The public preview sells the same book at the same price, and two copies of
  * this function is exactly how they would come to disagree.
  */
-import { formatCurrency } from './currency'
+import { formatCurrency, splitAmount } from './currency'
 
 /**
  * The formatting itself lives in currency.js, which is pure and tested. This
@@ -36,4 +36,20 @@ export function money(cents, currency, locale) {
   ].filter(Boolean)
 
   return formatCurrency(cents, currency, tags)
+}
+
+/**
+ * The same amount, split so the cents can be set smaller than the dollars.
+ *
+ * Reads the browser exactly the way money() does, so the two can never
+ * disagree about how a figure is written. See splitAmount in currency.js for
+ * why it returns three parts rather than two.
+ */
+export function moneyParts(cents, currency, locale) {
+  const tags = [
+    ...(typeof navigator !== 'undefined' ? (navigator.languages ?? [navigator.language]) : []),
+    locale === 'fr' ? 'fr-CA' : 'en-CA',
+  ].filter(Boolean)
+
+  return splitAmount(cents, currency, tags)
 }
