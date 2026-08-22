@@ -34,7 +34,10 @@
  */
 export default function ActionBar({ items, value, onChange }) {
   return (
-    <div className="flex gap-2 sm:gap-3">
+    /* A stable hook. These tiles carry their counts in their accessible name,
+       so matching them by text alone is ambiguous with the app's own tab bar
+       ("Journal" is both a pane here and a destination down there). */
+    <div data-actionbar="" className="flex gap-2 sm:gap-3">
       {items.map((item) => {
         const on = item.id === value
         return (
@@ -43,6 +46,16 @@ export default function ActionBar({ items, value, onChange }) {
             type="button"
             onClick={() => onChange(item.id)}
             aria-pressed={on}
+            /**
+             * The name, then the count, with a comma between them.
+             *
+             * The badge is a child of this button, so without this its text
+             * ran into the label and the accessible name came out as
+             * "0/6Enveloppes": the count first, glued to the word, which is
+             * both the wrong order and, in some readers, one token. The badge
+             * is hidden below and its meaning is carried here instead.
+             */
+            aria-label={item.badge ? `${item.label}, ${item.badge}` : item.label}
             className="press group flex min-w-0 flex-1 flex-col items-center gap-2"
           >
             <span
@@ -62,6 +75,7 @@ export default function ActionBar({ items, value, onChange }) {
                   than as part of its name. */}
               {item.badge && (
                 <span
+                  aria-hidden="true"
                   className={`absolute -right-1.5 -top-1.5 flex h-5 min-w-[1.25rem] items-center justify-center rounded-pill px-1 text-[0.625rem] font-semibold leading-none [font-variant-numeric:tabular-nums] ring-2 ring-[rgb(var(--c-bg))] ${
                     item.done ? 'bg-green text-white' : 'bg-accent text-on-accent'
                   }`}
@@ -130,6 +144,54 @@ export function ForwardIcon() {
       <g fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
         <path d="M4 12h14" />
         <path d="M13 6.5l5.5 5.5L13 17.5" />
+      </g>
+    </svg>
+  )
+}
+
+/* --- the money screen's four -------------------------------------------- */
+
+export function GaugeIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6">
+      <g fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round">
+        {/* An arch with a needle, which is the shape the pool card draws. */}
+        <path d="M4 17.5a8.5 8.5 0 1 1 16 0" />
+        <path d="M12 17.5 16 11" />
+      </g>
+    </svg>
+  )
+}
+
+export function EnvelopeIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6">
+      <g fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round">
+        <path d="M3.5 6.5h17v11h-17z" />
+        <path d="m3.5 7 8.5 6 8.5-6" strokeLinecap="round" />
+      </g>
+    </svg>
+  )
+}
+
+export function PlanIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6">
+      <g fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+        {/* Two columns of different heights: planned beside actual. */}
+        <path d="M4 20h16" />
+        <path d="M8 20V9M16 20V5" />
+      </g>
+    </svg>
+  )
+}
+
+export function ListIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6">
+      <g fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round">
+        <path d="M9 7h11M9 12h11M9 17h11" />
+        <path d="M4.6 7h.01M4.6 12h.01M4.6 17h.01" strokeWidth="2.4" />
       </g>
     </svg>
   )
