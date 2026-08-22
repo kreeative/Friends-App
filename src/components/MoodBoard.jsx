@@ -36,6 +36,34 @@ const FACE = {
   },
 }
 
+/**
+ * Where the two long labels are allowed to break.
+ *
+ * The measured problem: a grid cell is 66px at 320 and 89px at 390, and French
+ * "Reconnaissant" sets at 99px. It does not fit at either width, so something
+ * has to break it.
+ *
+ * `hyphens: auto` was supposed to, and cannot: it needs a hyphenation
+ * dictionary for the document's language, and Chromium ships none for French.
+ * With nothing to hyphenate by, `overflow-wrap: break-word` took over and
+ * split the word at whatever character the line ran out on, with no hyphen at
+ * all. That is what "Reconnaiss / ant" was.
+ *
+ * So the break points are given rather than derived. U+00AD is a SOFT hyphen:
+ * invisible unless the browser actually needs the break, and drawn as a real
+ * hyphen when it does. Keyed on the rendered word rather than the mood id,
+ * because it is the word that is too long, and the English labels are not.
+ *
+ * This lives here and not in the i18n table on purpose. The same string is the
+ * accessible name of every mood badge in the app, and a table nobody expects to
+ * contain invisible characters is a bad place to put them.
+ */
+const SOFT = {
+  Reconnaissant: 'Recon\u00ADnais\u00ADsant',
+  Nostalgique: 'Nostal\u00ADgique',
+}
+const softWrap = (label) => SOFT[label] ?? label
+
 function MoodGlyph({ mood }) {
   return (
     <svg viewBox="0 0 100 100" className="h-full w-full" aria-hidden="true">
@@ -172,16 +200,17 @@ export default function MoodBoard({ value, onChange, multiple = true }) {
                        the label takes the cell and wraps inside it. px-1 rather
                        than px-2 buys the eight pixels that keep that word on one
                        line. */
-                    /* hyphens-auto so the one word that still cannot fit, French
-                       "Reconnaissant", breaks with a hyphen where the language
-                       allows rather than snapping in half mid-syllable. The
-                       locale provider keeps <html lang> in step, which is what
-                       the browser's hyphenation dictionary keys on. */
-                    className={`mt-2 w-full hyphens-auto break-words rounded-inner px-1 py-0.5 text-label font-semibold leading-tight ${
+                    /* break-words is GONE. It was the thing snapping words in
+                       half: it breaks at whatever character the line runs out
+                       on, with no hyphen, so "Reconnaissant" rendered as
+                       "Reconnaiss" over "ant". hyphens-auto stays as a bonus
+                       where a dictionary exists; softWrap below is what
+                       actually does the work. */
+                    className={`mt-2 w-full hyphens-auto rounded-inner px-1 py-0.5 text-label font-semibold leading-tight ${
                       selected ? 'bg-ink text-bg' : 'text-muted'
                     }`}
                   >
-                    {t(`mood.${mood.id}`)}
+                    {softWrap(t(`mood.${mood.id}`))}
                   </span>
                 </button>
               )
