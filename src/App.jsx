@@ -2,7 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes, useParams } from 'react-router-
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { GroupProvider, useGroup } from './context/GroupContext'
 import { I18nProvider, useT } from './lib/i18n'
-import { ThemeProvider } from './lib/theme'
+import { BRAND, ThemeProvider, useTheme } from './lib/theme'
 import { configured } from './lib/supabase'
 import { landing, soloKeyFor } from './lib/onboarding'
 import ErrorNote from './components/ErrorNote'
@@ -11,6 +11,7 @@ import SignIn from './pages/SignIn'
 import Start from './pages/Start'
 import Dashboard from './pages/Dashboard'
 import Seo from './components/Seo'
+import Wordmark from './components/Wordmark'
 import Welcome from './pages/Welcome'
 import Board from './pages/Board'
 import Checkin from './pages/Checkin'
@@ -37,10 +38,48 @@ function LecturesRedirect() {
   return <Navigate to={`/library/${slug}`} replace />
 }
 
+/** A full screen with a sentence on it. Used for the one case that has
+    something to say: a backend that is not configured. */
 function Splash({ children }) {
   return (
     <main className="flex min-h-dvh items-center justify-center bg-bg px-8">
       <p className="max-w-sm text-center text-body text-muted">{children}</p>
+    </main>
+  )
+}
+
+/**
+ * The waiting screen: the brand tile on the brand's own ground.
+ *
+ * It used to be the word "Chargement" in muted type on the pale app ground,
+ * which is the least interesting thing an app can put in front of somebody
+ * during the one moment it has their whole attention and nothing else to show.
+ *
+ * The tile carries its own coloured ground, and the page is painted the SAME
+ * colour, so the artwork dissolves into the screen and reads as one printed
+ * surface rather than a logo sitting on a card. That is why BRAND exists: it
+ * is sampled from the corner pixel of the artwork rather than guessed at, so
+ * the two cannot drift apart. See the note in src/lib/theme.jsx.
+ *
+ * Sized off the viewport rather than fixed, because this is the only place in
+ * the app where the mark is the entire composition.
+ *
+ * The word did not disappear, it moved. A splash with no text at all tells a
+ * screen reader nothing is happening, so `err.loading` is still announced,
+ * with role="status" so it is read when it appears rather than interrupting.
+ */
+function BrandSplash() {
+  const { theme } = useTheme()
+  const { t } = useT()
+  return (
+    <main
+      className="flex min-h-dvh items-center justify-center"
+      style={{ backgroundColor: BRAND[theme] ?? BRAND.sun }}
+    >
+      <Wordmark size="min(46vw, 240px)" flat />
+      <p className="sr-only" role="status">
+        {t('err.loading')}
+      </p>
     </main>
   )
 }
@@ -95,7 +134,6 @@ const PUBLIC_ROUTES = (
 function Gate() {
   const { user, profile, loading, authError } = useAuth()
   const { loading: groupsLoading, memberships, error: groupError, reload } = useGroup()
-  const { t } = useT()
 
   // Marketing and legal pages are public in every sense, including when the
   // backend is misconfigured or down. Only the signed-in app needs Supabase.
@@ -116,7 +154,7 @@ function Gate() {
     )
   }
 
-  if (loading) return <Splash>{t('err.loading')}</Splash>
+  if (loading) return <BrandSplash />
 
   if (!user) {
     return (
@@ -127,7 +165,7 @@ function Gate() {
     )
   }
 
-  if (groupsLoading) return <Splash>{t('err.loading')}</Splash>
+  if (groupsLoading) return <BrandSplash />
 
   // Signed in, but the group query failed. Previously this rendered Start,
   // which made a network failure look like "you have no groups" and invited
@@ -160,7 +198,7 @@ function Gate() {
   })()
 
   const where = landing({ loading: groupsLoading, memberships, profile, local })
-  if (where === 'wait') return <Splash>{t('err.loading')}</Splash>
+  if (where === 'wait') return <BrandSplash />
 
   /**
    * Outside the AppShell on purpose. The deck is the whole screen: a tab bar
