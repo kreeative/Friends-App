@@ -10,12 +10,13 @@ import { loadBudget } from '../lib/budgetData'
 import { errorText, isMissingColumn, isNetworkError } from '../lib/dberr'
 import { fromCents, localISO, toCents, txnPayload, withoutField } from '../lib/txn'
 import { Empty, Field, Screen, Section, TopBar } from '../components/ui'
+import ActionBar, { EnvelopeIcon, GaugeIcon, ListIcon, PlanIcon } from '../components/ActionBar'
 import BudgetIntro from '../components/BudgetIntro'
 import BudgetTiles from '../components/BudgetTiles'
 import TransactionSheet from '../components/TransactionSheet'
 import PlanVsActual from '../components/PlanVsActual'
 import Envelopes, { SpendableBar } from '../components/Envelopes'
-import { allocationsFor, spendable } from '../lib/envelope'
+import { ENVELOPE_CATEGORIES, allocationsFor, spendable, toAllocate } from '../lib/envelope'
 import FixedCharges from '../components/FixedCharges'
 
 /**
@@ -300,6 +301,76 @@ export default function Money() {
   const bar = useMemo(() => spendable({ earned: s.earned, spent: s.spent }), [s.earned, s.spent])
 
   /**
+   * Which pane is showing.
+   *
+   * The money screen had grown to nine sections in one column: the headline,
+   * the tiles, the button, the envelopes, planned-against-actual, the fixed
+   * charges, this period's figures, where it went, and the last twenty
+   * transactions. Logging a coffee meant scrolling past six things nobody had
+   * asked for, which is the argument the check-in screen made about its own
+   * four jobs before it grew this same bar.
+   *
+   * Not stored anywhere. A tab is where you are, not a preference, and
+   * reopening the budget on "Journal" because that is where you finished last
+   * time is the app remembering the wrong thing.
+   */
+  const [pane, setPane] = useState('overview')
+
+  /**
+   * What each tile says about itself.
+   *
+   * ActionBar's own note is why these exist: a bar that hides three quarters
+   * of a screen leaves the reader no way to know whether the hidden parts are
+   * done, half-filled or untouched. So each tile carries its count.
+   */
+  const liveFixed = fixed.filter((f) => f.active !== false)
+  /* The same test summarise and the charge badges apply, so this count cannot
+     disagree with the one inside the pane. */
+  const paidFixed = liveFixed.filter((f) => {
+    const d = String(f.last_paid_on ?? '').slice(0, 10)
+    return Boolean(d) && d >= localISO(s.period.start) && d < localISO(s.period.end)
+  }).length
+  const funded = ENVELOPE_CATEGORIES.filter((k) => (allocations[k] ?? 0) > 0).length
+
+  const panes = [
+    {
+      id: 'overview',
+      icon: <GaugeIcon />,
+      label: t('money.tab_overview'),
+      /* No badge. This pane IS the summary, and a count on the tile that means
+         "the whole picture" would be a fourth number competing with the three
+         inside it. */
+      badge: null,
+      done: true,
+    },
+    {
+      id: 'envelopes',
+      icon: <EnvelopeIcon />,
+      label: t('money.tab_envelopes'),
+      badge: s.earned > 0 ? `${funded}/${ENVELOPE_CATEGORIES.length}` : null,
+      /* Green only when the pool is empty, which is the one thing this pane
+         asks for: every dollar given a job. */
+      done: s.earned > 0 && toAllocate({ earned: s.earned, allocations }) === 0,
+    },
+    {
+      id: 'plan',
+      icon: <PlanIcon />,
+      label: t('money.tab_plan'),
+      badge: liveFixed.length ? `${paidFixed}/${liveFixed.length}` : null,
+      done: liveFixed.length > 0 && paidFixed === liveFixed.length,
+    },
+    {
+      id: 'log',
+      icon: <ListIcon />,
+      label: t('money.tab_log'),
+      badge: recent.length ? String(recent.length) : null,
+      /* A log is never unfinished. Nothing here waits to be filled in, so the
+         tile is not allowed to nag about being empty. */
+      done: true,
+    },
+  ]
+
+  /**
    * Write one transaction, new or changed.
    *
    * Optimistic, then reconciled by the reload, so the number under your thumb
@@ -472,6 +543,37 @@ export default function Money() {
         }
       />
 
+      <ActionBar items={panes} value={pane} onChange={setPane} />
+
+      {/**
+       * The one button that belongs to no pane.
+       *
+       * Logging a transaction is what this screen exists to enable, so it sits
+       * above the panes for the same reason Submit sits outside the check-in's
+       * four: hiding it behind a tab would mean navigating in order to record
+       * a coffee. Everything else here is something you read.
+       */}
+      <Section>
+        <button className="btn-primary press w-full" onClick={() => setSheet(NEW)}>
+          {t('txn.open')}
+        </button>
+      </Section>
+
+      {/**
+       * One pane at a time, grouped by the question each answers.
+       *
+       * Overview is "how am I doing", in the three resolutions the screen has
+       * for it: the gauge, the two squares, the figures. Envelopes is "what is
+       * each dollar for". Plan is "what did I set up", the only pair here
+       * about intentions rather than events. Log is "what actually happened".
+       *
+       * The fixed charges sit with the plan rather than the log, even though
+       * marking one paid is an event: the list is the standing set of
+       * obligations, which is something you arranged, and the payment is how
+       * far through arranging it you are.
+       */}
+      {pane === 'overview' && (
+        <>
       {/**
        * The headline. Two failure states are called out by name rather
        * than left for the reader to infer from a negative number.
@@ -519,46 +621,6 @@ export default function Money() {
       </Section>
 
       {/**
-       * One button where the form used to be.
-       *
-       * The form was three controls and a submit, permanently open, sitting
-       * between the summary and the totals. Permanently open is the problem:
-       * it is a piece of furniture on a screen people mostly come to read,
-       * and it pushed the numbers it exists to change below the fold.
-       *
-       * It also could not grow. Adding a date to it, or a note, or a way back
-       * into a row, meant three more permanently-open controls. In a sheet
-       * those cost nothing until somebody wants them.
-       */}
-      <Section>
-        <button className="btn-primary press w-full" onClick={() => setSheet(NEW)}>
-          {t('txn.open')}
-        </button>
-      </Section>
-
-      {/* Every dollar that arrived, given a job. Above the plan because this is
-          about money that is really there, and the plan is an estimate. */}
-      <Section title={t('env.title')}>
-        <Envelopes s={s} allocations={allocations} locale={locale} onChange={load} />
-      </Section>
-
-      {/* What was meant to happen, against what has. The gap between the two
-          columns is the interesting part, and it is the thing the old single
-          column could not show because it had already merged them. */}
-      <Section title={t('money.plan_vs_actual')}>
-        <PlanVsActual s={s} locale={locale} />
-      </Section>
-
-      {/* And the charges themselves, each one planned until you say it went
-          out. This is the control the app never had: with no way to mark a
-          charge paid, the arithmetic had to assume always or never. */}
-      {fixed.filter((f) => f.active !== false).length > 0 && (
-        <Section title={t('money.fixed_title')}>
-          <FixedCharges fixed={fixed} s={s} locale={locale} onChange={load} />
-        </Section>
-      )}
-
-      {/**
        * Rows, not columns, and not the shared Stat component.
        *
        * Stat renders at text-metric, 3rem, sized for a percentage or a
@@ -594,6 +656,43 @@ export default function Money() {
         </dl>
       </Section>
 
+        </>
+      )}
+
+      {pane === 'envelopes' && (
+        <>
+      {/* Every dollar that arrived, given a job. Above the plan because this is
+          about money that is really there, and the plan is an estimate. */}
+      <Section title={t('env.title')}>
+        <Envelopes s={s} allocations={allocations} locale={locale} onChange={load} />
+      </Section>
+
+        </>
+      )}
+
+      {pane === 'plan' && (
+        <>
+      {/* What was meant to happen, against what has. The gap between the two
+          columns is the interesting part, and it is the thing the old single
+          column could not show because it had already merged them. */}
+      <Section title={t('money.plan_vs_actual')}>
+        <PlanVsActual s={s} locale={locale} />
+      </Section>
+
+      {/* And the charges themselves, each one planned until you say it went
+          out. This is the control the app never had: with no way to mark a
+          charge paid, the arithmetic had to assume always or never. */}
+      {fixed.filter((f) => f.active !== false).length > 0 && (
+        <Section title={t('money.fixed_title')}>
+          <FixedCharges fixed={fixed} s={s} locale={locale} onChange={load} />
+        </Section>
+      )}
+
+        </>
+      )}
+
+      {pane === 'log' && (
+        <>
       {s.byCategory.length > 0 && (
         <Section title={t('money.where')}>
           <ul className="lg divide-y divide-hairline px-5">
@@ -674,6 +773,9 @@ export default function Money() {
           </ul>
         )}
       </Section>
+
+        </>
+      )}
 
       <TransactionSheet
         open={sheet !== null}
