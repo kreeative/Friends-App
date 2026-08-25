@@ -5,9 +5,15 @@
  * icon: it is what turns a column of text into a list you can scan without
  * reading, because the shape lands before the word does.
  *
- * Drawn, one stroke weight, matching the ActionBar set. Not emoji, for the
- * reason recorded there: an emoji is a different typeface at a different
- * weight in a colour nothing else on the page uses.
+ * Solid, matching the ActionBar set. At 20px inside a 38px disc an outlined
+ * glyph is mostly hole: it reads as a smudge against the tint rather than as
+ * a fork or a house, and the tint it sits on is pale by design. A filled
+ * silhouette is the only thing that survives that size.
+ *
+ * Holes are cut with fill-rule evenodd, so a glyph stays one colour and keeps
+ * inheriting currentColor. Not emoji, for the reason recorded in ActionBar:
+ * an emoji is a different typeface at a different weight in a colour nothing
+ * else on the page uses.
  *
  * The disc takes the category's own shade from the envelope ramp, so the
  * colour a category has on its gauge is the colour it has in the ledger. One
@@ -16,45 +22,49 @@
 const ICON = {
   food: (
     <>
-      <path d="M7 3.5v7a2.6 2.6 0 0 0 5.2 0v-7" />
-      <path d="M9.6 10.5V20.5" />
-      <path d="M17.6 20.5V3.8c-2 .7-3 2.6-3 5.2 0 1.9.9 3 3 3.2" />
+      {/* Three tines over a stem, and a wedge blade over a handle. The
+          shoulders are concave arcs (sweep 0), which is the difference
+          between a fork and a lollipop. */}
+      <rect x="5.9" y="3.6" width="1.9" height="6.3" rx=".95" />
+      <rect x="8.55" y="3.6" width="1.9" height="6.3" rx=".95" />
+      <rect x="11.2" y="3.6" width="1.9" height="6.3" rx=".95" />
+      <path d="M5.9 8.4h7.2v1.5a3.1 3.1 0 0 0-2.2 2.97v6.2a1.15 1.15 0 0 1-2.3 0v-6.2A3.1 3.1 0 0 0 5.9 9.9Z" />
+      <path d="M18.1 3.3V19.1a1.2 1.2 0 0 1-2.4 0V13.1H14.65a.9.9 0 0 1-.9-.9V9.4Z" />
     </>
   ),
   transport: (
     <>
-      <path d="M4.5 16.5v-4l1.8-4.4A2 2 0 0 1 8.2 7h7.6a2 2 0 0 1 1.9 1.1l1.8 4.4v4" />
-      <path d="M4.5 12.5h15" />
-      <path d="M7 16.5v1.8M17 16.5v1.8" />
+      {/* Cabin, body, wheels. Composed rather than one path, so each piece is
+          a shape whose numbers mean something. */}
+      <path d="M7.6 5.6h8.8a2.3 2.3 0 0 1 2.17 1.55L20 11H4l1.43-3.85A2.3 2.3 0 0 1 7.6 5.6Z" />
+      <rect x="2.6" y="10.4" width="18.8" height="5.6" rx="2.2" />
+      <circle cx="7.2" cy="16.8" r="2.1" />
+      <circle cx="16.8" cy="16.8" r="2.1" />
     </>
   ),
   home: (
-    <>
-      <path d="M4.5 10.2 12 4.2l7.5 6v9.3h-15Z" />
-      <path d="M9.8 19.5v-5.2h4.4v5.2" />
-    </>
+    /* Roof and walls in one outline, the door cut out of it with an arched
+       head. Symmetric about x=12: both slopes run 8.2 across, 6.36 down. */
+    <path d="M11.12 3.63a1.4 1.4 0 0 1 1.76 0l8.2 6.36a1.4 1.4 0 0 1 .52 1.09V19.2a1.4 1.4 0 0 1-1.4 1.4h-5.3v-4.7a2.9 2.9 0 0 0-5.8 0v4.7H3.8a1.4 1.4 0 0 1-1.4-1.4v-8.12a1.4 1.4 0 0 1 .52-1.09Z" />
   ),
   fun: (
-    <>
-      <path d="M12 4.3 14.3 9l5.2.8-3.8 3.6.9 5.1-4.6-2.4-4.6 2.4.9-5.1L4.5 9.8 9.7 9Z" />
-    </>
+    <path d="M11.05 3.42a1.06 1.06 0 0 1 1.9 0l2.16 4.38 4.83.7a1.06 1.06 0 0 1 .59 1.81l-3.5 3.4.83 4.81a1.06 1.06 0 0 1-1.54 1.12L12 17.37l-4.32 2.27a1.06 1.06 0 0 1-1.54-1.12l.83-4.81-3.5-3.4a1.06 1.06 0 0 1 .59-1.81l4.83-.7Z" />
   ),
   health: (
-    <>
-      <path d="M12 19.4S4.6 15.1 4.6 9.9A3.9 3.9 0 0 1 12 8a3.9 3.9 0 0 1 7.4 1.9c0 5.2-7.4 9.5-7.4 9.5Z" />
-    </>
+    <path d="M12 19.9 4.9 12.75a4.85 4.85 0 0 1 0-6.86 4.85 4.85 0 0 1 6.86 0l.24.24.24-.24a4.85 4.85 0 0 1 6.86 0 4.85 4.85 0 0 1 0 6.86Z" />
   ),
   other: (
-    <>
-      <path d="M4.6 8.4h14.8v10.2H4.6Z" />
-      <path d="M4.6 8.4 6.4 5.2h11.2l1.8 3.2" />
-      <path d="M9.8 12h4.4" />
-    </>
+    /* A bag. The handle is a cut annulus, 2.2 thick all the way round, not a
+       filled lobe stuck to the top. */
+    <path d="M8.4 7.2V6.6a3.6 3.6 0 0 1 7.2 0v.6h2.9a2 2 0 0 1 1.99 1.8l1.06 10.2a2 2 0 0 1-1.99 2.2H4.45a2 2 0 0 1-1.99-2.2L3.52 9a2 2 0 0 1 1.99-1.8Zm2.2 0h2.8v-.6a1.4 1.4 0 0 0-2.8 0Z" />
   ),
   income: (
     <>
-      <path d="M12 19V5.4" />
-      <path d="m6.8 10.6 5.2-5.2 5.2 5.2" />
+      {/* Fatter than a drawn arrow wants to be, on purpose: it sits in a row
+          with a house and a heart, and at 20px a slim arrow reads as lighter
+          than its neighbours rather than as a different thing. */}
+      <rect x="9.95" y="8.4" width="4.1" height="11.4" rx="2.05" />
+      <path d="M12 3.6 18.7 11.5H5.3Z" />
     </>
   ),
 }
@@ -80,7 +90,7 @@ const TINT = {
 export function CatIcon({ category = 'other', className = 'h-5 w-5' }) {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
-      <g fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <g fill="currentColor" fillRule="evenodd" clipRule="evenodd">
         {ICON[category] ?? ICON.other}
       </g>
     </svg>
@@ -92,6 +102,11 @@ export default function CatDisc({ category = 'other', size = 38 }) {
   return (
     <span
       aria-hidden="true"
+      /* A stable hook. The glyphs are hand-written paths, and a wrong sweep
+         flag or fill-rule fails silently: it renders, it just renders the
+         wrong shape. The probe that measures the ink needs to address one
+         disc at a time to catch that. */
+      data-cat={category}
       className={`flex shrink-0 items-center justify-center rounded-pill ${TINT[category] ?? TINT.other}`}
       style={{ width: size, height: size }}
     >
