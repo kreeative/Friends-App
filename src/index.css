@@ -549,6 +549,36 @@
    * there is real content to bend. Those keep .lg-chrome.
    */
 
+  /**
+   * ...except here, where a screen asks for one.
+   *
+   * Glass over a flat ground is a lie: backdrop-filter blurs what is behind
+   * the element, and blurring one flat colour returns that same flat colour.
+   * A card set in .glass over --c-bg is therefore a slightly translucent box,
+   * pixel for pixel what an opaque box would be, and the whole recipe reduces
+   * to its rim. That is why the note above says there is no ground.
+   *
+   * So the ground comes first and the glass second. Three wide radial fields
+   * in the theme's own ramp, well under half opacity, at three corners: soft
+   * enough that nothing set on top of it has to fight, uneven enough that
+   * blurring it actually returns something other than what it started with.
+   *
+   * Gradients rather than blurred blobs on purpose. filter: blur() on a
+   * viewport-sized element rasterises the whole thing every frame; a radial
+   * gradient is already soft, costs one paint, and cannot be told apart from
+   * the blurred version once it is this diffuse.
+   *
+   * It is painted as the element's own background, not a fixed layer behind
+   * the app, so it changes nothing about stacking anywhere else.
+   */
+  .ambient {
+    background:
+      radial-gradient(58% 34% at 12% 4%, rgb(var(--c-cat-5) / 0.20), transparent 68%),
+      radial-gradient(52% 30% at 94% 22%, rgb(var(--c-cat-3) / 0.16), transparent 70%),
+      radial-gradient(64% 36% at 46% 96%, rgb(var(--c-cat-4) / 0.13), transparent 72%);
+    background-attachment: fixed;
+  }
+
   /* --- glass ----------------------------------------------------------- */
   /**
    * Solid first, translucent only where the browser can actually blur. Doing
@@ -565,6 +595,50 @@
     border: 1px solid var(--glass-edge);
     box-shadow:
       var(--e-float);
+  }
+
+  /**
+   * The budget's own surface.
+   *
+   * Kept separate from .glass because the two answer to different rules.
+   * .glass is chrome: it carries --glass-edge and a float shadow because it
+   * sits over whatever happens to be scrolling under it. These are content
+   * cards sitting in a column on a known ground, so they take a slate hairline
+   * and a small shadow, which is what the last three rounds of this screen
+   * specified and what the type on them was measured against.
+   *
+   * What changes is only the fill: white at 0.82 with a blur behind it rather
+   * than white at 1. Over .ambient that returns a card faintly carrying
+   * whichever field it happens to be over, which is the whole point of the
+   * effect; over a flat ground it degrades to a near-white box, which is
+   * exactly where this screen already was.
+   *
+   * 0.82 and not lower because everything on these cards was contrast-checked
+   * against white. Anything the ground shows through has to stay close enough
+   * to white that slate-500 body text still clears 4.5:1, and it is measured
+   * rather than assumed.
+   */
+  .glass-card {
+    background: rgb(255 255 255 / 0.94);
+    border: 1px solid rgb(var(--c-ink) / 0.08);
+    box-shadow: 0 1px 2px 0 rgb(var(--c-ink) / 0.05);
+  }
+
+  /* The pool card sits above the six and reads as their container, so it is
+     the one surface here that is tinted rather than white. */
+  .glass-card-quiet {
+    background: rgb(248 250 252 / 0.9);
+  }
+
+  @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .glass-card {
+      background: rgb(255 255 255 / 0.82);
+      -webkit-backdrop-filter: blur(22px) saturate(180%);
+      backdrop-filter: blur(22px) saturate(180%);
+    }
+    .glass-card-quiet {
+      background: rgb(248 250 252 / 0.76);
+    }
   }
 
   /**

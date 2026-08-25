@@ -99,53 +99,75 @@ export default function ActionBar({ items, value, onChange }) {
   )
 }
 
-/* Drawn, one stroke weight, so they inherit the tile's colour and sit at the
-   same weight as the type under them. Not emoji: an emoji is a different
-   typeface at a different weight in a colour nothing else on the page uses,
-   which is why they came out of the budget banner. */
+/**
+ * Solid, not outlined.
+ *
+ * These sat at strokeWidth 1.7 and read as wireframes: at 24px a hairline
+ * outline is mostly the hole in the middle, so the tile's colour barely
+ * changes when the tile goes active and the shape has to be looked at rather
+ * than recognised. A filled glyph is a silhouette, and a silhouette is what
+ * the eye matches at that size.
+ *
+ * Filled also means the tile's inversion actually reads: ink tile, white
+ * glyph, a solid block of it, instead of a white outline on a dark square.
+ *
+ * Holes are cut with fill-rule evenodd rather than a second colour, so a
+ * glyph is still one colour and still inherits currentColor. Everything else
+ * is composed from rects, circles and short paths instead of one long path,
+ * because a composed shape can be reasoned about and a 400-character path
+ * cannot.
+ *
+ * Not emoji, for the reason recorded above: an emoji is a different typeface
+ * at a different weight in a colour nothing else on the page uses.
+ */
+const Svg = ({ children }) => (
+  <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6">
+    <g fill="currentColor" fillRule="evenodd" clipRule="evenodd">
+      {children}
+    </g>
+  </svg>
+)
 
 export function TargetIcon() {
   return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6">
-      <g fill="none" stroke="currentColor" strokeWidth="1.7">
-        <circle cx="12" cy="12" r="8.2" />
-        <circle cx="12" cy="12" r="4.2" />
-        <circle cx="12" cy="12" r="1" fill="currentColor" stroke="none" />
-      </g>
-    </svg>
+    <Svg>
+      {/* Two annuli and a pip. The rings are cut, not stroked, so the whole
+          mark is one filled shape. */}
+      <path d="M12 2.9a9.1 9.1 0 1 0 0 18.2 9.1 9.1 0 0 0 0-18.2Zm0 2.6a6.5 6.5 0 1 1 0 13 6.5 6.5 0 0 1 0-13Z" />
+      <path d="M12 7.6a4.4 4.4 0 1 0 0 8.8 4.4 4.4 0 0 0 0-8.8Zm0 2.5a1.9 1.9 0 1 1 0 3.8 1.9 1.9 0 0 1 0-3.8Z" />
+      <circle cx="12" cy="12" r="1.9" />
+    </Svg>
   )
 }
 
 export function CameraIcon() {
   return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6">
-      <g fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round">
-        <path d="M3 8.5h3.2L8 6h8l1.8 2.5H21v11H3z" strokeLinecap="round" />
-        <circle cx="12" cy="13.5" r="3.4" />
-      </g>
-    </svg>
+    <Svg>
+      {/* Body with the viewfinder bump, lens knocked out of it. */}
+      <path d="M9.9 3.9H14.1L15.9 6.2H19.4A2.6 2.6 0 0 1 22 8.8V17.5A2.6 2.6 0 0 1 19.4 20.1H4.6A2.6 2.6 0 0 1 2 17.5V8.8A2.6 2.6 0 0 1 4.6 6.2H8.1ZM12 9.7a3.7 3.7 0 1 0 0 7.4 3.7 3.7 0 0 0 0-7.4Z" />
+    </Svg>
   )
 }
 
 export function PartyIcon() {
   return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6">
-      <g fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M4 20l4.6-10.4L15 16z" />
-        <path d="M14 4.5v2M18.5 6.2l-1.4 1.4M20 11h-2" />
-      </g>
-    </svg>
+    <Svg>
+      {/* A popper and what comes out of it. */}
+      <path d="M3.4 20.6 9.1 8.8 15.4 15.1Z" />
+      <circle cx="16.4" cy="6" r="1.3" />
+      <circle cx="20.1" cy="10.2" r="1" />
+      <circle cx="19.8" cy="5" r=".8" />
+      <circle cx="13" cy="4.4" r=".9" />
+    </Svg>
   )
 }
 
 export function ForwardIcon() {
   return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6">
-      <g fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M4 12h14" />
-        <path d="M13 6.5l5.5 5.5L13 17.5" />
-      </g>
-    </svg>
+    <Svg>
+      <rect x="3" y="10.4" width="12" height="3.2" rx="1.6" />
+      <path d="M13.4 5.9 20.9 12 13.4 18.1Z" />
+    </Svg>
   )
 }
 
@@ -153,46 +175,46 @@ export function ForwardIcon() {
 
 export function GaugeIcon() {
   return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6">
-      <g fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round">
-        {/* An arch with a needle, which is the shape the pool card draws. */}
-        <path d="M4 17.5a8.5 8.5 0 1 1 16 0" />
-        <path d="M12 17.5 16 11" />
-      </g>
-    </svg>
+    <Svg>
+      {/* A half-donut with a needle, which is the shape the pool card draws:
+          the tile and the pane behind it are the same picture. */}
+      <path d="M2.5 16.5a9.5 9.5 0 0 1 19 0H17.5a5.5 5.5 0 0 0-11 0Z" />
+      <path d="M10.77 15.64 16.31 9.7 16.89 10.1 13.23 17.36Z" />
+      <circle cx="12" cy="16.5" r="1.9" />
+    </Svg>
   )
 }
 
 export function EnvelopeIcon() {
   return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6">
-      <g fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round">
-        <path d="M3.5 6.5h17v11h-17z" />
-        <path d="m3.5 7 8.5 6 8.5-6" strokeLinecap="round" />
-      </g>
-    </svg>
+    <Svg>
+      {/* Filled body, flap cut out of it as a chevron. An outlined envelope at
+          this size is four hairlines and a V; this one is a block. */}
+      <path d="M4.6 5H19.4A2.6 2.6 0 0 1 22 7.6V16.4A2.6 2.6 0 0 1 19.4 19H4.6A2.6 2.6 0 0 1 2 16.4V7.6A2.6 2.6 0 0 1 4.6 5ZM5.3 7.9 12 12.9 18.7 7.9V10.1L12 15.1 5.3 10.1Z" />
+    </Svg>
   )
 }
 
 export function PlanIcon() {
   return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6">
-      <g fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-        {/* Two columns of different heights: planned beside actual. */}
-        <path d="M4 20h16" />
-        <path d="M8 20V9M16 20V5" />
-      </g>
-    </svg>
+    <Svg>
+      {/* Three columns of different heights: planned beside actual. */}
+      <rect x="3.3" y="12" width="4.3" height="7" rx="1.7" />
+      <rect x="9.85" y="6.5" width="4.3" height="12.5" rx="1.7" />
+      <rect x="16.4" y="9.2" width="4.3" height="9.8" rx="1.7" />
+    </Svg>
   )
 }
 
 export function ListIcon() {
   return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6">
-      <g fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round">
-        <path d="M9 7h11M9 12h11M9 17h11" />
-        <path d="M4.6 7h.01M4.6 12h.01M4.6 17h.01" strokeWidth="2.4" />
-      </g>
-    </svg>
+    <Svg>
+      <circle cx="4.6" cy="7" r="1.7" />
+      <circle cx="4.6" cy="12" r="1.7" />
+      <circle cx="4.6" cy="17" r="1.7" />
+      <rect x="8.6" y="5.9" width="11.8" height="2.2" rx="1.1" />
+      <rect x="8.6" y="10.9" width="11.8" height="2.2" rx="1.1" />
+      <rect x="8.6" y="15.9" width="11.8" height="2.2" rx="1.1" />
+    </Svg>
   )
 }

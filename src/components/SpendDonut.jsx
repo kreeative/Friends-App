@@ -50,7 +50,7 @@ export default function SpendDonut({ byCategory, total, currency, locale }) {
   })
 
   return (
-    <div className="rounded-3xl border border-slate-200/70 bg-white p-5 shadow-sm">
+    <div className="glass-card rounded-3xl p-5">
       <div className="flex justify-center">
         <div className="relative" style={{ width: SIZE, height: SIZE }}>
           <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} aria-hidden="true">
@@ -75,7 +75,7 @@ export default function SpendDonut({ byCategory, total, currency, locale }) {
             ))}
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-            <span className="text-label font-semibold uppercase tracking-wider text-slate-500">
+            <span className="text-label font-semibold uppercase tracking-wider text-slate-600">
               {t('money.spent')}
             </span>
             <span className="mt-1 font-display text-h2 font-bold leading-none text-slate-800 [font-variant-numeric:tabular-nums]">
@@ -96,7 +96,7 @@ export default function SpendDonut({ byCategory, total, currency, locale }) {
             <span className="min-w-0 flex-1 truncate text-body text-slate-800">
               {t(`money.cat_${c.key}`)}
             </span>
-            <span className="shrink-0 text-label text-slate-500 [font-variant-numeric:tabular-nums]">
+            <span className="shrink-0 text-label text-slate-600 [font-variant-numeric:tabular-nums]">
               {Math.round((c.cents / sum) * 100)} %
             </span>
             <span className="w-[5.5rem] shrink-0 text-right text-body font-semibold text-slate-800 [font-variant-numeric:tabular-nums]">

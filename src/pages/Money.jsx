@@ -529,7 +529,10 @@ export default function Money() {
   }
 
   return (
-    <Screen>
+    /* The ground the cards are glass over. Without it every .glass-card on
+       this screen is just a white box with a blur that returns the colour it
+       was given, which is what .glass has always degraded to app-wide. */
+    <Screen className="ambient">
       <TopBar
         title={t('money.title')}
         sub={t('money.sub_period', { days: s.period.daysLeft })}
@@ -723,7 +726,7 @@ export default function Money() {
                anything keyed to the class breaks on the next restyle and says
                nothing about the app when it does. */
             data-ledger=""
-            className="divide-y divide-slate-200/70 rounded-3xl border border-slate-200/70 bg-white px-4 shadow-sm"
+            className="glass-card divide-y divide-slate-200/70 rounded-3xl px-4"
           >
             {recent.slice(0, 20).map((r) => (
               <li key={r.id}>
@@ -753,7 +756,7 @@ export default function Money() {
                           ? t('money.kind_income')
                           : t(`money.cat_${r.category ?? 'other'}`))}
                     </span>
-                    <span className="block text-small text-slate-500">
+                    <span className="block text-small text-slate-600">
                       {day(r.happened_on)}
                       {r.note && r.kind === 'expense' && ` · ${t(`money.cat_${r.category ?? 'other'}`)}`}
                       {r.excluded && ` · ${t('txn.excluded_badge')}`}

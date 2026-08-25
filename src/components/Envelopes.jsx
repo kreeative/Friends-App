@@ -284,8 +284,8 @@ export default function Envelopes({ s, allocations, locale, onChange }) {
        * round because a percentage is four characters in every currency and an
        * amount is not, so the hole never has to be sized for the long case.
        */}
-      <div data-card="pool" className="rounded-3xl border border-slate-200/80 bg-slate-50 p-6 shadow-sm">
-        <p className="text-label font-semibold uppercase tracking-wider text-slate-500">
+      <div data-card="pool" className="glass-card glass-card-quiet rounded-3xl p-6">
+        <p className="text-label font-semibold uppercase tracking-wider text-slate-600">
           {t('env.to_allocate')}
         </p>
 
@@ -306,7 +306,7 @@ export default function Envelopes({ s, allocations, locale, onChange }) {
             >
               {s.earned ? `${placedPct} %` : '—'}
             </span>
-            <span className="mt-1.5 text-label text-slate-500">{t('env.placed_word')}</span>
+            <span className="mt-1.5 text-label text-slate-600">{t('env.placed_word')}</span>
           </Gauge>
         </div>
 
@@ -319,12 +319,12 @@ export default function Envelopes({ s, allocations, locale, onChange }) {
           }`}
         >
           <Amount cents={Math.abs(pool)} data-hook="pool-amount" />{' '}
-          <span className="text-body font-semibold text-slate-500">
+          <span className="text-body font-semibold text-slate-600">
             {pool < 0 ? t('env.over_word') : t('env.to_place')}
           </span>
         </p>
 
-        <p className="mx-auto mt-2.5 max-w-[34ch] text-center text-small leading-relaxed text-slate-500">
+        <p className="mx-auto mt-2.5 max-w-[34ch] text-center text-small leading-relaxed text-slate-600">
           {!s.earned
             ? t('env.no_income')
             : pool > 0
@@ -370,7 +370,7 @@ export default function Envelopes({ s, allocations, locale, onChange }) {
                * rather than one row at a time.
                */
               className={`flex flex-col rounded-2xl border p-4 shadow-sm ${
-                e.over > 0 ? 'border-negative/25 bg-negative/[0.045]' : 'border-slate-200/70 bg-white'
+                e.over > 0 ? 'border-negative/25 bg-negative/[0.06]' : 'glass-card'
               }`}
             >
               {/**
@@ -433,7 +433,7 @@ export default function Envelopes({ s, allocations, locale, onChange }) {
               {inUse && (
                 <p
                   aria-hidden="true"
-                  className={`mt-1 text-label ${e.over > 0 ? 'font-semibold text-negative' : 'text-slate-500'}`}
+                  className={`mt-1 text-label ${e.over > 0 ? 'font-semibold text-negative' : 'text-slate-600'}`}
                 >
                   {e.over > 0 ? t('env.over_word') : t('env.remaining_word')}
                 </p>
@@ -455,7 +455,7 @@ export default function Envelopes({ s, allocations, locale, onChange }) {
                * as 00 000 with nothing on screen to say so.
                */}
               <div className="mt-auto border-t border-slate-200/70 pt-2.5">
-                <label htmlFor={`env-${e.key}`} className="block text-label text-slate-500">
+                <label htmlFor={`env-${e.key}`} className="block text-label text-slate-600">
                   {t('env.allocated_short')}
                 </label>
                 <input
