@@ -568,7 +568,7 @@ export default function Money() {
     /* The ground the cards are glass over. Without it every .glass-card on
        this screen is just a white box with a blur that returns the colour it
        was given, which is what .glass has always degraded to app-wide. */
-    <Screen className="ambient">
+    <Screen className="ambient calm">
       <TopBar
         title={t('money.title')}
         sub={t('money.sub_period', { days: s.period.daysLeft })}
