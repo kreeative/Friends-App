@@ -9,7 +9,6 @@ import { isDueOn } from '../lib/schedule'
 import { isMissingColumn } from '../lib/dberr'
 import { rectOf } from '../lib/gesture'
 import { useLongPress } from '../lib/useLongPress'
-import { isOpen as journalUnlocked, loadLock } from '../lib/journal'
 import {
   CURRENT_MONTH,
   calendarRange,
@@ -310,7 +309,6 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
      opened it may not be on screen at all. */
   const [recap, setRecap] = useState(false)
   const [origin, setOrigin] = useState(null)
-  const [journal, setJournal] = useState({ entry: null, locked: false })
 
   /**
    * The two tracks.
@@ -329,7 +327,6 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
   const [itemsByCycle, setItemsByCycle] = useState({})
   const [budget, setBudget] = useState(null)
   const [moodByDay, setMoodByDay] = useState({})
-  const [journalDays, setJournalDays] = useState(() => new Set())
 
   /* Which select shape this database can answer. A ref rather than state: it
      changes at most once per session and nothing renders from it. */
@@ -424,31 +421,6 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
         /* Offline. The rest of the panel still draws. */
       }
 
-      /**
-       * Which days have a journal entry. The days only, never the entries.
-       *
-       * `select('day')` is the whole of it, deliberately. The journal sits
-       * behind a passcode, and a dashboard that had already fetched the bodies
-       * would be holding the private text in memory on a screen anybody
-       * glancing over a shoulder can see, one careless render away from being
-       * on it. That an entry exists is not the secret; what is in it is.
-       *
-       * A missing table is a state, not an error: migration 27 may not have
-       * been run, in which case no day is ever marked and nothing else changes.
-       */
-      try {
-        const { data, error } = await supabase
-          .from('journal_entries')
-          .select('day')
-          .eq('user_id', user.id)
-          .gte('day', dayKey(from))
-          .lte('day', dayKey(to))
-
-        if (dead || error) return
-        setJournalDays(new Set((data ?? []).map((r) => String(r.day).slice(0, 10))))
-      } catch {
-        /* Offline, or no journal table. Nothing else on the card depends on it. */
-      }
     }
 
     run()
@@ -509,8 +481,7 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
 
   const isFutureDay = selected > todayKey
   const mood = moodByDay[selected] ?? null
-  const hasJournal = journalDays.has(selected)
-  const nothing = live.length === 0 && entries.length === 0 && !mood && !hasJournal
+  const nothing = live.length === 0 && entries.length === 0 && !mood
 
   /**
    * Which month the header names, in whichever mode is showing.
@@ -536,8 +507,7 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
   const isMarked = (k) =>
     (cyclesByDay[k] ?? []).some((s) => s.status === 'submitted') ||
     (entriesByDay[k] ?? []).length > 0 ||
-    Boolean(moodByDay[k]) ||
-    journalDays.has(k)
+    Boolean(moodByDay[k])
 
   const dayLabel = (d) =>
     d.toLocaleDateString(localeTag(locale), { weekday: 'long', day: 'numeric', month: 'long' })
@@ -554,42 +524,14 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
   /**
    * Held a date: select it, remember the square, and open the day.
    *
-   * The journal is fetched here rather than with everything else, and only for
-   * a day that has one. Two reasons, and the second is the important one.
-   *
-   * COST. Nobody who never holds a date should pay for a passcode lookup and a
-   * body fetch on every dashboard load.
-   *
-   * THE LOCK. The entry is only read when the journal is actually open: no
-   * passcode set, or the passcode already given this session. Otherwise the
-   * text is never fetched at all, so it is not sitting in memory on a screen
-   * reached by holding a square, and the card says an entry exists and offers
-   * the route that asks for four digits. Deciding this before the request
-   * rather than at render is deliberate: a component that has the text and
-   * chooses not to draw it is one careless change away from drawing it.
+   * This used to also fetch that day's journal entry, behind the passcode, and
+   * that was most of the function. The journal is gone from the app, so what is
+   * left is what the name always said.
    */
-  async function openDay(k, el) {
+  function openDay(k, el) {
     setSelected(k)
     setOrigin(rectOf(el))
-    setJournal({ entry: null, locked: false })
     setRecap(true)
-
-    if (!user || !journalDays.has(k)) return
-
-    const { lock, missing } = await loadLock(user.id)
-    if (missing) return
-    if (lock && !journalUnlocked()) return setJournal({ entry: null, locked: true })
-
-    const { data, error } = await supabase
-      .from('journal_entries')
-      .select('id, day, kind, body, ink')
-      .eq('user_id', user.id)
-      .eq('day', k)
-      .order('created_at', { ascending: false })
-      .limit(1)
-
-    if (error) return
-    setJournal({ entry: data?.[0] ?? null, locked: false })
   }
 
   const toggleExpanded = () => {
@@ -928,9 +870,6 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
         outcomes={outcomes}
         entries={entries}
         currency={currency}
-        hasJournal={hasJournal}
-        journal={journal.entry}
-        journalLocked={journal.locked}
         onClose={() => setRecap(false)}
       />
     </div>

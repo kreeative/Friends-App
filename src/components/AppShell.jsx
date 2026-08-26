@@ -22,7 +22,7 @@ import { Slider, useSlider } from './Segmented'
  * tab bar could not do both without either hiding the dashboard behind a
  * group or listing check-in when there is no group to check into.
  *
- * "YOU" IS STILL NOT IN THE BAR, AND THE JOURNAL NOW IS.
+ * "YOU" IS NOT IN THE BAR.
  *
  * "You" was the only tab that was a settings screen rather than a place, and
  * it competed for width with the things people actually move between. There is
@@ -30,23 +30,15 @@ import { Slider, useSlider } from './Segmented'
  * the top corner of every screen, which opens the account panel with Profile &
  * Settings in it. The /me route is untouched.
  *
- * The journal is the opposite case and that is why it took the width instead.
- * It is a place, it is meant to be opened daily, and it was reachable only
- * through the account list, which is where settings live. Something you are
- * supposed to do every day cannot be two taps down a menu.
- *
- * Five did cost something, and the cost was paid in the label size rather
- * than by dropping a tab: see the measurements in TabBar below.
+ * This was five tabs for a while, with the journal taking the width that "You"
+ * had given up. The journal is gone from the app, so the bar is back to four
+ * and the label size it needed at five is no longer load-bearing: see the
+ * measurements in TabBar below.
  */
 const MINE = [
   { to: '/', key: 'nav.home', end: true },
   // Your own goals, which no longer require a group to exist in.
   { to: '/goals', key: 'nav.goals' },
-  /* Between the doing and the money, because it is the other half of the
-     doing. It was reachable only through the account list, which is where
-     settings live, and a journal is not a setting: something you are meant to
-     open daily cannot be two taps down a menu. */
-  { to: '/journal', key: 'nav.journal' },
   { to: '/money', key: 'nav.budget' },
   { to: '/library', key: 'nav.library' },
 ]
@@ -239,14 +231,15 @@ function TabBar({ tabs }) {
       {/**
        * gap-0.5 rather than gap-1, and the tabs size to their labels.
        *
-       * WHY THIS CHANGED WHEN THE JOURNAL ARRIVED.
+       * WHY THIS CHANGED, AND WHY IT STAYED AFTER THE JOURNAL LEFT.
        *
        * Every tab was flex-1, so all of them took the same width whatever
-       * their label. That is fine at four and breaks at five: measured in a
-       * browser, French "Objectifs" wants 70px and an equal fifth of a 390px
-       * phone gives it 66, so the tab people press most read "Objectif…" while
-       * "Budget" sat in 66px it did not need. Equal columns are only fair when
-       * the words are the same length.
+       * their label. That is fine at four and broke at five, which is what the
+       * bar was while it carried the journal: measured in a browser, French
+       * "Objectifs" wants 70px and an equal fifth of a 390px phone gives it 66,
+       * so the tab people press most read "Objectif…" while "Budget" sat in
+       * 66px it did not need. Equal columns are only fair when the words are
+       * the same length, and they still are not at four.
        *
        * flex-auto shares the leftover space out from each label's own width
        * instead, so "Objectifs" keeps the room it needs and "Budget" gives up

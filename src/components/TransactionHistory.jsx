@@ -52,7 +52,7 @@ export default function TransactionHistory({ entries, currency, locale, onOpen, 
   /**
    * Where it went, for whatever is on screen.
    *
-   * The donut used to live on the budget's Journal tab. That tab is gone, and
+   * The donut used to live on the budget's transaction tab. That tab is gone, and
    * deleting the chart with it would have thrown away a view nobody asked to
    * lose. Here it is better than it was: it reads the FILTERED rows, so
    * narrowing to one month or one category redraws it, where on the tab it was

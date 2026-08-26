@@ -424,7 +424,7 @@ export default function Money() {
    * four jobs before it grew this same bar.
    *
    * Not stored anywhere. A tab is where you are, not a preference, and
-   * reopening the budget on "Journal" because that is where you finished last
+   * reopening the budget on Epargne because that is where you finished last
    * time is the app remembering the wrong thing.
    */
   const [pane, setPane] = useState('envelopes')
@@ -494,7 +494,7 @@ export default function Money() {
    *
    *   Apercu       was never a section, it was the page. It is the bento and
    *                the rank card at the top now, always on, never selected.
-   *   Journal      the transaction list. Gone as a tab; the full history is
+   *   Historique   the transaction list. Gone as a tab; the full history is
    *                one button away under the primary action, which is a
    *                better home for it than a tab you had to be on to search.
    *   Comparaison  a whole pane for one number. It is the rank card now, and
@@ -775,10 +775,10 @@ export default function Money() {
        * four: hiding it behind a tab would mean navigating in order to record
        * a coffee.
        *
-       * The history link is beside it because the Journal TAB is gone and the
-       * app's bottom-nav "Journal" is the journaling feature, not the money
-       * log. Without this line every transaction ever recorded would have been
-       * unreachable, which is a bigger hole than the tab was.
+       * The history link is beside it because the tab that used to hold the
+       * transaction list is gone. Without this line every transaction ever
+       * recorded would have been unreachable, which is a bigger hole than the
+       * tab was.
        */}
       <Section>
           <button className="btn-primary press w-full" onClick={() => setSheet(NEW)}>

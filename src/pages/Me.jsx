@@ -420,12 +420,6 @@ export default function Me() {
               <span className="flex-1 text-body text-ink">{t('me.your_goals')}</span>
               <span className="text-small text-muted">{soloGoals.length || ''} →</span>
             </Link>
-            {/* First in the list, above the shared things. It is the only row
-                here that leads somewhere nobody else can follow. */}
-            <Link to="/journal" className="press flex items-center gap-4 py-5 no-underline">
-              <span className="flex-1 text-body text-ink">{t('journal.title')}</span>
-              <span className="text-small text-muted">{t('journal.private')} →</span>
-            </Link>
             <Link to="/library" className="press flex items-center gap-4 py-5 no-underline">
               <span className="flex-1 text-body text-ink">{t('nav.library')}</span>
               <span className="text-small text-muted">→</span>

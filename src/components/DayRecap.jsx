@@ -5,7 +5,6 @@ import { localeTag, useT } from '../lib/i18n'
 import { money } from '../lib/money'
 import { dragOffset, flipTransform, rectOf, shouldDismiss } from '../lib/gesture'
 import { MoodBadge } from './MoodBoard'
-import InkPreview from './InkPreview'
 
 /**
  * One day, in full, grown out of the square you held.
@@ -33,7 +32,7 @@ import InkPreview from './InkPreview'
  * Framer Motion's `layoutId` is this with a library around it. See flipFrom for
  * why it is not a dependency here.
  *
- * WHY THE PROOF AND THE JOURNAL ARE THE POINT.
+ * WHY THE PROOF IS THE POINT.
  *
  * A photograph, a link or a note is attached to a check-in and was only ever
  * visible from the group's proof gallery, filed under the goal. Nobody thinks
@@ -113,9 +112,6 @@ export default function DayRecap({
   outcomes = new Map(),
   entries = [],
   currency = 'CAD',
-  hasJournal = false,
-  journal = null,
-  journalLocked = false,
   onClose,
 }) {
   const { t, locale } = useT()
@@ -249,7 +245,7 @@ export default function DayRecap({
   const yearLabel =
     date.getFullYear() === new Date().getFullYear() ? null : String(date.getFullYear())
 
-  const empty = !mood && goals.length === 0 && entries.length === 0 && !hasJournal
+  const empty = !mood && goals.length === 0 && entries.length === 0
 
   /* --- swipe down to dismiss ------------------------------------------- */
   /**
@@ -403,12 +399,6 @@ export default function DayRecap({
                   ) : null}
                 </Part>
 
-                <Part title={t('recap.journal')}>
-                  {hasJournal ? (
-                    <JournalPart entry={journal} locked={journalLocked} t={t} onLeave={close} />
-                  ) : null}
-                </Part>
-
                 <Part title={t('recap.goals')}>
                   {goals.length ? (
                     <ul className="lg divide-y divide-hairline px-5">
@@ -510,79 +500,6 @@ export default function DayRecap({
       </div>
     </div>,
     document.body,
-  )
-}
-
-/**
- * What was written that day, if the journal is open.
- *
- * THIS IS THE ONE PLACE IN THE APP WHERE A LOCK COULD BE WALKED AROUND.
- *
- * The journal is behind a passcode by design and this screen is reached by
- * holding a square on the dashboard. If the entry rendered here regardless,
- * the four digits would protect one route into the same text and not the
- * other, which is not a lock, it is a speed bump.
- *
- * So the rule is the same one the journal itself uses, and it is decided by
- * the caller before a single character is fetched: no passcode set, or the
- * passcode already given this session, and the entry is here. Otherwise the
- * day says an entry exists and offers the way to it, which asks for the code.
- * That an entry exists was already public on this screen, it is the dot under
- * the date.
- *
- * The body is clamped rather than shown whole. This is a recap of a day, not
- * the reader, and three thousand words of somebody's diary inside a card
- * between "the mood" and "the money" is the wrong shape for both.
- */
-function JournalPart({ entry, locked, t, onLeave }) {
-  const body = String(entry?.body ?? '').trim()
-  const ink = entry?.kind === 'ink' && entry?.ink ? entry.ink : null
-
-  /* Nothing to draw is not the same as nothing to say. An entry with neither
-     a body nor strokes should be impossible, the not-empty constraint in
-     migration 27 refuses one, but a row that arrives thinner than expected
-     would otherwise render as a card containing only a link, which reads as a
-     rendering fault. It falls back to the sentence, which is still true. */
-  if (locked || !entry || (!body && !ink)) {
-    return (
-      <div className="lg flex flex-wrap items-center justify-between gap-3 px-5 py-4">
-        <span className="flex min-w-0 items-center gap-2 text-body text-ink">
-          {locked && <LockIcon />}
-          {locked ? t('recap.journal_locked') : t('recap.journal_has')}
-        </span>
-        <Link to="/journal" className="goal-action press shrink-0" onClick={onLeave}>
-          {locked ? t('recap.journal_unlock') : t('recap.journal_open')}
-        </Link>
-      </div>
-    )
-  }
-
-  return (
-    <div className="lg overflow-hidden">
-      {ink ? (
-        /* The handwriting itself, cropped to what was written. An SVG from the
-           stored strokes, which is the whole reason they are stored as numbers
-           rather than as an image: this is sharp here and sharp again on the
-           full page, from the same few kilobytes. */
-        <InkPreview
-          ink={entry.ink}
-          crop
-          className="block max-h-56 w-full bg-white/60 px-5 py-4"
-        />
-      ) : null}
-
-      {body ? (
-        <p className="fade-b max-h-40 overflow-hidden whitespace-pre-wrap px-5 py-4 text-body text-ink">
-          {body}
-        </p>
-      ) : null}
-
-      <div className="flex justify-end border-t border-hairline px-5 py-3">
-        <Link to="/journal" className="goal-action press" onClick={onLeave}>
-          {t('recap.journal_open')}
-        </Link>
-      </div>
-    </div>
   )
 }
 

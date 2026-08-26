@@ -181,7 +181,7 @@ export function AuthProvider({ children }) {
      *
      * It is also the better option for a good number of people regardless of
      * any store, because Hide My Email means signing up without handing over
-     * an address, which for an app holding a private journal is the kind of
+     * an address, which for an app holding a private budget is the kind of
      * thing somebody might reasonably want.
      *
      * Identical shape to Google's above, deliberately: same redirect, same

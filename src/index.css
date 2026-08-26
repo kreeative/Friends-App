@@ -1153,8 +1153,8 @@
   /**
    * Text that runs past its box fades out instead of being guillotined.
    *
-   * For the journal cards, where a square preview holds an entry of unknown
-   * length. The alternatives were both worse: -webkit-line-clamp draws its
+   * For the proof gallery cards, where a square preview holds a note of
+   * unknown length. The alternatives were both worse: -webkit-line-clamp draws its
    * ellipsis and then paints another line underneath it in this layout, and a
    * character budget tight enough for a 163px phone card leaves a 200px
    * desktop card two-thirds empty.

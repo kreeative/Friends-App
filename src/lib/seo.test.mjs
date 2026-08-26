@@ -46,13 +46,13 @@ eq('a query on the root', normalisePath('/?ref=twitter'), '/')
 
 /* --- private ----------------------------------------------------------- */
 ok('there are private prefixes to check', PRIVATE_PREFIXES.length > 5)
-for (const p of ['/journal', '/money', '/goals', '/settings', '/me', '/checkin', '/proofs', '/start', '/signin']) {
+for (const p of ['/money', '/goals', '/settings', '/me', '/checkin', '/proofs', '/start', '/signin']) {
   eq(`${p} is private`, isPrivate(p), true)
 }
 eq('a child of a private route is private', isPrivate('/goals/new'), true)
 eq('and a deep one', isPrivate('/goals/abc-123/edit'), true)
 eq('a group is private', isPrivate('/g/aaaa-bbbb'), true)
-eq('with a trailing slash too', isPrivate('/journal/'), true)
+eq('with a trailing slash too', isPrivate('/settings/'), true)
 eq('and with a query', isPrivate('/money?x=1'), true)
 
 eq('the home page is not private', isPrivate('/'), false)
@@ -97,9 +97,9 @@ eq('a similar name is left alone', canonicalPath('/librarything'), '/librarythin
   eq('so is a chapter', seoFor('/books/story-you-tell').noindex, false)
   eq('so are the legal pages', seoFor('/legal/terms').noindex, false)
 
-  const priv = seoFor('/journal')
+  const priv = seoFor('/settings')
   eq('a private page is noindex', priv.noindex, true)
-  eq('and still has a canonical', priv.canonical, `${ORIGIN}/journal`)
+  eq('and still has a canonical', priv.canonical, `${ORIGIN}/settings`)
 
   /* Titles and descriptions belong to the pages, in the reader's own
      language. This module must not have opinions about them, or two writers
