@@ -10,9 +10,12 @@ import { loadBudget } from '../lib/budgetData'
 import { errorText, isMissingColumn, isNetworkError } from '../lib/dberr'
 import { fromCents, localISO, toCents, txnPayload, withoutField } from '../lib/txn'
 import { Empty, Field, Screen, Section, TopBar } from '../components/ui'
-import ActionBar, { EnvelopeIcon, GaugeIcon, ListIcon, PlanIcon } from '../components/ActionBar'
+import ActionBar, { EnvelopeIcon, GaugeIcon, ListIcon, PlanIcon, SuitcaseIcon } from '../components/ActionBar'
 import CatDisc from '../components/CatDisc'
 import SpendDonut from '../components/SpendDonut'
+import Projects from '../components/Projects'
+import ProjectDetail from '../components/ProjectDetail'
+import { loadProjectProfiles, loadProjects } from '../lib/projectData'
 import BudgetIntro from '../components/BudgetIntro'
 import SpendTrend from '../components/SpendTrend'
 import TransactionSheet from '../components/TransactionSheet'
@@ -216,6 +219,20 @@ export default function Money() {
       .select('period_start, category, amount_cents')
       .eq('user_id', user.id)
     setAllocRows(data ?? [])
+
+    /* Soft in the same way: without migration 38 this returns `missing` and
+       the pane shows an empty list rather than an error for a feature nobody
+       has installed. */
+    const pr = await loadProjects(user.id)
+    setProjects(pr.projects)
+    setProjMembers(pr.members)
+    setProjEntries(pr.entries)
+    /* Names for everybody in every project, including payers who have since
+       left, so a ledger line never renders a blank name beside a real amount. */
+    setProjProfiles(await loadProjectProfiles([
+      ...pr.members.map((m) => m.user_id),
+      ...pr.entries.map((e) => e.paid_by),
+    ]))
   }, [user])
 
   useEffect(() => {
@@ -318,6 +335,15 @@ export default function Money() {
    */
   const [pane, setPane] = useState('overview')
 
+  /* Shared project budgets. Held separately from the personal budget in every
+     sense that matters: separate tables, separate policies, separate load.
+     Nothing here can widen what a friend can see of the rows above. */
+  const [projects, setProjects] = useState([])
+  const [projMembers, setProjMembers] = useState([])
+  const [projEntries, setProjEntries] = useState([])
+  const [projProfiles, setProjProfiles] = useState({})
+  const [openProject, setOpenProject] = useState(null)
+
   /**
    * What each tile says about itself.
    *
@@ -368,6 +394,16 @@ export default function Money() {
       badge: recent.length ? String(recent.length) : null,
       /* A log is never unfinished. Nothing here waits to be filled in, so the
          tile is not allowed to nag about being empty. */
+      done: true,
+    },
+    {
+      id: 'projects',
+      icon: <SuitcaseIcon />,
+      label: t('money.tab_projects'),
+      /* The count of projects, not of anything owed. "You owe money" belongs
+         on the project, where the amount and the person are both visible; a
+         red 3 on a tile is a worry with nothing attached to it. */
+      badge: projects.length ? String(projects.length) : null,
       done: true,
     },
   ]
@@ -798,6 +834,61 @@ export default function Money() {
       </Section>
 
         </>
+      )}
+
+      {/**
+       * Shared, ephemeral budgets.
+       *
+       * A drill-down rather than a route: opening one swaps the pane's body
+       * for the project and the back button swaps it back. A route would be
+       * shareable, but the thing worth sharing is the invite code, and that
+       * is on the project itself.
+       */}
+      {pane === 'projects' && (
+        <Section>
+          {openProject ? (
+            (() => {
+              const p = projects.find((x) => x.id === openProject)
+              /* Left, or removed on another device, between the tap and the
+                 render. Fall back to the list rather than to a blank pane. */
+              if (!p) return <Projects
+                userId={user?.id}
+                projects={projects}
+                members={projMembers}
+                entries={projEntries}
+                profiles={projProfiles}
+                currency={s.currency}
+                locale={locale}
+                onOpen={setOpenProject}
+                onChange={load}
+              />
+              return (
+                <ProjectDetail
+                  project={p}
+                  members={projMembers.filter((m) => m.project_id === p.id)}
+                  entries={projEntries.filter((e) => e.project_id === p.id)}
+                  profiles={projProfiles}
+                  userId={user?.id}
+                  locale={locale}
+                  onBack={() => setOpenProject(null)}
+                  onChange={load}
+                />
+              )
+            })()
+          ) : (
+            <Projects
+              userId={user?.id}
+              projects={projects}
+              members={projMembers}
+              entries={projEntries}
+              profiles={projProfiles}
+              currency={s.currency}
+              locale={locale}
+              onOpen={setOpenProject}
+              onChange={load}
+            />
+          )}
+        </Section>
       )}
 
       <TransactionSheet
