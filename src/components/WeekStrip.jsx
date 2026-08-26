@@ -674,6 +674,7 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
 
           <div
             ref={monthTrack.ref}
+            data-track="month"
             onScroll={monthTrack.onScroll}
             className="animate-rise flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
@@ -706,6 +707,7 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
       ) : (
         <div
           ref={weekTrack.ref}
+          data-track="week"
           onScroll={weekTrack.onScroll}
           className="flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
@@ -750,18 +752,47 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
        * same pixels, and the loser is whichever one the reader meant.
        */}
       <button
-        type="button"
-        onClick={toggleExpanded}
-        aria-expanded={expanded}
-        aria-label={expanded ? t('week.show_week') : t('week.show_month')}
-        className="press group mt-1 flex w-full items-center justify-center gap-1.5 rounded-inner py-2 transition-colors hover:bg-ink/[0.035]"
-      >
-        <span className="h-1 w-8 rounded-pill bg-ink/20 transition-colors group-hover:bg-ink/35" />
-        <span className="text-label font-semibold uppercase tracking-[0.08em] text-muted">
-          {expanded ? t('week.week') : t('week.month')}
-        </span>
-        <span className="h-1 w-8 rounded-pill bg-ink/20 transition-colors group-hover:bg-ink/35" />
-      </button>
+          type="button"
+          onClick={toggleExpanded}
+          aria-expanded={expanded}
+          aria-label={expanded ? t('week.show_week') : t('week.show_month')}
+          data-hook="week-toggle"
+          /**
+           * A pill, not two dashes with a word between them.
+           *
+           * The dashes were borrowed from the sheet grabber, which is the
+           * app's word for "drag me". This does not drag, it is a button, so
+           * the borrowed shape was making a promise the control does not
+           * keep. Full width made it worse: a 300px hit area for a word that
+           * is 40px wide reads as a divider somebody wrote on.
+           *
+           * A tinted pill in the theme's own accent, lifted off the card by
+           * its own shadow, is the size of the thing it does.
+           */
+          className="press group mx-auto mt-1 flex w-fit items-center gap-1.5 rounded-pill bg-accent/10 px-4 py-1.5 shadow-raised ring-1 ring-inset ring-ink/[0.07] transition-[background-color,box-shadow] duration-200 hover:bg-accent/[0.16]"
+        >
+          <span className="text-label font-semibold uppercase tracking-[0.08em] text-ink">
+            {expanded ? t('week.week') : t('week.month')}
+          </span>
+          {/* Which way it opens, and it turns over when it has. A chevron
+              that never moves is a decoration; one that does is the state. */}
+          <svg
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+            className={`h-3.5 w-3.5 text-ink transition-transform duration-300 ease-settle ${
+              expanded ? 'rotate-180' : ''
+            }`}
+          >
+            <path
+              d="M6.5 9.5 12 15l5.5-5.5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button>
 
       {/* Always open, never a disclosure. There is always a selected day, so a
           panel that had to be opened would be a second tap between you and the
