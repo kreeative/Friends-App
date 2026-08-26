@@ -12,9 +12,11 @@ import { detectCountry, spendOver } from '../lib/benchmarks'
 import { history as savingsHistory, recentRate } from '../lib/savings'
 import { fromCents, localISO, toCents, txnPayload, withoutField } from '../lib/txn'
 import { Empty, Screen, Section, TopBar } from '../components/ui'
-import ActionBar, {
+import {
   BookIcon, EnvelopeIcon, GaugeIcon, ListIcon, PiggyIcon, PlanIcon, ScaleIcon, SuitcaseIcon,
 } from '../components/ActionBar'
+import PaneTabs from '../components/PaneTabs'
+import CategoryBento from '../components/CategoryBento'
 import Savings from '../components/Savings'
 import Benchmarks from '../components/Benchmarks'
 import Formation from '../components/Formation'
@@ -800,8 +802,45 @@ export default function Money() {
         </Section>
       ) : (
         <>
-      {/* Gone while a lesson is open. See the note beside `reading`. */}
-      {!reading && <ActionBar items={panes} value={pane} onChange={setPane} />}
+      {/**
+       * 1. THE HEADER CARD, above everything and outside every pane.
+       *
+       * It used to live inside the overview, which meant the one number the
+       * whole screen is for vanished the moment you looked at anything else.
+       * It is the dashboard's header now: what is left, a percentage badge,
+       * and the bar, on every pane.
+       *
+       * Overcommitted replaces it rather than sitting beside it. That state
+       * means the plan itself does not close, so no amount of careful spending
+       * fixes it, and showing a spendable figure underneath a warning that the
+       * figure is unreachable would be arithmetically defensible and useless.
+       */}
+      {!reading && (
+        <Section>
+          {s.overcommitted ? (
+            <div className="card-warn">
+              <div className="text-h2 text-ink">{t('money.overcommitted_title')}</div>
+              <p className="mt-2 text-body text-muted">
+                {t('money.overcommitted_body', {
+                  over: fmt(Math.abs(s.plannedPool)),
+                  fixed: fmt(s.committed + s.savings),
+                  income: fmt(s.income),
+                })}
+              </p>
+            </div>
+          ) : (
+            <SpendableBar bar={bar} currency={s.currency} locale={locale} />
+          )}
+        </Section>
+      )}
+
+      {/* 2. The sections, as pills directly under the header card. Gone while
+             a lesson is open; see the note beside `reading`. */}
+      {!reading && (
+        <div className="mt-4">
+          <PaneTabs items={panes} value={pane} onChange={setPane} />
+        </div>
+      )}
 
       {/**
        * The one button that belongs to no pane.
@@ -835,42 +874,31 @@ export default function Money() {
       {pane === 'overview' && (
         <>
       {/**
-       * The headline. Two failure states are called out by name rather
-       * than left for the reader to infer from a negative number.
+       * 3. THE BENTO GRID, and the reason it is the first thing on the budget.
        *
-       * Overcommitted is the important one and it is not the same as
-       * overspent: it means the plan itself does not close, so no amount
-       * of careful spending fixes it. Saying "you can spend 4 dollars a
-       * day" to somebody whose rent already exceeds their pay would be
-       * arithmetically defensible and useless.
+       * The headline that used to open this pane is the page's header card
+       * now, so what opens the overview is the six categories: what each part
+       * of the month is for, how far through it you are, and what is left, six
+       * cards at a glance instead of one number and a list of places to go.
+       *
+       * Read only. See CategoryBento for why a dashboard that opens with six
+       * editable fields is a form rather than a dashboard, and why every card
+       * is a button into the envelopes pane instead.
        */}
-      <Section>
-        {s.overcommitted ? (
-          <div className="card-warn">
-            <div className="text-h2 text-ink">{t('money.overcommitted_title')}</div>
-            <p className="mt-2 text-body text-muted">
-              {t('money.overcommitted_body', {
-                over: fmt(Math.abs(s.plannedPool)),
-                fixed: fmt(s.committed + s.savings),
-                income: fmt(s.income),
-              })}
-            </p>
-          </div>
-        ) : (
-          /**
-           * The headline is now "what is left to spend", against real income.
-           *
-           * It used to be a day rate: what is free, divided by the days
-           * remaining. That answers a question about pace, and pace is not the
-           * question a zero-based budget asks. The question here is how much of
-           * what actually arrived is still there, so the number is income minus
-           * spending and the bar fills as the month runs down.
-           *
-           * The day rate has not been thrown away, it is in the tiles below,
-           * where a secondary figure belongs.
-           */
-          <SpendableBar bar={bar} currency={s.currency} locale={locale} />
-        )}
+      <Section
+        title={t('env.title')}
+        action={
+          <button className="goal-action press shrink-0" onClick={() => setPane('envelopes')}>
+            {t('money.tab_envelopes')}
+          </button>
+        }
+      >
+        <CategoryBento
+          s={s}
+          allocations={allocations}
+          locale={locale}
+          onOpen={() => setPane('envelopes')}
+        />
       </Section>
 
       {/* The shape of the month. Under the headline because it is the same
@@ -1434,7 +1462,7 @@ function PlanForm({ plan, fixed, userId, currency, onCancel, onSaved }) {
          */}
         <div
           data-card="plan-hero"
-          className="glass-card relative overflow-hidden rounded-3xl bg-gradient-to-b from-white to-accent/[0.16] p-6"
+          className="glass-card relative overflow-hidden rounded-3xl bg-gradient-to-br from-cat-1-soft via-white to-cat-5-soft p-6"
         >
           {/* The badge rides the label's line rather than the bottom corner it
               started in. Pinned bottom-right it came within ten pixels of the

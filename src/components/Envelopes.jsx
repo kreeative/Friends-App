@@ -80,7 +80,10 @@ const FAMILY_INK = 'text-cat-1'
  * attempt drew 4px and read as a wireframe. A gauge is a shape, not a line.
  * Round caps at both ends, so the arc looks drawn rather than clipped.
  */
-function Gauge({ pct, size, stroke, arc, track, dim = false, sweep = 1, children }) {
+/* Exported so the bento dashboard can draw the same ring. Duplicating the arc
+   arithmetic was the alternative, and two copies of a dasharray calculation is
+   two things to keep in step for no gain. */
+export function Gauge({ pct, size, stroke, arc, track, dim = false, sweep = 1, children }) {
   const r = (size - stroke) / 2
   const circumference = 2 * Math.PI * r
   const span = circumference * sweep
@@ -538,11 +541,37 @@ export function SpendableBar({ bar, currency, locale }) {
        separate restyles and took a test suite with it every time. */
     <div
       data-card="spendable"
-      className="glass-card relative overflow-hidden rounded-3xl bg-gradient-to-b from-white to-accent/[0.16] p-6"
+      className="glass-card relative overflow-hidden rounded-3xl bg-gradient-to-br from-cat-1-soft via-white to-cat-5-soft p-6"
     >
-      <p data-hook="label" className="text-label font-semibold uppercase tracking-wider text-muted">
-        {t('env.left_to_spend')}
-      </p>
+      {/**
+       * The badge rides the label's line, and it is pop pink rather than ink.
+       *
+       * Pinned to the bottom corner it landed within a few pixels of the end of
+       * the note, which is the string most likely to grow: one longer
+       * translation and the pill would sit on a sentence. Same fix the plan
+       * form's hero already took.
+       *
+       * And a tint of the accent rather than a near-black slab, which is what
+       * "bg-ink text-white" became when ink went to 30 24 27. Ink on the tint
+       * measures far past 4.5:1, so the badge can be the theme's own colour
+       * instead of the heaviest object on the card. The overspent badge keeps
+       * its solid negative fill: that one is meant to interrupt.
+       */}
+      <div className="flex items-baseline justify-between gap-3">
+        <p data-hook="label" className="text-label font-semibold uppercase tracking-wider text-muted">
+          {t('env.left_to_spend')}
+        </p>
+        {bar.funded && (
+          <span
+            data-hook="pct"
+            className={`shrink-0 rounded-pill px-3 py-1 text-label font-semibold [font-variant-numeric:tabular-nums] ${
+              bar.over > 0 ? 'bg-negative text-white' : 'bg-accent/[0.35] text-ink'
+            }`}
+          >
+            {bar.over > 0 ? t('env.bar_over_short') : `${bar.pct} %`}
+          </span>
+        )}
+      </div>
       <p
         data-hook="amount"
         className={`mt-2 font-display text-hero leading-none [font-variant-numeric:tabular-nums] ${
@@ -562,20 +591,6 @@ export function SpendableBar({ bar, currency, locale }) {
           style={{ width: `${bar.funded ? bar.pct : 0}%` }}
         />
       </div>
-
-      {/* The share of what came in that has gone, as a badge on the card
-          rather than a fourth line of prose. Only once something has come
-          in: "0 %" before your first payday is a statistic about nothing. */}
-      {bar.funded && (
-        <span
-          data-hook="pct"
-          className={`absolute bottom-5 right-5 rounded-pill px-3 py-1 text-label font-semibold [font-variant-numeric:tabular-nums] ${
-            bar.over > 0 ? 'bg-negative text-white' : 'bg-ink text-white'
-          }`}
-        >
-          {bar.over > 0 ? t('env.bar_over_short') : `${bar.pct} %`}
-        </span>
-      )}
 
       <p data-hook="note" className="mt-2.5 max-w-[26ch] text-small leading-relaxed text-muted">
         {!bar.funded
