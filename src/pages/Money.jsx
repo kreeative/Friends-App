@@ -2,14 +2,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useT } from '../lib/i18n'
-import { money } from '../lib/money'
+import { money, moneyParts } from '../lib/money'
 import { summarise } from '../lib/budget'
-import { minorDigits } from '../lib/currency'
+import { currencySymbol, minorDigits } from '../lib/currency'
 import { clearDraft, hasFreshDraft, readDraft, useDraft } from '../lib/draft'
 import { loadBudget } from '../lib/budgetData'
 import { errorText, isMissingColumn, isNetworkError } from '../lib/dberr'
 import { fromCents, localISO, toCents, txnPayload, withoutField } from '../lib/txn'
-import { Empty, Field, Screen, Section, TopBar } from '../components/ui'
+import { Empty, Screen, Section, TopBar } from '../components/ui'
 import ActionBar, { EnvelopeIcon, GaugeIcon, ListIcon, PlanIcon, SuitcaseIcon } from '../components/ActionBar'
 import CatDisc from '../components/CatDisc'
 import SpendDonut from '../components/SpendDonut'
@@ -59,17 +59,102 @@ const DRAFT_KEY = 'rich_friends_budget_draft'
 /** The sheet is open, on nothing yet. See the `sheet` state below. */
 const NEW = 'new'
 
-function MoneyInput({ value, onChange, digits = 2, autoFocus = false }) {
+/**
+ * One amount, typed straight into a tile.
+ *
+ * The plan form used to be three `.field` boxes stacked down a page: a filled
+ * rectangle, a label above it, a note under it, three times. That is a web
+ * form from 2012 sitting inside an app whose every other money surface is a
+ * card with a name at the top and a number at the bottom, and the mismatch is
+ * the whole of what was wrong with it.
+ *
+ * So the box goes and the tile stays. The tile IS the input: it is a `<label>`,
+ * so a tap anywhere on it puts the caret in the number, which makes it a much
+ * bigger target than the 44px-high field it replaces.
+ *
+ * The currency mark rides in the label row rather than beside the digits. Put
+ * next to the number it has to switch sides between "$12" and "12 $", and the
+ * trailing case leaves the symbol stranded at the far edge of the tile with the
+ * number at the other. In the label row it is in the same place in both
+ * languages and still says what unit you are typing.
+ *
+ * THE RING IS THE AFFORDANCE, AND IT IS A MEASURED ONE.
+ *
+ * With the box gone there was nothing at rest saying this tile takes a caret:
+ * the glass card's own edge is ink at 8%, which measures about 1.1:1 against
+ * the card and is a seam, not a boundary. `.field`'s fill is not much better.
+ * WCAG 1.4.11 asks 3:1 of anything required to identify a control, so this is
+ * ink at 50%, and ringprobe.mjs measures the painted pixels rather than
+ * trusting the arithmetic.
+ *
+ * Ink rather than the accent because the accent has to work in both themes and
+ * in sea it is yellow: #FFD60A on white is 1.41:1, and a boundary nobody can
+ * see is not a boundary.
+ *
+ * Which is also why focus does not swap the ring for the accent, the way
+ * `.field:focus` does app-wide. Doing that took a focused field in sea from
+ * 3.3:1 to roughly 1.4:1, so putting the caret in it made its edge harder to
+ * see than leaving it alone. The ring stays ink and goes to 2px, and the accent
+ * arrives as a glow outside it: measured, focus is 4.5:1 in both themes, which
+ * is stronger than rest rather than weaker.
+ */
+function AmountTile({ label, hint, ariaLabel, symbol, value, onChange, digits, autoFocus = false }) {
   return (
-    <input
-      type="text"
-      inputMode="decimal"
-      autoFocus={autoFocus}
-      className="field"
-      value={value}
-      placeholder={digits === 0 ? '0' : `0.${'0'.repeat(digits)}`}
-      onChange={(e) => onChange(e.target.value)}
-    />
+    <label
+      data-hook="plan-tile"
+      data-editable=""
+      className="glass-card flex min-h-[7.5rem] cursor-text flex-col justify-between rounded-3xl p-4
+                 ring-1 ring-inset ring-ink/50 transition-shadow duration-200 ease-settle
+                 focus-within:ring-2 focus-within:ring-ink/60
+                 focus-within:shadow-[0_0_0_4px_rgb(var(--c-accent)/0.4)]"
+    >
+      <span className="block">
+        <span className="flex items-baseline justify-between gap-2">
+          <span className="text-label font-semibold uppercase leading-tight tracking-wider text-muted">
+            {label}
+          </span>
+          <span className="shrink-0 text-label font-semibold text-muted">{symbol}</span>
+        </span>
+        {hint && <span className="mt-1 block text-label leading-tight text-muted">{hint}</span>}
+      </span>
+      <input
+        type="text"
+        inputMode="decimal"
+        autoFocus={autoFocus}
+        /* Wins over the tile's own text, which reads as two words plus a
+           currency mark. The long-form label the tile dropped lives here. */
+        aria-label={ariaLabel}
+        value={value}
+        placeholder={digits === 0 ? '0' : `0.${'0'.repeat(digits)}`}
+        onChange={(e) => onChange(e.target.value)}
+        className="mt-3 w-full min-w-0 border-0 bg-transparent p-0 font-display text-h2 font-semibold
+                   leading-none text-ink outline-none [font-variant-numeric:tabular-nums]
+                   placeholder:font-normal placeholder:text-muted"
+      />
+    </label>
+  )
+}
+
+/**
+ * A tile you cannot type in, because its number follows from the ones you can.
+ *
+ * Quieter than the two above it, so the grid reads as "these two you set, these
+ * two are what that means" rather than as four fields, two of which mysteriously
+ * refuse the caret.
+ */
+function PlanTile({ label, value }) {
+  return (
+    <div
+      data-hook="plan-tile"
+      className="glass-card glass-card-quiet flex min-h-[7.5rem] flex-col justify-between rounded-3xl p-4"
+    >
+      <p className="text-label font-semibold uppercase leading-tight tracking-wider text-muted">
+        {label}
+      </p>
+      <p className="mt-3 font-display text-h2 font-semibold leading-none text-ink [font-variant-numeric:tabular-nums]">
+        {value}
+      </p>
+    </div>
   )
 }
 
@@ -982,7 +1067,7 @@ export default function Money() {
  * this is the entire amount of typing the feature ever asks for.
  */
 function PlanForm({ plan, fixed, userId, currency, onCancel, onSaved }) {
-  const { t } = useT()
+  const { t, locale } = useT()
   const digits = minorDigits(currency)
 
   /**
@@ -1116,8 +1201,41 @@ function PlanForm({ plan, fixed, userId, currency, onCancel, onSaved }) {
     onCancel?.()
   }
 
+  /**
+   * What the numbers on the form add up to, right now.
+   *
+   * Recomputed from the fields rather than from the saved plan, so the headline
+   * answers the question you are in the middle of asking. Typing a rent of 1200
+   * and watching the number at the top of the screen drop by 1200 is the only
+   * feedback this form has ever offered, and without it the whole thing is data
+   * entry with the result hidden behind a Save button.
+   *
+   * Charges that are paused do not count. `active` is the pause, and a paused
+   * charge is money you are not being asked for this month.
+   */
+  const inCents = toCents(income) ?? 0
+  const saveCents = toCents(savings) ?? 0
+  const fixedCents = rows.reduce((n, r) => n + (r.active === false ? 0 : (toCents(r.amount) ?? 0)), 0)
+  const left = inCents - saveCents - fixedCents
+  const savedPct = inCents > 0 ? Math.round((saveCents / inCents) * 100) : 0
+
+  /* The period is the calendar month, so the divisor is this month's length.
+     Built from parts rather than by arithmetic on a timestamp: day 0 of next
+     month is the last day of this one, and it stays right in February. */
+  const now = new Date()
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+
+  const fmt = (cents) => money(cents, currency, locale)
+  const leftParts = moneyParts(left, currency, locale)
+  const { symbol } = currencySymbol(currency, [locale])
+
   return (
-    <Screen>
+    /* The ground the glass is over. Without it every card here is a white box
+       with a blur that returns the colour it was given, which is what the whole
+       app's glass degrades to on a flat surface. The overview already carries
+       it; the form used to be the one money screen that did not, and the cards
+       it now uses are the same cards. */
+    <Screen className="ambient">
       <TopBar
         title={t('money.plan_title')}
         right={
@@ -1141,60 +1259,203 @@ function PlanForm({ plan, fixed, userId, currency, onCancel, onSaved }) {
           </button>
         </div>
       )}
-      {/* pb-32 clears the floating tab bar plus its inset, so the save button
-          at the end of the list is reachable rather than sitting under it. */}
-      <div className="space-y-8 pb-32 pt-4">
-        <Field label={t('money.income')} hint={t('money.income_hint')}>
-          <MoneyInput value={income} onChange={setIncome} digits={digits} autoFocus />
-        </Field>
-
-        <Field label={t('money.savings')} hint={t('money.savings_hint')}>
-          <MoneyInput value={savings} onChange={setSavings} digits={digits} />
-        </Field>
-
-        <div>
-          <span className="field-label">{t('money.fixed')}</span>
-          <span className="field-note">{t('money.fixed_hint')}</span>
-          <ul className="mt-4 space-y-3">
-            {rows.map((r, i) => (
-              <li key={r.id ?? `new-${i}`} className="flex gap-2">
-                <input
-                  className="field flex-1"
-                  placeholder={t('money.fixed_label_ph')}
-                  value={r.label}
-                  onChange={(e) =>
-                    setRows((p) => p.map((x, j) => (j === i ? { ...x, label: e.target.value } : x)))
-                  }
-                />
-                <input
-                  className="field w-28"
-                  inputMode="decimal"
-                  placeholder="0.00"
-                  value={r.amount}
-                  onChange={(e) =>
-                    setRows((p) => p.map((x, j) => (j === i ? { ...x, amount: e.target.value } : x)))
-                  }
-                />
-                <button
-                  type="button"
-                  className="text-small text-muted underline"
-                  onClick={() => setRows((p) => p.filter((_, j) => j !== i))}
-                >
-                  {t('money.remove')}
-                </button>
-              </li>
-            ))}
-          </ul>
-          <button
-            type="button"
-            className="btn-ghost press mt-4"
-            onClick={() => setRows((p) => [...p, { label: '', amount: '', active: true }])}
+      {/* `Screen` already carries pb-36 for the floating tab bar, so the pb-32
+          that used to be here was a second clearance on top of the first: three
+          hundred pixels of nothing under the save button. */}
+      <div className="pt-4">
+        {/**
+         * The answer, above the questions.
+         *
+         * Same card as the one at the top of the overview, deliberately: this
+         * form's whole job is to set the number that card shows, so seeing the
+         * same card fill in as you type is the shortest possible explanation of
+         * what any of these fields are for.
+         */}
+        <div
+          data-card="plan-hero"
+          className="glass-card relative overflow-hidden rounded-3xl bg-gradient-to-b from-white to-accent/[0.16] p-6"
+        >
+          {/* The badge rides the label's line rather than the bottom corner it
+              started in. Pinned bottom-right it came within ten pixels of the
+              end of the note in French and within eight in English, and the
+              note is the string most likely to grow: one longer translation and
+              a pill would have been sitting on top of a sentence. */}
+          <div className="flex items-baseline justify-between gap-3">
+            <p className="text-label font-semibold uppercase tracking-wider text-muted">
+              {t('money.plan_left')}
+            </p>
+            {/* Only once there is an income to be a percentage of. "0 % épargné"
+                on an empty form is a fact about nothing. */}
+            {inCents > 0 && (
+              <span
+                data-hook="pct"
+                className="shrink-0 rounded-pill bg-accent/[0.35] px-3 py-1 text-label font-semibold text-ink"
+              >
+                {t('money.plan_saved_pct', { n: savedPct })}
+              </span>
+            )}
+          </div>
+          <p
+            data-hook="amount"
+            className={`mt-2 font-display text-hero leading-none [font-variant-numeric:tabular-nums] ${
+              left < 0 ? 'text-negative' : 'text-ink'
+            }`}
           >
-            {t('money.add_fixed')}
-          </button>
+            {leftParts.head}
+            <span className="align-baseline text-[0.62em] text-muted">{leftParts.cents}</span>
+            {leftParts.suffix}
+          </p>
+          <p className="mt-2.5 max-w-[26ch] text-small leading-relaxed text-muted">
+            {left < 0 ? t('money.plan_over_note') : t('money.plan_left_note')}
+          </p>
         </div>
 
-        <button className="btn-primary press" onClick={save} disabled={busy}>
+        {/**
+         * Two you set, two that follow.
+         *
+         * The long labels are gone from sight but not from the accessibility
+         * tree: `aria-label` on each input still carries the full sentence, so
+         * "Ce qui entre" on screen is still "Ce qui entre (revenu net mensuel)"
+         * to a screen reader. A tile that reads as two words to everybody would
+         * have been a real regression for anybody who cannot see the grid it
+         * sits in.
+         */}
+        <div className="mt-3 grid grid-cols-2 gap-3" data-hook="plan-tiles">
+          <AmountTile
+            label={t('money.income_short')}
+            hint={t('money.income_tile_hint')}
+            ariaLabel={`${t('money.income')}. ${t('money.income_hint')}`}
+            symbol={symbol}
+            value={income}
+            onChange={setIncome}
+            digits={digits}
+            autoFocus
+          />
+          <AmountTile
+            label={t('money.savings_short')}
+            hint={t('money.savings_tile_hint')}
+            ariaLabel={`${t('money.savings')}. ${t('money.savings_hint')}`}
+            symbol={symbol}
+            value={savings}
+            onChange={setSavings}
+            digits={digits}
+          />
+          <PlanTile label={t('money.fixed_short')} value={fmt(fixedCents)} />
+          <PlanTile label={t('money.plan_per_day')} value={fmt(Math.max(0, Math.round(left / daysInMonth)))} />
+        </div>
+
+        <Section
+          title={t('money.fixed_short')}
+          action={
+            <button
+              type="button"
+              className="goal-action press"
+              onClick={() => setRows((p) => [...p, { label: '', amount: '', active: true }])}
+            >
+              {t('money.add_fixed')}
+            </button>
+          }
+        >
+          <p className="-mt-2 mb-4 text-small text-muted">{t('money.fixed_hint')}</p>
+
+          {rows.length === 0 ? (
+            <p className="rounded-3xl border border-dashed border-ink/15 p-6 text-center text-small text-muted">
+              {t('money.fixed_none')}
+            </p>
+          ) : (
+            <ul className="space-y-2.5">
+              {rows.map((r, i) => (
+                /**
+                 * One charge, as a card rather than as three controls in a row.
+                 *
+                 * The amount keeps a filled well of its own because it is the
+                 * one thing on the row you scan down a column of, and a bare
+                 * number floating at the right edge of a card gives the eye no
+                 * edge to line up on. The name does not: it is prose, it is
+                 * left aligned against the card, and a second box inside the
+                 * card would be two edges where one will do.
+                 */
+                <li
+                  key={r.id ?? `new-${i}`}
+                  data-hook="fixed-row"
+                  className="glass-card flex items-center gap-2 rounded-3xl p-2.5"
+                >
+                  {/* px-1.5, not px-2.5. Every pixel of padding here comes off
+                      the name, and at 390px the column only has so much: the
+                      currency mark leaving the well and this padding coming in
+                      took the name from 150px to 172px.
+
+                      Measured, not assumed, and it is not a complete fix:
+                      "Abonnement musique" wants 193px and is still two glyphs
+                      short. An input scrolls rather than truncating, so the
+                      name is readable by tapping into it, and getting the rest
+                      would mean either a two-line row or a smaller face for the
+                      one thing on the row you are reading. Nineteen characters
+                      is where the single-line row runs out. */}
+                  <input
+                    aria-label={t('money.fixed_label_ph')}
+                    className="min-w-0 flex-1 rounded-2xl border-0 bg-transparent px-1.5 py-2 text-body
+                               font-semibold text-ink outline-none transition-colors duration-200 ease-settle
+                               placeholder:font-normal placeholder:text-muted focus:bg-ink/[0.05]"
+                    placeholder={t('money.fixed_label_ph')}
+                    value={r.label}
+                    onChange={(e) =>
+                      setRows((p) => p.map((x, j) => (j === i ? { ...x, label: e.target.value } : x)))
+                    }
+                  />
+                  {/* No currency mark in the well. The two tiles above already
+                      say what unit this form is in, and repeating "$CA" on
+                      every row cost the charge's own name thirty-four pixels
+                      it needed: "Abonnement musique" was arriving as
+                      "Abonnement m".
+
+                      Same ink ring as the tiles, for the same reason and at the
+                      same alpha. It buys slightly less here because it sits on
+                      the raised fill rather than on white, but ringprobe
+                      measures it at 3.26:1 in sun and 3.21:1 in sea, so it
+                      still clears 1.4.11. */}
+                  <span
+                    className="flex shrink-0 items-baseline rounded-2xl bg-raised px-3 py-2
+                               ring-1 ring-inset ring-ink/50 transition-shadow duration-200 ease-settle
+                               focus-within:ring-2 focus-within:ring-ink/60
+                               focus-within:shadow-[0_0_0_4px_rgb(var(--c-accent)/0.4)]"
+                  >
+                    <input
+                      aria-label={`${t('money.fixed_label_ph')} ${symbol}`}
+                      className="w-[4.75rem] min-w-0 border-0 bg-transparent p-0 text-right text-body font-semibold
+                                 text-ink outline-none [font-variant-numeric:tabular-nums]
+                                 placeholder:font-normal placeholder:text-muted"
+                      inputMode="decimal"
+                      placeholder={digits === 0 ? '0' : `0.${'0'.repeat(digits)}`}
+                      value={r.amount}
+                      onChange={(e) =>
+                        setRows((p) => p.map((x, j) => (j === i ? { ...x, amount: e.target.value } : x)))
+                      }
+                    />
+                  </span>
+                  {/* An icon, with the word as its accessible name. "Retirer"
+                      underlined at the end of every row was a column of blue-ish
+                      links down a list of money, and it took the width the name
+                      of the charge needed. */}
+                  <button
+                    type="button"
+                    aria-label={t('money.remove')}
+                    className="press flex h-8 w-8 shrink-0 items-center justify-center rounded-pill
+                               bg-ink/[0.06] text-muted transition-colors duration-200 ease-settle
+                               hover:bg-ink/[0.12] hover:text-ink"
+                    onClick={() => setRows((p) => p.filter((_, j) => j !== i))}
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4" {...stroke}>
+                      <path d="M6 6 18 18M18 6 6 18" />
+                    </svg>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Section>
+
+        <button className="btn-primary press mt-8" onClick={save} disabled={busy}>
           {busy ? t('money.saving') : t('money.save')}
         </button>
       </div>
