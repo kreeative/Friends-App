@@ -468,6 +468,21 @@ const STRINGS = {
     'money.sc_projects': 'shared budgets',
     'money.sc_sav': 'put aside',
     'money.sc_sav_none': 'Savings not installed',
+
+    /* Month by month. The card promising this has existed for a while and led
+       nowhere; the screen behind it is src/components/MonthByMonth.jsx. */
+    'months.title': 'Month by month',
+    'months.all': 'Everything',
+    'months.typical': 'A typical month',
+    'months.typical_hint':
+      'The average of the months that have finished. The one still running is drawn below but left out of this, so it does not shrink every time you open the app early in the month.',
+    'months.running': 'in progress',
+    'months.first': 'First month',
+    'months.up_pct': '{pct}% more than the month before',
+    'months.down_pct': '{pct}% less than the month before',
+    'months.up_amt': '{amount} more than the month before',
+    'months.down_amt': '{amount} less than the month before',
+    'months.empty': 'Nothing spent yet. Log a few transactions and this fills in on its own.',
     'money.tab_benchmarks': 'How you compare',
     'money.tab_formation': 'Learn',
 
@@ -1451,6 +1466,21 @@ const STRINGS = {
     'money.sc_projects': 'budgets partagés',
     'money.sc_sav': 'mis de côté',
     'money.sc_sav_none': 'Épargne non installée',
+
+    /* Mois par mois. La carte qui promet ça existe depuis un moment et ne menait
+       nulle part ; l'écran derrière est src/components/MonthByMonth.jsx. */
+    'months.title': 'Mois par mois',
+    'months.all': 'Tout',
+    'months.typical': 'Un mois typique',
+    'months.typical_hint':
+      'La moyenne des mois terminés. Le mois en cours est dessiné plus bas mais laissé en dehors de ce calcul, pour qu’il ne rapetisse pas chaque fois que tu ouvres l’app en début de mois.',
+    'months.running': 'en cours',
+    'months.first': 'Premier mois',
+    'months.up_pct': '{pct} % de plus que le mois d’avant',
+    'months.down_pct': '{pct} % de moins que le mois d’avant',
+    'months.up_amt': '{amount} de plus que le mois d’avant',
+    'months.down_amt': '{amount} de moins que le mois d’avant',
+    'months.empty': 'Rien de dépensé pour l’instant. Note quelques transactions et ça se remplit tout seul.',
     'money.tab_benchmarks': 'Comparaison',
     'money.tab_formation': 'Formation',
 

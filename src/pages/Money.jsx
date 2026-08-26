@@ -15,6 +15,8 @@ import { fromCents, localISO, toCents, txnPayload, withoutField } from '../lib/t
 import { Empty, Screen, Section, TopBar } from '../components/ui'
 import { EnvelopeIcon, PiggyIcon, PlanIcon, SuitcaseIcon } from '../components/ActionBar'
 import BudgetShortcuts from '../components/BudgetShortcuts'
+import FeatureCards from '../components/FeatureCards'
+import MonthByMonth from '../components/MonthByMonth'
 import WealthRank from '../components/WealthRank'
 import Savings from '../components/Savings'
 import TransactionHistory, { TxnRow } from '../components/TransactionHistory'
@@ -71,7 +73,7 @@ const NEW = 'new'
  * than from the section grid. Anything not in this list renders the
  * dashboard, so a typed or stale URL lands somewhere real.
  */
-const PANES = ['envelopes', 'plan', 'projects', 'savings', 'history']
+const PANES = ['envelopes', 'plan', 'projects', 'savings', 'history', 'months']
 
 /**
  * How many transactions the budget's own page shows.
@@ -828,6 +830,7 @@ export default function Money() {
     projects: t('money.tab_projects'),
     savings: t('money.tab_savings'),
     history: t('hist.title'),
+    months: t('months.title'),
   }
 
   return (
@@ -977,7 +980,38 @@ export default function Money() {
               onAddTransaction={() => setSheet(NEW)}
             />
           </Section>
+
+          {/**
+           * 6. THE TWO DOORS OUT OF THE BUDGET, AT THE BOTTOM.
+           *
+           * The course and the month-by-month comparison are not parts of the
+           * budget, they are things you go and look at, so they sit under a
+           * heading that says so rather than competing with the number at the
+           * top. See FeatureCards for why this is two cards and not the four
+           * it was asked for.
+           *
+           * Formation lives on Lectures with the rest of the reading, and this
+           * was the only thing missing to make that reachable from here.
+           */}
+          <Section title={t('feat.title')}>
+            <FeatureCards
+              onOpen={(id) => (id === 'formation' ? navigate('/library') : openPane('months'))}
+            />
+          </Section>
         </>
+      )}
+
+      {/* What was spent, period by period, each one against the one before.
+          The card that has been promising this finally has somewhere to go. */}
+      {pane === 'months' && (
+        <Section>
+          <MonthByMonth
+            entries={entries}
+            startDay={plan?.period_start_day ?? 1}
+            currency={s.currency}
+            locale={locale}
+          />
+        </Section>
       )}
 
       {/* Every transaction ever, with its own filters and its own donut. Its
