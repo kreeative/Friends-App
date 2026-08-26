@@ -522,22 +522,30 @@ export function SpendableBar({ bar, currency, locale }) {
 
   return (
     /**
-     * Slate, like every other surface on this screen.
+     * THE HERO.
      *
-     * This card was the last thing on the budget still set in the theme's
-     * pink while the envelopes, the donut and the ledger had all moved to
-     * slate. One screen was running two type systems, and switching panes
-     * looked like switching apps.
+     * One card carrying the only number the screen exists for, on a wash that
+     * fades from white into the theme. The reference this came from puts the
+     * heading, the figure and a small badge on one soft panel and lets
+     * everything else be small underneath it, which is the right hierarchy
+     * for a screen that answers a single question.
+     *
+     * The gradient runs top to bottom and stops well short of full strength.
+     * It has to: this is the card the headline sits on, and every point of
+     * saturation is a point of contrast spent. Measured rather than picked.
      */
     /* Hooks, because this card has now lost .eyebrow, .lg and .lede in three
        separate restyles and took a test suite with it every time. */
-    <div data-card="spendable" className="glass-card rounded-3xl p-5">
+    <div
+      data-card="spendable"
+      className="glass-card relative overflow-hidden rounded-3xl bg-gradient-to-b from-white to-accent/[0.16] p-6"
+    >
       <p data-hook="label" className="text-label font-semibold uppercase tracking-wider text-muted">
         {t('env.left_to_spend')}
       </p>
       <p
         data-hook="amount"
-        className={`mt-1.5 font-display text-hero leading-none [font-variant-numeric:tabular-nums] ${
+        className={`mt-2 font-display text-hero leading-none [font-variant-numeric:tabular-nums] ${
           bar.left < 0 ? 'text-negative' : 'text-ink'
         }`}
       >
@@ -555,7 +563,21 @@ export function SpendableBar({ bar, currency, locale }) {
         />
       </div>
 
-      <p data-hook="note" className="mt-2.5 max-w-[38ch] text-small leading-relaxed text-muted">
+      {/* The share of what came in that has gone, as a badge on the card
+          rather than a fourth line of prose. Only once something has come
+          in: "0 %" before your first payday is a statistic about nothing. */}
+      {bar.funded && (
+        <span
+          data-hook="pct"
+          className={`absolute bottom-5 right-5 rounded-pill px-3 py-1 text-label font-semibold [font-variant-numeric:tabular-nums] ${
+            bar.over > 0 ? 'bg-negative text-white' : 'bg-ink text-white'
+          }`}
+        >
+          {bar.over > 0 ? t('env.bar_over_short') : `${bar.pct} %`}
+        </span>
+      )}
+
+      <p data-hook="note" className="mt-2.5 max-w-[26ch] text-small leading-relaxed text-muted">
         {!bar.funded
           ? t('env.no_income_bar')
           : bar.over > 0

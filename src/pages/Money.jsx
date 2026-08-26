@@ -702,21 +702,47 @@ export default function Money() {
        * mysterious.
        */}
       <Section title={t('money.this_period')}>
-        <dl className="glass-card divide-y divide-hairline rounded-3xl px-5">
+        {/**
+         * Four tiles, not four rows.
+         *
+         * The same four facts, but a grid gives each its own object with room
+         * for the label above the figure, which is what lets the figure be
+         * read at a size worth reading. A divided list gave every one of them
+         * the same visual weight as a line of small print.
+         *
+         * Not aspect-square. The pair of tiles that used to live on this pane
+         * were, and a caption in French does not fit in half a phone; these
+         * size to their content and hold two short lines each.
+         *
+         * Every tile is something no other part of the pane shows. The spent
+         * total is in the headline sentence and the balance IS the headline,
+         * so neither is here.
+         */}
+        <div className="grid grid-cols-2 gap-3" data-hook="month-tiles">
           {[
             [t('money.after_bills'), fmt(s.available)],
             ...(s.fixedDue > 0 ? [[t('money.still_due'), fmt(s.fixedDue)]] : []),
             [t('money.per_day'), fmt(Math.max(0, s.perDay))],
             [t('money.days_left'), String(s.period.daysLeft)],
           ].map(([label, value]) => (
-            <div key={label} className="flex items-baseline justify-between gap-4 py-4">
-              <dt className="text-body text-muted">{label}</dt>
-              <dd className="text-body font-semibold text-ink [font-variant-numeric:tabular-nums]">
+            /* The figure is pinned to the bottom, not stacked under the
+               label. "Restant apres les charges" wraps to two lines and
+               "Encore a payer" does not, so a value that simply follows its
+               label sits at a different height in each tile and the row
+               reads as misaligned rather than as a set. */
+            <div
+              key={label}
+              className="glass-card flex min-h-[6.5rem] flex-col justify-between rounded-3xl p-4"
+            >
+              <p className="text-label font-semibold uppercase leading-tight tracking-wider text-muted">
+                {label}
+              </p>
+              <p className="mt-2 font-display text-h2 leading-none text-ink [font-variant-numeric:tabular-nums]">
                 {value}
-              </dd>
+              </p>
             </div>
           ))}
-        </dl>
+        </div>
       </Section>
 
         </>

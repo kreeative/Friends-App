@@ -375,6 +375,7 @@ const STRINGS = {
     'money.tile_per_day': '{amount} a day from here',
     /* The full transaction history, which is its own place rather than more
        rows on the money screen. See src/lib/history.js. */
+    'env.bar_over_short': 'Over',
     'hist.title': 'Activity',
     'hist.back': 'Back to the budget',
     'hist.see_all': 'See everything',
@@ -1322,6 +1323,7 @@ const STRINGS = {
     'money.tile_pct_over_free': '{pct} % de trop',
     'money.tile_no_pool': 'Rien de libre à dépenser',
     'money.tile_per_day': '{amount} par jour à partir d’ici',
+    'env.bar_over_short': 'Dépassé',
     'hist.title': 'Historique',
     'hist.back': 'Retour au budget',
     'hist.see_all': 'Voir tout',
