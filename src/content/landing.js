@@ -64,10 +64,27 @@ export const LANDING = {
       ],
     },
 
+    /* The answer has to answer the question. See the note on the French. */
     problem: {
-      eyebrow: 'Why often we are not reaching our goals?',
-      title: 'Productivity apps do not fail for lack of features.',
-      body: 'They fail because vague goals cannot be checked, because nothing happens when someone goes silent, and because one missed day kills a streak so people quit rather than restart from zero. Every decision here was made against a single test: does this make the group more likely to still be here in week twelve?',
+      eyebrow: 'Why don’t we reach our goals?',
+      title: 'Almost never for want of willpower.',
+      reasons: [
+        {
+          why: 'A vague goal cannot be checked.',
+          body: '"Get back into shape" has no yes or no, so you never find out whether you kept it.',
+          fix: 'Here you write a commitment, a rhythm, and what will count as proof.',
+        },
+        {
+          why: 'When somebody disappears, nothing happens.',
+          body: 'Nobody notices, and the app that asks least of you is the first one you drop.',
+          fix: 'Here, after two periods of silence, your friends see it and one of them offers to write to you.',
+        },
+        {
+          why: 'One broken streak and people quit.',
+          body: 'Starting from zero costs more than the day you actually missed.',
+          fix: 'Here the number the group looks at is a share of the period, not a streak. A missed day costs you a fraction, not everything.',
+        },
+      ],
     },
 
     steps: {
@@ -254,10 +271,44 @@ export const LANDING = {
       ],
     },
 
+    /**
+     * LA REPONSE DOIT REPONDRE A LA QUESTION.
+     *
+     * Le titre disait « Ces applis n'echouent pas par manque de fonctions »
+     * sous un chapeau qui demande « pourquoi on n'atteint pas nos objectifs ».
+     * La question porte sur nous, la reponse parlait des logiciels. Personne
+     * n'arrive sur cette page en se demandant pourquoi les applis echouent.
+     *
+     * Trois raisons, sur nous, et pour chacune ce que l'app fait. Les trois
+     * sont verifiables dans le code : la preuve demandee a la creation d'un
+     * objectif, le nudge leve par tick() apres deux periodes sans nouvelles,
+     * et memberRates qui calcule une proportion sur la fenetre.
+     *
+     * La troisieme a failli etre fausse. La formulation evidente etait « ici
+     * rien ne se casse » : c'est faux, streakOf coupe bien la serie au premier
+     * jour du. Ce qui est vrai, c'est que la serie n'est pas le chiffre que le
+     * groupe regarde.
+     */
     problem: {
       eyebrow: 'Pourquoi on n’atteint pas nos objectifs ?',
-      title: 'Ces applis n’échouent pas par manque de fonctions.',
-      body: 'Elles échouent parce qu’un objectif vague ne peut pas être vérifié, parce que rien ne se passe quand quelqu’un disparaît, et parce qu’un seul jour manqué casse une série, alors les gens abandonnent plutôt que de repartir de zéro. Chaque décision ici a été prise sur un seul critère : est-ce que ça augmente les chances que le groupe soit encore là à la douzième semaine ?',
+      title: 'Presque jamais par manque de volonté.',
+      reasons: [
+        {
+          why: 'Un objectif vague ne se vérifie pas.',
+          body: '« Me remettre au sport » n’a pas de réponse oui ou non, alors on ne sait jamais si on l’a tenu.',
+          fix: 'Ici tu écris un engagement, un rythme, et ce qui comptera comme preuve.',
+        },
+        {
+          why: 'Quand quelqu’un disparaît, il ne se passe rien.',
+          body: 'Personne ne le remarque, et l’app la moins gênante est celle qu’on lâche en premier.',
+          fix: 'Ici, après deux périodes sans nouvelles, tes amis le voient et l’un d’eux se propose de t’écrire.',
+        },
+        {
+          why: 'Une série cassée, et on abandonne.',
+          body: 'Repartir de zéro coûte plus cher que le jour qu’on a manqué.',
+          fix: 'Ici le chiffre que le groupe regarde est une proportion sur la période, pas une série. Un jour manqué te coûte une fraction, pas tout.',
+        },
+      ],
     },
 
     steps: {

@@ -141,18 +141,46 @@ export default function Home() {
       {/* Also unboxed. Two white rectangles in a row on a white page is not a
           hierarchy, it is a texture, a hairline separates these just as well
           and puts nothing on screen that is not information. */}
-      <section className="mx-auto w-full max-w-5xl border-t border-hairline px-6 py-16 md:py-20">
+      {/**
+       * THE ANSWER, IN THE SHAPE OF THE QUESTION.
+       *
+       * The eyebrow asks why WE do not reach our goals and the heading used to
+       * reply that other apps do not fail for want of features. Nobody arrives
+       * on this page wondering why software fails, and an answer aimed at a
+       * different question reads as evasion however true it is.
+       *
+       * Three reasons about people, and under each one the thing this app does
+       * about it. The reason and the remedy are on the same row deliberately:
+       * split across two sections they become a complaint and a brochure.
+       */}
+      <section
+        id="finances"
+        className="mx-auto w-full max-w-5xl border-t border-hairline px-6 py-16 md:py-20"
+      >
         <div className="grid gap-10 md:grid-cols-[1fr_1.5fr]">
           <div>
             <p className="eyebrow">{c.problem.eyebrow}</p>
-            <Mark size={96} className="mt-7" />
-          </div>
-          <div>
-            <h2 className="display max-w-[20ch] text-[clamp(1.625rem,3.6vw,2.5rem)]">
+            <h2 className="display mt-7 max-w-[16ch] text-[clamp(1.625rem,3.6vw,2.5rem)]">
               {c.problem.title}
             </h2>
-            <p className="lede mt-5 max-w-[52ch]">{c.problem.body}</p>
+            <Mark size={72} className="mt-8 hidden md:block" />
           </div>
+
+          <ul className="space-y-8">
+            {c.problem.reasons.map((r) => (
+              <li key={r.why} data-reason="">
+                <h3 className="max-w-[30ch] text-body font-bold leading-snug text-ink">{r.why}</h3>
+                <p className="mt-2 max-w-[52ch] text-small leading-relaxed text-muted">{r.body}</p>
+                {/* The remedy, marked by a rule in the accent rather than by a
+                    word like "solution". A label would make each of these a
+                    little sales pitch; a line just says the sentence after it
+                    is a different kind of sentence. */}
+                <p className="mt-3 max-w-[52ch] border-l-2 border-mark pl-4 text-small leading-relaxed text-ink">
+                  {r.fix}
+                </p>
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 
