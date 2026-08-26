@@ -50,11 +50,33 @@
 -- component that can be double-tapped.
 -- ============================================================================
 
-create extension if not exists pgcrypto;
-
+-- ---------------------------------------------------------------------------
+-- TWO LINES CHANGED HERE, AND BOTH WERE STOPPING THE FILE FROM RUNNING AT ALL.
+--
+-- There was a `create extension if not exists pgcrypto` above this table. It
+-- was buying gen_random_uuid(), which has been built into Postgres since 13,
+-- so on any database this app can run on it bought nothing. What it could do
+-- is fail: measured on Postgres 16, a role without CREATE on the database gets
+-- "permission denied to create extension" the moment the extension is not
+-- already present, and as the first statement in the file that takes the whole
+-- script down with it.
+--
+-- The foreign key pointed at auth.users. Every other table in this budget --
+-- 19's plan, entry and fixed, and 37's allocation -- points at profiles(id),
+-- and profiles.id is itself a reference to auth.users(id), so the two say the
+-- same thing about who a row belongs to. They do not need the same privileges
+-- to say it: measured on the same Postgres, a role without REFERENCES on
+-- auth.users gets "permission denied for table users", while the identical
+-- statement against profiles succeeds. auth is owned by the auth service and
+-- its grants are not this app's to rely on.
+--
+-- Neither change alters what the table means or who can read it. auth.uid()
+-- still returns the id every policy below compares against, because that id is
+-- the profile's id.
+-- ---------------------------------------------------------------------------
 create table if not exists public.budget_saving (
   id            uuid primary key default gen_random_uuid(),
-  user_id       uuid not null references auth.users (id) on delete cascade,
+  user_id       uuid not null references public.profiles (id) on delete cascade,
 
   -- The day the money moved. Defaults to today, editable, because somebody
   -- catching up on Sunday is recording Friday's transfer.
