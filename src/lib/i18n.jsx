@@ -243,6 +243,8 @@ const STRINGS = {
     'nudge.open': 'Someone should say hello, wherever you actually talk, not in here.',
     'nudge.claim': 'I’ll check on them',
     'nudge.close': 'Done, we spoke',
+    'nudge.hide': 'Put {name} away. Only you stop seeing this.',
+    'nudge.count': '{n} friends have gone quiet. Swipe to see them.',
     'nudge.busy': 'One moment',
 
     'signin.title': 'Get in with people who move.',
@@ -1255,6 +1257,8 @@ const STRINGS = {
     'nudge.open': 'Quelqu’un devrait lui écrire. Là où vous parlez vraiment, pas ici.',
     'nudge.claim': 'Je m’en occupe',
     'nudge.close': 'C’est fait, on s’est parlé',
+    'nudge.hide': 'Mettre {name} de côté. Toi seul arrêtes de le voir.',
+    'nudge.count': '{n} amis se sont tus. Glisse pour les voir.',
     'nudge.busy': 'Un instant',
 
     'signin.title': 'Rejoins des gens qui avancent.',
