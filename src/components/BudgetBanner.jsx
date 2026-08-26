@@ -75,7 +75,7 @@ export default function BudgetBanner() {
         // this the loudest thing on a page whose actual job is the groups
         // underneath it.
         backgroundImage:
-          'linear-gradient(135deg, rgb(var(--c-accent) / 0.10), rgb(var(--c-field) / 0.16))',
+          'rgb(var(--c-field) / 0.16)',
       }}
     >
       <button

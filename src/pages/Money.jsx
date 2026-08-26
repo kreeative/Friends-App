@@ -1361,7 +1361,7 @@ function PlanForm({ plan, fixed, userId, currency, onCancel, onSaved }) {
          */}
         <div
           data-card="plan-hero"
-          className="glass-card relative overflow-hidden rounded-3xl bg-gradient-to-br from-cat-1-soft via-white to-cat-5-soft p-6"
+          className="glass-card relative overflow-hidden rounded-3xl bg-surface p-6"
         >
           {/* The badge rides the label's line rather than the bottom corner it
               started in. Pinned bottom-right it came within ten pixels of the

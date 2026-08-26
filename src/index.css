@@ -670,12 +670,27 @@
    * It is painted as the element's own background, not a fixed layer behind
    * the app, so it changes nothing about stacking anywhere else.
    */
+  /**
+   * ONE FLAT COLOUR, AND WHAT THAT COSTS.
+   *
+   * This was three wide radial fields in the theme's ramp. The note above
+   * explains why they were there: backdrop-filter blurs what is BEHIND an
+   * element, and over a flat ground it returns that same flat colour, so glass
+   * over a flat page reduces to its rim.
+   *
+   * That argument was right and it is no longer the deciding one. A plain
+   * ground was asked for, so the glass now degrades to what it has always
+   * degraded to on browsers without backdrop-filter: a readable surface with a
+   * border and a shadow, which is the thing that was actually carrying the
+   * card all along. The rim is doing the work now, on purpose rather than as a
+   * fallback.
+   *
+   * Kept as a class rather than deleted at every call site: it is still the
+   * one place that decides what the page under the cards is, and a later
+   * change has somewhere to go.
+   */
   .ambient {
-    background:
-      radial-gradient(58% 34% at 12% 4%, rgb(var(--c-cat-5) / 0.20), transparent 68%),
-      radial-gradient(52% 30% at 94% 22%, rgb(var(--c-cat-3) / 0.16), transparent 70%),
-      radial-gradient(64% 36% at 46% 96%, rgb(var(--c-cat-4) / 0.13), transparent 72%);
-    background-attachment: fixed;
+    background: rgb(var(--c-bg));
   }
 
   /* --- glass ----------------------------------------------------------- */
@@ -717,9 +732,28 @@
    * to white that slate-500 body text still clears 4.5:1, and it is measured
    * rather than assumed.
    */
+  /**
+   * THE RIM CARRIES THE CARD NOW, SO THE RIM HAD TO GET STRONGER.
+   *
+   * This border was ink at 8 %, which composites to #EDEDED and measures
+   * 1.10:1 against the blush ground. That was survivable while .ambient
+   * painted three soft fields behind everything: the page under a card was
+   * rarely the same colour as the page beside it, and the difference did the
+   * separating. The ground is one flat colour now, so a white card on it was
+   * separated by 1.10:1 and effectively had no edge.
+   *
+   * 18 % composites to #D7D5D6 and measures 1.37:1 against both grounds, blush
+   * and ice, which are close enough in luminance to take the same value.
+   * Measured off the painted page rather than computed from the token, because
+   * the card is translucent and the number that matters is what lands.
+   *
+   * Not pushed to 3:1. That bar belongs to controls under WCAG 1.4.11 and a
+   * card is not one; an outline that strong on every surface turns a page of
+   * cards into a page of boxes.
+   */
   .glass-card {
     background: rgb(255 255 255 / 0.94);
-    border: 1px solid rgb(var(--c-ink) / 0.08);
+    border: 1px solid rgb(var(--c-ink) / 0.18);
     box-shadow: 0 1px 2px 0 rgb(var(--c-ink) / 0.05);
   }
 
@@ -739,7 +773,10 @@
    */
   .glass-card-quiet {
     background: rgb(255 255 255 / 0.97);
-    border-color: rgb(var(--c-ink) / 0.12);
+    /* One step past .glass-card, as before. What separates the container from
+       the six cards inside it is still the rim, not a colour from outside the
+       palette. */
+    border-color: rgb(var(--c-ink) / 0.26);
   }
 
   @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
@@ -832,18 +869,10 @@
       border-color 320ms ease;
   }
 
-  /* The specular sweep. Sits under the content (z-0 against the content's
-     own stacking) and over the blur. */
-  .lg::after {
-    content: '';
-    @apply pointer-events-none absolute inset-0 z-0;
-    border-radius: inherit;
-    background: radial-gradient(
-      120% 90% at 12% 0%,
-      var(--lg-spec) 0%,
-      transparent 55%
-    );
-  }
+  /* The specular sweep is gone: it was a radial gradient across the top left
+     of every card, which is a gradient on the ground of every surface in the
+     app. The lit top edge in ::before still gives the sheet its thickness, and
+     that is a 1px line rather than a wash. */
 
   /* Anything the author puts inside has to clear both pseudo-elements. */
   .lg > * {
