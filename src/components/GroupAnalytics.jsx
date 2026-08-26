@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { DEFAULT_PERIOD, firstName, groupRate, memberRates } from '../lib/completion'
+import { DEFAULT_PERIOD, firstName, groupRate, memberRates, rank } from '../lib/completion'
 import { useT } from '../lib/i18n'
 import PeriodBar from './PeriodBar'
 import { Avatar } from './ui'
@@ -18,13 +18,20 @@ import { Avatar } from './ui'
  * score with: of everything we said we would do in this window, how much got
  * done, per person.
  *
- * NO RANKS, AND NOT SORTED BY THE PERCENTAGE EITHER.
+ * IT IS A STANDING NOW, AND THE OLD ARGUMENT IS KEPT HERE ON PURPOSE.
  *
- * The rows are in roster order. Ordering them by the number would rebuild the
- * leaderboard with the medals filed off, and the reason a leaderboard is wrong
- * here has never been the medals: it is that telling somebody they are last
- * among four friends is how they stop opening the app. Their own bar against
- * their own goals is a fact they can act on. Their position is not.
+ * This said there would be no ranks and no sorting by the percentage, because
+ * telling somebody they are last among four friends is how they stop opening
+ * the app. That is still true and still worth having written down. It was
+ * overruled deliberately, by the person whose app this is, who wanted a board
+ * that moves when somebody finishes what they said they would do.
+ *
+ * Two things soften the edge without arguing with the decision. A tie SHARES a
+ * place, so two people on the same figure are both second and neither is
+ * ranked below somebody they drew with. And anybody who had nothing scheduled
+ * in the window is unranked rather than last: they have not failed at
+ * anything, so a position would be an accusation. See rank() in
+ * src/lib/completion.js, where the tie-breaks are tested.
  *
  * The colour is the theme's accent and nothing else. No red for a low bar, no
  * green for a high one. A bar that turns red at 40% is the app raising its
@@ -43,7 +50,28 @@ function Row({ row }) {
   const name = firstName(row.profile) || t('analytics.someone')
 
   return (
-    <div className="flex items-center gap-3.5 py-3.5">
+    <div className="flex items-center gap-3.5 py-3.5" data-rank-row={row.id}>
+      {/**
+       * The place, or a dash for somebody who was never on the hook.
+       *
+       * Tabular figures and a fixed width, so 1 and 10 occupy the same column
+       * and the avatars below them stay in a line. A ragged left edge on a
+       * list of five people reads as a rendering fault rather than as a
+       * standing.
+       *
+       * `tied` gets an equals sign, the way a league table does: =2 says two
+       * people share second, which is a different claim from 2 and is the
+       * whole reason rank() shares places rather than inventing an order.
+       */}
+      <span
+        data-rank={row.position ?? ''}
+        className={`w-6 shrink-0 text-right text-small font-bold [font-variant-numeric:tabular-nums] ${
+          row.position === 1 ? 'text-mark' : 'text-muted'
+        }`}
+      >
+        {row.position === null ? '-' : `${row.tied ? '=' : ''}${row.position}`}
+      </span>
+
       <Avatar profile={row.profile} size={34} />
 
       <div className="min-w-0 flex-1">
@@ -79,9 +107,11 @@ export default function GroupAnalytics({ members = [], goals = [], cycles = [], 
   const [period, setPeriod] = useState(DEFAULT_PERIOD)
 
   const rows = useMemo(
-    () => memberRates({ members, goals, cycles, checkins, items, period }),
+    () => rank(memberRates({ members, goals, cycles, checkins, items, period })),
     [members, goals, cycles, checkins, items, period],
   )
+  /* From the same two totals the rows are built on, so a member can add the
+     rows up and get this. Ranking reorders them and changes neither total. */
   const whole = useMemo(() => groupRate(rows), [rows])
 
   return (
