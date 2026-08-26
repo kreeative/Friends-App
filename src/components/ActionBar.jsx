@@ -206,6 +206,17 @@ export function PlanIcon() {
   )
 }
 
+export function SuitcaseIcon() {
+  return (
+    <Svg>
+      {/* A shared project is a trip more often than not, and the handle is
+          cut out of the body rather than drawn on top of it, so the whole
+          mark stays one filled shape. */}
+      <path d="M9.4 3.6h5.2a2.3 2.3 0 0 1 2.3 2.3v1.3h1.9a2.6 2.6 0 0 1 2.6 2.6v7.8a2.6 2.6 0 0 1-2.6 2.6H5.2a2.6 2.6 0 0 1-2.6-2.6V9.8a2.6 2.6 0 0 1 2.6-2.6h1.9V5.9a2.3 2.3 0 0 1 2.3-2.3Zm0 2.2a.3.3 0 0 0-.3.3v1.1h5.8V6.1a.3.3 0 0 0-.3-.3Z" />
+    </Svg>
+  )
+}
+
 export function ListIcon() {
   return (
     <Svg>
