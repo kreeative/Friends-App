@@ -109,12 +109,12 @@ export default function TransactionHistory({ entries, currency, locale, onOpen, 
           {days.map((d) => (
             <section key={d.day} data-day={d.day}>
               <div className="mb-2 flex items-baseline justify-between gap-4 px-1">
-                <h3 className="text-label font-semibold uppercase tracking-wider text-slate-600">
+                <h3 className="text-label font-semibold uppercase tracking-wider text-muted">
                   {label(d.day)}
                 </h3>
                 <span
                   className={`text-label font-semibold [font-variant-numeric:tabular-nums] ${
-                    d.net > 0 ? 'text-green' : 'text-slate-600'
+                    d.net > 0 ? 'text-green' : 'text-muted'
                   }`}
                 >
                   {d.net > 0 ? '+' : ''}
@@ -122,7 +122,7 @@ export default function TransactionHistory({ entries, currency, locale, onOpen, 
                 </span>
               </div>
 
-              <ul className="glass-card divide-y divide-slate-200/70 rounded-3xl px-4">
+              <ul className="glass-card divide-y divide-hairline rounded-3xl px-4">
                 {d.entries.map((r) => (
                   <li key={r.id}>
                     <button
@@ -133,13 +133,13 @@ export default function TransactionHistory({ entries, currency, locale, onOpen, 
                     >
                       <CatDisc category={r.kind === 'income' ? 'income' : (r.category ?? 'other')} />
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-body text-slate-800">
+                        <span className="block truncate text-body text-ink">
                           {r.note ||
                             (r.kind === 'income'
                               ? t('money.kind_income')
                               : t(`money.cat_${r.category ?? 'other'}`))}
                         </span>
-                        <span className="block text-small text-slate-600">
+                        <span className="block text-small text-muted">
                           {r.kind === 'income'
                             ? t('money.kind_income')
                             : t(`money.cat_${r.category ?? 'other'}`)}
@@ -149,10 +149,10 @@ export default function TransactionHistory({ entries, currency, locale, onOpen, 
                       <span
                         className={`shrink-0 text-body font-semibold [font-variant-numeric:tabular-nums] ${
                           r.excluded
-                            ? 'text-slate-400 line-through'
+                            ? 'text-muted line-through'
                             : r.kind === 'income'
                               ? 'text-green'
-                              : 'text-slate-800'
+                              : 'text-ink'
                         }`}
                       >
                         {r.kind === 'income' ? '+' : ''}
@@ -185,7 +185,7 @@ function Pill({ value, onChange, options, hook }) {
         value={value}
         onChange={(e) => onChange(e.target.value)}
         data-hook={hook}
-        className="press appearance-none rounded-pill border border-hairline bg-[rgb(var(--glass-tint))] py-2 pl-4 pr-9 text-small font-semibold text-slate-800 shadow-raised focus:outline-none focus:ring-2 focus:ring-accent/40"
+        className="press appearance-none rounded-pill border border-hairline bg-[rgb(var(--glass-tint))] py-2 pl-4 pr-9 text-small font-semibold text-ink shadow-raised focus:outline-none focus:ring-2 focus:ring-accent/40"
       >
         {options.map(([v, l]) => (
           <option key={v} value={v}>
@@ -196,7 +196,7 @@ function Pill({ value, onChange, options, hook }) {
       <svg
         viewBox="0 0 24 24"
         aria-hidden="true"
-        className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-600"
+        className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
       >
         <path d="M6.5 9.5 12 15l5.5-5.5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
       </svg>

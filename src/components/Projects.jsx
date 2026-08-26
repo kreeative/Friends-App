@@ -65,15 +65,15 @@ export default function Projects({ userId, projects, members, entries, profiles,
                 className="press glass-card w-full rounded-3xl p-5 text-left"
               >
                 <div className="flex items-baseline justify-between gap-3">
-                  <span className="min-w-0 flex-1 truncate text-body font-semibold text-slate-800">
+                  <span className="min-w-0 flex-1 truncate text-body font-semibold text-ink">
                     {project.name}
                   </span>
-                  <span className="shrink-0 text-label text-slate-600 [font-variant-numeric:tabular-nums]">
+                  <span className="shrink-0 text-label text-muted [font-variant-numeric:tabular-nums]">
                     {t('proj.people', { n: mem.length })}
                   </span>
                 </div>
 
-                <p className="mt-2 font-display text-h2 leading-none text-slate-800 [font-variant-numeric:tabular-nums]">
+                <p className="mt-2 font-display text-h2 leading-none text-ink [font-variant-numeric:tabular-nums]">
                   {money(totalSpent(ents), project.currency, locale)}
                 </p>
 
@@ -81,13 +81,13 @@ export default function Projects({ userId, projects, members, entries, profiles,
                     nobody set a budget is worse than no bar. */}
                 {progress.funded && (
                   <>
-                    <div className="mt-3 h-2 w-full overflow-hidden rounded-pill bg-slate-200/70">
+                    <div className="mt-3 h-2 w-full overflow-hidden rounded-pill bg-ink/10">
                       <div
                         className={`h-full rounded-pill ${progress.over > 0 ? 'bg-negative' : 'bg-accent'}`}
                         style={{ width: `${progress.pct}%` }}
                       />
                     </div>
-                    <p className="mt-1.5 text-label text-slate-600 [font-variant-numeric:tabular-nums]">
+                    <p className="mt-1.5 text-label text-muted [font-variant-numeric:tabular-nums]">
                       {progress.over > 0
                         ? t('proj.over_target', { over: money(progress.over, project.currency, locale) })
                         : t('proj.of_target', { target: money(progress.target, project.currency, locale) })}

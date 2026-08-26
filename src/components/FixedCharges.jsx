@@ -73,14 +73,14 @@ export default function FixedCharges({ fixed = [], s, locale, onChange }) {
   }
 
   return (
-    <div className="glass-card divide-y divide-slate-200/70 rounded-3xl px-5">
+    <div className="glass-card divide-y divide-hairline rounded-3xl px-5">
       {live.map((f) => {
         const paid = paidThisPeriod(f)
         return (
           <div key={f.id} className="flex items-center justify-between gap-3 py-3.5">
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-body text-slate-800">{f.label}</span>
-              <span className="mt-0.5 block text-small text-slate-600 [font-variant-numeric:tabular-nums]">
+              <span className="block truncate text-body text-ink">{f.label}</span>
+              <span className="mt-0.5 block text-small text-muted [font-variant-numeric:tabular-nums]">
                 {fmt(f.amount_cents)}
                 {paid && f.last_paid_on ? ` · ${dateFull(f.last_paid_on, tag) ?? ''}` : ''}
               </span>
@@ -97,8 +97,8 @@ export default function FixedCharges({ fixed = [], s, locale, onChange }) {
               aria-pressed={paid}
               className={`press shrink-0 rounded-pill px-3.5 py-2 text-small font-semibold transition-colors duration-200 ease-settle disabled:opacity-50 ${
                 paid
-                  ? 'bg-green/[0.16] text-slate-800 ring-1 ring-inset ring-green/40'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-800'
+                  ? 'bg-green/[0.16] text-ink ring-1 ring-inset ring-green/40'
+                  : 'bg-accent/12 text-muted hover:bg-ink/10 hover:text-ink'
               }`}
             >
               {busy === f.id ? '…' : paid ? t('money.paid') : t('money.planned_badge')}

@@ -572,7 +572,7 @@ export default function Money() {
     /* The ground the cards are glass over. Without it every .glass-card on
        this screen is just a white box with a blur that returns the colour it
        was given, which is what .glass has always degraded to app-wide. */
-    <Screen className="ambient calm">
+    <Screen className="ambient">
       <TopBar
         /* The heading follows you in. A page titled "Budget" that is showing
            a filtered list of June is a page lying about where you are. */
@@ -722,7 +722,7 @@ export default function Money() {
        * mysterious.
        */}
       <Section title={t('money.this_period')}>
-        <dl className="glass-card divide-y divide-slate-200/70 rounded-3xl px-5">
+        <dl className="glass-card divide-y divide-hairline rounded-3xl px-5">
           {[
             [t('money.after_bills'), fmt(s.available)],
             ...(s.fixedDue > 0 ? [[t('money.still_due'), fmt(s.fixedDue)]] : []),
@@ -730,8 +730,8 @@ export default function Money() {
             [t('money.days_left'), String(s.period.daysLeft)],
           ].map(([label, value]) => (
             <div key={label} className="flex items-baseline justify-between gap-4 py-4">
-              <dt className="text-body text-slate-600">{label}</dt>
-              <dd className="text-body font-semibold text-slate-800 [font-variant-numeric:tabular-nums]">
+              <dt className="text-body text-muted">{label}</dt>
+              <dd className="text-body font-semibold text-ink [font-variant-numeric:tabular-nums]">
                 {value}
               </dd>
             </div>
@@ -804,7 +804,7 @@ export default function Money() {
                anything keyed to the class breaks on the next restyle and says
                nothing about the app when it does. */
             data-ledger=""
-            className="glass-card divide-y divide-slate-200/70 rounded-3xl px-4"
+            className="glass-card divide-y divide-hairline rounded-3xl px-4"
           >
             {recent.slice(0, 8).map((r) => (
               <li key={r.id}>
@@ -827,14 +827,14 @@ export default function Money() {
                       surfaces are neutral now, and a ledger set in the theme's
                       pink beside a legend set in slate reads as two lists from
                       two different screens. */}
-                  <span className="min-w-0 flex-1 text-body text-slate-800">
+                  <span className="min-w-0 flex-1 text-body text-ink">
                     <span className="truncate">
                       {r.note ||
                         (r.kind === 'income'
                           ? t('money.kind_income')
                           : t(`money.cat_${r.category ?? 'other'}`))}
                     </span>
-                    <span className="block text-small text-slate-600">
+                    <span className="block text-small text-muted">
                       {day(r.happened_on)}
                       {r.note && r.kind === 'expense' && ` · ${t(`money.cat_${r.category ?? 'other'}`)}`}
                       {r.excluded && ` · ${t('txn.excluded_badge')}`}
@@ -850,7 +850,7 @@ export default function Money() {
                       line through text is not something everyone can see. */}
                   <span
                     className={`shrink-0 text-body font-semibold [font-variant-numeric:tabular-nums] ${
-                      r.excluded ? 'text-slate-400 line-through' : r.kind === 'income' ? 'text-green' : 'text-slate-800'
+                      r.excluded ? 'text-muted line-through' : r.kind === 'income' ? 'text-green' : 'text-ink'
                     }`}
                   >
                     {r.kind === 'income' ? '+' : ''}
