@@ -238,6 +238,43 @@ export function SuitcaseIcon() {
   )
 }
 
+export function PiggyIcon() {
+  return (
+    <Svg>
+      {/* Body, snout, ear and trotters, with the coin slot and the eye cut out
+          of the same shape. A piggy bank rather than a bag with a currency mark
+          on it: the mark would be wrong in half the currencies this app
+          supports, and a glyph that has to be redrawn per locale is not a
+          glyph. */}
+      <path d="M14.4 5.6a7.6 7.6 0 0 1 5.5 4.1l1.9.6a.9.9 0 0 1 .6.9v2.6a.9.9 0 0 1-.9.9h-1.3a7.7 7.7 0 0 1-2 2.4v2a.9.9 0 0 1-.9.9h-1.9a.9.9 0 0 1-.9-.9v-.9a10.3 10.3 0 0 1-3.6 0v.9a.9.9 0 0 1-.9.9H7.9a.9.9 0 0 1-.9-.9v-2A7.4 7.4 0 0 1 4.2 13H3.4a1.4 1.4 0 0 1-1.4-1.4V9.9a1 1 0 0 1 1.6-.8l.9.6a7.5 7.5 0 0 1 2.7-3l-1-2.5a.7.7 0 0 1 .9-.9l3 1.2a10 10 0 0 1 1.9-.2ZM9.6 9.2a1.2 1.2 0 1 0 0 2.4 1.2 1.2 0 0 0 0-2.4Zm5 .6h-2.4a.9.9 0 0 0 0 1.8h2.4a.9.9 0 0 0 0-1.8Z" />
+    </Svg>
+  )
+}
+
+export function ScaleIcon() {
+  return (
+    <Svg>
+      {/* Two columns of unequal height on a shared baseline, which is exactly
+          the picture the pane draws: you against a published figure. Distinct
+          from PlanIcon's three bars by being two, and by carrying the rule. */}
+      <rect x="3.4" y="9.6" width="6" height="8.2" rx="1.6" />
+      <rect x="14.6" y="5.4" width="6" height="12.4" rx="1.6" />
+      <rect x="2" y="19.2" width="20" height="2.2" rx="1.1" />
+    </Svg>
+  )
+}
+
+export function BookIcon() {
+  return (
+    <Svg>
+      {/* A closed book seen from the spine side, with the pages cut out as a
+          band. Not an open book: at 24px two facing pages come out as a shape
+          nobody recognises without looking twice. */}
+      <path d="M6.3 2.6h11.4A2.3 2.3 0 0 1 20 4.9v14.2a2.3 2.3 0 0 1-2.3 2.3H6.3A2.3 2.3 0 0 1 4 19.1V4.9a2.3 2.3 0 0 1 2.3-2.3Zm.5 2.2a.6.6 0 0 0-.6.6v11.9h11.6V5.4a.6.6 0 0 0-.6-.6h-1.9v6.3l-2.2-1.6-2.2 1.6V4.8Z" />
+    </Svg>
+  )
+}
+
 export function ListIcon() {
   return (
     <Svg>

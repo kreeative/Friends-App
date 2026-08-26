@@ -24,6 +24,25 @@
  */
 
 /**
+ * Does this error mean the table is not there at all?
+ *
+ * Which is a migration nobody has run, not a fault. PostgREST answers an
+ * unknown relation with PGRST205 and Postgres itself with 42P01.
+ *
+ * Here rather than beside each caller because there are three of them now, and
+ * the third one copying the pair of codes out of budgetData.js by hand is how a
+ * set like this ends up with two members in one file and three in another.
+ */
+const ABSENT = new Set(['PGRST205', '42P01'])
+
+export function isMissingTable(error) {
+  if (!error) return false
+  if (ABSENT.has(error.code)) return true
+  const raw = `${error.code ?? ''} ${error.message ?? ''}`.toLowerCase()
+  return raw.includes('pgrst205') || raw.includes('42p01')
+}
+
+/**
  * Does this error mean the database has no such column?
  *
  * PostgREST answers an unknown column on a write with PGRST204 and a message

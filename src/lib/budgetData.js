@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { isMissingTable } from './dberr'
 
 /**
  * One read of everything the money feature needs.
@@ -12,8 +13,6 @@ import { supabase } from './supabase'
  * the caller hides the feature rather than showing a PostgREST code to
  * somebody who cannot act on one.
  */
-const ABSENT = new Set(['PGRST205', '42P01'])
-
 export async function loadBudget(userId) {
   if (!userId) return { plan: null, fixed: [], entries: [], missing: false }
 
@@ -32,7 +31,7 @@ export async function loadBudget(userId) {
       .limit(200),
   ])
 
-  if ([p, f, e].some((r) => r?.error && ABSENT.has(r.error.code))) {
+  if ([p, f, e].some((r) => isMissingTable(r?.error))) {
     return { plan: null, fixed: [], entries: [], missing: true }
   }
 

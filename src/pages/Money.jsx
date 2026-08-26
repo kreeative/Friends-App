@@ -7,10 +7,17 @@ import { summarise } from '../lib/budget'
 import { currencySymbol, minorDigits } from '../lib/currency'
 import { clearDraft, hasFreshDraft, readDraft, useDraft } from '../lib/draft'
 import { loadBudget } from '../lib/budgetData'
-import { errorText, isMissingColumn, isNetworkError } from '../lib/dberr'
+import { errorText, isMissingColumn, isMissingTable, isNetworkError } from '../lib/dberr'
+import { detectCountry, spendOver } from '../lib/benchmarks'
+import { history as savingsHistory, recentRate } from '../lib/savings'
 import { fromCents, localISO, toCents, txnPayload, withoutField } from '../lib/txn'
 import { Empty, Screen, Section, TopBar } from '../components/ui'
-import ActionBar, { EnvelopeIcon, GaugeIcon, ListIcon, PlanIcon, SuitcaseIcon } from '../components/ActionBar'
+import ActionBar, {
+  BookIcon, EnvelopeIcon, GaugeIcon, ListIcon, PiggyIcon, PlanIcon, ScaleIcon, SuitcaseIcon,
+} from '../components/ActionBar'
+import Savings from '../components/Savings'
+import Benchmarks from '../components/Benchmarks'
+import Formation from '../components/Formation'
 import CatDisc from '../components/CatDisc'
 import SpendDonut from '../components/SpendDonut'
 import TransactionHistory from '../components/TransactionHistory'
@@ -288,6 +295,40 @@ export default function Money() {
      whole money screen down with it. */
   const [allocRows, setAllocRows] = useState([])
 
+  /* The savings ledger, and whether migration 39 has been run. Its own fetch
+     for the same reason the envelopes have one: a table nobody has installed
+     must not take the money screen down with it. */
+  const [savings, setSavings] = useState([])
+  const [savingsMissing, setSavingsMissing] = useState(false)
+
+  /**
+   * Which country to compare against, remembered.
+   *
+   * This one IS a preference, unlike the pane: a person's country does not
+   * change between visits and asking again every time would be the app
+   * forgetting something it was told. Detected once from the browser, then
+   * whatever they picked wins for good.
+   */
+  const [country, setCountry] = useState(() => {
+    try {
+      const saved = localStorage.getItem('rf.bm.country')
+      if (saved) return saved
+    } catch {
+      /* Private window. Fall through to detection, which needs no storage. */
+    }
+    return detectCountry(navigator.languages ?? [navigator.language].filter(Boolean))
+  })
+
+  const pickCountry = useCallback((code) => {
+    setCountry(code)
+    try {
+      if (code) localStorage.setItem('rf.bm.country', code)
+      else localStorage.removeItem('rf.bm.country')
+    } catch {
+      /* The pane still works for this session, which is what it is for. */
+    }
+  }, [])
+
   const load = useCallback(async () => {
     if (!user) return
     const r = await loadBudget(user.id)
@@ -305,6 +346,17 @@ export default function Money() {
       .select('period_start, category, amount_cents')
       .eq('user_id', user.id)
     setAllocRows(data ?? [])
+
+    /* And the savings ledger, soft in the same way. `missing` is the table not
+       existing, which is migration 39 not run; any other error leaves the pane
+       empty rather than claiming the feature is uninstalled. */
+    const sv = await supabase
+      .from('budget_saving')
+      .select('id, happened_on, amount_cents, source, period_start, note')
+      .eq('user_id', user.id)
+      .order('happened_on', { ascending: false })
+    setSavingsMissing(Boolean(sv.error) && isMissingTable(sv.error))
+    setSavings(sv.data ?? [])
 
     /* Soft in the same way: without migration 38 this returns `missing` and
        the pane shows an empty list rather than an error for a feature nobody
@@ -433,6 +485,11 @@ export default function Money() {
   /* The full history is its own view, reached from the log pane. */
   const [history, setHistory] = useState(false)
 
+  /* And so is a lesson, for the same reason: the menu is eight rows, which is
+     too much to scroll past to reach a paragraph. Set by Formation, which owns
+     which lesson is open; the chrome it hides belongs to this page. */
+  const [reading, setReading] = useState(false)
+
   /**
    * What each tile says about itself.
    *
@@ -449,6 +506,55 @@ export default function Money() {
   }).length
   const funded = ENVELOPE_CATEGORIES.filter((k) => (allocations[k] ?? 0) > 0).length
 
+  /**
+   * The saving rate the comparison pane reads, computed here rather than there.
+   *
+   * Over the last twelve CLOSED months, which is the window the published
+   * figures use. Null when nothing was ever logged as income, and the pane is
+   * built to render that rather than to print a zero it did not measure.
+   */
+  const savHistory = savingsHistory({ entries, startDay: plan?.period_start_day ?? 1 })
+  const myRate = recentRate({ history: savHistory, savings })
+
+  /**
+   * The window the shares table compares over: the last twelve CLOSED months.
+   *
+   * Not `s.byCategory`, which is this period. On the sixth of the month that is
+   * two transactions, and the pane reported spending 67 % on food against a
+   * national annual average of 15 %. Both figures were right; putting them in
+   * one table was not. Empty until a month has closed, which is honest: there
+   * is nothing yet to compare.
+   */
+  const bmClosed = savHistory.filter((r) => r.closed).slice(0, 12)
+  const bmCategories = bmClosed.length
+    ? spendOver(entries, bmClosed[bmClosed.length - 1].start, bmClosed[0].end)
+    : []
+
+  /**
+   * Eight rows, and why each one is here.
+   *
+   * The ask was to think about which menus the budget actually needs, so:
+   *
+   *   overview   how am I doing. The default, and the only one most days.
+   *   envelopes  what is each dollar for.
+   *   savings    where the surplus goes. New.
+   *   log        what happened, and the way through to the full history.
+   *   plan       what I set up, against what happened.
+   *   projects   the shared, ephemeral ones. Greece, the car, the flat.
+   *   benchmarks how that compares to everybody else. New.
+   *   formation  how to do any of this. New.
+   *
+   * Ordered by how often a row gets pressed rather than by category, so the
+   * daily ones are under the thumb and the two you read once are at the end.
+   *
+   * Nothing was merged to keep the count down. `log` was the candidate, since
+   * the overview already shows recent transactions, but it carries the category
+   * donut and the overview does not, so folding it would have deleted a view
+   * rather than tidied one.
+   *
+   * The rows themselves are ActionBar's, untouched. A new pane is an entry in
+   * this array and an icon, which is the whole point of the component.
+   */
   const panes = [
     {
       id: 'overview',
@@ -461,9 +567,9 @@ export default function Money() {
       label: t('money.tab_envelopes'),
     },
     {
-      id: 'plan',
-      icon: <PlanIcon />,
-      label: t('money.tab_plan'),
+      id: 'savings',
+      icon: <PiggyIcon />,
+      label: t('money.tab_savings'),
     },
     {
       id: 'log',
@@ -471,9 +577,24 @@ export default function Money() {
       label: t('money.tab_log'),
     },
     {
+      id: 'plan',
+      icon: <PlanIcon />,
+      label: t('money.tab_plan'),
+    },
+    {
       id: 'projects',
       icon: <SuitcaseIcon />,
       label: t('money.tab_projects'),
+    },
+    {
+      id: 'benchmarks',
+      icon: <ScaleIcon />,
+      label: t('money.tab_benchmarks'),
+    },
+    {
+      id: 'formation',
+      icon: <BookIcon />,
+      label: t('money.tab_formation'),
     },
   ]
 
@@ -679,7 +800,8 @@ export default function Money() {
         </Section>
       ) : (
         <>
-      <ActionBar items={panes} value={pane} onChange={setPane} />
+      {/* Gone while a lesson is open. See the note beside `reading`. */}
+      {!reading && <ActionBar items={panes} value={pane} onChange={setPane} />}
 
       {/**
        * The one button that belongs to no pane.
@@ -689,11 +811,13 @@ export default function Money() {
        * four: hiding it behind a tab would mean navigating in order to record
        * a coffee. Everything else here is something you read.
        */}
-      <Section>
-        <button className="btn-primary press w-full" onClick={() => setSheet(NEW)}>
-          {t('txn.open')}
-        </button>
-      </Section>
+      {!reading && (
+        <Section>
+          <button className="btn-primary press w-full" onClick={() => setSheet(NEW)}>
+            {t('txn.open')}
+          </button>
+        </Section>
+      )}
 
       {/**
        * One pane at a time, grouped by the question each answers.
@@ -842,6 +966,43 @@ export default function Money() {
       </Section>
 
         </>
+      )}
+
+      {/* Where the surplus goes. See src/components/Savings.jsx for why the
+          sweep is offered rather than taken. */}
+      {pane === 'savings' && (
+        <Savings
+          userId={user?.id}
+          plan={plan}
+          entries={entries}
+          savings={savings}
+          currency={s.currency}
+          locale={locale}
+          missing={savingsMissing}
+          onChange={load}
+        />
+      )}
+
+      {/* You against published national figures, and nobody else's rows. */}
+      {pane === 'benchmarks' && (
+        <Benchmarks
+          rate={myRate.rate}
+          months={myRate.months}
+          byCategory={bmCategories}
+          country={country}
+          onCountry={pickCountry}
+          locale={locale}
+        />
+      )}
+
+      {/* Six lessons, and each one ends in the pane it is about. */}
+      {pane === 'formation' && (
+        <Formation
+          userId={user?.id}
+          locale={locale}
+          onOpenPane={setPane}
+          onReading={setReading}
+        />
       )}
 
       {pane === 'plan' && (
