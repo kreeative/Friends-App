@@ -29,6 +29,9 @@ export default {
         accent: c('accent'),
         'accent-pressed': c('accent-pressed'),
         'on-accent': c('on-accent'),
+        /* The public shell's third touch. Undefined inside the app, which is
+           deliberate: nothing in the signed-in themes should reach for it. */
+        sky: c('sky'),
 
         // The theme's field, large blocks. Also a fill, also carries black.
         field: c('field'),

@@ -522,6 +522,52 @@
     --c-hairline: 219 234 242;
   }
 
+  /**
+   * THE PUBLIC SITE IS NEUTRAL. THE THEME BEGINS WHEN YOU SIGN IN.
+   *
+   * The marketing pages inherited [data-theme] like everything else, so the
+   * front page was entirely blush or entirely ice depending on a preference
+   * nobody visiting it has expressed yet. A stranger's first screen should not
+   * be somebody else's colour setting, and a page that is one hue throughout
+   * has no room for an accent: on the blush ground, pink IS the ground.
+   *
+   * So the public shell is off-white and the brand arrives in touches: pink,
+   * blue and yellow, each on its own pillar. Choosing a theme is then a thing
+   * that happens to the app, which is the only place it means anything.
+   *
+   * These are custom properties on an element rather than a competing :root
+   * rule, so specificity never enters into it: custom properties inherit, and
+   * a value set on the shell wins for its whole subtree whatever the root says.
+   *
+   * WHY --c-on-accent IS INK HERE TOO.
+   *
+   * Same arithmetic as the app: white on #FF007A is 3.83:1 and #111111 is
+   * 4.98:1. The public CTA is the single most important control on the site
+   * and it is not going to be the one thing that fails.
+   */
+  [data-surface='public'] {
+    --c-bg: 250 250 250;
+    --c-surface: 255 255 255;
+    --c-raised: 245 245 245;
+    --c-hairline: 228 228 228;
+
+    --c-ink: 17 17 17;         /* 18.09:1 on the ground */
+    --c-muted: 86 86 86;       /* #565656, 7.03:1 */
+
+    --c-accent: 255 0 122;     /* #FF007A */
+    --c-accent-pressed: 214 0 100;
+    --c-on-accent: 17 17 17;   /* 4.98:1 */
+    --c-field: 255 230 0;      /* #FFE600 */
+    --c-on-field: 17 17 17;    /* 14.90:1 */
+    --c-mark: 255 0 122;
+
+    /* The third touch. The app has no blue in sun and no pink in sea; the
+       public shell is the one surface that gets all three at once. */
+    --c-sky: 56 189 248;       /* #38BDF8, carries #111111 at 8.81:1 */
+
+    background-color: rgb(var(--c-bg));
+  }
+
 
   html {
     background-color: rgb(var(--c-bg));

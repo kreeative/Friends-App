@@ -124,10 +124,21 @@ export default function Home() {
                  would have to be re-measured against three grounds. */
               className="glass-card flex flex-col rounded-3xl border p-6"
             >
+              {/**
+               * A solid tile per pillar, one in each brand colour, and the
+               * numeral is INK on all three.
+               *
+               * The first version tinted the tile and coloured the numeral to
+               * match: pink on pale pink measured 3.10:1 at 16px bold, which
+               * is not large text and needs 4.5. Ink on all three is 4.98,
+               * 8.81 and 14.90 against pink, blue and yellow, and the colour
+               * moves to the tile where it can be solid enough to actually
+               * read as a touch of the brand rather than as a wash.
+               */}
               <span
                 aria-hidden="true"
                 className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${item.tone}
-                            font-display text-body font-bold text-mark [font-variant-numeric:tabular-nums]`}
+                            font-display text-body font-bold text-[#111111] [font-variant-numeric:tabular-nums]`}
               >
                 {item.n}
               </span>
