@@ -39,7 +39,7 @@ export default function SpendTrend({ s, locale }) {
   return (
     <div className="glass-card rounded-3xl p-5">
       <div className="flex items-baseline justify-between gap-4">
-        <span className="text-label font-semibold uppercase tracking-wider text-slate-600">
+        <span className="text-label font-semibold uppercase tracking-wider text-muted">
           {t('money.pace')}
         </span>
         {/**
@@ -57,7 +57,7 @@ export default function SpendTrend({ s, locale }) {
         {pctOfPool !== null && (
           <span
             className={`text-label [font-variant-numeric:tabular-nums] ${
-              pctOfPool > 100 ? 'font-semibold text-negative' : 'text-slate-600'
+              pctOfPool > 100 ? 'font-semibold text-negative' : 'text-muted'
             }`}
           >
             {pctOfPool > 100
@@ -67,9 +67,9 @@ export default function SpendTrend({ s, locale }) {
         )}
       </div>
 
-      <p className="mt-1.5 font-display text-h1 leading-none text-slate-800 [font-variant-numeric:tabular-nums]">
+      <p className="mt-1.5 font-display text-h1 leading-none text-ink [font-variant-numeric:tabular-nums]">
         {a.head}
-        <span className="text-[0.62em] align-baseline text-slate-600">{a.cents}</span>
+        <span className="text-[0.62em] align-baseline text-muted">{a.cents}</span>
         {a.suffix}
       </p>
 

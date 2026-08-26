@@ -54,7 +54,7 @@ export default function SpendDonut({ byCategory, total, currency, locale }) {
       <div className="flex justify-center">
         <div className="relative" style={{ width: SIZE, height: SIZE }}>
           <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} aria-hidden="true">
-            <circle cx={mid} cy={mid} r={r} fill="none" strokeWidth={STROKE} className="stroke-slate-100" />
+            <circle cx={mid} cy={mid} r={r} fill="none" strokeWidth={STROKE} className="stroke-ink/10" />
             {arcs.map((a) => (
               <circle
                 key={a.key}
@@ -75,10 +75,10 @@ export default function SpendDonut({ byCategory, total, currency, locale }) {
             ))}
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-            <span className="text-label font-semibold uppercase tracking-wider text-slate-600">
+            <span className="text-label font-semibold uppercase tracking-wider text-muted">
               {t('money.spent')}
             </span>
-            <span className="mt-1 font-display text-h2 font-bold leading-none text-slate-800 [font-variant-numeric:tabular-nums]">
+            <span className="mt-1 font-display text-h2 font-bold leading-none text-ink [font-variant-numeric:tabular-nums]">
               {fmt(total)}
             </span>
           </div>
@@ -87,19 +87,19 @@ export default function SpendDonut({ byCategory, total, currency, locale }) {
 
       {/* The legend IS the list. Every figure the old rows carried is here,
           plus the share, which the ring shows and the rows never could. */}
-      <ul className="mt-5 divide-y divide-slate-200/70">
+      <ul className="mt-5 divide-y divide-hairline">
         {rows.map((c) => (
           <li key={c.key} className="flex items-center gap-3 py-2.5">
             <span className={`shrink-0 ${TEXT[ORDER.indexOf(c.key)] ?? TEXT[5]}`}>
               <CatIcon category={c.key} className="h-5 w-5" />
             </span>
-            <span className="min-w-0 flex-1 truncate text-body text-slate-800">
+            <span className="min-w-0 flex-1 truncate text-body text-ink">
               {t(`money.cat_${c.key}`)}
             </span>
-            <span className="shrink-0 text-label text-slate-600 [font-variant-numeric:tabular-nums]">
+            <span className="shrink-0 text-label text-muted [font-variant-numeric:tabular-nums]">
               {Math.round((c.cents / sum) * 100)} %
             </span>
-            <span className="w-[5.5rem] shrink-0 text-right text-body font-semibold text-slate-800 [font-variant-numeric:tabular-nums]">
+            <span className="w-[5.5rem] shrink-0 text-right text-body font-semibold text-ink [font-variant-numeric:tabular-nums]">
               {fmt(c.cents)}
             </span>
           </li>

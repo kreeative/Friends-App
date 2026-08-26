@@ -178,7 +178,7 @@ export default function Envelopes({ s, allocations, locale, onChange }) {
     return (
       <span className={`[font-variant-numeric:tabular-nums] ${className}`} {...rest}>
         {a.head}
-        {a.cents && <span className="text-[0.62em] align-baseline text-slate-600">{a.cents}</span>}
+        {a.cents && <span className="text-[0.62em] align-baseline text-muted">{a.cents}</span>}
         {a.suffix}
       </span>
     )
@@ -285,7 +285,7 @@ export default function Envelopes({ s, allocations, locale, onChange }) {
        * amount is not, so the hole never has to be sized for the long case.
        */}
       <div data-card="pool" className="glass-card glass-card-quiet rounded-3xl p-6">
-        <p className="text-label font-semibold uppercase tracking-wider text-slate-600">
+        <p className="text-label font-semibold uppercase tracking-wider text-muted">
           {t('env.to_allocate')}
         </p>
 
@@ -306,7 +306,7 @@ export default function Envelopes({ s, allocations, locale, onChange }) {
             >
               {s.earned ? `${placedPct} %` : '—'}
             </span>
-            <span className="mt-1.5 text-label text-slate-600">{t('env.placed_word')}</span>
+            <span className="mt-1.5 text-label text-muted">{t('env.placed_word')}</span>
           </Gauge>
         </div>
 
@@ -315,16 +315,16 @@ export default function Envelopes({ s, allocations, locale, onChange }) {
             under it already names. */}
         <p
           className={`mt-4 text-center font-display text-h2 font-bold leading-none [font-variant-numeric:tabular-nums] ${
-            pool < 0 ? 'text-negative' : 'text-slate-800'
+            pool < 0 ? 'text-negative' : 'text-ink'
           }`}
         >
           <Amount cents={Math.abs(pool)} data-hook="pool-amount" />{' '}
-          <span className="text-body font-semibold text-slate-600">
+          <span className="text-body font-semibold text-muted">
             {pool < 0 ? t('env.over_word') : t('env.to_place')}
           </span>
         </p>
 
-        <p className="mx-auto mt-2.5 max-w-[34ch] text-center text-small leading-relaxed text-slate-600">
+        <p className="mx-auto mt-2.5 max-w-[34ch] text-center text-small leading-relaxed text-muted">
           {!s.earned
             ? t('env.no_income')
             : pool > 0
@@ -425,7 +425,7 @@ export default function Envelopes({ s, allocations, locale, onChange }) {
               <p
                 aria-hidden="true"
                 className={`mt-2 font-display font-bold leading-none [font-variant-numeric:tabular-nums] ${
-                  !inUse ? 'text-body text-slate-400' : e.over > 0 ? 'text-h2 text-negative' : 'text-h2 text-slate-800'
+                  !inUse ? 'text-body text-muted' : e.over > 0 ? 'text-h2 text-negative' : 'text-h2 text-ink'
                 }`}
               >
                 {!inUse ? t('env.unused') : fmt(e.over > 0 ? e.over : e.remaining)}
@@ -433,7 +433,7 @@ export default function Envelopes({ s, allocations, locale, onChange }) {
               {inUse && (
                 <p
                   aria-hidden="true"
-                  className={`mt-1 text-label ${e.over > 0 ? 'font-semibold text-negative' : 'text-slate-600'}`}
+                  className={`mt-1 text-label ${e.over > 0 ? 'font-semibold text-negative' : 'text-muted'}`}
                 >
                   {e.over > 0 ? t('env.over_word') : t('env.remaining_word')}
                 </p>
@@ -454,8 +454,8 @@ export default function Envelopes({ s, allocations, locale, onChange }) {
                * FRONT of the number away. That is how 1 200 000 comes to read
                * as 00 000 with nothing on screen to say so.
                */}
-              <div className="mt-auto border-t border-slate-200/70 pt-2.5">
-                <label htmlFor={`env-${e.key}`} className="block text-label text-slate-600">
+              <div className="mt-auto border-t border-hairline pt-2.5">
+                <label htmlFor={`env-${e.key}`} className="block text-label text-muted">
                   {t('env.allocated_short')}
                 </label>
                 <input
@@ -481,13 +481,13 @@ export default function Envelopes({ s, allocations, locale, onChange }) {
                    * A tinted well settles it. The odd formatting stops being
                    * an inconsistency and becomes the contents of an input.
                    */
-                  className="mt-1 w-full rounded-lg border-0 bg-slate-100/80 px-2 py-1 text-left text-small font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-accent/40 [font-variant-numeric:tabular-nums]"
+                  className="mt-1 w-full rounded-lg border-0 bg-accent/10 px-2 py-1 text-left text-small font-semibold text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/40 [font-variant-numeric:tabular-nums]"
                   value={text}
                   onChange={(ev) => setDraft((d) => ({ ...d, [e.key]: ev.target.value }))}
                   onBlur={() => commit(e.key)}
                   onKeyDown={(ev) => ev.key === 'Enter' && ev.currentTarget.blur()}
                 />
-                {saving === e.key && <span className="text-label text-slate-400">…</span>}
+                {saving === e.key && <span className="text-label text-muted">…</span>}
               </div>
             </div>
           )
@@ -532,21 +532,21 @@ export function SpendableBar({ bar, currency, locale }) {
     /* Hooks, because this card has now lost .eyebrow, .lg and .lede in three
        separate restyles and took a test suite with it every time. */
     <div data-card="spendable" className="glass-card rounded-3xl p-5">
-      <p data-hook="label" className="text-label font-semibold uppercase tracking-wider text-slate-600">
+      <p data-hook="label" className="text-label font-semibold uppercase tracking-wider text-muted">
         {t('env.left_to_spend')}
       </p>
       <p
         data-hook="amount"
         className={`mt-1.5 font-display text-hero leading-none [font-variant-numeric:tabular-nums] ${
-          bar.left < 0 ? 'text-negative' : 'text-slate-800'
+          bar.left < 0 ? 'text-negative' : 'text-ink'
         }`}
       >
         {a.head}
-        <span className="text-[0.62em] align-baseline text-slate-600">{a.cents}</span>
+        <span className="text-[0.62em] align-baseline text-muted">{a.cents}</span>
         {a.suffix}
       </p>
 
-      <div className="mt-4 h-2.5 w-full overflow-hidden rounded-pill bg-slate-200/70">
+      <div className="mt-4 h-2.5 w-full overflow-hidden rounded-pill bg-ink/10">
         <div
           className={`h-full rounded-pill transition-[width] duration-500 ease-settle ${
             bar.over > 0 ? 'bg-negative' : 'bg-accent'
@@ -555,7 +555,7 @@ export function SpendableBar({ bar, currency, locale }) {
         />
       </div>
 
-      <p data-hook="note" className="mt-2.5 max-w-[38ch] text-small leading-relaxed text-slate-600">
+      <p data-hook="note" className="mt-2.5 max-w-[38ch] text-small leading-relaxed text-muted">
         {!bar.funded
           ? t('env.no_income_bar')
           : bar.over > 0

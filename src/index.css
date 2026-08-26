@@ -321,7 +321,21 @@
      * of colour and is the difference between passing and not. Now 4.51:1 on
      * the ground and 4.82:1 on a card.
      */
-    --c-muted: 215 36 108;
+    /**
+     * Darkened from 215 36 108.
+     *
+     * That value cleared 4.5:1 on WHITE and the budget's cards are not white
+     * any more: over the ambient ground they composite to about 246 241 244,
+     * and secondary text measured 3.16:1 there. Fifty-eight text runs were
+     * failing.
+     *
+     * It ends up close to --c-ink, and that is not a mistake, it is the same
+     * constraint the envelope ramp ran into: on a light card, lightness is
+     * spent on contrast and there is none left to spend on hierarchy. So the
+     * gap between primary and secondary text is carried by SIZE and WEIGHT,
+     * which cost nothing, and both stay in the theme's own hue.
+     */
+    --c-muted: 185 28 92;
     --c-loud: 222 53 120;    /* #DE3578, 4.30:1, display sizes only */
     --c-field: 255 214 10;   /* #FFD60A golden yellow */
     --c-field-deep: 214 176 0;
@@ -397,7 +411,8 @@
     --c-ink: 0 98 116;       /* #006274, 7.00:1 on white */
     /* #007D94. Same correction as sun, same reason: 4.23:1 on the page
        ground before, 4.52:1 now, 4.82:1 on a card. */
-    --c-muted: 0 125 148;
+    /* Darkened for the reason recorded beside sun's. */
+    --c-muted: 0 100 118;
     --c-loud: 0 157 185;     /* #009DB9, 3.22:1, display sizes only */
     --c-field: 255 214 10;   /* #FFD60A golden yellow */
     --c-field-deep: 214 176 0;
@@ -634,8 +649,21 @@
 
   /* The pool card sits above the six and reads as their container, so it is
      the one surface here that is tinted rather than white. */
+  /**
+   * The pool card, which contains the six.
+   *
+   * It was slate-50, and that was two problems in one value. It is a GREY on
+   * a screen whose whole palette is the theme's hue, and because the tint is
+   * darker than white it composited to the darkest card on the page, which is
+   * where the last ten contrast failures all were.
+   *
+   * White, one step more opaque than the cards it contains. What separates it
+   * from them is the rim and the shadow, not a colour borrowed from outside
+   * the palette.
+   */
   .glass-card-quiet {
-    background: rgb(248 250 252 / 0.9);
+    background: rgb(255 255 255 / 0.97);
+    border-color: rgb(var(--c-ink) / 0.12);
   }
 
   @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
@@ -645,7 +673,7 @@
       backdrop-filter: blur(22px) saturate(180%);
     }
     .glass-card-quiet {
-      background: rgb(248 250 252 / 0.76);
+      background: rgb(255 255 255 / 0.9);
     }
   }
 
@@ -1409,33 +1437,6 @@
     @apply text-body text-muted;
   }
 
-  /**
-   * ONE INK FAMILY FOR INFORMATION. PINK IS FOR ACTION.
-   *
-   * Audited, not guessed: the money screen was painting sixteen distinct type
-   * styles, five of them different text colours, and two of those were rival
-   * INKS. rgb(169,28,84) carried the heading, the sub, the section titles and
-   * the tab labels while rgb(30,41,59) carried every number and every label
-   * inside a card. Two primaries on one screen is not a palette, it is two
-   * designs sharing a page, and no amount of spacing makes that read as
-   * refined.
-   *
-   * So inside .calm, anything that is INFORMATION goes slate and pink is left
-   * to do one job: the primary button, the active tab, the accent bar. The
-   * page heading keeps it, because one branded moment per screen is the point
-   * of having a brand, and losing it entirely is how this ends up looking
-   * like every other finance app.
-   *
-   * Scoped rather than global on purpose. The rest of the app has not been
-   * audited this way and a blanket change would be a claim about screens
-   * nobody has looked at.
-   */
-  .calm .eyebrow {
-    @apply text-slate-600;
-  }
-  .calm .lede {
-    @apply text-slate-600;
-  }
 
   /**
    * Headlines. No serif: the display face is gone, and the sans at 700 with

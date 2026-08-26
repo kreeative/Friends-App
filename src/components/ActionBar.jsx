@@ -94,14 +94,13 @@ export default function ActionBar({ items, value, onChange }) {
               /**
                * The badge the glyph sits in: neutral, not accent.
                *
-               * Five accent-tinted badges down a screen is a colour scheme
-               * rather than a set of marks, and it was competing with the one
-               * thing on the pane that should be pink: the button you press.
-               * Slate here leaves the accent doing a single job, which is the
-               * whole argument for having an accent.
+               * A tint of the theme's accent, not a grey. Grey was tried and
+               * it read as a colour borrowed from another app: on a screen
+               * whose whole palette is one hue, a slate square is the thing
+               * your eye stops on for the wrong reason.
                */
               className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-[0.875rem] [&>svg]:h-[1.6rem] [&>svg]:w-[1.6rem] ${
-                on ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'
+                on ? 'bg-white/20 text-white' : 'bg-accent/15 text-ink'
               }`}
             >
               {item.icon}
@@ -109,7 +108,7 @@ export default function ActionBar({ items, value, onChange }) {
 
             <span
               className={`min-w-0 flex-1 truncate text-body font-semibold leading-tight transition-colors ${
-                on ? 'text-white' : 'text-slate-800'
+                on ? 'text-white' : 'text-ink'
               }`}
             >
               {item.label}
