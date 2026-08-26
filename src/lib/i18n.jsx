@@ -334,8 +334,12 @@ const STRINGS = {
     'money.plan_vs_actual': 'Planned and actual',
     'money.planned': 'Planned',
     'money.actual': 'Actual',
-    'money.planned_badge': 'Planned',
+    /* The control says what pressing it does. "Planned" described the row and
+       left the button with nothing to say about itself. */
+    'money.planned_badge': 'Mark paid',
     'money.paid': 'Paid',
+    'money.mark_paid_a11y': '{label}, {amount}. Mark as paid.',
+    'money.unmark_paid_a11y': '{label}, {amount}. Paid. Mark as not paid.',
     'money.paid_unavailable': 'Marking a charge paid is not available yet.',
     'money.fixed_title': 'Fixed charges',
     'money.row_income': 'Income',
@@ -1342,8 +1346,12 @@ const STRINGS = {
     'money.plan_vs_actual': 'Prévu et réel',
     'money.planned': 'Prévu',
     'money.actual': 'Réel',
-    'money.planned_badge': 'Prévu',
+    /* Le bouton dit ce qu'il fait, pas ce que la ligne est. « Prévu » décrivait
+       la ligne et laissait le bouton sans rien à dire sur lui-même. */
+    'money.planned_badge': 'Payer',
     'money.paid': 'Payé',
+    'money.mark_paid_a11y': '{label}, {amount}. Marquer comme payée.',
+    'money.unmark_paid_a11y': '{label}, {amount}. Payée. Marquer comme non payée.',
     'money.paid_unavailable': 'Marquer une charge comme payée n’est pas encore disponible.',
     'money.fixed_title': 'Charges fixes',
     'money.row_income': 'Revenus',
