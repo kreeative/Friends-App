@@ -70,6 +70,50 @@ export default function Home() {
         </div>
       </section>
 
+      {/**
+       * WHAT THE APP IS, BEFORE ANY ARGUMENT ABOUT WHY IT EXISTS.
+       *
+       * The hero is a promise and the block under this one is about why other
+       * apps fail. Between them, nothing said what you actually DO here, and
+       * the reason this block exists is that people who were sent the link
+       * could not tell what the app was for.
+       *
+       * Numbered, because "three things" is a shape a reader can hold, and
+       * because the numbers say the list is finite: this is the whole product,
+       * not the first three of twenty features.
+       *
+       * Unboxed and separated by a hairline, like its neighbour. Two white
+       * rectangles in a row on a white page is a texture rather than a
+       * hierarchy.
+       */}
+      <section className="mx-auto w-full max-w-5xl border-t border-hairline px-6 py-16 md:py-20">
+        <p className="eyebrow">{c.what.eyebrow}</p>
+        <h2 className="display mt-7 max-w-[20ch] text-[clamp(1.625rem,3.6vw,2.5rem)]">
+          {c.what.title}
+        </h2>
+
+        <ol className="mt-10 grid gap-8 md:grid-cols-3">
+          {c.what.items.map((item, i) => (
+            <li key={item.title} data-what={i + 1}>
+              {/* The mark, not a decorative icon. Three invented glyphs for
+                  three sentences would be three more things to read. */}
+              <span
+                aria-hidden="true"
+                className="block font-display text-h2 font-bold leading-none text-mark [font-variant-numeric:tabular-nums]"
+              >
+                {String(i + 1).padStart(2, '0')}
+              </span>
+              <h3 className="mt-4 max-w-[24ch] text-body font-semibold leading-snug text-ink">
+                {item.title}
+              </h3>
+              <p className="mt-2.5 max-w-[34ch] text-small leading-relaxed text-muted">
+                {item.body}
+              </p>
+            </li>
+          ))}
+        </ol>
+      </section>
+
       {/* Also unboxed. Two white rectangles in a row on a white page is not a
           hierarchy, it is a texture, a hairline separates these just as well
           and puts nothing on screen that is not information. */}

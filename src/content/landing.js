@@ -14,6 +14,27 @@ export const LANDING = {
       note: 'Ambition Is Contagious.',
     },
 
+    /* See the note on the French copy: this block exists because people sent
+       the link and could not tell what the app was for. */
+    what: {
+      eyebrow: 'In plain terms',
+      title: 'What is Rich & Friends?',
+      items: [
+        {
+          title: 'A small group of friends, and what each of you commits to.',
+          body: 'You write down what you are going to do and how often. Your friends see it. They write theirs too.',
+        },
+        {
+          title: 'One check-in a day, in about a minute.',
+          body: 'You tick off what you did, with proof if your goal asks for it. Nobody sees anyone else\u2019s answers until the day is over.',
+        },
+        {
+          title: 'A personal budget nobody can see.',
+          body: 'How much you can spend today without breaking your month. No one in your group can read it, and that is not a setting: it is written into the database.',
+        },
+      ],
+    },
+
     problem: {
       eyebrow: 'Why often we are not reaching our goals?',
       title: 'Productivity apps do not fail for lack of features.',
@@ -127,6 +148,36 @@ export const LANDING = {
       cta: 'Créer un groupe',
       secondary: 'Comment ça marche',
       note: 'L’ambition est contagieuse',
+    },
+
+    /**
+     * Ce que l'app EST, en trois phrases concretes.
+     *
+     * Le hero est une promesse et le bloc suivant parle des autres apps. Rien
+     * ne disait ce qu'on fait ici, et c'est le retour qui a declenche ce bloc :
+     * les gens a qui on envoie le lien ne comprennent pas a quoi ca sert.
+     *
+     * Chaque phrase est verifiable dans le code. Il n'y a volontairement aucun
+     * nombre de membres : la taille du groupe n'est pas contrainte en base, et
+     * annoncer « 5 maximum » sur une page publique serait faux.
+     */
+    what: {
+      eyebrow: 'Concrètement',
+      title: 'C’est quoi, Rich & Friends ?',
+      items: [
+        {
+          title: 'Un petit groupe d’amis, et ce que chacun s’engage à faire.',
+          body: 'Tu écris ce que tu vas faire et à quel rythme. Tes amis le voient. Eux aussi écrivent le leur.',
+        },
+        {
+          title: 'Un point par jour, en une minute.',
+          body: 'Tu coches ce que tu as fait, avec une preuve si ton objectif en demande une. Personne ne voit les réponses des autres avant la fin de la journée.',
+        },
+        {
+          title: 'Un budget perso que personne ne voit.',
+          body: 'Combien tu peux dépenser aujourd’hui sans casser ton mois. Aucun membre de ton groupe ne peut le lire, et ce n’est pas un réglage : c’est écrit dans la base.',
+        },
+      ],
     },
 
     problem: {
