@@ -772,7 +772,7 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
            * A tinted pill in the theme's own accent, lifted off the card by
            * its own shadow, is the size of the thing it does.
            */
-          className="press group mx-auto mt-1 flex w-fit items-center gap-1.5 rounded-pill bg-accent/10 px-4 py-1.5 shadow-raised ring-1 ring-inset ring-ink/[0.07] transition-[background-color,box-shadow] duration-200 hover:bg-accent/[0.16]"
+          className="press group mx-auto mt-1 flex w-fit items-center gap-1.5 rounded-pill bg-accent/50 px-4 py-1.5 shadow-raised ring-1 ring-inset ring-ink/[0.07] transition-[background-color,box-shadow] duration-200 hover:bg-accent/[0.62]"
         >
           <span className="text-label font-semibold uppercase tracking-[0.08em] text-ink">
             {expanded ? t('week.week') : t('week.month')}
