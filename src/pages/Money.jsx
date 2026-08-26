@@ -369,46 +369,26 @@ export default function Money() {
       id: 'overview',
       icon: <GaugeIcon />,
       label: t('money.tab_overview'),
-      /* No badge. This pane IS the summary, and a count on the tile that means
-         "the whole picture" would be a fourth number competing with the three
-         inside it. */
-      badge: null,
-      done: true,
     },
     {
       id: 'envelopes',
       icon: <EnvelopeIcon />,
       label: t('money.tab_envelopes'),
-      badge: s.earned > 0 ? `${funded}/${ENVELOPE_CATEGORIES.length}` : null,
-      /* Green only when the pool is empty, which is the one thing this pane
-         asks for: every dollar given a job. */
-      done: s.earned > 0 && toAllocate({ earned: s.earned, allocations }) === 0,
     },
     {
       id: 'plan',
       icon: <PlanIcon />,
       label: t('money.tab_plan'),
-      badge: liveFixed.length ? `${paidFixed}/${liveFixed.length}` : null,
-      done: liveFixed.length > 0 && paidFixed === liveFixed.length,
     },
     {
       id: 'log',
       icon: <ListIcon />,
       label: t('money.tab_log'),
-      badge: recent.length ? String(recent.length) : null,
-      /* A log is never unfinished. Nothing here waits to be filled in, so the
-         tile is not allowed to nag about being empty. */
-      done: true,
     },
     {
       id: 'projects',
       icon: <SuitcaseIcon />,
       label: t('money.tab_projects'),
-      /* The count of projects, not of anything owed. "You owe money" belongs
-         on the project, where the amount and the person are both visible; a
-         red 3 on a tile is a worry with nothing attached to it. */
-      badge: projects.length ? String(projects.length) : null,
-      done: true,
     },
   ]
 
