@@ -123,3 +123,9 @@ create policy "saving: delete own"
 
 -- No grant to anon. The whole point.
 grant select, insert, update, delete on public.budget_saving to authenticated;
+
+notify pgrst, 'reload schema';
+
+-- Check:
+--   select happened_on, amount_cents, source, period_start from budget_saving
+--    order by happened_on desc;

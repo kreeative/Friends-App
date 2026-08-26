@@ -282,3 +282,9 @@ create policy budget_project_entry_delete on budget_project_entry
     (is_project_member(project_id) and paid_by = auth.uid())
     or is_project_owner(project_id)
   );
+
+notify pgrst, 'reload schema';
+
+-- Check:
+--   select name, currency, target_cents, archived from budget_project;
+--   select project_id, user_id, share from budget_project_member;
