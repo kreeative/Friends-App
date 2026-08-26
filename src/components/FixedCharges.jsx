@@ -65,7 +65,11 @@ export default function FixedCharges({ fixed = [], s, locale, onChange }) {
       /* Migration 35 not run yet. Saying which one is the difference between
          a person fixing it in a minute and filing a bug. */
       setError(
-        isMissingColumn(failed, 'last_paid_on') ? t('money.paid_unavailable') : errorText(failed),
+        /* Same split as everywhere else: the calm sentence on screen, the
+           migration name in the console where somebody can act on it. */
+        isMissingColumn(failed, 'last_paid_on')
+          ? (console.warn('last_paid_on is missing: run supabase/35_fixed_paid.sql'), t('money.paid_unavailable'))
+          : errorText(failed),
       )
       return
     }

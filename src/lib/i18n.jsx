@@ -308,7 +308,7 @@ const STRINGS = {
     'money.step_keep_body': 'Savings come off first. What is left becomes one safe number for today.',
     'money.set_up': 'Set it up',
     'money.edit_plan': 'Edit plan',
-    'money.not_installed': 'The money tables are not in the database yet.',
+    'money.not_installed': 'The budget is not available on this account yet.',
 
     'money.today_label': 'Safe to spend today',
     'env.title': 'Give every dollar a job',
@@ -328,7 +328,7 @@ const STRINGS = {
     'env.unused': 'Unused',
     'env.allocated_short': 'Allocated',
     'env.spent_of': '{spent} spent',
-    'env.unavailable': 'Run supabase/37_budget_allocation.sql to use envelopes.',
+    'env.unavailable': 'Envelopes are not available on this account yet.',
     'env.left_to_spend': 'Left to spend',
     'env.no_income_bar': 'No income logged this period yet, so there is nothing to spend down.',
     'env.bar_of': '{spent} spent of the {earned} that came in.',
@@ -341,7 +341,7 @@ const STRINGS = {
     'money.actual': 'Actual',
     'money.planned_badge': 'Planned',
     'money.paid': 'Paid',
-    'money.paid_unavailable': 'Run supabase/35_fixed_paid.sql to mark charges as paid.',
+    'money.paid_unavailable': 'Marking a charge paid is not available yet.',
     'money.fixed_title': 'Fixed charges',
     'money.row_income': 'Income',
     'money.row_fixed': 'Fixed charges',
@@ -379,6 +379,7 @@ const STRINGS = {
     'hist.title': 'Activity',
     'hist.back': 'Back to the budget',
     'hist.see_all': 'See everything',
+    'hist.all_txn': 'All transactions',
     'hist.all_kinds': 'Type',
     'hist.expenses': 'Spending',
     'hist.incomes': 'Income',
@@ -389,7 +390,7 @@ const STRINGS = {
     'hist.yesterday': 'Yesterday',
     'hist.none': 'Nothing logged yet.',
     'hist.none_filtered': 'Nothing matches that. Try a wider filter.',
-    'money.tab_projects': 'Projects',
+    'money.tab_projects': 'Big budgets',
 
     /* Shared, ephemeral budgets. A trip, a flat, a car: something with a
        beginning, an end and a total, split between people. Kept in its own
@@ -446,7 +447,7 @@ const STRINGS = {
     'proj.category_ph': 'housing',
     'money.tab_overview': 'Overview',
     'money.tab_envelopes': 'Envelopes',
-    'money.tab_plan': 'Plan',
+    'money.tab_plan': 'Plan & fixed',
     'money.tab_log': 'Log',
     /* --- the feature cards on the budget's front page ------------------- */
     'feat.title': 'Go further',
@@ -485,7 +486,7 @@ const STRINGS = {
     'sav.src_plan': 'Monthly amount',
     'sav.src_surplus': 'Month’s surplus',
     'sav.src_manual': 'Added',
-    'sav.not_installed': 'The savings ledger is not installed on this database yet. Run migration 39.',
+    'sav.not_installed': 'Savings are not available on this account yet.',
 
     /* --- benchmarks ---------------------------------------------------- */
     'bm.title': 'How you compare',
@@ -508,7 +509,26 @@ const STRINGS = {
     'bm.c_EA': 'Euro area',
 
     /* --- formation ----------------------------------------------------- */
+    'form.module_n': 'Module {n} · {m} min',
+    'form.exercise': 'Try this',
+    'form.back_list': 'Back to the modules',
+    'form.exit': 'Leave the course',
+    'form.review': 'Go back through it',
+
+    /* --- wealth rank ---------------------------------------------------- */
+    'rank.card_title': 'What is your savings rank?',
+    'rank.card_sub': 'See how your savings rate sits against other people your age.',
+    'rank.modal_title': 'Your savings rank',
+    'rank.yours': 'You keep',
+    'rank.locked': 'Log some transactions to unlock your rank.',
+    'rank.window': 'Measured over your last {n} closed months.',
+    'rank.standing_above': 'You keep more than the published rate.',
+    'rank.standing_near': 'You are about at the published rate.',
+    'rank.standing_below': 'You keep less than the published rate.',
+
     'form.title': 'Learn',
+    'form.sub': 'Six two-minute modules on running a zero-based budget.',
+    'form.back_library': 'Back to the library',
     'form.lessons': 'The six lessons',
     'form.of': '{done} of {total}',
     'form.minutes': '{n} min',
@@ -1349,7 +1369,7 @@ const STRINGS = {
     'money.step_keep_body': 'L’épargne part en premier. Le reste devient un seul chiffre sûr pour aujourd’hui.',
     'money.set_up': 'Configurer',
     'money.edit_plan': 'Modifier',
-    'money.not_installed': 'Les tables budget ne sont pas encore dans la base.',
+    'money.not_installed': 'Le budget n’est pas encore disponible sur ce compte.',
 
     'money.today_label': 'Disponible aujourd’hui',
     'env.title': 'Donne un rôle à chaque dollar',
@@ -1369,7 +1389,7 @@ const STRINGS = {
     'env.unused': 'Inutilisée',
     'env.allocated_short': 'Attribué',
     'env.spent_of': '{spent} dépensés',
-    'env.unavailable': 'Lance supabase/37_budget_allocation.sql pour utiliser les enveloppes.',
+    'env.unavailable': 'Les enveloppes ne sont pas encore disponibles sur ce compte.',
     'env.left_to_spend': 'Reste à dépenser',
     'env.no_income_bar': 'Aucun revenu enregistré cette période, il n’y a donc rien à dépenser.',
     'env.bar_of': '{spent} dépensés sur les {earned} rentrés.',
@@ -1382,7 +1402,7 @@ const STRINGS = {
     'money.actual': 'Réel',
     'money.planned_badge': 'Prévu',
     'money.paid': 'Payé',
-    'money.paid_unavailable': 'Lance supabase/35_fixed_paid.sql pour pouvoir marquer les charges comme payées.',
+    'money.paid_unavailable': 'Marquer une charge comme payée n’est pas encore disponible.',
     'money.fixed_title': 'Charges fixes',
     'money.row_income': 'Revenus',
     'money.row_fixed': 'Charges fixes',
@@ -1418,6 +1438,7 @@ const STRINGS = {
     'hist.title': 'Historique',
     'hist.back': 'Retour au budget',
     'hist.see_all': 'Voir tout',
+    'hist.all_txn': 'Toutes les transactions',
     'hist.all_kinds': 'Type',
     'hist.expenses': 'Dépenses',
     'hist.incomes': 'Revenus',
@@ -1428,7 +1449,7 @@ const STRINGS = {
     'hist.yesterday': 'Hier',
     'hist.none': 'Rien d’enregistré pour l’instant.',
     'hist.none_filtered': 'Rien ne correspond. Essaie un filtre plus large.',
-    'money.tab_projects': 'Projets',
+    'money.tab_projects': 'Haut Budget',
 
     'proj.new': 'Nouveau projet',
     'proj.join': 'Rejoindre',
@@ -1477,7 +1498,7 @@ const STRINGS = {
     'proj.category_ph': 'logement',
     'money.tab_overview': 'Aperçu',
     'money.tab_envelopes': 'Enveloppes',
-    'money.tab_plan': 'Plan',
+    'money.tab_plan': 'Plan & Fixe',
     'money.tab_log': 'Journal',
     /* --- the feature cards on the budget's front page ------------------- */
     'feat.title': 'Aller plus loin',
@@ -1516,7 +1537,7 @@ const STRINGS = {
     'sav.src_plan': 'Montant mensuel',
     'sav.src_surplus': 'Surplus du mois',
     'sav.src_manual': 'Ajout',
-    'sav.not_installed': 'Le registre d’épargne n’est pas encore installé sur cette base. Lance la migration 39.',
+    'sav.not_installed': 'L’épargne n’est pas encore disponible sur ce compte.',
 
     /* --- benchmarks ---------------------------------------------------- */
     'bm.title': 'Comparaison',
@@ -1539,7 +1560,26 @@ const STRINGS = {
     'bm.c_EA': 'Zone euro',
 
     /* --- formation ----------------------------------------------------- */
+    'form.module_n': 'Module {n} · {m} min',
+    'form.exercise': 'Exercice pratique',
+    'form.back_list': 'Retour aux modules',
+    'form.exit': 'Quitter la formation',
+    'form.review': 'La reprendre',
+
+    /* --- wealth rank ---------------------------------------------------- */
+    'rank.card_title': 'Quel est ton rang d’épargne ?',
+    'rank.card_sub': 'Découvre comment ton taux d’épargne se situe par rapport aux autres personnes de ta tranche d’âge.',
+    'rank.modal_title': 'Ton rang d’épargne',
+    'rank.yours': 'Tu gardes',
+    'rank.locked': 'Ajoute des transactions pour débloquer ton rang.',
+    'rank.window': 'Calculé sur tes {n} derniers mois terminés.',
+    'rank.standing_above': 'Tu gardes plus que le taux publié.',
+    'rank.standing_near': 'Tu es à peu près au taux publié.',
+    'rank.standing_below': 'Tu gardes moins que le taux publié.',
+
     'form.title': 'Formation',
+    'form.sub': 'Six modules de deux minutes pour tenir un budget à base zéro.',
+    'form.back_library': 'Retour aux lectures',
     'form.lessons': 'Les six leçons',
     'form.of': '{done} sur {total}',
     'form.minutes': '{n} min',

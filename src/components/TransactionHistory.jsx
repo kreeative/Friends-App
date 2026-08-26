@@ -4,6 +4,7 @@ import { money } from '../lib/money'
 import { localISO } from '../lib/txn'
 import { categoriesIn, dayHeading, filterHistory, groupByDay } from '../lib/history'
 import CatDisc from './CatDisc'
+import SpendDonut from './SpendDonut'
 import { Empty } from './ui'
 
 /**
@@ -42,10 +43,38 @@ export default function TransactionHistory({ entries, currency, locale, onOpen, 
      four of them return nothing is a filter that wastes four taps. */
   const cats = useMemo(() => categoriesIn(entries), [entries])
 
-  const days = useMemo(
-    () => groupByDay(filterHistory(entries, { kind, category, query })),
+  const rows = useMemo(
+    () => filterHistory(entries, { kind, category, query }),
     [entries, kind, category, query],
   )
+  const days = useMemo(() => groupByDay(rows), [rows])
+
+  /**
+   * Where it went, for whatever is on screen.
+   *
+   * The donut used to live on the budget's Journal tab. That tab is gone, and
+   * deleting the chart with it would have thrown away a view nobody asked to
+   * lose. Here it is better than it was: it reads the FILTERED rows, so
+   * narrowing to one month or one category redraws it, where on the tab it was
+   * always the current period no matter what you were looking at.
+   *
+   * Expenses only, and never income: a slice for money arriving inside a chart
+   * about where money went is a slice that means the opposite of its
+   * neighbours.
+   */
+  const byCategory = useMemo(() => {
+    const totals = new Map()
+    for (const e of rows) {
+      if (e.excluded || e.kind !== 'expense') continue
+      const k = e.category ?? 'other'
+      totals.set(k, (totals.get(k) ?? 0) + (Number(e.amount_cents) || 0))
+    }
+    return [...totals]
+      .map(([key, cents]) => ({ key, cents }))
+      .filter((c) => c.cents > 0)
+      .sort((a, b) => b.cents - a.cents)
+  }, [rows])
+  const spent = byCategory.reduce((n, c) => n + c.cents, 0)
 
   const filtered = kind !== 'all' || category !== 'all' || query.trim() !== ''
 
@@ -62,6 +91,10 @@ export default function TransactionHistory({ entries, currency, locale, onOpen, 
       <button className="goal-action press" onClick={onBack}>
         {t('hist.back')}
       </button>
+
+      {byCategory.length > 0 && (
+        <SpendDonut byCategory={byCategory} total={spent} currency={currency} locale={locale} />
+      )}
 
       {/* Pills, in the order the questions get asked: what kind, then what
           for, then the one you only reach for when the first two failed. */}
