@@ -227,41 +227,21 @@ export default function Checkin() {
       id: 'goals',
       icon: <TargetIcon />,
       label: t('checkin.tab_goals'),
-      /* Proof is filled in on this pane now, so its count belongs on this
-         tile. Only shown once something is counted: "0/3 proved" on an
-         untouched form is the app opening with a complaint. */
-      badge: goals.length
-        ? logged > 0 && wantProof > 0
-          ? `${logged}/${goals.length} · ${proved}/${wantProof}`
-          : `${logged}/${goals.length}`
-        : null,
-      done: goals.length > 0 && logged === goals.length,
     },
     {
       id: 'proof',
       icon: <CameraIcon />,
       label: t('checkin.tab_proof'),
-      /* No badge. This tile is a gallery of what the group has done, not a
-         list of things waiting to be filled in, and a count here would read as
-         the second. */
-      badge: null,
-      done: true,
     },
     {
       id: 'celebrate',
       icon: <PartyIcon />,
       label: t('checkin.tab_celebrate'),
-      /* What went out, not what is typed. A tick on a half-written draft would
-         say something had been sent that had not. */
-      badge: partySent > 0 ? String(partySent) : null,
-      done: true,
     },
     {
       id: 'next',
       icon: <ForwardIcon />,
       label: t('checkin.tab_next'),
-      badge: next.trim() ? '✓' : null,
-      done: true,
     },
   ]
 

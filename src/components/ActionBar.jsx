@@ -67,26 +67,27 @@ export default function ActionBar({ items, value, onChange }) {
             type="button"
             onClick={() => onChange(item.id)}
             aria-pressed={on}
-            /**
-             * The name, then the count, with a comma between them.
-             *
-             * The badge is a child of this button, so without this its text
-             * ran into the label and the accessible name came out as
-             * "0/6Enveloppes": the count first, glued to the word, which is
-             * both the wrong order and, in some readers, one token. The badge
-             * is hidden below and its meaning is carried here instead.
-             */
-            aria-label={item.badge ? `${item.label}, ${item.badge}` : item.label}
             className={`press group flex w-full min-w-0 items-center gap-3 rounded-3xl p-3 text-left transition-[background-color,color,box-shadow] duration-200 ${
-              /* Ink when active, paper when not. The same active treatment as
-                 the period filter and the day badge, rather than a fourth idea
-                 about what "selected" looks like in this app. */
-              /* A TRANSPARENT border on the active row, not no border. The
-                 inactive rows carry a 1px hairline, so an active row without
-                 one is 2px shorter and every row below it jumps 2px the
-                 moment you change tabs. */
+              /**
+               * Selected is a PINK card, not a dark one.
+               *
+               * It was bg-ink, and ink became a near-black, so the selected
+               * row turned into a black slab: the heaviest thing on a screen
+               * whose job is to be read past.
+               *
+               * A WASH of the accent, not the accent itself. Solid #FF006E
+               * carries white at 3.83:1 and this label is 16px at 600, which
+               * needs 4.5, so a pop-pink row could only take dark text and
+               * would read as a warning. The tint leaves the label where it
+               * is and lets the ring and the filled glyph carry the state.
+               *
+               * A TRANSPARENT border on the active row, not no border. The
+               * inactive rows carry a 1px hairline, so an active row without
+               * one is 2px shorter and every row below it jumps 2px the
+               * moment you change tabs.
+               */
               on
-                ? 'border border-transparent bg-ink shadow-float'
+                ? 'border border-transparent bg-accent/[0.14] shadow-float ring-2 ring-inset ring-accent/45'
                 : 'border border-hairline bg-[rgb(var(--glass-tint))] shadow-raised'
             }`}
           >
@@ -100,33 +101,18 @@ export default function ActionBar({ items, value, onChange }) {
                * your eye stops on for the wrong reason.
                */
               className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-[0.875rem] [&>svg]:h-[1.6rem] [&>svg]:w-[1.6rem] ${
-                on ? 'bg-white/20 text-white' : 'bg-accent/15 text-ink'
+                on ? 'bg-accent text-on-accent' : 'bg-accent/15 text-ink'
               }`}
             >
               {item.icon}
             </span>
 
             <span
-              className={`min-w-0 flex-1 truncate text-body font-semibold leading-tight transition-colors ${
-                on ? 'text-white' : 'text-ink'
-              }`}
+              className="min-w-0 flex-1 truncate text-body font-semibold leading-tight text-ink"
             >
               {item.label}
             </span>
 
-            {/* Far right, past the label rather than on top of it. A count
-                here reads as a state of the thing rather than as part of its
-                name. */}
-            {item.badge && (
-              <span
-                aria-hidden="true"
-                className={`mr-1 flex h-5 shrink-0 items-center justify-center rounded-pill px-2 text-[0.6875rem] font-semibold leading-none [font-variant-numeric:tabular-nums] ${
-                  item.done ? 'bg-green text-white' : 'bg-accent text-on-accent'
-                }`}
-              >
-                {item.badge}
-              </span>
-            )}
           </button>
         )
       })}
