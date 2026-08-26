@@ -69,7 +69,7 @@ export default function SpendTrend({ s, locale }) {
 
       <p className="mt-1.5 font-display text-h1 leading-none text-slate-800 [font-variant-numeric:tabular-nums]">
         {a.head}
-        <span className="text-[0.62em] align-baseline opacity-70">{a.cents}</span>
+        <span className="text-[0.62em] align-baseline text-slate-600">{a.cents}</span>
         {a.suffix}
       </p>
 

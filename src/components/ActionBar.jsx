@@ -32,14 +32,35 @@
  * many photos are attached, whether a celebration has gone out. Submit then
  * never sends anything invisible.
  */
+/**
+ * CARDS, NOT A ROW OF SMALL SQUARES.
+ *
+ * These were five 56px tiles in one row with the word underneath. On a 320px
+ * phone that is 48px of tile each, which is barely over the 44px minimum tap
+ * target and leaves the glyph inside at 24px: an icon that has to be looked
+ * at rather than recognised, and a label set at 11px to fit under it.
+ *
+ * A two-column grid of rounded rectangles gives each one about 150px instead
+ * of 48. The icon can then sit in a badge of its own at a size worth drawing,
+ * and the label can be read at body size inside the card rather than squeezed
+ * underneath it.
+ *
+ * An odd last item spans both columns rather than sitting half-width with a
+ * hole beside it. A grid with a gap in it reads as something failing to load.
+ *
+ * The cost is honest: this is taller than a row of squares, and it sits above
+ * the content on every pane. It buys legibility with vertical space, which is
+ * the trade the reference this came from makes too.
+ */
 export default function ActionBar({ items, value, onChange }) {
   return (
     /* A stable hook. These tiles carry their counts in their accessible name,
        so matching them by text alone is ambiguous with the app's own tab bar
        ("Journal" is both a pane here and a destination down there). */
-    <div data-actionbar="" className="flex gap-2 sm:gap-3">
-      {items.map((item) => {
+    <div data-actionbar="" className="grid grid-cols-2 gap-2.5 sm:gap-3">
+      {items.map((item, i) => {
         const on = item.id === value
+        const orphan = items.length % 2 === 1 && i === items.length - 1
         return (
           <button
             key={item.id}
@@ -56,42 +77,49 @@ export default function ActionBar({ items, value, onChange }) {
              * is hidden below and its meaning is carried here instead.
              */
             aria-label={item.badge ? `${item.label}, ${item.badge}` : item.label}
-            className="press group flex min-w-0 flex-1 flex-col items-center gap-2"
-          >
-            <span
+            className={`press group relative flex min-w-0 flex-col items-start rounded-[1.35rem] p-3.5 text-left transition-[background-color,color,box-shadow] duration-200 ${
+              orphan ? 'col-span-2' : ''
+            } ${
               /* Ink when active, paper when not. The same active treatment as
                  the period filter and the day badge, rather than a fourth idea
                  about what "selected" looks like in this app. */
-              className={`relative flex h-14 w-14 items-center justify-center rounded-[1.15rem] transition-[background-color,color,box-shadow] duration-200 ${
-                on
-                  ? 'bg-ink text-white shadow-float'
-                  : 'border border-hairline bg-[rgb(var(--glass-tint))] text-muted shadow-raised group-hover:text-ink'
+              on
+                ? 'bg-ink shadow-float'
+                : 'border border-hairline bg-[rgb(var(--glass-tint))] shadow-raised'
+            }`}
+          >
+            <span
+              /* The badge the glyph sits in. Tinted rather than filled, so
+                 five of them down a screen is a set of marks and not a colour
+                 scheme; the active card inverts the whole thing instead. */
+              className={`flex h-11 w-11 items-center justify-center rounded-[0.95rem] [&>svg]:h-[1.6rem] [&>svg]:w-[1.6rem] ${
+                on ? 'bg-white/20 text-white' : 'bg-accent/15 text-ink'
               }`}
             >
               {item.icon}
-
-              {/* On the corner of the tile, so the word underneath stays a
-                  word. A count up here reads as a state of the thing rather
-                  than as part of its name. */}
-              {item.badge && (
-                <span
-                  aria-hidden="true"
-                  className={`absolute -right-1.5 -top-1.5 flex h-5 min-w-[1.25rem] items-center justify-center rounded-pill px-1 text-[0.625rem] font-semibold leading-none [font-variant-numeric:tabular-nums] ring-2 ring-[rgb(var(--c-bg))] ${
-                    item.done ? 'bg-green text-white' : 'bg-accent text-on-accent'
-                  }`}
-                >
-                  {item.badge}
-                </span>
-              )}
             </span>
 
             <span
-              className={`text-center text-label font-semibold leading-tight transition-colors ${
-                on ? 'text-ink' : 'text-muted group-hover:text-ink'
+              className={`mt-2.5 text-body font-semibold leading-tight transition-colors ${
+                on ? 'text-white' : 'text-ink'
               }`}
             >
               {item.label}
             </span>
+
+            {/* Top right of the card, out of the label's way. A count here
+                reads as a state of the thing rather than as part of its
+                name. */}
+            {item.badge && (
+              <span
+                aria-hidden="true"
+                className={`absolute right-3 top-3 flex h-5 min-w-[1.25rem] items-center justify-center rounded-pill px-1.5 text-[0.6875rem] font-semibold leading-none [font-variant-numeric:tabular-nums] ${
+                  item.done ? 'bg-green text-white' : 'bg-accent text-on-accent'
+                }`}
+              >
+                {item.badge}
+              </span>
+            )}
           </button>
         )
       })}
