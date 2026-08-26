@@ -167,7 +167,10 @@ function DayCell({
           className={`flex items-center justify-center rounded-pill text-small [font-variant-numeric:tabular-nums] transition-transform duration-300 ease-settle ${
             weekday ? 'h-10 w-10' : 'h-9 w-9'
           } ${circle} ${holding ? 'scale-95' : ''} ${
-            isSelected && isToday ? 'ring-2 ring-ink/25 ring-offset-2 ring-offset-transparent' : ''
+            /* The accent, not the ink. This ring said "today, and selected" in a
+               pale tint of the ink; the ink is a near-black now, so it came out
+               as a silver band round a pink dot and read as a disabled state. */
+            isSelected && isToday ? 'ring-2 ring-accent/30 ring-offset-2 ring-offset-transparent' : ''
           }`}
           style={{ transitionProperty: 'transform, background-color, color' }}
         >

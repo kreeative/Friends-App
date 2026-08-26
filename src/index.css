@@ -307,7 +307,24 @@
    */
   :root,
   :root[data-theme='sun'] {
-    --c-ink: 169 28 84;      /* #A91C54, 7.04:1 on white */
+    /**
+     * NEAR-BLACK, NOT THE BRAND'S DARK PINK.
+     *
+     * This was #A91C54, a dark maroon, and it carried every word in the app:
+     * the greeting, the headings, the goal names, the amounts. A whole screen
+     * set in a tinted ink reads as coloured text rather than as text, and at
+     * heading sizes the tint is strong enough to look brown.
+     *
+     * Deliberately NOT slate. Slate is 30 41 59, nearly thirty points of blue
+     * over red, which reads as purple-black next to a pink accent and was
+     * rejected on sight. This is 30 24 27: three points of warmth, no cast
+     * you can name, black enough to be black.
+     *
+     * The theme has not gone anywhere. It is in --c-accent, which is what you
+     * press, and in the cat ramp, the gauges and the brand tile. Ink is for
+     * reading.
+     */
+    --c-ink: 30 24 27;       /* 16.7:1 on white */
     /**
      * #D7246C. Darkened by five points a channel, hue and saturation held.
      *
@@ -335,7 +352,9 @@
      * gap between primary and secondary text is carried by SIZE and WEIGHT,
      * which cost nothing, and both stay in the theme's own hue.
      */
-    --c-muted: 185 28 92;
+    /* The warm grey that goes with it. 7.5:1 on white, and it still
+       clears the floor on the darkest card the budget composites. */
+    --c-muted: 94 80 87;
     --c-loud: 222 53 120;    /* #DE3578, 4.30:1, display sizes only */
     --c-field: 255 214 10;   /* #FFD60A golden yellow */
     --c-field-deep: 214 176 0;
@@ -408,11 +427,14 @@
    * an ice ground would be a white circle on a white page.
    */
   :root[data-theme='sea'] {
-    --c-ink: 0 98 116;       /* #006274, 7.00:1 on white */
+    /* Near-black, for the reason recorded beside sun's. A touch cool rather
+       than a touch warm, so the two themes are not literally identical in
+       the ink, but nowhere near slate's blue. */
+    --c-ink: 22 28 30;       /* 16.6:1 on white */
     /* #007D94. Same correction as sun, same reason: 4.23:1 on the page
        ground before, 4.52:1 now, 4.82:1 on a card. */
     /* Darkened for the reason recorded beside sun's. */
-    --c-muted: 0 100 118;
+    --c-muted: 78 90 94;
     --c-loud: 0 157 185;     /* #009DB9, 3.22:1, display sizes only */
     --c-field: 255 214 10;   /* #FFD60A golden yellow */
     --c-field-deep: 214 176 0;
