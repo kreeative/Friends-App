@@ -7,6 +7,8 @@ import { useT } from '../lib/i18n'
 import { money } from '../lib/money'
 import { Empty, Screen, Section, Sheet, TopBar } from '../components/ui'
 import ErrorNote from '../components/ErrorNote'
+import Formation from '../components/Formation'
+import { BookIcon } from '../components/ActionBar'
 import { localBooks } from '../content/previews'
 
 export default function Library() {
@@ -20,6 +22,13 @@ export default function Library() {
   const [error, setError] = useState(null)
   const [busy, setBusy] = useState(null)
   const [sharePrompt, setSharePrompt] = useState(null)
+  /* The course took over the page, the way the transaction history takes over
+     the budget: reading six modules under a shop is reading in a corridor. */
+  const [course, setCourse] = useState(false)
+  /* Which stage the course is at, so this page can get out of its way. Inside
+     the player and inside a module the course has its own back button, and two
+     stacked back buttons is a reader wondering which one undoes what. */
+  const [stage, setStage] = useState('intro')
 
   async function load() {
     setLoading(true)
@@ -101,9 +110,57 @@ export default function Library() {
     setSharePrompt(null)
   }
 
+  /**
+   * The formation, which used to be a tab inside the budget.
+   *
+   * It is reading, and this is where the reading lives. A course sitting in a
+   * budget's tab strip is competing with the four things a budget is for, and
+   * losing: nobody opens a lesson while working out whether they can afford
+   * groceries.
+   */
+  if (course) {
+    return (
+      <Screen>
+        <TopBar title={t('form.title')} sub={t('form.sub')} />
+        {stage === 'intro' && (
+          <div className="pt-2">
+            <button type="button" className="goal-action press" onClick={() => setCourse(false)}>
+              {t('form.back_library')}
+            </button>
+          </div>
+        )}
+        <Formation userId={user?.id} locale={locale} onStageChange={setStage} />
+      </Screen>
+    )
+  }
+
   return (
     <Screen>
       <TopBar title={t('nav.library')} sub={t('library.sub')} />
+
+      {/* Above the catalogue, because it is free, it is short, and it is the
+          only thing on this page that does not cost anything to start. */}
+      <Section>
+        <button
+          type="button"
+          data-hook="formation-entry"
+          onClick={() => setCourse(true)}
+          className="press glass-card flex w-full items-center gap-4 rounded-3xl p-5 text-left"
+        >
+          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-cat-1-soft text-ink [&>svg]:h-7 [&>svg]:w-7">
+            <BookIcon />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-body font-bold leading-tight text-ink">{t('form.title')}</span>
+            <span className="mt-1.5 block text-small leading-snug text-muted">{t('form.sub')}</span>
+          </span>
+          <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-pill bg-accent/[0.18] text-ink">
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 12h13M13 6l6 6-6 6" />
+            </svg>
+          </span>
+        </button>
+      </Section>
 
       {error && (
         <div className="pt-8">

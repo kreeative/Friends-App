@@ -12,17 +12,11 @@ import { detectCountry, spendOver } from '../lib/benchmarks'
 import { history as savingsHistory, recentRate } from '../lib/savings'
 import { fromCents, localISO, toCents, txnPayload, withoutField } from '../lib/txn'
 import { Empty, Screen, Section, TopBar } from '../components/ui'
-import {
-  BookIcon, EnvelopeIcon, GaugeIcon, ListIcon, PiggyIcon, PlanIcon, ScaleIcon, SuitcaseIcon,
-} from '../components/ActionBar'
+import { EnvelopeIcon, PiggyIcon, PlanIcon, SuitcaseIcon } from '../components/ActionBar'
 import PaneTabs from '../components/PaneTabs'
 import CategoryBento from '../components/CategoryBento'
-import FeatureCards from '../components/FeatureCards'
+import WealthRank from '../components/WealthRank'
 import Savings from '../components/Savings'
-import Benchmarks from '../components/Benchmarks'
-import Formation from '../components/Formation'
-import CatDisc from '../components/CatDisc'
-import SpendDonut from '../components/SpendDonut'
 import TransactionHistory from '../components/TransactionHistory'
 import Projects from '../components/Projects'
 import ProjectDetail from '../components/ProjectDetail'
@@ -357,7 +351,13 @@ export default function Money() {
       .select('id, happened_on, amount_cents, source, period_start, note')
       .eq('user_id', user.id)
       .order('happened_on', { ascending: false })
-    setSavingsMissing(Boolean(sv.error) && isMissingTable(sv.error))
+    const svMissing = Boolean(sv.error) && isMissingTable(sv.error)
+    /* The migration name left the interface and did not leave the codebase.
+       Somebody looking at a "not available yet" card needs to know it is a
+       migration, and the person who needs to know that is looking at a console,
+       not at a budget. */
+    if (svMissing) console.warn('budget_saving is missing: run supabase/39_budget_savings.sql')
+    setSavingsMissing(svMissing)
     setSavings(sv.data ?? [])
 
     /* Soft in the same way: without migration 38 this returns `missing` and
@@ -405,52 +405,6 @@ export default function Money() {
 
   const fmt = (cents) => money(cents, s.currency, locale)
 
-  /**
-   * A date somebody would say out loud.
-   *
-   * The list printed the column raw, so every row carried "2026-08-14". That
-   * is the storage format, not a date: it is the one shape of date nobody
-   * writes by hand, and twenty of them stacked up is a machine's log rather
-   * than a list of things you bought.
-   *
-   * Split rather than `new Date(iso)`, which parses a bare ISO date as UTC and
-   * then renders it in local time, so the row would name the previous day for
-   * everybody west of Greenwich. The same trap as localISO, from the other end.
-   */
-  const dayFmt = useMemo(
-    () =>
-      new Intl.DateTimeFormat(locale === 'fr' ? 'fr-CA' : 'en-CA', {
-        day: 'numeric',
-        month: 'short',
-      }),
-    [locale],
-  )
-  const day = (iso) => {
-    const [y, m, d] = String(iso ?? '').slice(0, 10).split('-').map(Number)
-    if (!y || !m || !d) return iso ?? ''
-    return dayFmt.format(new Date(y, m - 1, d))
-  }
-
-  /**
-   * What the list shows: this period, counted or not.
-   *
-   * `s.entries` is the arithmetic set and drops anything flagged excluded,
-   * which is correct for every total on the screen and wrong for a list of
-   * what you logged. A row that disappears the moment you tick a box is
-   * indistinguishable from one you deleted by accident.
-   *
-   * String comparison rather than Date parsing: both sides are ISO dates, and
-   * ISO dates sort lexically, which is most of the reason the format exists.
-   */
-  const recent = useMemo(() => {
-    const from = localISO(s.period.start)
-    const to = localISO(s.period.end)
-    return entries.filter((r) => {
-      const d = String(r.happened_on ?? '').slice(0, 10)
-      return d >= from && d < to
-    })
-  }, [entries, s.period.start, s.period.end])
-
   /* The envelopes for THIS period, and the one bar above them. Both read the
      real, logged figures: summarise.earned and summarise.spent. */
   const allocations = useMemo(
@@ -473,7 +427,7 @@ export default function Money() {
    * reopening the budget on "Journal" because that is where you finished last
    * time is the app remembering the wrong thing.
    */
-  const [pane, setPane] = useState('overview')
+  const [pane, setPane] = useState('envelopes')
 
   /* Shared project budgets. Held separately from the personal budget in every
      sense that matters: separate tables, separate policies, separate load.
@@ -486,11 +440,6 @@ export default function Money() {
 
   /* The full history is its own view, reached from the log pane. */
   const [history, setHistory] = useState(false)
-
-  /* And so is a lesson, for the same reason: the menu is eight rows, which is
-     too much to scroll past to reach a paragraph. Set by Formation, which owns
-     which lesson is open; the chrome it hides belongs to this page. */
-  const [reading, setReading] = useState(false)
 
   /**
    * What each tile says about itself.
@@ -533,50 +482,29 @@ export default function Money() {
     : []
 
   /**
-   * Eight rows, and why each one is here.
+   * Four pillars, and everything that used to be a tab and is not one now.
    *
-   * The ask was to think about which menus the budget actually needs, so:
+   * The bar had eight items and four of them did not belong to it:
    *
-   *   overview   how am I doing. The default, and the only one most days.
-   *   envelopes  what is each dollar for.
-   *   savings    where the surplus goes. New.
-   *   log        what happened, and the way through to the full history.
-   *   plan       what I set up, against what happened.
-   *   projects   the shared, ephemeral ones. Greece, the car, the flat.
-   *   benchmarks how that compares to everybody else. New.
-   *   formation  how to do any of this. New.
+   *   Apercu       was never a section, it was the page. It is the bento and
+   *                the rank card at the top now, always on, never selected.
+   *   Journal      the transaction list. Gone as a tab; the full history is
+   *                one button away under the primary action, which is a
+   *                better home for it than a tab you had to be on to search.
+   *   Comparaison  a whole pane for one number. It is the rank card now, and
+   *                its methodology is fine print inside a sheet.
+   *   Formation    a course does not belong in a budget's tab strip. It lives
+   *                on Lectures, with the rest of the reading.
    *
-   * Ordered by how often a row gets pressed rather than by category, so the
-   * daily ones are under the thumb and the two you read once are at the end.
-   *
-   * Nothing was merged to keep the count down. `log` was the candidate, since
-   * the overview already shows recent transactions, but it carries the category
-   * donut and the overview does not, so folding it would have deleted a view
-   * rather than tidied one.
-   *
-   * The rows themselves are ActionBar's, untouched. A new pane is an entry in
-   * this array and an icon, which is the whole point of the component.
+   * What is left is the four things a budget IS: this month's spending, the
+   * standing arrangement behind it, the one-off projects beside it, and what
+   * survives the month.
    */
   const panes = [
-    {
-      id: 'overview',
-      icon: <GaugeIcon />,
-      label: t('money.tab_overview'),
-    },
     {
       id: 'envelopes',
       icon: <EnvelopeIcon />,
       label: t('money.tab_envelopes'),
-    },
-    {
-      id: 'savings',
-      icon: <PiggyIcon />,
-      label: t('money.tab_savings'),
-    },
-    {
-      id: 'log',
-      icon: <ListIcon />,
-      label: t('money.tab_log'),
     },
     {
       id: 'plan',
@@ -589,14 +517,9 @@ export default function Money() {
       label: t('money.tab_projects'),
     },
     {
-      id: 'benchmarks',
-      icon: <ScaleIcon />,
-      label: t('money.tab_benchmarks'),
-    },
-    {
-      id: 'formation',
-      icon: <BookIcon />,
-      label: t('money.tab_formation'),
+      id: 'savings',
+      icon: <PiggyIcon />,
+      label: t('money.tab_savings'),
     },
   ]
 
@@ -815,48 +738,99 @@ export default function Money() {
        * fixes it, and showing a spendable figure underneath a warning that the
        * figure is unreachable would be arithmetically defensible and useless.
        */}
-      {!reading && (
-        <Section>
-          {s.overcommitted ? (
-            <div className="card-warn">
-              <div className="text-h2 text-ink">{t('money.overcommitted_title')}</div>
-              <p className="mt-2 text-body text-muted">
-                {t('money.overcommitted_body', {
-                  over: fmt(Math.abs(s.plannedPool)),
-                  fixed: fmt(s.committed + s.savings),
-                  income: fmt(s.income),
-                })}
-              </p>
-            </div>
-          ) : (
-            <SpendableBar bar={bar} currency={s.currency} locale={locale} />
-          )}
-        </Section>
-      )}
+      <Section>
+        {s.overcommitted ? (
+          <div className="card-warn">
+            <div className="text-h2 text-ink">{t('money.overcommitted_title')}</div>
+            <p className="mt-2 text-body text-muted">
+              {t('money.overcommitted_body', {
+                over: fmt(Math.abs(s.plannedPool)),
+                fixed: fmt(s.committed + s.savings),
+                income: fmt(s.income),
+              })}
+            </p>
+          </div>
+        ) : (
+          <SpendableBar bar={bar} currency={s.currency} locale={locale} />
+        )}
+      </Section>
 
-      {/* 2. The sections, as pills directly under the header card. Gone while
-             a lesson is open; see the note beside `reading`. */}
-      {!reading && (
-        <div className="mt-4">
-          <PaneTabs items={panes} value={pane} onChange={setPane} />
-        </div>
-      )}
+      {/* 2. The four pillars, as pills directly under the header card. */}
+      <div className="mt-4">
+        <PaneTabs items={panes} value={pane} onChange={setPane} />
+      </div>
 
       {/**
-       * The one button that belongs to no pane.
+       * The one button that belongs to no pane, and the way to everything
+       * that has already been logged.
        *
        * Logging a transaction is what this screen exists to enable, so it sits
        * above the panes for the same reason Submit sits outside the check-in's
        * four: hiding it behind a tab would mean navigating in order to record
-       * a coffee. Everything else here is something you read.
+       * a coffee.
+       *
+       * The history link is beside it because the Journal TAB is gone and the
+       * app's bottom-nav "Journal" is the journaling feature, not the money
+       * log. Without this line every transaction ever recorded would have been
+       * unreachable, which is a bigger hole than the tab was.
        */}
-      {!reading && (
-        <Section>
+      <Section>
           <button className="btn-primary press w-full" onClick={() => setSheet(NEW)}>
             {t('txn.open')}
           </button>
+          {entries.length > 0 && (
+            <button
+              className="btn-quiet press mt-2 w-full"
+              data-hook="all-txn"
+              onClick={() => setHistory(true)}
+            >
+              {t('hist.all_txn')}
+            </button>
+          )}
+        </Section>
+
+      {/**
+       * 3. THE BENTO, ALWAYS ON, NEVER A TAB.
+       *
+       * The overview was a tab you had to select to see the state of your own
+       * month. It is the page now: six categories, what each is for, how far
+       * through it you are and what is left, above whatever section you happen
+       * to be working in.
+       *
+       * With one exception, and it is not a hedge. The Enveloppes pane IS these
+       * six categories with a field in each, so on that tab the page drew the
+       * same six cards twice in a row, read-only and then editable. The summary
+       * is what you keep when you are somewhere else; where you are already
+       * looking at the detail, it is noise.
+       */}
+      {pane !== 'envelopes' && (
+      <Section
+          title={t('money.tab_envelopes')}
+          action={
+            <button className="goal-action press shrink-0" onClick={() => setPane('envelopes')}>
+              {t('hist.see_all')}
+            </button>
+          }
+        >
+          <CategoryBento
+            s={s}
+            allocations={allocations}
+            locale={locale}
+            onOpen={() => setPane('envelopes')}
+          />
         </Section>
       )}
+
+      {/* One number, one card, one sheet. See WealthRank for what this
+          replaced and why the methodology is fine print now. */}
+      <Section>
+          <WealthRank
+            rate={myRate.rate}
+            months={myRate.months}
+            country={country}
+            onAddTransaction={() => setSheet(NEW)}
+          />
+        </Section>
 
       {/**
        * One pane at a time, grouped by the question each answers.
@@ -871,58 +845,6 @@ export default function Money() {
        * obligations, which is something you arranged, and the payment is how
        * far through arranging it you are.
        */}
-      {pane === 'overview' && (
-        <>
-      {/**
-       * 3. THE BENTO GRID, and the reason it is the first thing on the budget.
-       *
-       * The headline that used to open this pane is the page's header card
-       * now, so what opens the overview is the six categories: what each part
-       * of the month is for, how far through it you are, and what is left, six
-       * cards at a glance instead of one number and a list of places to go.
-       *
-       * Read only. See CategoryBento for why a dashboard that opens with six
-       * editable fields is a form rather than a dashboard, and why every card
-       * is a button into the envelopes pane instead.
-       */}
-      {/* Its own heading, not the envelopes pane's. Both said "Donne un rôle à
-          chaque dollar", so the same sentence introduced two different screens
-          and the section's own action button then said "Enveloppes" underneath
-          it. The dashboard names the thing; the pane keeps the sentence. */}
-      <Section
-        title={t('money.tab_envelopes')}
-        action={
-          <button className="goal-action press shrink-0" onClick={() => setPane('envelopes')}>
-            {t('hist.see_all')}
-          </button>
-        }
-      >
-        <CategoryBento
-          s={s}
-          allocations={allocations}
-          locale={locale}
-          onOpen={() => setPane('envelopes')}
-        />
-      </Section>
-
-      {/**
-       * Four ways in, where the pace sparkline and the month tiles used to be.
-       *
-       * The three blocks that stood here were all arithmetic, and the budget's
-       * front page already opens with the number they were qualifying. What it
-       * did not have was any reason to press Formation, Projets, Comparaison or
-       * Journal: a pill is a word, and a word cannot say what a section is for.
-       *
-       * FeatureCards carries the note on what those blocks took with them when
-       * they went, which is one figure with nowhere else to live.
-       */}
-      <Section title={t('feat.title')}>
-        <FeatureCards onOpen={setPane} />
-      </Section>
-
-        </>
-      )}
-
       {pane === 'envelopes' && (
         <>
       {/* Every dollar that arrived, given a job. Above the plan because this is
@@ -950,27 +872,6 @@ export default function Money() {
       )}
 
       {/* You against published national figures, and nobody else's rows. */}
-      {pane === 'benchmarks' && (
-        <Benchmarks
-          rate={myRate.rate}
-          months={myRate.months}
-          byCategory={bmCategories}
-          country={country}
-          onCountry={pickCountry}
-          locale={locale}
-        />
-      )}
-
-      {/* Six lessons, and each one ends in the pane it is about. */}
-      {pane === 'formation' && (
-        <Formation
-          userId={user?.id}
-          locale={locale}
-          onOpenPane={setPane}
-          onReading={setReading}
-        />
-      )}
-
       {pane === 'plan' && (
         <>
       {/* What was meant to happen, against what has. The gap between the two
@@ -988,126 +889,6 @@ export default function Money() {
           <FixedCharges fixed={fixed} s={s} locale={locale} onChange={load} />
         </Section>
       )}
-
-        </>
-      )}
-
-      {pane === 'log' && (
-        <>
-      {s.byCategory.length > 0 && (
-        <Section title={t('money.where')}>
-          <SpendDonut byCategory={s.byCategory} total={s.spent} currency={s.currency} locale={locale} />
-        </Section>
-      )}
-
-      {/**
-       * The empty state gets a card too. A lone sentence on the page ground
-       * reads as a section that failed to load; inside the container it is
-       * the section, saying it is empty.
-       *
-       * `recent` rather than `s.entries`, because the summary only returns
-       * rows inside the period and only the ones that count. Both are right
-       * for arithmetic and wrong for a list: a transaction you left out of
-       * the budget is still a transaction you logged, and one that vanishes
-       * from the list the moment you flip the switch reads as a delete.
-       */}
-      <Section
-        title={t('money.recent')}
-        /**
-         * The way through to everything, beside the heading.
-         *
-         * It used to sit under the list, which meant scrolling past up to
-         * eight rows to find it, and it was gated on having more than eight
-         * entries in the first place. Both were wrong for what this leads to.
-         * The history is not "more rows": it is the only place with the
-         * filters, the search, and any period other than this one, so
-         * somebody with three transactions needs it as much as somebody with
-         * three hundred.
-         *
-         * Hidden only when there is genuinely nothing anywhere, since a link
-         * to an empty screen is a dead end rather than an affordance.
-         */
-        action={
-          entries.length > 0 ? (
-            <button
-              className="goal-action press shrink-0"
-              data-hook="see-all"
-              onClick={() => setHistory(true)}
-            >
-              {t('hist.see_all')}
-            </button>
-          ) : null
-        }
-      >
-        {recent.length === 0 ? (
-          <div className="lg px-5 py-2">
-            <Empty>{t('money.no_entries')}</Empty>
-          </div>
-        ) : (
-          <ul
-            /* A stable hook. This list has been ul.lg and is now a slate card;
-               anything keyed to the class breaks on the next restyle and says
-               nothing about the app when it does. */
-            data-ledger=""
-            className="glass-card divide-y divide-hairline rounded-3xl px-4"
-          >
-            {recent.slice(0, 8).map((r) => (
-              <li key={r.id}>
-                {/* The row is the way back in. Remove used to be the only
-                    thing you could do to a transaction from here, sitting as
-                    an underlined word at the end of every line: twenty
-                    invitations to delete something, and no way to fix a typo
-                    short of taking one of them. */}
-                <button
-                  type="button"
-                  onClick={() => setSheet(r)}
-                  className="press flex w-full items-center gap-3 py-3.5 text-left"
-                >
-                  {/* The mark lands before the word does, which is what turns
-                      a column of text into a list you can scan. Income gets
-                      its own, because it is the one row here that is not a
-                      spend and should not borrow a category's colour. */}
-                  <CatDisc category={r.kind === 'income' ? 'income' : (r.category ?? 'other')} />
-                  {/* Slate, like the donut card above it. The budget's own
-                      surfaces are neutral now, and a ledger set in the theme's
-                      pink beside a legend set in slate reads as two lists from
-                      two different screens. */}
-                  <span className="min-w-0 flex-1 text-body text-ink">
-                    <span className="truncate">
-                      {r.note ||
-                        (r.kind === 'income'
-                          ? t('money.kind_income')
-                          : t(`money.cat_${r.category ?? 'other'}`))}
-                    </span>
-                    <span className="block text-small text-muted">
-                      {day(r.happened_on)}
-                      {r.note && r.kind === 'expense' && ` · ${t(`money.cat_${r.category ?? 'other'}`)}`}
-                      {r.excluded && ` · ${t('txn.excluded_badge')}`}
-                    </span>
-                  </span>
-                  {/* Struck through when it does not count, so the reason the
-                      total ignores it is legible from the list rather than
-                      only from inside the sheet. The word is there too: a
-                      line through text is not something everyone can see. */}
-                  {/* Struck through when it does not count, so the reason the
-                      total ignores it is legible from the list rather than
-                      only from inside the sheet. The word is there too: a
-                      line through text is not something everyone can see. */}
-                  <span
-                    className={`shrink-0 text-body font-semibold [font-variant-numeric:tabular-nums] ${
-                      r.excluded ? 'text-muted line-through' : r.kind === 'income' ? 'text-green' : 'text-ink'
-                    }`}
-                  >
-                    {r.kind === 'income' ? '+' : ''}
-                    {fmt(r.amount_cents)}
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-
-      </Section>
 
         </>
       )}

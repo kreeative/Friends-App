@@ -255,6 +255,10 @@ export default function Envelopes({ s, allocations, locale, onChange }) {
     if (failed) {
       /* Naming the migration is the difference between somebody fixing this in
          a minute and filing a bug. */
+      /* The migration name left the interface and did not leave the codebase:
+         see the same note in Money.jsx. A person reading "not available yet"
+         cannot act on a filename; the person who can is reading a console. */
+      if (isMissingTable(failed)) console.warn('budget_allocation is missing: run supabase/37_budget_allocation.sql')
       setError(isMissingTable(failed) ? t('env.unavailable') : errorText(failed))
       return
     }

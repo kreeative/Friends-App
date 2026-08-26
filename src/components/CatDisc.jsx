@@ -80,7 +80,19 @@ const TINT = {
   home: 'text-cat-3 bg-cat-3-soft',
   fun: 'text-cat-4 bg-cat-4-soft',
   health: 'text-cat-5 bg-cat-5-soft',
-  other: 'text-cat-6 bg-cat-6-soft',
+  /**
+   * `other` borrows cat-3's ink, and this was measured.
+   *
+   * cat-6 is the palest step of the ramp: index.css records it at 3.58:1, which
+   * is against WHITE. On its own soft tint it measures 2.49:1 in sea, under the
+   * 3:1 WCAG 1.4.11 asks of a graphical object, and discprobe has been saying
+   * so since the disc started appearing in the transaction history.
+   *
+   * Same fix and the same value as CategoryBento's `other`, deliberately: the
+   * disc beside a row and the ring on the dashboard are the same category and
+   * disagreeing about its colour would be worse than sharing one with `home`.
+   */
+  other: 'text-cat-3 bg-cat-6-soft',
   /* Money coming in is not one of the six and should not borrow their family:
      it is the one row in the ledger that is not a spend. */
   income: 'text-green bg-green/10',

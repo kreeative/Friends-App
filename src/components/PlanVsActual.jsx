@@ -35,15 +35,23 @@ export default function PlanVsActual({ s, locale }) {
 
   /* The hook is on the card below. It has been div.lg and is now glass-card,
      and both suites that read it were keyed to the class. */
+  /* The amount columns are 5.25rem, not 4.75. At 76px the total row's
+     "1 430,00 $" wanted 78 and spilled its own box by two pixels: not enough
+     to look broken in a screenshot, enough to clip the leading digit of a
+     larger figure. Measured, not guessed.
+
+     Written here rather than inside the JSX because a comment before the root
+     element of a return is the trap CLAUDE.md already records for this exact
+     file. It broke it silently once; this time it was a syntax error. */
   return (
     <div data-card="planvsactual" className="glass-card rounded-3xl px-5 py-2">
       {/* The two headings are the whole point, so they carry the weight. */}
       <div className="flex items-baseline gap-2 border-b border-hairline py-3 sm:gap-4">
         <span className="min-w-0 flex-1" aria-hidden="true" />
-        <span className="w-[4.75rem] sm:w-[5.5rem] text-right text-label font-semibold uppercase tracking-[0.05em] text-muted">
+        <span className="w-[5.25rem] sm:w-[5.5rem] text-right text-label font-semibold uppercase tracking-[0.05em] text-muted">
           {t('money.planned')}
         </span>
-        <span className="w-[4.75rem] sm:w-[5.5rem] text-right text-label font-semibold uppercase tracking-[0.05em] text-ink">
+        <span className="w-[5.25rem] sm:w-[5.5rem] text-right text-label font-semibold uppercase tracking-[0.05em] text-ink">
           {t('money.actual')}
         </span>
       </div>
@@ -51,10 +59,10 @@ export default function PlanVsActual({ s, locale }) {
       {rows.map(({ label, plan, real }) => (
         <div key={label} className="flex items-baseline gap-2 border-b border-hairline py-3.5 sm:gap-4">
           <span className="min-w-0 flex-1 truncate text-body text-ink">{label}</span>
-          <span className="w-[4.75rem] sm:w-[5.5rem] shrink-0 text-right text-small text-muted [font-variant-numeric:tabular-nums]">
+          <span className="w-[5.25rem] sm:w-[5.5rem] shrink-0 text-right text-small text-muted [font-variant-numeric:tabular-nums]">
             {fmt(plan)}
           </span>
-          <span className="w-[4.75rem] sm:w-[5.5rem] shrink-0 text-right text-small font-semibold text-ink [font-variant-numeric:tabular-nums]">
+          <span className="w-[5.25rem] sm:w-[5.5rem] shrink-0 text-right text-small font-semibold text-ink [font-variant-numeric:tabular-nums]">
             {real === null ? (
               /* The full muted ink, not a faded one. The dash means "no
                  value", which is information, and a lighter tint of it
@@ -74,11 +82,11 @@ export default function PlanVsActual({ s, locale }) {
           to plan, which is a month nobody has. */}
       <div className="flex items-baseline gap-2 py-4 sm:gap-4">
         <span className="min-w-0 flex-1 text-body font-semibold text-ink">{t('money.row_free')}</span>
-        <span className="w-[4.75rem] sm:w-[5.5rem] shrink-0 text-right text-small text-muted [font-variant-numeric:tabular-nums]">
+        <span className="w-[5.25rem] sm:w-[5.5rem] shrink-0 text-right text-small text-muted [font-variant-numeric:tabular-nums]">
           {fmt(s.plannedPool)}
         </span>
         <span
-          className={`w-[4.75rem] sm:w-[5.5rem] shrink-0 text-right text-body font-semibold [font-variant-numeric:tabular-nums] ${
+          className={`w-[5.25rem] sm:w-[5.5rem] shrink-0 text-right text-body font-semibold [font-variant-numeric:tabular-nums] ${
             s.available < 0 ? 'text-negative' : 'text-ink'
           }`}
         >
