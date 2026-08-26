@@ -249,7 +249,15 @@
     --c-spark: 248 203 2;
 
     /* Not themeable. "Checked in this week" is a fact about the world. */
-    --c-green: 21 128 61; /* darkened to 4.8:1 on white, since it labels too */
+    /**
+     * 4.99:1 against the darkest the budget's glass cards composite to.
+     *
+     * It used to be 21 128 61, tuned to 4.8:1 ON WHITE. The cards stopped
+     * being white when they went translucent over the ambient ground, and the
+     * income amount in the ledger measured 3.68:1 there. A colour tuned
+     * against a background that no longer exists is not tuned.
+     */
+    --c-green: 15 105 50;
     --c-negative: 190 30 45;
     --c-on-pop: 255 255 255;
     /**

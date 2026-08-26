@@ -14,7 +14,7 @@ import ActionBar, { EnvelopeIcon, GaugeIcon, ListIcon, PlanIcon } from '../compo
 import CatDisc from '../components/CatDisc'
 import SpendDonut from '../components/SpendDonut'
 import BudgetIntro from '../components/BudgetIntro'
-import BudgetTiles from '../components/BudgetTiles'
+import SpendTrend from '../components/SpendTrend'
 import TransactionSheet from '../components/TransactionSheet'
 import PlanVsActual from '../components/PlanVsActual'
 import Envelopes, { SpendableBar } from '../components/Envelopes'
@@ -618,11 +618,11 @@ export default function Money() {
         )}
       </Section>
 
-      {/* The two squares. Under the headline because they are the same
-          fact at more resolution, and above the form because a person
-          opening this screen is reading before they are typing. */}
+      {/* The shape of the month. Under the headline because it is the same
+          fact over time, and full width because that is what a sparkline
+          needs; see SpendTrend for what was here before and why it broke. */}
       <Section>
-        <BudgetTiles s={s} locale={locale} />
+        <SpendTrend s={s} locale={locale} />
       </Section>
 
       {/**
@@ -641,19 +641,31 @@ export default function Money() {
        * columns problem stops existing. It also matches the "where it
        * went" list further down, which is the same shape of information.
        */}
-      {/* Three figures inside one sheet rather than three lines lying on the
-          page. Divided rather than spaced: the hairlines are what say these
-          are one set of related numbers and not three unrelated ones. */}
+      {/**
+       * Figures inside one sheet rather than lines lying on the page. Divided
+       * rather than spaced: the hairlines are what say these are one set of
+       * related numbers and not three unrelated ones.
+       *
+       * Every row here is something no other part of the pane shows. It used
+       * to repeat the spent total, which is in the headline sentence, and to
+       * label `available` "Restant" while the tile above labelled `balance`
+       * "Restant" too. Those are different numbers, they differ by whatever
+       * charges are still unpaid, and the pane read as though it could not
+       * add up. The row says "after bills" now, and the charges it is net of
+       * get a row of their own so the arithmetic is visible rather than
+       * mysterious.
+       */}
       <Section title={t('money.this_period')}>
-        <dl className="lg divide-y divide-hairline px-5">
+        <dl className="glass-card divide-y divide-slate-200/70 rounded-3xl px-5">
           {[
-            [t('money.left'), fmt(s.available)],
-            [t('money.spent'), fmt(s.spent)],
+            [t('money.after_bills'), fmt(s.available)],
+            ...(s.fixedDue > 0 ? [[t('money.still_due'), fmt(s.fixedDue)]] : []),
+            [t('money.per_day'), fmt(Math.max(0, s.perDay))],
             [t('money.days_left'), String(s.period.daysLeft)],
           ].map(([label, value]) => (
             <div key={label} className="flex items-baseline justify-between gap-4 py-4">
-              <dt className="text-body text-ink">{label}</dt>
-              <dd className="text-body font-semibold text-ink [font-variant-numeric:tabular-nums]">
+              <dt className="text-body text-slate-600">{label}</dt>
+              <dd className="text-body font-semibold text-slate-800 [font-variant-numeric:tabular-nums]">
                 {value}
               </dd>
             </div>
