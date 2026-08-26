@@ -13,6 +13,7 @@ import { Empty, Field, Screen, Section, TopBar } from '../components/ui'
 import ActionBar, { EnvelopeIcon, GaugeIcon, ListIcon, PlanIcon, SuitcaseIcon } from '../components/ActionBar'
 import CatDisc from '../components/CatDisc'
 import SpendDonut from '../components/SpendDonut'
+import TransactionHistory from '../components/TransactionHistory'
 import Projects from '../components/Projects'
 import ProjectDetail from '../components/ProjectDetail'
 import { loadProjectProfiles, loadProjects } from '../lib/projectData'
@@ -344,6 +345,9 @@ export default function Money() {
   const [projProfiles, setProjProfiles] = useState({})
   const [openProject, setOpenProject] = useState(null)
 
+  /* The full history is its own view, reached from the log pane. */
+  const [history, setHistory] = useState(false)
+
   /**
    * What each tile says about itself.
    *
@@ -570,20 +574,46 @@ export default function Money() {
        was given, which is what .glass has always degraded to app-wide. */
     <Screen className="ambient calm">
       <TopBar
-        title={t('money.title')}
-        sub={t('money.sub_period', { days: s.period.daysLeft })}
+        /* The heading follows you in. A page titled "Budget" that is showing
+           a filtered list of June is a page lying about where you are. */
+        title={history ? t('hist.title') : t('money.title')}
+        sub={history ? t('hist.count', { n: entries.length }) : t('money.sub_period', { days: s.period.daysLeft })}
         right={
-          /* An outlined pill, not btn-ghost. Ghost is edgeless by design,
-             which works underneath a filled primary that has already
-             established the row; alone in the corner of a heading it was
-             indistinguishable from a line of bold text and read as a label
-             rather than as the only control on the screen. */
-          <button className="goal-action press" onClick={() => setEditing(true)}>
-            {t('money.edit_plan')}
-          </button>
+          /* Nothing to edit from inside the history, and "Modifier" there
+             would read as an offer to edit the list. */
+          history ? null : (
+            /* An outlined pill, not btn-ghost. Ghost is edgeless by design,
+               which works underneath a filled primary that has already
+               established the row; alone in the corner of a heading it was
+               indistinguishable from a line of bold text and read as a label
+               rather than as the only control on the screen. */
+            <button className="goal-action press" onClick={() => setEditing(true)}>
+              {t('money.edit_plan')}
+            </button>
+          )
         }
       />
 
+      {/**
+       * The history takes over the whole body, not just the pane.
+       *
+       * "Instead of everything being on the same page" was the ask, and a
+       * history rendered under the tab grid with the primary button still
+       * above it is still the same page. With the chrome gone it reads as a
+       * place you went to, which is what makes going back meaningful.
+       */}
+      {history ? (
+        <Section>
+          <TransactionHistory
+            entries={entries}
+            currency={s.currency}
+            locale={locale}
+            onOpen={setSheet}
+            onBack={() => setHistory(false)}
+          />
+        </Section>
+      ) : (
+        <>
       <ActionBar items={panes} value={pane} onChange={setPane} />
 
       {/**
@@ -776,7 +806,7 @@ export default function Money() {
             data-ledger=""
             className="glass-card divide-y divide-slate-200/70 rounded-3xl px-4"
           >
-            {recent.slice(0, 20).map((r) => (
+            {recent.slice(0, 8).map((r) => (
               <li key={r.id}>
                 {/* The row is the way back in. Remove used to be the only
                     thing you could do to a transaction from here, sitting as
@@ -830,6 +860,20 @@ export default function Money() {
               </li>
             ))}
           </ul>
+        )}
+
+        {/* The way through to everything. The pane above is the current
+            period cut to eight rows, which answers "what have I just done";
+            the history answers "what did I spend in June", and that is a
+            different screen rather than more rows on this one. */}
+        {entries.length > recent.slice(0, 8).length && (
+          <button
+            className="goal-action press mt-4 w-full"
+            data-hook="see-all"
+            onClick={() => setHistory(true)}
+          >
+            {t('hist.see_all')}
+          </button>
         )}
       </Section>
 
@@ -889,6 +933,9 @@ export default function Money() {
             />
           )}
         </Section>
+      )}
+
+        </>
       )}
 
       <TransactionSheet
