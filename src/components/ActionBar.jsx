@@ -10,19 +10,17 @@
  *
  * One action per job, and only the chosen one is on screen.
  *
- * THE LABEL SITS UNDER THE TILE, NOT INSIDE IT.
+ * THE LABEL IS BACK INSIDE THE CARD, AND THIS TIME IT FITS.
  *
- * The first version put the icon, the word and the badge inside one card, which
- * meant the card had to be as wide as the longest word. "Objectifs" and
- * "Féliciter" then set the width of all four, four of them did not fit on a
- * 320px screen, and the only fix available was cutting words down to
- * "Objecti…".
+ * The first version put icon, word and badge inside one card in a ROW of
+ * four, so the card had to be as wide as the longest word: "Objectifs" and
+ * "Feliciter" set the width of all four, four did not fit on a 320px screen,
+ * and the only fix was cutting words to "Objecti...". The word moved
+ * underneath a square tile to escape that.
  *
- * A square tile with the word underneath, the way every banking app's action
- * row does it, removes that constraint entirely. The tile is the tap target and
- * stays a fixed comfortable size; the word is free text below it that wraps to
- * a second line rather than being cut. Nothing truncates at any width this app
- * runs at, and the row is shorter than it was.
+ * A two-column grid removes the constraint the row imposed. Each card is half
+ * the screen rather than a fifth of it, which is 131px at 320px, so the word
+ * fits inside again with room to wrap rather than truncate.
  *
  * TILES CARRY THEIR OWN STATE.
  *
@@ -77,8 +75,12 @@ export default function ActionBar({ items, value, onChange }) {
              * is hidden below and its meaning is carried here instead.
              */
             aria-label={item.badge ? `${item.label}, ${item.badge}` : item.label}
-            className={`press group relative flex min-w-0 flex-col items-start rounded-[1.35rem] p-3.5 text-left transition-[background-color,color,box-shadow] duration-200 ${
-              orphan ? 'col-span-2' : ''
+            /* The odd one out goes horizontal. Spanning both columns while
+               keeping the stacked layout left a card that was half icon and
+               half void, which reads as something that failed to load rather
+               than as a deliberate full-width row. */
+            className={`press group relative flex min-w-0 rounded-3xl p-3.5 text-left transition-[background-color,color,box-shadow] duration-200 ${
+              orphan ? 'col-span-2 flex-row items-center gap-3' : 'flex-col items-start'
             } ${
               /* Ink when active, paper when not. The same active treatment as
                  the period filter and the day badge, rather than a fourth idea
@@ -89,20 +91,26 @@ export default function ActionBar({ items, value, onChange }) {
             }`}
           >
             <span
-              /* The badge the glyph sits in. Tinted rather than filled, so
-                 five of them down a screen is a set of marks and not a colour
-                 scheme; the active card inverts the whole thing instead. */
-              className={`flex h-11 w-11 items-center justify-center rounded-[0.95rem] [&>svg]:h-[1.6rem] [&>svg]:w-[1.6rem] ${
-                on ? 'bg-white/20 text-white' : 'bg-accent/15 text-ink'
+              /**
+               * The badge the glyph sits in: neutral, not accent.
+               *
+               * Five accent-tinted badges down a screen is a colour scheme
+               * rather than a set of marks, and it was competing with the one
+               * thing on the pane that should be pink: the button you press.
+               * Slate here leaves the accent doing a single job, which is the
+               * whole argument for having an accent.
+               */
+              className={`flex h-11 w-11 items-center justify-center rounded-[0.875rem] [&>svg]:h-[1.6rem] [&>svg]:w-[1.6rem] ${
+                on ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'
               }`}
             >
               {item.icon}
             </span>
 
             <span
-              className={`mt-2.5 text-body font-semibold leading-tight transition-colors ${
-                on ? 'text-white' : 'text-ink'
-              }`}
+              className={`text-body font-semibold leading-tight transition-colors ${
+                orphan ? '' : 'mt-2.5'
+              } ${on ? 'text-white' : 'text-slate-800'}`}
             >
               {item.label}
             </span>

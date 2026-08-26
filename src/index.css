@@ -1410,6 +1410,34 @@
   }
 
   /**
+   * ONE INK FAMILY FOR INFORMATION. PINK IS FOR ACTION.
+   *
+   * Audited, not guessed: the money screen was painting sixteen distinct type
+   * styles, five of them different text colours, and two of those were rival
+   * INKS. rgb(169,28,84) carried the heading, the sub, the section titles and
+   * the tab labels while rgb(30,41,59) carried every number and every label
+   * inside a card. Two primaries on one screen is not a palette, it is two
+   * designs sharing a page, and no amount of spacing makes that read as
+   * refined.
+   *
+   * So inside .calm, anything that is INFORMATION goes slate and pink is left
+   * to do one job: the primary button, the active tab, the accent bar. The
+   * page heading keeps it, because one branded moment per screen is the point
+   * of having a brand, and losing it entirely is how this ends up looking
+   * like every other finance app.
+   *
+   * Scoped rather than global on purpose. The rest of the app has not been
+   * audited this way and a blanket change would be a claim about screens
+   * nobody has looked at.
+   */
+  .calm .eyebrow {
+    @apply text-slate-600;
+  }
+  .calm .lede {
+    @apply text-slate-600;
+  }
+
+  /**
    * Headlines. No serif: the display face is gone, and the sans at 700 with
    * the tracking pulled well in does the same job without a second voice on
    * the page. Reserved for the top-level headline of a section and nothing
