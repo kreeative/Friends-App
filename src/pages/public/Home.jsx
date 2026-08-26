@@ -71,44 +71,68 @@ export default function Home() {
       </section>
 
       {/**
-       * WHAT THE APP IS, BEFORE ANY ARGUMENT ABOUT WHY IT EXISTS.
+       * THE MANIFESTO. One sentence, alone, with nothing to compete with it.
        *
-       * The hero is a promise and the block under this one is about why other
-       * apps fail. Between them, nothing said what you actually DO here, and
-       * the reason this block exists is that people who were sent the link
-       * could not tell what the app was for.
+       * It is the only place on the site where a single line gets the whole
+       * width and a size normally reserved for a heading. That is the point of
+       * a manifesto: it is not information, it is the thing the rest of the
+       * page is arguing for, so it gets read at a different speed.
        *
-       * Numbered, because "three things" is a shape a reader can hold, and
-       * because the numbers say the list is finite: this is the whole product,
-       * not the first three of twenty features.
-       *
-       * Unboxed and separated by a hairline, like its neighbour. Two white
-       * rectangles in a row on a white page is a texture rather than a
-       * hierarchy.
+       * No quotation marks. Nobody is being quoted; the app is saying it.
+       * Punctuation that implies a source the page cannot name reads as a
+       * testimonial with the name filed off.
        */}
-      <section className="mx-auto w-full max-w-5xl border-t border-hairline px-6 py-16 md:py-20">
-        <p className="eyebrow">{c.what.eyebrow}</p>
+      <section className="mx-auto w-full max-w-5xl border-t border-hairline px-6 py-20 md:py-28">
+        <p
+          data-hook="manifesto"
+          className="mx-auto max-w-[26ch] text-center font-display text-[clamp(1.5rem,4.4vw,2.75rem)]
+                     font-semibold leading-[1.12] tracking-[-0.02em] text-ink"
+        >
+          {c.manifesto}
+        </p>
+      </section>
+
+      {/**
+       * THE THREE PILLARS.
+       *
+       * Money is one of three here rather than the whole story, and that is
+       * what makes this page agree with the app: the sections below it talk
+       * about groups going quiet and about check-ins, which a page that opened
+       * on budgeting alone would have contradicted three screens later.
+       *
+       * Each pillar names a part of the app that actually exists. A pillar
+       * that does not resolve to a screen is a slogan, and this page has one
+       * of those already, on purpose, at the top.
+       */}
+      <section
+        id="lifestyle"
+        className="mx-auto w-full max-w-5xl border-t border-hairline px-6 py-16 md:py-20"
+      >
+        <p className="eyebrow">{c.pillars.eyebrow}</p>
         <h2 className="display mt-7 max-w-[20ch] text-[clamp(1.625rem,3.6vw,2.5rem)]">
-          {c.what.title}
+          {c.pillars.title}
         </h2>
 
-        <ol className="mt-10 grid gap-8 md:grid-cols-3">
-          {c.what.items.map((item, i) => (
-            <li key={item.title} data-what={i + 1}>
-              {/* The mark, not a decorative icon. Three invented glyphs for
-                  three sentences would be three more things to read. */}
+        <ol className="mt-10 grid gap-5 md:grid-cols-3">
+          {c.pillars.items.map((item) => (
+            <li
+              key={item.n}
+              data-pillar={item.n}
+              /* rounded-3xl with a light border, as asked. The tint is on the
+                 numeral's tile rather than on the card: a full card of colour
+                 three times in a row is a page of blocks, and the text on it
+                 would have to be re-measured against three grounds. */
+              className="glass-card flex flex-col rounded-3xl border p-6"
+            >
               <span
                 aria-hidden="true"
-                className="block font-display text-h2 font-bold leading-none text-mark [font-variant-numeric:tabular-nums]"
+                className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${item.tone}
+                            font-display text-body font-bold text-mark [font-variant-numeric:tabular-nums]`}
               >
-                {String(i + 1).padStart(2, '0')}
+                {item.n}
               </span>
-              <h3 className="mt-4 max-w-[24ch] text-body font-semibold leading-snug text-ink">
-                {item.title}
-              </h3>
-              <p className="mt-2.5 max-w-[34ch] text-small leading-relaxed text-muted">
-                {item.body}
-              </p>
+              <h3 className="mt-5 text-body font-bold leading-snug text-ink">{item.title}</h3>
+              <p className="mt-2.5 text-small leading-relaxed text-muted">{item.body}</p>
             </li>
           ))}
         </ol>
@@ -138,7 +162,7 @@ export default function Home() {
        * (the page was white with coloured type and that was all) so the
        * closing ask becomes the field itself, with black on it at 13.5:1.
        */}
-      <section className="relative mx-auto w-full max-w-5xl px-6 pb-20">
+      <section id="mouvement" className="relative mx-auto w-full max-w-5xl px-6 pb-20">
         <div className="relative overflow-hidden rounded-card bg-field px-6 py-20 text-center">
           <h2 className="mx-auto max-w-[18ch] text-[clamp(1.875rem,5vw,3rem)] font-semibold leading-[1.02] tracking-[-0.024em] text-on-field">
             {c.close.title}

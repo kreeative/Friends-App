@@ -7,11 +7,40 @@
 export const LANDING = {
   en: {
     hero: {
-      title: 'Alone we go faster, but together we go further.',
-      body: 'Our environment dictates our output. Stop grinding in isolation, surround yourself with high-caliber peers who force you to level up every single day.',
-      cta: 'Start a group',
+      title: 'Change your life. Take back your future.',
+      /* An aim, not a count. See the note on the French copy. */
+      body: 'The goal: help millions of people transform how they live, through personal discipline, an ambitious mindset and control of their money.',
+      cta: 'Upgrade your lifestyle',
       secondary: 'How it works',
-      note: 'Ambition Is Contagious.',
+      note: 'Free, and your budget stays private',
+    },
+
+    manifesto:
+      'A new way of living does not ask for luck. It asks for vision, for discipline every day, and for the right tools to carry it out.',
+
+    pillars: {
+      eyebrow: 'The three pillars',
+      title: 'What you build here.',
+      items: [
+        {
+          n: '01',
+          title: 'Discipline & mindset',
+          body: 'Build the daily habits that shape the better version of you. You say what you are going to do, your friends see it, and you tick it off every day.',
+          tone: 'bg-cat-1-soft',
+        },
+        {
+          n: '02',
+          title: 'Upgrade your lifestyle',
+          body: 'Think bigger. Travel, a career change, independence: give your most ambitious plans a date and a number instead of keeping them in your head.',
+          tone: 'bg-cat-3-soft',
+        },
+        {
+          n: '03',
+          title: 'Financial freedom',
+          body: 'Put your money behind what you want: envelopes for the everyday, Big Budgets for the large things, and savings for what is left.',
+          tone: 'bg-cat-5-soft',
+        },
+      ],
     },
 
     /* See the note on the French copy: this block exists because people sent
@@ -143,11 +172,56 @@ export const LANDING = {
 
   fr: {
     hero: {
-      title: 'Parce qu’ensemble on construit plus vite.',
-      body: 'Ton entourage décide de tes résultats. Arrête de ramer seul dans ton coin : entoure-toi de gens ambitieux qui te tirent vers le haut, un jour après l’autre.',
-      cta: 'Créer un groupe',
+      title: 'Change de vie. Reprends le contrôle de ton avenir.',
+      /**
+       * UN OBJECTIF, PAS UNE STATISTIQUE.
+       *
+       * La premiere version disait « aide des milliers de personnes ». C'est
+       * un chiffre verifiable, et il est faux aujourd'hui : les groupes de
+       * cette app se comptent sur les doigts. Une page publique qui annonce
+       * des utilisateurs qu'elle n'a pas est la meme faute que « 5 membres
+       * maximum », qui n'est ecrit nulle part dans la base, et que
+       * « Telecharger l'application », qui ne telecharge rien.
+       *
+       * « Objectif : aider des millions de personnes » dit la meme ambition et
+       * se trouve etre vrai, parce que c'est une declaration d'intention et
+       * non un compte. Rien a corriger le jour ou le chiffre arrive.
+       */
+      body: 'Objectif : aider des millions de personnes à transformer leur mode de vie grâce à la discipline personnelle, un mindset ambitieux et la maîtrise financière.',
+      cta: 'Améliore ton Lifestyle',
       secondary: 'Comment ça marche',
-      note: 'L’ambition est contagieuse',
+      note: 'Gratuit, et ton budget reste privé',
+    },
+
+    manifesto:
+      'Un nouveau mode de vie ne demande pas de la chance. Il demande de la vision, de la discipline au quotidien et les bons outils pour l’exécuter.',
+
+    /* Les trois piliers. Chacun pointe vers une partie de l'app qui existe
+       vraiment : les objectifs et le point quotidien, les projets et le suivi,
+       le budget et l'epargne. */
+    pillars: {
+      eyebrow: 'Les trois piliers',
+      title: 'Ce que tu construis ici.',
+      items: [
+        {
+          n: '01',
+          title: 'Discipline & Mindset',
+          body: 'Construis les habitudes quotidiennes qui façonnent la meilleure version de toi-même. Tu dis ce que tu vas faire, tes amis le voient, et tu coches chaque jour.',
+          tone: 'bg-cat-1-soft',
+        },
+        {
+          n: '02',
+          title: 'Upgrade ton Lifestyle',
+          body: 'Pense grand. Voyages, reconversion, indépendance : donne une date et un montant à tes projets les plus ambitieux au lieu de les garder dans ta tête.',
+          tone: 'bg-cat-3-soft',
+        },
+        {
+          n: '03',
+          title: 'Liberté Financière',
+          body: 'Mets ton argent au service de tes rêves : des enveloppes pour le quotidien, le Haut Budget pour les gros projets, et l’épargne pour ce qui reste.',
+          tone: 'bg-cat-5-soft',
+        },
+      ],
     },
 
     /**
