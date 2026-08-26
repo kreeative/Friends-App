@@ -178,7 +178,7 @@ export default function Envelopes({ s, allocations, locale, onChange }) {
     return (
       <span className={`[font-variant-numeric:tabular-nums] ${className}`} {...rest}>
         {a.head}
-        {a.cents && <span className="text-[0.62em] align-baseline opacity-70">{a.cents}</span>}
+        {a.cents && <span className="text-[0.62em] align-baseline text-slate-600">{a.cents}</span>}
         {a.suffix}
       </span>
     )
@@ -542,7 +542,7 @@ export function SpendableBar({ bar, currency, locale }) {
         }`}
       >
         {a.head}
-        <span className="text-[0.62em] align-baseline opacity-70">{a.cents}</span>
+        <span className="text-[0.62em] align-baseline text-slate-600">{a.cents}</span>
         {a.suffix}
       </p>
 
