@@ -36,14 +36,28 @@ import { allocationsFor, envelopes, toAllocate, totalAllocated } from '../lib/en
  * Whole class strings because Tailwind scans source text. A template like
  * `stroke-cat-${n}` produces nothing at build time.
  */
+/**
+ * One arc colour, six tracks.
+ *
+ * These were six steps of the category ramp. That ramp is pink to yellow now
+ * and its yellow half cannot be an arc: #FFD600 is 1.41:1 on white. So every
+ * gauge draws in --c-mark and keeps its own soft track, which is what still
+ * tells the six cards apart at a glance; the card's name does the rest.
+ */
 const TONE = {
-  food:      { arc: 'stroke-cat-1', track: 'stroke-cat-1-soft' },
-  transport: { arc: 'stroke-cat-2', track: 'stroke-cat-2-soft' },
-  home:      { arc: 'stroke-cat-3', track: 'stroke-cat-3-soft' },
-  fun:       { arc: 'stroke-cat-4', track: 'stroke-cat-4-soft' },
-  health:    { arc: 'stroke-cat-5', track: 'stroke-cat-5-soft' },
-  other:     { arc: 'stroke-cat-6', track: 'stroke-cat-6-soft' },
+  food:      { well: 'bg-cat-1-soft' },
+  transport: { well: 'bg-cat-2-soft' },
+  home:      { well: 'bg-cat-3-soft' },
+  fun:       { well: 'bg-cat-4-soft' },
+  health:    { well: 'bg-cat-5-soft' },
+  other:     { well: 'bg-cat-6-soft' },
 }
+/* The same pair the bento uses, so a category's ring is the same object in
+   both places. The track cannot be the soft tint any more: the ramp ends in
+   cream, and cream on a white card measured 1.06:1, which is a track nobody
+   can see and a gauge that reads as a bare arc. */
+const ARC = 'stroke-mark'
+const TRACK = 'stroke-mark/25'
 
 /**
  * The family colour for TEXT on a card, and why it is one value and not six.
@@ -59,7 +73,7 @@ const TONE = {
  * 10.76:1 in sea, safe at any size. Everything still belongs to the theme's
  * palette, which is the point; only the arc carries which envelope it is.
  */
-const FAMILY_INK = 'text-cat-1'
+const FAMILY_INK = 'text-ink'
 
 /**
  * An arc with something in the middle of it.
@@ -303,8 +317,8 @@ export default function Envelopes({ s, allocations, locale, onChange }) {
             stroke={14}
             sweep={0.75}
             dim={!s.earned}
-            arc={pool < 0 ? 'stroke-negative' : 'stroke-cat-3'}
-            track={pool < 0 ? 'stroke-negative/15' : 'stroke-cat-3-soft'}
+            arc={pool < 0 ? 'stroke-negative' : 'stroke-mark'}
+            track={pool < 0 ? 'stroke-negative/15' : 'stroke-mark/20'}
           >
             <span
               className={`font-display text-h1 font-bold leading-none [font-variant-numeric:tabular-nums] ${
@@ -395,15 +409,24 @@ export default function Envelopes({ s, allocations, locale, onChange }) {
                * at 320, against the 86 it wants. Costs one line of height and
                * cannot go wrong.
                */}
-              <Gauge
-                pct={e.pct}
-                size={46}
-                stroke={7}
-                sweep={0.75}
-                dim={!inUse}
-                arc={e.over > 0 ? 'stroke-negative' : tone.arc}
-                track={e.over > 0 ? 'stroke-negative/15' : tone.track}
-              />
+              {/* In a tinted well, like the bento's. The well is what tells the
+                  six cards apart now that every arc is one colour, and it is
+                  also what the track needs to be legible against. */}
+              <span
+                className={`flex h-[3.75rem] w-[3.75rem] shrink-0 items-center justify-center rounded-2xl ${
+                  e.over > 0 ? 'bg-negative/[0.10]' : tone.well
+                }`}
+              >
+                <Gauge
+                  pct={e.pct}
+                  size={46}
+                  stroke={7}
+                  sweep={0.75}
+                  dim={!inUse}
+                  arc={e.over > 0 ? 'stroke-negative' : ARC}
+                  track={e.over > 0 ? 'stroke-negative/25' : TRACK}
+                />
+              </span>
               <span
                 className={`mt-2.5 block text-label font-bold uppercase leading-tight tracking-wide ${
                   e.over > 0 ? 'text-negative' : FAMILY_INK

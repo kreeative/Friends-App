@@ -75,26 +75,30 @@ const ICON = {
  * ramp, so a category's disc and its gauge are the same step of the family.
  */
 const TINT = {
-  food: 'text-cat-1 bg-cat-1-soft',
-  transport: 'text-cat-2 bg-cat-2-soft',
-  home: 'text-cat-3 bg-cat-3-soft',
-  fun: 'text-cat-4 bg-cat-4-soft',
-  health: 'text-cat-5 bg-cat-5-soft',
+  food: 'text-mark bg-cat-1-soft',
+  transport: 'text-mark bg-cat-2-soft',
+  home: 'text-mark bg-cat-3-soft',
+  fun: 'text-mark bg-cat-4-soft',
+  health: 'text-mark bg-cat-5-soft',
   /**
-   * `other` borrows cat-3's ink, and this was measured.
+   * One glyph colour, six tints, and the palette is why.
    *
-   * cat-6 is the palest step of the ramp: index.css records it at 3.58:1, which
-   * is against WHITE. On its own soft tint it measures 2.49:1 in sea, under the
-   * 3:1 WCAG 1.4.11 asks of a graphical object, and discprobe has been saying
-   * so since the disc started appearing in the transaction history.
+   * These were six steps of the category ramp, and the ramp is pink to yellow
+   * now: its yellow half is 1.41:1 on white, so half the discs would have been
+   * a glyph nobody could see. Six distinguishable marks cannot be made from
+   * pink and yellow, so the disc says which category it is with the tint behind
+   * the glyph, and the row's own words say it in words.
    *
-   * Same fix and the same value as CategoryBento's `other`, deliberately: the
-   * disc beside a row and the ring on the dashboard are the same category and
-   * disagreeing about its colour would be worse than sharing one with `home`.
+   * `other` no longer needs its special case: it was borrowing cat-3's ink to
+   * escape cat-6 at 2.49:1, and there is no cat-6 ink left to escape.
    */
-  other: 'text-cat-3 bg-cat-6-soft',
-  /* Money coming in is not one of the six and should not borrow their family:
-     it is the one row in the ledger that is not a spend. */
+  other: 'text-mark bg-cat-6-soft',
+  /* Income is not one of the six and must not borrow their tint. Green is a
+     fact about the world rather than a matter of taste, which is why it is not
+     a themed token, and it survived the palette change for the same reason
+     --c-negative did: "money arrived" and "you overspent" are the two states a
+     reader must not misread. Dropped by accident in the rewrite above, which
+     silently fell income through to `other` and painted it pink. */
   income: 'text-green bg-green/10',
 }
 

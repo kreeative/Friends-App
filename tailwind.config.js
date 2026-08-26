@@ -18,6 +18,13 @@ export default {
         muted: c('muted'),
         hairline: c('hairline'),
 
+        /**
+         * The one colour a small mark may be: an arc, a glyph, anything that
+         * has to be seen against a light tint. See --c-mark in index.css for
+         * why there is one of these and not six.
+         */
+        mark: c('mark'),
+
         // The theme's accent, what you click. A fill only, never text.
         accent: c('accent'),
         'accent-pressed': c('accent-pressed'),

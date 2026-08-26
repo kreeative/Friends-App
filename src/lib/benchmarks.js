@@ -30,12 +30,13 @@
  * percent deliberately: writing 6.1 % implies somebody refreshed it this
  * morning, and nobody did.
  *
- * WHERE THERE IS NO FIGURE, THERE IS NO ROW.
+ * WHERE THERE IS NO FIGURE, THERE IS NO ROW IN THIS TABLE.
  *
- * Cote d'Ivoire has no published household saving rate on this basis. Gross
- * national savings as a share of GDP is published for it, and substituting that
- * would be quoting a real number for a different concept, which is the second
- * way to get this wrong. It is absent, and the screen says it is absent.
+ * Cote d'Ivoire has no published household saving rate on this basis. It is
+ * therefore not in SAVING_RATE and never will be. What exists for it is a
+ * different measure on a different basis, and it lives in OTHER_BASIS below
+ * with its basis named, so the screen can answer "is there one for my country"
+ * with something true instead of with silence.
  */
 
 /** When this table was transcribed. Shown, so its age is the reader's to judge. */
@@ -51,6 +52,116 @@ export const SAVING_RATE = [
   { code: 'FR', rate: 18, source: 'INSEE, comptes nationaux', period: '2024' },
   { code: 'EA', rate: 15, source: 'Eurostat, comptes sectoriels', period: '2024' },
 ]
+
+/**
+ * The five age bands, and what a household in each one puts aside.
+ *
+ * The ask was a rank against people your own age rather than against the
+ * country, which is the more useful comparison by a distance: a 24-year-old
+ * saving 4 % and a 50-year-old saving 4 % are not doing the same thing, and
+ * telling them both "below the national 6 %" tells neither of them anything.
+ *
+ * The shape of this is not in doubt and is worth knowing on its own: saving
+ * rises through working life, peaks in the forties and fifties, and goes
+ * NEGATIVE after 65, because retirement is when a household is supposed to be
+ * spending what it put aside. A minus sign there is the system working.
+ *
+ * THE NUMBERS ARE THE LEAST CERTAIN THING IN THIS FILE.
+ *
+ * The country-level figures above are headline series quoted everywhere. These
+ * come from Statistics Canada's distributions of household economic accounts,
+ * by age of the main income earner, and they are a best reading rather than a
+ * transcription from an open table. They are rounded hard for that reason, and
+ * the UI names the source so a reader can check. Anybody updating them should
+ * check the published table first and correct all five together.
+ *
+ * Only Canada. The same breakdown is not published in the same shape
+ * elsewhere, and lining a French nomenclature up against a Canadian one would
+ * make a table that looks comparable and is not.
+ */
+export const AGE_BANDS = ['u35', '35_44', '45_54', '55_64', '65p']
+
+export const SAVING_RATE_BY_AGE = {
+  CA: {
+    source: 'Statistique Canada, comptes économiques des ménages par groupe d’âge',
+    period: '2024',
+    rates: { u35: 5, '35_44': 10, '45_54': 9, '55_64': 7, '65p': -2 },
+  },
+}
+
+/**
+ * Côte d'Ivoire, and the honest answer to "do we have the same statistic".
+ *
+ * No. There is no published household saving rate for Côte d'Ivoire on the
+ * national accounts basis every other row here uses, and inventing one would
+ * be the worst thing this file could do.
+ *
+ * What DOES exist is gross national savings as a share of GDP, published by
+ * the IMF and the World Bank. It is a real figure and it is a different
+ * measure: it counts what companies and the government put aside as well as
+ * households, so it is typically much higher than a household rate and is not
+ * comparable to one. Quoting it in the same gauge would be the exact mistake
+ * the note at the top of this file warns about.
+ *
+ * So it is here, clearly marked, on its own basis, and the UI shows it as
+ * information rather than as a rank. `basis` is what keeps the two apart, and
+ * compareRate refuses anything that is not a household rate.
+ */
+export const OTHER_BASIS = [
+  {
+    code: 'CI',
+    basis: 'gross-national',
+    rate: 18,
+    source: 'FMI et Banque mondiale, épargne nationale brute (% du PIB)',
+    period: '2024',
+  },
+]
+
+/** The bands a birthday falls into, or null when there is no birthday on file. */
+export function ageBandOf(birthday, today = new Date()) {
+  const [y, m, d] = String(birthday ?? '').slice(0, 10).split('-').map(Number)
+  if (!y || !m || !d) return null
+  let age = today.getFullYear() - y
+  /* Not yet had this year's birthday. Compared as month-then-day rather than
+     by subtracting dates, which is the same trap daysUntilBirthday avoids. */
+  const before = today.getMonth() + 1 < m || (today.getMonth() + 1 === m && today.getDate() < d)
+  if (before) age -= 1
+  if (age < 0 || age > 130) return null
+  if (age < 35) return 'u35'
+  if (age < 45) return '35_44'
+  if (age < 55) return '45_54'
+  if (age < 65) return '55_64'
+  return '65p'
+}
+
+/**
+ * The figure to compare against: your own age band where there is one, the
+ * country otherwise.
+ *
+ * Returns which of the two it used, because the screen has to say so. "You
+ * against Canadians your age" and "you against Canadians" are different
+ * claims and a reader is entitled to know which one they are being shown.
+ */
+export function benchmarkFor(code, band) {
+  const table = SAVING_RATE_BY_AGE[code]
+  if (band && table && table.rates[band] != null) {
+    return {
+      code,
+      band,
+      rate: table.rates[band],
+      source: table.source,
+      period: table.period,
+      scope: 'age',
+    }
+  }
+  const row = SAVING_RATE.find((r) => r.code === code)
+  return row ? { ...row, band: null, scope: 'country' } : null
+}
+
+/** A published figure on some OTHER basis, which is not a rank. */
+export function otherBasisFor(code) {
+  return OTHER_BASIS.find((r) => r.code === code) ?? null
+}
 
 /**
  * Where a Canadian household's money goes, as a share of current consumption.
@@ -144,10 +255,7 @@ export function detectCountry(tags = []) {
   return null
 }
 
-/** The published row for a country, or null when there is not one. */
-export function benchmarkFor(code) {
-  return SAVING_RATE.find((r) => r.code === code) ?? null
-}
+
 
 /**
  * Where a rate stands against a published one.
@@ -159,8 +267,8 @@ export function benchmarkFor(code) {
  * Returns null for the standing when either side is unknown, so a caller cannot
  * accidentally render "below average" for somebody the app knows nothing about.
  */
-export function compareRate(mine, code) {
-  const row = benchmarkFor(code)
+export function compareRate(mine, code, band) {
+  const row = benchmarkFor(code, band)
   if (row == null || mine == null || !Number.isFinite(mine)) {
     return { standing: null, delta: null, benchmark: row }
   }

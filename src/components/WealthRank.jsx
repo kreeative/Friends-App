@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useT } from '../lib/i18n'
 import { Sheet } from './ui'
 import { Gauge } from './Envelopes'
-import { SNAPSHOT, benchmarkFor, compareRate } from '../lib/benchmarks'
+import { SNAPSHOT, compareRate, otherBasisFor } from '../lib/benchmarks'
 
 /**
  * Your saving rate against everybody else's, as one card and one sheet.
@@ -30,13 +30,23 @@ import { SNAPSHOT, benchmarkFor, compareRate } from '../lib/benchmarks'
  * than a blank, the gauge locks and the sheet says what would unlock it. The
  * primary button then does that exact thing.
  */
-export default function WealthRank({ rate, months, country, onAddTransaction }) {
+export default function WealthRank({ rate, months, country, band, onAddTransaction }) {
   const { t } = useT()
   const [open, setOpen] = useState(false)
 
   const code = country ?? 'CA'
-  const cmp = compareRate(rate, code)
-  const bench = cmp.benchmark ?? benchmarkFor('CA')
+  /* The band, when the profile has a birthday to derive one from. Where there
+     is one the comparison is against people the same age, which is the useful
+     one: a 24-year-old and a 50-year-old both saving 4 % are not doing the same
+     thing, and telling them both "under the national 6 %" tells neither
+     anything. Where there is not, it falls back to the country and the screen
+     says which it used. */
+  const cmp = compareRate(rate, code, band)
+  const bench = cmp.benchmark
+  /* A country with no household rate at all. See OTHER_BASIS: what exists for
+     Cote d'Ivoire is a different measure, and it is shown as information rather
+     than as a rank. */
+  const other = bench ? null : otherBasisFor(code)
   const locked = rate == null || !Number.isFinite(rate)
   const mine = locked ? null : Math.round(rate)
 
@@ -82,8 +92,8 @@ export default function WealthRank({ rate, months, country, onAddTransaction }) 
             stroke={6}
             sweep={1}
             dim={locked}
-            arc="stroke-cat-3"
-            track="stroke-cat-3/20"
+            arc="stroke-mark"
+            track="stroke-mark/20"
           >
             <span className="text-label font-bold leading-none text-ink [font-variant-numeric:tabular-nums]">
               {locked ? '–' : `${mine} %`}
@@ -117,8 +127,8 @@ export default function WealthRank({ rate, months, country, onAddTransaction }) 
               stroke={16}
               sweep={0.5}
               dim={locked}
-              arc="stroke-cat-3"
-              track="stroke-cat-3/20"
+              arc="stroke-mark"
+              track="stroke-mark/20"
             >
               <span
                 data-hook="rank-value"
@@ -136,6 +146,19 @@ export default function WealthRank({ rate, months, country, onAddTransaction }) 
             <p data-hook="rank-locked" className="mt-6 text-center text-body leading-relaxed text-muted">
               {t('rank.locked')}
             </p>
+          ) : !bench ? (
+            /* No household rate published for this country. Say so, name what
+               does exist, and do not draw a rank against it. */
+            <div data-hook="rank-nobasis" className="mt-6">
+              <p className="text-center text-body leading-relaxed text-ink">
+                {t('rank.no_basis', { country: t(`bm.c_${code}`) })}
+              </p>
+              {other && (
+                <p className="mt-3 text-center text-small leading-relaxed text-muted">
+                  {t('rank.other_basis', { n: other.rate, country: t(`bm.c_${code}`) })}
+                </p>
+              )}
+            </div>
           ) : (
             <>
               <p
@@ -147,15 +170,25 @@ export default function WealthRank({ rate, months, country, onAddTransaction }) 
 
               {/* The other side of the comparison, as a plain row rather than a
                   second gauge. Two dials side by side invite the reader to
-                  compare their sweep, and these two are not on one scale. */}
-              <dl className="mt-5 flex items-baseline justify-between gap-3 rounded-2xl bg-ink/[0.04] px-4 py-3">
-                <dt className="text-small font-semibold text-ink">{t(`bm.c_${code}`)}</dt>
+                  compare their sweep, and these two are not on one scale.
+
+                  The row NAMES which comparison it is. "You against people your
+                  age" and "you against the country" are different claims, and
+                  showing one while the reader assumes the other is the quiet
+                  way this feature could mislead. */}
+              <dl data-hook="rank-against" className="mt-5 flex items-baseline justify-between gap-3 rounded-2xl bg-ink/[0.04] px-4 py-3">
+                <dt className="min-w-0 text-small font-semibold text-ink">
+                  {bench.scope === 'age'
+                    ? t('rank.same_age', { band: t(`rank.band_${bench.band}`) })
+                    : t(`bm.c_${code}`)}
+                </dt>
                 <dd className="shrink-0 text-small font-semibold text-ink [font-variant-numeric:tabular-nums]">
-                  {bench?.rate} %
+                  {bench.rate} %
                 </dd>
               </dl>
               <p className="mt-3 text-center text-small leading-relaxed text-muted">
                 {t('rank.window', { n: months })}
+                {bench.scope === 'country' && ` ${t('rank.no_band')}`}
               </p>
             </>
           )}
@@ -168,12 +201,30 @@ export default function WealthRank({ rate, months, country, onAddTransaction }) 
             {t('txn.open')}
           </button>
 
-          {/* The methodology, in fine print, which is where a methodology
-              belongs. It used to be a paragraph in the middle of the budget
-              feed. */}
-          <p data-hook="rank-note" className="mt-5 text-center text-label leading-relaxed text-muted">
-            {bench?.source}, {bench?.period}. {t('bm.caveat')} {t('bm.snapshot', { d: SNAPSHOT })}
-          </p>
+          {/**
+           * WHAT THE NUMBER IS, then where it came from.
+           *
+           * This used to be one run of small grey text: source, then a caveat
+           * about national accounts and employer pension contributions, then a
+           * snapshot date. It was the most confusing thing on the screen, and
+           * the reason is that it answered "where is this from" without ever
+           * answering "what IS this", which is the question somebody looking at
+           * a percentage actually has.
+           *
+           * So the plain sentence comes first and gets its own heading, and the
+           * provenance follows it in the fine print where provenance belongs.
+           */}
+          <div className="mt-7 border-t border-hairline pt-5">
+            <p className="text-label font-semibold uppercase tracking-wider text-muted">
+              {t('rank.what_title')}
+            </p>
+            <p data-hook="rank-what" className="mt-2 text-small leading-relaxed text-ink">
+              {t('rank.what_body')}
+            </p>
+            <p data-hook="rank-note" className="mt-3 text-label leading-relaxed text-muted">
+              {(bench ?? other)?.source}, {(bench ?? other)?.period}. {t('bm.snapshot', { d: SNAPSHOT })}
+            </p>
+          </div>
         </div>
       </Sheet>
     </>
