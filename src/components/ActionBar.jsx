@@ -31,34 +31,36 @@
  * never sends anything invisible.
  */
 /**
- * CARDS, NOT A ROW OF SMALL SQUARES.
+ * FULL-WIDTH ROWS.
  *
- * These were five 56px tiles in one row with the word underneath. On a 320px
- * phone that is 48px of tile each, which is barely over the 44px minimum tap
- * target and leaves the glyph inside at 24px: an icon that has to be looked
- * at rather than recognised, and a label set at 11px to fit under it.
+ * Three shapes have been tried here and each one was the previous one's
+ * problem solved badly.
  *
- * A two-column grid of rounded rectangles gives each one about 150px instead
- * of 48. The icon can then sit in a badge of its own at a size worth drawing,
- * and the label can be read at body size inside the card rather than squeezed
- * underneath it.
+ * Five 56px squares in a row put 48px of tile on a 320px phone, barely over
+ * the 44px tap minimum, with the glyph at 24px and the label at 11px beneath
+ * it. A two-column grid fixed the size and introduced a new fault: five items
+ * do not divide by two, so the last card spanned both columns and was half
+ * icon, half void.
  *
- * An odd last item spans both columns rather than sitting half-width with a
- * hole beside it. A grid with a gap in it reads as something failing to load.
+ * A single column of rows has neither problem. Every item is the full width
+ * of the screen whatever the count, so nothing is ever an orphan and there is
+ * no special case in this file for an odd number. The badge sits at its own
+ * size, the label reads at body size beside it rather than under it, and the
+ * count goes to the far right where a count belongs.
  *
- * The cost is honest: this is taller than a row of squares, and it sits above
- * the content on every pane. It buys legibility with vertical space, which is
- * the trade the reference this came from makes too.
+ * It is also shorter per item than the stacked card was: a row needs the
+ * badge's height and its padding, where a card needed the badge, the gap and
+ * a line of type below it. Five rows come to roughly what three rows of cards
+ * did.
  */
 export default function ActionBar({ items, value, onChange }) {
   return (
-    /* A stable hook. These tiles carry their counts in their accessible name,
+    /* A stable hook. These rows carry their counts in their accessible name,
        so matching them by text alone is ambiguous with the app's own tab bar
        ("Journal" is both a pane here and a destination down there). */
-    <div data-actionbar="" className="grid grid-cols-2 gap-2.5 sm:gap-3">
-      {items.map((item, i) => {
+    <div data-actionbar="" className="flex flex-col gap-2">
+      {items.map((item) => {
         const on = item.id === value
-        const orphan = items.length % 2 === 1 && i === items.length - 1
         return (
           <button
             key={item.id}
@@ -75,18 +77,16 @@ export default function ActionBar({ items, value, onChange }) {
              * is hidden below and its meaning is carried here instead.
              */
             aria-label={item.badge ? `${item.label}, ${item.badge}` : item.label}
-            /* The odd one out goes horizontal. Spanning both columns while
-               keeping the stacked layout left a card that was half icon and
-               half void, which reads as something that failed to load rather
-               than as a deliberate full-width row. */
-            className={`press group relative flex min-w-0 rounded-3xl p-3.5 text-left transition-[background-color,color,box-shadow] duration-200 ${
-              orphan ? 'col-span-2 flex-row items-center gap-3' : 'flex-col items-start'
-            } ${
+            className={`press group flex w-full min-w-0 items-center gap-3 rounded-3xl p-3 text-left transition-[background-color,color,box-shadow] duration-200 ${
               /* Ink when active, paper when not. The same active treatment as
                  the period filter and the day badge, rather than a fourth idea
                  about what "selected" looks like in this app. */
+              /* A TRANSPARENT border on the active row, not no border. The
+                 inactive rows carry a 1px hairline, so an active row without
+                 one is 2px shorter and every row below it jumps 2px the
+                 moment you change tabs. */
               on
-                ? 'bg-ink shadow-float'
+                ? 'border border-transparent bg-ink shadow-float'
                 : 'border border-hairline bg-[rgb(var(--glass-tint))] shadow-raised'
             }`}
           >
@@ -100,7 +100,7 @@ export default function ActionBar({ items, value, onChange }) {
                * Slate here leaves the accent doing a single job, which is the
                * whole argument for having an accent.
                */
-              className={`flex h-11 w-11 items-center justify-center rounded-[0.875rem] [&>svg]:h-[1.6rem] [&>svg]:w-[1.6rem] ${
+              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-[0.875rem] [&>svg]:h-[1.6rem] [&>svg]:w-[1.6rem] ${
                 on ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'
               }`}
             >
@@ -108,20 +108,20 @@ export default function ActionBar({ items, value, onChange }) {
             </span>
 
             <span
-              className={`text-body font-semibold leading-tight transition-colors ${
-                orphan ? '' : 'mt-2.5'
-              } ${on ? 'text-white' : 'text-slate-800'}`}
+              className={`min-w-0 flex-1 truncate text-body font-semibold leading-tight transition-colors ${
+                on ? 'text-white' : 'text-slate-800'
+              }`}
             >
               {item.label}
             </span>
 
-            {/* Top right of the card, out of the label's way. A count here
-                reads as a state of the thing rather than as part of its
+            {/* Far right, past the label rather than on top of it. A count
+                here reads as a state of the thing rather than as part of its
                 name. */}
             {item.badge && (
               <span
                 aria-hidden="true"
-                className={`absolute right-3 top-3 flex h-5 min-w-[1.25rem] items-center justify-center rounded-pill px-1.5 text-[0.6875rem] font-semibold leading-none [font-variant-numeric:tabular-nums] ${
+                className={`mr-1 flex h-5 shrink-0 items-center justify-center rounded-pill px-2 text-[0.6875rem] font-semibold leading-none [font-variant-numeric:tabular-nums] ${
                   item.done ? 'bg-green text-white' : 'bg-accent text-on-accent'
                 }`}
               >
