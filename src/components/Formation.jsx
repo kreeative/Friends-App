@@ -156,7 +156,7 @@ export default function Formation({ userId, locale, onOpenPane, onReading }) {
       <Section>
         <div
           data-card="formation-hero"
-          className="glass-card relative overflow-hidden rounded-3xl bg-gradient-to-b from-white to-accent/[0.16] p-6"
+          className="glass-card relative overflow-hidden rounded-3xl bg-gradient-to-br from-cat-1-soft via-white to-cat-5-soft p-6"
         >
           <div className="flex items-baseline justify-between gap-3">
             <p className="text-label font-semibold uppercase tracking-wider text-muted">
