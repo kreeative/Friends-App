@@ -370,6 +370,7 @@ const STRINGS = {
     'money.cat_other': 'Other',
 
     'money.tile_pct_of_free': '{pct}% of what was free',
+    'money.tile_pct_over_free': '{pct}% over what was free',
     'money.tile_no_pool': 'Nothing free to spend',
     'money.tile_per_day': '{amount} a day from here',
     'money.tab_overview': 'Overview',
@@ -380,6 +381,15 @@ const STRINGS = {
     'money.left': 'Left',
     'money.spent': 'Spent',
     'money.days_left': 'Days left',
+    /* "Left" was on two different numbers on the same pane: what is in hand
+       (earned less spent) and what is in hand once the charges you have not
+       paid yet come out. Both read "Left" and they differ by the unpaid
+       charges, so the pane appeared to contradict itself. Only the second one
+       is a row now, and it says what it means. */
+    'money.after_bills': 'Left after bills',
+    'money.still_due': 'Still to pay',
+    'money.per_day': 'A day from here',
+    'money.pace': 'The pace',
     'money.where': 'Where it went',
     'money.recent': 'Recent',
     'money.no_entries': 'Nothing logged this period yet.',
@@ -1238,7 +1248,8 @@ const STRINGS = {
     'money.cat_health': 'Santé',
     'money.cat_other': 'Autre',
 
-    'money.tile_pct_of_free': '{pct}% de ce qui était libre',
+    'money.tile_pct_of_free': '{pct} % de ce qui était libre',
+    'money.tile_pct_over_free': '{pct} % de trop',
     'money.tile_no_pool': 'Rien de libre à dépenser',
     'money.tile_per_day': '{amount} par jour à partir d’ici',
     'money.tab_overview': 'Aperçu',
@@ -1249,6 +1260,10 @@ const STRINGS = {
     'money.left': 'Restant',
     'money.spent': 'Dépensé',
     'money.days_left': 'Jours restants',
+    'money.after_bills': 'Restant après les charges',
+    'money.still_due': 'Encore à payer',
+    'money.per_day': 'Par jour à partir d’ici',
+    'money.pace': 'Le rythme',
     'money.where': 'Où c’est parti',
     'money.recent': 'Récent',
     'money.no_entries': 'Rien d’enregistré pour cette période.',

@@ -468,7 +468,20 @@ export default function Envelopes({ s, allocations, locale, onChange }) {
                      an empty amount looks like. */
                   placeholder={digits === 0 ? '0' : `0.${'0'.repeat(digits)}`}
                   aria-label={t('env.allocate_to', { category: t(`money.cat_${e.key}`) })}
-                  className="mt-0.5 w-full border-0 bg-transparent p-0 text-left text-small font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none [font-variant-numeric:tabular-nums]"
+                  /**
+                   * It has to LOOK like a field.
+                   *
+                   * Borderless and transparent, it read as one more static
+                   * amount on a card full of static amounts, except that it
+                   * says "600.00" while everything around it says "600,00 $".
+                   * That looks like a formatting bug rather than like the one
+                   * thing on the card you can type into, and the raw number is
+                   * correct here: it is what you edit, not what you read.
+                   *
+                   * A tinted well settles it. The odd formatting stops being
+                   * an inconsistency and becomes the contents of an input.
+                   */
+                  className="mt-1 w-full rounded-lg border-0 bg-slate-100/80 px-2 py-1 text-left text-small font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-accent/40 [font-variant-numeric:tabular-nums]"
                   value={text}
                   onChange={(ev) => setDraft((d) => ({ ...d, [e.key]: ev.target.value }))}
                   onBlur={() => commit(e.key)}
@@ -502,18 +515,38 @@ export function SpendableBar({ bar, currency, locale }) {
   const { t } = useT()
   const fmt = (c) => money(c, currency, locale)
 
+  /* The headline amount takes the same treatment as the pool card's: cents
+     set smaller, so the dollars are what the eye lands on. Three parts, not
+     two, because fr-CA puts the symbol after the decimals. */
+  const a = moneyParts(bar.left, currency, locale)
+
   return (
-    <div className="lg p-5">
-      <p className="eyebrow">{t('env.left_to_spend')}</p>
+    /**
+     * Slate, like every other surface on this screen.
+     *
+     * This card was the last thing on the budget still set in the theme's
+     * pink while the envelopes, the donut and the ledger had all moved to
+     * slate. One screen was running two type systems, and switching panes
+     * looked like switching apps.
+     */
+    /* Hooks, because this card has now lost .eyebrow, .lg and .lede in three
+       separate restyles and took a test suite with it every time. */
+    <div data-card="spendable" className="glass-card rounded-3xl p-5">
+      <p data-hook="label" className="text-label font-semibold uppercase tracking-wider text-slate-600">
+        {t('env.left_to_spend')}
+      </p>
       <p
-        className={`mt-2 font-display text-hero leading-none [font-variant-numeric:tabular-nums] ${
-          bar.left < 0 ? 'text-negative' : 'text-ink'
+        data-hook="amount"
+        className={`mt-1.5 font-display text-hero leading-none [font-variant-numeric:tabular-nums] ${
+          bar.left < 0 ? 'text-negative' : 'text-slate-800'
         }`}
       >
-        {fmt(bar.left)}
+        {a.head}
+        <span className="text-[0.62em] align-baseline opacity-70">{a.cents}</span>
+        {a.suffix}
       </p>
 
-      <div className="mt-4 h-2.5 w-full overflow-hidden rounded-pill bg-ink/[0.07]">
+      <div className="mt-4 h-2.5 w-full overflow-hidden rounded-pill bg-slate-200/70">
         <div
           className={`h-full rounded-pill transition-[width] duration-500 ease-settle ${
             bar.over > 0 ? 'bg-negative' : 'bg-accent'
@@ -522,7 +555,7 @@ export function SpendableBar({ bar, currency, locale }) {
         />
       </div>
 
-      <p className="lede mt-2 max-w-[38ch]">
+      <p data-hook="note" className="mt-2.5 max-w-[38ch] text-small leading-relaxed text-slate-600">
         {!bar.funded
           ? t('env.no_income_bar')
           : bar.over > 0

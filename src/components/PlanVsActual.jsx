@@ -33,27 +33,36 @@ export default function PlanVsActual({ s, locale }) {
     ...(s.savings > 0 ? [{ label: t('money.row_savings'), plan: s.savings, real: null }] : []),
   ]
 
+  /* The hook is on the card below. It has been div.lg and is now glass-card,
+     and both suites that read it were keyed to the class. */
   return (
-    <div className="lg px-5 py-2">
+    <div data-card="planvsactual" className="glass-card rounded-3xl px-5 py-2">
       {/* The two headings are the whole point, so they carry the weight. */}
       <div className="flex items-baseline gap-2 border-b border-hairline py-3 sm:gap-4">
         <span className="min-w-0 flex-1" aria-hidden="true" />
-        <span className="w-[4.75rem] sm:w-[5.5rem] text-right text-label font-semibold uppercase tracking-[0.05em] text-muted">
+        <span className="w-[4.75rem] sm:w-[5.5rem] text-right text-label font-semibold uppercase tracking-[0.05em] text-slate-600">
           {t('money.planned')}
         </span>
-        <span className="w-[4.75rem] sm:w-[5.5rem] text-right text-label font-semibold uppercase tracking-[0.05em] text-ink">
+        <span className="w-[4.75rem] sm:w-[5.5rem] text-right text-label font-semibold uppercase tracking-[0.05em] text-slate-800">
           {t('money.actual')}
         </span>
       </div>
 
       {rows.map(({ label, plan, real }) => (
         <div key={label} className="flex items-baseline gap-2 border-b border-hairline py-3.5 sm:gap-4">
-          <span className="min-w-0 flex-1 truncate text-body text-ink">{label}</span>
-          <span className="w-[4.75rem] sm:w-[5.5rem] shrink-0 text-right text-small text-muted [font-variant-numeric:tabular-nums]">
+          <span className="min-w-0 flex-1 truncate text-body text-slate-800">{label}</span>
+          <span className="w-[4.75rem] sm:w-[5.5rem] shrink-0 text-right text-small text-slate-600 [font-variant-numeric:tabular-nums]">
             {fmt(plan)}
           </span>
-          <span className="w-[4.75rem] sm:w-[5.5rem] shrink-0 text-right text-small font-semibold text-ink [font-variant-numeric:tabular-nums]">
-            {real === null ? <span className="text-muted/60">—</span> : fmt(real)}
+          <span className="w-[4.75rem] sm:w-[5.5rem] shrink-0 text-right text-small font-semibold text-slate-800 [font-variant-numeric:tabular-nums]">
+            {real === null ? (
+              /* slate-600, not slate-400. The dash means "no value",
+                 which is information, and at slate-400 it measured
+                 2.45:1 on the card. */
+              <span className="text-slate-600">–</span>
+            ) : (
+              fmt(real)
+            )}
           </span>
         </div>
       ))}
@@ -64,13 +73,13 @@ export default function PlanVsActual({ s, locale }) {
           what is still owed. They are only equal in a month that went exactly
           to plan, which is a month nobody has. */}
       <div className="flex items-baseline gap-2 py-4 sm:gap-4">
-        <span className="min-w-0 flex-1 text-body font-semibold text-ink">{t('money.row_free')}</span>
-        <span className="w-[4.75rem] sm:w-[5.5rem] shrink-0 text-right text-small text-muted [font-variant-numeric:tabular-nums]">
+        <span className="min-w-0 flex-1 text-body font-semibold text-slate-800">{t('money.row_free')}</span>
+        <span className="w-[4.75rem] sm:w-[5.5rem] shrink-0 text-right text-small text-slate-600 [font-variant-numeric:tabular-nums]">
           {fmt(s.plannedPool)}
         </span>
         <span
           className={`w-[4.75rem] sm:w-[5.5rem] shrink-0 text-right text-body font-semibold [font-variant-numeric:tabular-nums] ${
-            s.available < 0 ? 'text-negative' : 'text-ink'
+            s.available < 0 ? 'text-negative' : 'text-slate-800'
           }`}
         >
           {fmt(s.available)}
