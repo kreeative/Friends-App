@@ -18,43 +18,33 @@ import { Gauge } from './Envelopes'
  * one tap from the number itself, which is the only thing the field on the
  * dashboard was buying.
  *
- * THE RING SITS IN A TINTED WELL, AND THE TRACK CANNOT BE THE WELL.
+ * The colours are in the note on TONE below.
+ */
+/**
+ * Six tints, one arc colour.
  *
- * The obvious build gives the well the category's soft tint and the ring's
- * track the same token, which paints the unspent part of the arc in exactly
- * the colour behind it: the gauge then reads as a bare arc floating in a
- * square, and an empty envelope reads as no gauge at all. So the track is the
- * category's own colour at low alpha, which sits between the well and the arc
- * and keeps all three legible.
+ * The arcs used to be six steps of the category ramp. That ramp is pink to
+ * yellow now and its yellow half cannot carry an arc: #FFD600 is 1.41:1 on
+ * white. So the ring is always --c-mark, the well is the category's own tint,
+ * and the card's own name is what actually says which category it is.
  *
- * Whole class strings, not `bg-cat-${n}-soft`. Tailwind scans source text, so
- * an interpolated class never reaches the stylesheet.
+ * The track is the mark at low alpha rather than the well's tint, for the
+ * reason it always was: giving both the same colour paints the unspent part of
+ * the arc in exactly the colour behind it, and an untouched envelope then reads
+ * as no ring at all.
+ *
+ * Whole class strings, not `bg-cat-${n}-soft`. Tailwind scans source text.
  */
 const TONE = {
-  food: { well: 'bg-cat-1-soft', arc: 'stroke-cat-1', track: 'stroke-cat-1/25' },
-  transport: { well: 'bg-cat-2-soft', arc: 'stroke-cat-2', track: 'stroke-cat-2/25' },
-  home: { well: 'bg-cat-3-soft', arc: 'stroke-cat-3', track: 'stroke-cat-3/25' },
-  fun: { well: 'bg-cat-4-soft', arc: 'stroke-cat-4', track: 'stroke-cat-4/25' },
-  health: { well: 'bg-cat-5-soft', arc: 'stroke-cat-5', track: 'stroke-cat-5/25' },
-  /**
-   * `other` keeps its own well and borrows a darker arc, and this was measured.
-   *
-   * The six arcs are a lightness ramp and cat-6 is its palest step: index.css
-   * records it at 3.58:1, which is against WHITE. Sitting it in its own soft
-   * tint instead of on the card costs the rest of that headroom, and ringprobe
-   * measured the sea theme at 2.49:1, under the 3:1 that WCAG 1.4.11 asks of a
-   * graphical object. Sun scraped through at 3.33:1, which is not a reason to
-   * ship it in one theme and not the other.
-   *
-   * Alpha on the well does not fix it: at 60 % over the card it still only
-   * reaches 2.89:1, because the binding constraint is the arc, not the ground.
-   * So the arc steps back to cat-3, which measures 4.80:1 in sea and 5.97:1 in
-   * sun. `home` also draws cat-3, and the two are still told apart by their
-   * wells and by their names. A residual bucket sharing a hue with a named one
-   * is a smaller cost than a ring nobody can see.
-   */
-  other: { well: 'bg-cat-6-soft', arc: 'stroke-cat-3', track: 'stroke-cat-3/25' },
+  food: { well: 'bg-cat-1-soft' },
+  transport: { well: 'bg-cat-2-soft' },
+  home: { well: 'bg-cat-3-soft' },
+  fun: { well: 'bg-cat-4-soft' },
+  health: { well: 'bg-cat-5-soft' },
+  other: { well: 'bg-cat-6-soft' },
 }
+const ARC = 'stroke-mark'
+const TRACK = 'stroke-mark/25'
 
 export default function CategoryBento({ s, allocations, locale, onOpen }) {
   const { t } = useT()
@@ -112,8 +102,8 @@ export default function CategoryBento({ s, allocations, locale, onOpen }) {
                 stroke={6}
                 sweep={0.75}
                 dim={!inUse}
-                arc={over ? 'stroke-negative' : tone.arc}
-                track={over ? 'stroke-negative/25' : tone.track}
+                arc={over ? 'stroke-negative' : ARC}
+                track={over ? 'stroke-negative/25' : TRACK}
               />
             </span>
 

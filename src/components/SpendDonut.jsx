@@ -22,7 +22,15 @@ import { CatIcon } from './CatDisc'
  * gap or an overlap, which hand-built arc paths do the moment a share rounds.
  */
 const ARC = ['stroke-cat-1', 'stroke-cat-2', 'stroke-cat-3', 'stroke-cat-4', 'stroke-cat-5', 'stroke-cat-6']
-const TEXT = ['text-cat-1', 'text-cat-2', 'text-cat-3', 'text-cat-4', 'text-cat-5', 'text-cat-6']
+/**
+ * The legend's words are INK, not the slice's colour.
+ *
+ * They used to take the slice's own step of the ramp, which worked while the
+ * ramp was six dark crimsons. It is pink to yellow now: #FFD600 as a 14px word
+ * is 1.41:1 and unreadable. The swatch beside each row carries the colour, the
+ * word carries the meaning, and that split is what 1.4.1 asks for anyway.
+ */
+const TEXT = ['text-ink', 'text-ink', 'text-ink', 'text-ink', 'text-ink', 'text-ink']
 const ORDER = ['food', 'transport', 'home', 'fun', 'health', 'other']
 
 const SIZE = 168

@@ -6,8 +6,9 @@
  * has an answer is a benchmark that is making some of them up.
  */
 import {
-  benchmarkFor, compareRate, compareShares, COUNTRIES, detectCountry,
-  SAVING_RATE, sharesOf, SNAPSHOT, spendOver, SPEND_SHARE,
+  AGE_BANDS, ageBandOf, benchmarkFor, compareRate, compareShares, COUNTRIES,
+  detectCountry, otherBasisFor, SAVING_RATE, SAVING_RATE_BY_AGE, sharesOf,
+  SNAPSHOT, spendOver, SPEND_SHARE,
 } from './benchmarks.js'
 
 let pass = 0
@@ -42,8 +43,79 @@ const eq = (what, a, b) => ok(what, a === b, `${a} !== ${b}`)
 /* ------------------------------------------------------- benchmarkFor --- */
 {
   eq('a known country returns its rate', benchmarkFor('CA').rate, 6)
+  eq('and says the figure is the country one', benchmarkFor('CA').scope, 'country')
   eq('an unknown one returns null', benchmarkFor('CI'), null)
   eq('so does nothing at all', benchmarkFor(undefined), null)
+}
+{
+  const r = benchmarkFor('CA', 'u35')
+  eq('a band returns the band figure', r.rate, 5)
+  eq('and says so', r.scope, 'age')
+  eq('naming the band', r.band, 'u35')
+  eq('with its own source', r.source.includes('groupe d’âge'), true)
+}
+{
+  eq('a band nobody has data for falls back to the country',
+    benchmarkFor('FR', 'u35').scope, 'country')
+  eq('and so does a band that is not a band', benchmarkFor('CA', 'nonsense').scope, 'country')
+}
+
+/* ------------------------------------------------------------ by age --- */
+{
+  const t = SAVING_RATE_BY_AGE.CA
+  eq('five bands', Object.keys(t.rates).length, 5)
+  eq('one per declared band', AGE_BANDS.every((b) => t.rates[b] != null), true)
+  ok('every one is a whole number', Object.values(t.rates).every(Number.isInteger))
+  ok('it names its source and period', Boolean(t.source && t.period))
+  /* The shape is the part that is not in doubt: saving rises through working
+     life and goes negative after 65, because that is when a household spends
+     what it put aside. A table where 65+ is the highest is a transcription
+     error, not a finding. */
+  ok('saving peaks in the middle of working life',
+    t.rates['35_44'] > t.rates.u35 && t.rates['45_54'] > t.rates.u35)
+  ok('and turns negative in retirement', t.rates['65p'] < 0, String(t.rates['65p']))
+  eq('only Canada has a by-age table', Object.keys(SAVING_RATE_BY_AGE).length, 1)
+}
+
+/* ---------------------------------------------------------- ageBandOf --- */
+{
+  const on = (y, m, d) => new Date(y, m - 1, d)
+  eq('a twenty-something', ageBandOf('2000-01-01', on(2026, 6, 1)), 'u35')
+  eq('exactly 35 leaves the first band', ageBandOf('1991-06-01', on(2026, 6, 1)), '35_44')
+  eq('the day before does not', ageBandOf('1991-06-02', on(2026, 6, 1)), 'u35')
+  eq('mid forties', ageBandOf('1980-01-01', on(2026, 6, 1)), '45_54')
+  eq('late fifties', ageBandOf('1968-01-01', on(2026, 6, 1)), '55_64')
+  eq('and retirement', ageBandOf('1950-01-01', on(2026, 6, 1)), '65p')
+  eq('exactly 65 is in the last band', ageBandOf('1961-06-01', on(2026, 6, 1)), '65p')
+}
+{
+  const on = (y, m, d) => new Date(y, m - 1, d)
+  /* The birthday has not happened yet this year, so the age is one less. Same
+     month-then-day comparison daysUntilBirthday uses, and the same reason: a
+     date subtraction gets this wrong by a day around the boundary. */
+  eq('a birthday later this month has not happened', ageBandOf('1991-06-15', on(2026, 6, 1)), 'u35')
+  eq('on the day itself it has', ageBandOf('1991-06-01', on(2026, 6, 1)), '35_44')
+  eq('and the day after', ageBandOf('1991-05-31', on(2026, 6, 1)), '35_44')
+}
+{
+  eq('no birthday on file is no band', ageBandOf(null), null)
+  eq('nor is a blank', ageBandOf(''), null)
+  eq('nor is rubbish', ageBandOf('not-a-date'), null)
+  eq('nor is a year nobody was born in', ageBandOf('1650-01-01', new Date(2026, 0, 1)), null)
+  eq('a full timestamp still parses', ageBandOf('2000-01-01T00:00:00Z', new Date(2026, 5, 1)), 'u35')
+}
+
+/* -------------------------------------------------------- otherBasis --- */
+{
+  const ci = otherBasisFor('CI')
+  ok('Cote d Ivoire has a figure', Boolean(ci))
+  eq('on a DIFFERENT basis', ci.basis, 'gross-national')
+  ok('and it says which, in its source', /nationale brute|% du PIB/.test(ci.source), ci.source)
+  /* The whole point of the split: it must never become a rank. */
+  eq('it is not in the rate table', SAVING_RATE.some((r) => r.code === 'CI'), false)
+  eq('so it cannot be benchmarked against', benchmarkFor('CI'), null)
+  eq('and comparing gives no standing', compareRate(12, 'CI').standing, null)
+  eq('a country with no other-basis figure returns null', otherBasisFor('CA'), null)
 }
 
 /* ------------------------------------------------------ detectCountry --- */

@@ -8,7 +8,7 @@ import { currencySymbol, minorDigits } from '../lib/currency'
 import { clearDraft, hasFreshDraft, readDraft, useDraft } from '../lib/draft'
 import { loadBudget } from '../lib/budgetData'
 import { errorText, isMissingColumn, isMissingTable, isNetworkError } from '../lib/dberr'
-import { detectCountry, spendOver } from '../lib/benchmarks'
+import { ageBandOf, detectCountry, spendOver } from '../lib/benchmarks'
 import { history as savingsHistory, recentRate } from '../lib/savings'
 import { fromCents, localISO, toCents, txnPayload, withoutField } from '../lib/txn'
 import { Empty, Screen, Section, TopBar } from '../components/ui'
@@ -476,6 +476,12 @@ export default function Money() {
    * one table was not. Empty until a month has closed, which is honest: there
    * is nothing yet to compare.
    */
+  /* The age band, from the birthday already on the profile. Null when there is
+     none, and the sheet says so and offers the fallback rather than guessing an
+     age or silently comparing against the country as though it had been asked
+     for. */
+  const ageBand = ageBandOf(profile?.birthday)
+
   const bmClosed = savHistory.filter((r) => r.closed).slice(0, 12)
   const bmCategories = bmClosed.length
     ? spendOver(entries, bmClosed[bmClosed.length - 1].start, bmClosed[0].end)
@@ -828,6 +834,7 @@ export default function Money() {
             rate={myRate.rate}
             months={myRate.months}
             country={country}
+            band={ageBand}
             onAddTransaction={() => setSheet(NEW)}
           />
         </Section>
