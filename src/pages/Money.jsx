@@ -17,6 +17,7 @@ import {
 } from '../components/ActionBar'
 import PaneTabs from '../components/PaneTabs'
 import CategoryBento from '../components/CategoryBento'
+import FeatureCards from '../components/FeatureCards'
 import Savings from '../components/Savings'
 import Benchmarks from '../components/Benchmarks'
 import Formation from '../components/Formation'
@@ -27,7 +28,6 @@ import Projects from '../components/Projects'
 import ProjectDetail from '../components/ProjectDetail'
 import { loadProjectProfiles, loadProjects } from '../lib/projectData'
 import BudgetIntro from '../components/BudgetIntro'
-import SpendTrend from '../components/SpendTrend'
 import TransactionSheet from '../components/TransactionSheet'
 import PlanVsActual from '../components/PlanVsActual'
 import Envelopes, { SpendableBar } from '../components/Envelopes'
@@ -885,11 +885,15 @@ export default function Money() {
        * editable fields is a form rather than a dashboard, and why every card
        * is a button into the envelopes pane instead.
        */}
+      {/* Its own heading, not the envelopes pane's. Both said "Donne un rôle à
+          chaque dollar", so the same sentence introduced two different screens
+          and the section's own action button then said "Enveloppes" underneath
+          it. The dashboard names the thing; the pane keeps the sentence. */}
       <Section
-        title={t('env.title')}
+        title={t('money.tab_envelopes')}
         action={
           <button className="goal-action press shrink-0" onClick={() => setPane('envelopes')}>
-            {t('money.tab_envelopes')}
+            {t('hist.see_all')}
           </button>
         }
       >
@@ -901,85 +905,19 @@ export default function Money() {
         />
       </Section>
 
-      {/* The shape of the month. Under the headline because it is the same
-          fact over time, and full width because that is what a sparkline
-          needs; see SpendTrend for what was here before and why it broke. */}
-      <Section>
-        <SpendTrend s={s} locale={locale} />
-      </Section>
-
       {/**
-       * Rows, not columns, and not the shared Stat component.
+       * Four ways in, where the pace sparkline and the month tiles used to be.
        *
-       * Stat renders at text-metric, 3rem, sized for a percentage or a
-       * count. Three formatted currency amounts at that size ran straight
-       * through each other on a phone. Dropping to heading size stopped
-       * the overlap but they still touched, because "CA$1,367.00" is
-       * eleven characters and a third of a 420px screen is not enough for
-       * it at any size worth reading.
+       * The three blocks that stood here were all arithmetic, and the budget's
+       * front page already opens with the number they were qualifying. What it
+       * did not have was any reason to press Formation, Projets, Comparaison or
+       * Journal: a pill is a word, and a word cannot say what a section is for.
        *
-       * Currency width is not predictable: the code, the thousands
-       * separator and the locale all move it, and fr-CA writes the symbol
-       * on the other end. So the amounts get a full line each and the
-       * columns problem stops existing. It also matches the "where it
-       * went" list further down, which is the same shape of information.
+       * FeatureCards carries the note on what those blocks took with them when
+       * they went, which is one figure with nowhere else to live.
        */}
-      {/**
-       * Figures inside one sheet rather than lines lying on the page. Divided
-       * rather than spaced: the hairlines are what say these are one set of
-       * related numbers and not three unrelated ones.
-       *
-       * Every row here is something no other part of the pane shows. It used
-       * to repeat the spent total, which is in the headline sentence, and to
-       * label `available` "Restant" while the tile above labelled `balance`
-       * "Restant" too. Those are different numbers, they differ by whatever
-       * charges are still unpaid, and the pane read as though it could not
-       * add up. The row says "after bills" now, and the charges it is net of
-       * get a row of their own so the arithmetic is visible rather than
-       * mysterious.
-       */}
-      <Section title={t('money.this_period')}>
-        {/**
-         * Four tiles, not four rows.
-         *
-         * The same four facts, but a grid gives each its own object with room
-         * for the label above the figure, which is what lets the figure be
-         * read at a size worth reading. A divided list gave every one of them
-         * the same visual weight as a line of small print.
-         *
-         * Not aspect-square. The pair of tiles that used to live on this pane
-         * were, and a caption in French does not fit in half a phone; these
-         * size to their content and hold two short lines each.
-         *
-         * Every tile is something no other part of the pane shows. The spent
-         * total is in the headline sentence and the balance IS the headline,
-         * so neither is here.
-         */}
-        <div className="grid grid-cols-2 gap-3" data-hook="month-tiles">
-          {[
-            [t('money.after_bills'), fmt(s.available)],
-            ...(s.fixedDue > 0 ? [[t('money.still_due'), fmt(s.fixedDue)]] : []),
-            [t('money.per_day'), fmt(Math.max(0, s.perDay))],
-            [t('money.days_left'), String(s.period.daysLeft)],
-          ].map(([label, value]) => (
-            /* The figure is pinned to the bottom, not stacked under the
-               label. "Restant apres les charges" wraps to two lines and
-               "Encore a payer" does not, so a value that simply follows its
-               label sits at a different height in each tile and the row
-               reads as misaligned rather than as a set. */
-            <div
-              key={label}
-              className="glass-card flex min-h-[6.5rem] flex-col justify-between rounded-3xl p-4"
-            >
-              <p className="text-label font-semibold uppercase leading-tight tracking-wider text-muted">
-                {label}
-              </p>
-              <p className="mt-2 font-display text-h2 leading-none text-ink [font-variant-numeric:tabular-nums]">
-                {value}
-              </p>
-            </div>
-          ))}
-        </div>
+      <Section title={t('feat.title')}>
+        <FeatureCards onOpen={setPane} />
       </Section>
 
         </>
