@@ -480,6 +480,21 @@ const STRINGS = {
     'money.draft_restored': 'Picked up where you left off. Nothing is saved until you save it.',
     'money.draft_discard': 'Start over',
 
+    /* The plan form's own headline and tiles. Short on purpose: these sit in a
+       tile roughly 170px wide on a phone, and the long-form label above is
+       what the screen reader still gets. */
+    'money.plan_left': 'Left to spend',
+    'money.plan_left_note': 'What is left each month once you have paid yourself and paid the bills.',
+    'money.plan_over_note': 'Your savings and your fixed costs come to more than what goes in.',
+    'money.plan_saved_pct': '{n} % saved',
+    'money.income_short': 'Money in',
+    'money.income_tile_hint': 'after tax',
+    'money.savings_short': 'Saved first',
+    'money.savings_tile_hint': 'before anything else',
+    'money.fixed_short': 'Fixed costs',
+    'money.plan_per_day': 'A day',
+    'money.fixed_none': 'No fixed costs yet. Rent, phone, transit, subscriptions.',
+
     'txn.new': 'New transaction',
     'txn.edit': 'Edit transaction',
     'txn.open': 'Add a transaction',
@@ -1414,6 +1429,18 @@ const STRINGS = {
     'money.saving': 'Enregistrement',
     'money.draft_restored': 'On reprend où tu t’étais arrêté. Rien n’est enregistré tant que tu ne le fais pas.',
     'money.draft_discard': 'Recommencer',
+
+    'money.plan_left': 'Reste à dépenser',
+    'money.plan_left_note': 'Ce qui reste chaque mois une fois que tu t’es payé et que les charges sont payées.',
+    'money.plan_over_note': 'Ton épargne et tes charges dépassent ce qui entre.',
+    'money.plan_saved_pct': '{n} % épargné',
+    'money.income_short': 'Ce qui entre',
+    'money.income_tile_hint': 'après impôts',
+    'money.savings_short': 'Épargne',
+    'money.savings_tile_hint': 'avant tout le reste',
+    'money.fixed_short': 'Charges fixes',
+    'money.plan_per_day': 'Par jour',
+    'money.fixed_none': 'Aucune charge fixe. Loyer, téléphone, transport, abonnements.',
 
     'txn.new': 'Nouvelle transaction',
     'txn.edit': 'Modifier la transaction',
