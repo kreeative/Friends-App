@@ -15,17 +15,54 @@ export function Screen({ children, className = '' }) {
 /**
  * No sticky bar, no bottom rule. The heading just sits at the top of the page
  * with room around it, one confident thing, which is the whole point.
+ *
+ * `back` turns the heading into a sub-page heading: an arrow above the title,
+ * on its own line, at the top left. Above rather than beside, because beside
+ * costs the title 44px of its width on a 320px screen and the titles here are
+ * French compounds like "Plan & Fixe" that were already wrapping.
+ *
+ * A real button with a real accessible name, not a bare glyph. The arrow is
+ * `aria-hidden` and `backLabel` is what a screen reader announces, so the
+ * control says "Retour au budget" rather than "left arrow".
  */
-export function TopBar({ title, right, sub }) {
+export function TopBar({ title, right, sub, back, backLabel }) {
   // pt-10 rather than pt-14: there is a sticky nav above this now, and the
   // heading was clearing chrome that no longer needed clearing.
   return (
-    <header className="flex items-start justify-between gap-4 pb-2 pt-10">
-      <div>
-        <h1 className="text-h1 text-ink">{title}</h1>
-        {sub && <p className="lede mt-2">{sub}</p>}
+    <header className={`pb-2 ${back ? 'pt-6' : 'pt-10'}`}>
+      {back && (
+        <button
+          type="button"
+          onClick={back}
+          data-hook="back"
+          aria-label={backLabel}
+          /* 44px square, the smallest thing a thumb should be asked to hit,
+             and the same glass card everything else on this screen sits in so
+             it reads as a control rather than as a decoration on the title. */
+          className="press mb-4 flex h-11 w-11 items-center justify-center rounded-pill
+                     border border-hairline bg-[rgb(var(--glass-tint))] text-ink shadow-raised"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5">
+            {/* Stroked, not a filled triangle: at 20px a solid arrowhead reads
+                as a play button pointing the wrong way. */}
+            <path
+              d="M14.5 5 7.8 11.4a.85.85 0 0 0 0 1.2L14.5 19"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button>
+      )}
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-h1 text-ink">{title}</h1>
+          {sub && <p className="lede mt-2">{sub}</p>}
+        </div>
+        {right && <div className="pt-1">{right}</div>}
       </div>
-      {right && <div className="pt-1">{right}</div>}
     </header>
   )
 }

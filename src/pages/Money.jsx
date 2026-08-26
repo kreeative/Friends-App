@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useT } from '../lib/i18n'
@@ -9,15 +10,14 @@ import { clearDraft, hasFreshDraft, readDraft, useDraft } from '../lib/draft'
 import { loadBudget } from '../lib/budgetData'
 import { errorText, isMissingColumn, isMissingTable, isNetworkError } from '../lib/dberr'
 import { ageBandOf, detectCountry, spendOver } from '../lib/benchmarks'
-import { history as savingsHistory, recentRate } from '../lib/savings'
+import { history as savingsHistory, recentRate, savedTotal } from '../lib/savings'
 import { fromCents, localISO, toCents, txnPayload, withoutField } from '../lib/txn'
 import { Empty, Screen, Section, TopBar } from '../components/ui'
 import { EnvelopeIcon, PiggyIcon, PlanIcon, SuitcaseIcon } from '../components/ActionBar'
-import PaneTabs from '../components/PaneTabs'
-import CategoryBento from '../components/CategoryBento'
+import BudgetShortcuts from '../components/BudgetShortcuts'
 import WealthRank from '../components/WealthRank'
 import Savings from '../components/Savings'
-import TransactionHistory from '../components/TransactionHistory'
+import TransactionHistory, { TxnRow } from '../components/TransactionHistory'
 import Projects from '../components/Projects'
 import ProjectDetail from '../components/ProjectDetail'
 import { loadProjectProfiles, loadProjects } from '../lib/projectData'
@@ -25,7 +25,7 @@ import BudgetIntro from '../components/BudgetIntro'
 import TransactionSheet from '../components/TransactionSheet'
 import PlanVsActual from '../components/PlanVsActual'
 import Envelopes, { SpendableBar } from '../components/Envelopes'
-import { ENVELOPE_CATEGORIES, allocationsFor, spendable, toAllocate } from '../lib/envelope'
+import { ENVELOPE_CATEGORIES, allocationsFor, spendable, toAllocate, totalAllocated } from '../lib/envelope'
 import FixedCharges from '../components/FixedCharges'
 
 /**
@@ -61,6 +61,31 @@ const DRAFT_KEY = 'rich_friends_budget_draft'
 
 /** The sheet is open, on nothing yet. See the `sheet` state below. */
 const NEW = 'new'
+
+/**
+ * Every :pane the budget answers to.
+ *
+ * The list is here rather than derived from the cards below because it also
+ * has to accept `history`, which is a sub-page with a heading and a back
+ * button like the other four but is reached from the primary button rather
+ * than from the section grid. Anything not in this list renders the
+ * dashboard, so a typed or stale URL lands somewhere real.
+ */
+const PANES = ['envelopes', 'plan', 'projects', 'savings', 'history']
+
+/**
+ * How many transactions the budget's own page shows.
+ *
+ * Five, not the twenty the old log pane carried. A dashboard's job with a log
+ * is to answer "did that go in", which the newest row answers by itself, and
+ * to offer the way to the real question, which is the link beside the heading.
+ * Twenty answers neither and pushes the rank card off the first screen.
+ */
+const RECENT = 5
+
+/** "There is no number here", the way the rest of the screen already spells
+    it. An en dash, not an em dash: see CLAUDE.md. */
+const NO_FIGURE = '\u2013'
 
 /**
  * One amount, typed straight into a tile.
@@ -270,6 +295,43 @@ export default function Money() {
   const { user, profile, updateProfile } = useAuth()
   const { t, locale } = useT()
 
+  /**
+   * THE SECTIONS ARE PAGES NOW, AND THE URL IS WHERE THAT LIVES.
+   *
+   * They used to be `useState('envelopes')` under a row of pills: tapping one
+   * swapped a block in the middle of a screen that kept its heading, its hero
+   * card, its primary button and its rank card. That is a tab, and it was
+   * asked to behave as navigation. Two things were wrong with it and both are
+   * fixed by the address bar rather than by styling:
+   *
+   *   The system back gesture did nothing. Opening Haut Budget and swiping
+   *   back left the budget entirely, because as far as the browser was
+   *   concerned you had never gone anywhere.
+   *
+   *   Nothing was linkable. /money was every section at once, so there was no
+   *   way to send somebody, or yourself, to the one you meant.
+   *
+   * So a section is a route: /money/envelopes, /money/plan, /money/projects,
+   * /money/savings, and /money/history for the full transaction list. Bare
+   * /money is the dashboard.
+   *
+   * ONE COMPONENT, NOT FIVE ROUTES WITH FIVE FETCHES. Every section reads the
+   * same plan, the same entries, the same allocations. Splitting them into
+   * sibling route elements would mean five copies of loadBudget and five
+   * chances for two of them to disagree about what this period is. React
+   * Router points all six paths at this component and the param picks the
+   * body, so navigation is a render rather than a reload and the numbers on a
+   * section are the numbers the dashboard just showed.
+   *
+   * An unknown param is the dashboard rather than a crash: /money/typo is a
+   * URL somebody can type.
+   */
+  const { pane: param } = useParams()
+  const navigate = useNavigate()
+  const pane = PANES.includes(param) ? param : null
+  const openPane = (id) => navigate(`/money/${id}`)
+  const toBudget = () => navigate('/money')
+
   const [plan, setPlan] = useState(null)
   const [fixed, setFixed] = useState([])
   const [entries, setEntries] = useState([])
@@ -414,20 +476,29 @@ export default function Money() {
   const bar = useMemo(() => spendable({ earned: s.earned, spent: s.spent }), [s.earned, s.spent])
 
   /**
-   * Which pane is showing.
+   * The last few transactions, newest first.
    *
-   * The money screen had grown to nine sections in one column: the headline,
-   * the tiles, the button, the envelopes, planned-against-actual, the fixed
-   * charges, this period's figures, where it went, and the last twenty
-   * transactions. Logging a coffee meant scrolling past six things nobody had
-   * asked for, which is the argument the check-in screen made about its own
-   * four jobs before it grew this same bar.
+   * Up here with the other derived values rather than beside the JSX that
+   * uses it, because everything below the `loading`, `missing` and intro
+   * branches is past an early return. A hook after one of those runs on some
+   * renders and not others, which React counts and refuses: it cost a
+   * "rendered more hooks than during the previous render" and a blank budget.
    *
-   * Not stored anywhere. A tab is where you are, not a preference, and
-   * reopening the budget on Epargne because that is where you finished last
-   * time is the app remembering the wrong thing.
+   * `id` breaks the tie, so two transactions logged on the same day come out
+   * in a stable order rather than in whatever order the fetch happened to
+   * return them.
    */
-  const [pane, setPane] = useState('envelopes')
+  const recent = useMemo(
+    () =>
+      [...entries]
+        .sort(
+          (a, b) =>
+            String(b.happened_on).localeCompare(String(a.happened_on)) ||
+            String(b.id).localeCompare(String(a.id)),
+        )
+        .slice(0, RECENT),
+    [entries],
+  )
 
   /* Shared project budgets. Held separately from the personal budget in every
      sense that matters: separate tables, separate policies, separate load.
@@ -438,8 +509,14 @@ export default function Money() {
   const [projProfiles, setProjProfiles] = useState({})
   const [openProject, setOpenProject] = useState(null)
 
-  /* The full history is its own view, reached from the log pane. */
-  const [history, setHistory] = useState(false)
+  /* A section's own drill-down does not survive leaving the section, which is
+     the point of leaving it. Without this, going back to the budget and into
+     Haut Budget again reopens whichever project you were last inside, which
+     as a tab was merely odd and as a route is a page that does not match its
+     own URL. */
+  useEffect(() => {
+    if (pane !== 'projects') setOpenProject(null)
+  }, [pane])
 
   /**
    * What each tile says about itself.
@@ -506,26 +583,79 @@ export default function Money() {
    * standing arrangement behind it, the one-off projects beside it, and what
    * survives the month.
    */
-  const panes = [
+  const allocated = totalAllocated(allocations)
+  /* Only what a category was given a job for. s.spent includes the categories
+     with no envelope, and dividing that by the allocated total draws an arc
+     past full for a month nobody overspent. */
+  const inEnvelopes = s.byCategory.reduce(
+    (n, c) => n + (ENVELOPE_CATEGORIES.includes(c.key) ? c.cents : 0),
+    0,
+  )
+  const saved = savedTotal(savings)
+  const target = Number(plan?.savings_target_cents) || 0
+
+  /**
+   * The four sections, and the one live number each one is worth opening for.
+   *
+   * The numbers are the whole reason this is a grid of cards rather than a row
+   * of names. A section is a page away now, so "is there anything in Haut
+   * Budget" has to be answerable without going there, or the dashboard has
+   * sent you on a round trip to find out there was nothing.
+   *
+   * `dim` is "nothing set up yet", and it changes what the card says rather
+   * than only how it looks: a grey zero and a black zero are the same claim,
+   * and WCAG 1.4.1 wants the difference carried by something other than the
+   * colour anyway. Each dim branch prints the word for "not set up" instead of
+   * a figure nobody entered.
+   */
+  const shortcuts = [
     {
       id: 'envelopes',
       icon: <EnvelopeIcon />,
       label: t('money.tab_envelopes'),
+      well: 'bg-cat-1-soft',
+      pct: allocated > 0 ? Math.round((inEnvelopes / allocated) * 100) : 0,
+      dim: funded === 0,
+      value: String(funded),
+      word: t('money.sc_env', { n: ENVELOPE_CATEGORIES.length }),
     },
     {
       id: 'plan',
       icon: <PlanIcon />,
       label: t('money.tab_plan'),
+      well: 'bg-cat-2-soft',
+      pct: liveFixed.length > 0 ? Math.round((paidFixed / liveFixed.length) * 100) : null,
+      dim: liveFixed.length === 0,
+      value: String(paidFixed),
+      word: liveFixed.length === 0 ? t('money.sc_plan_none') : t('money.sc_plan', { n: liveFixed.length }),
     },
     {
       id: 'projects',
       icon: <SuitcaseIcon />,
       label: t('money.tab_projects'),
+      well: 'bg-cat-3-soft',
+      /* No denominator exists. Three shared projects is not three out of
+         anything, so the card wears the section's own mark rather than a ring
+         drawn at a fraction nobody measured. */
+      pct: null,
+      dim: projects.length === 0,
+      value: String(projects.length),
+      word: t('money.sc_projects'),
     },
     {
       id: 'savings',
       icon: <PiggyIcon />,
       label: t('money.tab_savings'),
+      well: 'bg-cat-5-soft',
+      pct: target > 0 ? Math.round((saved / target) * 100) : null,
+      dim: savingsMissing || saved === 0,
+      /* The one card with no number to print. Every other zero here is a
+         measured zero: no envelope funded, no charge paid, no project. A
+         savings table that has never been installed is not a zero, it is an
+         absence, and printing 0,00 $ would be the screen inventing a figure.
+         The en dash is what PlanVsActual already uses for the same thing. */
+      value: savingsMissing ? NO_FIGURE : fmt(saved),
+      word: savingsMissing ? t('money.sc_sav_none') : t('money.sc_sav'),
     },
   ]
 
@@ -685,228 +815,222 @@ export default function Money() {
     )
   }
 
+  /**
+   * The five sub-pages, by the name each one wears at the top of itself.
+   *
+   * The heading follows you in. A page still titled "Budget" while it is
+   * showing a filtered list of June is a page lying about where you are, and
+   * that was already true of the history before any of these were routes.
+   */
+  const PANE_TITLE = {
+    envelopes: t('money.tab_envelopes'),
+    plan: t('money.tab_plan'),
+    projects: t('money.tab_projects'),
+    savings: t('money.tab_savings'),
+    history: t('hist.title'),
+  }
+
   return (
     /* The ground the cards are glass over. Without it every .glass-card on
        this screen is just a white box with a blur that returns the colour it
        was given, which is what .glass has always degraded to app-wide. */
     <Screen className="ambient">
       <TopBar
-        /* The heading follows you in. A page titled "Budget" that is showing
-           a filtered list of June is a page lying about where you are. */
-        title={history ? t('hist.title') : t('money.title')}
-        sub={history ? t('hist.count', { n: entries.length }) : t('money.sub_period', { days: s.period.daysLeft })}
+        title={pane ? PANE_TITLE[pane] : t('money.title')}
+        sub={
+          pane === 'history'
+            ? t('hist.count', { n: entries.length })
+            : t('money.sub_period', { days: s.period.daysLeft })
+        }
+        /* Only on a sub-page, and it is the whole reason TopBar grew the
+           prop. On the budget itself there is nothing above to go back to:
+           the app's own tab bar is where you leave from. */
+        back={pane ? toBudget : undefined}
+        backLabel={t('hist.back')}
         right={
-          /* Nothing to edit from inside the history, and "Modifier" there
-             would read as an offer to edit the list. */
-          history ? null : (
-            /* An outlined pill, not btn-ghost. Ghost is edgeless by design,
-               which works underneath a filled primary that has already
-               established the row; alone in the corner of a heading it was
-               indistinguishable from a line of bold text and read as a label
-               rather than as the only control on the screen. */
+          /**
+           * Editing the plan belongs to the two screens it is about.
+           *
+           * Inside the history "Modifier" reads as an offer to edit the list,
+           * and inside Enveloppes or Haut Budget it offers to edit something
+           * that is not on screen. It stays on the budget, where setup starts,
+           * and on Plan & Fixe, which is the page the plan IS.
+           *
+           * An outlined pill, not btn-ghost. Ghost is edgeless by design,
+           * which works underneath a filled primary that has already
+           * established the row; alone in the corner of a heading it was
+           * indistinguishable from a line of bold text and read as a label
+           * rather than as the only control on the screen.
+           */
+          pane === null || pane === 'plan' ? (
             <button className="goal-action press" onClick={() => setEditing(true)}>
               {t('money.edit_plan')}
             </button>
-          )
+          ) : null
         }
       />
 
-      {/**
-       * The history takes over the whole body, not just the pane.
-       *
-       * "Instead of everything being on the same page" was the ask, and a
-       * history rendered under the tab grid with the primary button still
-       * above it is still the same page. With the chrome gone it reads as a
-       * place you went to, which is what makes going back meaningful.
-       */}
-      {history ? (
+      {pane === null && (
+        <>
+          {/**
+           * 1. WHAT IS LEFT, AND NOTHING ABOVE IT.
+           *
+           * The one number the whole screen is for. It used to live inside the
+           * overview tab, which meant it vanished the moment you looked at
+           * anything else; now the sections are pages and it is what the
+           * budget's own page opens with.
+           *
+           * Overcommitted replaces it rather than sitting beside it. That
+           * state means the plan itself does not close, so no amount of
+           * careful spending fixes it, and showing a spendable figure
+           * underneath a warning that the figure is unreachable would be
+           * arithmetically defensible and useless.
+           */}
+          <Section>
+            {s.overcommitted ? (
+              <div className="card-warn">
+                <div className="text-h2 text-ink">{t('money.overcommitted_title')}</div>
+                <p className="mt-2 text-body text-muted">
+                  {t('money.overcommitted_body', {
+                    over: fmt(Math.abs(s.plannedPool)),
+                    fixed: fmt(s.committed + s.savings),
+                    income: fmt(s.income),
+                  })}
+                </p>
+              </div>
+            ) : (
+              <SpendableBar bar={bar} currency={s.currency} locale={locale} />
+            )}
+          </Section>
+
+          {/* 2. The one thing this screen exists to enable, above the sections
+                for the same reason Submit sits outside the check-in's four:
+                hiding it behind navigation would mean navigating in order to
+                record a coffee. */}
+          <Section>
+            <button className="btn-primary press w-full" onClick={() => setSheet(NEW)}>
+              {t('txn.open')}
+            </button>
+          </Section>
+
+          {/* 3. The four sections, as cards that go somewhere. */}
+          <Section title={t('money.sections')}>
+            <BudgetShortcuts items={shortcuts} onOpen={openPane} />
+          </Section>
+
+          {/**
+           * 4. THE LAST FEW, AND THE WAY TO ALL OF THEM.
+           *
+           * Five rows, not twenty. A dashboard's job with a log is to answer
+           * "did that go in", which the newest row answers on its own, and to
+           * offer the way to the real question, which is the link beside the
+           * heading. Twenty rows answers neither and costs the rank card its
+           * place on the first screen.
+           *
+           * The rows are TransactionHistory's own row component rather than a
+           * second rendering of the same fact. They had already drifted once:
+           * the excluded badge and the strike-through were added to the
+           * history and never reached the summary, so a transaction marked as
+           * not counting looked exactly like one that did.
+           */}
+          <Section
+            title={t('money.recent')}
+            action={
+              entries.length > 0 && (
+                <button
+                  className="goal-action press shrink-0"
+                  data-hook="all-txn"
+                  onClick={() => openPane('history')}
+                >
+                  {t('hist.see_all')}
+                </button>
+              )
+            }
+          >
+            {recent.length === 0 ? (
+              <div className="glass-card rounded-3xl p-5">
+                <Empty>{t('hist.none')}</Empty>
+              </div>
+            ) : (
+              <ul className="glass-card divide-y divide-hairline rounded-3xl px-4">
+                {recent.map((r) => (
+                  <TxnRow
+                    key={r.id}
+                    row={r}
+                    currency={s.currency}
+                    locale={locale}
+                    onOpen={setSheet}
+                  />
+                ))}
+              </ul>
+            )}
+          </Section>
+
+          {/* 5. One number, one card, one sheet. See WealthRank for what this
+                replaced and why the methodology is fine print now. */}
+          <Section>
+            <WealthRank
+              rate={myRate.rate}
+              months={myRate.months}
+              country={country}
+              band={ageBand}
+              onAddTransaction={() => setSheet(NEW)}
+            />
+          </Section>
+        </>
+      )}
+
+      {/* Every transaction ever, with its own filters and its own donut. Its
+          back button used to be the first thing in its body; the heading
+          carries it now, so the page does not offer two ways back. */}
+      {pane === 'history' && (
         <Section>
           <TransactionHistory
             entries={entries}
             currency={s.currency}
             locale={locale}
             onOpen={setSheet}
-            onBack={() => setHistory(false)}
-          />
-        </Section>
-      ) : (
-        <>
-      {/**
-       * 1. THE HEADER CARD, above everything and outside every pane.
-       *
-       * It used to live inside the overview, which meant the one number the
-       * whole screen is for vanished the moment you looked at anything else.
-       * It is the dashboard's header now: what is left, a percentage badge,
-       * and the bar, on every pane.
-       *
-       * Overcommitted replaces it rather than sitting beside it. That state
-       * means the plan itself does not close, so no amount of careful spending
-       * fixes it, and showing a spendable figure underneath a warning that the
-       * figure is unreachable would be arithmetically defensible and useless.
-       */}
-      <Section>
-        {s.overcommitted ? (
-          <div className="card-warn">
-            <div className="text-h2 text-ink">{t('money.overcommitted_title')}</div>
-            <p className="mt-2 text-body text-muted">
-              {t('money.overcommitted_body', {
-                over: fmt(Math.abs(s.plannedPool)),
-                fixed: fmt(s.committed + s.savings),
-                income: fmt(s.income),
-              })}
-            </p>
-          </div>
-        ) : (
-          <SpendableBar bar={bar} currency={s.currency} locale={locale} />
-        )}
-      </Section>
-
-      {/* 2. The four pillars, as pills directly under the header card. */}
-      <div className="mt-4">
-        <PaneTabs items={panes} value={pane} onChange={setPane} />
-      </div>
-
-      {/**
-       * The one button that belongs to no pane, and the way to everything
-       * that has already been logged.
-       *
-       * Logging a transaction is what this screen exists to enable, so it sits
-       * above the panes for the same reason Submit sits outside the check-in's
-       * four: hiding it behind a tab would mean navigating in order to record
-       * a coffee.
-       *
-       * The history link is beside it because the tab that used to hold the
-       * transaction list is gone. Without this line every transaction ever
-       * recorded would have been unreachable, which is a bigger hole than the
-       * tab was.
-       */}
-      <Section>
-          <button className="btn-primary press w-full" onClick={() => setSheet(NEW)}>
-            {t('txn.open')}
-          </button>
-          {entries.length > 0 && (
-            <button
-              className="btn-quiet press mt-2 w-full"
-              data-hook="all-txn"
-              onClick={() => setHistory(true)}
-            >
-              {t('hist.all_txn')}
-            </button>
-          )}
-        </Section>
-
-      {/**
-       * 3. THE BENTO, ALWAYS ON, NEVER A TAB.
-       *
-       * The overview was a tab you had to select to see the state of your own
-       * month. It is the page now: six categories, what each is for, how far
-       * through it you are and what is left, above whatever section you happen
-       * to be working in.
-       *
-       * With one exception, and it is not a hedge. The Enveloppes pane IS these
-       * six categories with a field in each, so on that tab the page drew the
-       * same six cards twice in a row, read-only and then editable. The summary
-       * is what you keep when you are somewhere else; where you are already
-       * looking at the detail, it is noise.
-       */}
-      {pane !== 'envelopes' && (
-      <Section
-          title={t('money.tab_envelopes')}
-          action={
-            <button className="goal-action press shrink-0" onClick={() => setPane('envelopes')}>
-              {t('hist.see_all')}
-            </button>
-          }
-        >
-          <CategoryBento
-            s={s}
-            allocations={allocations}
-            locale={locale}
-            onOpen={() => setPane('envelopes')}
           />
         </Section>
       )}
 
-      {/* One number, one card, one sheet. See WealthRank for what this
-          replaced and why the methodology is fine print now. */}
-      <Section>
-          <WealthRank
-            rate={myRate.rate}
-            months={myRate.months}
-            country={country}
-            band={ageBand}
-            onAddTransaction={() => setSheet(NEW)}
-          />
-        </Section>
-
-      {/**
-       * One pane at a time, grouped by the question each answers.
-       *
-       * Overview is "how am I doing", in the three resolutions the screen has
-       * for it: the gauge, the two squares, the figures. Envelopes is "what is
-       * each dollar for". Plan is "what did I set up", the only pair here
-       * about intentions rather than events. Log is "what actually happened".
-       *
-       * The fixed charges sit with the plan rather than the log, even though
-       * marking one paid is an event: the list is the standing set of
-       * obligations, which is something you arranged, and the payment is how
-       * far through arranging it you are.
-       */}
+      {/* Every dollar that arrived, given a job. */}
       {pane === 'envelopes' && (
-        <>
-      {/* Every dollar that arrived, given a job. Above the plan because this is
-          about money that is really there, and the plan is an estimate. */}
-      <Section title={t('env.title')}>
-        <Envelopes s={s} allocations={allocations} locale={locale} onChange={load} />
-      </Section>
-
-        </>
+        <Section title={t('env.title')}>
+          <Envelopes s={s} allocations={allocations} locale={locale} onChange={load} />
+        </Section>
       )}
 
-      {/* Where the surplus goes. See src/components/Savings.jsx for why the
-          sweep is offered rather than taken. */}
-      {pane === 'savings' && (
-        <Savings
-          userId={user?.id}
-          plan={plan}
-          entries={entries}
-          savings={savings}
-          currency={s.currency}
-          locale={locale}
-          missing={savingsMissing}
-          onChange={load}
-        />
-      )}
-
-      {/* You against published national figures, and nobody else's rows. */}
       {pane === 'plan' && (
         <>
-      {/* What was meant to happen, against what has. The gap between the two
-          columns is the interesting part, and it is the thing the old single
-          column could not show because it had already merged them. */}
-      <Section title={t('money.plan_vs_actual')}>
-        <PlanVsActual s={s} locale={locale} />
-      </Section>
+          {/* What was meant to happen, against what has. The gap between the
+              two columns is the interesting part, and it is the thing the old
+              single column could not show because it had already merged
+              them. */}
+          <Section title={t('money.plan_vs_actual')}>
+            <PlanVsActual s={s} locale={locale} />
+          </Section>
 
-      {/* And the charges themselves, each one planned until you say it went
-          out. This is the control the app never had: with no way to mark a
-          charge paid, the arithmetic had to assume always or never. */}
-      {fixed.filter((f) => f.active !== false).length > 0 && (
-        <Section title={t('money.fixed_title')}>
-          <FixedCharges fixed={fixed} s={s} locale={locale} onChange={load} />
-        </Section>
-      )}
-
+          {/* And the charges themselves, each one planned until you say it
+              went out. This is the control the app never had: with no way to
+              mark a charge paid, the arithmetic had to assume always or
+              never. */}
+          {liveFixed.length > 0 && (
+            <Section title={t('money.fixed_title')}>
+              <FixedCharges fixed={fixed} s={s} locale={locale} onChange={load} />
+            </Section>
+          )}
         </>
       )}
 
       {/**
        * Shared, ephemeral budgets.
        *
-       * A drill-down rather than a route: opening one swaps the pane's body
-       * for the project and the back button swaps it back. A route would be
-       * shareable, but the thing worth sharing is the invite code, and that
-       * is on the project itself.
+       * The project drill-down stays a drill-down rather than becoming
+       * /money/projects/:id. A route would be shareable, and the thing worth
+       * sharing about a project is its invite code, which is on the project
+       * itself and works whether or not the URL does. Its own back button
+       * returns to the list; the heading's returns to the budget.
        */}
       {pane === 'projects' && (
         <Section>
@@ -914,18 +1038,21 @@ export default function Money() {
             (() => {
               const p = projects.find((x) => x.id === openProject)
               /* Left, or removed on another device, between the tap and the
-                 render. Fall back to the list rather than to a blank pane. */
-              if (!p) return <Projects
-                userId={user?.id}
-                projects={projects}
-                members={projMembers}
-                entries={projEntries}
-                profiles={projProfiles}
-                currency={s.currency}
-                locale={locale}
-                onOpen={setOpenProject}
-                onChange={load}
-              />
+                 render. Fall back to the list rather than to a blank page. */
+              if (!p)
+                return (
+                  <Projects
+                    userId={user?.id}
+                    projects={projects}
+                    members={projMembers}
+                    entries={projEntries}
+                    profiles={projProfiles}
+                    currency={s.currency}
+                    locale={locale}
+                    onOpen={setOpenProject}
+                    onChange={load}
+                  />
+                )
               return (
                 <ProjectDetail
                   project={p}
@@ -955,7 +1082,19 @@ export default function Money() {
         </Section>
       )}
 
-        </>
+      {/* Where the surplus goes. See src/components/Savings.jsx for why the
+          sweep is offered rather than taken. */}
+      {pane === 'savings' && (
+        <Savings
+          userId={user?.id}
+          plan={plan}
+          entries={entries}
+          savings={savings}
+          currency={s.currency}
+          locale={locale}
+          missing={savingsMissing}
+          onChange={load}
+        />
       )}
 
       <TransactionSheet

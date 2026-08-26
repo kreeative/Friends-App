@@ -235,6 +235,17 @@ function Gate() {
         <Route path="start" element={<Start />} />
         <Route path="me" element={<Me />} />
         <Route path="money" element={<Money />} />
+        {/**
+         * The budget's sections are pages, and they are pages here rather than
+         * five sibling routes with five components.
+         *
+         * Every one of them reads the same plan, the same transactions and the
+         * same allocations. Splitting them would mean five copies of the load
+         * and five chances for two of them to disagree about what this period
+         * is, so one component answers all six paths and the param picks the
+         * body. See the note on useParams in src/pages/Money.jsx.
+         */}
+        <Route path="money/:pane" element={<Money />} />
         <Route path="library" element={<Library />} />
         <Route path="library/:slug" element={<Reader />} />
 

@@ -456,6 +456,18 @@ const STRINGS = {
     'feat.log_d': 'Note your thinking and your spending habits, day to day.',
 
     'money.tab_savings': 'Savings',
+
+    /* The budget's own page: the four section cards and the short list of
+       transactions under them. Each card's word is what goes under its
+       figure, so it has to read as the tail of a sentence the number starts. */
+    'money.sections': 'Sections',
+    'money.recent': 'Latest',
+    'money.sc_env': 'of {n} funded',
+    'money.sc_plan': 'of {n} paid',
+    'money.sc_plan_none': 'No fixed charge',
+    'money.sc_projects': 'shared budgets',
+    'money.sc_sav': 'put aside',
+    'money.sc_sav_none': 'Savings not installed',
     'money.tab_benchmarks': 'How you compare',
     'money.tab_formation': 'Learn',
 
@@ -1427,6 +1439,18 @@ const STRINGS = {
     'feat.log_d': 'Note tes réflexions et habitudes de dépense au quotidien.',
 
     'money.tab_savings': 'Épargne',
+
+    /* Le budget lui-même : les quatre cartes de section et la courte liste de
+       transactions en dessous. Le mot de chaque carte se lit comme la suite de
+       la phrase que le chiffre commence. */
+    'money.sections': 'Sections',
+    'money.recent': 'Dernières',
+    'money.sc_env': 'sur {n} financées',
+    'money.sc_plan': 'sur {n} payées',
+    'money.sc_plan_none': 'Aucune charge fixe',
+    'money.sc_projects': 'budgets partagés',
+    'money.sc_sav': 'mis de côté',
+    'money.sc_sav_none': 'Épargne non installée',
     'money.tab_benchmarks': 'Comparaison',
     'money.tab_formation': 'Formation',
 

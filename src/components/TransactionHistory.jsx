@@ -23,7 +23,7 @@ import { Empty } from './ui'
  * The day heading carries that day's net. It is the one number a grouped list
  * can give you for free, and without it the groups are just visual separation.
  */
-export default function TransactionHistory({ entries, currency, locale, onOpen, onBack }) {
+export default function TransactionHistory({ entries, currency, locale, onOpen }) {
   const { t } = useT()
   const [kind, setKind] = useState('all')
   const [category, setCategory] = useState('all')
@@ -88,10 +88,9 @@ export default function TransactionHistory({ entries, currency, locale, onOpen, 
 
   return (
     <div className="space-y-4" data-history="">
-      <button className="goal-action press" onClick={onBack}>
-        {t('hist.back')}
-      </button>
-
+      {/* No back button in here any more. This is a routed sub-page and the
+          heading above it carries the arrow, so a second control saying the
+          same thing was two ways back on one screen. */}
       {byCategory.length > 0 && (
         <SpendDonut byCategory={byCategory} total={spent} currency={currency} locale={locale} />
       )}
@@ -157,42 +156,7 @@ export default function TransactionHistory({ entries, currency, locale, onOpen, 
 
               <ul className="glass-card divide-y divide-hairline rounded-3xl px-4">
                 {d.entries.map((r) => (
-                  <li key={r.id}>
-                    <button
-                      type="button"
-                      onClick={() => onOpen(r)}
-                      data-txn={r.id}
-                      className="press flex w-full items-center gap-3 py-3.5 text-left"
-                    >
-                      <CatDisc category={r.kind === 'income' ? 'income' : (r.category ?? 'other')} />
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-body text-ink">
-                          {r.note ||
-                            (r.kind === 'income'
-                              ? t('money.kind_income')
-                              : t(`money.cat_${r.category ?? 'other'}`))}
-                        </span>
-                        <span className="block text-small text-muted">
-                          {r.kind === 'income'
-                            ? t('money.kind_income')
-                            : t(`money.cat_${r.category ?? 'other'}`)}
-                          {r.excluded && ` · ${t('txn.excluded_badge')}`}
-                        </span>
-                      </span>
-                      <span
-                        className={`shrink-0 text-body font-semibold [font-variant-numeric:tabular-nums] ${
-                          r.excluded
-                            ? 'text-muted line-through'
-                            : r.kind === 'income'
-                              ? 'text-green'
-                              : 'text-ink'
-                        }`}
-                      >
-                        {r.kind === 'income' ? '+' : ''}
-                        {fmt(r.amount_cents)}
-                      </span>
-                    </button>
-                  </li>
+                  <TxnRow key={r.id} row={r} currency={currency} locale={locale} onOpen={onOpen} />
                 ))}
               </ul>
             </section>
@@ -234,5 +198,55 @@ function Pill({ value, onChange, options, hook }) {
         <path d="M6.5 9.5 12 15l5.5-5.5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     </span>
+  )
+}
+
+/**
+ * One logged transaction, as a row you can tap to edit it.
+ *
+ * Exported because the budget dashboard shows the last few of these under its
+ * primary button, and two renderings of one fact drift. They drifted here
+ * already: the excluded badge and the strike-through were added to the history
+ * and the dashboard's old summary never got them, so a transaction marked as
+ * not counting looked exactly like one that did.
+ *
+ * `data-txn` carries the row id, so a probe can address one transaction rather
+ * than matching an amount that appears three times on a busy day.
+ */
+export function TxnRow({ row: r, currency, locale, onOpen }) {
+  const { t } = useT()
+  const fmt = (c) => money(c, currency, locale)
+  const name = r.kind === 'income' ? t('money.kind_income') : t(`money.cat_${r.category ?? 'other'}`)
+
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={() => onOpen(r)}
+        data-txn={r.id}
+        className="press flex w-full items-center gap-3 py-3.5 text-left"
+      >
+        <CatDisc category={r.kind === 'income' ? 'income' : (r.category ?? 'other')} />
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-body text-ink">{r.note || name}</span>
+          <span className="block text-small text-muted">
+            {name}
+            {r.excluded && ` · ${t('txn.excluded_badge')}`}
+          </span>
+        </span>
+        <span
+          className={`shrink-0 text-body font-semibold [font-variant-numeric:tabular-nums] ${
+            r.excluded
+              ? 'text-muted line-through'
+              : r.kind === 'income'
+                ? 'text-green'
+                : 'text-ink'
+          }`}
+        >
+          {r.kind === 'income' ? '+' : ''}
+          {fmt(r.amount_cents)}
+        </span>
+      </button>
+    </li>
   )
 }
