@@ -773,7 +773,34 @@ export default function Money() {
        * the budget is still a transaction you logged, and one that vanishes
        * from the list the moment you flip the switch reads as a delete.
        */}
-      <Section title={t('money.recent')}>
+      <Section
+        title={t('money.recent')}
+        /**
+         * The way through to everything, beside the heading.
+         *
+         * It used to sit under the list, which meant scrolling past up to
+         * eight rows to find it, and it was gated on having more than eight
+         * entries in the first place. Both were wrong for what this leads to.
+         * The history is not "more rows": it is the only place with the
+         * filters, the search, and any period other than this one, so
+         * somebody with three transactions needs it as much as somebody with
+         * three hundred.
+         *
+         * Hidden only when there is genuinely nothing anywhere, since a link
+         * to an empty screen is a dead end rather than an affordance.
+         */
+        action={
+          entries.length > 0 ? (
+            <button
+              className="goal-action press shrink-0"
+              data-hook="see-all"
+              onClick={() => setHistory(true)}
+            >
+              {t('hist.see_all')}
+            </button>
+          ) : null
+        }
+      >
         {recent.length === 0 ? (
           <div className="lg px-5 py-2">
             <Empty>{t('money.no_entries')}</Empty>
@@ -842,19 +869,6 @@ export default function Money() {
           </ul>
         )}
 
-        {/* The way through to everything. The pane above is the current
-            period cut to eight rows, which answers "what have I just done";
-            the history answers "what did I spend in June", and that is a
-            different screen rather than more rows on this one. */}
-        {entries.length > recent.slice(0, 8).length && (
-          <button
-            className="goal-action press mt-4 w-full"
-            data-hook="see-all"
-            onClick={() => setHistory(true)}
-          >
-            {t('hist.see_all')}
-          </button>
-        )}
       </Section>
 
         </>
