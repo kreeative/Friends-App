@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useT } from '../lib/i18n'
 import { money } from '../lib/money'
-import { minorDigits } from '../lib/currency'
+import { CURRENCIES, currencyName, minorDigits } from '../lib/currency'
 import { toCents } from '../lib/txn'
 import { errorText } from '../lib/dberr'
 import { balances, projectProgress, totalSpent } from '../lib/project'
@@ -134,10 +134,28 @@ function NewProject({ open, onClose, userId, currency, locale, onDone }) {
   const [target, setTarget] = useState('')
   const [starts, setStarts] = useState('')
   const [ends, setEnds] = useState('')
+  /**
+   * ITS OWN CURRENCY, ASKED FOR RATHER THAN ASSUMED.
+   *
+   * 38 gave a project a currency column and this form never showed it, so
+   * every project silently inherited whatever the personal budget was counted
+   * in. That is right most of the time and wrong in exactly the case the
+   * feature exists for: a trip is very often not in the currency you are paid
+   * in, and there was no way to say so. The result was a Greece budget typed
+   * in euros and labelled in dollars, with no screen anywhere to correct it.
+   *
+   * The personal currency is still the default, because it is the right guess.
+   * It is now a guess somebody can overrule.
+   */
+  const [cur, setCur] = useState(currency)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
-  const digits = minorDigits(currency)
+  /* Follows the personal currency until the sheet is opened, so somebody who
+     changes it on their profile does not find last month's default here. */
+  useEffect(() => { if (open) setCur(currency) }, [open, currency])
+
+  const digits = minorDigits(cur)
 
   const save = async () => {
     if (!name.trim() || busy) return
@@ -146,7 +164,7 @@ function NewProject({ open, onClose, userId, currency, locale, onDone }) {
     const { error: err } = await createProject({
       userId,
       name,
-      currency,
+      currency: cur,
       targetCents: target ? (toCents(target) ?? 0) : 0,
       startsOn: starts,
       endsOn: ends,
@@ -169,6 +187,25 @@ function NewProject({ open, onClose, userId, currency, locale, onDone }) {
             placeholder={t('proj.name_ph')}
             onChange={(e) => setName(e.target.value)}
           />
+        </Field>
+
+        <Field label={t('proj.currency')} hint={t('proj.currency_hint')}>
+          {/* The code and the name together. "XOF" alone is a lookup, and
+              "franc CFA (BCEAO)" alone does not tell somebody scanning for the
+              three letters their bank app shows them. Same reasoning as the
+              profile picker in Me.jsx. */}
+          <select
+            className="field"
+            value={cur}
+            data-hook="project-currency"
+            onChange={(e) => setCur(e.target.value)}
+          >
+            {CURRENCIES.map((code) => (
+              <option key={code} value={code}>
+                {`${code} \u00b7 ${currencyName(code, locale === 'fr' ? 'fr-CA' : 'en-CA')}`}
+              </option>
+            ))}
+          </select>
         </Field>
 
         <Field label={t('proj.target')} hint={t('proj.target_hint')}>

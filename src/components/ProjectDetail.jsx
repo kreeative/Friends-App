@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useT } from '../lib/i18n'
 import { money } from '../lib/money'
-import { minorDigits } from '../lib/currency'
+import { CURRENCIES, currencyName, minorDigits } from '../lib/currency'
 import { fromCents, localISO, toCents } from '../lib/txn'
 import { errorText } from '../lib/dberr'
 import { balances, byCategory, projectProgress, settleUp, totalSpent } from '../lib/project'
@@ -14,6 +14,7 @@ import {
   inviteErrorKey,
   inviteToProject,
   leaveProject,
+  updateProject,
   withdrawProjectInvite,
 } from '../lib/projectData'
 import { Avatar, Empty, Field, Sheet } from './ui'
@@ -48,6 +49,9 @@ export default function ProjectDetail({
   const [sheet, setSheet] = useState(false)
   const [invite, setInvite] = useState(false)
   const [paying, setPaying] = useState(null)
+  /* Which ledger row is asking "sure?". One at a time, by id: a confirm that
+     is a boolean opens on every row at once the moment two are on screen. */
+  const [confirm, setConfirm] = useState(null)
   const [error, setError] = useState('')
 
   const cur = project.currency
@@ -80,8 +84,24 @@ export default function ProjectDetail({
   const open = useMemo(() => openCount(lines, entries), [lines, entries])
 
   const remove = async (id) => {
+    setConfirm(null)
     const { error: err } = await deleteProjectEntry(id)
-    if (err) return setError(errorText(err, t))
+    if (err) return setError(errorText(err))
+    await onChange()
+  }
+
+  /**
+   * The project's currency, changed after the fact.
+   *
+   * Nothing is converted, and the sentence under the picker says so. That is
+   * not a shortcut: the amounts are the numbers people typed, and the case
+   * this exists for is a trip whose figures were euros all along while the
+   * label said dollars. Converting them would be the wrong answer to exactly
+   * the problem being fixed.
+   */
+  const setCurrency = async (code) => {
+    const { error: err } = await updateProject(project.id, { currency: code })
+    if (err) return setError(errorText(err))
     await onChange()
   }
 
@@ -347,14 +367,53 @@ export default function ProjectDetail({
                 <span className="shrink-0 text-body font-semibold text-ink [font-variant-numeric:tabular-nums]">
                   {fmt(e.amount_cents)}
                 </span>
-                {/* Only your own, which is also what the policy allows. */}
-                {e.paid_by === userId && (
-                  <button
-                    className="press shrink-0 text-label text-muted underline"
-                    onClick={() => remove(e.id)}
-                  >
-                    {t('proj.remove')}
-                  </button>
+                {/**
+                 * Yours, and the owner's whole project.
+                 *
+                 * This used to be `e.paid_by === userId` alone, which was
+                 * narrower than the policy 38 actually writes:
+                 *
+                 *   (is_project_member(project_id) and paid_by = auth.uid())
+                 *   or is_project_owner(project_id)
+                 *
+                 * So the person responsible for a trip could not tidy up a row
+                 * somebody else fat-fingered, even though the database would
+                 * have let them. A screen narrower than its own policy is not
+                 * safer, it is just a feature nobody can reach.
+                 *
+                 * Two taps, because this erases money and there is no undo. The
+                 * personal budget's sheet has asked since it shipped; this
+                 * deleted on a single tap, which is the more dangerous of the
+                 * two because the row sits in a scrolling list under a thumb.
+                 */}
+                {(e.paid_by === userId || project.owner_id === userId) && (
+                  confirm === e.id ? (
+                    <span className="flex shrink-0 items-center gap-1.5">
+                      <button
+                        className="press text-label text-muted underline"
+                        data-hook="entry-remove-no"
+                        onClick={() => setConfirm(null)}
+                      >
+                        {t('txn.delete_no')}
+                      </button>
+                      <button
+                        className="chip press bg-negative text-white"
+                        data-hook="entry-remove-yes"
+                        onClick={() => remove(e.id)}
+                      >
+                        {t('txn.delete_yes')}
+                      </button>
+                    </span>
+                  ) : (
+                    <button
+                      className="press shrink-0 text-label text-muted underline"
+                      data-hook="entry-remove"
+                      aria-label={t('proj.remove_what', { what: e.label || e.category || t('proj.a_spend') })}
+                      onClick={() => setConfirm(e.id)}
+                    >
+                      {t('proj.remove')}
+                    </button>
+                  )
                 )}
               </li>
             ))}
@@ -431,6 +490,44 @@ export default function ProjectDetail({
           </div>
         </div>
       </section>
+
+      {/**
+       * WHAT THE TRIP IS COUNTED IN.
+       *
+       * 38 gave a project its own currency column with exactly this in mind, and
+       * then nothing ever showed it: every project silently inherited the
+       * personal one and could never be corrected. A Greece budget typed in
+       * euros and labelled in dollars had no screen anywhere to fix it.
+       *
+       * Owner only, which is what budget_project_update already enforces, so
+       * nobody is offered a control that would be refused.
+       *
+       * Nothing is converted, and it says so under the picker. The case this
+       * exists for is figures that were euros all along; multiplying them by a
+       * rate would be the wrong answer to the problem being fixed.
+       */}
+      {project.owner_id === userId && (
+        <section className="space-y-2">
+          <h3 className="px-1 text-label font-semibold uppercase tracking-wider text-muted">
+            {t('proj.currency')}
+          </h3>
+          <div className="glass-card rounded-3xl p-5">
+            <select
+              className="field"
+              value={cur}
+              data-hook="project-currency"
+              onChange={(e) => setCurrency(e.target.value)}
+            >
+              {CURRENCIES.map((code) => (
+                <option key={code} value={code}>
+                  {`${code} \u00b7 ${currencyName(code, locale === 'fr' ? 'fr-CA' : 'en-CA')}`}
+                </option>
+              ))}
+            </select>
+            <p className="mt-2 text-small text-muted">{t('proj.currency_note')}</p>
+          </div>
+        </section>
+      )}
 
       {error && (
         <p className="break-words px-1 text-small text-negative" role="alert">

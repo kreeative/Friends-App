@@ -236,6 +236,21 @@ export async function leaveProject({ projectId, userId }) {
   return { error }
 }
 
+/**
+ * Change something about the project itself. Owner only, which is what
+ * budget_project_update in 38 already enforces.
+ *
+ * Nothing is converted when the currency moves, and the screen says so. The
+ * amounts are the numbers people typed; relabelling dollars as euros does not
+ * move any money, and an app that silently multiplied a trip by an exchange
+ * rate it looked up would be far worse than one that does nothing. This is the
+ * same position Me.jsx takes about the personal currency, for the same reason.
+ */
+export async function updateProject(projectId, patch) {
+  const { error } = await supabase.from('budget_project').update(patch).eq('id', projectId)
+  return { error }
+}
+
 export async function archiveProject(projectId) {
   const { error } = await supabase
     .from('budget_project')
