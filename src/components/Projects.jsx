@@ -6,6 +6,7 @@ import { toCents } from '../lib/txn'
 import { errorText } from '../lib/dberr'
 import { balances, projectProgress, totalSpent } from '../lib/project'
 import { createProject, joinProject } from '../lib/projectData'
+import ProjectInvites from './ProjectInvites'
 import { Empty, Field, Sheet } from './ui'
 
 /**
@@ -20,7 +21,7 @@ import { Empty, Field, Sheet } from './ui'
  * know you have a Greece trip; what you open this for is how much has gone
  * and whether you are up or down.
  */
-export default function Projects({ userId, projects, members, entries, profiles, currency, locale, onOpen, onChange }) {
+export default function Projects({ userId, projects, members, entries, profiles, invites, currency, locale, onOpen, onChange }) {
   const { t } = useT()
   const [sheet, setSheet] = useState(null) // 'new' | 'join' | null
 
@@ -41,6 +42,10 @@ export default function Projects({ userId, projects, members, entries, profiles,
 
   return (
     <div className="space-y-4">
+      {/* Above the buttons, because it is a question somebody asked you and
+          everything below it is something you might do instead. */}
+      <ProjectInvites invites={invites} profiles={profiles} onDone={onChange} />
+
       <div className="flex gap-2">
         <button className="btn-primary press flex-1" onClick={() => setSheet('new')}>
           {t('proj.new')}

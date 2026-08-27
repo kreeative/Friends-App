@@ -22,7 +22,13 @@ import Savings from '../components/Savings'
 import TransactionHistory, { TxnRow } from '../components/TransactionHistory'
 import Projects from '../components/Projects'
 import ProjectDetail from '../components/ProjectDetail'
-import { loadProjectProfiles, loadProjects } from '../lib/projectData'
+import {
+  loadInvitableFriends,
+  loadMyProjectInvites,
+  loadProjectProfiles,
+  loadProjects,
+  loadSentInvites,
+} from '../lib/projectData'
 import BudgetIntro from '../components/BudgetIntro'
 import TransactionSheet from '../components/TransactionSheet'
 import PlanVsActual from '../components/PlanVsActual'
@@ -446,11 +452,30 @@ export default function Money() {
     setProjects(pr.projects)
     setProjMembers(pr.members)
     setProjEntries(pr.entries)
+
+    /* Invitations, in both directions. Soft on migration 41 the same way the
+       projects themselves are soft on 38: without it loadMyProjectInvites
+       reports `missing`, the card never renders and the picker is empty, and
+       nobody is shown a PostgREST code they cannot act on. */
+    const [inv, sent, mates] = await Promise.all([
+      loadMyProjectInvites(),
+      loadSentInvites(pr.projects.filter((p) => p.owner_id === user.id).map((p) => p.id)),
+      loadInvitableFriends(user.id),
+    ])
+    setProjInvites(inv.invites)
+    setSentInvites(sent)
+    setFriends(mates)
+    setInvitesMissing(inv.missing)
+
     /* Names for everybody in every project, including payers who have since
-       left, so a ledger line never renders a blank name beside a real amount. */
+       left, so a ledger line never renders a blank name beside a real amount.
+       Whoever invited you is in here too: they are always a group-mate, so the
+       profiles policy allows the read, but they need not be in any project of
+       yours yet and the card is a sentence with their name in it. */
     setProjProfiles(await loadProjectProfiles([
       ...pr.members.map((m) => m.user_id),
       ...pr.entries.map((e) => e.paid_by),
+      ...inv.invites.map((i) => i.invited_by),
     ]))
   }, [user])
 
@@ -525,6 +550,14 @@ export default function Money() {
   const [projEntries, setProjEntries] = useState([])
   const [projProfiles, setProjProfiles] = useState({})
   const [openProject, setOpenProject] = useState(null)
+
+  /* Invitations. Waiting for you, sent by you, and the people you may send to. */
+  const [projInvites, setProjInvites] = useState([])
+  const [sentInvites, setSentInvites] = useState([])
+  const [friends, setFriends] = useState([])
+  /* Migration 41 not run. The picker is hidden rather than offered and then
+     failing, which is the same contract loadProjects has for 38. */
+  const [invitesMissing, setInvitesMissing] = useState(false)
 
   /* A section's own drill-down does not survive leaving the section, which is
      the point of leaving it. Without this, going back to the budget and into
@@ -1118,6 +1151,7 @@ export default function Money() {
                     members={projMembers}
                     entries={projEntries}
                     profiles={projProfiles}
+                    invites={projInvites}
                     currency={s.currency}
                     locale={locale}
                     onOpen={setOpenProject}
@@ -1130,6 +1164,9 @@ export default function Money() {
                   members={projMembers.filter((m) => m.project_id === p.id)}
                   entries={projEntries.filter((e) => e.project_id === p.id)}
                   profiles={projProfiles}
+                  friends={invitesMissing ? [] : friends}
+                  sentInvites={sentInvites}
+                  canInvite={!invitesMissing}
                   userId={user?.id}
                   locale={locale}
                   onBack={() => setOpenProject(null)}
@@ -1144,6 +1181,7 @@ export default function Money() {
               members={projMembers}
               entries={projEntries}
               profiles={projProfiles}
+              invites={projInvites}
               currency={s.currency}
               locale={locale}
               onOpen={setOpenProject}
