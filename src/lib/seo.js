@@ -67,6 +67,10 @@ export const PRIVATE_PREFIXES = [
 const ALIAS = {
   '/library': '/books',
   '/lectures': '/books',
+  /* Same shape as the library's two spellings: /etudes is canonical because
+     the readers of these pages are francophone, and /studies renders the same
+     thing for an English link so a shared address opens rather than bouncing. */
+  '/studies': '/etudes',
 }
 
 /**
@@ -154,6 +158,16 @@ export function seoFor(pathname) {
  * @param slugs the chapter slugs, passed in because they live in
  *              src/content/previews.js and this module has no imports.
  */
+/**
+ * Les etudes publiees, par slug.
+ *
+ * Ecrit ici plutot qu'importe de content/studies.js, parce que ce fichier est
+ * pur et sans import : c'est ce qui permet a scripts/sitemap.mjs de le lancer
+ * sous node sans bundler. Le probe verifie que les deux listes concordent, donc
+ * un ajout oublie ici se voit.
+ */
+export const STUDY_SLUGS = ['epargner-a-19-ans']
+
 export function sitemapPaths(slugs = []) {
   return [
     '/',
@@ -161,6 +175,12 @@ export function sitemapPaths(slugs = []) {
     '/about',
     '/books',
     ...slugs.map((s) => `/books/${s}`),
+    /* Les etudes. Publiques, sans compte, et c'est tout l'interet : une page
+       qui publie des chiffres verifiables doit etre trouvable. /studies est
+       l'alias anglais et n'est pas liste, pour la meme raison que /library et
+       /lectures ne le sont pas : une seule adresse canonique par page. */
+    '/etudes',
+    ...STUDY_SLUGS.map((s) => `/etudes/${s}`),
     '/legal/terms',
     '/legal/privacy',
     '/legal/notice',

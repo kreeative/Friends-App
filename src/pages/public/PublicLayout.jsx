@@ -20,6 +20,7 @@ export const PUBLIC_LINKS = [
   { to: '/how-it-works', key: 'how' },
   { to: '/about', key: 'about' },
   { to: '/books', key: 'library' },
+  { to: '/etudes', key: 'studies' },
 ]
 
 export default function PublicLayout() {

@@ -166,6 +166,23 @@ export function peerStanding(cents, code = 'XOF') {
   }
 }
 
+/**
+ * A round XOF figure, with thin spaces between the thousands.
+ *
+ * Not Intl.NumberFormat with the reader's locale. These amounts are quoted FROM
+ * the survey in CFA francs, so they are facts about the sample rather than
+ * figures in the reader's own money, and formatting them as though they were
+ * theirs is how "44 500 XOF" quietly becomes "44 500 $".
+ *
+ * Here rather than in a component because two screens print it now, the rank
+ * sheet and the public study, and two copies of a formatter is two chances to
+ * disagree about what the same number looks like.
+ */
+export function formatXof(n) {
+  if (n == null || !Number.isFinite(n)) return ''
+  return `${String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '\u202f')}\u202fXOF`
+}
+
 /** The median of the whole sample, zeroes included. */
 export function medianAll() {
   return median(MONTHLY_XOF)

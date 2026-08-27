@@ -174,12 +174,38 @@ export const LANDING = {
       cta: 'Start a group',
     },
 
+    /**
+     * The section that publishes what the app learns.
+     *
+     * Not a newsletter in the sense of an email list: a page, at an address,
+     * readable with no account. A study that asks you to sign up before you
+     * can read it is not a publication, it is a capture form, and the whole
+     * argument of these pages is that the numbers can be checked.
+     */
+    studies: {
+      eyebrow: 'What we are finding out',
+      title: 'Studies',
+      body: 'What people actually do with their money, asked rather than assumed. Published in full, with the method and the limits, for anyone to read.',
+      note: 'Every figure on these pages comes from data we collected ourselves and can show you. Where a sample is small or skewed, the page says so before it says anything else.',
+      read: 'Read the study',
+      back: 'All studies',
+      stat_app: 'already use a mobile money or banking app. Access is not the blocker.',
+      stat_zero: 'set nothing aside at all.',
+      dots_title: 'One dot per person',
+      dots_note: 'The same 92 people, lit up on three different questions. The tool is there, the wanting is there, the saving does not follow.',
+      dots_app: 'Has an app',
+      dots_goal: 'Has an ambition',
+      dots_save: 'Saves something',
+      cta_line: 'Rich & Friends is built for exactly this gap: not another place to put money, a few people who notice whether you did.',
+      cta: 'Start with your friends',
+    },
+
     footer: {
       tagline: 'A daily check-in with a few people who know what you are working on.',
       product: 'Product',
       home: 'Home',
       menu: 'Menu',
-      links: { how: 'How it works', about: 'About', library: 'The books', signin: 'Sign in' },
+      links: { how: 'How it works', about: 'About', library: 'The books', studies: 'Studies', signin: 'Sign in' },
       legalHeading: 'Legal',
       contact: 'Contact',
       rights: 'All rights reserved.',
@@ -398,6 +424,32 @@ export const LANDING = {
       cta: 'Créer un groupe',
     },
 
+    /**
+     * La section qui publie ce que l'app apprend.
+     *
+     * Pas une newsletter au sens d'une liste d'adresses : une page, a une
+     * adresse, lisible sans compte. Une etude qui demande une inscription pour
+     * etre lue n'est pas une publication, c'est un formulaire de capture, et
+     * tout l'argument de ces pages est que les chiffres sont verifiables.
+     */
+    studies: {
+      eyebrow: 'Ce qu’on découvre',
+      title: 'Études',
+      body: 'Ce que les gens font vraiment de leur argent, demandé plutôt que supposé. Publié en entier, avec la méthode et les limites, pour tout le monde.',
+      note: 'Chaque chiffre de ces pages vient de données qu’on a collectées nous-mêmes et qu’on peut te montrer. Quand un échantillon est petit ou biaisé, la page le dit avant de dire autre chose.',
+      read: 'Lire l’étude',
+      back: 'Toutes les études',
+      stat_app: 'utilisent déjà une application mobile money ou bancaire. L’accès n’est pas le frein.',
+      stat_zero: 'n’épargnent rien du tout.',
+      dots_title: 'Un point par personne',
+      dots_note: 'Les mêmes 92 personnes, éclairées sur trois questions différentes. L’outil est là, l’envie est là, l’épargne ne suit pas.',
+      dots_app: 'A une application',
+      dots_goal: 'A une ambition',
+      dots_save: 'Épargne quelque chose',
+      cta_line: 'Rich & Friends est fait exactement pour cet écart : pas un endroit de plus où ranger son argent, quelques personnes qui remarquent si tu l’as fait.',
+      cta: 'Commence avec tes amis',
+    },
+
     footer: {
       tagline: 'Un point quotidien avec quelques personnes qui savent sur quoi tu travailles.',
       product: 'Produit',
@@ -405,6 +457,7 @@ export const LANDING = {
         how: 'Comment ça marche',
         about: 'À propos',
         library: 'Les livres',
+        studies: 'Études',
         signin: 'Se connecter',
       },
       legalHeading: 'Légal',
