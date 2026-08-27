@@ -47,6 +47,11 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
+                <Link to="/etudes" className="nav-link">
+                  {c.links.studies}
+                </Link>
+              </li>
+              <li>
                 <Link to="/signin" className="nav-link">
                   {c.links.signin}
                 </Link>

@@ -27,6 +27,10 @@ Disallow: /g/
 Disallow: /library
 Disallow: /lectures
 
+# The English alias for the studies. /etudes is the canonical one and the only
+# one in the sitemap; /studies renders the same pages.
+Disallow: /studies
+
 # Tracking parameters make one page look like several.
 Disallow: /*?utm_
 

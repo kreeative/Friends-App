@@ -27,6 +27,8 @@ import Home from './pages/public/Home'
 import How from './pages/public/How'
 import About from './pages/public/About'
 import Books from './pages/public/Books'
+import Studies from './pages/public/Studies'
+import Study from './pages/public/Study'
 import Preview from './pages/public/Preview'
 import Library from './pages/Library'
 import Reader from './pages/Reader'
@@ -133,6 +135,19 @@ const PUBLIC_ROUTES = (
     <Route path="lectures/:slug" element={<Preview />} />
     <Route path="lectures" element={<Books />} />
     <Route path="library" element={<Books />} />
+    {/**
+     * Les etudes, lisibles sans compte.
+     *
+     * /etudes est l'adresse canonique parce que le public de ces textes est
+     * francophone et que c'est le mot qui sera tape et partage. /studies
+     * existe pour l'anglais et pointe sur les memes pages plutot que de
+     * rediriger : une adresse partagee en anglais doit ouvrir l'etude, pas
+     * faire un aller-retour.
+     */}
+    <Route path="etudes" element={<Studies />} />
+    <Route path="etudes/:slug" element={<Study />} />
+    <Route path="studies" element={<Studies />} />
+    <Route path="studies/:slug" element={<Study />} />
     <Route path="*" element={<Navigate to="/" replace />} />
   </Route>
 )

@@ -3,7 +3,7 @@ import { useT } from '../lib/i18n'
 import { Sheet } from './ui'
 import { Gauge } from './Envelopes'
 import { COUNTRIES, SNAPSHOT, compareRate, otherBasisFor } from '../lib/benchmarks'
-import { SURVEY, appliesTo, medianSavers, peerStanding } from '../lib/peers'
+import { SURVEY, appliesTo, formatXof, medianSavers, peerStanding } from '../lib/peers'
 
 /**
  * Your saving rate against everybody else's, as one card and one sheet.
@@ -31,18 +31,6 @@ import { SURVEY, appliesTo, medianSavers, peerStanding } from '../lib/peers'
  * than a blank, the gauge locks and the sheet says what would unlock it. The
  * primary button then does that exact thing.
  */
-/**
- * A round XOF figure with thin spaces between the thousands.
- *
- * Not Intl.NumberFormat with the user's locale: the amount is being quoted FROM
- * the survey in francs CFA, so it is a fact about the sample rather than a
- * figure in the reader's own currency, and formatting it as though it were
- * theirs is how "44 500 XOF" quietly becomes "44 500 $".
- */
-function fmtXof(n) {
-  return `${String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '\u202f')}\u202fXOF`
-}
-
 export default function WealthRank({
   rate, months, country, band, age, currency, monthlySaved, onPickCountry, onAddTransaction,
 }) {
@@ -246,7 +234,7 @@ export default function WealthRank({
                       : t('peers.beats', { pct: peers.beats })}
                   </p>
                   <p className="mt-2 text-center text-small leading-relaxed text-muted [font-variant-numeric:tabular-nums]">
-                    {t('peers.median', { amount: fmtXof(medianSavers()) })}
+                    {t('peers.median', { amount: formatXof(medianSavers()) })}
                   </p>
                   <p className="mt-3 text-center text-label leading-relaxed text-muted">
                     {t('peers.method', { n: SURVEY.n, age: SURVEY.medianAge })}
