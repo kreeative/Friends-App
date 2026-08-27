@@ -329,17 +329,53 @@ export default function WealthRank({
            * So the plain sentence comes first and gets its own heading, and the
            * provenance follows it in the fine print where provenance belongs.
            */}
-          <div className="mt-7 border-t border-hairline pt-5">
-            <p className="text-label font-semibold uppercase tracking-wider text-muted">
+          {/**
+           * FOLDED AWAY, NOT DELETED.
+           *
+           * "Ce que ca veut dire, fais ca comme un lien, que si il clique
+           * dessus il va voir."
+           *
+           * Five lines of definition sat open under a gauge somebody opened to
+           * read one number. It still has to be here, because a percentage
+           * whose meaning is not written down anywhere is a percentage people
+           * make up their own meaning for. It just does not have to be the
+           * loudest thing on the screen.
+           *
+           * <details> rather than a useState toggle: the open and closed state,
+           * the keyboard behaviour and the screen-reader semantics all come
+           * with the element, and a hand-rolled version gets one of the three
+           * wrong. Closed on open, so the sheet lands on the figure.
+           */}
+          <details className="group mt-7 border-t border-hairline pt-2" data-hook="rank-what-details">
+            <summary
+              data-hook="rank-what-toggle"
+              className="press flex cursor-pointer list-none items-center justify-between gap-3 rounded-2xl py-3
+                         text-label font-semibold uppercase tracking-wider text-muted
+                         [&::-webkit-details-marker]:hidden"
+            >
               {t('rank.what_title')}
-            </p>
-            <p data-hook="rank-what" className="mt-2 text-small leading-relaxed text-ink">
+              <span
+                aria-hidden="true"
+                className="flex h-6 w-6 shrink-0 items-center justify-center transition-transform duration-200 ease-settle group-open:rotate-90"
+              >
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 6l6 6-6 6" />
+                </svg>
+              </span>
+            </summary>
+
+            <p data-hook="rank-what" className="pb-1 text-small leading-relaxed text-ink">
               {t('rank.what_body')}
             </p>
-            <p data-hook="rank-note" className="mt-3 text-label leading-relaxed text-muted">
-              {(bench ?? other)?.source}, {(bench ?? other)?.period}. {t('bm.snapshot', { d: SNAPSHOT })}
-            </p>
-          </div>
+            {/* Only when there is a figure to attribute. With no country
+                picked there is neither a benchmark nor a published fallback,
+                and this rendered as a stray comma and a full stop. */}
+            {(bench ?? other) && (
+              <p data-hook="rank-note" className="mt-3 text-label leading-relaxed text-muted">
+                {(bench ?? other).source}, {(bench ?? other).period}. {t('bm.snapshot', { d: SNAPSHOT })}
+              </p>
+            )}
+          </details>
         </div>
       </Sheet>
     </>
