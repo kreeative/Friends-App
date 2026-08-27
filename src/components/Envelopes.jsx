@@ -11,6 +11,7 @@ import { errorText } from '../lib/dberr'
    is one spelling too many. */
 import { isMissingTable } from '../lib/moodStore'
 import { allocationsFor, envelopes, toAllocate, totalAllocated } from '../lib/envelope'
+import { heroClass } from '../lib/amount'
 
 /**
  * One SHADE per envelope, from the theme's own family.
@@ -594,7 +595,7 @@ export function SpendableBar({ bar, currency, locale }) {
           <span
             data-hook="pct"
             className={`shrink-0 rounded-pill px-3 py-1 text-label font-semibold [font-variant-numeric:tabular-nums] ${
-              bar.over > 0 ? 'bg-negative text-white' : 'bg-accent/[0.35] text-ink'
+              bar.over > 0 ? 'bg-over text-white' : 'bg-accent/[0.35] text-ink'
             }`}
           >
             {bar.over > 0 ? t('env.bar_over_short') : `${bar.pct} %`}
@@ -603,9 +604,9 @@ export function SpendableBar({ bar, currency, locale }) {
       </div>
       <p
         data-hook="amount"
-        className={`mt-2 font-display text-hero leading-none [font-variant-numeric:tabular-nums] ${
-          bar.left < 0 ? 'text-negative' : 'text-ink'
-        }`}
+        className={`mt-2 font-display leading-none [font-variant-numeric:tabular-nums] ${
+          heroClass(`${a.head}${a.cents}${a.suffix}`)
+        } ${bar.left < 0 ? 'text-negative' : 'text-ink'}`}
       >
         {a.head}
         <span className="text-[0.62em] align-baseline text-muted">{a.cents}</span>
@@ -615,7 +616,7 @@ export function SpendableBar({ bar, currency, locale }) {
       <div className="mt-4 h-2.5 w-full overflow-hidden rounded-pill bg-ink/10">
         <div
           className={`h-full rounded-pill transition-[width] duration-500 ease-settle ${
-            bar.over > 0 ? 'bg-negative' : 'bg-accent'
+            bar.over > 0 ? 'bg-over' : 'bg-progress'
           }`}
           style={{ width: `${bar.funded ? bar.pct : 0}%` }}
         />

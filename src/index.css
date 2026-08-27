@@ -406,6 +406,38 @@
     --c-on-field: 17 17 17;      /* #111111, 13.38:1 on #FFD60A */
 
     /**
+     * THE PROGRESS BARS, AND WHY YELLOW IS NOT ONE OF THEM.
+     *
+     * "Replace any dark red progress indicator lines with electric blue,
+     * vibrant yellow, or bright pink."
+     *
+     * The dark red goes. Two of the three replacements cannot be a bar,
+     * measured against the track (ink at 10 %, which composites to #E8E6E7):
+     *
+     *   #FFD60A vibrant yellow    1.14:1
+     *   #38BDF8 electric blue     1.72:1
+     *   #E60070 bright pink       3.68:1
+     *   #0B6FAD deeper blue       4.34:1
+     *
+     * WCAG 1.4.11 asks 3:1 of a graphic that carries information, and a
+     * progress bar is nothing but information. So yellow stays what it has
+     * always been here, a GROUND: black sits on it at 13.5:1 and it is the
+     * field colour for washes, marks and the selected day. As an 8px line on
+     * a pale track it is invisible, and a bar nobody can see is not a brighter
+     * bar, it is no bar.
+     *
+     * Electric blue has the same problem at that size, so the blue that does
+     * the work is one step deeper.
+     *
+     * --c-over is the theme's OTHER strong colour rather than a red, which is
+     * what makes going over read as a change rather than as an alarm. Colour
+     * is not the only signal either way: the label beside the bar already says
+     * "X de trop" instead of "sur Y" (WCAG 1.4.1).
+     */
+    --c-progress: 230 0 112;  /* #E60070, 3.68:1 on the track */
+    --c-over: 11 111 173;     /* #0B6FAD, 4.34:1 */
+
+    /**
      * The six envelope shades: one family, six lightnesses.
      *
      * The categories used to be a rainbow, one unrelated hue each. Six hues
@@ -521,6 +553,13 @@
     --c-on-accent: 255 255 255;  /* 4.57:1 on #E60070 */
     --c-on-field: 0 76 90;
 
+    /* Sea leads in blue again. The accent went pink in both themes to kill the
+       yellow button, and it took this theme's blue off every progress bar with
+       it, which is what "restore the blue accents" is about. The button stays
+       pink; the bars go back to the theme's own colour. */
+    --c-progress: 11 111 173;  /* #0B6FAD, 4.34:1 on the track */
+    --c-over: 230 0 112;       /* #E60070, 3.68:1 */
+
     /* The same six steps in the sea family. See the note in the sun block for
        why they are shades rather than hues, and why the ramp stops at mid.
        Measured on white: 10.76, 8.56, 6.81, 5.40, 4.37, 3.58 to one. */
@@ -594,6 +633,9 @@
     /* The third touch. The app has no blue in sun and no pink in sea; the
        public shell is the one surface that gets all three at once. */
     --c-sky: 56 189 248;       /* #38BDF8, carries #111111 at 8.81:1 */
+
+    --c-progress: 230 0 112;
+    --c-over: 11 111 173;
 
     background-color: rgb(var(--c-bg));
   }

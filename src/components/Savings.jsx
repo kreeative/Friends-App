@@ -8,6 +8,7 @@ import { Empty, Section } from './ui'
 import {
   cushionTarget, history as buildHistory, pendingSweeps, recentRate, savedTotal,
 } from '../lib/savings'
+import { heroClass } from '../lib/amount'
 
 /**
  * The savings pane. Where the surplus goes.
@@ -151,7 +152,7 @@ export default function Savings({
           </div>
           <p
             data-hook="amount"
-            className="mt-2 font-display text-hero leading-none text-ink [font-variant-numeric:tabular-nums]"
+            className={`mt-2 font-display leading-none text-ink [font-variant-numeric:tabular-nums] ${heroClass(`${parts.head}${parts.cents}${parts.suffix}`)}`}
           >
             {parts.head}
             <span className="align-baseline text-[0.62em] text-muted">{parts.cents}</span>
@@ -186,7 +187,7 @@ export default function Savings({
           <div className="mt-4 h-2.5 w-full overflow-hidden rounded-pill bg-ink/10">
             <div
               data-hook="cushion-bar"
-              className="h-full rounded-pill bg-accent transition-[width] duration-500 ease-settle"
+              className="h-full rounded-pill bg-progress transition-[width] duration-500 ease-settle"
               style={{ width: `${cushionPct}%` }}
             />
           </div>

@@ -6,6 +6,7 @@ import { categoriesIn, dayHeading, filterHistory, groupByDay } from '../lib/hist
 import CatDisc from './CatDisc'
 import SpendDonut from './SpendDonut'
 import { Empty } from './ui'
+import { TrashIcon } from './ActionBar'
 
 /**
  * Every transaction, ever, grouped into days.
@@ -23,7 +24,7 @@ import { Empty } from './ui'
  * The day heading carries that day's net. It is the one number a grouped list
  * can give you for free, and without it the groups are just visual separation.
  */
-export default function TransactionHistory({ entries, currency, locale, onOpen }) {
+export default function TransactionHistory({ entries, currency, locale, onOpen, onDelete}) {
   const { t } = useT()
   const [kind, setKind] = useState('all')
   const [category, setCategory] = useState('all')
@@ -156,7 +157,7 @@ export default function TransactionHistory({ entries, currency, locale, onOpen }
 
               <ul className="glass-card divide-y divide-hairline rounded-3xl px-4">
                 {d.entries.map((r) => (
-                  <TxnRow key={r.id} row={r} currency={currency} locale={locale} onOpen={onOpen} />
+                  <TxnRow key={r.id} row={r} currency={currency} locale={locale} onOpen={onOpen} onDelete={onDelete} />
                 ))}
               </ul>
             </section>
@@ -213,18 +214,21 @@ function Pill({ value, onChange, options, hook }) {
  * `data-txn` carries the row id, so a probe can address one transaction rather
  * than matching an amount that appears three times on a busy day.
  */
-export function TxnRow({ row: r, currency, locale, onOpen }) {
+export function TxnRow({ row: r, currency, locale, onOpen, onDelete }) {
   const { t } = useT()
+  /* Asks on this row and no other, so a list of ten does not open the same
+     question ten times. */
+  const [sure, setSure] = useState(false)
   const fmt = (c) => money(c, currency, locale)
   const name = r.kind === 'income' ? t('money.kind_income') : t(`money.cat_${r.category ?? 'other'}`)
 
   return (
-    <li>
+    <li className="flex items-center gap-1">
       <button
         type="button"
         onClick={() => onOpen(r)}
         data-txn={r.id}
-        className="press flex w-full items-center gap-3 py-3.5 text-left"
+        className="press flex min-w-0 flex-1 items-center gap-3 py-3.5 text-left"
       >
         <CatDisc category={r.kind === 'income' ? 'income' : (r.category ?? 'other')} />
         <span className="min-w-0 flex-1">
@@ -247,6 +251,57 @@ export function TxnRow({ row: r, currency, locale, onOpen }) {
           {fmt(r.amount_cents)}
         </span>
       </button>
+
+      {/**
+       * A BIN ON THE ROW, NOT ONLY INSIDE THE SHEET.
+       *
+       * Deleting a transaction has always been possible: tap the row, open the
+       * sheet, scroll to the bottom, confirm. Three steps and a scroll for the
+       * commonest correction there is, which is why it read as missing.
+       *
+       * The row stays tappable for editing and the bin is its own target
+       * beside it, so the two are never the same tap. Two taps still, because
+       * this erases money and the list scrolls under a thumb; the sheet's
+       * delete asks as well and always has.
+       *
+       * Not swipe-to-delete: a horizontal swipe on a row inside a vertically
+       * scrolling list is a gesture people trigger by accident on a phone, and
+       * the undo it would need does not exist here.
+       */}
+      {onDelete && (
+        sure ? (
+          <span className="flex shrink-0 items-center gap-1.5">
+            <button
+              type="button"
+              className="press text-label text-muted underline"
+              data-hook="txn-del-no"
+              onClick={() => setSure(false)}
+            >
+              {t('txn.delete_no')}
+            </button>
+            <button
+              type="button"
+              className="chip press bg-negative text-white"
+              data-hook="txn-del-yes"
+              onClick={() => { setSure(false); onDelete(r) }}
+            >
+              {t('txn.delete_yes')}
+            </button>
+          </span>
+        ) : (
+          <button
+            type="button"
+            data-hook="txn-del"
+            aria-label={t('txn.delete_what', { what: r.note || name })}
+            onClick={() => setSure(true)}
+            className="press flex h-10 w-10 shrink-0 items-center justify-center rounded-pill
+                       text-muted transition-colors hover:bg-ink/[0.06] hover:text-ink
+                       [&>svg]:h-4 [&>svg]:w-4"
+          >
+            <TrashIcon />
+          </button>
+        )
+      )}
     </li>
   )
 }

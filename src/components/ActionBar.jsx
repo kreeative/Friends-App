@@ -275,6 +275,23 @@ export function BookIcon() {
   )
 }
 
+/**
+ * A bin. Filled shapes rather than a stroked outline, like every other icon in
+ * this file, so it sits at the same weight as its neighbours at 16px.
+ *
+ * The lid is a separate bar with a handle above it: at small sizes a one-piece
+ * bin silhouette reads as a plain cup, and the gap is what makes it a bin.
+ */
+export function TrashIcon() {
+  return (
+    <Svg>
+      <rect x="9" y="2.6" width="6" height="2.1" rx="1.05" />
+      <rect x="3.6" y="5.4" width="16.8" height="2.2" rx="1.1" />
+      <path d="M5.9 9.2h12.2l-.9 10.1a2.2 2.2 0 0 1-2.2 2H9a2.2 2.2 0 0 1-2.2-2L5.9 9.2Z" />
+    </Svg>
+  )
+}
+
 export function ListIcon() {
   return (
     <Svg>
