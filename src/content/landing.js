@@ -15,6 +15,23 @@ export const LANDING = {
       note: 'Free, and your budget stays private',
     },
 
+    mockup: {
+      label:
+        'The Rich & Friends budget screen on a phone: what you have left to spend, the button to add a transaction, and the Envelopes, Plan & fixed, Big budgets and Savings sections.',
+      eyebrow: 'Budget',
+      title: '6 days left',
+      left: 'Left to spend',
+      amount: '$968.00',
+      cta: 'Add a transaction',
+      sections: 'Sections',
+      cards: [
+        { name: 'Envelopes', value: '6', note: 'of 6 funded', well: '#FFE0EC', dot: '#FF007A' },
+        { name: 'Plan & fixed', value: '1', note: 'of 2 paid', well: '#FFE0EC', dot: '#FF007A' },
+        { name: 'Big budgets', value: '2', note: 'shared budgets', well: '#DEEEFA', dot: '#38BDF8' },
+        { name: 'Savings', value: '$300', note: 'put aside', well: '#FFF7D1', dot: '#E0B400' },
+      ],
+    },
+
     manifesto:
       'A new way of living does not ask for luck. It asks for vision, for discipline every day, and for the right tools to carry it out.',
 
@@ -208,6 +225,25 @@ export const LANDING = {
       cta: 'Améliore ton Lifestyle',
       secondary: 'Comment ça marche',
       note: 'Gratuit, et ton budget reste privé',
+    },
+
+    /* Le telephone du hero. Chiffres illustratifs et ronds, exprès : c'est une
+       photo de produit, pas une capture d'un vrai compte. */
+    mockup: {
+      label:
+        'L’écran Budget de Rich & Friends sur un téléphone : ce qu’il te reste à dépenser, le bouton pour ajouter une transaction, et les sections Enveloppes, Plan & Fixe, Haut Budget et Épargne.',
+      eyebrow: 'Budget',
+      title: 'Il reste 6 jours',
+      left: 'Reste à dépenser',
+      amount: '968,00 $',
+      cta: 'Ajouter une transaction',
+      sections: 'Sections',
+      cards: [
+        { name: 'Enveloppes', value: '6', note: 'sur 6 financées', well: '#FFE0EC', dot: '#FF007A' },
+        { name: 'Plan & Fixe', value: '1', note: 'sur 2 payées', well: '#FFE0EC', dot: '#FF007A' },
+        { name: 'Haut Budget', value: '2', note: 'budgets partagés', well: '#DEEEFA', dot: '#38BDF8' },
+        { name: 'Épargne', value: '300 $', note: 'mis de côté', well: '#FFF7D1', dot: '#E0B400' },
+      ],
     },
 
     manifesto:

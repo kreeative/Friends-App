@@ -3,6 +3,7 @@ import { LANDING } from '../../content/landing'
 import { useT } from '../../lib/i18n'
 import { usePageMeta } from '../../lib/pageMeta'
 import { Mark } from '../../components/Wordmark'
+import PhoneMockup from '../../components/public/PhoneMockup'
 
 /**
  * The front page: what this is, why groups go quiet, and the way in.
@@ -68,6 +69,18 @@ export default function Home() {
             {c.hero.note}
           </p>
         </div>
+      </section>
+
+      {/**
+       * THE PRODUCT, BEFORE THE ARGUMENT ABOUT IT.
+       *
+       * The hero makes a promise and the pillars explain it. Between the two,
+       * a stranger who has been sent a link has still not seen the thing. One
+       * picture of the app answers "what is this" faster than either block of
+       * words, which was the whole complaint that started this rebuild.
+       */}
+      <section className="mx-auto w-full max-w-5xl px-6 pb-4 pt-2 md:pb-10">
+        <PhoneMockup label={c.mockup.label} screen={c.mockup} />
       </section>
 
       {/**
