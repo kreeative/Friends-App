@@ -134,6 +134,16 @@ export default function Home() {
                * 8.81 and 14.90 against pink, blue and yellow, and the colour
                * moves to the tile where it can be solid enough to actually
                * read as a touch of the brand rather than as a wash.
+               *
+               * THE PINK IS LITERAL HERE, NOT --c-accent, AND THAT IS WHY.
+               *
+               * These borrowed the accent token, and the accent then went from
+               * #FF007A to #E60070 so the primary button could carry WHITE at
+               * 4.57:1. Black on that deeper pink is 4.14:1, so the numerals
+               * silently dropped under the bar the moment the button changed.
+               * The button's pink and the tile's pink are answering opposite
+               * questions -- one needs white on it, one needs black -- so they
+               * are two colours and no longer one token.
                */}
               <span
                 aria-hidden="true"

@@ -358,8 +358,23 @@
     --c-loud: 222 53 120;    /* #DE3578, 4.30:1, display sizes only */
     --c-field: 255 214 10;   /* #FFD60A golden yellow */
     --c-field-deep: 214 176 0;
-    --c-accent: 255 0 110;   /* #FF006E hot magenta */
-    --c-accent-pressed: 214 0 92;
+    /**
+     * THE PINK THAT CARRIES WHITE, AND WHY IT MOVED TWICE.
+     *
+     * "Bouton rose, ecriture blanche, fond blanc." White is what was asked for
+     * and white is what it is. The problem is that #FF006E carries white at
+     * 3.83:1, which is the failure this file already shipped once: the label
+     * went black last week precisely because the pink could not hold white.
+     *
+     * Black satisfied the ratio and was not what anybody wanted. So the pink
+     * moves instead. #E60070 is one step deeper, indistinguishable beside the
+     * old one at a glance, and carries white at 4.57:1.
+     *
+     * The ratio is measured on the painted button rather than on the token,
+     * because .btn-primary dims on press and that changes both together.
+     */
+    --c-accent: 230 0 112;   /* #E60070, 4.57:1 with white */
+    --c-accent-pressed: 194 0 94;
     /**
      * BLACK ON THE PINK, NOT WHITE. THE RATIO IS THE REASON AND THE BRIEF
      * SAID SO ANYWAY.
@@ -376,8 +391,15 @@
      * #111111 on #FF006E is 4.93:1, which passes, and it is what the palette
      * brief specified in the first place: "Text & Headers: Deep Black / Dark
      * Charcoal (#111111 / #1A1A1A)". The accent itself does not move.
+     *
+     * AND THEN IT DID MOVE, WHICH IS THE POINT OF LEAVING THE NOTE ABOVE.
+     *
+     * "Bouton rose, ecriture blanche" came next. Black satisfied the ratio and
+     * was not what anybody wanted; the honest fix is to stop asking a pink
+     * that cannot hold white to hold white. --c-accent is #E60070 now and this
+     * is white again, at 4.57:1.
      */
-    --c-on-accent: 17 17 17;     /* #111111, 4.93:1 on #FF006E */
+    --c-on-accent: 255 255 255;  /* 4.57:1 on #E60070 */
     /* Was #A3004A, a deep magenta at 5.6:1. Two problems: it is the wine-red
        family the palette brief banned outright, and black on this yellow is
        13.38:1, so the darker pink was buying nothing and costing compliance. */
@@ -486,12 +508,17 @@
     --c-loud: 0 157 185;     /* #009DB9, 3.22:1, display sizes only */
     --c-field: 255 214 10;   /* #FFD60A golden yellow */
     --c-field-deep: 214 176 0;
-    --c-accent: 255 214 10;
-    --c-accent-pressed: 235 194 0;
-    /* Yellow is the accent here too, so both of these are the same question
-       and get the same answer: the theme's own deep teal, 6.8:1, rather than
-       a black. */
-    --c-on-accent: 0 76 90;
+    /* NO YELLOW RECTANGLE. The accent here was #FFD60A, which is why the
+       primary button came out as a yellow slab: "Ajouter une transaction" and
+       "Nouveau projet" were the accent, and the accent was yellow. The button
+       is the same pink in both themes now. Yellow is still the theme's field
+       colour for washes and marks; it is no longer a button. */
+    --c-accent: 230 0 112;   /* #E60070, as in sun */
+    --c-accent-pressed: 194 0 94;
+    /* The button is pink in both themes now, so this is white in both. Yellow
+       stays the field colour for washes and marks, where nothing has to be
+       legible on top of it at 16px. */
+    --c-on-accent: 255 255 255;  /* 4.57:1 on #E60070 */
     --c-on-field: 0 76 90;
 
     /* The same six steps in the sea family. See the note in the sun block for
@@ -554,9 +581,12 @@
     --c-ink: 17 17 17;         /* 18.09:1 on the ground */
     --c-muted: 86 86 86;       /* #565656, 7.03:1 */
 
-    --c-accent: 255 0 122;     /* #FF007A */
-    --c-accent-pressed: 214 0 100;
-    --c-on-accent: 17 17 17;   /* 4.98:1 */
+    /* Same pink and same white as the app. The marketing CTA was black on
+       #FF007A; "bouton rose, ecriture blanche" applies here too, and #FF007A
+       cannot carry white at 3.80:1. */
+    --c-accent: 230 0 112;     /* #E60070 */
+    --c-accent-pressed: 194 0 94;
+    --c-on-accent: 255 255 255; /* 4.57:1 */
     --c-field: 255 230 0;      /* #FFE600 */
     --c-on-field: 17 17 17;    /* 14.90:1 */
     --c-mark: 255 0 122;

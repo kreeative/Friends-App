@@ -13,7 +13,7 @@ import { ageBandOf, detectCountry, spendOver } from '../lib/benchmarks'
 import { history as savingsHistory, recentRate, savedTotal } from '../lib/savings'
 import { fromCents, localISO, toCents, txnPayload, withoutField } from '../lib/txn'
 import { Empty, Screen, Section, TopBar } from '../components/ui'
-import { EnvelopeIcon, PiggyIcon, PlanIcon, SuitcaseIcon } from '../components/ActionBar'
+import { PlanIcon, SuitcaseIcon } from '../components/ActionBar'
 import BudgetShortcuts from '../components/BudgetShortcuts'
 import FeatureCards from '../components/FeatureCards'
 import MonthByMonth from '../components/MonthByMonth'
@@ -26,7 +26,8 @@ import { loadProjectProfiles, loadProjects } from '../lib/projectData'
 import BudgetIntro from '../components/BudgetIntro'
 import TransactionSheet from '../components/TransactionSheet'
 import PlanVsActual from '../components/PlanVsActual'
-import Envelopes, { SpendableBar } from '../components/Envelopes'
+import { SpendableBar } from '../components/Envelopes'
+import CatDisc from '../components/CatDisc'
 import { ENVELOPE_CATEGORIES, allocationsFor, spendable, toAllocate, totalAllocated } from '../lib/envelope'
 import FixedCharges from '../components/FixedCharges'
 
@@ -73,7 +74,21 @@ const NEW = 'new'
  * than from the section grid. Anything not in this list renders the
  * dashboard, so a typed or stale URL lands somewhere real.
  */
-const PANES = ['envelopes', 'plan', 'projects', 'savings', 'history', 'months']
+/**
+ * ENVELOPPES AND EPARGNE ARE NOT SECTIONS ANY MORE.
+ *
+ * "Le concept des enveloppes est un peu confus, retirer ca." It was: the six
+ * envelopes asked you to hand out money you had already been shown as a single
+ * spendable figure, and then the same six categories appeared again as actual
+ * spending somewhere else. Two screens, one set of categories, two different
+ * meanings, and no way to tell from a card which one you were looking at.
+ *
+ * Plan holds the whole picture now: what comes in, what is committed, what
+ * varies, and what survives. Splitting those four across four destinations is
+ * what made it confusing, so they are one page in the order money actually
+ * moves.
+ */
+const PANES = ['plan', 'projects', 'history', 'months']
 
 /**
  * How many transactions the budget's own page shows.
@@ -612,24 +627,17 @@ export default function Money() {
    */
   const shortcuts = [
     {
-      id: 'envelopes',
-      icon: <EnvelopeIcon />,
-      label: t('money.tab_envelopes'),
-      well: 'bg-cat-1-soft',
-      pct: allocated > 0 ? Math.round((inEnvelopes / allocated) * 100) : 0,
-      dim: funded === 0,
-      value: String(funded),
-      word: t('money.sc_env', { n: ENVELOPE_CATEGORIES.length }),
-    },
-    {
       id: 'plan',
       icon: <PlanIcon />,
       label: t('money.tab_plan'),
-      well: 'bg-cat-2-soft',
-      pct: liveFixed.length > 0 ? Math.round((paidFixed / liveFixed.length) * 100) : null,
-      dim: liveFixed.length === 0,
-      value: String(paidFixed),
-      word: liveFixed.length === 0 ? t('money.sc_plan_none') : t('money.sc_plan', { n: liveFixed.length }),
+      well: 'bg-cat-1-soft',
+      /* How much of the month's income has been accounted for: committed plus
+         put aside plus actually spent, against what came in. One ring for the
+         one page that now holds all of it. */
+      pct: s.income > 0 ? Math.round(((s.committed + s.savings + s.spent) / s.income) * 100) : null,
+      dim: s.income === 0,
+      value: fmt(s.spent),
+      word: t('money.sc_plan_spent'),
     },
     {
       id: 'projects',
@@ -637,27 +645,12 @@ export default function Money() {
       label: t('money.tab_projects'),
       well: 'bg-cat-3-soft',
       /* No denominator exists. Three shared projects is not three out of
-         anything, so the card wears the section's own mark rather than a ring
-         drawn at a fraction nobody measured. */
+         anything, so the card wears its own mark rather than a ring drawn at
+         a fraction nobody measured. */
       pct: null,
       dim: projects.length === 0,
       value: String(projects.length),
       word: t('money.sc_projects'),
-    },
-    {
-      id: 'savings',
-      icon: <PiggyIcon />,
-      label: t('money.tab_savings'),
-      well: 'bg-cat-5-soft',
-      pct: target > 0 ? Math.round((saved / target) * 100) : null,
-      dim: savingsMissing || saved === 0,
-      /* The one card with no number to print. Every other zero here is a
-         measured zero: no envelope funded, no charge paid, no project. A
-         savings table that has never been installed is not a zero, it is an
-         absence, and printing 0,00 $ would be the screen inventing a figure.
-         The en dash is what PlanVsActual already uses for the same thing. */
-      value: savingsMissing ? NO_FIGURE : fmt(saved),
-      word: savingsMissing ? t('money.sc_sav_none') : t('money.sc_sav'),
     },
   ]
 
@@ -1028,32 +1021,76 @@ export default function Money() {
         </Section>
       )}
 
-      {/* Every dollar that arrived, given a job. */}
-      {pane === 'envelopes' && (
-        <Section title={t('env.title')}>
-          <Envelopes s={s} allocations={allocations} locale={locale} onChange={load} />
-        </Section>
-      )}
-
       {pane === 'plan' && (
         <>
-          {/* What was meant to happen, against what has. The gap between the
-              two columns is the interesting part, and it is the thing the old
-              single column could not show because it had already merged
-              them. */}
+          {/**
+           * ONE PAGE, IN THE ORDER MONEY MOVES.
+           *
+           * What came in, what was already promised, what varied, what
+           * survived. These were four destinations and the split was the whole
+           * of what made the budget confusing: the envelopes handed out money
+           * the headline had already called spendable, and the same six
+           * categories turned up again as real spending on another screen.
+           */}
           <Section title={t('money.plan_vs_actual')}>
             <PlanVsActual s={s} locale={locale} />
           </Section>
 
-          {/* And the charges themselves, each one planned until you say it
-              went out. This is the control the app never had: with no way to
-              mark a charge paid, the arithmetic had to assume always or
-              never. */}
+          {/* The charges themselves, each one planned until you say it went
+              out. This is the control the app never had: with no way to mark a
+              charge paid, the arithmetic had to assume always or never. */}
           {liveFixed.length > 0 && (
             <Section title={t('money.fixed_title')}>
               <FixedCharges fixed={fixed} s={s} locale={locale} onChange={load} />
             </Section>
           )}
+
+          {/**
+           * What varied, by category, for this period.
+           *
+           * This is what the envelopes were reaching for and never delivered:
+           * the envelopes asked you to PLAN a number per category, which is a
+           * forecast, and then showed it beside a figure that was a fact. Only
+           * the fact is here. Nothing to fill in, nothing to keep in step.
+           */}
+          {s.byCategory.some((c) => c.cents > 0) && (
+            <Section title={t('money.variable_title')}>
+              <ul className="glass-card divide-y divide-hairline rounded-3xl px-4">
+                {s.byCategory
+                  .filter((c) => c.cents > 0)
+                  .sort((a, b) => b.cents - a.cents)
+                  .map((c) => (
+                    <li
+                      key={c.key}
+                      data-variable={c.key}
+                      className="flex items-center gap-3 py-3.5"
+                    >
+                      <CatDisc category={c.key} />
+                      <span className="min-w-0 flex-1 truncate text-body text-ink">
+                        {t(`money.cat_${c.key}`)}
+                      </span>
+                      <span className="shrink-0 text-body font-semibold text-ink [font-variant-numeric:tabular-nums]">
+                        {fmt(c.cents)}
+                      </span>
+                    </li>
+                  ))}
+              </ul>
+            </Section>
+          )}
+
+          {/* And what survives the month. Folded in here rather than kept as
+              its own destination, for the reason at the top of this block:
+              dividing it is what made it confusing. */}
+          <Savings
+            userId={user?.id}
+            plan={plan}
+            entries={entries}
+            savings={savings}
+            currency={s.currency}
+            locale={locale}
+            missing={savingsMissing}
+            onChange={load}
+          />
         </>
       )}
 
@@ -1114,21 +1151,6 @@ export default function Money() {
             />
           )}
         </Section>
-      )}
-
-      {/* Where the surplus goes. See src/components/Savings.jsx for why the
-          sweep is offered rather than taken. */}
-      {pane === 'savings' && (
-        <Savings
-          userId={user?.id}
-          plan={plan}
-          entries={entries}
-          savings={savings}
-          currency={s.currency}
-          locale={locale}
-          missing={savingsMissing}
-          onChange={load}
-        />
       )}
 
       <TransactionSheet

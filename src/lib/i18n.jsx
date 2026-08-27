@@ -391,7 +391,7 @@ const STRINGS = {
     'hist.yesterday': 'Yesterday',
     'hist.none': 'Nothing logged yet.',
     'hist.none_filtered': 'Nothing matches that. Try a wider filter.',
-    'money.tab_projects': 'Big budgets',
+    'money.tab_projects': 'Other budgets',
 
     /* Shared, ephemeral budgets. A trip, a flat, a car: something with a
        beginning, an end and a total, split between people. Kept in its own
@@ -448,7 +448,11 @@ const STRINGS = {
     'proj.category_ph': 'housing',
     'money.tab_overview': 'Overview',
     'money.tab_envelopes': 'Envelopes',
-    'money.tab_plan': 'Plan & fixed',
+    /* Just "Plan". It was "Plan & fixed" while the fixed charges were the
+       only thing beside the table; the page holds income, fixed, variable and
+       savings now, and naming one of the four in the title is the split this
+       restructure exists to undo. */
+    'money.tab_plan': 'Plan',
     'money.tab_log': 'Log',
     /* --- the feature cards on the budget's front page ------------------- */
     'feat.title': 'Go further',
@@ -468,7 +472,8 @@ const STRINGS = {
        figure, so it has to read as the tail of a sentence the number starts. */
     'money.sections': 'Sections',
     'money.recent': 'Latest',
-    'money.sc_env': 'of {n} funded',
+    'money.sc_plan_spent': 'spent this period',
+    'money.variable_title': 'What varied',
     'money.sc_plan': 'of {n} paid',
     'money.sc_plan_none': 'No fixed charge',
     'money.sc_projects': 'shared budgets',
@@ -1403,7 +1408,7 @@ const STRINGS = {
     'hist.yesterday': 'Hier',
     'hist.none': 'Rien d’enregistré pour l’instant.',
     'hist.none_filtered': 'Rien ne correspond. Essaie un filtre plus large.',
-    'money.tab_projects': 'Haut Budget',
+    'money.tab_projects': 'Autres budgets',
 
     'proj.new': 'Nouveau projet',
     'proj.join': 'Rejoindre',
@@ -1452,7 +1457,7 @@ const STRINGS = {
     'proj.category_ph': 'logement',
     'money.tab_overview': 'Aperçu',
     'money.tab_envelopes': 'Enveloppes',
-    'money.tab_plan': 'Plan & Fixe',
+    'money.tab_plan': 'Plan',
     'money.tab_log': 'Journal',
     /* --- the feature cards on the budget's front page ------------------- */
     'feat.title': 'Aller plus loin',
@@ -1472,7 +1477,8 @@ const STRINGS = {
        la phrase que le chiffre commence. */
     'money.sections': 'Sections',
     'money.recent': 'Dernières',
-    'money.sc_env': 'sur {n} financées',
+    'money.sc_plan_spent': 'dépensés sur la période',
+    'money.variable_title': 'Ce qui a varié',
     'money.sc_plan': 'sur {n} payées',
     'money.sc_plan_none': 'Aucune charge fixe',
     'money.sc_projects': 'budgets partagés',
