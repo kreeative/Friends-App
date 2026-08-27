@@ -5,7 +5,14 @@ import { minorDigits } from '../lib/currency'
 import { localISO, toCents } from '../lib/txn'
 import { errorText } from '../lib/dberr'
 import { balances, byCategory, projectProgress, settleUp, totalSpent } from '../lib/project'
-import { addProjectEntry, deleteProjectEntry, leaveProject } from '../lib/projectData'
+import {
+  addProjectEntry,
+  deleteProjectEntry,
+  inviteErrorKey,
+  inviteToProject,
+  leaveProject,
+  withdrawProjectInvite,
+} from '../lib/projectData'
 import { Avatar, Empty, Field, Sheet } from './ui'
 
 /**
@@ -19,9 +26,22 @@ import { Avatar, Empty, Field, Sheet } from './ui'
  * that can disagree with the entries it came from, and the moment those two
  * disagree the feature is worse than a group chat.
  */
-export default function ProjectDetail({ project, members, entries, profiles, userId, locale, onBack, onChange }) {
+export default function ProjectDetail({
+  project,
+  members,
+  entries,
+  profiles,
+  friends,
+  sentInvites,
+  canInvite = true,
+  userId,
+  locale,
+  onBack,
+  onChange,
+}) {
   const { t } = useT()
   const [sheet, setSheet] = useState(false)
+  const [invite, setInvite] = useState(false)
   const [error, setError] = useState('')
 
   const cur = project.currency
@@ -36,6 +56,11 @@ export default function ProjectDetail({ project, members, entries, profiles, use
   const owing = useMemo(() => settleUp(members, entries), [members, entries])
   const cats = useMemo(() => byCategory(entries), [entries])
   const mine = bal.find((b) => b.user_id === userId)
+
+  const pending = useMemo(
+    () => (sentInvites ?? []).filter((i) => i.project_id === project.id),
+    [sentInvites, project.id],
+  )
 
   const remove = async (id) => {
     const { error: err } = await deleteProjectEntry(id)
@@ -227,6 +252,36 @@ export default function ProjectDetail({ project, members, entries, profiles, use
             })}
           </ul>
 
+          {/**
+           * Two ways in, and the order says which one to reach for.
+           *
+           * Picking a name is one tap and lands in their app. A code has to be
+           * read off one screen, typed into another, and it only works if the
+           * person opens the app at all. So the friend picker is the button
+           * and the code is the fallback underneath it, for somebody who is
+           * not in any of your groups yet.
+           *
+           * Only the owner sees the picker, because invite_to_project() will
+           * refuse anybody else. A button that exists and always fails is a
+           * worse way to learn a rule than a button that is not there.
+           */}
+          {project.owner_id === userId && canInvite && (
+            <div className="mt-5 border-t border-hairline pt-4">
+              <button
+                className="goal-action press w-full"
+                data-hook="invite-friend"
+                onClick={() => setInvite(true)}
+              >
+                {t('proj.invite_friend')}
+              </button>
+              {pending.length > 0 && (
+                <p className="mt-2 text-label text-muted" data-hook="invite-pending">
+                  {t('proj.inv_waiting', { n: pending.length })}
+                </p>
+              )}
+            </div>
+          )}
+
           <div className="mt-5 border-t border-hairline pt-4">
             <p className="text-label text-muted">{t('proj.invite_with')}</p>
             <p
@@ -260,7 +315,109 @@ export default function ProjectDetail({ project, members, entries, profiles, use
         currency={cur}
         onDone={onChange}
       />
+
+      <InviteFriends
+        open={invite}
+        onClose={() => setInvite(false)}
+        projectId={project.id}
+        friends={friends}
+        members={members}
+        pending={pending}
+        onDone={onChange}
+      />
     </div>
+  )
+}
+
+/**
+ * Pick a name.
+ *
+ * The list is everybody you share a group with, which is exactly what
+ * loadInvitableFriends gets back from a plain read of profiles, because that
+ * is what profiles_select allows. It is also exactly the set
+ * invite_to_project() will accept, so the picker cannot offer a person the
+ * database will then refuse.
+ *
+ * People already in the project are dropped rather than shown greyed out: they
+ * are listed by name six inches up the same screen under "Who is in", and a
+ * second list of the same faces in a disabled state is a puzzle, not
+ * information.
+ *
+ * An invitation already sent stays in the list, saying so, with a way to take
+ * it back. That is the one state you need this screen to tell you: whether you
+ * already asked. Without it the only way to find out is to press invite again
+ * and read what happens.
+ */
+function InviteFriends({ open, onClose, projectId, friends, members, pending, onDone }) {
+  const { t } = useT()
+  const [busy, setBusy] = useState(null)
+  const [error, setError] = useState('')
+
+  const inProject = new Set((members ?? []).map((m) => m.user_id))
+  const askedBy = new Map((pending ?? []).map((i) => [i.invited_user, i.id]))
+  const list = (friends ?? []).filter((f) => !inProject.has(f.id))
+
+  const run = async (id, fn) => {
+    setBusy(id)
+    setError('')
+    const { error: err } = await fn()
+    setBusy(null)
+    if (err) {
+      const key = inviteErrorKey(err)
+      return setError(key ? t(key) : errorText(err))
+    }
+    await onDone()
+  }
+
+  return (
+    <Sheet open={open} onClose={onClose} title={t('proj.invite_friend')}>
+      <div className="space-y-4">
+        <p className="text-small text-muted">{t('proj.invite_who')}</p>
+
+        {list.length === 0 ? (
+          <Empty>{t('proj.invite_none')}</Empty>
+        ) : (
+          <ul className="divide-y divide-hairline" data-hook="invite-list">
+            {list.map((f) => {
+              const asked = askedBy.get(f.id)
+              return (
+                <li key={f.id} className="flex items-center gap-3 py-3" data-friend={f.id}>
+                  <Avatar profile={f} size={34} />
+                  <span className="min-w-0 flex-1 truncate text-body text-ink">
+                    {f.display_name || t('proj.someone')}
+                  </span>
+
+                  {asked ? (
+                    <span className="flex shrink-0 items-center gap-2">
+                      <span className="text-label text-muted">{t('proj.inv_sent')}</span>
+                      <button
+                        className="press text-label text-muted underline"
+                        disabled={busy === f.id}
+                        data-hook="invite-withdraw"
+                        onClick={() => run(f.id, () => withdrawProjectInvite(asked))}
+                      >
+                        {t('proj.inv_withdraw')}
+                      </button>
+                    </span>
+                  ) : (
+                    <button
+                      className="goal-action press shrink-0"
+                      disabled={busy === f.id}
+                      data-hook="invite-send"
+                      onClick={() => run(f.id, () => inviteToProject(projectId, f.id))}
+                    >
+                      {busy === f.id ? t('common.saving') : t('proj.inv_send')}
+                    </button>
+                  )}
+                </li>
+              )
+            })}
+          </ul>
+        )}
+
+        {error && <p className="break-words text-small text-negative" role="alert">{error}</p>}
+      </div>
+    </Sheet>
   )
 }
 

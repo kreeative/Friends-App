@@ -11,7 +11,11 @@ import { supabase } from './supabase'
  * the caller hides the feature rather than showing a PostgREST code to
  * somebody who cannot act on one. Same contract as loadBudget.
  */
-const ABSENT = new Set(['PGRST205', '42P01', '42883'])
+/* PGRST202 is the RPC half of the same state: PostgREST answers a function it
+   has never heard of with that, not with PGRST205. Without it here, a database
+   that has not run migration 41 shows the person a PostgREST code under an
+   invite button instead of simply not offering the button. */
+const ABSENT = new Set(['PGRST205', 'PGRST202', '42P01', '42883'])
 
 const absent = (r) => Boolean(r?.error && ABSENT.has(r.error.code))
 
@@ -167,5 +171,123 @@ export async function archiveProject(projectId) {
     .from('budget_project')
     .update({ archived: true })
     .eq('id', projectId)
+  return { error }
+}
+
+/* ---------------------------------------------------------------------------
+ * Inviting somebody who is already a friend.
+ *
+ * The code above still exists and still works, because it is the only way to
+ * reach somebody who is not in any of your groups. This is the other half:
+ * pick a name, and they find the invitation in their own budget.
+ *
+ * Everything below is soft on migration 41 being absent, the same way
+ * loadProjects is soft on 38. A person looking at a budget cannot run a
+ * migration, so the feature disappears rather than erroring.
+ * ------------------------------------------------------------------------ */
+
+/**
+ * Everybody you are allowed to invite.
+ *
+ * This is a plain read of profiles with no filter, and that is the whole
+ * trick: profiles_select in 03_policies is `id = auth.uid() or
+ * shares_group(id)`, so the rows that come back ARE your group-mates. Building
+ * the same set by hand out of group_members would be a second definition of
+ * "people you know" that could drift from the one the database enforces, and
+ * invite_to_project() checks the database's.
+ *
+ * Yourself dropped here rather than in the caller, because you are in the set
+ * by that policy and are never an answer to "who do you want to add".
+ */
+export async function loadInvitableFriends(userId) {
+  if (!userId) return []
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, display_name, avatar_url')
+    .neq('id', userId)
+    .order('display_name')
+  if (error) return []
+  return data ?? []
+}
+
+/**
+ * What is waiting for you.
+ *
+ * An RPC rather than a select, because the invite row on its own is two uuids
+ * and neither of those is a sentence anybody can read. my_project_invites()
+ * joins the project name on as the definer without granting a read of the
+ * project row, so a pending invitee never sees the invite code. See 41.
+ */
+export async function loadMyProjectInvites() {
+  const { data, error } = await supabase.rpc('my_project_invites')
+  if (error) return { invites: [], missing: absent({ error }) }
+  return { invites: data ?? [], missing: false }
+}
+
+/** The pending invitations you have sent, so the list can say "invited". */
+export async function loadSentInvites(projectIds = []) {
+  const ids = [...new Set(projectIds.filter(Boolean))]
+  if (ids.length === 0) return []
+  const { data, error } = await supabase
+    .from('budget_project_invite')
+    .select('id, project_id, invited_user, created_at')
+    .in('project_id', ids)
+    .eq('state', 'pending')
+  if (error) return []
+  return data ?? []
+}
+
+export async function inviteToProject(projectId, userId) {
+  const { data, error } = await supabase.rpc('invite_to_project', {
+    p_project: projectId,
+    p_user: userId,
+  })
+  if (error) return { error }
+  return { inviteId: data }
+}
+
+export async function respondToProjectInvite(inviteId, accept) {
+  const { data, error } = await supabase.rpc('respond_to_project_invite', {
+    p_invite: inviteId,
+    p_accept: accept,
+  })
+  if (error) return { error }
+  return { projectId: data }
+}
+
+/**
+ * Which refusal this was, as an i18n key.
+ *
+ * invite_to_project() and respond_to_project_invite() raise plain English
+ * sentences, because a Postgres exception is written for whoever is reading
+ * the log. The app is bilingual, so the sentence is matched here and the one
+ * on screen is translated. Matched on a distinctive fragment rather than on
+ * equality: the message arrives wrapped in PostgREST's own envelope.
+ *
+ * Null for anything unrecognised, and the caller falls back to errorText. A
+ * refusal nobody predicted must still reach the screen, in full, rather than
+ * being flattened into a friendly sentence that is not true.
+ */
+const INVITE_ERRORS = [
+  ['do not share a group', 'proj.err_not_friend'],
+  ['only the owner', 'proj.err_not_owner'],
+  ['already in this project', 'proj.err_already_in'],
+  ['is archived', 'proj.err_archived'],
+  ['already been answered', 'proj.err_answered'],
+  ['not yours', 'proj.err_not_yours'],
+  ['no such invitation', 'proj.err_gone'],
+]
+
+export function inviteErrorKey(error) {
+  const raw = `${error?.message ?? ''} ${error?.details ?? ''} ${error?.hint ?? ''}`.toLowerCase()
+  return INVITE_ERRORS.find(([needle]) => raw.includes(needle))?.[1] ?? null
+}
+
+/** Withdraw one you sent. The policy allows it only while it is unanswered. */
+export async function withdrawProjectInvite(inviteId) {
+  const { error } = await supabase
+    .from('budget_project_invite')
+    .delete()
+    .eq('id', inviteId)
   return { error }
 }
