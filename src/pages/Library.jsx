@@ -10,6 +10,7 @@ import ErrorNote from '../components/ErrorNote'
 import Formation from '../components/Formation'
 import { BookIcon } from '../components/ActionBar'
 import { localBooks } from '../content/previews'
+import { STUDY_SLUGS } from '../lib/seo'
 
 export default function Library() {
   const { user } = useAuth()
@@ -160,6 +161,46 @@ export default function Library() {
             </svg>
           </span>
         </button>
+      </Section>
+
+      {/**
+       * LES ETUDES, EN BANNIERE PLUTOT QU'EN ONGLET.
+       *
+       * "Une section newsletter qui va peut-etre siter a l'interieur de
+       * Lectures comme un banner."
+       *
+       * Elle vit ici parce que c'est la meme envie que le reste de la page :
+       * lire quelque chose. Un cinquieme onglet en bas pour un texte par mois
+       * serait une destination vide onze mois sur douze, alors qu'une banniere
+       * sous la formation est trouvee par les gens deja venus lire.
+       *
+       * Plus discrete que la formation au-dessus : bord seul, pas de carte
+       * pleine. Les deux se ressembleraient trop et la page dirait deux fois
+       * "commence par ici".
+       */}
+      <Section>
+        <Link
+          to={`/etudes/${STUDY_SLUGS[0]}`}
+          data-hook="studies-banner"
+          className="press flex w-full items-center gap-4 rounded-3xl border border-hairline px-5 py-4 text-left"
+        >
+          <span className="min-w-0 flex-1">
+            <span className="block text-label font-semibold uppercase tracking-wider text-muted">
+              {t('studies.banner_eyebrow')}
+            </span>
+            <span className="mt-1 block text-body font-semibold leading-tight text-ink">
+              {t('studies.banner_title')}
+            </span>
+            <span className="mt-1 block text-small leading-snug text-muted">
+              {t('studies.banner_sub')}
+            </span>
+          </span>
+          <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-pill bg-ink/[0.06] text-ink">
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 12h13M13 6l6 6-6 6" />
+            </svg>
+          </span>
+        </Link>
       </Section>
 
       {error && (

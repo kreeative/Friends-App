@@ -1,9 +1,15 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useT } from '../lib/i18n'
 import { Sheet } from './ui'
 import { Gauge } from './Envelopes'
 import { COUNTRIES, SNAPSHOT, compareRate, otherBasisFor } from '../lib/benchmarks'
-import { SURVEY, appliesTo, formatXof, medianSavers, peerStanding } from '../lib/peers'
+import { SURVEY, appliesTo, peerStanding } from '../lib/peers'
+import { STUDY_SLUGS } from '../lib/seo'
+
+/* The study these figures come from. One entry today; taking the first keeps
+   the link pointing somewhere real rather than at a slug typed twice. */
+const PEERS_STUDY = STUDY_SLUGS[0]
 
 /**
  * Your saving rate against everybody else's, as one card and one sheet.
@@ -206,7 +212,13 @@ export default function WealthRank({
                   <option key={c} value={c}>{t(`bm.c_${c}`)}</option>
                 ))}
               </select>
-              {other && (
+              {/* The nearest published figure, and why it is not a rank. It is
+                  the consolation prize for having nothing better, so it steps
+                  aside when there IS something better: four lines about gross
+                  national savings above a real peer comparison is the "trop
+                  d'information" this sheet was asked to lose. Still shown when
+                  the survey does not apply, because then it is all there is. */}
+              {other && !peers && (
                 <p className="mt-3 text-center text-small leading-relaxed text-muted">
                   {t('rank.other_basis', { n: other.rate, country: t(`bm.c_${code}`) })}
                 </p>
@@ -226,6 +238,25 @@ export default function WealthRank({
                * and a reader who cannot tell those apart is being misled by
                * omission.
                */}
+              {/**
+               * ONE SENTENCE AND A DOOR, NOT A METHODOLOGY.
+               *
+               * This carried three lines: where you stand, the median among
+               * savers, and the sample and its limits. All three are true and
+               * two of them are a footnote wearing a paragraph's clothes on a
+               * screen somebody opened to see one number.
+               *
+               * "Pas trop d'information dans la section budget, juste indiquer
+               * un truc qui dit si vous voulez savoir sur quoi on se base pour
+               * determiner les chiffres ivoiriens, consulter ce lien."
+               *
+               * So: the standing, and a link. The method did not get quieter,
+               * it moved to the page written for it, where it is the first
+               * thing under the figures rather than the last thing under a
+               * gauge. Naming the sample in the link text is what keeps this
+               * honest at a glance: somebody who reads only the sentence still
+               * knows it came from a survey.
+               */}
               {peers && (
                 <div data-hook="rank-peers" className="mt-6 rounded-2xl bg-ink/[0.04] px-4 py-4">
                   <p className="text-center text-body leading-relaxed text-ink">
@@ -233,12 +264,13 @@ export default function WealthRank({
                       ? t('peers.none', { pct: SURVEY.savesNothingPct })
                       : t('peers.beats', { pct: peers.beats })}
                   </p>
-                  <p className="mt-2 text-center text-small leading-relaxed text-muted [font-variant-numeric:tabular-nums]">
-                    {t('peers.median', { amount: formatXof(medianSavers()) })}
-                  </p>
-                  <p className="mt-3 text-center text-label leading-relaxed text-muted">
-                    {t('peers.method', { n: SURVEY.n, age: SURVEY.medianAge })}
-                  </p>
+                  <Link
+                    to={`/etudes/${PEERS_STUDY}`}
+                    data-hook="peers-source"
+                    className="press mt-3 block text-center text-small font-semibold text-ink underline decoration-ink/40 underline-offset-4"
+                  >
+                    {t('peers.source_link', { n: SURVEY.n })}
+                  </Link>
                 </div>
               )}
             </div>

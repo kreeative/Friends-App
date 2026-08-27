@@ -203,6 +203,35 @@ export default function Home() {
             ))}
           </ul>
         </div>
+
+        {/**
+         * L'ETUDE, CITEE SOUS L'ARGUMENT QU'ELLE SOUTIENT.
+         *
+         * "Avoir un lien sur la home page du site pour citer ce sondage-la ou
+         * d'autres affaires."
+         *
+         * Ici et pas dans le hero : cette section explique pourquoi les gens
+         * n'atteignent pas leurs objectifs, et le sondage est ce sur quoi cette
+         * explication repose. Une page qui affirme puis, deux paragraphes plus
+         * bas, montre ou aller verifier, est une page differente d'une page qui
+         * affirme seulement.
+         *
+         * Une ligne et un lien. Pas un encart avec des chiffres : les chiffres
+         * sont sur la page qui porte aussi la methode, et les sortir d'ici
+         * reviendrait a publier une statistique sans ses limites.
+         */}
+        <div className="mt-14 flex flex-col gap-3 border-t border-hairline pt-8 sm:flex-row sm:items-center sm:justify-between">
+          <p className="max-w-[46ch] text-small leading-relaxed text-muted">
+            {c.studies.home_line}
+          </p>
+          <Link
+            to="/etudes"
+            data-hook="home-studies"
+            className="chip press shrink-0 self-start sm:self-auto"
+          >
+            {c.studies.home_link}
+          </Link>
+        </div>
       </section>
 
       {/**
