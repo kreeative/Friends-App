@@ -9,7 +9,7 @@ import { currencySymbol, minorDigits } from '../lib/currency'
 import { clearDraft, hasFreshDraft, readDraft, useDraft } from '../lib/draft'
 import { loadBudget } from '../lib/budgetData'
 import { errorText, isMissingColumn, isMissingTable, isNetworkError } from '../lib/dberr'
-import { ageBandOf, detectCountry, spendOver } from '../lib/benchmarks'
+import { ageBandOf, ageOf, detectCountry, spendOver } from '../lib/benchmarks'
 import { history as savingsHistory, recentRate, savedTotal } from '../lib/savings'
 import { fromCents, localISO, toCents, txnPayload, withoutField } from '../lib/txn'
 import { Empty, Screen, Section, TopBar } from '../components/ui'
@@ -1016,6 +1016,14 @@ export default function Money() {
               months={myRate.months}
               country={country}
               band={ageBand}
+              age={ageOf(profile?.birthday)}
+              currency={s.currency}
+              /* An average month rather than the whole window, because the
+                 survey asked "combien epargnez-vous par mois". Comparing a
+                 twelve-month total against a monthly answer would say somebody
+                 beats the entire sample when they are merely being summed. */
+              monthlySaved={myRate.months > 0 ? Math.round(myRate.saved / myRate.months) : null}
+              onPickCountry={pickCountry}
               onAddTransaction={() => setSheet(NEW)}
             />
           </Section>

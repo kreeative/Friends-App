@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { useT } from '../lib/i18n'
 import { Sheet } from './ui'
 import { Gauge } from './Envelopes'
-import { SNAPSHOT, compareRate, otherBasisFor } from '../lib/benchmarks'
+import { COUNTRIES, SNAPSHOT, compareRate, otherBasisFor } from '../lib/benchmarks'
+import { SURVEY, appliesTo, medianSavers, peerStanding } from '../lib/peers'
 
 /**
  * Your saving rate against everybody else's, as one card and one sheet.
@@ -30,23 +31,68 @@ import { SNAPSHOT, compareRate, otherBasisFor } from '../lib/benchmarks'
  * than a blank, the gauge locks and the sheet says what would unlock it. The
  * primary button then does that exact thing.
  */
-export default function WealthRank({ rate, months, country, band, onAddTransaction }) {
+/**
+ * A round XOF figure with thin spaces between the thousands.
+ *
+ * Not Intl.NumberFormat with the user's locale: the amount is being quoted FROM
+ * the survey in francs CFA, so it is a fact about the sample rather than a
+ * figure in the reader's own currency, and formatting it as though it were
+ * theirs is how "44 500 XOF" quietly becomes "44 500 $".
+ */
+function fmtXof(n) {
+  return `${String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '\u202f')}\u202fXOF`
+}
+
+export default function WealthRank({
+  rate, months, country, band, age, currency, monthlySaved, onPickCountry, onAddTransaction,
+}) {
   const { t } = useT()
   const [open, setOpen] = useState(false)
 
-  const code = country ?? 'CA'
+  /**
+   * NO SILENT FALLBACK TO CANADA.
+   *
+   * This read `country ?? 'CA'`, which is the exact thing benchmarks.js says it
+   * avoids: "the screen offers the picker rather than quietly showing Canada to
+   * somebody in Abidjan". detectCountry returns null for CI, so that is what an
+   * Ivorian user was getting, ranked against a Canadian household saving rate
+   * without being told.
+   *
+   * The picker it refers to had also gone: pickCountry survived the budget
+   * restructure as an unused callback with nothing wired to it. It is back
+   * below, and until somebody uses it an unknown country is an unknown country.
+   */
+  const code = country ?? null
   /* The band, when the profile has a birthday to derive one from. Where there
      is one the comparison is against people the same age, which is the useful
      one: a 24-year-old and a 50-year-old both saving 4 % are not doing the same
      thing, and telling them both "under the national 6 %" tells neither
      anything. Where there is not, it falls back to the country and the screen
      says which it used. */
-  const cmp = compareRate(rate, code, band)
+  const cmp = code ? compareRate(rate, code, band) : { standing: null, delta: null, benchmark: null }
   const bench = cmp.benchmark
   /* A country with no household rate at all. See OTHER_BASIS: what exists for
      Cote d'Ivoire is a different measure, and it is shown as information rather
      than as a rank. */
-  const other = bench ? null : otherBasisFor(code)
+  const other = bench || !code ? null : otherBasisFor(code)
+
+  /**
+   * The survey, for the people it actually describes.
+   *
+   * Only in the no-basis branch, and only when appliesTo() says yes. It is not
+   * an upgrade on the published rate and it never replaces one: where a country
+   * HAS a household saving rate that is the better comparison, because it is a
+   * national statistic rather than 92 people who answered a link.
+   *
+   * Where there is none, this is the difference between telling a 19-year-old in
+   * Abidjan "the statistic does not exist for your country" and telling them
+   * something true about people like them. See src/lib/peers.js for why it is
+   * kept out of benchmarks.js entirely.
+   */
+  const fits = appliesTo({ age, currency, country: code })
+  const peers = !bench && fits.ok && monthlySaved != null
+    ? peerStanding(monthlySaved, currency)
+    : null
   const locked = rate == null || !Number.isFinite(rate)
   const mine = locked ? null : Math.round(rate)
 
@@ -151,12 +197,61 @@ export default function WealthRank({ rate, months, country, band, onAddTransacti
                does exist, and do not draw a rank against it. */
             <div data-hook="rank-nobasis" className="mt-6">
               <p className="text-center text-body leading-relaxed text-ink">
-                {t('rank.no_basis', { country: t(`bm.c_${code}`) })}
+                {code
+                  ? t('rank.no_basis', { country: t(`bm.c_${code}`) })
+                  : t('rank.pick_prompt')}
               </p>
+
+              {/* Back, and reachable. An unknown country is a question the
+                  reader can answer in one tap; it is not a reason to show them
+                  a different country's figure. Cote d'Ivoire is in the list
+                  even though it has no household rate, because saying so about
+                  YOUR country is a real answer and being shown Canada is not. */}
+              <select
+                className="field mt-3"
+                data-hook="rank-country"
+                value={code ?? ''}
+                onChange={(e) => onPickCountry?.(e.target.value || null)}
+              >
+                <option value="">{t('rank.pick_none')}</option>
+                {[...COUNTRIES, 'CI'].map((c) => (
+                  <option key={c} value={c}>{t(`bm.c_${c}`)}</option>
+                ))}
+              </select>
               {other && (
                 <p className="mt-3 text-center text-small leading-relaxed text-muted">
                   {t('rank.other_basis', { n: other.rate, country: t(`bm.c_${code}`) })}
                 </p>
+              )}
+
+              {/**
+               * What DOES exist for this reader.
+               *
+               * The sentence changes on the one distinction that matters. Above
+               * zero, it says how many of the 92 you are ahead of. At zero it
+               * says how many were also at zero, because "tu bats 0 %" is a true
+               * sentence that would land as a punishment, and 41 % of the sample
+               * was in exactly the same position that month.
+               *
+               * The sample is named every time. This is 92 people who answered a
+               * link, not a national statistic and not other users of this app,
+               * and a reader who cannot tell those apart is being misled by
+               * omission.
+               */}
+              {peers && (
+                <div data-hook="rank-peers" className="mt-6 rounded-2xl bg-ink/[0.04] px-4 py-4">
+                  <p className="text-center text-body leading-relaxed text-ink">
+                    {peers.savesNothing
+                      ? t('peers.none', { pct: SURVEY.savesNothingPct })
+                      : t('peers.beats', { pct: peers.beats })}
+                  </p>
+                  <p className="mt-2 text-center text-small leading-relaxed text-muted [font-variant-numeric:tabular-nums]">
+                    {t('peers.median', { amount: fmtXof(medianSavers()) })}
+                  </p>
+                  <p className="mt-3 text-center text-label leading-relaxed text-muted">
+                    {t('peers.method', { n: SURVEY.n, age: SURVEY.medianAge })}
+                  </p>
+                </div>
               )}
             </div>
           ) : (

@@ -117,8 +117,15 @@ export const OTHER_BASIS = [
   },
 ]
 
-/** The bands a birthday falls into, or null when there is no birthday on file. */
-export function ageBandOf(birthday, today = new Date()) {
+/**
+ * Age in whole years, or null when there is no usable birthday.
+ *
+ * Split out of ageBandOf because the peer survey in peers.js gates on the age
+ * itself rather than on one of these five bands: its sample runs 15 to 32 and
+ * `u35` would sweep a 34-year-old into a comparison against teenagers. One
+ * implementation, so the two cannot drift.
+ */
+export function ageOf(birthday, today = new Date()) {
   const [y, m, d] = String(birthday ?? '').slice(0, 10).split('-').map(Number)
   if (!y || !m || !d) return null
   let age = today.getFullYear() - y
@@ -127,6 +134,13 @@ export function ageBandOf(birthday, today = new Date()) {
   const before = today.getMonth() + 1 < m || (today.getMonth() + 1 === m && today.getDate() < d)
   if (before) age -= 1
   if (age < 0 || age > 130) return null
+  return age
+}
+
+/** The bands a birthday falls into, or null when there is no birthday on file. */
+export function ageBandOf(birthday, today = new Date()) {
+  const age = ageOf(birthday, today)
+  if (age == null) return null
   if (age < 35) return 'u35'
   if (age < 45) return '35_44'
   if (age < 55) return '45_54'
