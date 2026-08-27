@@ -16,8 +16,8 @@ import Wordmark from '../components/Wordmark'
  * A form. Name your group, pick a weekday, pick an hour, create. That is the
  * right first screen for somebody who arrived with three friends already
  * waiting, and the wrong one for everybody else, which is most people. The
- * journal, the budget and your own goals all work perfectly well alone and
- * none of them were reachable until you had invented a group to hold them.
+ * budget and your own goals both work perfectly well alone and neither was
+ * reachable until you had invented a group to hold them.
  * The app's own answer to "what can I do here" was "find some friends first".
  *
  * So the first screen says what the app is, in three slides, and then asks a
@@ -50,7 +50,7 @@ import Wordmark from '../components/Wordmark'
  * because the card is a panel in the middle of it rather than the page.
  *
  * Scroll-snap rather than a transform and a drag handler, exactly as
- * JournalIntro and BudgetIntro do. The browser owns the physics, the momentum
+ * BudgetIntro does. The browser owns the physics, the momentum
  * matches every other scroller on the device, and it stays keyboard and
  * screen-reader reachable for nothing. The dots follow the scroll rather than
  * driving it, so flicking, tapping Next and tabbing all agree about which

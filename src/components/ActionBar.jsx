@@ -56,8 +56,8 @@
 export default function ActionBar({ items, value, onChange }) {
   return (
     /* A stable hook. These rows carry their counts in their accessible name,
-       so matching them by text alone is ambiguous with the app's own tab bar
-       ("Journal" is both a pane here and a destination down there). */
+       so matching them by text alone is ambiguous with the app's own tab bar,
+       where a pane and a destination can share a word. */
     <div data-actionbar="" className="flex flex-col gap-2">
       {items.map((item) => {
         const on = item.id === value

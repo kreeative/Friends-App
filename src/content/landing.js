@@ -7,17 +7,84 @@
 export const LANDING = {
   en: {
     hero: {
-      title: 'Alone we go faster, but together we go further.',
-      body: 'Our environment dictates our output. Stop grinding in isolation, surround yourself with high-caliber peers who force you to level up every single day.',
-      cta: 'Start a group',
+      title: 'Change your life. Take back your future.',
+      /* An aim, not a count. See the note on the French copy. */
+      body: 'The goal: help millions of people transform how they live, through personal discipline, an ambitious mindset and control of their money.',
+      cta: 'Upgrade your lifestyle',
       secondary: 'How it works',
-      note: 'Ambition Is Contagious.',
+      note: 'Free, and your budget stays private',
     },
 
+    manifesto:
+      'A new way of living does not ask for luck. It asks for vision, for discipline every day, and for the right tools to carry it out.',
+
+    pillars: {
+      eyebrow: 'The three pillars',
+      title: 'What you build here.',
+      items: [
+        {
+          n: '01',
+          title: 'Discipline & mindset',
+          body: 'Build the daily habits that shape the better version of you. You say what you are going to do, your friends see it, and you tick it off every day.',
+          tone: 'bg-accent',
+        },
+        {
+          n: '02',
+          title: 'Upgrade your lifestyle',
+          body: 'Think bigger. Travel, a career change, independence: give your most ambitious plans a date and a number instead of keeping them in your head.',
+          tone: 'bg-sky',
+        },
+        {
+          n: '03',
+          title: 'Financial freedom',
+          body: 'Put your money behind what you want: envelopes for the everyday, Big Budgets for the large things, and savings for what is left.',
+          tone: 'bg-field',
+        },
+      ],
+    },
+
+    /* See the note on the French copy: this block exists because people sent
+       the link and could not tell what the app was for. */
+    what: {
+      eyebrow: 'In plain terms',
+      title: 'What is Rich & Friends?',
+      items: [
+        {
+          title: 'A small group of friends, and what each of you commits to.',
+          body: 'You write down what you are going to do and how often. Your friends see it. They write theirs too.',
+        },
+        {
+          title: 'One check-in a day, in about a minute.',
+          body: 'You tick off what you did, with proof if your goal asks for it. Nobody sees anyone else\u2019s answers until the day is over.',
+        },
+        {
+          title: 'A personal budget nobody can see.',
+          body: 'How much you can spend today without breaking your month. No one in your group can read it, and that is not a setting: it is written into the database.',
+        },
+      ],
+    },
+
+    /* The answer has to answer the question. See the note on the French. */
     problem: {
-      eyebrow: 'Why often we are not reaching our goals?',
-      title: 'Productivity apps do not fail for lack of features.',
-      body: 'They fail because vague goals cannot be checked, because nothing happens when someone goes silent, and because one missed day kills a streak so people quit rather than restart from zero. Every decision here was made against a single test: does this make the group more likely to still be here in week twelve?',
+      eyebrow: 'Why don’t we reach our goals?',
+      title: 'Almost never for want of willpower.',
+      reasons: [
+        {
+          why: 'A vague goal cannot be checked.',
+          body: '"Get back into shape" has no yes or no, so you never find out whether you kept it.',
+          fix: 'Here you write a commitment, a rhythm, and what will count as proof.',
+        },
+        {
+          why: 'When somebody disappears, nothing happens.',
+          body: 'Nobody notices, and the app that asks least of you is the first one you drop.',
+          fix: 'Here, after two periods of silence, your friends see it and one of them offers to write to you.',
+        },
+        {
+          why: 'One broken streak and people quit.',
+          body: 'Starting from zero costs more than the day you actually missed.',
+          fix: 'Here the number the group looks at is a share of the period, not a streak. A missed day costs you a fraction, not everything.',
+        },
+      ],
     },
 
     steps: {
@@ -122,17 +189,126 @@ export const LANDING = {
 
   fr: {
     hero: {
-      title: 'Parce qu’ensemble on construit plus vite.',
-      body: 'Ton entourage décide de tes résultats. Arrête de ramer seul dans ton coin : entoure-toi de gens ambitieux qui te tirent vers le haut, un jour après l’autre.',
-      cta: 'Créer un groupe',
+      title: 'Change de vie. Reprends le contrôle de ton avenir.',
+      /**
+       * UN OBJECTIF, PAS UNE STATISTIQUE.
+       *
+       * La premiere version disait « aide des milliers de personnes ». C'est
+       * un chiffre verifiable, et il est faux aujourd'hui : les groupes de
+       * cette app se comptent sur les doigts. Une page publique qui annonce
+       * des utilisateurs qu'elle n'a pas est la meme faute que « 5 membres
+       * maximum », qui n'est ecrit nulle part dans la base, et que
+       * « Telecharger l'application », qui ne telecharge rien.
+       *
+       * « Objectif : aider des millions de personnes » dit la meme ambition et
+       * se trouve etre vrai, parce que c'est une declaration d'intention et
+       * non un compte. Rien a corriger le jour ou le chiffre arrive.
+       */
+      body: 'Objectif : aider des millions de personnes à transformer leur mode de vie grâce à la discipline personnelle, un mindset ambitieux et la maîtrise financière.',
+      cta: 'Améliore ton Lifestyle',
       secondary: 'Comment ça marche',
-      note: 'L’ambition est contagieuse',
+      note: 'Gratuit, et ton budget reste privé',
     },
 
+    manifesto:
+      'Un nouveau mode de vie ne demande pas de la chance. Il demande de la vision, de la discipline au quotidien et les bons outils pour l’exécuter.',
+
+    /* Les trois piliers. Chacun pointe vers une partie de l'app qui existe
+       vraiment : les objectifs et le point quotidien, les projets et le suivi,
+       le budget et l'epargne. */
+    pillars: {
+      eyebrow: 'Les trois piliers',
+      title: 'Ce que tu construis ici.',
+      items: [
+        {
+          n: '01',
+          title: 'Discipline & Mindset',
+          body: 'Construis les habitudes quotidiennes qui façonnent la meilleure version de toi-même. Tu dis ce que tu vas faire, tes amis le voient, et tu coches chaque jour.',
+          tone: 'bg-accent',
+        },
+        {
+          n: '02',
+          title: 'Upgrade ton Lifestyle',
+          body: 'Pense grand. Voyages, reconversion, indépendance : donne une date et un montant à tes projets les plus ambitieux au lieu de les garder dans ta tête.',
+          tone: 'bg-sky',
+        },
+        {
+          n: '03',
+          title: 'Liberté Financière',
+          body: 'Mets ton argent au service de tes rêves : des enveloppes pour le quotidien, le Haut Budget pour les gros projets, et l’épargne pour ce qui reste.',
+          tone: 'bg-field',
+        },
+      ],
+    },
+
+    /**
+     * Ce que l'app EST, en trois phrases concretes.
+     *
+     * Le hero est une promesse et le bloc suivant parle des autres apps. Rien
+     * ne disait ce qu'on fait ici, et c'est le retour qui a declenche ce bloc :
+     * les gens a qui on envoie le lien ne comprennent pas a quoi ca sert.
+     *
+     * Chaque phrase est verifiable dans le code. Il n'y a volontairement aucun
+     * nombre de membres : la taille du groupe n'est pas contrainte en base, et
+     * annoncer « 5 maximum » sur une page publique serait faux.
+     */
+    what: {
+      eyebrow: 'Concrètement',
+      title: 'C’est quoi, Rich & Friends ?',
+      items: [
+        {
+          title: 'Un petit groupe d’amis, et ce que chacun s’engage à faire.',
+          body: 'Tu écris ce que tu vas faire et à quel rythme. Tes amis le voient. Eux aussi écrivent le leur.',
+        },
+        {
+          title: 'Un point par jour, en une minute.',
+          body: 'Tu coches ce que tu as fait, avec une preuve si ton objectif en demande une. Personne ne voit les réponses des autres avant la fin de la journée.',
+        },
+        {
+          title: 'Un budget perso que personne ne voit.',
+          body: 'Combien tu peux dépenser aujourd’hui sans casser ton mois. Aucun membre de ton groupe ne peut le lire, et ce n’est pas un réglage : c’est écrit dans la base.',
+        },
+      ],
+    },
+
+    /**
+     * LA REPONSE DOIT REPONDRE A LA QUESTION.
+     *
+     * Le titre disait « Ces applis n'echouent pas par manque de fonctions »
+     * sous un chapeau qui demande « pourquoi on n'atteint pas nos objectifs ».
+     * La question porte sur nous, la reponse parlait des logiciels. Personne
+     * n'arrive sur cette page en se demandant pourquoi les applis echouent.
+     *
+     * Trois raisons, sur nous, et pour chacune ce que l'app fait. Les trois
+     * sont verifiables dans le code : la preuve demandee a la creation d'un
+     * objectif, le nudge leve par tick() apres deux periodes sans nouvelles,
+     * et memberRates qui calcule une proportion sur la fenetre.
+     *
+     * La troisieme a failli etre fausse. La formulation evidente etait « ici
+     * rien ne se casse » : c'est faux, streakOf coupe bien la serie au premier
+     * jour du. Ce qui est vrai, c'est que la serie n'est pas le chiffre que le
+     * groupe regarde.
+     */
     problem: {
       eyebrow: 'Pourquoi on n’atteint pas nos objectifs ?',
-      title: 'Ces applis n’échouent pas par manque de fonctions.',
-      body: 'Elles échouent parce qu’un objectif vague ne peut pas être vérifié, parce que rien ne se passe quand quelqu’un disparaît, et parce qu’un seul jour manqué casse une série, alors les gens abandonnent plutôt que de repartir de zéro. Chaque décision ici a été prise sur un seul critère : est-ce que ça augmente les chances que le groupe soit encore là à la douzième semaine ?',
+      title: 'Presque jamais par manque de volonté.',
+      reasons: [
+        {
+          why: 'Un objectif vague ne se vérifie pas.',
+          body: '« Me remettre au sport » n’a pas de réponse oui ou non, alors on ne sait jamais si on l’a tenu.',
+          fix: 'Ici tu écris un engagement, un rythme, et ce qui comptera comme preuve.',
+        },
+        {
+          why: 'Quand quelqu’un disparaît, il ne se passe rien.',
+          body: 'Personne ne le remarque, et l’app la moins gênante est celle qu’on lâche en premier.',
+          fix: 'Ici, après deux périodes sans nouvelles, tes amis le voient et l’un d’eux se propose de t’écrire.',
+        },
+        {
+          why: 'Une série cassée, et on abandonne.',
+          body: 'Repartir de zéro coûte plus cher que le jour qu’on a manqué.',
+          fix: 'Ici le chiffre que le groupe regarde est une proportion sur la période, pas une série. Un jour manqué te coûte une fraction, pas tout.',
+        },
+      ],
     },
 
     steps: {

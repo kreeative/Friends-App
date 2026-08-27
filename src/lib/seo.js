@@ -56,7 +56,6 @@ export const PRIVATE_PREFIXES = [
   '/start',
   '/me',
   '/settings',
-  '/journal',
   '/money',
   '/goals',
   '/checkin',

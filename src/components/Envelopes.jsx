@@ -560,15 +560,17 @@ export function SpendableBar({ bar, currency, locale }) {
      * everything else be small underneath it, which is the right hierarchy
      * for a screen that answers a single question.
      *
-     * The gradient runs top to bottom and stops well short of full strength.
-     * It has to: this is the card the headline sits on, and every point of
-     * saturation is a point of contrast spent. Measured rather than picked.
+     * One flat surface. It was a corner-to-corner gradient, pale pink through
+     * white to pale yellow, and the argument for keeping it weak was that
+     * every point of saturation on the card the headline sits on is a point of
+     * contrast spent. Flat spends none of it, which is the same argument
+     * arriving at its end.
      */
     /* Hooks, because this card has now lost .eyebrow, .lg and .lede in three
        separate restyles and took a test suite with it every time. */
     <div
       data-card="spendable"
-      className="glass-card relative overflow-hidden rounded-3xl bg-gradient-to-br from-cat-1-soft via-white to-cat-5-soft p-6"
+      className="glass-card relative overflow-hidden rounded-3xl bg-surface p-6"
     >
       {/**
        * The badge rides the label's line, and it is pop pink rather than ink.

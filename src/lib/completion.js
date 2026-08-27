@@ -127,9 +127,10 @@ function ownersOf(goal, memberIds) {
 /**
  * How much of the window each member actually did.
  *
- * Returns one row per member in the order the roster came in. Deliberately not
- * sorted: this replaced a leaderboard, and re-sorting by the percentage would
- * rebuild the thing it replaced with the badges filed off.
+ * Returns one row per member in the order the roster came in. `rank()` below
+ * is what orders them for the board; this stays in roster order so that
+ * anything else reading it gets a stable list rather than one that reshuffles
+ * as the day goes on.
  *
  * `pct` is null rather than 0 when nothing was scheduled. A person with no
  * goals in the window has not failed at anything, and a bar sitting at zero
@@ -241,4 +242,78 @@ export function firstName(profile) {
   const full = (profile?.display_name ?? '').trim()
   if (!full) return ''
   return full.split(/\s+/)[0]
+}
+
+/**
+ * The roster, as a standing.
+ *
+ * WHAT THIS REVERSES, AND WHO REVERSED IT.
+ *
+ * The note above this function used to say there would be no ranking, and the
+ * argument was not about medals: telling somebody they are last among four
+ * friends is how they stop opening the app. That argument still holds and it
+ * is worth keeping written down. It was overruled deliberately, by the person
+ * whose app this is, who asked for a standing that moves when somebody
+ * finishes what they said they would do.
+ *
+ * So the sort is here, tested, rather than inline in a component where the
+ * tie-breaks would be invisible.
+ *
+ * HIGHEST FIRST, AND THREE TIE-BREAKS THAT ALL MEAN SOMETHING.
+ *
+ *   pct   the share of what you said you would do. First, because it is the
+ *         only figure that compares two people with different loads fairly:
+ *         one goal out of one is a finished week, and so is twenty out of
+ *         twenty.
+ *   done  the raw count, so that between two people who both did everything,
+ *         the one who took on more is ahead. Without it a person with a single
+ *         goal ties with somebody carrying eight.
+ *   name  so the order is stable. Two members with identical figures must not
+ *         swap places on every render, which is what an unstable sort does and
+ *         what makes a list look like it is moving when nothing happened.
+ *
+ * NOBODY WITH NOTHING SCHEDULED IS RANKED.
+ *
+ * `pct` is null when the window held no goals for somebody. They have not
+ * failed at anything, so they are not last: they are unranked, placed after
+ * everybody who has a figure, and `position` is null rather than a number.
+ * Sorting them as zero would put a person who was never on the hook at the
+ * bottom of a table about doing what you promised.
+ */
+export function rank(rows = []) {
+  const scored = rows.filter((r) => r.pct !== null)
+  const unscored = rows.filter((r) => r.pct === null)
+
+  const byName = (a, b) =>
+    String(a.profile?.display_name ?? '').localeCompare(String(b.profile?.display_name ?? ''))
+
+  scored.sort((a, b) => b.pct - a.pct || b.done - a.done || byName(a, b))
+  unscored.sort(byName)
+
+  /**
+   * Shared places, so a tie reads as a tie.
+   *
+   * Two people on 100 % are both first and the next is third. Numbering them
+   * 1, 2, 3 would invent an order between two identical rows and hand somebody
+   * a worse position than the person they actually drew with.
+   */
+  let position = 0
+  let seen = 0
+  let last = null
+  const ranked = scored.map((r) => {
+    seen += 1
+    const key = `${r.pct}:${r.done}`
+    if (key !== last) {
+      position = seen
+      last = key
+    }
+    return { ...r, position, tied: false }
+  })
+
+  for (let i = 0; i < ranked.length; i++) {
+    const shares = ranked.some((o, j) => j !== i && o.position === ranked[i].position)
+    ranked[i].tied = shares
+  }
+
+  return ranked.concat(unscored.map((r) => ({ ...r, position: null, tied: false })))
 }

@@ -19,7 +19,6 @@ import Proofs from './pages/Proofs'
 import Goals from './pages/Goals'
 import GoalEditor from './pages/GoalEditor'
 import Me from './pages/Me'
-import Journal from './pages/Journal'
 import Money from './pages/Money'
 import Settings from './pages/Settings'
 import Legal from './pages/Legal'
@@ -185,8 +184,8 @@ function Gate() {
    *
    * This used to be `memberships.length === 0 ? <Start /> : <Dashboard />`,
    * which put a form asking you to name a group in front of every new account
-   * with no way past it. The journal, the budget and your own goals all work
-   * alone; none of them were reachable until you had invented a group.
+   * with no way past it. The budget and your own goals both work alone;
+   * neither was reachable until you had invented a group.
    *
    * Three answers, not two, and the third is the important one: WAIT. The
    * decision needs the memberships and the profile, which arrive from two
@@ -209,8 +208,8 @@ function Gate() {
 
   /**
    * Outside the AppShell on purpose. The deck is the whole screen: a tab bar
-   * offering Journal, Budget and Goals underneath it would be four ways out
-   * of a screen whose entire job is to ask one question.
+   * offering Goals, Budget and the library underneath it would be four ways
+   * out of a screen whose entire job is to ask one question.
    */
   if (where === 'welcome') {
     return (
@@ -235,11 +234,18 @@ function Gate() {
         <Route index element={<Dashboard />} />
         <Route path="start" element={<Start />} />
         <Route path="me" element={<Me />} />
-        {/* Personal, and deliberately not under /g/:groupId. A journal that
-            lived inside a group would be one URL away from looking like it
-            belonged to the group. */}
-        <Route path="journal" element={<Journal />} />
         <Route path="money" element={<Money />} />
+        {/**
+         * The budget's sections are pages, and they are pages here rather than
+         * five sibling routes with five components.
+         *
+         * Every one of them reads the same plan, the same transactions and the
+         * same allocations. Splitting them would mean five copies of the load
+         * and five chances for two of them to disagree about what this period
+         * is, so one component answers all six paths and the param picks the
+         * body. See the note on useParams in src/pages/Money.jsx.
+         */}
+        <Route path="money/:pane" element={<Money />} />
         <Route path="library" element={<Library />} />
         <Route path="library/:slug" element={<Reader />} />
 

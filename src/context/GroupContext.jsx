@@ -135,7 +135,7 @@ export function GroupProvider({ children }) {
     }
 
     try {
-      const [g, m, c, gl, st, nd] = await Promise.all([
+      const [g, m, c, gl, st, nd, hid] = await Promise.all([
       supabase.from('groups').select('*').eq('id', activeId).maybeSingle(),
       supabase
         .from('group_members')
@@ -157,6 +157,16 @@ export function GroupProvider({ children }) {
       supabase.from('goals').select('*').eq('group_id', activeId).order('created_at'),
       supabase.from('member_cycle_status').select('*').eq('group_id', activeId),
       supabase.from('nudges').select('*').eq('group_id', activeId).in('state', ['pending', 'claimed']),
+      /**
+       * The ones this reader has put away.
+       *
+       * Its own request rather than a join, for the reason the envelopes and
+       * the savings ledger each have one: migration 40 may not have been run,
+       * and a missing table must not take the whole group down with it. RLS
+       * already limits this to the reader's own rows, so no filter is needed
+       * and none would add anything.
+       */
+      supabase.from('nudge_hidden').select('nudge_id'),
       ])
 
       setGroup(g.data ?? null)
@@ -164,7 +174,12 @@ export function GroupProvider({ children }) {
       setCycles(c.data ?? [])
       setGoals(gl.data ?? [])
       setStatuses(st.data ?? [])
-      setNudges(nd.data ?? [])
+      /* Hidden is a per-reader veto, applied here so every consumer of
+         `nudges` sees the same list. hid.data is null when the table is not
+         installed, which reads as "nothing hidden" and is the right way for
+         this to fail. */
+      const hidden = new Set((hid?.data ?? []).map((r) => r.nudge_id))
+      setNudges((nd.data ?? []).filter((n) => !hidden.has(n.id)))
       setError(null)
     } catch (e) {
       // One rejected request used to abort the whole Promise.all and leave

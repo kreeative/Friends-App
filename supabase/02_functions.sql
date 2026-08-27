@@ -306,9 +306,19 @@ begin
     if found then
       for m in select user_id from group_members where group_id = c.group_id loop
         if missed_cycle(m.user_id, c.id) and missed_cycle(m.user_id, prev.id) then
+          -- Unqualified, so it catches BOTH unique rules on this table: the
+          -- per-cycle one from 01_schema, and nudges_one_open_per_person from
+          -- migration 40. Naming a conflict target only excuses the target it
+          -- names, so the moment 40 made "one open nudge per person" real,
+          -- this insert would have started RAISING on the second week of
+          -- somebody's silence and taken the whole heartbeat down with it.
+          --
+          -- Doing nothing is the right answer either way. One person who has
+          -- gone quiet is one situation, and it stays one situation until
+          -- somebody deals with it.
           insert into nudges (group_id, cycle_id, subject_id)
           values (c.group_id, c.id, m.user_id)
-          on conflict (cycle_id, subject_id) do nothing;
+          on conflict do nothing;
         end if;
       end loop;
     end if;

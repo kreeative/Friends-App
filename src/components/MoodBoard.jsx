@@ -117,14 +117,16 @@ function MoodGlyph({ mood }) {
  * picker that opens on "en colère" is one that reads as an accusation before
  * anybody has answered.
  *
- * `multiple` exists because the journal is not the dashboard. journal_entries
- * .mood is a single text column and an entry is about one moment rather than a
- * whole day, so that editor keeps one-of-many and gets back a bare id; the
- * daily card takes any-of-many and gets back an array. The roles follow the
- * mode, because announcing "radio" for a control that keeps your last answer
- * is worse than announcing nothing.
+ * ANY-OF-MANY, AND ONLY THAT.
+ *
+ * There used to be a one-of-many mode here, with radio roles, for the journal
+ * editor: an entry was about one moment rather than a whole day, so its mood
+ * was a single column. The journal is gone and the daily card is the only
+ * caller left, so the mode went with it rather than sitting here as a branch
+ * nothing takes. A day holds more than one feeling, so the buttons are
+ * toggles and the answer is an array.
  */
-export default function MoodBoard({ value, onChange, multiple = true }) {
+export default function MoodBoard({ value, onChange }) {
   const { t } = useT()
   const chosen = Array.isArray(value) ? value : value ? [value] : []
 
@@ -148,7 +150,7 @@ export default function MoodBoard({ value, onChange, multiple = true }) {
            * horizontal room would cost the width that stopped them colliding.
            */}
           <div
-            role={multiple ? 'group' : 'radiogroup'}
+            role="group"
             aria-label={t(`mood.group_${group}`)}
             className="mt-3 grid grid-cols-3 gap-x-3 gap-y-6 sm:grid-cols-4 sm:gap-x-2"
           >
@@ -158,18 +160,8 @@ export default function MoodBoard({ value, onChange, multiple = true }) {
                 <button
                   key={mood.id}
                   type="button"
-                  {...(multiple
-                    ? { 'aria-pressed': selected }
-                    : { role: 'radio', 'aria-checked': selected })}
-                  onClick={() =>
-                    onChange(
-                      multiple
-                        ? toggleMood(chosen, mood.id)
-                        : selected
-                          ? null
-                          : mood.id,
-                    )
-                  }
+                  aria-pressed={selected}
+                  onClick={() => onChange(toggleMood(chosen, mood.id))}
                   className="press group flex flex-col items-center rounded-inner py-1 text-center"
                 >
                   {/* A fixed box, not a fraction of the column. The glyphs have

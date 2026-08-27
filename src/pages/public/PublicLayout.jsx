@@ -37,7 +37,11 @@ export default function PublicLayout() {
   // their rim. Over a saturated ground there is something to refract, which
   // is the whole reason the material exists.
   return (
-    <div className="ground relative min-h-dvh">
+    /* data-surface="public" swaps the whole token set to the neutral one. See
+       the block in index.css for why the marketing pages do not wear the app's
+       theme, and why it is set on the element rather than fought for at the
+       root. */
+    <div data-surface="public" className="ground relative min-h-dvh">
       {/* Every public page, not just the landing hero. */}
       <Stickers set="page" />
 

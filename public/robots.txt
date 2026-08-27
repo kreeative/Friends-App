@@ -15,7 +15,6 @@ Disallow: /signin
 Disallow: /start
 Disallow: /me
 Disallow: /settings
-Disallow: /journal
 Disallow: /money
 Disallow: /goals
 Disallow: /checkin

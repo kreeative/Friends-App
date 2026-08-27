@@ -360,8 +360,28 @@
     --c-field-deep: 214 176 0;
     --c-accent: 255 0 110;   /* #FF006E hot magenta */
     --c-accent-pressed: 214 0 92;
-    --c-on-accent: 255 255 255;  /* 3.83:1 */
-    --c-on-field: 163 0 74;      /* #A3004A deep magenta on yellow, 5.6:1 */
+    /**
+     * BLACK ON THE PINK, NOT WHITE. THE RATIO IS THE REASON AND THE BRIEF
+     * SAID SO ANYWAY.
+     *
+     * This was white, and the comment beside it said 3.83:1, which is the
+     * measurement of a failure: normal text needs 4.5. It was written down and
+     * shipped. Every surface that carries the accent as a fill inherited it,
+     * which is three of them, all measured off the painted page:
+     *
+     *   the primary button, everywhere        16px w600   3.83:1
+     *   the selected day in the calendar      14px w600   3.83:1
+     *   the transaction sheet's segmented on  14px w600   3.83:1
+     *
+     * #111111 on #FF006E is 4.93:1, which passes, and it is what the palette
+     * brief specified in the first place: "Text & Headers: Deep Black / Dark
+     * Charcoal (#111111 / #1A1A1A)". The accent itself does not move.
+     */
+    --c-on-accent: 17 17 17;     /* #111111, 4.93:1 on #FF006E */
+    /* Was #A3004A, a deep magenta at 5.6:1. Two problems: it is the wine-red
+       family the palette brief banned outright, and black on this yellow is
+       13.38:1, so the darker pink was buying nothing and costing compliance. */
+    --c-on-field: 17 17 17;      /* #111111, 13.38:1 on #FFD60A */
 
     /**
      * The six envelope shades: one family, six lightnesses.
@@ -500,6 +520,52 @@
     --c-bg: 240 249 255;     /* ice */
     --c-raised: 224 242 254; /* sky, the soft well inside a card */
     --c-hairline: 219 234 242;
+  }
+
+  /**
+   * THE PUBLIC SITE IS NEUTRAL. THE THEME BEGINS WHEN YOU SIGN IN.
+   *
+   * The marketing pages inherited [data-theme] like everything else, so the
+   * front page was entirely blush or entirely ice depending on a preference
+   * nobody visiting it has expressed yet. A stranger's first screen should not
+   * be somebody else's colour setting, and a page that is one hue throughout
+   * has no room for an accent: on the blush ground, pink IS the ground.
+   *
+   * So the public shell is off-white and the brand arrives in touches: pink,
+   * blue and yellow, each on its own pillar. Choosing a theme is then a thing
+   * that happens to the app, which is the only place it means anything.
+   *
+   * These are custom properties on an element rather than a competing :root
+   * rule, so specificity never enters into it: custom properties inherit, and
+   * a value set on the shell wins for its whole subtree whatever the root says.
+   *
+   * WHY --c-on-accent IS INK HERE TOO.
+   *
+   * Same arithmetic as the app: white on #FF007A is 3.83:1 and #111111 is
+   * 4.98:1. The public CTA is the single most important control on the site
+   * and it is not going to be the one thing that fails.
+   */
+  [data-surface='public'] {
+    --c-bg: 250 250 250;
+    --c-surface: 255 255 255;
+    --c-raised: 245 245 245;
+    --c-hairline: 228 228 228;
+
+    --c-ink: 17 17 17;         /* 18.09:1 on the ground */
+    --c-muted: 86 86 86;       /* #565656, 7.03:1 */
+
+    --c-accent: 255 0 122;     /* #FF007A */
+    --c-accent-pressed: 214 0 100;
+    --c-on-accent: 17 17 17;   /* 4.98:1 */
+    --c-field: 255 230 0;      /* #FFE600 */
+    --c-on-field: 17 17 17;    /* 14.90:1 */
+    --c-mark: 255 0 122;
+
+    /* The third touch. The app has no blue in sun and no pink in sea; the
+       public shell is the one surface that gets all three at once. */
+    --c-sky: 56 189 248;       /* #38BDF8, carries #111111 at 8.81:1 */
+
+    background-color: rgb(var(--c-bg));
   }
 
 
@@ -650,12 +716,27 @@
    * It is painted as the element's own background, not a fixed layer behind
    * the app, so it changes nothing about stacking anywhere else.
    */
+  /**
+   * ONE FLAT COLOUR, AND WHAT THAT COSTS.
+   *
+   * This was three wide radial fields in the theme's ramp. The note above
+   * explains why they were there: backdrop-filter blurs what is BEHIND an
+   * element, and over a flat ground it returns that same flat colour, so glass
+   * over a flat page reduces to its rim.
+   *
+   * That argument was right and it is no longer the deciding one. A plain
+   * ground was asked for, so the glass now degrades to what it has always
+   * degraded to on browsers without backdrop-filter: a readable surface with a
+   * border and a shadow, which is the thing that was actually carrying the
+   * card all along. The rim is doing the work now, on purpose rather than as a
+   * fallback.
+   *
+   * Kept as a class rather than deleted at every call site: it is still the
+   * one place that decides what the page under the cards is, and a later
+   * change has somewhere to go.
+   */
   .ambient {
-    background:
-      radial-gradient(58% 34% at 12% 4%, rgb(var(--c-cat-5) / 0.20), transparent 68%),
-      radial-gradient(52% 30% at 94% 22%, rgb(var(--c-cat-3) / 0.16), transparent 70%),
-      radial-gradient(64% 36% at 46% 96%, rgb(var(--c-cat-4) / 0.13), transparent 72%);
-    background-attachment: fixed;
+    background: rgb(var(--c-bg));
   }
 
   /* --- glass ----------------------------------------------------------- */
@@ -697,9 +778,28 @@
    * to white that slate-500 body text still clears 4.5:1, and it is measured
    * rather than assumed.
    */
+  /**
+   * THE RIM CARRIES THE CARD NOW, SO THE RIM HAD TO GET STRONGER.
+   *
+   * This border was ink at 8 %, which composites to #EDEDED and measures
+   * 1.10:1 against the blush ground. That was survivable while .ambient
+   * painted three soft fields behind everything: the page under a card was
+   * rarely the same colour as the page beside it, and the difference did the
+   * separating. The ground is one flat colour now, so a white card on it was
+   * separated by 1.10:1 and effectively had no edge.
+   *
+   * 18 % composites to #D7D5D6 and measures 1.37:1 against both grounds, blush
+   * and ice, which are close enough in luminance to take the same value.
+   * Measured off the painted page rather than computed from the token, because
+   * the card is translucent and the number that matters is what lands.
+   *
+   * Not pushed to 3:1. That bar belongs to controls under WCAG 1.4.11 and a
+   * card is not one; an outline that strong on every surface turns a page of
+   * cards into a page of boxes.
+   */
   .glass-card {
     background: rgb(255 255 255 / 0.94);
-    border: 1px solid rgb(var(--c-ink) / 0.08);
+    border: 1px solid rgb(var(--c-ink) / 0.18);
     box-shadow: 0 1px 2px 0 rgb(var(--c-ink) / 0.05);
   }
 
@@ -719,7 +819,10 @@
    */
   .glass-card-quiet {
     background: rgb(255 255 255 / 0.97);
-    border-color: rgb(var(--c-ink) / 0.12);
+    /* One step past .glass-card, as before. What separates the container from
+       the six cards inside it is still the rim, not a colour from outside the
+       palette. */
+    border-color: rgb(var(--c-ink) / 0.26);
   }
 
   @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
@@ -812,18 +915,10 @@
       border-color 320ms ease;
   }
 
-  /* The specular sweep. Sits under the content (z-0 against the content's
-     own stacking) and over the blur. */
-  .lg::after {
-    content: '';
-    @apply pointer-events-none absolute inset-0 z-0;
-    border-radius: inherit;
-    background: radial-gradient(
-      120% 90% at 12% 0%,
-      var(--lg-spec) 0%,
-      transparent 55%
-    );
-  }
+  /* The specular sweep is gone: it was a radial gradient across the top left
+     of every card, which is a gradient on the ground of every surface in the
+     app. The lit top edge in ::before still gives the sheet its thickness, and
+     that is a 1px line rather than a wash. */
 
   /* Anything the author puts inside has to clear both pseudo-elements. */
   .lg > * {
@@ -1153,8 +1248,8 @@
   /**
    * Text that runs past its box fades out instead of being guillotined.
    *
-   * For the journal cards, where a square preview holds an entry of unknown
-   * length. The alternatives were both worse: -webkit-line-clamp draws its
+   * For the proof gallery cards, where a square preview holds a note of
+   * unknown length. The alternatives were both worse: -webkit-line-clamp draws its
    * ellipsis and then paints another line underneath it in this layout, and a
    * character budget tight enough for a 163px phone card leaves a 200px
    * desktop card two-thirds empty.
@@ -1511,8 +1606,17 @@
            transition-all duration-200 ease-settle
            disabled:pointer-events-none disabled:opacity-40;
   }
+  /**
+   * The press dims the whole button rather than darkening the fill under it.
+   *
+   * --c-accent-pressed is #D6005C, and the label is #111111 now: black on the
+   * pressed fill measures 3.61:1, so swapping the background on :active would
+   * have taken a button that passes at rest and failed it for as long as a
+   * thumb was on it. Opacity moves the label and its ground together, so the
+   * ratio between them is the one thing a press cannot change.
+   */
   .btn-primary {
-    @apply btn bg-accent text-on-accent hover:opacity-90 active:bg-accent-pressed active:scale-[0.97];
+    @apply btn bg-accent text-on-accent hover:opacity-90 active:opacity-80 active:scale-[0.97];
   }
 
   /**

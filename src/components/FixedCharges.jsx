@@ -99,10 +99,40 @@ export default function FixedCharges({ fixed = [], s, locale, onChange }) {
               onClick={() => toggle(f)}
               disabled={busy !== null}
               aria-pressed={paid}
+              /**
+               * The row's name and amount, then what pressing does.
+               *
+               * Without it the button announces "Payer" or "Paye", which
+               * differ by one syllable and neither says WHICH charge, on a
+               * list where every row has the same two buttons. The visible
+               * label is the short one because it sits in a 3.5rem chip; the
+               * spoken one has room to be a sentence.
+               */
+              aria-label={t(paid ? 'money.unmark_paid_a11y' : 'money.mark_paid_a11y', {
+                label: f.label,
+                amount: fmt(f.amount_cents),
+              })}
+              /**
+               * A RING, BECAUSE A CONTROL HAS TO LOOK LIKE ONE AT REST.
+               *
+               * The unpaid state was `bg-accent/12 text-muted`: a 12 % wash of
+               * the accent on a white card, which measures about 1.1:1 against
+               * it. WCAG 1.4.11 asks 3:1 of anything needed to identify a
+               * control, so there was nothing at rest saying this was
+               * pressable, and the word inside it read as a status label. That
+               * is the same fault AmountTile records about its own border, and
+               * the same answer: ink at 50 %, which is measured rather than
+               * guessed at.
+               *
+               * The paid state keeps its green, because green there is a fact
+               * about the world rather than a matter of taste. Its ring goes to
+               * the same weight so the two states differ by colour AND by
+               * having been filled, not by whether they have an edge at all.
+               */
               className={`press shrink-0 rounded-pill px-3.5 py-2 text-small font-semibold transition-colors duration-200 ease-settle disabled:opacity-50 ${
                 paid
-                  ? 'bg-green/[0.16] text-ink ring-1 ring-inset ring-green/40'
-                  : 'bg-accent/12 text-muted hover:bg-ink/10 hover:text-ink'
+                  ? 'bg-green/[0.16] text-ink ring-1 ring-inset ring-green/70'
+                  : 'bg-transparent text-ink ring-1 ring-inset ring-ink/50 hover:bg-ink/[0.05]'
               }`}
             >
               {busy === f.id ? '…' : paid ? t('money.paid') : t('money.planned_badge')}

@@ -1,4 +1,4 @@
-import { MAX_SPAN_DAYS, PERIODS, firstName, groupRate, memberRates, windowDays } from './completion.js'
+import { MAX_SPAN_DAYS, PERIODS, firstName, groupRate, memberRates, windowDays, rank } from './completion.js'
 let pass = 0, fail = 0
 const eq = (label, got, want) => {
   const ok = JSON.stringify(got) === JSON.stringify(want)
@@ -154,6 +154,59 @@ eq('a single name survives',        firstName({ display_name: 'Rich' }), 'Rich')
 eq('padding is trimmed',            firstName({ display_name: '  Anne-Kelly  Nguema ' }), 'Anne-Kelly')
 eq('nobody is empty',               firstName(null), '')
 eq('no name is empty',              firstName({}), '')
+
+
+/* ------------------------------------------------------------------ rank --- */
+{
+  const p = (name) => ({ display_name: name })
+  const row = (name, done, target) => ({
+    id: name, profile: p(name), done, target,
+    pct: target > 0 ? Math.round((done / target) * 100) : null,
+  })
+
+  /* The screenshot that prompted this: one person on 7 %, everybody else on 0,
+     and the 7 % sitting third in roster order. */
+  const board = rank([
+    row('Kee', 0, 28), row('usernamnh', 0, 7), row('Aya', 1, 14),
+    row('Harrisso', 0, 7), row('Aline', 0, 7),
+  ])
+  eq('the one who did something is first', board[0].profile.display_name, 'Aya')
+  eq('and carries position 1', board[0].position, 1)
+  eq('everybody else is behind', board.slice(1).every((r) => r.pct === 0), true)
+
+  /* pct before raw count: a finished small week beats an unfinished big one. */
+  const fair = rank([row('Big', 10, 40), row('Small', 1, 1)])
+  eq('one out of one beats ten out of forty', fair[0].profile.display_name, 'Small')
+  eq('because the share is what is compared', fair[0].pct, 100)
+
+  /* done breaks a tie on pct, so carrying more is worth something. */
+  const load = rank([row('Light', 1, 1), row('Heavy', 8, 8)])
+  eq('between two perfect weeks the bigger load is first', load[0].profile.display_name, 'Heavy')
+  eq('and they share the position', load[0].position, 1)
+  eq('the lighter one is second', load[1].position, 2)
+
+  /* A true tie shares a place, and the next is third, not second. */
+  const tied = rank([row('A', 5, 10), row('B', 5, 10), row('C', 1, 10)])
+  eq('both halves are first', tied[0].position, 1)
+  eq('really both', tied[1].position, 1)
+  eq('and both are marked as tied', tied[0].tied && tied[1].tied, true)
+  eq('the next is third, not second', tied[2].position, 3)
+  eq('and is not marked tied', tied[2].tied, false)
+
+  /* NOBODY WITH NOTHING SCHEDULED IS RANKED LAST. They are not ranked at all. */
+  const idle = rank([row('None', 0, 0), row('Tried', 0, 7)])
+  eq('a person with a figure comes first', idle[0].profile.display_name, 'Tried')
+  eq('the one with nothing scheduled has no position', idle[1].position, null)
+  eq('and is not called zero', idle[1].pct, null)
+
+  /* Stability: identical rows must not swap on re-sort. */
+  const same = [row('Zoe', 3, 10), row('Ana', 3, 10)]
+  eq('ties are ordered by name, not by luck', rank(same)[0].profile.display_name, 'Ana')
+  eq('and again the same way', rank([...same].reverse())[0].profile.display_name, 'Ana')
+
+  eq('an empty roster ranks to nothing', rank([]).length, 0)
+  eq('and no argument at all does not throw', rank().length, 0)
+}
 
 console.log(`\n${pass} passed, ${fail} failed`)
 process.exit(fail ? 1 : 0)
