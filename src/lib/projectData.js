@@ -137,8 +137,8 @@ export async function joinProject(code) {
   return { projectId: data }
 }
 
-export async function addProjectEntry({ projectId, userId, amountCents, label, category, happenedOn }) {
-  const { error } = await supabase.from('budget_project_entry').insert({
+export async function addProjectEntry({ projectId, userId, amountCents, label, category, happenedOn, lineId }) {
+  const row = {
     project_id: projectId,
     /* Always the caller. The policy enforces this too, but sending somebody
        else's id and getting a refusal is a worse error than not being able to
@@ -148,7 +148,77 @@ export async function addProjectEntry({ projectId, userId, amountCents, label, c
     label: label?.trim() || null,
     category: category?.trim() || null,
     happened_on: happenedOn,
-  })
+  }
+  /* Only sent when there IS one, so this call still works verbatim against a
+     database that has not run migration 42: PostgREST rejects the whole insert
+     for an unknown column, and logging a spend you just made must not start
+     failing because a plan feature is not installed yet. */
+  if (lineId) row.line_id = lineId
+
+  const { error } = await supabase.from('budget_project_entry').insert(row)
+  return { error }
+}
+
+/* ---------------------------------------------------------------------------
+ * What the project still has to pay.
+ *
+ * A line is a plan, an entry is a fact, and paying a line is an ordinary entry
+ * with line_id set. There is no pay_line() RPC on purpose: 38's insert policy
+ * already says the only rule that matters, `paid_by = auth.uid()`, and a rule
+ * stated twice is a rule that can disagree with itself. See migration 42.
+ * ------------------------------------------------------------------------ */
+
+/** Every line on these projects. Soft on migration 42 the same way as 38. */
+export async function loadProjectLines(projectIds = []) {
+  const ids = [...new Set(projectIds.filter(Boolean))]
+  if (ids.length === 0) return { lines: [], missing: false }
+  const r = await supabase
+    .from('budget_project_line')
+    .select('*')
+    .in('project_id', ids)
+    .order('created_at', { ascending: true })
+  if (absent(r)) return { lines: [], missing: true }
+  if (r.error) return { lines: [], missing: false }
+  return { lines: r.data ?? [], missing: false }
+}
+
+/** Returns the row, because "add it and mark it paid" needs its id. */
+export async function addProjectLine({ projectId, userId, label, amountCents, category, assignedTo, dueOn }) {
+  const { data, error } = await supabase
+    .from('budget_project_line')
+    .insert({
+      project_id: projectId,
+      /* Always the caller, and the policy insists on it too. Sending somebody
+         else's id and being refused is a worse way to learn the rule than not
+         being able to express it. */
+      created_by: userId,
+      label: label.trim(),
+      amount_cents: amountCents,
+      category: category?.trim() || null,
+      assigned_to: assignedTo || null,
+      due_on: dueOn || null,
+    })
+    .select()
+    .single()
+  if (error) return { error }
+  return { line: data }
+}
+
+export async function updateProjectLine(id, patch) {
+  const { error } = await supabase.from('budget_project_line').update(patch).eq('id', id)
+  return { error }
+}
+
+/**
+ * Delete a line without touching what was already paid against it.
+ *
+ * line_id is `on delete set null`, so the payments survive with their payer
+ * and their amount and simply stop being attached to a plan. Every balance in
+ * the project stays correct, which is the point: removing a to-do must never
+ * rewrite what a trip cost.
+ */
+export async function deleteProjectLine(id) {
+  const { error } = await supabase.from('budget_project_line').delete().eq('id', id)
   return { error }
 }
 

@@ -25,6 +25,7 @@ import ProjectDetail from '../components/ProjectDetail'
 import {
   loadInvitableFriends,
   loadMyProjectInvites,
+  loadProjectLines,
   loadProjectProfiles,
   loadProjects,
   loadSentInvites,
@@ -457,15 +458,21 @@ export default function Money() {
        projects themselves are soft on 38: without it loadMyProjectInvites
        reports `missing`, the card never renders and the picker is empty, and
        nobody is shown a PostgREST code they cannot act on. */
-    const [inv, sent, mates] = await Promise.all([
+    const [inv, sent, mates, ln] = await Promise.all([
       loadMyProjectInvites(),
       loadSentInvites(pr.projects.filter((p) => p.owner_id === user.id).map((p) => p.id)),
       loadInvitableFriends(user.id),
+      /* What each project still has to pay. Soft on migration 42 the same way
+         as the rest: absent means the section is not drawn, not that anything
+         is broken. */
+      loadProjectLines(pr.projects.map((p) => p.id)),
     ])
     setProjInvites(inv.invites)
     setSentInvites(sent)
     setFriends(mates)
     setInvitesMissing(inv.missing)
+    setProjLines(ln.lines)
+    setLinesMissing(ln.missing)
 
     /* Names for everybody in every project, including payers who have since
        left, so a ledger line never renders a blank name beside a real amount.
@@ -558,6 +565,12 @@ export default function Money() {
   /* Migration 41 not run. The picker is hidden rather than offered and then
      failing, which is the same contract loadProjects has for 38. */
   const [invitesMissing, setInvitesMissing] = useState(false)
+
+  /* The plan half of a project: what it still has to pay. Held beside the
+     entries rather than merged into them, because an entry is a fact about
+     money that moved and a line is only a to-do. See migration 42. */
+  const [projLines, setProjLines] = useState([])
+  const [linesMissing, setLinesMissing] = useState(false)
 
   /* A section's own drill-down does not survive leaving the section, which is
      the point of leaving it. Without this, going back to the budget and into
@@ -1164,6 +1177,8 @@ export default function Money() {
                   members={projMembers.filter((m) => m.project_id === p.id)}
                   entries={projEntries.filter((e) => e.project_id === p.id)}
                   profiles={projProfiles}
+                  lines={projLines.filter((l) => l.project_id === p.id)}
+                  linesMissing={linesMissing}
                   friends={invitesMissing ? [] : friends}
                   sentInvites={sentInvites}
                   canInvite={!invitesMissing}
