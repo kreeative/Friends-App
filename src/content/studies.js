@@ -63,7 +63,13 @@ export const SAVINGS_QUOTES = [
 
 export const STUDIES = [
   {
-    slug: 'epargner-a-19-ans',
+    slug: 'epargner-en-tant-que-jeune',
+    /* L'adresse d'avant. Le titre disait "a 19 ans", ce qui est l'age median
+       de l'echantillon et pas son sujet : l'etude parle de ce que c'est que
+       d'epargner quand on est jeune, pas de ce qui se passe une annee precise.
+       L'ancienne adresse reste servie plutot que de casser un lien deja
+       partage. Voir studyBySlug. */
+    aliases: ['epargner-a-19-ans'],
     date: '2026-08-27',
     /* Le sondage a ete pose en francais a un public francophone, et le corps
        de l'etude est en francais dans les deux langues. La page anglaise le
@@ -74,7 +80,7 @@ export const STUDIES = [
 
     fr: {
       eyebrow: 'Étude · août 2026',
-      title: 'Épargner à 19 ans',
+      title: 'Épargner en tant que jeune',
       dek: '{n} réponses, en majorité ivoiriennes. Ils ont déjà les applications. Ils ont déjà les ambitions. Quatre sur dix ne mettent rien de côté.',
       readTime: '4 min',
       sections: [
@@ -115,7 +121,7 @@ export const STUDIES = [
 
     en: {
       eyebrow: 'Study · August 2026',
-      title: 'Saving at 19',
+      title: 'Saving young',
       dek: '{n} responses, mostly Ivorian. They already have the apps. They already have the ambitions. Four in ten set nothing aside.',
       readTime: '4 min',
       /* Dit une fois, en haut de la version anglaise. Traduire un sondage
@@ -160,6 +166,17 @@ export const STUDIES = [
   },
 ]
 
+/**
+ * Une etude par son adresse, actuelle ou ancienne.
+ *
+ * Renommer une etude change son adresse, et une adresse deja partagee ne doit
+ * pas cesser de marcher parce qu'on a trouve un meilleur titre. Les anciennes
+ * sont listees dans `aliases` et menent a la meme page.
+ */
 export function studyBySlug(slug) {
-  return STUDIES.find((s) => s.slug === slug) ?? null
+  return (
+    STUDIES.find((s) => s.slug === slug)
+    ?? STUDIES.find((s) => (s.aliases ?? []).includes(slug))
+    ?? null
+  )
 }

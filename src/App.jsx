@@ -281,6 +281,19 @@ function Gate() {
         <Route path="lectures/:slug" element={<LecturesRedirect />} />
 
         {/**
+         * Les etudes, signe ou pas.
+         *
+         * Meme raison que books/:slug juste au-dessus : ces routes n'existaient
+         * que du cote public, donc le lien "sur quoi on se base" pose sous le
+         * rang d'epargne tombait dans le catch-all et renvoyait au tableau de
+         * bord. Meme composant des deux cotes, il ne lit que le bundle.
+         */}
+        <Route path="etudes" element={<Studies />} />
+        <Route path="etudes/:slug" element={<Study />} />
+        <Route path="studies" element={<Navigate to="/etudes" replace />} />
+        <Route path="studies/:slug" element={<Study />} />
+
+        {/**
          * Goals with no group at all. The app assumed a group was the only
          * place a goal could live, so keeping one of your own meant finding
          * people first, the wrong order, and the reason someone could sign

@@ -166,7 +166,7 @@ export function seoFor(pathname) {
  * sous node sans bundler. Le probe verifie que les deux listes concordent, donc
  * un ajout oublie ici se voit.
  */
-export const STUDY_SLUGS = ['epargner-a-19-ans']
+export const STUDY_SLUGS = ['epargner-en-tant-que-jeune']
 
 export function sitemapPaths(slugs = []) {
   return [
