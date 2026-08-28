@@ -217,40 +217,20 @@ export default function FixedCharges({ fixed = [], s, locale, onChange }) {
       )}
 
       {/**
-       * THE CREDIT CARD RULE, WHERE THE BUTTON IS.
+       * ONE LINE, NOT THE LESSON.
        *
-       * Tapping Payer now writes the ledger line itself, which is what makes
-       * the arithmetic right. It also creates exactly one way to get it wrong:
-       * entering the same charge again by hand, which counts the money twice.
+       * The explanation moved to the formation, where it belongs: it is a
+       * thing to understand once, and this screen is where you go to DO
+       * something. See LESSONS['card'] in src/lib/lessons.js.
        *
-       * The commonest version of that is a credit card. You buy groceries on
-       * the card and log 50, then you transfer 100 from your account to clear
-       * the card and log that too. The 50 is now counted twice and the account
-       * transfer was never a new expense at all.
-       *
-       * So the rule is written at the foot of the list rather than in a guide
-       * somebody would have to go and find. It is the last thing under the
-       * buttons it is about.
+       * What has to stay here is the operational half. Tapping Payer writes
+       * the ledger line, which creates exactly one way to get it wrong, and
+       * somebody who never opens the course still has to know not to enter it
+       * twice. A sentence at the point of action, and the reasoning elsewhere.
        */}
-      <details className="group py-3" data-hook="fixed-card-rule">
-        <summary
-          className="press flex cursor-pointer list-none items-center justify-between gap-3 py-1
-                     text-label font-semibold text-muted [&::-webkit-details-marker]:hidden"
-        >
-          {t('money.card_rule_title')}
-          <span
-            aria-hidden="true"
-            className="flex h-6 w-6 shrink-0 items-center justify-center transition-transform duration-200 ease-settle group-open:rotate-90"
-          >
-            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 6l6 6-6 6" />
-            </svg>
-          </span>
-        </summary>
-        <p className="pb-1 text-small leading-relaxed text-ink">{t('money.card_rule_1')}</p>
-        <p className="mt-3 text-small leading-relaxed text-ink">{t('money.card_rule_2')}</p>
-        <p className="mt-3 text-small leading-relaxed text-muted">{t('money.card_rule_3')}</p>
-      </details>
+      <p className="py-3 text-label leading-relaxed text-muted" data-hook="fixed-pay-note">
+        {t('money.pay_writes_note')}
+      </p>
 
     </div>
   )
