@@ -16,9 +16,14 @@ import {
   COMPARABLE,
   MONTHLY_XOF,
   PEG,
+  RESPONDENTS,
   SURVEY,
   appliesTo,
+  byAgeBand,
+  byOutcome,
+  bySex,
   comparableCurrency,
+  groupStats,
   medianAll,
   medianSavers,
   peerStanding,
@@ -185,6 +190,106 @@ const ok = (name, cond, extra = '') => {
   ok('difficulty median 6 of 10', SURVEY.difficultyMedian === 6)
   ok('the age range is the real one', SURVEY.ageRange[0] === 15 && SURVEY.ageRange[1] === 32)
   ok('women and men sum to n', SURVEY.women + SURVEY.men === SURVEY.n)
+}
+
+/* --- the rows are the source, everything else is derived from them ---------- */
+
+{
+  ok('92 rows, one per answer', RESPONDENTS.length === SURVEY.n)
+  ok('and MONTHLY_XOF is their third column, not a second copy',
+     MONTHLY_XOF.length === RESPONDENTS.length)
+
+  /* The whole reason for storing rows is that the app's ranking and the study's
+     breakdown must be the same sample. If a row is edited and the sorted list
+     stops matching, this is where it shows. */
+  const resorted = RESPONDENTS.map((r) => r[2]).sort((a, b) => a - b)
+  ok('the sorted amounts are exactly MONTHLY_XOF',
+     resorted.every((v, i) => v === MONTHLY_XOF[i]))
+  ok('MONTHLY_XOF is ascending, which peerStanding walks',
+     MONTHLY_XOF.every((v, i) => i === 0 || MONTHLY_XOF[i - 1] <= v))
+
+  ok('every row has a sex the breakdown knows',
+     RESPONDENTS.every((r) => r[0] === 'f' || r[0] === 'h'))
+  ok('every row has an age inside the stated range',
+     RESPONDENTS.every((r) => r[1] >= SURVEY.ageRange[0] && r[1] <= SURVEY.ageRange[1]))
+  ok('every row has a difficulty on the 1-to-10 scale that was asked',
+     RESPONDENTS.every((r) => Number.isInteger(r[3]) && r[3] >= 1 && r[3] <= 10))
+  ok('no negative amounts', RESPONDENTS.every((r) => r[2] >= 0))
+
+  /* SURVEY.women and SURVEY.men are written down separately and are what the
+     method paragraph quotes. They have to be a count of these rows. */
+  ok('the stated count of women is the number of rows',
+     RESPONDENTS.filter((r) => r[0] === 'f').length === SURVEY.women)
+  ok('and so is the count of men',
+     RESPONDENTS.filter((r) => r[0] === 'h').length === SURVEY.men)
+}
+
+/* --- the breakdowns the public study publishes ------------------------------ */
+
+{
+  const all = groupStats(RESPONDENTS)
+  ok('the whole sample still saves nothing 41 % of the time',
+     all.zeroPct === SURVEY.savesNothingPct, `got ${all.zeroPct}`)
+  ok('and the savers median is still 44 500',
+     all.medianSavers === medianSavers(), `got ${all.medianSavers}`)
+  ok('difficulty median 6 across everybody',
+     all.difficulty === SURVEY.difficultyMedian)
+
+  const { women, men } = bySex()
+
+  /* THE RESULT THE STUDY LEADS WITH. Women save at all more often than men.
+     Asserted as the direction plus both figures, so a wrong edit to a row
+     cannot quietly reverse a sentence on a public page. */
+  ok('more women than men put something aside',
+     women.savePct > men.savePct, `${women.savePct} vs ${men.savePct}`)
+  ok('women: 68 % save something, 32 % nothing',
+     women.savePct === 68 && women.zeroPct === 32, JSON.stringify(women))
+  ok('men: 49 % save something, 51 % nothing',
+     men.savePct === 49 && men.zeroPct === 51, JSON.stringify(men))
+  ok('the two groups are the whole sample', women.n + men.n === SURVEY.n)
+
+  /* THE RESULT THE STUDY REFUSES TO LEAD WITH. Among savers the men's median is
+     higher, and a Mann-Whitney on the two gives z = -1.29, which is well inside
+     the noise for n = 32 and n = 22. The page prints both medians and says so.
+     This asserts the gap exists in the data, NOT that it means anything. */
+  ok('among savers the men median higher, which the copy calls unproven',
+     men.medianSavers > women.medianSavers,
+     `${men.medianSavers} vs ${women.medianSavers}`)
+  ok('women savers median 30 000', women.medianSavers === 30000)
+  ok('men savers median 50 000', men.medianSavers === 50000)
+
+  /* The null result, which is half the point: saving is rated exactly as hard
+     by both, so the behaviour gap is not a reported-difficulty gap. */
+  ok('both sexes rate the difficulty the same',
+     women.difficulty === men.difficulty && women.hardPct === men.hardPct,
+     `${women.difficulty}/${women.hardPct} vs ${men.difficulty}/${men.hardPct}`)
+
+  const bands = byAgeBand()
+  ok('four age bands', bands.length === 4)
+  ok('the bands account for everybody exactly once',
+     bands.reduce((s, b) => s + b.n, 0) === SURVEY.n)
+  const core = bands.find((b) => b.id === '18-20')
+  ok('18-20 is 69 of the 92, which is why it is the only band quoted alone',
+     core.n === 69)
+  ok('and it reproduces the whole sample rather than departing from it',
+     Math.abs(core.zeroPct - all.zeroPct) <= 3, `${core.zeroPct} vs ${all.zeroPct}`)
+
+  /* The guard against the most tempting wrong headline on this page. The 25+
+     band has a savers median of 125 000, nearly three times the sample, off
+     FOUR people. If a future edit ever quotes a band median, this says out loud
+     how many people it rests on. */
+  const oldest = bands.find((b) => b.id === '25+')
+  ok('the 25+ band is 5 people and is never quoted as a finding', oldest.n === 5)
+  ok('the small bands are all reported with an n', bands.every((b) => b.n > 0))
+
+  const { zero, saving } = byOutcome()
+  ok('those who save nothing rate it harder than those who save',
+     zero.difficulty > saving.difficulty, `${zero.difficulty} vs ${saving.difficulty}`)
+  ok('7 for the first group, 6 for the second, which is what the copy says',
+     zero.difficulty === 7 && saving.difficulty === 6)
+
+  ok('groupStats refuses an empty slice rather than dividing by zero',
+     groupStats([]) === null && groupStats() === null)
 }
 
 console.log(`\npeers\n\n  ${pass} passed, ${fail} failed\n`)

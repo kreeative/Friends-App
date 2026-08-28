@@ -33,7 +33,18 @@ export default function Study() {
   const c = (LANDING[locale] ?? LANDING.en).studies
   const w = study[locale] ?? study.en
   const st = study.stats
-  const v = { ...st, medianSavers: formatXof(st.medianSavers) }
+  /* Les montants sont formates ici et pas dans studies.js, parce que formatXof
+     pose une espace fine insecable et un suffixe XOF : ecrit dans la prose, ce
+     serait un chiffre dans un bloc de langue, ce que l'en-tete de studies.js
+     interdit. Tout ce qui est un montant passe par la meme fonction, donc les
+     medianes par sexe et par tranche s'ecrivent comme celle de l'echantillon. */
+  const v = {
+    ...st,
+    medianSavers: formatXof(st.medianSavers),
+    womenMedian: formatXof(st.womenMedian),
+    menMedian: formatXof(st.menMedian),
+    coreMedianSavers: formatXof(st.coreMedianSavers),
+  }
 
   usePageMeta({ title: `${w.title} · Rich & Friends`, description: fill(w.dek, v) })
 

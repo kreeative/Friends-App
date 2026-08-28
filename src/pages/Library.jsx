@@ -11,6 +11,7 @@ import Formation from '../components/Formation'
 import { BookIcon } from '../components/ActionBar'
 import { localBooks } from '../content/previews'
 import { STUDY_SLUGS } from '../lib/seo'
+import { LESSONS } from '../lib/lessons'
 
 export default function Library() {
   const { user } = useAuth()
@@ -122,7 +123,7 @@ export default function Library() {
   if (course) {
     return (
       <Screen>
-        <TopBar title={t('form.title')} sub={t('form.sub')} />
+        <TopBar title={t('form.title')} sub={t('form.sub', { n: LESSONS.length })} />
         {stage === 'intro' && (
           <div className="pt-2">
             <button type="button" className="goal-action press" onClick={() => setCourse(false)}>
@@ -153,7 +154,7 @@ export default function Library() {
           </span>
           <span className="min-w-0 flex-1">
             <span className="block text-body font-bold leading-tight text-ink">{t('form.title')}</span>
-            <span className="mt-1.5 block text-small leading-snug text-muted">{t('form.sub')}</span>
+            <span className="mt-1.5 block text-small leading-snug text-muted">{t('form.sub', { n: LESSONS.length })}</span>
           </span>
           <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-pill bg-accent/[0.18] text-ink">
             <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

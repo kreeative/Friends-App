@@ -27,6 +27,10 @@ export default {
 
         // The theme's accent, what you click. A fill only, never text.
         accent: c('accent'),
+        /* The bars. Separate from the accent because sea's bars are blue while
+           its button is pink; see the note in index.css. */
+        progress: c('progress'),
+        over: c('over'),
         'accent-pressed': c('accent-pressed'),
         'on-accent': c('on-accent'),
         /* The public shell's third touch. Undefined inside the app, which is

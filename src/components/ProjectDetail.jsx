@@ -4,12 +4,14 @@ import { money } from '../lib/money'
 import { CURRENCIES, currencyName, minorDigits } from '../lib/currency'
 import { fromCents, localISO, toCents } from '../lib/txn'
 import { errorText } from '../lib/dberr'
+import { heroClass } from '../lib/amount'
 import { balances, byCategory, projectProgress, settleUp, totalSpent } from '../lib/project'
 import { lineState, openCount, plannedLeft, quickAmounts, sortLines } from '../lib/projectLines'
 import {
   addProjectEntry,
   addProjectLine,
   deleteProjectEntry,
+  deleteProject,
   deleteProjectLine,
   inviteErrorKey,
   inviteToProject,
@@ -18,6 +20,8 @@ import {
   withdrawProjectInvite,
 } from '../lib/projectData'
 import { Avatar, Empty, Field, Sheet } from './ui'
+import ConfirmDialog from './ConfirmDialog'
+import { TrashIcon } from './ActionBar'
 
 /**
  * One shared project: what it cost, who paid, and who owes whom.
@@ -52,6 +56,15 @@ export default function ProjectDetail({
   /* Which ledger row is asking "sure?". One at a time, by id: a confirm that
      is a boolean opens on every row at once the moment two are on screen. */
   const [confirm, setConfirm] = useState(null)
+  /* Deleting the project itself. A dialog rather than the inline two-tap the
+     rows use: this one takes everybody's ledger with it, so it gets a screen
+     that says so and a focus trap that starts on Cancel. */
+  const [killing, setKilling] = useState(false)
+  /* Which plan line is being removed, or null. A dialog rather than a second
+     inline confirm, because this one has to say what happens to the money
+     already paid against it. */
+  const [lineKill, setLineKill] = useState(null)
+  const [killBusy, setKillBusy] = useState(false)
   const [error, setError] = useState('')
 
   const cur = project.currency
@@ -111,6 +124,24 @@ export default function ProjectDetail({
     await onChange()
   }
 
+  /**
+   * Delete the whole project.
+   *
+   * onBack() BEFORE onChange(). The detail screen reads `project` from a list
+   * the reload is about to empty, so refreshing while still on it renders a
+   * component whose subject no longer exists. Leaving first is the same order
+   * `leave` already uses, for the same reason.
+   */
+  const destroy = async () => {
+    setKillBusy(true)
+    const { error: err } = await deleteProject(project.id)
+    setKillBusy(false)
+    if (err) return setError(errorText(err))
+    setKilling(false)
+    onBack()
+    await onChange()
+  }
+
   const leave = async () => {
     const { error: err } = await leaveProject({ projectId: project.id, userId })
     if (err) return setError(errorText(err, t))
@@ -129,7 +160,7 @@ export default function ProjectDetail({
         <p className="text-label font-semibold uppercase tracking-wider text-muted">
           {project.name}
         </p>
-        <p className="mt-1.5 font-display text-hero leading-none text-ink [font-variant-numeric:tabular-nums]">
+        <p className={`mt-1.5 font-display leading-none text-ink [font-variant-numeric:tabular-nums] ${heroClass(fmt(totalSpent(entries)))}`}>
           {fmt(totalSpent(entries))}
         </p>
 
@@ -138,7 +169,7 @@ export default function ProjectDetail({
             <div className="mt-4 h-2.5 w-full overflow-hidden rounded-pill bg-ink/10">
               <div
                 className={`h-full rounded-pill transition-[width] duration-500 ease-settle ${
-                  progress.over > 0 ? 'bg-negative' : 'bg-accent'
+                  progress.over > 0 ? 'bg-over' : 'bg-progress'
                 }`}
                 style={{ width: `${progress.pct}%` }}
               />
@@ -206,7 +237,7 @@ export default function ProjectDetail({
           ) : (
             <ul className="glass-card divide-y divide-hairline rounded-3xl px-5" data-hook="plan-list">
               {plan.map(({ line, state }) => (
-                <li key={line.id} className="py-4" data-line={line.id} data-settled={state.settled ? '' : undefined}>
+                <li key={line.id} className="relative py-4 pr-11" data-line={line.id} data-settled={state.settled ? '' : undefined}>
                   <div className="flex items-baseline gap-3">
                     <span className="min-w-0 flex-1">
                       <span className={`block truncate text-body ${state.settled ? 'text-muted line-through' : 'text-ink'}`}>
@@ -253,7 +284,7 @@ export default function ProjectDetail({
                       untouched line is six rules of noise. */}
                   {state.started && !state.settled && state.pct !== null && (
                     <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-pill bg-ink/10">
-                      <div className="h-full rounded-pill bg-accent" style={{ width: `${state.pct}%` }} />
+                      <div className="h-full rounded-pill bg-progress" style={{ width: `${state.pct}%` }} />
                     </div>
                   )}
 
@@ -261,13 +292,30 @@ export default function ProjectDetail({
                       touches what was already paid against it: line_id is
                       `on delete set null`, so the payments survive and every
                       balance stays correct. See migration 42. */}
-                  {(line.created_by === userId || project.owner_id === userId) && !state.started && (
+                  {/**
+                   * On every line, not only the untouched ones.
+                   *
+                   * This was hidden once anybody had paid into a line, on the
+                   * theory that removing it would strand their payment. It does
+                   * not: line_id is `on delete set null`, so the entry keeps its
+                   * payer and its amount and simply stops being attached to a
+                   * plan. Every balance in the project stays correct, which is
+                   * exactly what migration 42 was written to guarantee.
+                   *
+                   * Hiding it meant a line typed wrong could never be removed
+                   * the moment one person had covered part of it. The confirm
+                   * says what survives instead.
+                   */}
+                  {(line.created_by === userId || project.owner_id === userId) && (
                     <button
-                      className="press mt-2 text-label text-muted underline"
+                      className="press absolute right-0 top-4 flex h-9 w-9 items-center justify-center
+                                 rounded-pill text-muted transition-colors hover:bg-ink/[0.06] hover:text-ink
+                                 [&>svg]:h-4 [&>svg]:w-4"
                       data-hook="line-remove"
-                      onClick={() => removeLine(line.id)}
+                      aria-label={t('proj.remove_what', { what: line.label })}
+                      onClick={() => setLineKill(line.id)}
                     >
-                      {t('proj.remove')}
+                      <TrashIcon />
                     </button>
                   )}
                 </li>
@@ -406,12 +454,14 @@ export default function ProjectDetail({
                     </span>
                   ) : (
                     <button
-                      className="press shrink-0 text-label text-muted underline"
+                      className="press flex h-9 w-9 shrink-0 items-center justify-center rounded-pill
+                                 text-muted transition-colors hover:bg-ink/[0.06] hover:text-ink
+                                 [&>svg]:h-4 [&>svg]:w-4"
                       data-hook="entry-remove"
                       aria-label={t('proj.remove_what', { what: e.label || e.category || t('proj.a_spend') })}
                       onClick={() => setConfirm(e.id)}
                     >
-                      {t('proj.remove')}
+                      <TrashIcon />
                     </button>
                   )
                 )}
@@ -541,6 +591,53 @@ export default function ProjectDetail({
           {t('proj.leave')}
         </button>
       )}
+
+      {/**
+       * SUPPRIMER CE BUDGET.
+       *
+       * budget_project_delete has read `owner_id = auth.uid()` since 38 and no
+       * screen ever offered it, so a project could be created and never
+       * removed. Members, entries and lines all cascade on project_id, so one
+       * statement takes the whole thing and leaves nothing pointing at a row
+       * that is gone.
+       *
+       * Under the leave link and separated by a rule, because it is the last
+       * thing on the page for the same reason it is the last thing anybody
+       * should reach for. The owner never sees "leave"; everybody else never
+       * sees this.
+       */}
+      {project.owner_id === userId && (
+        <div className="border-t border-hairline pt-5">
+          <button
+            className="press w-full rounded-inner py-3 text-small font-semibold text-negative transition-colors hover:bg-negative/[0.07]"
+            data-hook="project-delete"
+            onClick={() => setKilling(true)}
+          >
+            {t('proj.delete')}
+          </button>
+        </div>
+      )}
+
+      <ConfirmDialog
+        open={killing}
+        title={t('proj.delete_title', { name: project.name })}
+        body={t('proj.delete_body', { n: members.length })}
+        cancelLabel={t('txn.delete_no')}
+        confirmLabel={t('proj.delete_yes')}
+        busy={killBusy}
+        onCancel={() => setKilling(false)}
+        onConfirm={destroy}
+      />
+
+      <ConfirmDialog
+        open={lineKill !== null}
+        title={t('proj.line_delete_title')}
+        body={t('proj.line_delete_body')}
+        cancelLabel={t('txn.delete_no')}
+        confirmLabel={t('proj.delete_yes')}
+        onCancel={() => setLineKill(null)}
+        onConfirm={async () => { const id = lineKill; setLineKill(null); await removeLine(id) }}
+      />
 
       <AddSpend
         open={sheet}

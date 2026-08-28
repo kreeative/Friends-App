@@ -4,6 +4,7 @@ import { money } from '../lib/money'
 import { CURRENCIES, currencyName, minorDigits } from '../lib/currency'
 import { toCents } from '../lib/txn'
 import { errorText } from '../lib/dberr'
+import { cardClass } from '../lib/amount'
 import { balances, projectProgress, totalSpent } from '../lib/project'
 import { createProject, joinProject } from '../lib/projectData'
 import ProjectInvites from './ProjectInvites'
@@ -78,7 +79,7 @@ export default function Projects({ userId, projects, members, entries, profiles,
                   </span>
                 </div>
 
-                <p className="mt-2 font-display text-h2 leading-none text-ink [font-variant-numeric:tabular-nums]">
+                <p className={`mt-2 font-display leading-none text-ink [font-variant-numeric:tabular-nums] ${cardClass(money(totalSpent(ents), project.currency, locale))}`}>
                   {money(totalSpent(ents), project.currency, locale)}
                 </p>
 
@@ -88,7 +89,7 @@ export default function Projects({ userId, projects, members, entries, profiles,
                   <>
                     <div className="mt-3 h-2 w-full overflow-hidden rounded-pill bg-ink/10">
                       <div
-                        className={`h-full rounded-pill ${progress.over > 0 ? 'bg-negative' : 'bg-accent'}`}
+                        className={`h-full rounded-pill ${progress.over > 0 ? 'bg-over' : 'bg-progress'}`}
                         style={{ width: `${progress.pct}%` }}
                       />
                     </div>

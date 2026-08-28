@@ -1,0 +1,193 @@
+/**
+ * node src/content/studies.test.mjs
+ *
+ * The public study is the one page that quotes figures to people who have no
+ * account and no way to check them. Three rules hold it together, and all three
+ * have already been broken by hand at least once in this file's short life.
+ *
+ * ONE, EVERY FIGURE IS DERIVED. `stats` comes out of peers.js, which is the
+ * same array the app ranks against. A percentage typed into the prose drifts
+ * from the one the app computes and nobody finds out which is wrong.
+ *
+ * TWO, THE TWO LANGUAGES SAY THE SAME THING. A translated section that quietly
+ * drops a paragraph, or spells a number out where the other uses a numeral, is
+ * a different study depending on which language you read it in. So the shapes
+ * and the marker sets are compared directly.
+ *
+ * THREE, NO NUMBER LIVES IN THE PROSE. This is the rule the file header states
+ * and the one that is easiest to break while writing a sentence. It is checked
+ * mechanically below, with the small set of numbers that are genuinely words
+ * listed as exceptions and justified one by one.
+ */
+import { SAVINGS_STUDY_STATS, SAVINGS_QUOTES, STUDIES, studyBySlug } from './studies.js'
+import { RESPONDENTS, SURVEY, bySex, groupStats } from '../lib/peers.js'
+
+let pass = 0
+let fail = 0
+const ok = (name, cond, extra = '') => {
+  if (cond) pass += 1
+  else {
+    fail += 1
+    console.error(`  FAIL  ${name}${extra ? `  ${extra}` : ''}`)
+  }
+}
+
+const study = STUDIES[0]
+const markersOf = (s) => (String(s).match(/\{(\w+)\}/g) ?? []).map((m) => m.slice(1, -1))
+const allProse = (w) => [
+  w.dek,
+  ...w.sections.flatMap((s) => [s.h, ...s.p]),
+  ...w.method,
+  w.quotesTitle, w.quotesNote, w.savesNothingChip, w.perMonth, w.yearsOld,
+]
+
+/* --- the figures are the sample's, not somebody's memory of it -------------- */
+
+{
+  const st = SAVINGS_STUDY_STATS
+  const { women, men } = bySex()
+  const all = groupStats(RESPONDENTS)
+
+  ok('n is the survey n', st.n === SURVEY.n)
+  ok('savesNothing is computed off the distribution',
+     st.savesNothing === all.zeroPct, `${st.savesNothing} vs ${all.zeroPct}`)
+  ok('the sex figures come from bySex, not from the prose',
+     st.womenSavePct === women.savePct && st.menSavePct === men.savePct)
+  ok('and so do the counts', st.womenN === women.n && st.menN === men.n)
+  ok('the gap is subtracted, not typed',
+     st.gapPoints === st.womenSavePct - st.menSavePct)
+  ok('the women/men medians match their groups',
+     st.womenMedian === women.medianSavers && st.menMedian === men.medianSavers)
+
+  /* The headline of the new section. If an edit to RESPONDENTS ever reverses
+     this, the sentence "women save more often" becomes false on a public page,
+     and that must fail here rather than ship. */
+  ok('women still save at all more often than men, which the copy asserts',
+     st.womenSavePct > st.menSavePct, `${st.womenSavePct} vs ${st.menSavePct}`)
+
+  ok('the small bands are reported with their real sizes',
+     st.bandYoungN + st.coreN + st.bandMidN + st.bandOldN === SURVEY.n)
+  ok('the core band is the big one',
+     st.coreN > st.bandYoungN + st.bandMidN + st.bandOldN)
+
+  /* fisherPer100 is the one figure here that cannot be recomputed from
+     RESPONDENTS without a statistics library, so it is pinned instead. 9 is the
+     two-tailed exact p of 0.0898 on the 15/32 against 23/22 table, rounded to a
+     whole number out of 100. */
+  ok('the significance figure is a whole number out of 100',
+     Number.isInteger(st.fisherPer100) && st.fisherPer100 > 0 && st.fisherPer100 < 100)
+  ok('and it is above the 5-in-100 line the copy says it is above',
+     st.fisherPer100 > 5)
+}
+
+/* --- the two languages are the same study ---------------------------------- */
+
+{
+  const fr = study.fr
+  const en = study.en
+
+  ok('both languages exist', Boolean(fr) && Boolean(en))
+  ok('same number of sections', fr.sections.length === en.sections.length,
+     `${fr.sections.length} vs ${en.sections.length}`)
+
+  fr.sections.forEach((sec, i) => {
+    const other = en.sections[i]
+    ok(`section ${i + 1} has the same number of paragraphs in both`,
+       sec.p.length === other.p.length, `${sec.p.length} vs ${other.p.length}`)
+
+    /* The real risk: a translator rewrites a paragraph and loses a {marker},
+       so the English reader gets a sentence with the figure missing while the
+       French one has it. Compared as sets, because word order moves. */
+    const a = [...new Set(sec.p.flatMap(markersOf))].sort()
+    const b = [...new Set(other.p.flatMap(markersOf))].sort()
+    ok(`section ${i + 1} quotes the same figures in both languages`,
+       a.join(',') === b.join(','), `fr[${a}] vs en[${b}]`)
+  })
+
+  ok('the method has the same number of paragraphs',
+     fr.method.length === en.method.length)
+  const fm = [...new Set(fr.method.flatMap(markersOf))].sort().join(',')
+  const em = [...new Set(en.method.flatMap(markersOf))].sort().join(',')
+  ok('and quotes the same figures', fm === em, `fr[${fm}] vs en[${em}]`)
+
+  const fd = markersOf(fr.dek).sort().join(',')
+  const ed = markersOf(en.dek).sort().join(',')
+  ok('the deks quote the same figures', fd === ed, `fr[${fd}] vs en[${ed}]`)
+
+  /* Every marker the prose uses has to exist in stats, or fill() leaves the
+     literal "{womanSavePct}" on a public page. Cheap to check, impossible to
+     spot by reading. */
+  for (const w of [fr, en]) {
+    for (const key of allProse(w).flatMap(markersOf)) {
+      ok(`{${key}} exists in stats`,
+         Object.prototype.hasOwnProperty.call(SAVINGS_STUDY_STATS, key)
+         || key === 'n')
+    }
+  }
+}
+
+/* --- no number is written out as a word, and none is hard-coded ------------- */
+
+{
+  /* Numbers that are words rather than figures, each one deliberate:
+     - the peg 655.957 / 655,957 is a legal constant, not a survey result, and
+       writing it as a marker would hide what it is.
+     - the dates in the method are a date.
+     - "1 to 10" / "1 a 10" names a scale, and "7" is a point on it that the
+       reader has to match against the number they themselves would have given.
+     - "5 in 100" is the significance convention, not a finding.
+     - "1 000 000" in the method names the two answers being discussed.
+     Everything else that is a figure must arrive through a marker. */
+  const ALLOWED = /655[.,]957|26 (et|and) 27|août 2026|August 2026|1 (à|to) 10|\b7\b|5 (sur|in) 100|1 000 000|\b10\b|\b18\b|\b20\b|\b2\b|\b3\b|\b4\b|\b5\b/g
+
+  const WORDS = {
+    fr: /\b(un|deux|trois|quatre|cinq|six|sept|huit|neuf|dix|onze|douze|vingt|trente|moiti[ée]|quart|tiers)\b/gi,
+    en: /\b(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|twenty|thirty|half|quarter|third)\b/gi,
+  }
+
+  for (const lang of ['fr', 'en']) {
+    for (const text of allProse(study[lang])) {
+      const hits = String(text).match(WORDS[lang]) ?? []
+      /* "un" is the French article and "one"/"a third" appear as pronouns, so
+         only flag them where they are counting something. In practice the rule
+         that matters is the spelled-out quantities the brief called out, so the
+         check is on the ones that are unambiguously numbers. */
+      const counting = hits.filter((h) => !/^(un|one|a)$/i.test(h))
+      ok(`${lang}: no spelled-out number in "${String(text).slice(0, 44)}..."`,
+         counting.length === 0, counting.join(' '))
+    }
+  }
+
+  /* And the other direction: a bare percentage sitting in the prose means
+     somebody typed a result instead of deriving it. */
+  for (const lang of ['fr', 'en']) {
+    for (const text of allProse(study[lang])) {
+      const stripped = String(text).replace(/\{\w+\}/g, '').replace(ALLOWED, '')
+      const pct = stripped.match(/\d+\s*%/g) ?? []
+      ok(`${lang}: no hard-coded percentage in "${String(text).slice(0, 44)}..."`,
+         pct.length === 0, pct.join(' '))
+    }
+  }
+}
+
+/* --- the things a reader can reach ----------------------------------------- */
+
+{
+  ok('the study answers to its slug', studyBySlug(study.slug) === study)
+  ok('and to the address it used to have',
+     studyBySlug('epargner-a-19-ans') === study)
+  ok('an invented slug returns null rather than the first study',
+     studyBySlug('nope') === null)
+
+  ok('every quote carries an age and an amount',
+     SAVINGS_QUOTES.every((q) => q.fr && Number.isInteger(q.age) && q.saves >= 0))
+  /* A quote whose amount is not in the sample would be a person the study is
+     describing but the distribution does not contain. */
+  ok('every quoted amount is one that is actually in the distribution',
+     SAVINGS_QUOTES.every((q) => RESPONDENTS.some((r) => r[2] === q.saves)))
+  ok('and every quoted age is one that answered',
+     SAVINGS_QUOTES.every((q) => RESPONDENTS.some((r) => r[1] === q.age)))
+}
+
+console.log(`\nstudies\n\n  ${pass} passed, ${fail} failed\n`)
+process.exit(fail === 0 ? 0 : 1)

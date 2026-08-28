@@ -251,6 +251,32 @@ export async function updateProject(projectId, patch) {
   return { error }
 }
 
+/**
+ * Delete a project outright, with everything in it.
+ *
+ * ARCHIVING AND DELETING ARE DIFFERENT ANSWERS TO DIFFERENT QUESTIONS.
+ *
+ * archiveProject below is for a trip that ENDED: 38 calls a project ephemeral
+ * and says "the numbers are worth keeping, what did Greece actually cost is
+ * the question you ask next time you plan one". This is for a project that
+ * should never have existed, or one somebody is done with entirely, and there
+ * was no way to express it: the row could be created and never removed.
+ *
+ * budget_project_delete has always been `owner_id = auth.uid()`, so this is a
+ * screen catching up with a policy rather than a new power. Members, entries
+ * and lines all cascade; project_id is `on delete cascade` on all three, so
+ * one statement takes the lot and nothing is left pointing at a project that
+ * is gone.
+ *
+ * No soft delete and no undo. A trip's ledger is not something to half-remove
+ * and leave somebody wondering which version four people are looking at, and
+ * the confirmation dialog is where the second thought belongs.
+ */
+export async function deleteProject(projectId) {
+  const { error } = await supabase.from('budget_project').delete().eq('id', projectId)
+  return { error }
+}
+
 export async function archiveProject(projectId) {
   const { error } = await supabase
     .from('budget_project')

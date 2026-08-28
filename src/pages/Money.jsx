@@ -12,6 +12,7 @@ import { errorText, isMissingColumn, isMissingTable, isNetworkError } from '../l
 import { ageBandOf, ageOf, detectCountry, spendOver } from '../lib/benchmarks'
 import { history as savingsHistory, recentRate, savedTotal } from '../lib/savings'
 import { fromCents, localISO, toCents, txnPayload, withoutField } from '../lib/txn'
+import { heroClass } from '../lib/amount'
 import { Empty, Screen, Section, TopBar } from '../components/ui'
 import { PlanIcon, SuitcaseIcon } from '../components/ActionBar'
 import BudgetShortcuts from '../components/BudgetShortcuts'
@@ -1002,6 +1003,7 @@ export default function Money() {
                     currency={s.currency}
                     locale={locale}
                     onOpen={setSheet}
+                    onDelete={removeEntry}
                   />
                 ))}
               </ul>
@@ -1071,6 +1073,7 @@ export default function Money() {
             currency={s.currency}
             locale={locale}
             onOpen={setSheet}
+            onDelete={removeEntry}
           />
         </Section>
       )}
@@ -1468,9 +1471,9 @@ function PlanForm({ plan, fixed, userId, currency, onCancel, onSaved }) {
           </div>
           <p
             data-hook="amount"
-            className={`mt-2 font-display text-hero leading-none [font-variant-numeric:tabular-nums] ${
-              left < 0 ? 'text-negative' : 'text-ink'
-            }`}
+            className={`mt-2 font-display leading-none [font-variant-numeric:tabular-nums] ${
+              heroClass(`${leftParts.head}${leftParts.cents}${leftParts.suffix}`)
+            } ${left < 0 ? 'text-negative' : 'text-ink'}`}
           >
             {leftParts.head}
             <span className="align-baseline text-[0.62em] text-muted">{leftParts.cents}</span>

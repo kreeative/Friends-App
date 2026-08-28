@@ -406,6 +406,54 @@
     --c-on-field: 17 17 17;      /* #111111, 13.38:1 on #FFD60A */
 
     /**
+     * THE PROGRESS BARS, AND WHY YELLOW IS NOT ONE OF THEM.
+     *
+     * "Replace any dark red progress indicator lines with electric blue,
+     * vibrant yellow, or bright pink."
+     *
+     * The dark red goes. Two of the three replacements cannot be a bar,
+     * measured against the track (ink at 10 %, which composites to #E8E6E7):
+     *
+     *   #FFD60A vibrant yellow    1.14:1
+     *   #38BDF8 electric blue     1.72:1
+     *   #E60070 bright pink       3.68:1
+     *   #0B6FAD deeper blue       4.34:1
+     *
+     * WCAG 1.4.11 asks 3:1 of a graphic that carries information, and a
+     * progress bar is nothing but information. So yellow stays what it has
+     * always been here, a GROUND: black sits on it at 13.5:1 and it is the
+     * field colour for washes, marks and the selected day. As an 8px line on
+     * a pale track it is invisible, and a bar nobody can see is not a brighter
+     * bar, it is no bar.
+     *
+     * Electric blue has the same problem at that size, so the blue that does
+     * the work is one step deeper.
+     *
+     * TWO COLOURS PER THEME, NOT FOUR.
+     *
+     * "T'avais un theme bleu jaune a part et rose jaune. Tu as gate le bleu et
+     * la tu es en train de gater l'autre."
+     *
+     * Sun is pink and yellow. Sea is blue and yellow. They are two separate
+     * two-colour systems that happen to share white and black, and the first
+     * version of these tokens broke both at once: it marked sun's overshoot in
+     * BLUE and sea's in PINK, on the reasoning that the theme's "other strong
+     * colour" makes the two bar states easy to tell apart. That reasoning is
+     * fine and the colours were not sun's or sea's to spend.
+     *
+     * So --c-over is the theme's own INK. Black is in both palettes, it is the
+     * one thing they share besides white, and it cannot belong to the wrong
+     * one. It is also the most visible option by a distance, 15.20:1 against
+     * the track in sun and 13.87:1 in sea, and it stays 4.14:1 and 3.19:1
+     * against the normal bar, so full and overspent are never confusable.
+     *
+     * Colour is not the only signal either way: the label beside the bar
+     * already says "X de trop" instead of "sur Y" (WCAG 1.4.1).
+     */
+    --c-progress: 230 0 112;  /* #E60070, 3.68:1 on the track */
+    --c-over: 17 17 17;       /* #111111, 15.20:1 on the track */
+
+    /**
      * The six envelope shades: one family, six lightnesses.
      *
      * The categories used to be a rainbow, one unrelated hue each. Six hues
@@ -508,18 +556,26 @@
     --c-loud: 0 157 185;     /* #009DB9, 3.22:1, display sizes only */
     --c-field: 255 214 10;   /* #FFD60A golden yellow */
     --c-field-deep: 214 176 0;
-    /* NO YELLOW RECTANGLE. The accent here was #FFD60A, which is why the
-       primary button came out as a yellow slab: "Ajouter une transaction" and
-       "Nouveau projet" were the accent, and the accent was yellow. The button
-       is the same pink in both themes now. Yellow is still the theme's field
-       colour for washes and marks; it is no longer a button. */
-    --c-accent: 230 0 112;   /* #E60070, as in sun */
-    --c-accent-pressed: 194 0 94;
-    /* The button is pink in both themes now, so this is white in both. Yellow
-       stays the field colour for washes and marks, where nothing has to be
-       legible on top of it at 16px. */
-    --c-on-accent: 255 255 255;  /* 4.57:1 on #E60070 */
+    /**
+     * BLUE, NOT YELLOW AND NOT PINK.
+     *
+     * This has been all three. It was #FFD60A, which made the primary button a
+     * yellow slab: "pas de rectangle jaune" was about that. It went pink to fix
+     * it, and pink is sun's colour, so the blue theme stopped being blue.
+     *
+     * The complaint was the yellow rectangle, never the blue. So the accent is
+     * the theme's own blue: no yellow slab, no pink in a blue theme, and white
+     * on it at 5.40:1, which is the "ecriture blanche" that was asked for.
+     * Yellow stays the field colour for washes and marks, where nothing has to
+     * be legible on top of it at 16px.
+     */
+    --c-accent: 11 111 173;      /* #0B6FAD, 5.40:1 with white */
+    --c-accent-pressed: 8 88 138;
+    --c-on-accent: 255 255 255;  /* 5.40:1 on #0B6FAD */
     --c-on-field: 0 76 90;
+
+    --c-progress: 11 111 173;  /* #0B6FAD, 4.34:1 on the track */
+    --c-over: 22 28 30;        /* the theme's own ink, 13.87:1 */
 
     /* The same six steps in the sea family. See the note in the sun block for
        why they are shades rather than hues, and why the ramp stops at mid.
@@ -594,6 +650,9 @@
     /* The third touch. The app has no blue in sun and no pink in sea; the
        public shell is the one surface that gets all three at once. */
     --c-sky: 56 189 248;       /* #38BDF8, carries #111111 at 8.81:1 */
+
+    --c-progress: 230 0 112;
+    --c-over: 17 17 17;
 
     background-color: rgb(var(--c-bg));
   }
