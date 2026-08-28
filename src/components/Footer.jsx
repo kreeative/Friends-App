@@ -52,6 +52,11 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
+                <Link to="/aide" className="nav-link">
+                  {c.links.faq}
+                </Link>
+              </li>
+              <li>
                 <Link to="/signin" className="nav-link">
                   {c.links.signin}
                 </Link>

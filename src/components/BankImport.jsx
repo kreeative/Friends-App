@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useT } from '../lib/i18n'
 import { bankConnections, connectBank, disconnectBank, plaidStatus, syncBanks } from '../lib/plaidLink'
 import { Empty } from './ui'
@@ -79,7 +80,22 @@ export default function BankImport({ onImported }) {
      that their correct password is incorrect. */
   useEffect(() => {
     let alive = true
-    plaidStatus().then((out) => { if (alive && !out.error) setEnv(out.env) })
+    plaidStatus().then((out) => {
+      if (!alive || out.error) return
+      setEnv(out.env)
+      /* The fix, for the one person who can apply it. It used to be printed on
+         every user's budget screen, which is where nobody who could act on it
+         was looking. */
+      if (out.env === 'sandbox') {
+        console.warn(
+          'Rich & Friends: the bank import is running against the Plaid SANDBOX, '
+          + 'where real bank credentials and real phone numbers are refused by design. '
+          + 'To connect real accounts, set PLAID_ENV=production in Vercel together with '
+          + 'the matching production secret (Plaid issues a different secret per '
+          + 'environment), then redeploy.',
+        )
+      }
+    })
     return () => { alive = false }
   }, [])
 
@@ -131,49 +147,34 @@ export default function BankImport({ onImported }) {
       <p className="mt-1.5 text-small leading-relaxed text-muted">{t('bank.body')}</p>
 
       {/**
-       * TEST MODE, SAID LOUDEST AND FIRST.
+       * ONE LINE EACH, AND THE REST BEHIND A LINK.
        *
-       * In the sandbox Plaid refuses real credentials and real phone numbers
-       * and words both as though the person got something wrong: "Incorrect
-       * credentials" under a correct password, and "We couldn't verify that
-       * +1 506... is a valid number" under a valid area code. There was
-       * nothing on screen to tell those apart from a real typo, so the
-       * reasonable conclusion was that the app was broken, and the actual
-       * cause was one unset environment variable.
+       * These two were six-line grey slabs stacked above the button. Both said
+       * something true and necessary, and both were too long to be read where
+       * they were: a wall of text above a button gets skipped, not read.
        *
-       * Above the coverage note because it applies to every institution
-       * including the covered ones, and it is the reason a Canadian bank was
-       * failing while the panel talked about Ivorian ones.
+       * Worse, the test-mode one carried "set PLAID_ENV to production in
+       * Vercel", which is an instruction nobody except the person who deploys
+       * this can follow, printed on every user's budget screen. That half now
+       * goes to the console, where the operator sees it and nobody else has to
+       * read it.
+       *
+       * So: one short line per subject, and /aide holds the full answers for
+       * whoever actually has the question.
        */}
-      {env === 'sandbox' && (
-        <p
-          className="mt-3 rounded-card border border-negative/30 bg-negative/[0.07] p-3 text-label leading-relaxed text-ink"
-          data-hook="bank-testmode"
-        >
-          {t('bank.test_mode')}
-        </p>
-      )}
-
-      {/**
-       * WHERE THIS ACTUALLY WORKS, SAID BEFORE THE BUTTON.
-       *
-       * Plaid covers North America, the UK and part of Europe. Nothing in
-       * Africa, and no mobile money anywhere. This panel promised "tes achats
-       * arrivent tout seuls" with no caveat, so somebody with an Ivorian bank
-       * account tried it, failed with credentials that were perfectly correct,
-       * and had nothing on screen to tell them that no credential would ever
-       * have worked. The survey behind this product is 91 % Ivorian, so that
-       * is the majority case, not an edge one.
-       *
-       * It sits above the button rather than in a tooltip or a help page,
-       * because the cost of not reading it is somebody typing their real bank
-       * password into a dialog that cannot use it.
-       */}
-      <p
-        className="mt-3 rounded-card bg-ink/[0.04] p-3 text-label leading-relaxed text-muted"
-        data-hook="bank-coverage"
-      >
-        {t('bank.coverage')}
+      <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-label text-muted">
+        {env === 'sandbox' && (
+          <span
+            className="rounded-pill bg-negative/10 px-2 py-0.5 font-semibold text-negative"
+            data-hook="bank-testmode"
+          >
+            {t('bank.test_mode')}
+          </span>
+        )}
+        <span data-hook="bank-coverage">{t('bank.coverage')}</span>
+        <Link to="/aide" className="font-semibold text-ink underline" data-hook="bank-more">
+          {t('bank.more')}
+        </Link>
       </p>
 
       {connections.length === 0 ? (
