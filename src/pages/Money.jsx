@@ -15,6 +15,7 @@ import { fromCents, localISO, toCents, txnPayload, withoutField } from '../lib/t
 import { heroClass } from '../lib/amount'
 import { Empty, Screen, Section, TopBar } from '../components/ui'
 import { PlanIcon, SuitcaseIcon } from '../components/ActionBar'
+import BankImport from '../components/BankImport'
 import BudgetShortcuts from '../components/BudgetShortcuts'
 import FeatureCards from '../components/FeatureCards'
 import MonthByMonth from '../components/MonthByMonth'
@@ -1067,15 +1068,23 @@ export default function Money() {
           back button used to be the first thing in its body; the heading
           carries it now, so the page does not offer two ways back. */}
       {pane === 'history' && (
-        <Section>
-          <TransactionHistory
-            entries={entries}
-            currency={s.currency}
-            locale={locale}
-            onOpen={setSheet}
-            onDelete={removeEntry}
-          />
-        </Section>
+        <>
+          {/* Above the list, because what it produces is the list. An import
+              control below the transactions it creates is a control nobody
+              scrolls to on the one screen where it is obviously relevant. */}
+          <Section>
+            <BankImport onImported={load} />
+          </Section>
+          <Section>
+            <TransactionHistory
+              entries={entries}
+              currency={s.currency}
+              locale={locale}
+              onOpen={setSheet}
+              onDelete={removeEntry}
+            />
+          </Section>
+        </>
       )}
 
       {pane === 'plan' && (
