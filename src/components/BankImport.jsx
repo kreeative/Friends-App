@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useT } from '../lib/i18n'
-import { bankConnections, connectBank, disconnectBank, syncBanks } from '../lib/plaidLink'
+import { bankConnections, connectBank, disconnectBank, plaidStatus, syncBanks } from '../lib/plaidLink'
 import { Empty } from './ui'
 
 /**
@@ -50,6 +50,10 @@ export default function BankImport({ onImported }) {
      than apologising. Kept separate so it can be styled as the aside it is. */
   const [error, setError] = useState(null)
   const [result, setResult] = useState(null)
+  /* 'sandbox' | 'production' | null. Null means the status call has not landed
+     or failed, and no banner is shown: a failed status call is not a reason to
+     block the feature or to guess which environment somebody is in. */
+  const [env, setEnv] = useState(null)
 
   const refresh = useCallback(async () => {
     const { connections: rows, error: err } = await bankConnections()
@@ -69,6 +73,15 @@ export default function BankImport({ onImported }) {
   }, [t])
 
   useEffect(() => { refresh() }, [refresh])
+
+  /* Asked once, on mount, so the sandbox warning is on screen BEFORE anybody
+     types a bank password rather than after Plaid has told them three times
+     that their correct password is incorrect. */
+  useEffect(() => {
+    let alive = true
+    plaidStatus().then((out) => { if (alive && !out.error) setEnv(out.env) })
+    return () => { alive = false }
+  }, [])
 
   const connect = async (itemId = null) => {
     setBusy('connect'); setError(null); setResult(null)
@@ -116,6 +129,30 @@ export default function BankImport({ onImported }) {
     <div className="glass-card rounded-3xl p-5" data-hook="bank-import">
       <p className="text-body font-semibold text-ink">{t('bank.title')}</p>
       <p className="mt-1.5 text-small leading-relaxed text-muted">{t('bank.body')}</p>
+
+      {/**
+       * TEST MODE, SAID LOUDEST AND FIRST.
+       *
+       * In the sandbox Plaid refuses real credentials and real phone numbers
+       * and words both as though the person got something wrong: "Incorrect
+       * credentials" under a correct password, and "We couldn't verify that
+       * +1 506... is a valid number" under a valid area code. There was
+       * nothing on screen to tell those apart from a real typo, so the
+       * reasonable conclusion was that the app was broken, and the actual
+       * cause was one unset environment variable.
+       *
+       * Above the coverage note because it applies to every institution
+       * including the covered ones, and it is the reason a Canadian bank was
+       * failing while the panel talked about Ivorian ones.
+       */}
+      {env === 'sandbox' && (
+        <p
+          className="mt-3 rounded-card border border-negative/30 bg-negative/[0.07] p-3 text-label leading-relaxed text-ink"
+          data-hook="bank-testmode"
+        >
+          {t('bank.test_mode')}
+        </p>
+      )}
 
       {/**
        * WHERE THIS ACTUALLY WORKS, SAID BEFORE THE BUTTON.

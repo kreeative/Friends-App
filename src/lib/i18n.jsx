@@ -358,6 +358,14 @@ const STRINGS = {
        account tried, failed with correct credentials, and had no way to learn
        that no credential would ever have worked. */
     'bank.coverage': 'Works with banks in Canada, the United States, the United Kingdom and part of Europe. Ivorian banks and mobile money (Orange, MTN, Wave, Moov) are not covered by Plaid, so no login will work for those.',
+    /* THE SANDBOX WARNING.
+       Plaid's sandbox rejects real credentials and real phone numbers, and
+       words both as though the person made a mistake: "Incorrect credentials"
+       under a correct password, "We couldn't verify that +1 506... is a valid
+       number" under a valid area code. Without this banner there is nothing on
+       screen to tell those apart from a genuine typo, and somebody retypes
+       their real bank password several times before giving up. */
+    'bank.test_mode': 'Test mode. Your real bank login will be refused here, and so will your real phone number: the Plaid sandbox only accepts its demo details. To connect a real account, set PLAID_ENV to production in Vercel with the matching production secret, then redeploy.',
     'bank.none': 'No bank connected yet.',
     'bank.connect': 'Connect a bank',
     'bank.add': 'Add another',
@@ -1473,6 +1481,7 @@ const STRINGS = {
     'bank.title': 'Importer depuis ta banque',
     'bank.body': 'Connecte un compte et tes achats arrivent tout seuls, à la date où tu les as faits.',
     'bank.coverage': 'Fonctionne avec les banques du Canada, des États-Unis, du Royaume-Uni et d’une partie de l’Europe. Les banques ivoiriennes et le mobile money (Orange, MTN, Wave, Moov) ne sont pas couverts par Plaid : aucun identifiant ne marchera pour ceux-là.',
+    'bank.test_mode': 'Mode test. Tes vrais identifiants bancaires seront refusés ici, et ton vrai numéro de téléphone aussi : le sandbox Plaid n’accepte que ses données de démonstration. Pour connecter un vrai compte, mets PLAID_ENV sur production dans Vercel avec le secret de production correspondant, puis redéploie.',
     'bank.none': 'Aucune banque connectée pour l’instant.',
     'bank.connect': 'Connecter une banque',
     'bank.add': 'En ajouter une',
