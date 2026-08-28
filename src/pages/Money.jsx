@@ -15,7 +15,6 @@ import { fromCents, localISO, toCents, txnPayload, withoutField } from '../lib/t
 import { heroClass } from '../lib/amount'
 import { Empty, Screen, Section, TopBar } from '../components/ui'
 import { PlanIcon, SuitcaseIcon } from '../components/ActionBar'
-import BankImport from '../components/BankImport'
 import BudgetShortcuts from '../components/BudgetShortcuts'
 import FeatureCards from '../components/FeatureCards'
 import MonthByMonth from '../components/MonthByMonth'
@@ -978,20 +977,20 @@ export default function Money() {
            * not counting looked exactly like one that did.
            */}
           {/**
-           * CONNECTING A BANK LIVES ON THE FRONT DOOR, NOT BEHIND "VOIR TOUT".
+           * THE BANK IMPORT IS NOT OFFERED. See src/components/BankImport.jsx.
            *
-           * It was on /money/history, which is reached only by the small link
-           * beside the RECENT heading. That is a fine place for the full
-           * transaction list and a hopeless one for a feature somebody is
-           * looking for: "where is the plaid button" is what happens when the
-           * only way in is a link that says something else.
+           * Connecting a real bank account needs paid Plaid production access,
+           * and this project is on the sandbox, where every real credential is
+           * refused by design. A button that cannot succeed for anybody is
+           * worse than no button: it costs a Plaid Link load, a bank password
+           * typed into a dialog that will reject it, and the conclusion that
+           * the app is broken.
            *
-           * It is compact until it has something to say. With no bank linked
-           * it is a title, one line and one button.
+           * Everything behind it is kept and still tested: the component, the
+           * four API routes, migrations 44 and 45, and the pure mapping and
+           * error modules with their unit tests. Turning it back on is putting
+           * this Section back with <BankImport onImported={load} /> in it.
            */}
-          <Section>
-            <BankImport onImported={load} />
-          </Section>
 
           <Section
             title={t('money.recent')}
