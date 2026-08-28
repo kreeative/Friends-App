@@ -18,6 +18,7 @@ import Checkin from './pages/Checkin'
 import Proofs from './pages/Proofs'
 import Goals from './pages/Goals'
 import GoalEditor from './pages/GoalEditor'
+import Account from './pages/Account'
 import Me from './pages/Me'
 import Money from './pages/Money'
 import Settings from './pages/Settings'
@@ -255,7 +256,14 @@ function Gate() {
       <Route element={<AppShell />}>
         <Route index element={<Dashboard />} />
         <Route path="start" element={<Start />} />
+        {/* /profile is the name the avatar in the bar points at; /me is the
+            address it had for a year and stays served rather than breaking a
+            link somebody bookmarked. */}
+        <Route path="profile" element={<Me />} />
         <Route path="me" element={<Me />} />
+        {/* Top level, and distinct from /g/:groupId/settings, which is the
+            GROUP's settings and is unreachable to anybody without a group. */}
+        <Route path="settings" element={<Account />} />
         <Route path="money" element={<Money />} />
         {/**
          * The budget's sections are pages, and they are pages here rather than

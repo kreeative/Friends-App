@@ -10,14 +10,40 @@ import { CURRENCIES, FALLBACK, currencyName } from '../lib/currency'
 import { DECLINED, PRONOUN_OPTIONS } from '../lib/pronouns'
 import { localeTag, useT } from '../lib/i18n'
 import { offerGroup } from '../lib/onboarding'
-import DeleteAccount from '../components/DeleteAccount'
 import ThemePicker from '../components/ThemePicker'
 import LanguagePicker from '../components/LanguagePicker'
 import { Avatar, Field, Screen, Section, TopBar } from '../components/ui'
 import MyCompletion from '../components/MyCompletion'
 
+/**
+ * The settings gear.
+ *
+ * Drawn rather than imported: this project has one icon file per family and a
+ * single-use glyph in a shared file is how that file becomes a sprite sheet.
+ * Stroked at 1.9 because the teeth close up into a blob when filled at 20px.
+ */
+function GearIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5">
+      {/* A real cog outline. The first attempt was a circle with eight
+          radiating spokes, which is not a gear, it is a sun: on screen at 20px
+          it read as a brightness control sitting where the settings button was
+          meant to be. Teeth have to be lobes on the rim, not lines off it. */}
+      <path
+        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" strokeWidth="1.7" />
+    </svg>
+  )
+}
+
 export default function Me() {
-  const { user, profile, signOut, updateProfile } = useAuth()
+  const { user, profile, updateProfile } = useAuth()
   const { statusesFor, myGoals, soloGoals, groups, reloadGroup } = useGroup()
   const { t, locale } = useT()
   const navigate = useNavigate()
@@ -224,16 +250,53 @@ export default function Me() {
    * do nothing until you happen to visit another screen is one people press
    * twice.
    */
-  async function rewatchIntro() {
-    setBusy(true)
-    await updateProfile?.({ has_seen_budget_intro: false })
-    setBusy(false)
-    navigate('/money')
-  }
 
   return (
     <Screen>
-      <TopBar title={profile?.display_name ?? t('nav.you')} sub={t('me.consistency')} />
+      {/**
+       * Back on the left, the gear on the right, per the brief.
+       *
+       * The gear is the ONLY way to /settings from here, which is why it is a
+       * 44px target with a real label rather than a decorative glyph beside
+       * the title: an icon that is the sole door to a screen has to be findable
+       * by somebody who does not already know it is a door.
+       */}
+      <TopBar
+        title={t('me.profile')}
+        back={() => navigate(-1)}
+        backLabel={t('common.back')}
+        right={
+          <Link
+            to="/settings"
+            data-hook="to-settings"
+            aria-label={t('account.title')}
+            className="press flex h-11 w-11 items-center justify-center rounded-pill
+                       border border-hairline bg-[rgb(var(--glass-tint))] text-ink shadow-raised"
+          >
+            <GearIcon />
+          </Link>
+        }
+      />
+
+      {/**
+       * Who you are, before anything you can change about it.
+       *
+       * The old page opened on a consistency chart and put the name in the
+       * page title, so the one screen called "you" never actually showed your
+       * email anywhere. It does now, because "is this the right account" is a
+       * question people come here to answer.
+       */}
+      <div className="mt-2 flex items-center gap-4" data-hook="identity">
+        <Avatar profile={profile} size={56} />
+        <div className="min-w-0">
+          <p className="truncate text-h2 font-semibold text-ink" data-hook="identity-name">
+            {profile?.display_name ?? t('nav.you')}
+          </p>
+          <p className="truncate text-small text-muted" data-hook="identity-email">
+            {user?.email}
+          </p>
+        </div>
+      </div>
 
       {quiet >= 2 && (
         <div className="pt-8">
@@ -247,12 +310,6 @@ export default function Me() {
           </div>
         </div>
       )}
-
-      {/* The same card as the dashboard. See MyCompletion for why the two
-          saturated chart panels that used to fill this screen are gone. */}
-      <Section title={t('me.consistency')}>
-        <MyCompletion />
-      </Section>
 
       {/* The only thing on this screen that is about who you are rather than
           about how you are doing, which is why it is its own section and not a
@@ -413,34 +470,22 @@ export default function Me() {
         </Section>
       )}
 
-      <Section title={t('me.account')}>
-        <div className="lg px-5">
-          <div className="list">
-            <Link to="/goals" className="press flex items-center gap-4 py-5 no-underline">
-              <span className="flex-1 text-body text-ink">{t('me.your_goals')}</span>
-              <span className="text-small text-muted">{soloGoals.length || ''} →</span>
-            </Link>
-            <Link to="/library" className="press flex items-center gap-4 py-5 no-underline">
-              <span className="flex-1 text-body text-ink">{t('nav.library')}</span>
-              <span className="text-small text-muted">→</span>
-            </Link>
-            <button
-              onClick={rewatchIntro}
-              disabled={busy}
-              className="press flex w-full items-center gap-4 py-5 text-left"
-            >
-              <span className="flex-1 text-body text-ink">{t('settings.rewatch_intro')}</span>
-              <span className="text-small text-muted">→</span>
-            </button>
-            <button
-              onClick={signOut}
-              className="press flex w-full items-center gap-4 py-5 text-left"
-            >
-              <span className="flex-1 text-body text-ink">{t('me.sign_out')}</span>
-            </button>
-          </div>
-        </div>
-      </Section>
+      {/**
+       * WHAT LEFT THIS PAGE.
+       *
+       * Signing out, the legal documents and deleting the account are on
+       * /settings behind the gear now. They are not about who you are, they
+       * are about what you can end or read, and having them here meant the
+       * destructive button shared a screen with a row that opens your reading
+       * list.
+       *
+       * The shortcuts to your goals and the library stayed behind too: both
+       * are one tap away in the tab bar, so a second copy on this screen was
+       * a row that existed to make the list look complete.
+       *
+       * "Revoir l'intro" moved with them. It is a setting, not a fact about
+       * you.
+       */}
 
       {/**
        * How the app looks and what language it speaks.
@@ -462,22 +507,19 @@ export default function Me() {
       </Section>
 
       {/**
-       * Closing the account, last on the page and on its own.
+       * Last, not second.
        *
-       * Below signing out, because it is the same shelf of things and this is
-       * the far end of it, and outside that card rather than a fourteenth row
-       * in it: a row that looks like "Your goals" and destroys everything is a
-       * row somebody taps on the way to something else.
-       *
-       * HERE AND NOT IN /g/:id/settings. That page is the group's settings and
-       * is unreachable to anybody without a group, which since solo mode
-       * includes people who will never have one. An account you can open and
-       * cannot close is not really yours, and Apple's guideline 5.1.1(v) says
-       * the same thing with more words.
+       * It used to sit between the identity block and the settings, so the
+       * page went: who you are, a chart, what you can change. Somebody opening
+       * the profile to change their currency scrolled past a graph to get
+       * there. It is still a fact about you and still belongs on this page,
+       * just not in the middle of the thing the page is for.
        */}
-      <Section title={t('danger.zone')}>
-        <DeleteAccount />
+      <Section title={t('me.consistency')}>
+        <MyCompletion />
       </Section>
+
+
     </Screen>
   )
 }
