@@ -351,23 +351,10 @@ const STRINGS = {
        count, which is the exact mistake the credit card module teaches against. */
     'bank.title': 'Import from your bank',
     'bank.body': 'Connect an account and your purchases arrive on their own, on the day you made them.',
-    /* SAID BEFORE THE BUTTON, NOT AFTER THE FAILURE.
-       Plaid covers North America, the UK and part of Europe, and nothing in
-       Africa. The panel used to promise "your purchases arrive on their own"
-       with no caveat, so somebody with an Ivorian bank or a mobile money
-       account tried, failed with correct credentials, and had no way to learn
-       that no credential would ever have worked. */
-    'bank.coverage': 'Canada, the US, the UK and part of Europe. Not Ivorian banks or mobile money.',
-    'bank.more': 'Which banks, and why',
-    /* THE SANDBOX WARNING.
-       Plaid's sandbox rejects real credentials and real phone numbers, and
-       words both as though the person made a mistake: "Incorrect credentials"
-       under a correct password, "We couldn't verify that +1 506... is a valid
-       number" under a valid area code. Without this banner there is nothing on
-       screen to tell those apart from a genuine typo, and somebody retypes
-       their real bank password several times before giving up. */
-    'bank.test_mode': 'Test mode: a real bank login will be refused here.',
-    'bank.none': 'No bank connected yet.',
+    /* The coverage and test-mode lines that used to sit here were removed
+       from the panel by request: an offer hedged with three disclaimers reads
+       as a warning not to take it. The same information is on /aide, in
+       src/content/faq.js, which is where somebody with the question goes. */
     'bank.connect': 'Connect a bank',
     'bank.add': 'Add another',
     'bank.sync': 'Import now',
@@ -1481,10 +1468,6 @@ const STRINGS = {
        de crédit apprend à ne pas faire. */
     'bank.title': 'Importer depuis ta banque',
     'bank.body': 'Connecte un compte et tes achats arrivent tout seuls, à la date où tu les as faits.',
-    'bank.coverage': 'Canada, États-Unis, Royaume-Uni et une partie de l’Europe. Pas les banques ivoiriennes ni le mobile money.',
-    'bank.more': 'Quelles banques, et pourquoi',
-    'bank.test_mode': 'Mode test : un vrai identifiant bancaire sera refusé ici.',
-    'bank.none': 'Aucune banque connectée pour l’instant.',
     'bank.connect': 'Connecter une banque',
     'bank.add': 'En ajouter une',
     'bank.sync': 'Importer',
