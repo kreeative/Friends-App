@@ -1,5 +1,5 @@
 /**
- * The formation: six modules on running a zero-based budget.
+ * The formation: the modules on running a zero-based budget.
  *
  * The French is the copy as supplied, with two dictation slips corrected:
  * module 4 said "vends immédiatement 10 % à 20 % vers ton compte d'épargne",
@@ -7,10 +7,10 @@
  * exercise said "un virement automatique automatique". Both are typing, not
  * intent, and leaving them in would have shipped them.
  *
- * WHY THIS IS DATA AND NOT SIX COMPONENTS.
+ * WHY THIS IS DATA AND NOT ONE COMPONENT PER MODULE.
  *
  * Every module has exactly the same shape, so the shape belongs in one place
- * and the words belong in another. A seventh module is an object rather than a
+ * and the words belong in another. Another module is an object rather than a
  * route, and the whole course is translatable by editing one file.
  *
  * THE SHAPE OF A MODULE.
@@ -210,9 +210,9 @@ export const LESSONS = [
       concept: 'Le piège qui compte ton argent deux fois.',
       body: [
         'Dans Rich & Friends, tu enregistres tes dépenses réelles, au jour le jour. Une carte de crédit casse ça, parce qu’elle sépare le moment où tu dépenses du moment où tu payes.',
-        'Enregistre l’achat, le jour de l’achat. Cinquante dollars d’épicerie avec la carte le 2 août, c’est cinquante dollars de nourriture le 2 août, dans sa catégorie. Peu importe que la carte ne soit pas encore remboursée : l’argent, tu l’as engagé ce jour-là.',
-        'N’enregistre pas le remboursement. Le virement de cent dollars de ton compte vers ta carte le 3 août n’est pas une nouvelle dépense. C’est le même argent qui bouge une deuxième fois, entre deux endroits qui sont tous les deux à toi. La dépense a déjà été comptée le 2.',
-        'Si tu enregistres les deux, tu comptes cent cinquante dollars alors que tu en as dépensé cinquante. Ton budget te dit que tu vas mal alors que non, et la seule chose que tu apprends, c’est à ne plus lui faire confiance.',
+        'Enregistre l’achat, le jour de l’achat. 50 $ d’épicerie avec la carte le 2 août, c’est 50 $ de nourriture le 2 août, dans sa catégorie. Peu importe que la carte ne soit pas encore remboursée : l’argent, tu l’as engagé ce jour-là.',
+        'N’enregistre pas le remboursement. Le virement de 100 $ de ton compte vers ta carte le 3 septembre n’est pas une nouvelle dépense. C’est le même argent qui bouge une deuxième fois, entre deux endroits qui sont tous les deux à toi. Les achats du mois ont déjà été comptés le jour où tu les as faits.',
+        'Si tu enregistres les deux, tu comptes 150 $ pour un mois où tu as dépensé 100 $. Les 50 $ d’épicerie sont comptés deux fois : une fois à l’achat, une fois dans le remboursement qui les contient. Ton budget te dit que tu vas mal alors que non, et la seule chose que tu apprends, c’est à ne plus lui faire confiance.',
         'Si le paiement de ta carte est une de tes charges fixes, appuie simplement sur Payer dessus. La transaction est écrite pour toi, donc ne la rajoute pas à la main non plus.',
       ],
       exercise: 'Ouvre ton relevé de carte et coche les achats que tu as déjà notés. Ce que tu as manqué, entre-le à la date de l’achat, pas à celle du relevé.',
@@ -222,9 +222,9 @@ export const LESSONS = [
       concept: 'The trap that counts your money twice.',
       body: [
         'In Rich & Friends you log what you actually spend, day by day. A credit card breaks that, because it separates the moment you spend from the moment you pay.',
-        'Log the purchase, on the day of the purchase. Fifty dollars of groceries on the card on 2 August is fifty dollars of food on 2 August, in its own category. It does not matter that the card is not settled yet: that is the day you committed the money.',
-        'Do not log the repayment. Sending a hundred dollars from your bank to your card on 3 August is not a new expense. It is the same money moving a second time, between two places that are both yours. The spending was already counted on the 2nd.',
-        'Log both and you have counted a hundred and fifty dollars while spending fifty. Your budget tells you that you are in trouble when you are not, and the only thing you learn from it is to stop trusting it.',
+        'Log the purchase, on the day of the purchase. $50 of groceries on the card on 2 August is $50 of food on 2 August, in its own category. It does not matter that the card is not settled yet: that is the day you committed the money.',
+        'Do not log the repayment. Sending $100 from your bank to your card on 3 September is not a new expense. It is the same money moving a second time, between two places that are both yours. The month’s purchases were already counted on the days you made them.',
+        'Log both and you have counted $150 for a month in which you spent $100. The $50 of groceries is counted twice: once when you bought it, and again inside the repayment that covers it. Your budget tells you that you are in trouble when you are not, and the only thing you learn from it is to stop trusting it.',
         'If your card payment is one of your fixed charges, just tap Payer on it. The transaction is written for you, so do not add it by hand either.',
       ],
       exercise: 'Open your card statement and tick off the purchases you already logged. Whatever you missed, enter it on the date you bought it, not the date of the statement.',
@@ -248,7 +248,7 @@ export function progress(readIds = []) {
  * The next module worth opening.
  *
  * The first unread one in order, or null when the course is finished. In order
- * rather than by any cleverer rule, because the six build on each other: the
+ * rather than by any cleverer rule, because they build on each other: the
  * cushion module assumes you know what "three to six months of fixed costs"
  * means, and that is the module before it.
  */

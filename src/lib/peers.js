@@ -72,28 +72,77 @@ export const SURVEY = {
 }
 
 /**
- * Every answer, in XOF per month, sorted, rounded to the nearest hundred.
+ * Every answer, one row per person: [sex, age, XOF per month, difficulty].
  *
- * Stored as the whole distribution rather than as quartiles, because with 92
- * points the exact position is cheaper to compute than an interpolation is to
- * justify. Rounded to hundreds because the source was free text full of round
- * numbers: a stored 43 333 would imply a precision nobody typed.
+ * WHY THE ROWS AND NOT JUST THE AMOUNTS.
  *
- * The six values that are not round (6 600, 13 100, 32 800, 65 600, 98 400)
+ * This started as a sorted list of the 92 amounts, which is all the rank
+ * feature needs. Sorting throws away which amount belonged to whom, so the
+ * moment the study wanted to say whether women save more than men, the only
+ * way to answer was to type the answer in by hand next to the prose. That is
+ * exactly the arrangement the header of src/content/studies.js exists to
+ * forbid: a percentage copied into a text file drifts from the one the app
+ * computes, and nobody notices which of the two is wrong.
+ *
+ * So the rows are the source and every figure on the public page is derived
+ * from them. MONTHLY_XOF is now the sorted third column rather than a second
+ * copy of it, which also means the ranking in the app and the breakdown in the
+ * study cannot disagree about the same sample.
+ *
+ * WHY THIS IS STILL NOT IDENTIFYING.
+ *
+ * Sex, age, an amount and a 1-to-10 rating, with no name, no initial, no city,
+ * no date and no free text attached to the row. The written ambitions live in
+ * studies.js and are not joined to these; a quote carries an age and an amount
+ * because that pairing is the point of the quote, and stops there. The form
+ * asked for none of the rest. Rows are ordered by age, then sex, then amount,
+ * so the array does not preserve submission order either.
+ *
+ * Amounts are rounded to the nearest hundred, because the source was free text
+ * full of round numbers and a stored 43 333 would imply a precision nobody
+ * typed. The values that are not round (6 600, 13 100, 32 800, 65 600, 98 400)
  * are euro amounts converted at the peg, and 43 300 is a weekly answer scaled
  * to a month. See the conversion note below.
  */
-export const MONTHLY_XOF = [
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  5000, 5000, 5000, 5000, 5000, 5000, 6600, 10000, 10000, 10000,
-  13100, 13100, 13200, 20000, 20000, 20000, 20000, 25000,
-  30000, 30000, 30000, 30000, 32800, 32800, 35000, 43300, 44000,
-  45000, 45000, 50000, 50000, 50000, 50000, 60000, 65000,
-  65600, 65600, 65600, 65600, 75000, 78000, 98400, 98400,
-  100000, 100000, 100000, 120000, 125000, 150000,
-  200000, 200000, 200000, 1000000, 1000000,
+export const RESPONDENTS = [
+  ['f', 15, 5000, 5], ['f', 17, 0, 8], ['f', 17, 0, 9],
+  ['f', 17, 0, 6], ['f', 17, 10000, 4], ['f', 17, 20000, 9],
+  ['f', 17, 43300, 4], ['f', 17, 44000, 8], ['h', 17, 45000, 8],
+  ['f', 18, 0, 5], ['f', 18, 0, 10], ['f', 18, 0, 7],
+  ['f', 18, 0, 8], ['f', 18, 0, 5], ['f', 18, 5000, 10],
+  ['f', 18, 6600, 8], ['f', 18, 10000, 7], ['f', 18, 10000, 5],
+  ['f', 18, 20000, 4], ['f', 18, 30000, 9], ['f', 18, 30000, 9],
+  ['f', 18, 98400, 5], ['f', 18, 98400, 5], ['f', 18, 150000, 9],
+  ['h', 18, 0, 10], ['h', 18, 0, 4], ['h', 18, 0, 7],
+  ['h', 18, 0, 6], ['h', 18, 20000, 8], ['h', 18, 60000, 7],
+  ['h', 18, 100000, 6], ['f', 19, 0, 6], ['f', 19, 0, 5],
+  ['f', 19, 0, 6], ['f', 19, 0, 8], ['f', 19, 5000, 7],
+  ['f', 19, 13200, 10], ['f', 19, 65600, 3], ['f', 19, 65600, 7],
+  ['f', 19, 78000, 5], ['f', 19, 200000, 5], ['h', 19, 0, 3],
+  ['h', 19, 0, 8], ['h', 19, 0, 6], ['h', 19, 0, 9],
+  ['h', 19, 0, 7], ['h', 19, 0, 6], ['h', 19, 0, 6],
+  ['h', 19, 0, 7], ['h', 19, 0, 7], ['h', 19, 5000, 6],
+  ['h', 19, 32800, 2], ['h', 19, 50000, 5], ['h', 19, 50000, 3],
+  ['h', 19, 75000, 10], ['h', 19, 100000, 4], ['f', 20, 0, 8],
+  ['f', 20, 0, 5], ['f', 20, 13100, 4], ['f', 20, 13100, 10],
+  ['f', 20, 20000, 4], ['f', 20, 25000, 1], ['f', 20, 45000, 7],
+  ['f', 20, 50000, 5], ['f', 20, 65600, 6], ['f', 20, 120000, 4],
+  ['h', 20, 0, 8], ['h', 20, 0, 8], ['h', 20, 0, 6],
+  ['h', 20, 0, 3], ['h', 20, 0, 6], ['h', 20, 0, 10],
+  ['h', 20, 5000, 7], ['h', 20, 32800, 3], ['h', 20, 35000, 7],
+  ['h', 20, 65600, 10], ['h', 20, 125000, 4], ['h', 20, 1000000, 3],
+  ['f', 21, 200000, 8], ['h', 21, 0, 10], ['h', 21, 0, 3],
+  ['h', 21, 0, 10], ['h', 21, 5000, 8], ['h', 21, 65000, 7],
+  ['h', 21, 100000, 6], ['f', 22, 30000, 2], ['f', 23, 0, 7],
+  ['h', 25, 0, 5], ['h', 25, 50000, 6], ['f', 27, 200000, 5],
+  ['h', 28, 1000000, 1], ['h', 32, 30000, 6],
 ]
+
+/**
+ * The amounts alone, sorted ascending. Derived, so it cannot drift from the
+ * rows above. peerStanding walks it, so ascending order is load-bearing.
+ */
+export const MONTHLY_XOF = RESPONDENTS.map((r) => r[2]).sort((a, b) => a - b)
 
 /**
  * The currencies this comparison can be made in AT ALL.
@@ -197,6 +246,81 @@ function median(sorted) {
   if (sorted.length === 0) return null
   const mid = Math.floor(sorted.length / 2)
   return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2
+}
+
+/**
+ * One slice of the sample, described the same way every time.
+ *
+ * `n` comes back on every group and the public page prints it, because the
+ * interesting slices here are small. A median over 5 people is a number, not a
+ * finding, and the only defence against it being read as one is showing the 5
+ * next to it.
+ *
+ * Two rates rather than one: `savePct` is the share who put anything aside at
+ * all, `medianSavers` is how much the ones who do manage. They answer different
+ * questions and the survey separates the sexes on the first while saying
+ * nothing certain about the second, so folding them together would hide the
+ * only real result.
+ */
+export function groupStats(rows) {
+  if (!rows || rows.length === 0) return null
+  const amounts = rows.map((r) => r[2])
+  const savers = amounts.filter((v) => v > 0).sort((a, b) => a - b)
+  const zeros = amounts.length - savers.length
+  const hard = rows.map((r) => r[3]).sort((a, b) => a - b)
+  return {
+    n: rows.length,
+    zeros,
+    savers: savers.length,
+    zeroPct: Math.round((zeros / rows.length) * 100),
+    savePct: Math.round((savers.length / rows.length) * 100),
+    medianAll: median([...amounts].sort((a, b) => a - b)),
+    medianSavers: savers.length ? median(savers) : 0,
+    difficulty: median(hard),
+    /* The share who rated saving 7 or more out of 10. Kept as its own figure
+       because the median difficulty is 6 in almost every slice, so the median
+       alone makes the question look settled when the tail is where the
+       difference would show up. */
+    hardPct: Math.round((hard.filter((d) => d >= 7).length / hard.length) * 100),
+  }
+}
+
+/** Women and men, each described by groupStats. */
+export function bySex() {
+  return {
+    women: groupStats(RESPONDENTS.filter((r) => r[0] === 'f')),
+    men: groupStats(RESPONDENTS.filter((r) => r[0] === 'h')),
+  }
+}
+
+/**
+ * The four age bands.
+ *
+ * The bands are uneven on purpose: 18 to 20 is where three quarters of the
+ * sample is, and splitting it further would produce cells of 20 rather than a
+ * finer answer. The three outside it hold 9, 9 and 5 people, which is why
+ * every caller gets `n` back and the study says so in words.
+ */
+export const AGE_BANDS = [
+  { id: '15-17', lo: 15, hi: 17 },
+  { id: '18-20', lo: 18, hi: 20 },
+  { id: '21-24', lo: 21, hi: 24 },
+  { id: '25+', lo: 25, hi: 200 },
+]
+
+export function byAgeBand() {
+  return AGE_BANDS.map((b) => ({
+    ...b,
+    ...groupStats(RESPONDENTS.filter((r) => r[1] >= b.lo && r[1] <= b.hi)),
+  }))
+}
+
+/** Those who save nothing, and those who save, rated on the same question. */
+export function byOutcome() {
+  return {
+    zero: groupStats(RESPONDENTS.filter((r) => r[2] === 0)),
+    saving: groupStats(RESPONDENTS.filter((r) => r[2] > 0)),
+  }
 }
 
 /**
