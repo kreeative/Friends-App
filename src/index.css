@@ -549,9 +549,10 @@
        than a touch warm, so the two themes are not literally identical in
        the ink, but nowhere near slate's blue. */
     --c-ink: 22 28 30;       /* 16.6:1 on white */
-    /* #007D94. Same correction as sun, same reason: 4.23:1 on the page
-       ground before, 4.52:1 now, 4.82:1 on a card. */
-    /* Darkened for the reason recorded beside sun's. */
+    /* Darkened for the reason recorded beside sun's. The stacked note above
+       this line described #007D94, a value --c-muted has not held for two
+       revisions, so it has been removed rather than left to be read as
+       current. */
     --c-muted: 78 90 94;
     --c-loud: 0 157 185;     /* #009DB9, 3.22:1, display sizes only */
     --c-field: 255 214 10;   /* #FFD60A golden yellow */
@@ -580,10 +581,15 @@
     /* The same six steps in the sea family. See the note in the sun block for
        why they are shades rather than hues, and why the ramp stops at mid.
        Measured on white: 10.76, 8.56, 6.81, 5.40, 4.37, 3.58 to one. */
-    /* The mark colour for this theme. Not --c-accent, which is #FFD60A: yellow
-       is 1.41:1 on white and cannot carry an arc or a glyph in any palette.
-       This is the ramp's second step, which is dark enough to be seen and is
-       already the theme's own colour. */
+    /* The mark colour for this theme. Not --c-accent and not --c-field: the
+       field yellow is 1.41:1 on white and cannot carry an arc or a glyph in
+       any palette. This is the ramp's second step, dark enough to be seen and
+       already the theme's own colour.
+
+       This comment used to say "not --c-accent, which is #FFD60A", which was
+       true only while the accent was still yellow. It outlived two changes to
+       that line and would have sent the next reader looking for a yellow
+       accent that is now #0B6FAD. */
     --c-mark: 8 80 125;       /* #08507D  8.56:1 on white */
 
     --c-cat-1: 6 65 101;      /* #064165  10.76:1 */

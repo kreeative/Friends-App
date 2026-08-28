@@ -21,6 +21,20 @@ const NAMES = {
   stripeSecret: ['STRIPE_SECRET_KEY', 'stripe_secret_key'],
   stripeWebhook: ['STRIPE_WEBHOOK_SECRET', 'stripe_webhook_secret'],
   siteUrl: ['SITE_URL', 'PUBLIC_SITE_URL'],
+
+  /* Plaid. Same treatment as the others: the dashboard may have refused a
+     name, so each has a list and the canonical one is first.
+
+     NONE of these is a VITE_ variable, and that is the point. Vite inlines
+     every VITE_ name into the bundle it ships to the browser, so naming the
+     secret VITE_PLAID_SECRET would publish a bank credential to every visitor
+     of the site. If one of these ever needs to be read in src/, the answer is
+     that it does not: the browser gets a link_token and nothing else. */
+  plaidClientId: ['PLAID_CLIENT_ID', 'plaid_client_id'],
+  plaidSecret: ['PLAID_SECRET', 'plaid_secret'],
+  /* sandbox | production. Defaulted at the call site rather than here, so a
+     missing value is a deliberate choice of sandbox and not a silent one. */
+  plaidEnv: ['PLAID_ENV', 'plaid_env'],
 }
 
 /** The value, or undefined. Empty strings count as unset. */
