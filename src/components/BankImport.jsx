@@ -117,6 +117,28 @@ export default function BankImport({ onImported }) {
       <p className="text-body font-semibold text-ink">{t('bank.title')}</p>
       <p className="mt-1.5 text-small leading-relaxed text-muted">{t('bank.body')}</p>
 
+      {/**
+       * WHERE THIS ACTUALLY WORKS, SAID BEFORE THE BUTTON.
+       *
+       * Plaid covers North America, the UK and part of Europe. Nothing in
+       * Africa, and no mobile money anywhere. This panel promised "tes achats
+       * arrivent tout seuls" with no caveat, so somebody with an Ivorian bank
+       * account tried it, failed with credentials that were perfectly correct,
+       * and had nothing on screen to tell them that no credential would ever
+       * have worked. The survey behind this product is 91 % Ivorian, so that
+       * is the majority case, not an edge one.
+       *
+       * It sits above the button rather than in a tooltip or a help page,
+       * because the cost of not reading it is somebody typing their real bank
+       * password into a dialog that cannot use it.
+       */}
+      <p
+        className="mt-3 rounded-card bg-ink/[0.04] p-3 text-label leading-relaxed text-muted"
+        data-hook="bank-coverage"
+      >
+        {t('bank.coverage')}
+      </p>
+
       {connections.length === 0 ? (
         <div className="mt-4">
           <Empty>{t('bank.none')}</Empty>

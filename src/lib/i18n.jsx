@@ -351,6 +351,13 @@ const STRINGS = {
        count, which is the exact mistake the credit card module teaches against. */
     'bank.title': 'Import from your bank',
     'bank.body': 'Connect an account and your purchases arrive on their own, on the day you made them.',
+    /* SAID BEFORE THE BUTTON, NOT AFTER THE FAILURE.
+       Plaid covers North America, the UK and part of Europe, and nothing in
+       Africa. The panel used to promise "your purchases arrive on their own"
+       with no caveat, so somebody with an Ivorian bank or a mobile money
+       account tried, failed with correct credentials, and had no way to learn
+       that no credential would ever have worked. */
+    'bank.coverage': 'Works with banks in Canada, the United States, the United Kingdom and part of Europe. Ivorian banks and mobile money (Orange, MTN, Wave, Moov) are not covered by Plaid, so no login will work for those.',
     'bank.none': 'No bank connected yet.',
     'bank.connect': 'Connect a bank',
     'bank.add': 'Add another',
@@ -1465,6 +1472,7 @@ const STRINGS = {
        de crédit apprend à ne pas faire. */
     'bank.title': 'Importer depuis ta banque',
     'bank.body': 'Connecte un compte et tes achats arrivent tout seuls, à la date où tu les as faits.',
+    'bank.coverage': 'Fonctionne avec les banques du Canada, des États-Unis, du Royaume-Uni et d’une partie de l’Europe. Les banques ivoiriennes et le mobile money (Orange, MTN, Wave, Moov) ne sont pas couverts par Plaid : aucun identifiant ne marchera pour ceux-là.',
     'bank.none': 'Aucune banque connectée pour l’instant.',
     'bank.connect': 'Connecter une banque',
     'bank.add': 'En ajouter une',
