@@ -83,6 +83,22 @@ async function call(path, body = {}) {
   return payload
 }
 
+/**
+ * Which Plaid environment the deployment calls, so the panel can warn.
+ *
+ * In the sandbox Plaid rejects real credentials and real phone numbers by
+ * design, and words both rejections as though the person got something wrong.
+ * Asked once on mount so the warning is on screen before anybody types a bank
+ * password rather than after they have retyped it three times.
+ *
+ * Returns `{ env }` or `{ error }`; the caller treats a failure as "unknown"
+ * and simply shows no banner, because a status call that fails is not a reason
+ * to block the feature.
+ */
+export function plaidStatus() {
+  return call('status')
+}
+
 /** The connected banks, safe fields only. Never includes a token. */
 export async function bankConnections() {
   const { data, error } = await supabase.rpc('my_bank_connections')
