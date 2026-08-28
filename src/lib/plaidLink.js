@@ -157,7 +157,13 @@ export function syncBanks() {
   return call('sync')
 }
 
-/** Unlink one bank. The imported transactions are deliberately kept. */
+/**
+ * Unlink one bank, and delete the transactions it imported.
+ *
+ * The comment here used to say the imported rows were deliberately kept. They
+ * are not, since the behaviour was reversed; a comment that describes the
+ * opposite of what the call does is worse than none.
+ */
 export function disconnectBank(itemId) {
   return call('disconnect', { item_id: itemId })
 }

@@ -16,10 +16,16 @@ import { bodyOf, guard, plaidCall } from '../_plaid.js'
  * between "untidy record at Plaid" and "cannot revoke access to my own bank
  * account" there is no contest. The failure is logged and reported.
  *
- * The delete itself goes through disconnect_bank(), which is scoped to
- * auth.uid(), so naming somebody else's item_id returns false and touches
- * nothing. The budget rows are deliberately kept: unlinking a bank means "stop
- * reading my account", not "erase my spending history". See 44_plaid.sql.
+ * The delete is done with the service role, scoped by user_id on every
+ * statement, so naming somebody else's item_id touches nothing. An earlier
+ * draft routed it through a security definer disconnect_bank() function; that
+ * function was removed, and this sentence described it for two commits after
+ * it stopped existing.
+ *
+ * The transactions this bank imported go with it. That is the reverse of what
+ * this file said originally, and the paragraph arguing for keeping them is
+ * gone rather than left standing next to code that does the opposite. The
+ * reasoning for the change is in 44_plaid.sql and in the block below.
  */
 export default async function handler(req, res) {
   const ctx = await guard(req, res)
