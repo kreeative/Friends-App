@@ -106,18 +106,41 @@ const ok = (name, cond, extra = '') => {
   }
 }
 
-/* --- the answers the bank panel now points at ---------------------------- */
+/* --- no dangling answers for a feature that is not offered --------------- */
 
 {
-  /* The panel says one line and links here. If these three answers ever left,
-     the panel would be pointing at a page that no longer explains it. */
-  const fr = faqItems('fr').map((i) => i.a.join(' ')).join(' ')
-  ok('the coverage answer names mobile money by operator',
-     /Orange/.test(fr) && /Wave/.test(fr) && /MTN/.test(fr) && /Moov/.test(fr))
-  ok('the test-mode answer explains the refusal is not the user',
-     /d.monstration/i.test(fr) && /refus/i.test(fr))
-  ok('and something explains why transfers are skipped',
-     /deux fois/.test(fr) && /virement/i.test(fr))
+  /* The bank questions were removed with the button they explained. A FAQ that
+     answers "which banks can be connected?" when nothing on any screen offers
+     to connect one sends people hunting for a control that is not there.
+     They are in git history and come back with the button. */
+  const all = ['fr', 'en'].flatMap((l) =>
+    faqItems(l).flatMap((i) => [i.q, ...i.a]))
+  const banky = all.filter((t) => /Plaid|mobile money|connecter (ma|sa|une) banque|connect (a|my) bank/i.test(t))
+  ok('nothing answers a question about connecting a bank', banky.length === 0, banky.join(' | ').slice(0, 120))
+
+  /* And the page still earns the link from the settings screen. Two questions
+     is a page not worth opening. */
+  for (const lang of ['fr', 'en']) {
+    ok(`${lang}: the page has enough on it to be worth a link`,
+       faqItems(lang).length >= 5, String(faqItems(lang).length))
+  }
+}
+
+/* --- the claims that are about how this app really behaves --------------- */
+
+{
+  /* Each of these was checked against the code before it was written, and each
+     is the kind of sentence that quietly becomes false: if the rate ever
+     becomes a streak or the email cap moves, the page is lying. */
+  const fr = faqItems('fr').map((i) => `${i.q} ${i.a.join(' ')}`).join(' ')
+  ok('the rate is described as a share, not a streak',
+     /part de la p.riode/i.test(fr) && /remet .* z.ro/i.test(fr))
+  ok('declared-away periods are said to leave the maths',
+     /absente sort compl.tement du calcul/i.test(fr))
+  ok('and the email ceiling is named as two per cycle',
+     /[Dd]eux par cycle/.test(fr))
+  ok('with the reason it holds: the database, not good intentions',
+     /base de donn.es/i.test(fr))
 }
 
 console.log(`\nfaq\n\n  ${pass} passed, ${fail} failed\n`)

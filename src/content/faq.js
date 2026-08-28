@@ -1,24 +1,19 @@
 /**
- * Les questions qui etaient ecrites en gros sur un ecran que personne ne lit.
- *
- * POURQUOI CETTE PAGE EXISTE.
- *
- * Le panneau d'import bancaire portait deux paves gris de six lignes chacun,
- * au-dessus du bouton, sur l'ecran budget de tout le monde. Les deux disaient
- * quelque chose de vrai et de necessaire, et les deux etaient trop longs pour
- * etre lus la ou ils etaient : un mur de texte au-dessus d'un bouton se saute,
- * il ne se lit pas.
- *
- * Donc le panneau garde UNE ligne par sujet et le detail vit ici, ou quelqu'un
- * vient quand il se pose la question.
+ * L'aide, atteignable depuis les reglages et depuis le pied de page.
  *
  * CE QUI N'EST PAS ICI.
  *
- * Rien qui s'adresse a celui qui deploie l'application. "Mets PLAID_ENV sur
- * production dans Vercel" etait affiche a chaque utilisateur, ce qui est une
- * instruction que personne d'autre que le proprietaire du projet ne peut
- * suivre. Elle part dans la console, ou l'operateur la voit et ou personne
- * d'autre n'a a la lire.
+ * Les questions sur la connexion bancaire ont ete retirees avec le bouton
+ * qu'elles expliquaient : connecter un vrai compte demande l'acces payant de
+ * Plaid, ce projet est sur le bac a sable, donc la fonctionnalite n'est
+ * proposee nulle part. Une FAQ qui repond a des questions sur un bouton
+ * inexistant envoie les gens le chercher.
+ *
+ * Elles sont dans l'historique git et reviennent avec le bouton.
+ *
+ * Rien ici ne s'adresse non plus a celui qui deploie l'application. Une
+ * instruction que seul le proprietaire du projet peut suivre appartient a la
+ * console, pas a une page que lisent les utilisateurs, et un test le verifie.
  *
  * UNE SEULE LANGUE PAR LECTEUR, LES DEUX ICI.
  *
@@ -34,51 +29,28 @@ export const FAQ = {
     lede: 'Ce qu’on nous demande le plus souvent, répondu en entier plutôt qu’à moitié.',
     groups: [
       {
-        id: 'bank',
-        title: 'Connecter sa banque',
+        id: 'day',
+        title: 'Au quotidien',
         items: [
           {
-            q: 'Quelles banques peuvent être connectées ?',
+            q: 'Pourquoi un pourcentage et pas une série de jours ?',
             a: [
-              'Les banques du Canada, des États-Unis, du Royaume-Uni et d’une partie de l’Europe. C’est la couverture de Plaid, le service qui fait la connexion, et elle s’arrête là.',
-              'Les banques ivoiriennes n’en font pas partie. Le mobile money non plus, ni Orange, ni MTN, ni Wave, ni Moov. Aucun identifiant ne marchera pour ces comptes-là : ce n’est pas une question de mot de passe, c’est que la connexion n’existe pas.',
-              'Si c’est ton cas, la saisie à la main reste le chemin, et elle marche partout.',
+              'Parce qu’une série remet à zéro. Un mauvais jour efface trois semaines, et repartir de zéro coûte plus cher que la journée qu’on a réellement manquée : c’est le moment où les gens arrêtent.',
+              'Ici le chiffre est une part de la période. Un jour manqué te coûte une fraction, jamais tout, donc recommencer n’a jamais l’air pire qu’abandonner.',
             ],
           },
           {
-            q: 'Mes identifiants sont bons et la connexion est refusée. Pourquoi ?',
+            q: 'Je pars en voyage ou j’ai des examens. Je perds tout ?',
             a: [
-              'Si l’application affiche « Mode test », c’est normal et ça ne vient pas de toi : dans cet environnement de démonstration, les vrais identifiants bancaires et les vrais numéros de téléphone sont refusés d’office. Le message parle d’identifiants incorrects parce que c’est le seul message qu’il connaît, pas parce que les tiens le sont.',
-              'Sans « Mode test », vérifie d’abord que ta banque fait partie des pays couverts plus haut.',
+              'Non, à condition de le dire à l’avance. Une période déclarée absente sort complètement du calcul : elle ne compte ni comme réussie ni comme manquée.',
+              'Être honnête sur une quinzaine difficile ne devrait rien coûter, donc ça ne coûte rien.',
             ],
           },
           {
-            q: 'Est-ce que vous voyez mon mot de passe bancaire ?',
+            q: 'Combien d’e-mails vous m’envoyez ?',
             a: [
-              'Non. Tu le tapes dans une fenêtre qui appartient à Plaid, pas à nous, et il ne passe jamais par nos serveurs.',
-              'Ce qu’on garde de la connexion est une clé d’accès, rangée dans une table que ton propre navigateur ne peut pas lire. Ce n’est pas un réglage prudent, c’est écrit dans la base : la table n’a aucune règle d’accès, donc personne n’y accède sauf le serveur qui appelle Plaid.',
-            ],
-          },
-          {
-            q: 'Pourquoi certaines transactions ne sont pas importées ?',
-            a: [
-              'Les virements entre tes propres comptes sont écartés, et c’est voulu. Déplacer de l’argent d’un compte à l’autre n’est pas une dépense, et compter le remboursement de ta carte en plus des achats qu’il règle les compterait deux fois.',
-              'Sont écartées aussi les opérations encore en attente chez ta banque, qui arriveront une fois validées, et celles dans une autre devise que celle de ton budget, parce qu’on préfère ne rien afficher plutôt qu’un montant converti à un taux inventé.',
-              'Le nombre et la raison sont affichés après chaque import. Rien n’est écarté en silence.',
-            ],
-          },
-          {
-            q: 'Si je supprime une transaction importée, est-ce qu’elle revient ?',
-            a: [
-              'Non. L’application se souvient de celles qu’elle a déjà traitées, y compris de celles que tu as supprimées, donc l’import suivant les laisse tranquilles.',
-            ],
-          },
-          {
-            q: 'Que se passe-t-il si je déconnecte ma banque ?',
-            a: [
-              'La clé d’accès est révoquée chez Plaid puis effacée chez nous, et l’application ne peut plus rien lire de ton compte.',
-              'Les transactions que cette banque avait importées sont supprimées en même temps : déconnecter défait l’import. C’est irréversible.',
-              'Ce que tu as saisi toi-même n’est pas touché, même une dépense notée pour le même commerce le même jour.',
+              'Deux par cycle au maximum : un avant l’ouverture de la fenêtre, un si tu as manqué deux fois. C’est tout.',
+              'Ce n’est pas une intention, c’est une contrainte de la base de données : rien ne part sans réserver une ligne, et il n’y a qu’une ligne par type et par cycle.',
             ],
           },
         ],
@@ -111,51 +83,28 @@ export const FAQ = {
     lede: 'What we get asked most, answered in full rather than halfway.',
     groups: [
       {
-        id: 'bank',
-        title: 'Connecting a bank',
+        id: 'day',
+        title: 'Day to day',
         items: [
           {
-            q: 'Which banks can be connected?',
+            q: 'Why a percentage and not a streak?',
             a: [
-              'Banks in Canada, the United States, the United Kingdom and part of Europe. That is the coverage of Plaid, the service that makes the connection, and it stops there.',
-              'Ivorian banks are not in it. Neither is mobile money: not Orange, not MTN, not Wave, not Moov. No login will work for those accounts. It is not a password problem, the connection simply does not exist.',
-              'If that is you, entering transactions by hand is still the way, and it works everywhere.',
+              'Because a streak resets. One bad day wipes out three weeks, and starting from zero costs more than the day you actually missed: that is the moment people quit.',
+              'Here the number is a share of the period. A missed day costs you a fraction, never everything, so restarting never looks worse than giving up.',
             ],
           },
           {
-            q: 'My details are correct and the connection is refused. Why?',
+            q: 'I am travelling or I have exams. Do I lose everything?',
             a: [
-              'If the app says "Test mode", this is expected and it is not you: in that demonstration environment, real bank credentials and real phone numbers are refused outright. The message talks about incorrect credentials because that is the only message it has, not because yours are.',
-              'Without "Test mode", check first that your bank is in one of the countries listed above.',
+              'No, as long as you say so in advance. A period declared away leaves the maths entirely: it counts neither as kept nor as missed.',
+              'Being honest about a hard fortnight should cost nothing, so it costs nothing.',
             ],
           },
           {
-            q: 'Can you see my bank password?',
+            q: 'How many emails do you send me?',
             a: [
-              'No. You type it into a window that belongs to Plaid, not to us, and it never passes through our servers.',
-              'What we keep from the connection is an access key, held in a table your own browser cannot read. That is not a cautious setting, it is written into the database: the table has no access rules at all, so nothing reaches it except the server that calls Plaid.',
-            ],
-          },
-          {
-            q: 'Why are some transactions not imported?',
-            a: [
-              'Transfers between your own accounts are left out, deliberately. Moving money from one account to another is not spending, and counting your card repayment as well as the purchases it settles would count them twice.',
-              'Also left out: entries still pending at your bank, which arrive once they post, and entries in a currency other than your budget’s, because showing nothing beats showing an amount converted at a rate we would have to invent.',
-              'The count and the reason appear after every import. Nothing is dropped in silence.',
-            ],
-          },
-          {
-            q: 'If I delete an imported transaction, does it come back?',
-            a: [
-              'No. The app remembers the ones it has already handled, including the ones you deleted, so the next import leaves them alone.',
-            ],
-          },
-          {
-            q: 'What happens if I disconnect my bank?',
-            a: [
-              'The access key is revoked at Plaid and then deleted here, and the app can no longer read anything from your account.',
-              'The transactions that bank had imported are deleted at the same time: disconnecting undoes the import. This cannot be undone.',
-              'Anything you typed yourself is untouched, even a spend you logged for the same shop on the same day.',
+              'Two per cycle at most: one before the window opens, one if you have missed twice. That is all.',
+              'It is not an intention, it is a database constraint: nothing sends without claiming a row, and there is only one row per kind per cycle.',
             ],
           },
         ],
