@@ -48,6 +48,66 @@ export default async function handler(req, res) {
     console.error('plaid item/remove failed, deleting locally anyway', err.plaidCode ?? err.message)
   }
 
+  /**
+   * THE IMPORTED TRANSACTIONS GO WITH THE LINK.
+   *
+   * This used to keep them, deliberately, on the reasoning that unlinking a
+   * bank means "stop reading my account" and not "erase my history". That was
+   * overruled: the expectation is that disconnecting undoes the import, and an
+   * app that leaves a few hundred rows behind after you disconnect leaves you
+   * deleting them one at a time.
+   *
+   * Only rows THIS import created are touched, found through plaid_entry.
+   * Anything typed by hand has no link row and is never reached, including a
+   * transaction somebody typed for the same shop on the same day.
+   *
+   * The link rows go too. While the import was permanent the link row had to
+   * outlive its entry, so that deleting a transaction did not invite the next
+   * sync to re-import it. That reasoning ends here: with the entries gone and
+   * the bank unlinked there is nothing left to protect them from, and keeping
+   * them would mean re-linking the same bank imported nothing at all.
+   *
+   * Done BEFORE plaid_item is deleted. If this half fails, the link still
+   * exists and the person can try again; the other order would leave orphaned
+   * rows attached to a bank they can no longer name.
+   */
+  const { data: links, error: linkErr } = await db
+    .from('plaid_entry')
+    .select('entry_id')
+    .eq('user_id', user.id)
+    .eq('item_id', itemId)
+
+  if (linkErr) {
+    console.error('reading the imported rows failed', linkErr)
+    return res.status(500).json({
+      error: `Could not disconnect: ${linkErr.message ?? linkErr.code ?? 'unknown error'}. If it names a missing table, run supabase/44_plaid.sql.`,
+    })
+  }
+
+  /* entry_id is null for anything already deleted by hand, and .in() with an
+     empty list is a query that matches nothing rather than everything, but
+     being explicit costs one line and the alternative is a delete with no
+     filter if a future refactor drops the filter() call. */
+  const entryIds = (links ?? []).map((l) => l.entry_id).filter(Boolean)
+  let removedEntries = 0
+  if (entryIds.length > 0) {
+    const { error: delErr, count } = await db
+      .from('budget_entry')
+      .delete({ count: 'exact' })
+      .eq('user_id', user.id)
+      .in('id', entryIds)
+
+    if (delErr) {
+      console.error('deleting the imported transactions failed', delErr)
+      return res.status(500).json({
+        error: `Could not remove the imported transactions: ${delErr.message ?? delErr.code ?? 'unknown error'}.`,
+      })
+    }
+    removedEntries = count ?? entryIds.length
+  }
+
+  await db.from('plaid_entry').delete().eq('user_id', user.id).eq('item_id', itemId)
+
   /* Scoped by user_id, the same clause that guarded the token read above.
      plaid_item has RLS with no policies, so this has to be the service role;
      the scoping is therefore this line's job and it is not optional.
@@ -71,5 +131,9 @@ export default async function handler(req, res) {
     })
   }
 
-  return res.status(200).json({ disconnected: true, revoked_at_plaid: revoked })
+  return res.status(200).json({
+    disconnected: true,
+    revoked_at_plaid: revoked,
+    removed_entries: removedEntries,
+  })
 }

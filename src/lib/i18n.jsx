@@ -342,7 +342,13 @@ const STRINGS = {
     'money.paid': 'Paid',
     'money.mark_paid_a11y': '{label}, {amount}. Mark as paid.',
     'money.unmark_paid_a11y': '{label}, {amount}. Paid. Mark as not paid.',
-    'money.paid_unavailable': 'Marking a charge paid is not available yet.',
+    /* NAMES THE MIGRATION, unlike the caveats that were taken off the bank
+       panel. Those showed always and hedged an offer; this shows only when the
+       database is genuinely missing a column, and the alternative is somebody
+       tapping Payer, seeing "not available yet", and having no way to find out
+       that one file needs running. The panel rule is about decorating a
+       working screen, not about muting a broken one. */
+    'money.paid_unavailable': 'Marking a charge paid needs a database update: run supabase/43_fixed_charge_entry.sql.',
     'money.fixed_title': 'Fixed charges',
     'money.pay_writes_note': 'Payer records the transaction for you. Do not enter it again by hand.',
 
@@ -369,7 +375,10 @@ const STRINGS = {
     'bank.skip_transfer': '{n} transfers left out: moving money between your own accounts is not a spend, and counting a card repayment as well as the purchases it settles would count them twice.',
     'bank.skip_pending': '{n} still pending at your bank. They will arrive once they post.',
     'bank.skip_currency': '{n} in another currency, left out rather than converted at a rate we would have to invent.',
-    'bank.disconnect_confirm': 'Disconnect this bank? Your imported transactions stay in your budget.',
+    'bank.disconnect_confirm': 'Disconnect this bank?',
+    /* The count, because "disconnect?" and "delete 312 transactions?" are
+       different questions and only the first was being asked. */
+    'bank.disconnect_confirm_n': 'Disconnect this bank and delete the {n} transactions it imported? This cannot be undone. Anything you typed yourself is kept.',
     'bank.not_installed': 'Bank import is not installed on this database yet. Run supabase/44_plaid.sql.',
     'bank.sync_failed': 'One of your banks could not be reached this time.',
     /* Keyed to Plaid's error codes. The server sends the code AND an English
@@ -1458,7 +1467,7 @@ const STRINGS = {
     'money.paid': 'Payé',
     'money.mark_paid_a11y': '{label}, {amount}. Marquer comme payée.',
     'money.unmark_paid_a11y': '{label}, {amount}. Payée. Marquer comme non payée.',
-    'money.paid_unavailable': 'Marquer une charge comme payée n’est pas encore disponible.',
+    'money.paid_unavailable': 'Marquer une charge comme payée demande une mise à jour de la base : lance supabase/43_fixed_charge_entry.sql.',
     'money.fixed_title': 'Charges fixes',
     'money.pay_writes_note': 'Payer enregistre la transaction pour toi. Ne la rajoute pas à la main.',
 
@@ -1482,7 +1491,8 @@ const STRINGS = {
     'bank.skip_transfer': '{n} virements laissés de côté : déplacer de l’argent entre tes propres comptes n’est pas une dépense, et compter le remboursement de ta carte en plus des achats qu’il règle les compterait deux fois.',
     'bank.skip_pending': '{n} encore en attente chez ta banque. Ils arriveront une fois validés.',
     'bank.skip_currency': '{n} dans une autre devise, laissées de côté plutôt que converties à un taux qu’il faudrait inventer.',
-    'bank.disconnect_confirm': 'Déconnecter cette banque ? Tes transactions importées restent dans ton budget.',
+    'bank.disconnect_confirm': 'Déconnecter cette banque ?',
+    'bank.disconnect_confirm_n': 'Déconnecter cette banque et supprimer les {n} transactions qu’elle a importées ? C’est irréversible. Ce que tu as saisi toi-même est conservé.',
     'bank.not_installed': 'L’import bancaire n’est pas installé sur cette base. Lance supabase/44_plaid.sql.',
     'bank.sync_failed': 'Une de tes banques n’a pas pu être jointe cette fois-ci.',
     'bank.err_INVALID_API_KEYS': 'La connexion bancaire n’est pas encore bien configurée.',
