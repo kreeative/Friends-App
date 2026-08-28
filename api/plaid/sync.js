@@ -1,5 +1,6 @@
-import { guard, plaidCall } from '../_plaid.js'
+import { guard, plaidCall, plaidFailure } from '../_plaid.js'
 import { mapBatch } from '../../src/lib/plaidMap.js'
+import { isReauth } from '../../src/lib/plaidErrors.js'
 
 /**
  * Pull new transactions from every linked bank into the ledger.
@@ -74,7 +75,11 @@ export default async function handler(req, res) {
          in again, and it happens routinely. Marked so the screen can offer the
          re-authentication flow instead of showing a failure they cannot act
          on. */
-      const needsReauth = err.plaidCode === 'ITEM_LOGIN_REQUIRED'
+      /* The shared list, not one code. ITEM_LOCKED and PENDING_EXPIRATION
+         need the same trip through Link, and hard-coding one of the three
+         meant the other two showed as a plain failure the person could not
+         act on. */
+      const needsReauth = isReauth(err.plaidCode)
       if (needsReauth) {
         await db.from('plaid_item').update({ status: 'reauth' })
           .eq('user_id', user.id).eq('item_id', item.item_id)
@@ -83,7 +88,7 @@ export default async function handler(req, res) {
       report.push({
         item_id: item.item_id,
         error: needsReauth ? 'reauth' : 'failed',
-        code: err.plaidCode ?? null,
+        ...plaidFailure(err),
       })
     }
   }

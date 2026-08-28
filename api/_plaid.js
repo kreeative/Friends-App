@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { env, missingEnv } from './_env.js'
+import { describePlaidError } from '../src/lib/plaidErrors.js'
 
 /**
  * The bits every Plaid route needs: who is calling, and how to call Plaid.
@@ -131,6 +132,33 @@ export async function guard(req, res) {
   }
 
   return { db, user }
+}
+
+/** Which Plaid environment this deployment actually calls. */
+export function plaidEnvName() {
+  return String(env('plaidEnv') ?? 'sandbox').toLowerCase() === 'production'
+    ? 'production'
+    : 'sandbox'
+}
+
+/**
+ * The body to send when a Plaid call failed.
+ *
+ * Every route was answering "Could not start the bank connection", which is
+ * true of every failure and useful for none. The most likely one during setup
+ * is INVALID_API_KEYS, which is neither a bug nor an outage: Plaid issues a
+ * different secret per environment, PLAID_ENV is optional and defaults to
+ * sandbox, so setting only the client id and the secret is exactly the state
+ * that produces it. describePlaidError turns that into the sentence naming
+ * what to change.
+ *
+ * `hint` is only ever a configuration instruction, never a credential; the
+ * test asserts no message can carry a key-shaped string.
+ */
+export function plaidFailure(err) {
+  const d = describePlaidError(err?.plaidCode ?? null, { env: plaidEnvName() })
+  if (d.hint) console.error('plaid config problem:', d.hint)
+  return d
 }
 
 /** JSON body, whichever form the platform hands it over in. */

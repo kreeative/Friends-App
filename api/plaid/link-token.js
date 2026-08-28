@@ -1,4 +1,4 @@
-import { bodyOf, guard, plaidCall } from '../_plaid.js'
+import { bodyOf, guard, plaidCall, plaidFailure } from '../_plaid.js'
 
 /**
  * A link_token: the one Plaid string the browser is allowed to hold.
@@ -63,9 +63,6 @@ export default async function handler(req, res) {
     return res.status(200).json({ link_token: out.link_token, expiration: out.expiration })
   } catch (err) {
     console.error('link token failed', err.plaidCode ?? err.message)
-    return res.status(502).json({
-      error: 'Could not start the bank connection.',
-      code: err.plaidCode ?? null,
-    })
+    return res.status(502).json(plaidFailure(err))
   }
 }

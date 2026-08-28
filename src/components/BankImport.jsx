@@ -21,9 +21,34 @@ import { Empty } from './ui'
  */
 export default function BankImport({ onImported }) {
   const { t, locale } = useT()
+
+  /**
+   * The server's sentence, in the reader's language.
+   *
+   * describePlaidError returns an English `error` and a Plaid `code`. The code
+   * is the durable thing, so it picks the translated string and the English
+   * only survives as the fallback for a code Plaid adds after this shipped.
+   * Without this a French reader got an English sentence on an otherwise
+   * French page, which the screenshot caught.
+   *
+   * The `hint` beside it is deliberately NOT translated: it names PLAID_ENV
+   * and PLAID_SECRET, which are English strings in a Vercel dashboard, and
+   * translating the sentence around them would make them harder to find.
+   */
+  const fromServer = (out) => {
+    const key = out?.code ? `bank.err_${out.code}` : null
+    const translated = key ? t(key) : null
+    return {
+      text: translated && translated !== key ? translated : out?.error,
+      hint: out?.hint,
+    }
+  }
   const [connections, setConnections] = useState([])
   const [busy, setBusy] = useState('')
-  const [error, setError] = useState('')
+  /* { text, hint }. The hint is the operator's sentence, which on this
+     product is the same person: it names the Vercel variable to change rather
+     than apologising. Kept separate so it can be styled as the aside it is. */
+  const [error, setError] = useState(null)
   const [result, setResult] = useState(null)
 
   const refresh = useCallback(async () => {
@@ -32,36 +57,44 @@ export default function BankImport({ onImported }) {
        the rest of this project's errors do, rather than showing an empty list
        for a feature that is simply not installed. */
     if (err) {
-      setError(
-        /function|does not exist|schema cache/i.test(err.message ?? '')
+      setError({
+        text: /function|does not exist|schema cache/i.test(err.message ?? '')
           ? t('bank.not_installed')
           : (err.message ?? String(err)),
-      )
+      })
       return
     }
-    setError('')
+    setError(null)
     setConnections(rows)
   }, [t])
 
   useEffect(() => { refresh() }, [refresh])
 
   const connect = async (itemId = null) => {
-    setBusy('connect'); setError(''); setResult(null)
+    setBusy('connect'); setError(null); setResult(null)
     const out = await connectBank({ locale, itemId })
     setBusy('')
     /* Closing the dialog is how this flow ends most of the time. It is not an
        error and showing one for it would be wrong every day. */
     if (out.cancelled) return
-    if (out.error) return setError(out.error)
+    if (out.error) return setError(fromServer(out))
     await refresh()
     await sync()
   }
 
   const sync = async () => {
-    setBusy('sync'); setError('')
+    setBusy('sync'); setError(null)
     const out = await syncBanks()
     setBusy('')
-    if (out.error) return setError(out.error)
+    if (out.error) return setError(fromServer(out))
+    /* A sync can succeed as a request and still have failed per bank, which is
+       the shape the route returns. Reporting "0 added" for that would hide a
+       broken link behind a number that looks like a quiet month. */
+    const broke = (out.items ?? []).find((i) => i.error && i.error !== 'reauth')
+    if (broke) {
+      const d = fromServer(broke)
+      setError({ text: d.text ?? t('bank.sync_failed'), hint: d.hint })
+    }
     setResult(out)
     await refresh()
     /* The ledger behind this panel has to change in the same breath. An import
@@ -72,10 +105,10 @@ export default function BankImport({ onImported }) {
 
   const disconnect = async (itemId) => {
     if (!window.confirm(t('bank.disconnect_confirm'))) return
-    setBusy(itemId); setError('')
+    setBusy(itemId); setError(null)
     const out = await disconnectBank(itemId)
     setBusy('')
-    if (out.error) return setError(out.error)
+    if (out.error) return setError(fromServer(out))
     await refresh()
   }
 
@@ -164,9 +197,18 @@ export default function BankImport({ onImported }) {
       {result && <Tally result={result} />}
 
       {error && (
-        <p className="mt-3 break-words text-small text-negative" role="alert" data-hook="bank-error">
-          {error}
-        </p>
+        <div className="mt-3" role="alert">
+          <p className="break-words text-small text-negative" data-hook="bank-error">
+            {error.text}
+          </p>
+          {/* The fix, when there is one. Muted rather than red: it is not a
+              second failure, it is the instruction for the one above. */}
+          {error.hint && (
+            <p className="mt-1.5 break-words text-label leading-relaxed text-muted" data-hook="bank-hint">
+              {error.hint}
+            </p>
+          )}
+        </div>
       )}
     </div>
   )

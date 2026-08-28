@@ -1,4 +1,4 @@
-import { bodyOf, guard, plaidCall } from '../_plaid.js'
+import { bodyOf, guard, plaidCall, plaidFailure } from '../_plaid.js'
 
 /**
  * public_token in, access_token stored, nothing sensitive out.
@@ -79,9 +79,6 @@ export default async function handler(req, res) {
     return res.status(200).json({ item_id: itemId, institution })
   } catch (err) {
     console.error('exchange failed', err.plaidCode ?? err.message)
-    return res.status(502).json({
-      error: 'Could not finish connecting the bank.',
-      code: err.plaidCode ?? null,
-    })
+    return res.status(502).json(plaidFailure(err))
   }
 }
