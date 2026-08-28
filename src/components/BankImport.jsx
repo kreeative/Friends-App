@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { useT } from '../lib/i18n'
 import { bankConnections, connectBank, disconnectBank, plaidStatus, syncBanks } from '../lib/plaidLink'
-import { Empty } from './ui'
 
 /**
  * Connect a bank, and pull transactions in from it.
@@ -51,10 +49,6 @@ export default function BankImport({ onImported }) {
      than apologising. Kept separate so it can be styled as the aside it is. */
   const [error, setError] = useState(null)
   const [result, setResult] = useState(null)
-  /* 'sandbox' | 'production' | null. Null means the status call has not landed
-     or failed, and no banner is shown: a failed status call is not a reason to
-     block the feature or to guess which environment somebody is in. */
-  const [env, setEnv] = useState(null)
 
   const refresh = useCallback(async () => {
     const { connections: rows, error: err } = await bankConnections()
@@ -75,32 +69,27 @@ export default function BankImport({ onImported }) {
 
   useEffect(() => { refresh() }, [refresh])
 
-  /* Asked once, on mount, so the sandbox warning is on screen BEFORE anybody
-     types a bank password rather than after Plaid has told them three times
-     that their correct password is incorrect. */
-  useEffect(() => {
-    let alive = true
-    plaidStatus().then((out) => {
-      if (!alive || out.error) return
-      setEnv(out.env)
-      /* The fix, for the one person who can apply it. It used to be printed on
-         every user's budget screen, which is where nobody who could act on it
-         was looking. */
-      if (out.env === 'sandbox') {
-        console.warn(
-          'Rich & Friends: the bank import is running against the Plaid SANDBOX, '
-          + 'where real bank credentials and real phone numbers are refused by design. '
-          + 'To connect real accounts, set PLAID_ENV=production in Vercel together with '
-          + 'the matching production secret (Plaid issues a different secret per '
-          + 'environment), then redeploy.',
-        )
-      }
-    })
-    return () => { alive = false }
-  }, [])
 
   const connect = async (itemId = null) => {
     setBusy('connect'); setError(null); setResult(null)
+
+    /* Asked here rather than on mount. Nothing on screen depends on it any
+       more, so fetching it on every visit to the budget page would be a
+       request nobody reads the answer to. At this moment it is worth one:
+       the sandbox refuses real credentials and real phone numbers by design,
+       and this is the console line that tells the one person who can fix it
+       which variable to set. */
+    plaidStatus().then((out) => {
+      if (out.error || out.env !== 'sandbox') return
+      console.warn(
+        'Rich & Friends: the bank import is running against the Plaid SANDBOX, '
+        + 'where real bank credentials and real phone numbers are refused by design. '
+        + 'To connect real accounts, set PLAID_ENV=production in Vercel together with '
+        + 'the matching production secret (Plaid issues a different secret per '
+        + 'environment), then redeploy.',
+      )
+    })
+
     const out = await connectBank({ locale, itemId })
     setBusy('')
     /* Closing the dialog is how this flow ends most of the time. It is not an
@@ -147,48 +136,37 @@ export default function BankImport({ onImported }) {
       <p className="mt-1.5 text-small leading-relaxed text-muted">{t('bank.body')}</p>
 
       {/**
-       * ONE LINE EACH, AND THE REST BEHIND A LINK.
+       * NO CAVEATS ON THIS PANEL, ON PURPOSE.
        *
-       * These two were six-line grey slabs stacked above the button. Both said
-       * something true and necessary, and both were too long to be read where
-       * they were: a wall of text above a button gets skipped, not read.
+       * This carried a test-mode chip, a line of country coverage and a link.
+       * All three are gone by request: the panel is an offer, and an offer
+       * hedged with three disclaimers reads as a warning not to take it.
        *
-       * Worse, the test-mode one carried "set PLAID_ENV to production in
-       * Vercel", which is an instruction nobody except the person who deploys
-       * this can follow, printed on every user's budget screen. That half now
-       * goes to the console, where the operator sees it and nobody else has to
-       * read it.
+       * The information still exists on /aide, linked from the footer, and the
+       * sandbox note still reaches the one person who can act on it through
+       * the console warning in connect() below.
        *
-       * So: one short line per subject, and /aide holds the full answers for
-       * whoever actually has the question.
+       * The cost of this is real and worth naming: somebody whose bank Plaid
+       * does not cover now finds out by failing in the Plaid dialog rather
+       * than by reading a line first. If that becomes a complaint, the place
+       * to answer it is the failure itself, not this panel.
        */}
-      <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-label text-muted">
-        {env === 'sandbox' && (
-          <span
-            className="rounded-pill bg-negative/10 px-2 py-0.5 font-semibold text-negative"
-            data-hook="bank-testmode"
-          >
-            {t('bank.test_mode')}
-          </span>
-        )}
-        <span data-hook="bank-coverage">{t('bank.coverage')}</span>
-        <Link to="/aide" className="font-semibold text-ink underline" data-hook="bank-more">
-          {t('bank.more')}
-        </Link>
-      </p>
 
       {connections.length === 0 ? (
-        <div className="mt-4">
-          <Empty>{t('bank.none')}</Empty>
-          <button
-            className="btn-primary press mt-4 w-full"
-            data-hook="bank-connect"
-            disabled={busy === 'connect'}
-            onClick={() => connect()}
-          >
-            {busy === 'connect' ? t('common.saving') : t('bank.connect')}
-          </button>
-        </div>
+        /* No empty state here. "Aucune banque connectee pour l'instant" sat
+           between the line above and the button below and said the same thing
+           as both: the sentence already explains the offer and the button
+           already says nothing is connected. Three elements for one idea, with
+           py-10 of air around the middle one, on a panel that had just been
+           cut back for being too long. */
+        <button
+          className="btn-primary press mt-4 w-full"
+          data-hook="bank-connect"
+          disabled={busy === 'connect'}
+          onClick={() => connect()}
+        >
+          {busy === 'connect' ? t('common.saving') : t('bank.connect')}
+        </button>
       ) : (
         <>
           <ul className="mt-4 space-y-2" data-hook="bank-list">
