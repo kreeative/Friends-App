@@ -77,7 +77,8 @@ export const FAQ = {
             q: 'Que se passe-t-il si je déconnecte ma banque ?',
             a: [
               'La clé d’accès est révoquée chez Plaid puis effacée chez nous, et l’application ne peut plus rien lire de ton compte.',
-              'Tes transactions déjà importées restent dans ton budget. Déconnecter veut dire « arrête de lire mon compte », pas « efface mon historique ».',
+              'Les transactions que cette banque avait importées sont supprimées en même temps : déconnecter défait l’import. C’est irréversible.',
+              'Ce que tu as saisi toi-même n’est pas touché, même une dépense notée pour le même commerce le même jour.',
             ],
           },
         ],
@@ -153,7 +154,8 @@ export const FAQ = {
             q: 'What happens if I disconnect my bank?',
             a: [
               'The access key is revoked at Plaid and then deleted here, and the app can no longer read anything from your account.',
-              'Transactions already imported stay in your budget. Disconnecting means "stop reading my account", not "erase my history".',
+              'The transactions that bank had imported are deleted at the same time: disconnecting undoes the import. This cannot be undone.',
+              'Anything you typed yourself is untouched, even a spend you logged for the same shop on the same day.',
             ],
           },
         ],

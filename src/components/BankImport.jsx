@@ -121,13 +121,26 @@ export default function BankImport({ onImported }) {
     if (out.added > 0 || out.removed > 0) await onImported?.()
   }
 
-  const disconnect = async (itemId) => {
-    if (!window.confirm(t('bank.disconnect_confirm'))) return
-    setBusy(itemId); setError(null)
-    const out = await disconnectBank(itemId)
+  const disconnect = async (item) => {
+    /* The count is in the confirmation because this is irreversible and the
+       number is the whole decision: "disconnect?" and "delete 312
+       transactions?" are different questions and only one of them was being
+       asked. n comes from my_bank_connections, which counts the link rows. */
+    const n = item.imported ?? 0
+    const ask = n > 0
+      ? t('bank.disconnect_confirm_n', { n })
+      : t('bank.disconnect_confirm')
+    if (!window.confirm(ask)) return
+
+    setBusy(item.item_id); setError(null)
+    const out = await disconnectBank(item.item_id)
     setBusy('')
     if (out.error) return setError(fromServer(out))
     await refresh()
+    /* The ledger behind this panel just lost rows. Without this the page keeps
+       showing transactions that no longer exist until something else reloads,
+       which is the same complaint that started this: they are "still there". */
+    if ((out.removed_entries ?? 0) > 0) await onImported?.()
   }
 
   return (
@@ -202,7 +215,7 @@ export default function BankImport({ onImported }) {
                     className="goal-action press"
                     data-hook="bank-disconnect"
                     disabled={busy === c.item_id}
-                    onClick={() => disconnect(c.item_id)}
+                    onClick={() => disconnect(c)}
                   >
                     {t('bank.disconnect')}
                   </button>

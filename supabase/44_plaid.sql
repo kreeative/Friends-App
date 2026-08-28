@@ -214,15 +214,29 @@ grant execute on function my_bank_connections() to authenticated;
 -- api/plaid/disconnect.js does both halves in that order, and deletes the row
 -- with the service role scoped by user_id.
 --
--- WHAT DISCONNECTING DELIBERATELY DOES NOT DO IS DELETE THE TRANSACTIONS.
+-- DISCONNECTING NOW DELETES THE IMPORTED TRANSACTIONS.
 --
--- The imported rows are the person's budget. Somebody unlinking a bank is
--- saying "stop reading my account", not "erase four months of my spending
--- history", and quietly doing the second because they asked for the first
--- would be the single most destructive thing in this schema.
+-- This file used to argue the opposite, at length: that unlinking a bank means
+-- "stop reading my account" and not "erase my history". That was overruled by
+-- the person whose product it is, and the reasoning against it was weaker than
+-- it looked: an app that leaves several hundred imported rows behind after you
+-- disconnect leaves you deleting them one at a time.
 --
--- The plaid_entry rows are kept too, so that re-linking the same bank does not
--- re-import everything that was already imported once.
+-- api/plaid/disconnect.js removes the budget_entry rows this import created,
+-- found through plaid_entry, then the plaid_entry rows, then plaid_item. Only
+-- rows the import created are touched; anything typed by hand has no link row
+-- and is never reached.
+--
+-- The confirmation names the count before any of it happens, because
+-- "disconnect?" and "delete 312 transactions?" are different questions.
+--
+-- NOTE THAT THIS CHANGES WHY entry_id IS `on delete set null` ABOVE.
+--
+-- That column still matters, and for the same reason as before: while a bank
+-- is CONNECTED, deleting an imported transaction by hand must not invite the
+-- next sync to re-import it, so the link row outlives the entry. Disconnecting
+-- is the one moment both go, and it goes through the route rather than through
+-- a cascade, so the constraint above stays exactly as it is.
 -- ============================================================================
 
 drop function if exists disconnect_bank(text);
