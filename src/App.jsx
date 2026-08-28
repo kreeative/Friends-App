@@ -27,6 +27,7 @@ import Home from './pages/public/Home'
 import How from './pages/public/How'
 import About from './pages/public/About'
 import Books from './pages/public/Books'
+import Faq from './pages/public/Faq'
 import Studies from './pages/public/Studies'
 import Study from './pages/public/Study'
 import Preview from './pages/public/Preview'
@@ -148,6 +149,12 @@ const PUBLIC_ROUTES = (
     <Route path="etudes/:slug" element={<Study />} />
     <Route path="studies" element={<Studies />} />
     <Route path="studies/:slug" element={<Study />} />
+    {/* Both spellings, like the studies above: the app is bilingual and a
+        shared link should not stop working because it was copied from the
+        other language. */}
+    <Route path="aide" element={<Faq />} />
+    <Route path="faq" element={<Faq />} />
+    <Route path="help" element={<Faq />} />
     <Route path="*" element={<Navigate to="/" replace />} />
   </Route>
 )
@@ -291,6 +298,9 @@ function Gate() {
         <Route path="etudes" element={<Studies />} />
         <Route path="etudes/:slug" element={<Study />} />
         <Route path="studies" element={<Navigate to="/etudes" replace />} />
+        <Route path="aide" element={<Faq />} />
+        <Route path="faq" element={<Faq />} />
+        <Route path="help" element={<Faq />} />
         <Route path="studies/:slug" element={<Study />} />
 
         {/**
