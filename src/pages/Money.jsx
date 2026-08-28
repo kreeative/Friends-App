@@ -977,6 +977,22 @@ export default function Money() {
            * history and never reached the summary, so a transaction marked as
            * not counting looked exactly like one that did.
            */}
+          {/**
+           * CONNECTING A BANK LIVES ON THE FRONT DOOR, NOT BEHIND "VOIR TOUT".
+           *
+           * It was on /money/history, which is reached only by the small link
+           * beside the RECENT heading. That is a fine place for the full
+           * transaction list and a hopeless one for a feature somebody is
+           * looking for: "where is the plaid button" is what happens when the
+           * only way in is a link that says something else.
+           *
+           * It is compact until it has something to say. With no bank linked
+           * it is a title, one line and one button.
+           */}
+          <Section>
+            <BankImport onImported={load} />
+          </Section>
+
           <Section
             title={t('money.recent')}
             action={
@@ -1068,23 +1084,15 @@ export default function Money() {
           back button used to be the first thing in its body; the heading
           carries it now, so the page does not offer two ways back. */}
       {pane === 'history' && (
-        <>
-          {/* Above the list, because what it produces is the list. An import
-              control below the transactions it creates is a control nobody
-              scrolls to on the one screen where it is obviously relevant. */}
-          <Section>
-            <BankImport onImported={load} />
-          </Section>
-          <Section>
-            <TransactionHistory
-              entries={entries}
-              currency={s.currency}
-              locale={locale}
-              onOpen={setSheet}
-              onDelete={removeEntry}
-            />
-          </Section>
-        </>
+        <Section>
+          <TransactionHistory
+            entries={entries}
+            currency={s.currency}
+            locale={locale}
+            onOpen={setSheet}
+            onDelete={removeEntry}
+          />
+        </Section>
       )}
 
       {pane === 'plan' && (

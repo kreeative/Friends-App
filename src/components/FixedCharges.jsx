@@ -127,6 +127,25 @@ export default function FixedCharges({ fixed = [], s, locale, onChange }) {
       await supabase.from('budget_entry').delete().eq('id', row.paid_entry_id)
     }
 
+    /**
+     * THE ENTRY IS TAKEN BACK IF THE MARK FAILED.
+     *
+     * The comment above says the worst case of writing the entry first is "an
+     * orphan transaction the person can see and delete". That was too kind.
+     * Measured against a database with 35 run but not 43: the insert succeeds,
+     * the update fails on the missing paid_entry_id column, the function
+     * returns WITHOUT calling onChange, so the screen never refreshes and the
+     * charge still reads unpaid. The person taps Payer again. Another entry.
+     * And again. It is a duplicate generator with an error message on top, and
+     * none of the copies is visible until the next reload.
+     *
+     * So a failed mark undoes its own write. The tap becomes all-or-nothing,
+     * which is what it looked like it already was.
+     */
+    if (failed && paying && patch.paid_entry_id) {
+      await supabase.from('budget_entry').delete().eq('id', patch.paid_entry_id)
+    }
+
     setBusy(null)
     if (failed) {
       /* Migration 35 not run yet. Saying which one is the difference between
