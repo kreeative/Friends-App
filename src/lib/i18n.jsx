@@ -923,6 +923,17 @@ const STRINGS = {
     'me.preferences': 'Preferences',
     'me.your_goals': 'Your own goals',
     'me.profile': 'Profile',
+    /* The settings screen behind the gear. 'account.*' rather than more
+       'me.*' keys: this is a different page answering a different question,
+       and folding it into the profile's namespace is how two screens end up
+       sharing strings that then cannot be changed independently. */
+    'account.title': 'Settings',
+    'account.support': 'Support',
+    'account.faq': 'Help and frequently asked questions',
+    'account.contact': 'Contact us',
+    'account.info': 'Information and links',
+    'account.about': 'About Rich & Friends',
+    'common.back': 'Back',
     'me.name': 'Your name',
     'me.name_hint': 'What your groups see. Nobody sees your email address.',
     'me.name_failed': 'That did not save. Check your connection and try again.',
@@ -1048,7 +1059,6 @@ const STRINGS = {
     'me.legend_away': 'Away',
     'me.legend_missed': 'Missed',
     'me.sign_out': 'Sign out',
-    'me.profile_settings': 'Profile & Settings',
     'me.one_thing': 'One thing',
 
     'settings.group_rate': 'Group daily goal rate',
@@ -2013,6 +2023,13 @@ const STRINGS = {
     'me.preferences': 'Préférences',
     'me.your_goals': 'Tes propres objectifs',
     'me.profile': 'Profil',
+    'account.title': 'Réglages',
+    'account.support': 'Aide',
+    'account.faq': 'Aide et questions fréquentes',
+    'account.contact': 'Nous contacter',
+    'account.info': 'Informations et liens',
+    'account.about': 'À propos de Rich & Friends',
+    'common.back': 'Retour',
     'me.name': 'Ton nom',
     'me.name_hint': 'Ce que tes groupes voient. Personne ne voit ton adresse e-mail.',
     'me.name_failed': 'Ça n’a pas été enregistré. Vérifie ta connexion et réessaie.',
@@ -2140,7 +2157,6 @@ const STRINGS = {
     'me.legend_away': 'Absent',
     'me.legend_missed': 'Manqué',
     'me.sign_out': 'Se déconnecter',
-    'me.profile_settings': 'Profil et réglages',
     'me.one_thing': 'Une seule chose',
 
     'settings.group_rate': 'Taux quotidien du groupe',

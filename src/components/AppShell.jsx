@@ -97,40 +97,18 @@ function useAutoFlush() {
 }
 
 /**
- * Home, who you are, and the way out. Present on every screen.
+ * Home, which group you are in, and you. Present on every screen.
  *
- * The account menu opens **inside the bar** rather than as a sheet floating
- * under it. The floating version was a second white card laid over the page,
- * with its own rim and its own shadow, hanging off the corner of a bar that
- * already had both. Two stacked sheets for four lines of text reads as a
- * dialog, and on a narrow phone the 240px panel came within a few pixels of
- * the opposite edge of the screen it was supposed to be a corner of.
- *
- * Expanding the bar keeps one sheet on screen. The name, the address and the
- * two things you can do sit inside the border and the padding the bar already
- * has, so nothing new is drawn, the chrome simply gets taller.
- *
- * The animation is the same CSS grid trick MoodToday uses: grid-template-rows
- * from 0fr to 1fr resolves to the content's real height with nothing measured
- * and no dependency. See that file for the longer argument.
+ * There used to be an account panel that expanded inside the bar, holding the
+ * name, the email, a link to the profile and a sign-out. It is gone: it was a
+ * table of contents for a page one tap away that opens with the same name and
+ * the same email. The avatar is that link now.
  */
 function TopNav() {
-  const { user, profile, signOut } = useAuth()
+  const { profile } = useAuth()
   const { activeId, group } = useGroup()
   const { t } = useT()
   const { pathname } = useLocation()
-  const [menu, setMenu] = useState(false)
-
-  // A menu that survives navigation is a menu covering the page you asked for.
-  useEffect(() => setMenu(false), [pathname])
-
-  useEffect(() => {
-    if (!menu) return
-    const onKey = (e) => e.key === 'Escape' && setMenu(false)
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [menu])
-
   return (
     <header className="sticky top-0 z-40 px-4 pt-4">
       <nav className="lg lg-chrome mx-auto w-full max-w-content">
@@ -157,53 +135,30 @@ function TopNav() {
               </>
             )}
 
-            <button
-              onClick={() => setMenu((v) => !v)}
-              aria-expanded={menu}
-              aria-controls="account-panel"
+            {/**
+             * THE AVATAR IS A LINK NOW, NOT A MENU.
+             *
+             * It used to expand the bar into a panel holding a name, an email,
+             * "Profil et reglages" and "Se deconnecter". Four lines and two
+             * taps to reach a page that shows the same name and email at the
+             * top, plus everything else. The panel was a table of contents for
+             * a screen one tap away.
+             *
+             * So the avatar goes straight there. Signing out moved to
+             * /settings, behind the gear on that page, which is one tap
+             * further than before and is the correct distance for the control
+             * that ends the session.
+             */}
+            <Link
+              to="/profile"
               aria-label={t('nav.you')}
+              data-hook="to-profile"
               className="press ml-auto block shrink-0 rounded-pill"
             >
               <Avatar profile={profile} size={32} />
-            </button>
+            </Link>
           </div>
 
-          <div
-            id="account-panel"
-            className={`grid transition-[grid-template-rows,opacity] duration-300 ease-settle motion-reduce:transition-none ${
-              menu ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
-            }`}
-            aria-hidden={!menu}
-          >
-            {/* The clip is what makes the closed state actually zero-height
-                rather than squashed, and it takes the spacing with it, so a
-                shut panel adds nothing at all to the bar. */}
-            <div className="overflow-hidden">
-              {/* inert while collapsed, so a closed panel is not a tab stop */}
-              <fieldset disabled={!menu} className="mt-2.5 border-0 border-t border-hairline p-0 pt-2.5">
-                <p className="truncate px-3 text-small font-semibold text-ink">
-                  {profile?.display_name}
-                </p>
-                <p className="truncate px-3 text-small text-muted">{user?.email}</p>
-
-                <div className="mt-2">
-                  <Link
-                    to="/me"
-                    tabIndex={menu ? undefined : -1}
-                    className="block rounded-inner px-3 py-2.5 text-small text-ink no-underline transition-colors hover:bg-ink/[0.06]"
-                  >
-                    {t('me.profile_settings')}
-                  </Link>
-                  <button
-                    onClick={signOut}
-                    className="block w-full rounded-inner px-3 py-2.5 text-left text-small text-ink transition-colors hover:bg-ink/[0.06]"
-                  >
-                    {t('me.sign_out')}
-                  </button>
-                </div>
-              </fieldset>
-            </div>
-          </div>
         </div>
       </nav>
     </header>
