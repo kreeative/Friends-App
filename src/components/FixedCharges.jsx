@@ -22,13 +22,37 @@ import { errorText, isMissingColumn } from '../lib/dberr'
  * due again by itself when the period rolls over. See the note on that
  * migration.
  *
- * WHY THIS DOES NOT ALSO LOG A TRANSACTION.
+ * IT LOGS THE TRANSACTION TOO, AND THAT IS A CORRECTION.
  *
- * Because they are two different claims and somebody may want either, or both.
- * "The rent went out" is a fact about a plan being met; "I spent 500 on home"
- * is a line in the ledger. Doing both from one tap would double-count for
- * anybody who then logs the transaction themselves, and summarise is careful to
- * subtract each exactly once precisely because they are separate.
+ * This used to write only the date, with a comment here arguing that also
+ * logging a transaction would double-count for anybody who then logged it by
+ * hand. That risk is real and it was the wrong thing to optimise for, because
+ * the DEFAULT path was giving a wrong number. Measured, on a 3 000 income with
+ * a 1 000 rent:
+ *
+ *   before Payer   reste a depenser = 2 000
+ *   after  Payer   reste a depenser = 3 000
+ *
+ * Paying the rent made the app say there was a thousand more to spend.
+ * available = (earned - spent) - fixedDue, so moving a charge out of fixedDue
+ * without moving anything into spent lifts the answer by exactly the charge.
+ * Both halves move or neither does.
+ *
+ * Now both move: the tap writes the date AND the ledger line, available stays
+ * put, and the transaction that really happened is in the log where somebody
+ * can see it. Un-tapping removes the line it wrote.
+ *
+ * WHICH LINE IT WROTE IS REMEMBERED, NOT GUESSED.
+ *
+ * budget_fixed.paid_entry_id (migration 43). Finding it again by matching
+ * label, amount and date would also match a spend the person entered
+ * themselves for the same rent on the same day, and deleting somebody's own
+ * row because it resembles ours is not a tidy-up.
+ *
+ * AND THE PERSON IS TOLD NOT TO LOG IT TWICE.
+ *
+ * Which is the other half of the fix, and it lives in the guide: see
+ * money.guide_* in i18n and the note under this list.
  */
 export default function FixedCharges({ fixed = [], s, locale, onChange }) {
   const { t } = useT()
@@ -54,11 +78,54 @@ export default function FixedCharges({ fixed = [], s, locale, onChange }) {
     setBusy(row.id)
     setError(null)
 
-    const next = paidThisPeriod(row) ? null : localISO(new Date())
+    const paying = !paidThisPeriod(row)
+    const next = paying ? localISO(new Date()) : null
+    const patch = { last_paid_on: next }
+
+    /**
+     * The ledger line, written before the charge is marked.
+     *
+     * This order matters. If the entry is written and the update then fails,
+     * the worst case is an orphan transaction the person can see and delete.
+     * The other order leaves a charge marked paid with no money having moved,
+     * which is the silent version of the exact bug being fixed.
+     *
+     * `home` because the six categories are a life's categories and a fixed
+     * charge is a standing cost of living in it. The note carries the charge's
+     * own name, so the row reads "Loyer" in the log rather than "home".
+     */
+    if (paying) {
+      const { data, error: failedEntry } = await supabase
+        .from('budget_entry')
+        .insert({
+          user_id: row.user_id,
+          kind: 'expense',
+          amount_cents: row.amount_cents,
+          category: 'home',
+          note: row.label,
+          happened_on: next,
+        })
+        .select('id')
+        .single()
+
+      if (failedEntry) {
+        setBusy(null)
+        return setError(errorText(failedEntry))
+      }
+      patch.paid_entry_id = data.id
+    }
+
     const { error: failed } = await supabase
       .from('budget_fixed')
-      .update({ last_paid_on: next })
+      .update(patch)
       .eq('id', row.id)
+
+    /* Un-paying removes the line the tap created, and only that line. A row
+       the person typed themselves is not touched, because it is not the id
+       the charge remembers. */
+    if (!failed && !paying && row.paid_entry_id) {
+      await supabase.from('budget_entry').delete().eq('id', row.paid_entry_id)
+    }
 
     setBusy(null)
     if (failed) {
@@ -69,7 +136,9 @@ export default function FixedCharges({ fixed = [], s, locale, onChange }) {
            migration name in the console where somebody can act on it. */
         isMissingColumn(failed, 'last_paid_on')
           ? (console.warn('last_paid_on is missing: run supabase/35_fixed_paid.sql'), t('money.paid_unavailable'))
-          : errorText(failed),
+          : isMissingColumn(failed, 'paid_entry_id')
+            ? (console.warn('paid_entry_id is missing: run supabase/43_fixed_charge_entry.sql'), t('money.paid_unavailable'))
+            : errorText(failed),
       )
       return
     }
@@ -146,6 +215,43 @@ export default function FixedCharges({ fixed = [], s, locale, onChange }) {
           {error}
         </p>
       )}
+
+      {/**
+       * THE CREDIT CARD RULE, WHERE THE BUTTON IS.
+       *
+       * Tapping Payer now writes the ledger line itself, which is what makes
+       * the arithmetic right. It also creates exactly one way to get it wrong:
+       * entering the same charge again by hand, which counts the money twice.
+       *
+       * The commonest version of that is a credit card. You buy groceries on
+       * the card and log 50, then you transfer 100 from your account to clear
+       * the card and log that too. The 50 is now counted twice and the account
+       * transfer was never a new expense at all.
+       *
+       * So the rule is written at the foot of the list rather than in a guide
+       * somebody would have to go and find. It is the last thing under the
+       * buttons it is about.
+       */}
+      <details className="group py-3" data-hook="fixed-card-rule">
+        <summary
+          className="press flex cursor-pointer list-none items-center justify-between gap-3 py-1
+                     text-label font-semibold text-muted [&::-webkit-details-marker]:hidden"
+        >
+          {t('money.card_rule_title')}
+          <span
+            aria-hidden="true"
+            className="flex h-6 w-6 shrink-0 items-center justify-center transition-transform duration-200 ease-settle group-open:rotate-90"
+          >
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 6l6 6-6 6" />
+            </svg>
+          </span>
+        </summary>
+        <p className="pb-1 text-small leading-relaxed text-ink">{t('money.card_rule_1')}</p>
+        <p className="mt-3 text-small leading-relaxed text-ink">{t('money.card_rule_2')}</p>
+        <p className="mt-3 text-small leading-relaxed text-muted">{t('money.card_rule_3')}</p>
+      </details>
+
     </div>
   )
 }

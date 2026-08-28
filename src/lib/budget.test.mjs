@@ -228,5 +228,43 @@ eq('never divides by zero', Number.isFinite(summarise({ plan, fixed, today: new 
   eq('fixedDue has a floor of zero', over.fixedDue >= 0, true)
 }
 
+/* --- paying a fixed charge must not invent money ------------------------- */
+
+/**
+ * The regression this guards is arithmetic, and it shipped:
+ *
+ *   available = (earned - spent) - fixedDue
+ *
+ * Marking a charge paid moves it out of fixedDue. If nothing moves into
+ * `spent`, the answer goes UP by the whole charge, so paying the rent told
+ * somebody they had more to spend than before they paid it. See
+ * supabase/43_fixed_charge_entry.sql and FixedCharges.jsx.
+ */
+{
+  const plan = { monthly_income_cents: 300000, savings_target_cents: 0, currency: 'CAD', period_start_day: 1 }
+  const today = new Date('2026-08-15T12:00:00')
+  const income = [{ id: 'i', kind: 'income', amount_cents: 300000, happened_on: '2026-08-01', excluded: false }]
+  const unpaid = { id: 'f1', label: 'Loyer', amount_cents: 100000, active: true, last_paid_on: null }
+  const paid = { ...unpaid, last_paid_on: '2026-08-05' }
+  const asTxn = { id: 'e', kind: 'expense', amount_cents: 100000, category: 'home', happened_on: '2026-08-05', excluded: false }
+
+  const before = summarise({ plan, fixed: [unpaid], entries: income, today })
+  eq('before paying, 2 000 is available', before.available, 200000)
+
+  const markOnly = summarise({ plan, fixed: [paid], entries: income, today })
+  eq('marking paid WITHOUT the transaction inflates it, which was the bug',
+     markOnly.available, 300000)
+
+  const both = summarise({ plan, fixed: [paid], entries: [...income, asTxn], today })
+  eq('marking paid AND logging the transaction leaves it alone',
+     both.available, before.available)
+  eq('and the money shows as spent, because it was', [both.spent, both.fixedDue], [100000, 0])
+
+  /* The other direction: un-paying puts the charge back and removes the line,
+     which has to return to exactly where it started. */
+  const undone = summarise({ plan, fixed: [unpaid], entries: income, today })
+  eq('un-paying returns to the starting figure', undone.available, before.available)
+}
+
 console.log(`\n${pass} passed, ${fail} failed`)
 process.exit(fail ? 1 : 0)
