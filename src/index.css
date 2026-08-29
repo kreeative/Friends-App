@@ -1416,16 +1416,23 @@
    * Used by the money screen when a plan does not close: fixed costs plus
    * savings exceed income, so there is no daily allowance to show. It leans on
    * the yellow field rather than the accent, because the accent is the colour
-   * of things you are invited to tap and this is not an invitation. The left
-   * rule carries the emphasis so the message is not hue-only, which matters
-   * both for contrast and for anyone who cannot separate the two.
+   * of things you are invited to tap and this is not an invitation.
+   *
+   * THE LEFT RULE IS GONE.
+   *
+   * It was a 4px stripe in the deep yellow down the edge, and it was doing two
+   * jobs: emphasis, and keeping the warning from being hue-only for 1.4.1. The
+   * emphasis was never needed, because --c-field at full strength is a solid
+   * golden panel and there is nothing subtle about it. The 1.4.1 job is now
+   * done by AlertIcon in the markup, which is better at it: a stripe says only
+   * that a panel is special, a glyph says what kind of special before anybody
+   * reads the heading.
+   *
+   * What is left is a plain filled card, which is what the rest of the app is
+   * made of.
    */
   .card-warn {
-    /* The rule takes the deep yellow and the wash takes the pale one. A 4px
-       stripe in #FEF9C3 on a blush page is not a stripe, it is nothing, which
-       is the one thing a warning must not be. The wash goes to full strength
-       for the same reason in reverse: at 15% the new field is invisible. */
-    @apply rounded-card border-l-4 border-field-deep bg-field p-6;
+    @apply rounded-card bg-field p-6;
   }
 
   /* --- chips ------------------------------------------------------------ */

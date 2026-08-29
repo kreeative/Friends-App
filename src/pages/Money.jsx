@@ -13,7 +13,7 @@ import { ageBandOf, ageOf, detectCountry, spendOver } from '../lib/benchmarks'
 import { history as savingsHistory, recentRate, savedTotal } from '../lib/savings'
 import { fromCents, localISO, toCents, txnPayload, withoutField } from '../lib/txn'
 import { heroClass } from '../lib/amount'
-import { Empty, Screen, Section, TopBar } from '../components/ui'
+import { AlertIcon, Empty, Screen, Section, TopBar } from '../components/ui'
 import { PlanIcon, SuitcaseIcon } from '../components/ActionBar'
 import BudgetShortcuts from '../components/BudgetShortcuts'
 import FeatureCards from '../components/FeatureCards'
@@ -931,15 +931,28 @@ export default function Money() {
            */}
           <Section>
             {s.overcommitted ? (
-              <div className="card-warn">
-                <div className="text-h2 text-ink">{t('money.overcommitted_title')}</div>
-                <p className="mt-2 text-body text-muted">
-                  {t('money.overcommitted_body', {
-                    over: fmt(Math.abs(s.plannedPool)),
-                    fixed: fmt(s.committed + s.savings),
-                    income: fmt(s.income),
-                  })}
-                </p>
+              <div className="card-warn" data-hook="overcommitted">
+                {/* The glyph replaces the rule that used to run down the left
+                    edge. It is what keeps this from being a warning carried by
+                    hue alone, and it sits on the heading's line rather than
+                    above it so the panel still opens on a sentence. */}
+                <div className="flex items-start gap-3">
+                  <AlertIcon className="mt-0.5 h-6 w-6 shrink-0 text-on-field" />
+                  <div className="min-w-0">
+                    <div className="text-h2 text-on-field">{t('money.overcommitted_title')}</div>
+                    {/* on-field, not muted. --c-muted was chosen against white
+                        and measures far worse on a full-strength golden panel,
+                        which is the wrong paragraph in the app to make anyone
+                        squint at. */}
+                    <p className="mt-2 text-body text-on-field/80">
+                      {t('money.overcommitted_body', {
+                        over: fmt(Math.abs(s.plannedPool)),
+                        fixed: fmt(s.committed + s.savings),
+                        income: fmt(s.income),
+                      })}
+                    </p>
+                  </div>
+                </div>
               </div>
             ) : (
               <SpendableBar bar={bar} currency={s.currency} locale={locale} />

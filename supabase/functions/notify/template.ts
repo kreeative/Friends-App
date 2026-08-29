@@ -24,10 +24,16 @@ const SITE = Deno.env.get('SITE_URL') ?? 'https://richandfriends.xyz'
    consistent is the only honest option. */
 const INK = '#A91C54'
 const ACCENT = '#DE3578'
-const YELLOW = '#F8CB02'
+/* The yellow that used to stripe the left edge of every list card went with
+   the stripe. Left as a comment rather than an unused constant, because a
+   colour sitting in a palette that nothing paints is an invitation to paint
+   something with it. */
 const PAPER = '#FFFFFF'
 const WALL = '#FBF7F8'
 const MUTED = '#8A6076'
+/* The site's own --c-hairline. A closed 1px outline is what marks a card here
+   now, replacing a stripe hanging off its left edge. */
+const HAIR = '#F0E2E7'
 
 const FONT =
   "'Montserrat','Segoe UI',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif"
@@ -54,9 +60,22 @@ function renderBlock(b: Block): string {
       return `<div style="height:1px;line-height:1px;font-size:0;background:#EFE3E8;margin:26px 0;">&nbsp;</div>`
 
     /**
-     * The commitments. A bordered card per goal rather than bullets: the
-     * whole message exists to make these three lines easy to look at, and a
-     * dash in front of a sentence is not a design.
+     * The commitments. A card per item rather than bullets: the whole message
+     * exists to make these lines easy to look at, and a dash in front of a
+     * sentence is not a design.
+     *
+     * A CLOSED OUTLINE, NOT A STRIPE.
+     *
+     * Each of these used to be a pale fill with a 3px yellow bar down the left
+     * edge. The bar was load-bearing: WALL on PAPER is #FBF7F8 on white, which
+     * is very nearly nothing, so without it the cards would have dissolved
+     * into the message. Rather than keep the stripe, the card now carries a 1px
+     * outline the whole way round, which is what marks a card everywhere else
+     * and does not leave a coloured tab hanging off one side.
+     *
+     * Kept simple on purpose. This renders in Outlook, where a border on a td
+     * is one of the few things that behaves; anything cleverer degrades into
+     * exactly the artefact it was trying to avoid.
      */
     case 'list':
       return b.items
@@ -64,7 +83,7 @@ function renderBlock(b: Block): string {
           (it) => `
 <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 10px;">
   <tr>
-    <td style="background:${WALL};border-left:3px solid ${YELLOW};border-radius:10px;padding:14px 16px;">
+    <td style="background:${PAPER};border:1px solid ${HAIR};border-radius:12px;padding:15px 17px;">
       <div style="font-family:${FONT};font-size:15px;line-height:1.4;color:${INK};font-weight:700;">${esc(it.title)}</div>
       ${
         it.note

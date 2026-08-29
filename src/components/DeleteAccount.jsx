@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useT } from '../lib/i18n'
 import { errorText } from '../lib/dberr'
+import { AlertIcon } from './ui'
 
 /**
  * Closing the account, from inside the app.
@@ -76,14 +77,32 @@ export default function DeleteAccount() {
     )
   }
 
+  /**
+   * THE LEFT RULE IS GONE, AND HERE IT WAS DOING REAL WORK.
+   *
+   * The wash is negative at 5%, which on a blush page is very nearly white.
+   * The 4px stripe was the only thing making this read as a panel at all, so
+   * deleting it and stopping there would have left a paragraph floating on the
+   * page immediately before the one action in the app that nothing undoes.
+   *
+   * A hairline all the way round replaces it. It closes the shape instead of
+   * hanging off one side, which is what every current destructive-zone pattern
+   * does, and AlertIcon carries the "this is a warning" signal that the
+   * stripe's colour used to carry on its own.
+   */
   return (
-    <div className="animate-rise rounded-card border-l-4 border-negative bg-negative/[0.05] p-5">
-      <h3 className="text-body font-semibold text-ink">{t('danger.title')}</h3>
-      {/* Ink, not muted. On the panel's tinted ground muted measures 4.16:1,
-          under the bar, and this is the wrong paragraph in the app to make
-          people squint at: it is the list of what they are about to lose,
-          read once, immediately before an action nothing undoes. */}
-      <p className="mt-2 max-w-[46ch] text-small text-ink">{t('danger.body')}</p>
+    <div className="animate-rise rounded-card border border-negative/30 bg-negative/[0.05] p-5">
+      <div className="flex items-start gap-3">
+        <AlertIcon className="mt-0.5 h-5 w-5 shrink-0 text-negative" />
+        <div className="min-w-0">
+          <h3 className="text-body font-semibold text-ink">{t('danger.title')}</h3>
+          {/* Ink, not muted. On the panel's tinted ground muted measures 4.16:1,
+              under the bar, and this is the wrong paragraph in the app to make
+              people squint at: it is the list of what they are about to lose,
+              read once, immediately before an action nothing undoes. */}
+          <p className="mt-2 max-w-[46ch] text-small text-ink">{t('danger.body')}</p>
+        </div>
+      </div>
 
       <label className="mt-5 block">
         <span className="field-label">{t('danger.confirm_label', { word })}</span>
