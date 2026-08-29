@@ -192,11 +192,16 @@ export default function Home() {
               <li key={r.why} data-reason="">
                 <h3 className="max-w-[30ch] text-body font-bold leading-snug text-ink">{r.why}</h3>
                 <p className="mt-2 max-w-[52ch] text-small leading-relaxed text-muted">{r.body}</p>
-                {/* The remedy, marked by a rule in the accent rather than by a
-                    word like "solution". A label would make each of these a
-                    little sales pitch; a line just says the sentence after it
-                    is a different kind of sentence. */}
-                <p className="mt-3 max-w-[52ch] border-l-2 border-mark pl-4 text-small leading-relaxed text-ink">
+                {/* The remedy. Still not labelled "solution", because a word
+                    would make each of these a little sales pitch, and the
+                    sentence needs to read as a different kind of sentence
+                    without being announced.
+
+                    It used to be marked by a rule in the accent down its left
+                    edge. It is a soft filled panel now: same job, closed shape,
+                    and it groups the remedy with itself instead of tagging it
+                    from outside. */}
+                <p className="mt-3 max-w-[52ch] rounded-inner bg-mark/[0.07] px-4 py-3 text-small leading-relaxed text-ink">
                   {r.fix}
                 </p>
               </li>

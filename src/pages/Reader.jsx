@@ -73,7 +73,21 @@ function render(md) {
     }
     if (b.startsWith('> ')) {
       return (
-        <blockquote key={i} className="my-8 border-l-2 border-accent pl-5 text-ink/80">
+        /**
+         * A pull quote, marked by size and space rather than by a rule down
+         * its left edge.
+         *
+         * Dropping the rule and changing nothing else would have made a quote
+         * indistinguishable from the paragraph above it, so the marking moved
+         * into the type: larger, lighter in weight than the body around it,
+         * set in muted rather than full ink, and given a lot more room above
+         * and below. Four signals instead of one line, none of them colour on
+         * its own.
+         */
+        <blockquote
+          key={i}
+          className="my-10 text-[1.14em] font-normal leading-relaxed text-muted"
+        >
           {b.replace(/^> ?/gm, '')}
         </blockquote>
       )

@@ -69,7 +69,13 @@ function render(md) {
     }
     if (b.startsWith('> ')) {
       return (
-        <blockquote key={i} className="my-8 border-l-2 border-accent pl-5 text-ink/80">
+        /* Same treatment as the reader: size and space carry the quote, not a
+           rule on the edge. The two have to match, because this page is a
+           sample of that one. */
+        <blockquote
+          key={i}
+          className="my-10 text-[1.14em] font-normal leading-relaxed text-muted"
+        >
           {b.replace(/^> ?/gm, '')}
         </blockquote>
       )

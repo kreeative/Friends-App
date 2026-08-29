@@ -251,3 +251,39 @@ export function Sheet({ open, onClose, title, children }) {
     document.body,
   )
 }
+
+/**
+ * The alert glyph, shared by the two panels carrying news the reader will not
+ * enjoy: the money screen when a plan does not close, and the delete-account
+ * zone.
+ *
+ * WHY IT EXISTS.
+ *
+ * Both panels used to be marked by a 4px rule down the left edge. The rule did
+ * two jobs. It gave the panel emphasis, and it kept the warning from being
+ * carried by hue alone, which is 1.4.1: somebody who cannot separate the
+ * yellow from the page gets nothing at all from a yellow card.
+ *
+ * A glyph does the second job better than a stripe ever did. A stripe says
+ * only that this panel is special; a glyph says what kind of special it is,
+ * before the heading is read. So the stripes are gone and this is what
+ * replaces them.
+ *
+ * aria-hidden on purpose. The heading next to it already says the thing in
+ * words, and a screen reader announcing "alert" first would say it twice.
+ */
+export function AlertIcon({ className = '' }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
+      <circle cx="12" cy="12" r="9.25" fill="none" stroke="currentColor" strokeWidth="1.9" />
+      <path
+        d="M12 7.4v5.4"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.1"
+        strokeLinecap="round"
+      />
+      <circle cx="12" cy="16.5" r="1.15" fill="currentColor" />
+    </svg>
+  )
+}
