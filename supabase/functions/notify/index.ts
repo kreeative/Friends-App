@@ -30,9 +30,85 @@ const supabase = createClient(
 const RESEND_KEY = Deno.env.get('RESEND_API_KEY')
 const MAIL_FROM = Deno.env.get('MAIL_FROM') ?? 'Friends <onboarding@resend.dev>'
 
-async function emailFor(userId: string): Promise<string | null> {
+/**
+ * THE WORDS, IN BOTH LANGUAGES.
+ *
+ * These two messages were English only. The app has been bilingual since it
+ * shipped, but the language lived in localStorage and this function runs with
+ * nobody's browser attached, so it had nothing to read and wrote to everybody
+ * in English. On a product whose own survey is 91 % Ivorian, the single
+ * message sent to somebody who has gone quiet was arriving in a language they
+ * may not read.
+ *
+ * profiles.locale (migration 46) is what fixed that. It is nullable, so a
+ * profile that has never been seen by the client falls back rather than
+ * failing, and `fr` is the fallback rather than `en` because that is what most
+ * of the people this app is for actually speak.
+ *
+ * The copy is here rather than in template.ts because template.ts is layout:
+ * it knows about tables and preheaders and dark mode, and it should not also
+ * be the place two languages are kept in step.
+ */
+type Loc = 'fr' | 'en'
+const localeOf = (raw: unknown): Loc => (raw === 'en' ? 'en' : 'fr')
+
+const COPY = {
+  fr: {
+    digestSubject: (g: string) => `Le point ouvre ce soir. ${g}`,
+    digestTitle: 'Le point ouvre ce soir',
+    digestPre: (g: string, n: number) =>
+      `${g} · ${n} chose${n === 1 ? '' : 's'} a regarder, environ une minute.`,
+    digestLead: 'Ce que tu as dit que tu ferais :',
+    digestCta: 'Faire le point',
+    digestTail: 'Moins d une minute. Rien a rattraper si tu le manques.',
+    nudgeSubject: (g: string) => `Rien ne presse. ${g}`,
+    nudgeTitle: 'Rien ne presse',
+    nudgePre: 'Rien a rattraper. Une seule chose, quand tu veux.',
+    nudgeLead: 'Tu as manque quelques points. C est vraiment pas grave.',
+    nudgeBody:
+      'Quand tu es prete, ouvre l application et touche "Je suis toujours la". Ca met en pause tout ce qui traine et te demande une seule chose. Il n y a pas de retard a combler et rien a expliquer.',
+    nudgeCta: 'Choisir une chose',
+    nudgeFoot: (g: string) => `Envoye une fois, parce que tu es dans ${g}. Il n y en aura pas de deuxieme.`,
+  },
+  en: {
+    digestSubject: (g: string) => `Check-in opens tonight. ${g}`,
+    digestTitle: 'Check-in opens tonight',
+    digestPre: (g: string, n: number) =>
+      `${g} · ${n} thing${n === 1 ? '' : 's'} to look at, about a minute.`,
+    digestLead: 'What you said you would do:',
+    digestCta: 'Check in',
+    digestTail: 'Takes under a minute. Nothing to catch up on if you miss it.',
+    nudgeSubject: (g: string) => `No rush. ${g}`,
+    nudgeTitle: 'No rush',
+    nudgePre: 'Nothing to catch up on. One thing when you are ready.',
+    nudgeLead: 'You have missed a couple of check-ins. That is genuinely fine.',
+    nudgeBody:
+      'When you are ready, open the app and tap "I am still in". It parks everything old and asks for one thing. There is no backlog to clear and nothing to explain.',
+    nudgeCta: 'Pick one thing',
+    nudgeFoot: (g: string) => `Sent once, because you are in ${g}. There is no second one.`,
+  },
+} as const
+
+/**
+ * Where to write, and in which language.
+ *
+ * Two reads rather than one because the address lives in auth.users and the
+ * language in public.profiles, and there is no join across that boundary from
+ * here. Returns null for the whole thing when there is no address, since a
+ * language with nowhere to send it is not worth a second query.
+ */
+async function recipient(userId: string): Promise<{ to: string; loc: Loc } | null> {
   const { data } = await supabase.auth.admin.getUserById(userId)
-  return data?.user?.email ?? null
+  const to = data?.user?.email
+  if (!to) return null
+
+  const { data: prof } = await supabase
+    .from('profiles')
+    .select('locale')
+    .eq('id', userId)
+    .maybeSingle()
+
+  return { to, loc: localeOf(prof?.locale) }
 }
 
 /**
@@ -106,8 +182,9 @@ async function sendDigests() {
       if (!listed.length) continue
       if (!(await claim(m.user_id, cycle.id, 'digest'))) continue
 
-      const to = await emailFor(m.user_id)
-      if (!to) continue
+      const who = await recipient(m.user_id)
+      if (!who) continue
+      const c = COPY[who.loc]
 
       /**
        * The trigger goes in the email.
@@ -124,18 +201,18 @@ async function sendDigests() {
         note: [g.trigger_when, g.trigger_where].filter(Boolean).join(' · ') || undefined,
       }))
 
-      const name = (cycle as any).groups?.name ?? 'your group'
+      const name = (cycle as any).groups?.name ?? (who.loc === 'fr' ? 'ton groupe' : 'your group')
 
-      await send(to, `Check-in opens tonight. ${name}`, {
-        title: 'Check-in opens tonight',
+      await send(who.to, c.digestSubject(name), {
+        title: c.digestTitle,
         // Shown next to the subject in the inbox. Without one, clients scrape
         // the first text in the message, which would be the logo's alt text.
-        preheader: `${name} · ${items.length} thing${items.length === 1 ? '' : 's'} to look at, about a minute.`,
+        preheader: c.digestPre(name, items.length),
         blocks: [
-          { kind: 'lead', text: 'What you said you would do:' },
+          { kind: 'lead', text: c.digestLead },
           { kind: 'list', items },
-          { kind: 'button', label: 'Check in', href: `${SITE}/g/${cycle.group_id}/checkin` },
-          { kind: 'text', text: 'Takes under a minute. Nothing to catch up on if you miss it.' },
+          { kind: 'button', label: c.digestCta, href: `${SITE}/g/${cycle.group_id}/checkin` },
+          { kind: 'text', text: c.digestTail },
         ],
       })
     }
@@ -152,27 +229,27 @@ async function sendNudges() {
   for (const n of nudges ?? []) {
     if (!(await claim(n.subject_id, n.cycle_id, 'nudge'))) continue
 
-    const to = await emailFor(n.subject_id)
-    if (!to) continue
+    const who = await recipient(n.subject_id)
+    if (!who) continue
+    const c = COPY[who.loc]
 
-    const name = (n as any).groups?.name ?? 'your group'
+    const name = (n as any).groups?.name ?? (who.loc === 'fr' ? 'ton groupe' : 'your group')
 
     /* Deliberately the quiet one: no button colour shouting, no count of what
        was missed, no streak language. The whole design of this message is
        that it must not read as a debt collector. */
-    await send(to, `No rush. ${name}`, {
-      title: 'No rush',
-      preheader: 'Nothing to catch up on. One thing when you are ready.',
+    await send(who.to, c.nudgeSubject(name), {
+      title: c.nudgeTitle,
+      preheader: c.nudgePre,
       blocks: [
-        { kind: 'lead', text: 'You have missed a couple of check-ins. That is genuinely fine.' },
-        {
-          kind: 'text',
-          text:
-            'When you are ready, open the app and tap “I’m still in”. It parks everything old and asks for one thing. There is no backlog to clear and nothing to explain.',
-        },
-        { kind: 'button', label: 'Pick one thing', href: `${SITE}/me` },
+        { kind: 'lead', text: c.nudgeLead },
+        { kind: 'text', text: c.nudgeBody },
+        /* /profile, not /me. Both still serve the page, but /profile is the
+           canonical address now and a link in an email outlives the deploy
+           that renamed it. */
+        { kind: 'button', label: c.nudgeCta, href: `${SITE}/profile` },
       ],
-      footnote: `Sent once, because you are in ${name}. There is no second one.`,
+      footnote: c.nudgeFoot(name),
     })
   }
 }

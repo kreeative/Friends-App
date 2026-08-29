@@ -1,4 +1,5 @@
 import { useT } from '../lib/i18n'
+import { useAuth } from '../context/AuthContext'
 
 /**
  * Which language the app speaks.
@@ -21,6 +22,25 @@ const LANGUAGES = [
 
 export default function LanguagePicker({ className = '' }) {
   const { t, locale, setLocale } = useT()
+  const { updateProfile } = useAuth()
+
+  /**
+   * The device decides what you see; the profile decides what you are sent.
+   *
+   * setLocale is what changes the screen, instantly and without a round trip,
+   * and it stays the thing that does that. The profile write is only for
+   * supabase/functions/notify, which sends the reminder emails on a schedule
+   * with no browser involved and therefore cannot read localStorage.
+   *
+   * Not awaited, and its failure is swallowed on purpose. Changing the
+   * language must not wait on the network or fail visibly because the network
+   * did: the screen has already changed, and the worst case is one email in
+   * the previous language until the next time this is touched.
+   */
+  const pick = (code) => {
+    setLocale(code)
+    updateProfile?.({ locale: code })?.catch?.(() => {})
+  }
 
   return (
     <div className={className}>
@@ -31,7 +51,7 @@ export default function LanguagePicker({ className = '' }) {
             <button
               key={code}
               type="button"
-              onClick={() => setLocale(code)}
+              onClick={() => pick(code)}
               /* Pressed rather than checked: these are buttons that act
                  immediately, not a form somebody submits afterwards. */
               aria-pressed={locale === code}

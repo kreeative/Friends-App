@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { localTimezone } from '../lib/time'
 import { detectCurrency } from '../lib/currency'
+import { detectLocale } from '../lib/i18n'
 
 /* Exported so a test or a preview can supply a value without a live session.
    Application code should use the hook. */
@@ -121,13 +122,32 @@ export function AuthProvider({ children }) {
          * back to. Failure is silent: the app reads null as the fallback, and
          * the next sign-in tries again.
          */
+        /**
+         * The currency and the language, together, and only while unset.
+         *
+         * The language is here for one reason: supabase/functions/notify sends
+         * the reminder emails on a schedule with nobody's browser involved, so
+         * it cannot read localStorage and had no way to choose words. It wrote
+         * to everybody in English, on a product whose own survey is 91 %
+         * Ivorian.
+         *
+         * Written once for the same reason the currency is: re-detecting on
+         * every sign-in would overwrite the choice of anybody who picked the
+         * other language on a device whose browser disagrees. The picker keeps
+         * it fresh from then on; see LanguagePicker.
+         */
+        const seed = {}
         if (data && !data.currency) {
-          const guess = detectCurrency(
+          seed.currency = detectCurrency(
             navigator.languages ?? [navigator.language].filter(Boolean),
           )
+        }
+        if (data && !data.locale) seed.locale = detectLocale()
+
+        if (Object.keys(seed).length > 0) {
           const { data: updated } = await supabase
             .from('profiles')
-            .update({ currency: guess })
+            .update(seed)
             .eq('id', session.user.id)
             .select()
             .maybeSingle()
