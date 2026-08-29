@@ -57,6 +57,10 @@ const keysOf = (lang) => [...block(lang).matchAll(/^ {4}(\w+):/gm)].map((m) => m
   for (const key of [
     'digestSubject', 'digestTitle', 'digestPre', 'digestLead', 'digestCta', 'digestTail',
     'nudgeSubject', 'nudgeTitle', 'nudgePre', 'nudgeLead', 'nudgeBody', 'nudgeCta', 'nudgeFoot',
+    'nudgeFromSubject', 'nudgeFromTitle', 'nudgeFromLead',
+    'birthdaySubject', 'birthdayTitle', 'birthdayPre', 'birthdayLead', 'birthdayNote',
+    'birthdayCta', 'birthdayFoot',
+    'smallPrint',
   ]) {
     ok(`both languages define ${key}`, fr.includes(key) && en.includes(key))
   }
@@ -79,8 +83,10 @@ const keysOf = (lang) => [...block(lang).matchAll(/^ {4}(\w+):/gm)].map((m) => m
 {
   ok('the recipient lookup reads profiles.locale',
      /from\('profiles'\)[\s\S]{0,80}select\('locale'\)/.test(src))
-  ok('and both senders use the copy table rather than literals',
-     (src.match(/COPY\[who\.loc\]/g) ?? []).length === 2,
+  /* One per sender: digest, nudge, birthday. Counted rather than named so
+     that adding a fourth kind and hard-coding its words trips this. */
+  ok('and every sender uses the copy table rather than literals',
+     (src.match(/COPY\[who\.loc\]/g) ?? []).length === 3,
      String((src.match(/COPY\[who\.loc\]/g) ?? []).length))
 
   /* The English strings that used to be inline. If any of these comes back as
@@ -98,26 +104,60 @@ const keysOf = (lang) => [...block(lang).matchAll(/^ {4}(\w+):/gm)].map((m) => m
 /* --- the nudge opens on the gesture, not on the absence ------------------ */
 
 {
-  /** One string literal out of a language block, e.g. nudgeLead. */
-  const line = (lang, key) =>
-    block(lang).match(new RegExp(`${key}:\\s*\\n?\\s*'([^']*)'`))?.[1] ?? ''
-
-  /* The email and the in-app card were changed together and for the same
-     reason. Six cards that each opened with "X has been quiet for a couple of
-     weeks" stacked six reproaches at the top of the board, so the heading is
-     now what you can do and the absence sits under it in grey.
-
-     This message has the same job and a harder audience: it is the only thing
-     the app sends to somebody who has already stopped opening it, and there is
-     exactly one per cycle. Opening it by telling them what they missed spends
-     that one chance informing them of something they know. */
-  for (const lang of ['fr', 'en']) {
-    const lead = line(lang, 'nudgeLead')
-    ok(`the ${lang} nudge has a lead`, lead.length > 0)
-    ok(`the ${lang} nudge does not open on what was missed`,
-       !/manqu|missed|oubli|forgot|depuis \d|weeks? (now|already)/i.test(lead),
-       lead)
+  /** The words of one key, whether it is a plain string or an arrow returning
+      a template. Reading only `'...'` silently returned '' the moment a key
+      grew a parameter, which passed a "does not say X" check by looking at an
+      empty string. */
+  const line = (lang, key) => {
+    const b = block(lang)
+    const at = b.search(new RegExp(`^ {4}${key}:`, 'm'))
+    if (at < 0) return ''
+    /* To the next key, which is the next line starting at exactly four spaces
+       and then something. Not `\n    `, which also matches the first four
+       spaces of a six-space continuation line and cuts a wrapped value in
+       half, returning only the part before the wrap. */
+    const rest = b.slice(at + 1)
+    const next = rest.search(/^ {4}\S/m)
+    const upto = next < 0 ? rest : rest.slice(0, next)
+    return [...upto.matchAll(/'([^']*)'|`([^`]*)`/g)].map((m) => m[1] ?? m[2]).join(' ')
   }
+
+  /* WHAT THIS MESSAGE IS ALLOWED TO SAY.
+     It goes to somebody who has been silent a fortnight, there is exactly one
+     per cycle, and it is the only thing the app ever sends them. It SHOULD say
+     that nobody has seen them for two weeks: that is the reason it exists, and
+     leaving it out makes an email that arrives for no stated reason.
+
+     What it must not do is keep score. "Tu as manque quelques points" / "You
+     have missed a couple of check-ins" is a tally handed to somebody who is
+     probably not having a good fortnight, and it spends the one message on
+     telling them something they already know about themselves. The line below
+     matches verbs of failure, not the fact of the two weeks. */
+  for (const lang of ['fr', 'en']) {
+    for (const key of ['nudgeLead', 'nudgeFromLead']) {
+      const lead = line(lang, key)
+      ok(`the ${lang} ${key} has words`, lead.length > 0)
+      ok(`and it does not keep score`, !/manqu|missed|oubli|forgot|rattrap\w* ton retard/i.test(lead), lead)
+    }
+    /* And it does say why it arrived. */
+    ok(`the ${lang} nudge says how long it has been`,
+       /deux semaines|two weeks|couple of weeks/i.test(line(lang, 'nudgeLead')),
+       line(lang, 'nudgeLead'))
+  }
+
+  /* The named version is only reachable from a real claim, and the code is
+     where that is enforced, so this checks the code rather than the words. */
+  ok('the named nudge is built from claimed_by, which is somebody pressing a button',
+     /if \(n\.claimed_by\)/.test(src))
+  /* Comments stripped, for the same reason as the gender check below: the note
+     inside sendNudges names assigned_to in order to say why it is not used. */
+  const nudgeCode = src
+    .slice(src.indexOf('async function sendNudges'))
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/\/\/.*$/gm, '')
+  ok('and never from assigned_to, which is the app choosing for them',
+     !/assigned_to/.test(nudgeCode),
+     'assigned_to must not decide who the email is from')
 
   /* WHY A GENDER CHECK AT ALL.
      The French said "Quand tu es prete", a feminine agreement in a message
@@ -133,9 +173,76 @@ const keysOf = (lang) => [...block(lang).matchAll(/^ {4}(\w+):/gm)].map((m) => m
        string that gets sent. Removing the quote from the comment would pass
        the test by making the file worse. */
     const fr = block('fr').replace(/\/\*[\s\S]*?\*\//g, '')
-    const gendered = fr.match(/tu es \w*[ée]e\b|tu es (prete|sure|seule)\b/i)
+    /* \p{L} rather than \w, which matches neither ê nor é, so the accented
+       spelling of the exact word this was written for would have walked past
+       it. */
+    const gendered = fr.match(
+      /tu es \p{L}*ée|tu es (prête|prete|sûre|sure|seule|contente|désolée|desolee)\b/iu,
+    )
     ok('the French carries no feminine-only agreement', !gendered, gendered?.[0] ?? '')
+
+    /* AND IT IS ACTUALLY WRITTEN IN FRENCH.
+       This block was ASCII, which in an inbox reads as "C est une question",
+       "Ouvre l application", "Envoye une fois". The apostrophe is ASCII, so
+       nothing technical was forcing that: the strings were single-quoted and
+       dropping the apostrophe was cheaper than escaping it. What arrived
+       looked like a bad machine translation, in the one message this app
+       sends to somebody who has stopped opening it. */
+    ok('the French uses real apostrophes', /’/.test(fr))
+    ok('and real accents', /[àâçéèêîôùû]/i.test(fr))
+    for (const broken of ['C est', 'l application', 'n y a', 'Envoye', 'deuxieme', 'Ca fait']) {
+      ok(`no dropped elision or accent: "${broken}"`, !fr.includes(broken))
+    }
   }
+}
+
+/* --- birthdays, and the shell that wraps every message ------------------- */
+
+{
+  const tpl = readFileSync(
+    join(here, '..', '..', 'supabase', 'functions', 'notify', 'template.ts'),
+    'utf8',
+  )
+
+  /* The layout carried its own sentence of English, three hundred lines away
+     from the copy table, so every French message ended in an English line
+     about a ceiling. Nothing caught it because the copy table only knows about
+     words the senders hand it, and this one was never handed anywhere. */
+  ok('the shell takes its small print from the caller',
+     /smallPrint/.test(tpl) && /\$\{esc\(smallPrint\)\}/.test(tpl))
+  ok('and no longer says it in English in the markup',
+     !tpl.includes('You get at most two of these'))
+  ok('so every send passes a language to the shell',
+     (src.match(/loc: who\.loc/g) ?? []).length === 3,
+     String((src.match(/loc: who\.loc/g) ?? []).length))
+
+  /* Three days is the whole argument for the message existing: on the day
+     itself the only thing left is a text, which is what BirthdayBanner says on
+     screen. A constant so the number is in one place and reviewable. */
+  ok('the birthday lead time is a named constant', /const BIRTHDAY_LEAD_DAYS = \d+/.test(src))
+  ok('and it is three days, not the day itself',
+     src.match(/const BIRTHDAY_LEAD_DAYS = (\d+)/)?.[1] === '3',
+     src.match(/const BIRTHDAY_LEAD_DAYS = (\d+)/)?.[1] ?? 'missing')
+
+  /* Being told your own birthday is coming is the app reminding you of the one
+     date you did not need reminding of, and it also tells you everybody else
+     just got a mail about you. */
+  ok('nobody is sent their own birthday',
+     /c\.user_id !== m\.user_id/.test(src))
+
+  /* Two friends sharing a date must both appear. The ceiling is one row per
+     recipient per cycle per kind, so a message per birthday would mean the
+     second one silently never sends. A list block is the fix and the better
+     message, and it is what the digest already does with goals. */
+  ok('several birthdays on one day go in one message, as a list',
+     /kind: 'list', items: names\.map/.test(src))
+
+  /* Dates without a timezone are the bug that produces one wrong email in
+     March and nothing reproducible in June. */
+  ok('the birthday date is resolved in the group timezone',
+     /timeZone: tz/.test(src) && /monthDayAhead\(\(g as any\)\.timezone/.test(src))
+  ok('and profiles.birthday is read as text, not parsed into a Date',
+     /iso\.slice\(5, 7\)/.test(src) && !/new Date\(b\)/.test(src))
 }
 
 /* --- the ceiling, and where the link points ------------------------------ */

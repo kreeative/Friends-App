@@ -114,17 +114,25 @@ function renderBlock(b: Block): string {
  * @param preheader the line inboxes show next to the subject. Left out, they
  *                  scrape the first text they find, which is usually the
  *                  alt text of the logo.
+ * @param smallPrint the grey line under the card, in the reader's language.
+ *                  It used to be an English string literal down in the markup,
+ *                  which meant every French message ended in an English
+ *                  sentence about a ceiling. The copy table caught none of it,
+ *                  because the copy table only ever knew about the words the
+ *                  senders pass in and this one lived in the layout.
  */
 function layout({
   title,
   preheader,
   blocks,
   footnote,
+  smallPrint,
 }: {
   title: string
   preheader: string
   blocks: Block[]
   footnote?: string
+  smallPrint: string
 }): string {
   return `<!doctype html>
 <html lang="en">
@@ -169,10 +177,7 @@ function layout({
           <td style="padding:22px 8px 0;font-family:${FONT};font-size:12px;line-height:1.6;color:${MUTED};">
             <a href="${SITE}" style="color:${MUTED};text-decoration:underline;">richandfriends.xyz</a>
             &nbsp;·&nbsp; Ambition is contagious.
-            <div style="padding-top:8px;">
-              You get at most two of these per check-in cycle. Reminders can be
-              switched off per goal, in the app.
-            </div>
+            <div style="padding-top:8px;">${esc(smallPrint)}</div>
           </td>
         </tr>
 
@@ -211,13 +216,18 @@ function plain(title: string, blocks: Block[], footnote?: string): string {
  * app most needs to reach is the one who has stopped opening it. So the two
  * outbound messages live here, on a schedule, instead of in the client.
  *
- * The ceiling is two emails per person per cycle and it is enforced by the
- * database, not by this code: every send first claims a row in
+ * The ceiling is one email per kind per person per cycle and it is enforced by
+ * the database, not by this code: every send first claims a row in
  * notifications_log, whose unique (user_id, cycle_id, kind) constraint makes a
  * duplicate physically impossible even if this function runs twice.
  *
- *   digest. A few hours before the window opens: what you committed to
- *   nudge . After a missed cycle: one message, no escalation, no streak talk
+ *   digest  . A few hours before the window opens: what you committed to
+ *   nudge   . A day after somebody goes quiet, addressed TO them. If a friend
+ *             volunteered in the app it is sent in that friend's name, which
+ *             is the version that has a chance of working
+ *   birthday. Three days before a friend's birthday, addressed to everybody
+ *             else, because on the day itself it is too late to do anything
+ *             but send a message
  *
  * Deploy:  supabase functions deploy notify --no-verify-jwt
  * Secrets: supabase secrets set RESEND_API_KEY=... MAIL_FROM="Friends <hi@yourdomain>"
@@ -257,30 +267,73 @@ type Loc = 'fr' | 'en'
 const localeOf = (raw: unknown): Loc => (raw === 'en' ? 'en' : 'fr')
 
 const COPY = {
+  /**
+   * DU VRAI FRANCAIS, AVEC LES ACCENTS ET LES APOSTROPHES.
+   *
+   * Ce bloc etait en ASCII pur, et rendu dans une boite de reception ca donnait
+   * "C est une question", "Ouvre l application", "Il n y a pas de retard",
+   * "Envoye une fois". Ce n'est pas une contrainte technique qui produisait ca :
+   * l'apostrophe est de l'ASCII, elle sautait seulement parce que les chaines
+   * etaient entre guillemets simples et que personne ne voulait les echapper.
+   * Le resultat ressemblait a du spam mal traduit, dans le seul message que
+   * l'application envoie a quelqu'un qui ne l'ouvre plus.
+   *
+   * La regle ASCII du depot vise le SQL colle dans l'editeur Supabase, ou un
+   * octet abime donne "invalid byte sequence" et une erreur qui designe la
+   * mauvaise ligne. Ici c'est du TypeScript : un accent abime s'affiche mal,
+   * il ne casse rien, et le fichier transporte deja des caracteres accentues.
+   *
+   * Les guillemets francais sont voulus. Le corps cite un bouton de
+   * l'application, et « ... » evite d'echapper des guillemets droits a
+   * l'interieur d'une chaine qui en est deja entouree.
+   */
   fr: {
     digestSubject: (g: string) => `Le point ouvre ce soir. ${g}`,
     digestTitle: 'Le point ouvre ce soir',
     digestPre: (g: string, n: number) =>
-      `${g} · ${n} chose${n === 1 ? '' : 's'} a regarder, environ une minute.`,
+      `${g} · ${n} chose${n === 1 ? '' : 's'} à regarder, environ une minute.`,
     digestLead: 'Ce que tu as dit que tu ferais :',
     digestCta: 'Faire le point',
-    digestTail: 'Moins d une minute. Rien a rattraper si tu le manques.',
-    nudgeSubject: (g: string) => `Rien ne presse. ${g}`,
-    nudgeTitle: 'Rien ne presse',
-    nudgePre: 'Rien a rattraper. Une seule chose, quand tu veux.',
-    /* Ouvre sur ce qu il y a a faire, pas sur ce qui a ete manque. La version
-       d avant commencait par "Tu as manque quelques points", ce qui apprend a
-       la personne quelque chose qu elle sait deja et le lui apprend en premier.
-       Ce message est la seule chose que l application envoie a quelqu un qui a
-       arrete de l ouvrir : il ne doit pas commencer par un reproche.
+    digestTail: 'Moins d’une minute. Rien à rattraper si tu le manques.',
 
-       "Quand tu es prete" a aussi disparu. C est un accord feminin dans un
-       message envoye a tout le monde, donc il se trompait une fois sur deux. */
-    nudgeLead: 'Reviens quand tu veux. Une seule chose suffit.',
+    /* SANS PERSONNE À NOMMER. Personne n’a encore touché « Je m’en occupe »,
+       donc le message ne peut pas prétendre que quelqu’un demande de tes
+       nouvelles : ce serait inventer un ami inquiet pour faire revenir
+       quelqu’un. Il pose la question lui-même, ce qui reste vrai. */
+    nudgeSubject: (g: string) => `Tout va bien ? ${g}`,
+    nudgeTitle: 'Tout va bien ?',
+    nudgePre: (g: string) => `Personne ne t’a vu dans ${g} depuis deux semaines.`,
+    nudgeLead: (g: string) => `Ça fait deux semaines qu’on ne te voit pas dans ${g}.`,
+    /* « Quand tu es prête » est parti d’ici : un accord féminin dans un message
+       envoyé à tout le monde se trompe une fois sur deux. */
     nudgeBody:
-      'Ouvre l application et touche "Je suis toujours la". Ca met en pause tout ce qui traine et te demande une seule chose. Il n y a pas de retard a combler et rien a expliquer.',
-    nudgeCta: 'Choisir une chose',
-    nudgeFoot: (g: string) => `Envoye une fois, parce que tu es dans ${g}. Il n y en aura pas de deuxieme.`,
+      'C’est une question, pas un reproche. Ouvre l’application et touche « Je suis toujours là » : ça met en pause tout ce qui traîne et te demande une seule chose. Il n’y a pas de retard à combler et rien à expliquer.',
+    nudgeCta: 'Je suis toujours là',
+    nudgeFoot: (g: string) => `Envoyé une fois, parce que tu es dans ${g}. Il n’y en aura pas de deuxième.`,
+
+    /* AVEC QUELQU’UN À NOMMER. Quelqu’un a vraiment touché « Je m’en occupe »
+       dans le groupe, donc le nom est un fait et pas une tournure. C’est la
+       version qui a une chance de marcher : ce qui ramène une personne qui a
+       arrêté d’ouvrir une application, c’est un ami, pas une notification. */
+    nudgeFromSubject: (who: string) => `${who} veut de tes nouvelles`,
+    nudgeFromTitle: (who: string) => `${who} veut de tes nouvelles`,
+    nudgeFromLead: (who: string, g: string) =>
+      `${who} se demande comment tu vas. Ça fait deux semaines qu’on ne te voit pas dans ${g}.`,
+
+    birthdaySubject: (n: number, first: string) =>
+      n === 1 ? `L’anniversaire de ${first}, dans trois jours` : `${n} anniversaires dans trois jours`,
+    birthdayTitle: (n: number) =>
+      n === 1 ? 'Un anniversaire dans trois jours' : `${n} anniversaires dans trois jours`,
+    birthdayPre: (n: number) =>
+      n === 1 ? 'Trois jours pour y penser.' : `${n} personnes à qui penser, dans trois jours.`,
+    birthdayLead: 'Trois jours, c’est encore le temps de faire quelque chose.',
+    birthdayNote:
+      'Le jour même il ne reste que le message, et il arrive avec tous les autres. Trois jours avant, on peut encore réserver, commander, écrire quelque chose qui se lit. Ceci est le rappel, pas le geste.',
+    birthdayCta: 'Ouvrir le groupe',
+    birthdayFoot: (g: string) => `Envoyé une fois par anniversaire, parce que tu es dans ${g}.`,
+
+    smallPrint:
+      'Au plus un message de chaque sorte par cycle. Les rappels d’objectif se coupent objectif par objectif, dans l’application.',
   },
   en: {
     digestSubject: (g: string) => `Check-in opens tonight. ${g}`,
@@ -290,14 +343,34 @@ const COPY = {
     digestLead: 'What you said you would do:',
     digestCta: 'Check in',
     digestTail: 'Takes under a minute. Nothing to catch up on if you miss it.',
-    nudgeSubject: (g: string) => `No rush. ${g}`,
-    nudgeTitle: 'No rush',
-    nudgePre: 'Nothing to catch up on. One thing when you are ready.',
-    nudgeLead: 'Come back whenever you want. One thing is enough.',
+    nudgeSubject: (g: string) => `Everything all right? ${g}`,
+    nudgeTitle: 'Everything all right?',
+    nudgePre: (g: string) => `Nobody has seen you in ${g} for two weeks.`,
+    nudgeLead: (g: string) => `Nobody has seen you in ${g} for a couple of weeks.`,
     nudgeBody:
-      'Open the app and tap "I am still in". It parks everything old and asks for one thing. There is no backlog to clear and nothing to explain.',
-    nudgeCta: 'Pick one thing',
+      'It is a question, not a complaint. Open the app and tap "I am still in": it parks everything old and asks for one thing. There is no backlog to clear and nothing to explain.',
+    nudgeCta: 'I am still in',
     nudgeFoot: (g: string) => `Sent once, because you are in ${g}. There is no second one.`,
+
+    nudgeFromSubject: (who: string) => `${who} is asking after you`,
+    nudgeFromTitle: (who: string) => `${who} is asking after you`,
+    nudgeFromLead: (who: string, g: string) =>
+      `${who} wants to know how you are. Nobody has seen you in ${g} for a couple of weeks.`,
+
+    birthdaySubject: (n: number, first: string) =>
+      n === 1 ? `${first}'s birthday, in three days` : `${n} birthdays in three days`,
+    birthdayTitle: (n: number) =>
+      n === 1 ? 'A birthday in three days' : `${n} birthdays in three days`,
+    birthdayPre: (n: number) =>
+      n === 1 ? 'Three days to think of something.' : `${n} people to think of, three days out.`,
+    birthdayLead: 'Three days is still enough time to do something.',
+    birthdayNote:
+      'On the day there is only the message left, and it arrives with everyone else’s. Three days out you can still book something, order something, write something worth reading. This is the reminder, not the gesture.',
+    birthdayCta: 'Open the group',
+    birthdayFoot: (g: string) => `Sent once per birthday, because you are in ${g}.`,
+
+    smallPrint:
+      'At most one message of each kind per cycle. Goal reminders can be switched off per goal, in the app.',
   },
 } as const
 
@@ -331,14 +404,18 @@ async function recipient(userId: string): Promise<{ to: string; loc: Loc } | nul
 async function send(
   to: string,
   subject: string,
-  { title, preheader, blocks, footnote }: {
+  { title, preheader, blocks, footnote, loc }: {
     title: string
     preheader: string
     blocks: Block[]
     footnote?: string
+    /* The shell has words of its own. Without this they were English on every
+       message, including the French ones. */
+    loc: Loc
   },
 ) {
-  const html = layout({ title, preheader, blocks, footnote })
+  const smallPrint = COPY[loc].smallPrint
+  const html = layout({ title, preheader, blocks, footnote, smallPrint })
   const text = plain(title, blocks, footnote)
 
   if (!RESEND_KEY) {
@@ -426,19 +503,46 @@ async function sendDigests() {
           { kind: 'button', label: c.digestCta, href: `${SITE}/g/${cycle.group_id}/checkin` },
           { kind: 'text', text: c.digestTail },
         ],
+        loc: who.loc,
       })
     }
   }
 }
 
+/**
+ * How long the group gets before the app writes instead.
+ *
+ * The component that shows these cards says it plainly: the one thing that
+ * reliably reaches somebody who has stopped opening an app is a message from a
+ * friend, not another notification. So the friends go first. tick() raises the
+ * nudge, the card appears for everybody except the quiet person, and this waits
+ * a day to see whether anyone taps "I'll check on them".
+ *
+ * If somebody does, the email can name them, and that is a completely
+ * different message: a person is asking after you, rather than software
+ * noticing you are gone. If nobody does, the app asks the question itself, and
+ * it asks as itself rather than inventing a concerned friend.
+ *
+ * A day, matching the fallback rotation in tick() that assigns an unclaimed
+ * nudge after the same interval. Two clocks measuring the same patience should
+ * not disagree.
+ */
+const GROUP_HEAD_START_HOURS = 24
+
 async function sendNudges() {
   // One message to the person who went quiet. Never a second.
   const { data: nudges } = await supabase
     .from('nudges')
-    .select('id, cycle_id, subject_id, group_id, groups(name)')
+    .select('id, cycle_id, subject_id, group_id, claimed_by, created_at, groups(name)')
     .in('state', ['pending', 'claimed'])
 
   for (const n of nudges ?? []) {
+    /* Not yet. Nobody has volunteered and the card has not been up long
+       enough to say nobody is going to. Claiming the log row here would burn
+       the one send on the weakest version of the message. */
+    const old = Date.parse((n as any).created_at) < Date.now() - GROUP_HEAD_START_HOURS * 3600_000
+    if (!n.claimed_by && !old) continue
+
     if (!(await claim(n.subject_id, n.cycle_id, 'nudge'))) continue
 
     const who = await recipient(n.subject_id)
@@ -447,14 +551,34 @@ async function sendNudges() {
 
     const name = (n as any).groups?.name ?? (who.loc === 'fr' ? 'ton groupe' : 'your group')
 
+    /**
+     * The name of whoever volunteered, and only if they really did.
+     *
+     * claimed_by is somebody pressing a button, so it is a fact. assigned_to
+     * is the rotation in tick() handing the card to whoever is next, which is
+     * the app's decision and not that person's, so it is NOT usable here:
+     * "Fatim is asking after you" when Fatim has done nothing is the app
+     * fabricating concern to get somebody to come back. A missing profile
+     * falls back to the unnamed version for the same reason.
+     */
+    let from: string | null = null
+    if (n.claimed_by) {
+      const { data: p } = await supabase
+        .from('profiles')
+        .select('display_name')
+        .eq('id', n.claimed_by)
+        .maybeSingle()
+      from = p?.display_name?.trim() || null
+    }
+
     /* Deliberately the quiet one: no button colour shouting, no count of what
        was missed, no streak language. The whole design of this message is
        that it must not read as a debt collector. */
-    await send(who.to, c.nudgeSubject(name), {
-      title: c.nudgeTitle,
-      preheader: c.nudgePre,
+    await send(who.to, from ? c.nudgeFromSubject(from) : c.nudgeSubject(name), {
+      title: from ? c.nudgeFromTitle(from) : c.nudgeTitle,
+      preheader: c.nudgePre(name),
       blocks: [
-        { kind: 'lead', text: c.nudgeLead },
+        { kind: 'lead', text: from ? c.nudgeFromLead(from, name) : c.nudgeLead(name) },
         { kind: 'text', text: c.nudgeBody },
         /* /profile, not /me. Both still serve the page, but /profile is the
            canonical address now and a link in an email outlives the deploy
@@ -462,7 +586,136 @@ async function sendNudges() {
         { kind: 'button', label: c.nudgeCta, href: `${SITE}/profile` },
       ],
       footnote: c.nudgeFoot(name),
+      loc: who.loc,
     })
+  }
+}
+
+/**
+ * Birthdays, three days out.
+ *
+ * WHY THREE DAYS AND NOT ON THE DAY.
+ *
+ * The same argument BirthdayBanner makes on screen. On the morning of, the
+ * only thing left is a message, and it lands in a pile of identical ones. Three
+ * days is the difference between remembering and being able to do something
+ * about it: a table can still be booked, a thing can still arrive, a paragraph
+ * can still be written by somebody who is not in a hurry.
+ *
+ * The in-app banner starts a week out and counts down, because a banner costs
+ * nothing to look past. An email is not free, so it fires once, on one day.
+ *
+ * WHY ONE MESSAGE FOR EVERYBODY WHOSE BIRTHDAY IT IS.
+ *
+ * The ceiling is one row per recipient per cycle per kind, so two friends
+ * sharing a date would otherwise mean the second one silently never sends.
+ * Listing them is both the fix and the better message, and it is the shape the
+ * digest already uses for goals.
+ */
+const BIRTHDAY_LEAD_DAYS = 3
+
+/**
+ * The month and day it will be in `tz`, `ahead` days from now.
+ *
+ * Resolve the local calendar date first, then do the arithmetic on it in UTC.
+ * Adding 3 * 86400000 to an instant and reading it back in a timezone crosses
+ * DST wrong twice a year, and this is the kind of bug that produces one wrong
+ * email in March and none anybody can reproduce in June.
+ */
+function monthDayAhead(tz: string, ahead: number): { month: number; day: number } {
+  let iso: string
+  try {
+    iso = new Intl.DateTimeFormat('en-CA', {
+      timeZone: tz,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(new Date())
+  } catch {
+    // A group carrying a timezone Deno does not know should not stop every
+    // other group's birthdays from going out.
+    iso = new Date().toISOString().slice(0, 10)
+  }
+  const [y, m, d] = iso.split('-').map(Number)
+  const at = new Date(Date.UTC(y, m - 1, d) + ahead * 86400_000)
+  return { month: at.getUTCMonth() + 1, day: at.getUTCDate() }
+}
+
+/* profiles.birthday is a date, so it arrives as "1998-04-12" and the month and
+   day are already right there. Parsing it into a Date would reinterpret it in
+   whatever zone the runtime is in and move the 1st of a month to the last of
+   the one before, for everybody west of UTC. */
+const monthDayOf = (iso: string) => ({
+  month: Number(iso.slice(5, 7)),
+  day: Number(iso.slice(8, 10)),
+})
+
+async function sendBirthdays() {
+  const { data: groups } = await supabase.from('groups').select('id, name, timezone')
+
+  for (const g of groups ?? []) {
+    // Every group agrees with itself about what day it is, the same way cycles
+    // do. A group in Abidjan should not get its reminders on Montreal's clock.
+    const target = monthDayAhead((g as any).timezone ?? 'UTC', BIRTHDAY_LEAD_DAYS)
+
+    const { data: members } = await supabase
+      .from('group_members')
+      .select('user_id, profiles(display_name, birthday)')
+      .eq('group_id', g.id)
+
+    /* Whose birthday it is. A 29 February birthday only matches in a leap
+       year, which is the same thing every calendar does with it and better
+       than picking the 28th or the 1st on somebody's behalf. */
+    const celebrating = (members ?? []).filter((m: any) => {
+      const b = m.profiles?.birthday
+      if (!b) return false
+      const md = monthDayOf(b)
+      return md.month === target.month && md.day === target.day
+    })
+    if (!celebrating.length) continue
+
+    // The anchor for the ceiling. A group always has cycles; if it somehow has
+    // none there is nothing to claim against and nothing to send.
+    const { data: cyc } = await supabase
+      .from('cycles')
+      .select('id')
+      .eq('group_id', g.id)
+      .order('opens_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    if (!cyc) continue
+
+    for (const m of members ?? []) {
+      /* Never your own. Being told your birthday is in three days is the app
+         reminding you of the one date you did not need reminding of, and it
+         would also tell you that everybody else just got an email about it. */
+      const others = celebrating.filter((c: any) => c.user_id !== m.user_id)
+      if (!others.length) continue
+
+      if (!(await claim(m.user_id, cyc.id, 'birthday'))) continue
+
+      const who = await recipient(m.user_id)
+      if (!who) continue
+      const c = COPY[who.loc]
+
+      const names = others.map(
+        (o: any) => o.profiles?.display_name?.trim() || (who.loc === 'fr' ? 'Quelqu un' : 'Someone'),
+      )
+      const group = (g as any).name ?? (who.loc === 'fr' ? 'ton groupe' : 'your group')
+
+      await send(who.to, c.birthdaySubject(names.length, names[0]), {
+        title: c.birthdayTitle(names.length),
+        preheader: c.birthdayPre(names.length),
+        blocks: [
+          { kind: 'lead', text: c.birthdayLead },
+          { kind: 'list', items: names.map((n: string) => ({ title: n })) },
+          { kind: 'text', text: c.birthdayNote },
+          { kind: 'button', label: c.birthdayCta, href: `${SITE}/g/${g.id}` },
+        ],
+        footnote: c.birthdayFoot(group),
+        loc: who.loc,
+      })
+    }
   }
 }
 
@@ -472,6 +725,7 @@ Deno.serve(async () => {
     await supabase.rpc('tick')
     await sendDigests()
     await sendNudges()
+    await sendBirthdays()
     return new Response(JSON.stringify({ ok: true }), {
       headers: { 'Content-Type': 'application/json' },
     })
