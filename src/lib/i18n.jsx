@@ -236,15 +236,18 @@ const STRINGS = {
     'goal.resume': 'Pick it back up',
     'goal.mark_done': 'Mark done',
 
-    'nudge.quiet': '{name} has been quiet for a couple of weeks.',
-    'nudge.claimed_by_me': 'You’ve got this one. Send them a message about them, not about the app.',
-    'nudge.claimed_by_other': '{name} is checking in on them.',
-    'nudge.assigned': 'Nobody picked this one up, so it came to you. A text is plenty.',
-    'nudge.open': 'Someone should say hello, wherever you actually talk, not in here.',
+    /* The gesture first, the absence second and small. See the note on the
+       French copy for why. */
+    'nudge.reach_out': 'Say hello to {name}',
+    'nudge.quiet': 'No word for a couple of weeks.',
+    'nudge.claimed_by_me': 'You’ve got this one. Make it about the two of you, not about the app.',
+    'nudge.claimed_by_other': '{name} has got this one.',
+    'nudge.assigned': 'It is yours this time. A text is plenty.',
+    'nudge.open': 'Wherever you actually talk, not in here.',
     'nudge.claim': 'I’ll check on them',
     'nudge.close': 'Done, we spoke',
-    'nudge.hide': 'Put {name} away. Only you stop seeing this.',
-    'nudge.count': '{n} friends have gone quiet. Swipe to see them.',
+    'nudge.hide': 'Hide {name}. This card disappears for you only.',
+    'nudge.count': '{n} friends to say hello to. Swipe.',
     'nudge.busy': 'One moment',
 
     'signin.title': 'Get in with people who move.',
@@ -1370,16 +1373,29 @@ const STRINGS = {
     'goal.resume': 'Reprendre',
     'goal.mark_done': 'Terminer',
 
-    'nudge.quiet': '{name} n’a rien dit depuis deux semaines.',
-    'nudge.claimed_by_me':
-      'C’est toi qui t’en occupes. Écris-lui, et parle de lui, pas de l’appli.',
-    'nudge.claimed_by_other': '{name} prend de ses nouvelles.',
-    'nudge.assigned': 'Personne ne s’en est chargé, alors ça te revient. Un message suffit.',
-    'nudge.open': 'Quelqu’un devrait lui écrire. Là où vous parlez vraiment, pas ici.',
+    /* LE GESTE D'ABORD, L'ABSENCE ENSUITE ET EN PETIT.
+       Le titre disait "{name} n'a rien dit depuis deux semaines", donc six
+       amis silencieux faisaient six reproches empiles a l'ouverture, et la
+       carte se lisait comme une corvee au lieu d'une idee. Le titre est
+       maintenant ce qu'on peut faire ; depuis quand passe en gris dessous, ou
+       c'est un contexte et plus une accusation.
+
+       "Faire signe a" plutot que "prendre des nouvelles de" : "de" s'elide
+       devant une voyelle, donc "de Fatim" et "d'Esther" auraient demande une
+       regle par prenom. "a" ne s'elide pas. */
+    'nudge.reach_out': 'Fais signe à {name}',
+    'nudge.quiet': 'Pas de nouvelles depuis deux semaines.',
+    /* Accords neutres partout. On ne connait pas le genre des gens : la
+       version d'avant disait "parle de lui" et "Toi seul arretes", ce qui se
+       trompe une fois sur deux et n'apporte rien. */
+    'nudge.claimed_by_me': 'C’est toi qui t’en occupes. Parle de vous deux, pas de l’appli.',
+    'nudge.claimed_by_other': '{name} s’en occupe.',
+    'nudge.assigned': 'C’est à toi cette fois. Un message suffit.',
+    'nudge.open': 'Là où vous parlez vraiment, pas ici.',
     'nudge.claim': 'Je m’en occupe',
     'nudge.close': 'C’est fait, on s’est parlé',
-    'nudge.hide': 'Mettre {name} de côté. Toi seul arrêtes de le voir.',
-    'nudge.count': '{n} amis se sont tus. Glisse pour les voir.',
+    'nudge.hide': 'Masquer {name}. Cette carte disparaît pour toi seulement.',
+    'nudge.count': '{n} amis à qui faire signe. Glisse.',
     'nudge.busy': 'Un instant',
 
     'signin.title': 'Rejoins des gens qui avancent.',

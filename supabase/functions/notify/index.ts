@@ -64,9 +64,17 @@ const COPY = {
     nudgeSubject: (g: string) => `Rien ne presse. ${g}`,
     nudgeTitle: 'Rien ne presse',
     nudgePre: 'Rien a rattraper. Une seule chose, quand tu veux.',
-    nudgeLead: 'Tu as manque quelques points. C est vraiment pas grave.',
+    /* Ouvre sur ce qu il y a a faire, pas sur ce qui a ete manque. La version
+       d avant commencait par "Tu as manque quelques points", ce qui apprend a
+       la personne quelque chose qu elle sait deja et le lui apprend en premier.
+       Ce message est la seule chose que l application envoie a quelqu un qui a
+       arrete de l ouvrir : il ne doit pas commencer par un reproche.
+
+       "Quand tu es prete" a aussi disparu. C est un accord feminin dans un
+       message envoye a tout le monde, donc il se trompait une fois sur deux. */
+    nudgeLead: 'Reviens quand tu veux. Une seule chose suffit.',
     nudgeBody:
-      'Quand tu es prete, ouvre l application et touche "Je suis toujours la". Ca met en pause tout ce qui traine et te demande une seule chose. Il n y a pas de retard a combler et rien a expliquer.',
+      'Ouvre l application et touche "Je suis toujours la". Ca met en pause tout ce qui traine et te demande une seule chose. Il n y a pas de retard a combler et rien a expliquer.',
     nudgeCta: 'Choisir une chose',
     nudgeFoot: (g: string) => `Envoye une fois, parce que tu es dans ${g}. Il n y en aura pas de deuxieme.`,
   },
@@ -81,9 +89,9 @@ const COPY = {
     nudgeSubject: (g: string) => `No rush. ${g}`,
     nudgeTitle: 'No rush',
     nudgePre: 'Nothing to catch up on. One thing when you are ready.',
-    nudgeLead: 'You have missed a couple of check-ins. That is genuinely fine.',
+    nudgeLead: 'Come back whenever you want. One thing is enough.',
     nudgeBody:
-      'When you are ready, open the app and tap "I am still in". It parks everything old and asks for one thing. There is no backlog to clear and nothing to explain.',
+      'Open the app and tap "I am still in". It parks everything old and asks for one thing. There is no backlog to clear and nothing to explain.',
     nudgeCta: 'Pick one thing',
     nudgeFoot: (g: string) => `Sent once, because you are in ${g}. There is no second one.`,
   },
