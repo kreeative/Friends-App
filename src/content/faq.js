@@ -49,8 +49,9 @@ export const FAQ = {
           {
             q: 'Combien d’e-mails vous m’envoyez ?',
             a: [
-              'Deux par cycle au maximum : un avant l’ouverture de la fenêtre, un si tu as manqué deux fois. C’est tout.',
-              'Ce n’est pas une intention, c’est une contrainte de la base de données : rien ne part sans réserver une ligne, et il n’y a qu’une ligne par type et par cycle.',
+              'Trois sortes, une seule fois chacune par cycle : un avant l’ouverture de la fenêtre, un si personne ne t’a vu depuis deux semaines, et un trois jours avant l’anniversaire d’un ami.',
+              'Ce n’est pas une intention, c’est une contrainte de la base de données : rien ne part sans réserver une ligne, et il n’y a qu’une ligne par sorte et par cycle.',
+              'Celui des deux semaines part en dernier. Le groupe a une journée pour te faire signe avant, parce qu’un message d’un ami vaut mieux qu’un e-mail de nous.',
             ],
           },
         ],
@@ -103,8 +104,9 @@ export const FAQ = {
           {
             q: 'How many emails do you send me?',
             a: [
-              'Two per cycle at most: one before the window opens, one if you have missed twice. That is all.',
+              'Three kinds, once each per cycle: one before the window opens, one if nobody has seen you for two weeks, and one three days before a friend’s birthday.',
               'It is not an intention, it is a database constraint: nothing sends without claiming a row, and there is only one row per kind per cycle.',
+              'The two-week one goes last. The group gets a day to reach you first, because a message from a friend beats an email from us.',
             ],
           },
         ],

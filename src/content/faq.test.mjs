@@ -137,8 +137,16 @@ const ok = (name, cond, extra = '') => {
      /part de la p.riode/i.test(fr) && /remet .* z.ro/i.test(fr))
   ok('declared-away periods are said to leave the maths',
      /absente sort compl.tement du calcul/i.test(fr))
-  ok('and the email ceiling is named as two per cycle',
-     /[Dd]eux par cycle/.test(fr))
+  /* This assertion said "deux par cycle" and failed the moment birthdays
+     became a third kind of message, which is the whole point of having it: the
+     ceiling is a promise made on a page users read, and raising it while the
+     old number stays on screen is the app lying about itself. It now checks
+     the shape of the promise (one of each kind) and that all three kinds are
+     actually named, so adding a fourth and not saying so fails here too. */
+  ok('the email ceiling is named as one of each kind per cycle',
+     /une seule fois chacune par cycle/i.test(fr))
+  ok('and every kind that can send is listed',
+     /avant l.ouverture/i.test(fr) && /deux semaines/i.test(fr) && /anniversaire/i.test(fr))
   ok('with the reason it holds: the database, not good intentions',
      /base de donn.es/i.test(fr))
 }

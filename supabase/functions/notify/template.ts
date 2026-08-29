@@ -98,17 +98,25 @@ function renderBlock(b: Block): string {
  * @param preheader the line inboxes show next to the subject. Left out, they
  *                  scrape the first text they find, which is usually the
  *                  alt text of the logo.
+ * @param smallPrint the grey line under the card, in the reader's language.
+ *                  It used to be an English string literal down in the markup,
+ *                  which meant every French message ended in an English
+ *                  sentence about a ceiling. The copy table caught none of it,
+ *                  because the copy table only ever knew about the words the
+ *                  senders pass in and this one lived in the layout.
  */
 export function layout({
   title,
   preheader,
   blocks,
   footnote,
+  smallPrint,
 }: {
   title: string
   preheader: string
   blocks: Block[]
   footnote?: string
+  smallPrint: string
 }): string {
   return `<!doctype html>
 <html lang="en">
@@ -153,10 +161,7 @@ export function layout({
           <td style="padding:22px 8px 0;font-family:${FONT};font-size:12px;line-height:1.6;color:${MUTED};">
             <a href="${SITE}" style="color:${MUTED};text-decoration:underline;">richandfriends.xyz</a>
             &nbsp;·&nbsp; Ambition is contagious.
-            <div style="padding-top:8px;">
-              You get at most two of these per check-in cycle. Reminders can be
-              switched off per goal, in the app.
-            </div>
+            <div style="padding-top:8px;">${esc(smallPrint)}</div>
           </td>
         </tr>
 
