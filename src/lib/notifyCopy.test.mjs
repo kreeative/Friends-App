@@ -14,6 +14,7 @@
  * constraint, so there is no second chance to get it right.
  */
 import { readFileSync } from 'node:fs'
+import { bundle } from '../../scripts/bundle-notify.mjs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 
@@ -110,6 +111,46 @@ const keysOf = (lang) => [...block(lang).matchAll(/^ {4}(\w+):/gm)].map((m) => m
      link in an email outlives the deploy that renamed it. */
   ok('the nudge links to /profile', src.includes('${SITE}/profile'))
   ok('and the digest links to the check-in', src.includes('/checkin'))
+}
+
+/* --- the single-file copy has not fallen behind ------------------------- */
+
+{
+  /* bundled.ts is what gets pasted into the Supabase dashboard editor, which
+     is the only way to deploy this function without a terminal. A stale copy
+     is the worst kind: the repo is correct, the deployed function is not, and
+     nothing on either side says so. Regenerated in memory and compared. */
+  const onDisk = readFileSync(
+    join(here, '..', '..', 'supabase', 'functions', 'notify', 'bundled.ts'),
+    'utf8',
+  )
+  ok('bundled.ts matches what the script would write now',
+     onDisk === bundle(),
+     'run: node scripts/bundle-notify.mjs')
+
+  ok('and it says it is generated, at the top',
+     onDisk.slice(0, 200).includes('GENERATED FILE'))
+
+  /* The two hazards of concatenating these particular files. */
+  ok('only one SITE is declared',
+     (onDisk.match(/^const SITE = /gm) ?? []).length === 1,
+     String((onDisk.match(/^const SITE = /gm) ?? []).length))
+  ok('the inlined module is not still imported',
+     !onDisk.includes("from './template.ts'"))
+  ok('and the import that must survive did',
+     onDisk.includes("from 'https://esm.sh/@supabase/supabase-js@2'"))
+
+  /* Pasted into a dashboard editor, an import buried three hundred lines down
+     reads as a mistake even though ES modules hoist it. */
+  const firstImport = onDisk.indexOf('import ')
+  const firstCode = onDisk.indexOf('const INK')
+  ok('imports sit above the code', firstImport > 0 && firstImport < firstCode,
+     `${firstImport} vs ${firstCode}`)
+
+  /* The whole point of the bundle: both halves are actually in it. */
+  ok('the bundle contains the layout', onDisk.includes('function layout('))
+  ok('and the sender', onDisk.includes('Deno.serve('))
+  ok('and both languages of copy', onDisk.includes('nudgeFoot') && onDisk.includes("fr: {"))
 }
 
 console.log(`\nnotifyCopy\n\n  ${pass} passed, ${fail} failed\n`)
