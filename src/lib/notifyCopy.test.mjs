@@ -95,6 +95,49 @@ const keysOf = (lang) => [...block(lang).matchAll(/^ {4}(\w+):/gm)].map((m) => m
   }
 }
 
+/* --- the nudge opens on the gesture, not on the absence ------------------ */
+
+{
+  /** One string literal out of a language block, e.g. nudgeLead. */
+  const line = (lang, key) =>
+    block(lang).match(new RegExp(`${key}:\\s*\\n?\\s*'([^']*)'`))?.[1] ?? ''
+
+  /* The email and the in-app card were changed together and for the same
+     reason. Six cards that each opened with "X has been quiet for a couple of
+     weeks" stacked six reproaches at the top of the board, so the heading is
+     now what you can do and the absence sits under it in grey.
+
+     This message has the same job and a harder audience: it is the only thing
+     the app sends to somebody who has already stopped opening it, and there is
+     exactly one per cycle. Opening it by telling them what they missed spends
+     that one chance informing them of something they know. */
+  for (const lang of ['fr', 'en']) {
+    const lead = line(lang, 'nudgeLead')
+    ok(`the ${lang} nudge has a lead`, lead.length > 0)
+    ok(`the ${lang} nudge does not open on what was missed`,
+       !/manqu|missed|oubli|forgot|depuis \d|weeks? (now|already)/i.test(lead),
+       lead)
+  }
+
+  /* WHY A GENDER CHECK AT ALL.
+     The French said "Quand tu es prete", a feminine agreement in a message
+     sent to every member of every group, so it was wrong for about half of
+     them. Nothing in the schema records anyone's gender and nothing should, so
+     the only correct French here is French that does not agree. The trap is
+     specific to the second person, which is why the pattern is anchored to
+     `tu es` rather than hunting for adjectives anywhere. */
+  {
+    /* Comments stripped first. The note next to the French copy quotes the
+       exact phrase this looks for, in order to explain why it was removed, and
+       without this the check fails on the explanation rather than on the
+       string that gets sent. Removing the quote from the comment would pass
+       the test by making the file worse. */
+    const fr = block('fr').replace(/\/\*[\s\S]*?\*\//g, '')
+    const gendered = fr.match(/tu es \w*[ée]e\b|tu es (prete|sure|seule)\b/i)
+    ok('the French carries no feminine-only agreement', !gendered, gendered?.[0] ?? '')
+  }
+}
+
 /* --- the ceiling, and where the link points ------------------------------ */
 
 {

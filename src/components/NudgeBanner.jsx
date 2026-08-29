@@ -134,10 +134,27 @@ export default function NudgeBanner() {
                 </svg>
               </button>
 
-              {/* pr-10 so a long name never runs under the cross. */}
+              {/**
+               * THE HEADING IS THE GESTURE, NOT THE ABSENCE.
+               *
+               * It used to be "{name} has been quiet for a couple of weeks",
+               * so six quiet friends stacked six reproaches at the top of the
+               * board and the rail read as a backlog of chores. That is the
+               * thing the sideways layout above was already fighting, and the
+               * words were undoing it.
+               *
+               * Leading with what you can do makes it an idea instead. How
+               * long they have been quiet is still there, one line down and in
+               * grey, where it is context rather than an accusation.
+               *
+               * pr-10 so a long name never runs under the cross.
+               */}
               <h3 className="pr-10 text-h2 text-ink">
-                {t('nudge.quiet', { name: nameOf(n.subject_id) })}
+                {t('nudge.reach_out', { name: nameOf(n.subject_id) })}
               </h3>
+              <p className="mt-1.5 text-label text-muted" data-hook="nudge-since">
+                {t('nudge.quiet')}
+              </p>
               <p className="lede mt-3">
                 {n.state === 'claimed'
                   ? claimedByMe
