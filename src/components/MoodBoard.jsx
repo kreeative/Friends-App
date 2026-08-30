@@ -1,4 +1,4 @@
-import { MOOD_GROUPS, inMoodGroup, moodById, toggleMood } from '../lib/moods'
+import { MOODS, moodById, toggleMood } from '../lib/moods'
 import { useT } from '../lib/i18n'
 
 /**
@@ -138,30 +138,39 @@ export default function MoodBoard({ value, onChange }) {
   const chosen = Array.isArray(value) ? value : value ? [value] : []
 
   return (
-    <div className="space-y-6">
-      {MOOD_GROUPS.map((group) => (
-        <div key={group}>
-          <p className="eyebrow">{t(`mood.group_${group}`)}</p>
-
-          {/**
-           * Three across on a phone, four from `sm` up.
-           *
-           * Four columns on a 390px screen leaves each face about 82px, and
-           * "Reconnaissant" and "Plein d'énergie" are wider than that, so the
-           * labels ran into their neighbours and the row became unreadable.
-           * Three columns give each one about 110px, which every label in both
-           * languages fits inside on at most two lines.
-           *
-           * The row gap is larger than the column gap on purpose. Labels that
-           * wrap to a second line need the vertical room; giving them the same
-           * horizontal room would cost the width that stopped them colliding.
-           */}
-          <div
-            role="group"
-            aria-label={t(`mood.group_${group}`)}
-            className="mt-3 grid grid-cols-3 gap-x-3 gap-y-6 sm:grid-cols-4 sm:gap-x-2"
-          >
-            {inMoodGroup(group).map((mood) => {
+    /**
+     * ONE RUN, NO HEADINGS.
+     *
+     * Three labelled bands used to sit here. They asked somebody to agree with
+     * the app about which category their own day belonged to before they had
+     * said anything, and the boundary between "Entre les deux" and "Difficile"
+     * was never one two people would draw in the same place. The catalogue is
+     * already ordered brightest to hardest, so the gradient says everything the
+     * headings were saying and makes no claim about where the lines are.
+     *
+     * Three across on a phone, four from `sm` up.
+     *
+     * Four columns on a 390px screen leaves each face about 82px, and
+     * "Reconnaissant" and "Plein d'énergie" are wider than that, so the labels
+     * ran into their neighbours and the row became unreadable. Three columns
+     * give each one about 110px, which every label in both languages fits
+     * inside on at most two lines.
+     *
+     * The row gap is larger than the column gap on purpose. Labels that wrap to
+     * a second line need the vertical room; giving them the same horizontal
+     * room would cost the width that stopped them colliding.
+     */
+    <div
+      role="group"
+      /* The question itself, which MoodToday renders as the visible heading
+         directly above. With the band headings gone this group had no name at
+         all, and a screen reader would have announced seventeen toggles with
+         nothing saying what they were for. */
+      aria-label={t('mood.question_day')}
+      data-hook="mood-grid"
+      className="grid grid-cols-3 gap-x-3 gap-y-6 sm:grid-cols-4 sm:gap-x-2"
+    >
+      {MOODS.map((mood) => {
               const selected = chosen.includes(mood.id)
               return (
                 <button
@@ -213,10 +222,7 @@ export default function MoodBoard({ value, onChange }) {
                   </span>
                 </button>
               )
-            })}
-          </div>
-        </div>
-      ))}
+      })}
     </div>
   )
 }

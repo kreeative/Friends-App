@@ -10,10 +10,8 @@
 import {
   MAX_MOODS,
   MOODS,
-  MOOD_GROUPS,
   MOOD_IDS,
   cleanMoods,
-  inMoodGroup,
   moodById,
   primaryMood,
   toggleMood,
@@ -41,7 +39,9 @@ console.log('\nmoods')
 ok('there is a catalogue at all', MOODS.length > 0)
 eq('and the cap is all of it', MAX_MOODS, MOODS.length)
 ok('every id is unique', new Set(MOOD_IDS).size === MOODS.length)
-ok('every one is in a known band', MOODS.every((m) => MOOD_GROUPS.includes(m.group)))
+/* The bands are gone. Nothing carries a `group` any more, and a leftover one
+   on a single entry would be a heading waiting to come back. */
+ok('nothing carries a band any more', MOODS.every((m) => !('group' in m)))
 ok('every one has a colour', MOODS.every((m) => /^#[0-9A-F]{6}$/i.test(m.color)))
 /* Closed, and starting from a move. Not a length: the triangle is a perfectly
    good fourteen characters and an arbitrary floor failed it. */
@@ -52,8 +52,6 @@ ok(
 ok('every one has a face', MOODS.every((m) => m.eyes && m.mouth))
 ok('the colours are distinct', new Set(MOODS.map((m) => m.color)).size === MOODS.length)
 ok('and so are the shapes', new Set(MOODS.map((m) => m.path)).size === MOODS.length)
-eq('the bands account for everyone', MOOD_GROUPS.reduce((n, g) => n + inMoodGroup(g).length, 0), MOODS.length)
-eq('an unknown band is empty, not a throw', inMoodGroup('nope'), [])
 
 /* The three added with multi-select, and the twelve that must survive it:
    every one of these ids may already be sitting in somebody's database. */
@@ -71,22 +69,56 @@ for (const id of ['serene', 'neutral', 'nostalgic', 'sad', 'discouraged']) {
    first and which one primaryMood hands to the group board. Put at the end of
    the file, `sad` would sort after `guilty`, and a day tagged sad and stressed
    would show the group the stressed face. */
-ok('sad and discouraged are in the hard band',
-   inMoodGroup('hard').map((m) => m.id).includes('sad') &&
-   inMoodGroup('hard').map((m) => m.id).includes('discouraged'))
-eq('and they sort before the sharper ones', primaryMood(['stressed', 'guilty', 'sad']), 'sad')
-eq('discouraged too', primaryMood(['angry', 'discouraged']), 'discouraged')
+ok('sad and discouraged sit in the second half of the run',
+   MOOD_IDS.indexOf('sad') > MOOD_IDS.length / 2 &&
+   MOOD_IDS.indexOf('discouraged') > MOOD_IDS.length / 2,
+   `sad ${MOOD_IDS.indexOf('sad')}, discouraged ${MOOD_IDS.indexOf('discouraged')} of ${MOOD_IDS.length}`)
+eq('and a hard day picks the earlier of two hard faces',
+   primaryMood(['sad', 'discouraged']), 'discouraged')
 
-/* The bands as they were asked for. */
-eq('positive', inMoodGroup('positive').map((m) => m.id), ['joyful', 'grateful', 'energized', 'serene'])
-eq('neutral and mixed', inMoodGroup('neutral').map((m) => m.id), ['excited', 'sensitive', 'neutral', 'nostalgic'])
-/* Derived rather than counted, for the same reason. The property is that the
-   hard band is whatever is left once the two named bands are taken out, so
-   adding a mood to it cannot fail this line. */
-eq('challenging holds the rest',
-   inMoodGroup('hard').length,
-   MOODS.length - inMoodGroup('positive').length - inMoodGroup('neutral').length)
-ok('and it is not empty', inMoodGroup('hard').length > 0)
+/* --- the gradient -------------------------------------------------------- */
+
+/**
+ * ONE RUN, BRIGHTEST TO HARDEST.
+ *
+ * This is not decoration. cleanMoods sorts by catalogue position, so the order
+ * decides which badge is drawn first and which id primaryMood puts in
+ * daily_mood.mood, and that column is the single face the group board and the
+ * week strip draw for a whole day.
+ *
+ * The assertions below are about the SHAPE of the run rather than its exact
+ * sequence: pinning all seventeen ids in order would fail on any future
+ * insertion, which is the mistake the count assertions above already made
+ * once. What has to stay true is that it starts bright, ends hard, and never
+ * puts a hard face ahead of a bright one.
+ */
+const at = (id) => MOOD_IDS.indexOf(id)
+
+eq('it opens on the brightest thing in the set', MOOD_IDS[0], 'joyful')
+ok('and ends somewhere hard', ['guilty', 'hurt', 'sad'].includes(MOOD_IDS[MOOD_IDS.length - 1]),
+   MOOD_IDS[MOOD_IDS.length - 1])
+
+/* Pairs that must never swap. Each one is a claim somebody could get wrong by
+   dropping a new mood at the end of the file, which is the easy edit. */
+for (const [brighter, harder] of [
+  ['joyful', 'neutral'],
+  ['energized', 'bored'],
+  ['grateful', 'sad'],
+  ['serene', 'stressed'],
+  ['neutral', 'angry'],
+  ['nostalgic', 'discouraged'],
+  ['sensitive', 'hurt'],
+  ['bored', 'guilty'],
+]) {
+  ok(`${brighter} comes before ${harder}`, at(brighter) < at(harder),
+     `${at(brighter)} vs ${at(harder)}`)
+}
+
+/* The consequence, stated as behaviour rather than as indices: pick one of
+   each and the brighter one is what the group sees. */
+eq('a bright day beside a hard one shows the bright face',
+   primaryMood(['guilty', 'joyful']), 'joyful')
+eq('and that holds for the two newest', primaryMood(['sad', 'serene']), 'serene')
 
 eq('an unknown id has no mood', moodById('wibble'), null)
 eq('null has no mood', moodById(null), null)

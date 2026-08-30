@@ -32,45 +32,32 @@
  * corners modelled.
  */
 
-/**
- * Grouped, and the grouping is what the grid is drawn from.
- *
- * It used to be one run of twelve ordered by valence, pleasant to sharp, and
- * the order carried the meaning implicitly. Seventeen is too many for that:
- * an unbroken grid of seventeen faces is a wall, and the eye has nowhere to
- * land.
- * Three named bands give it somewhere, and they say out loud what the ordering
- * was only implying.
- *
- * `group` is for the layout and nothing else. No row stores it, nothing
- * downstream asks which band a mood is in, so regrouping later changes a
- * heading and no data.
- */
-export const MOOD_GROUPS = ['positive', 'neutral', 'hard']
+
 
 /**
- * THE ARRAY ORDER IS THE BAND ORDER, and that is load-bearing now.
+ * THE ARRAY ORDER IS A GRADIENT, AND IT IS LOAD-BEARING.
  *
- * `sad` and `discouraged` went INSIDE the hard band, after `bored`, and not at
- * the end of the file where they would have been easier to add. cleanMoods
- * sorts by this order, so the end of the file would have put them after
- * `guilty`: a day tagged sad and stressed would draw the stressed face first
- * and hand that one to primaryMood, which is the face the group sees.
+ * These were split into three named bands with headings over them: Positif,
+ * Entre les deux, Difficile. The headings are gone and this is one run from
+ * the brightest to the hardest, because the bands were doing something the
+ * order already did, and doing it worse: a heading that says "Difficile" over
+ * nine faces asks somebody to file their own day into a category before they
+ * have said anything, and the line between "Entre les deux" and "Difficile"
+ * was never a line anybody else would have drawn in the same place.
  *
- * It used to be valence, pleasant to sharp, which said the same thing
- * implicitly. Keeping the three new moods at the end of the file would have
- * been the easy edit and would have broken it: `serene` would sort after
- * `guilty`, so a day tagged serene and stressed would show the hard face
- * first, and primaryMood would hand that face to the group board.
+ * A gradient makes no claim about where the boundaries are. It just runs.
  *
- * cleanMoods sorts by this order, so it decides the order badges are drawn in
- * and which mood stands for the rest. Positive first, then the middle, then
- * the hard ones, matching MOOD_GROUPS.
+ * The order is what cleanMoods sorts by, so it decides two visible things: the
+ * left-to-right order of the badges on a day, and which one primaryMood hands
+ * to daily_mood.mood, which is the single face the group board and the week
+ * strip draw. Rearranging this therefore rearranges what some existing days
+ * look like to other people. That is the intended cost of picking a better
+ * order, not an accident: nothing is stored by position, and every id in the
+ * database still resolves.
  */
 export const MOODS = [
   {
     id: 'joyful',
-    group: 'positive',
     color: '#F2569F',
     eyes: 'closed',
     mouth: 'smile',
@@ -78,17 +65,7 @@ export const MOODS = [
     path: 'M50 6a22 22 0 0 1 22 22a22 22 0 0 1 22 22a22 22 0 0 1-22 22a22 22 0 0 1-22 22a22 22 0 0 1-22-22a22 22 0 0 1-22-22a22 22 0 0 1 22-22a22 22 0 0 1 22-22Z',
   },
   {
-    id: 'grateful',
-    group: 'positive',
-    color: '#8B5CD6',
-    eyes: 'closed',
-    mouth: 'smile',
-    // squircle
-    path: 'M50 4c28 0 46 18 46 46s-18 46-46 46S4 78 4 50 22 4 50 4Z',
-  },
-  {
     id: 'energized',
-    group: 'positive',
     color: '#A78BDA',
     eyes: 'closed',
     mouth: 'smile',
@@ -99,8 +76,23 @@ export const MOODS = [
     path: 'M4 36a15.3 24 0 0 1 30.7 0a15.3 24 0 0 1 30.7 0a15.3 24 0 0 1 30.6 0v48a12 12 0 0 1-12 12H16A12 12 0 0 1 4 84Z',
   },
   {
+    id: 'excited',
+    color: '#F79AC0',
+    eyes: 'closed',
+    mouth: 'smile',
+    // circle
+    path: 'M6 50a44 44 0 1 1 88 0a44 44 0 1 1-88 0Z',
+  },
+  {
+    id: 'grateful',
+    color: '#8B5CD6',
+    eyes: 'closed',
+    mouth: 'smile',
+    // squircle
+    path: 'M50 4c28 0 46 18 46 46s-18 46-46 46S4 78 4 50 22 4 50 4Z',
+  },
+  {
     id: 'serene',
-    group: 'positive',
     color: '#3FBFB0',
     eyes: 'closed',
     mouth: 'smile',
@@ -109,26 +101,7 @@ export const MOODS = [
     path: 'M36 20h28a30 30 0 0 1 0 60H36a30 30 0 0 1 0-60Z',
   },
   {
-    id: 'excited',
-    group: 'neutral',
-    color: '#F79AC0',
-    eyes: 'closed',
-    mouth: 'smile',
-    // circle
-    path: 'M6 50a44 44 0 1 1 88 0a44 44 0 1 1-88 0Z',
-  },
-  {
-    id: 'sensitive',
-    group: 'neutral',
-    color: '#0BA5EC',
-    eyes: 'closed',
-    mouth: 'flat',
-    // dome
-    path: 'M50 6a44 44 0 0 1 44 44v28a18 18 0 0 1-18 18H24A18 18 0 0 1 6 78V50A44 44 0 0 1 50 6Z',
-  },
-  {
     id: 'neutral',
-    group: 'neutral',
     color: '#8797A6',
     eyes: 'dots',
     mouth: 'flat',
@@ -137,7 +110,6 @@ export const MOODS = [
   },
   {
     id: 'nostalgic',
-    group: 'neutral',
     color: '#B384BC',
     eyes: 'closed',
     mouth: 'flat',
@@ -145,17 +117,15 @@ export const MOODS = [
     path: 'M50 6 92 38 76 92H24L8 38Z',
   },
   {
-    id: 'confused',
-    group: 'hard',
-    color: '#1B58D9',
-    eyes: 'dots',
+    id: 'sensitive',
+    color: '#0BA5EC',
+    eyes: 'closed',
     mouth: 'flat',
-    // hexagon
-    path: 'M50 6 89 28v44L50 94 11 72V28Z',
+    // dome
+    path: 'M50 6a44 44 0 0 1 44 44v28a18 18 0 0 1-18 18H24A18 18 0 0 1 6 78V50A44 44 0 0 1 50 6Z',
   },
   {
     id: 'bored',
-    group: 'hard',
     color: '#0F8A3D',
     eyes: 'dots',
     mouth: 'flat',
@@ -163,20 +133,39 @@ export const MOODS = [
     path: 'M10 50a40 38 0 1 1 80 0a40 38 0 1 1-80 0Z',
   },
   {
-    id: 'sad',
-    group: 'hard',
-    color: '#6B84A8',
-    eyes: 'closed',
+    id: 'confused',
+    color: '#1B58D9',
+    eyes: 'dots',
+    mouth: 'flat',
+    // hexagon
+    path: 'M50 6 89 28v44L50 94 11 72V28Z',
+  },
+  {
+    id: 'insecure',
+    color: '#F07C1E',
+    eyes: 'dots',
     mouth: 'frown',
-    // teardrop, point up. The only shape in the set that comes to a point at
-    // the top, and the one whose meaning is legible before the label is read.
-    // The bowl is a circle of r40 centred at y60, so it is 75 wide at the eye
-    // line and the face sits in it without touching the sides.
-    path: 'M50 4C62 26 90 42 90 60A40 40 0 1 1 10 60C10 42 38 26 50 4Z',
+    // diamond
+    path: 'M50 6 94 50 50 94 6 50Z',
+  },
+  {
+    id: 'stressed',
+    color: '#17A55C',
+    eyes: 'squint',
+    mouth: 'flat',
+    // triangle
+    path: 'M50 8 92 84H8Z',
+  },
+  {
+    id: 'angry',
+    color: '#E8500F',
+    eyes: 'squint',
+    mouth: 'frown',
+    // rounded square
+    path: 'M22 8h56a14 14 0 0 1 14 14v56a14 14 0 0 1-14 14H22A14 14 0 0 1 8 78V22A14 14 0 0 1 22 8Z',
   },
   {
     id: 'discouraged',
-    group: 'hard',
     color: '#A9856B',
     eyes: 'dots',
     mouth: 'frown',
@@ -187,35 +176,18 @@ export const MOODS = [
     path: 'M12 12H88L72 88H28Z',
   },
   {
-    id: 'stressed',
-    group: 'hard',
-    color: '#17A55C',
-    eyes: 'squint',
-    mouth: 'flat',
-    // triangle
-    path: 'M50 8 92 84H8Z',
-  },
-  {
-    id: 'angry',
-    group: 'hard',
-    color: '#E8500F',
-    eyes: 'squint',
+    id: 'sad',
+    color: '#6B84A8',
+    eyes: 'closed',
     mouth: 'frown',
-    // rounded square
-    path: 'M22 8h56a14 14 0 0 1 14 14v56a14 14 0 0 1-14 14H22A14 14 0 0 1 8 78V22A14 14 0 0 1 22 8Z',
-  },
-  {
-    id: 'insecure',
-    group: 'hard',
-    color: '#F07C1E',
-    eyes: 'dots',
-    mouth: 'frown',
-    // diamond
-    path: 'M50 6 94 50 50 94 6 50Z',
+    // teardrop, point up. The only shape in the set that comes to a point at
+    // the top, and the one whose meaning is legible before the label is read.
+    // The bowl is a circle of r40 centred at y60, so it is 75 wide at the eye
+    // line and the face sits in it without touching the sides.
+    path: 'M50 4C62 26 90 42 90 60A40 40 0 1 1 10 60C10 42 38 26 50 4Z',
   },
   {
     id: 'hurt',
-    group: 'hard',
     color: '#F5A623',
     eyes: 'closed',
     mouth: 'frown',
@@ -224,7 +196,6 @@ export const MOODS = [
   },
   {
     id: 'guilty',
-    group: 'hard',
     color: '#FBC02D',
     eyes: 'dots',
     mouth: 'frown',
@@ -235,9 +206,6 @@ export const MOODS = [
 ]
 
 export const MOOD_IDS = MOODS.map((m) => m.id)
-
-/** The moods in one band, in catalogue order. */
-export const inMoodGroup = (group) => MOODS.filter((m) => m.group === group)
 
 /**
  * How many one day may carry.
