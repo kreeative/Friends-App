@@ -214,21 +214,12 @@ export default function MoodBoard({ value, onChange }) {
   )
 }
 
-/** The chosen mood, at rest. For the board and the history strip. */
-export function MoodBadge({ id, size = 28, withLabel = false }) {
-  const { t } = useT()
-  const mood = moodById(id)
-  if (!mood) return null
-
-  return (
-    <span className="inline-flex items-center gap-2 align-middle">
-      <span style={{ width: size, height: size }} className="block shrink-0">
-        <MoodGlyph mood={mood} />
-      </span>
-      {withLabel && <span className="text-small text-muted">{t(`mood.${mood.id}`)}</span>}
-    </span>
-  )
-}
+/* MoodBadge, the single-mood version, is gone. Its three callers (the group
+   card, the week panel and the day recap) all read one id when the day had
+   held several since migration 36, and fixing that made every one of them a
+   MoodBadges call. A one-element array renders identically, so keeping a
+   second component whose only remaining property is that it CANNOT show the
+   second feeling would be keeping the bug available. */
 
 /**
  * All of today's moods, at rest.

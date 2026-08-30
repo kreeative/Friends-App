@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 import { localeTag, useT } from '../lib/i18n'
 import { money } from '../lib/money'
 import { dragOffset, flipTransform, rectOf, shouldDismiss } from '../lib/gesture'
-import { MoodBadge } from './MoodBoard'
+import { MoodBadges } from './MoodBoard'
 
 /**
  * One day, in full, grown out of the square you held.
@@ -107,7 +107,11 @@ export default function DayRecap({
   origin = null,
   date,
   isFuture = false,
-  mood = null,
+  /* Every feeling of the day, not the one that stands for the rest. This took
+     a single id, so somebody who picked three saw one in their own history.
+     Default [] rather than null: a caller that has not loaded yet and a day
+     with nothing on it are the same thing to every reader below. */
+  moods = [],
   goals = [],
   outcomes = new Map(),
   entries = [],
@@ -245,7 +249,7 @@ export default function DayRecap({
   const yearLabel =
     date.getFullYear() === new Date().getFullYear() ? null : String(date.getFullYear())
 
-  const empty = !mood && goals.length === 0 && entries.length === 0
+  const empty = moods.length === 0 && goals.length === 0 && entries.length === 0
 
   /* --- swipe down to dismiss ------------------------------------------- */
   /**
@@ -391,10 +395,10 @@ export default function DayRecap({
                     in. Asking how somebody was before what they got done is
                     the order this whole product argues for. */}
                 <Part title={t('recap.mood')}>
-                  {mood ? (
+                  {moods.length > 0 ? (
                     <p className="flex items-center gap-3 text-body text-ink">
-                      <MoodBadge id={mood} size={28} />
-                      {t(`mood.${mood}`)}
+                      <MoodBadges ids={moods} size={28} />
+                      {moods.map((id) => t(`mood.${id}`)).join(' · ')}
                     </p>
                   ) : null}
                 </Part>
