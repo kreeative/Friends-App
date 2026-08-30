@@ -15,6 +15,20 @@ export const LANDING = {
       note: 'Free, and your budget stays private',
     },
 
+    /**
+     * The words after the name, in a browser tab and in a search result.
+     *
+     * The title was the product's name alone, which is right for a tab and
+     * useless in a result: "Rich & Friends" tells a search engine nothing
+     * about what the page is for, and the name has to compete with a song of
+     * the same name by a band people have heard of. The tagline is the only
+     * place the subject gets stated where a crawler can weigh it.
+     *
+     * Short on purpose. A result truncates around sixty characters including
+     * the name, so anything longer is written for nobody.
+     */
+    tagline: 'Daily check-ins, goals and money',
+
     manifesto:
       'A new way of living does not ask for luck. It asks for vision, for discipline every day, and for the right tools to carry it out.',
 
@@ -237,6 +251,11 @@ export const LANDING = {
       secondary: 'Comment ça marche',
       note: 'Gratuit, et ton budget reste privé',
     },
+
+    /* Voir la note sur la version anglaise. Le nom seul ne dit rien a un
+       moteur de recherche, et il doit se battre contre une chanson qui porte
+       le meme titre. */
+    tagline: 'Le point du jour, tes objectifs et ton budget',
 
     manifesto:
       'Un nouveau mode de vie ne demande pas de la chance. Il demande de la vision, de la discipline au quotidien et les bons outils pour l’exécuter.',

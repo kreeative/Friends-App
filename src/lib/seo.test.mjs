@@ -15,6 +15,12 @@ import {
   seoFor,
   sitemapPaths,
 } from './seo.js'
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+import { dirname, join } from 'node:path'
+import { LANDING } from '../content/landing.js'
+
+const here = dirname(fileURLToPath(import.meta.url))
 
 let pass = 0
 let fail = 0
@@ -132,6 +138,70 @@ eq('a similar name is left alone', canonicalPath('/librarything'), '/librarythin
 ok('the origin is absolute', ORIGIN.startsWith('https://'))
 ok('and has no trailing slash to double up', !ORIGIN.endsWith('/'))
 ok('so a canonical never doubles its slash', !seoFor('/about').canonical.includes('//about'))
+
+
+/* --- the static <head>, which is the only version some readers get -------- */
+
+{
+  /**
+   * WHY THIS SECTION EXISTS.
+   *
+   * usePageMeta rewrites the title and both descriptions when React mounts, so
+   * a crawler that runs JavaScript sees whatever the landing copy says today.
+   * WhatsApp, Slack, iMessage and Facebook do not run it. They read index.html
+   * and stop.
+   *
+   * So when the home page was rewritten, index.html kept the positioning from
+   * two rewrites earlier, and every link pasted into a chat previewed the old
+   * promise. Nothing on the site looked wrong, no test failed, and the only
+   * way to notice was to paste a link and read the card.
+   *
+   * These tie the two together. String comparisons on purpose: anything
+   * cleverer would be a second implementation of the thing being checked.
+   */
+  const html = readFileSync(join(here, '..', '..', 'index.html'), 'utf8')
+  const attr = (re) => html.match(re)?.[1] ?? ''
+  const unescape = (v) =>
+    v.replace(/&amp;/g, '&').replace(/&middot;/g, '\u00b7').replace(/&quot;/g, '"')
+
+  const body = LANDING.en.hero.body
+
+  ok('the static description is the landing copy',
+     unescape(attr(/<meta name="description" content="([^"]*)"/)) === body,
+     attr(/<meta name="description" content="([^"]*)"/).slice(0, 60))
+
+  ok('and so is og:description, which is what a chat previews',
+     unescape(attr(/<meta property="og:description" content="([^"]*)"/)) === body)
+
+  ok('and twitter:description',
+     unescape(attr(/<meta name="twitter:description" content="([^"]*)"/)) === body)
+
+  ok('the structured data agrees with them', html.includes(`"description": "${body}"`))
+
+  /* The title carries the subject, not just the name. A name alone gives a
+     search engine nothing to weigh, and this one competes with a song. */
+  const title = unescape(attr(/<title>([^<]*)<\/title>/))
+  ok('the static title names the product', title.startsWith('Rich & Friends'), title)
+  ok('and then says what it is', title.includes(LANDING.en.tagline), title)
+  ok('and is short enough to survive a result', title.length <= 64, String(title.length))
+
+  for (const lang of ['en', 'fr']) {
+    ok(`${lang} has a tagline`,
+       typeof LANDING[lang].tagline === 'string' && LANDING[lang].tagline.length > 8,
+       String(LANDING[lang].tagline))
+    ok(`and the ${lang} title fits a result`,
+       `Rich & Friends \u00b7 ${LANDING[lang].tagline}`.length <= 64,
+       String(`Rich & Friends \u00b7 ${LANDING[lang].tagline}`.length))
+  }
+
+  /* A relative og:image resolved against the crawler's own host is nothing. */
+  for (const tag of ['og:image', 'og:url']) {
+    const v = attr(new RegExp(`<meta property="${tag}" content="([^"]*)"`))
+    ok(`${tag} is absolute`, /^https:\/\//.test(v), v)
+  }
+
+  ok('the head carries no noindex', !/noindex/i.test(html))
+}
 
 console.log(`\n  ${pass} passed, ${fail} failed\n`)
 process.exit(fail ? 1 : 0)

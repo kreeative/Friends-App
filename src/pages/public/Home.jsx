@@ -15,10 +15,21 @@ export default function Home() {
   const { locale } = useT()
   const c = LANDING[locale] ?? LANDING.en
 
-  /* The one page whose title is the product's name alone. Everything else on
-     the site is "<page> · Rich & Friends"; the home page being that too would
-     put the name in twice for no reader's benefit. */
-  usePageMeta({ title: 'Rich & Friends', description: c.hero.body })
+  /**
+   * The name, and then what the thing is.
+   *
+   * This was the product's name alone, on the reasoning that every other page
+   * is "<page> · Rich & Friends" so the home page repeating it would say the
+   * name twice. That is right about a browser tab and wrong about a search
+   * result: "Rich & Friends" gives a search engine no subject to weigh, and
+   * the name has to compete with a song of the same name by a band people
+   * have heard of. The tagline is the only place the subject gets stated
+   * where a crawler can see it.
+   *
+   * It is the same string the static <head> carries, so what a crawler that
+   * runs JavaScript ends up with matches what one that does not started with.
+   */
+  usePageMeta({ title: `Rich & Friends · ${c.tagline}`, description: c.hero.body })
 
   return (
     <>
