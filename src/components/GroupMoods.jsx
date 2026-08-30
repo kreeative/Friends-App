@@ -2,8 +2,20 @@ import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useT } from '../lib/i18n'
 import { today } from '../lib/moodStore'
+import { cleanMoods } from '../lib/moods'
+import { isMissingColumn } from '../lib/dberr'
 import { Avatar, Section } from './ui'
-import { MoodBadge } from './MoodBoard'
+import { MoodBadges } from './MoodBoard'
+
+/**
+ * How many faces fit on a card before the card stops working.
+ *
+ * The picker allows all fifteen. Overlapped at 26px they run to nearly 290px,
+ * which on a 390px phone leaves no room for the name the row exists to show.
+ * Four is what fits; the rest are counted, and the words underneath still name
+ * every one of them.
+ */
+const FACES_SHOWN = 4
 
 /**
  * How the group is feeling today.
@@ -43,11 +55,27 @@ export default function GroupMoods({ groupId, members = [] }) {
        * today() is the same helper MoodToday writes with, so the two agree
        * about where the day boundary falls on this device.
        */
-      const { data, error } = await supabase
+      const COLS = 'user_id, mood, moods, shared, updated_at'
+      let { data, error } = await supabase
         .from('daily_mood')
-        .select('user_id, mood, shared, updated_at')
+        .select(COLS)
         .eq('day', today())
         .in('user_id', ids)
+
+      /**
+       * A database that has not had migration 36 run has no `moods` column,
+       * and PostgREST answers a select naming it by failing the whole request
+       * rather than by returning less. Without this fallback the section would
+       * disappear entirely there, which is a much worse bug than the one being
+       * fixed: everybody's mood gone rather than some of them.
+       */
+      if (error && isMissingColumn(error, 'moods')) {
+        ;({ data, error } = await supabase
+          .from('daily_mood')
+          .select('user_id, mood, shared, updated_at')
+          .eq('day', today())
+          .in('user_id', ids))
+      }
 
       if (error) return
       setMoods(data ?? [])
@@ -95,7 +123,24 @@ export default function GroupMoods({ groupId, members = [] }) {
   }, [groupId, load])
 
   const byUser = new Map(moods.map((m) => [m.user_id, m]))
-  const shown = members.filter((m) => byUser.get(m.user_id)?.mood)
+
+  /**
+   * EVERYTHING SOMEBODY PICKED, NOT THE ONE THAT STOOD FOR THE REST.
+   *
+   * This read `mood`, the single column, so choosing three feelings and
+   * sharing them showed the group exactly one. The other two were written and
+   * stored correctly the whole time, by MoodToday into `moods`; nothing was
+   * ever lost, this screen just never asked for them.
+   *
+   * `mood` is still the fallback, and it has to be: rows written before
+   * migration 36 have an empty array beside a real value, and a database
+   * without the column at all comes back from the retry above with only
+   * `mood`. cleanMoods takes either shape and returns catalogue order, so two
+   * people who picked the same pair look the same whichever way round they
+   * tapped them.
+   */
+  const listOf = (row) => cleanMoods(row?.moods?.length ? row.moods : row?.mood)
+  const shown = members.filter((m) => listOf(byUser.get(m.user_id)).length > 0)
 
   /* The heading goes with the list. Rendering a Section around this from the
      board would leave "How friends are feeling today" standing over a blank
@@ -120,28 +165,42 @@ export default function GroupMoods({ groupId, members = [] }) {
     <Section title={t('board.moods_today')}>
       <div className="space-y-3">
         {shown.map((m) => {
-          const mood = byUser.get(m.user_id)
+          const list = listOf(byUser.get(m.user_id))
+          const faces = list.slice(0, FACES_SHOWN)
+          const extra = list.length - faces.length
+
           return (
-            <div key={m.user_id} className="lg flex items-center gap-4 p-4">
+            <div key={m.user_id} data-hook="group-mood" data-moods={list.length} className="lg flex items-center gap-4 p-4">
               <Avatar profile={m.profile} size={40} />
 
               <div className="min-w-0 flex-1">
                 <div className="truncate text-body font-semibold text-ink">
                   {m.profile?.display_name}
                 </div>
-                {/* The word under the name rather than beside the glyph. Beside
-                    it, a long label like "Reconnaissant" pushed the name into
-                    an ellipsis on a phone, so the row lost the one thing it
-                    has to say first. */}
-                <div className="mt-0.5 truncate text-small text-muted">
-                  {t(`mood.${mood.mood}`)}
+                {/* The words under the name rather than beside the glyphs.
+                    Beside them, a long label like "Reconnaissant" pushed the
+                    name into an ellipsis on a phone, so the row lost the one
+                    thing it has to say first.
+
+                    Two lines rather than one, and clamped rather than
+                    truncated: with three feelings the joined label is the
+                    information somebody came to this screen for, and cutting
+                    it at one line would put back the bug in words that was
+                    just fixed in glyphs. */}
+                <div className="mt-0.5 line-clamp-2 text-small text-muted">
+                  {list.map((id) => t(`mood.${id}`)).join(' · ')}
                 </div>
               </div>
 
-              {/* Its own soft well, so the glyph reads as a badge on the card
-                  rather than as an image floating at the end of a line. */}
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-pill bg-ink/[0.04]">
-                <MoodBadge id={mood.mood} size={26} />
+              {/* Its own soft well, so the glyphs read as a badge on the card
+                  rather than as images floating at the end of a line. Width is
+                  the content's now, not a fixed 44: the well held exactly one
+                  face, so a second one drew outside it. */}
+              <span className="flex h-11 shrink-0 items-center gap-1.5 rounded-pill bg-ink/[0.04] px-3">
+                <MoodBadges ids={faces} size={26} />
+                {extra > 0 && (
+                  <span className="text-small font-semibold text-muted">+{extra}</span>
+                )}
               </span>
             </div>
           )

@@ -7,6 +7,7 @@ import { loadBudget } from '../lib/budgetData'
 import { dayKey, weekOf } from '../lib/time'
 import { isDueOn } from '../lib/schedule'
 import { isMissingColumn } from '../lib/dberr'
+import { cleanMoods } from '../lib/moods'
 import { rectOf } from '../lib/gesture'
 import { useLongPress } from '../lib/useLongPress'
 import {
@@ -16,7 +17,7 @@ import {
   monthsAround,
   sameMonth,
 } from '../lib/calendar'
-import { MoodBadge } from './MoodBoard'
+import { MoodBadges } from './MoodBoard'
 import DayRecap from './DayRecap'
 
 /**
@@ -405,16 +406,37 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
        * not appear, exactly as MoodToday handles it.
        */
       try {
-        const { data, error } = await supabase
+        let { data, error } = await supabase
           .from('daily_mood')
-          .select('day, mood')
+          .select('day, mood, moods')
           .eq('user_id', user.id)
           .gte('day', dayKey(from))
           .lte('day', dayKey(to))
 
+        /* No `moods` column before migration 36, and naming it fails the whole
+           select rather than returning less. Falling back keeps the mood line
+           working there instead of removing it from every day at once. */
+        if (error && isMissingColumn(error, 'moods')) {
+          ;({ data, error } = await supabase
+            .from('daily_mood')
+            .select('day, mood')
+            .eq('user_id', user.id)
+            .gte('day', dayKey(from))
+            .lte('day', dayKey(to)))
+        }
+
         if (!dead && !error) {
           const byDay = {}
-          for (const row of data ?? []) if (row.mood) byDay[row.day] = row.mood
+          /* An ARRAY per day now, not one id. A day held several feelings from
+             the moment migration 36 landed, and reading only `mood` showed the
+             one that stands for the rest: somebody who picked three saw one in
+             their own history. The compact dots below still use the first of
+             the set, because seven days each wearing four faces is not a strip
+             anybody can read, but the expanded day shows all of them. */
+          for (const row of data ?? []) {
+            const list = cleanMoods(row.moods?.length ? row.moods : row.mood)
+            if (list.length) byDay[row.day] = list
+          }
           setMoodByDay(byDay)
         }
       } catch {
@@ -480,8 +502,10 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
   const earned = total('income')
 
   const isFutureDay = selected > todayKey
-  const mood = moodByDay[selected] ?? null
-  const nothing = live.length === 0 && entries.length === 0 && !mood
+  /* An array now. Empty rather than null so every reader can ask for .length
+     and nothing has to remember which of the two shapes it is holding. */
+  const moods = moodByDay[selected] ?? []
+  const nothing = live.length === 0 && entries.length === 0 && moods.length === 0
 
   /**
    * Which month the header names, in whichever mode is showing.
@@ -507,7 +531,7 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
   const isMarked = (k) =>
     (cyclesByDay[k] ?? []).some((s) => s.status === 'submitted') ||
     (entriesByDay[k] ?? []).length > 0 ||
-    Boolean(moodByDay[k])
+    Boolean(moodByDay[k]?.length)
 
   const dayLabel = (d) =>
     d.toLocaleDateString(localeTag(locale), { weekday: 'long', day: 'numeric', month: 'long' })
@@ -766,10 +790,10 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
             {/* First, because the day's mood is the frame the rest of it is
                 read in. Asking how somebody was before what they got done is
                 the order this whole product argues for. */}
-            {mood && (
+            {moods.length > 0 && (
               <p className="mt-3 flex items-center gap-2.5 text-small text-ink">
-                <MoodBadge id={mood} size={22} />
-                {t(`mood.${mood}`)}
+                <MoodBadges ids={moods} size={22} />
+                {moods.map((id) => t(`mood.${id}`)).join(' · ')}
               </p>
             )}
 
@@ -865,7 +889,7 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
         origin={origin}
         date={selectedDate}
         isFuture={isFutureDay}
-        mood={mood}
+        moods={moods}
         goals={live}
         outcomes={outcomes}
         entries={entries}
