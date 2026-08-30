@@ -12,7 +12,21 @@
       colours the app paints nowhere. See GROUND in src/lib/theme.jsx.
     -->
     <meta name="theme-color" content="#FFF5F7" />
-    <meta name="description" content="A daily check-in with a few people who know what you are working on. One minute an evening, two to six people, sixty seconds. Ambition is contagious." />
+    <!--
+      THESE ARE NOT A COPY OF THE PAGE. THEY ARE THE ONLY VERSION SOME READERS
+      GET.
+
+      usePageMeta rewrites the title and both descriptions when React mounts,
+      so a crawler that runs JavaScript sees whatever the landing copy says
+      today. WhatsApp, Slack, iMessage and Facebook do not run it: they read
+      this file and stop. So when the home page was rewritten and these were
+      left alone, every link pasted into a chat kept previewing the positioning
+      from two rewrites ago, and nothing on the site looked wrong.
+
+      They are held to LANDING.en.hero.body by a test now, so the drift cannot
+      happen again quietly.
+    -->
+    <meta name="description" content="The goal: help millions of people transform how they live, through personal discipline, an ambitious mindset and control of their money." />
     <link rel="canonical" href="https://richandfriends.xyz/" />
 
     <!--
@@ -27,7 +41,7 @@
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Rich &amp; Friends" />
     <meta property="og:title" content="Rich &amp; Friends" />
-    <meta property="og:description" content="One check-in a day, at the same time, with the same people. Sixty seconds. That is the whole thing." />
+    <meta property="og:description" content="The goal: help millions of people transform how they live, through personal discipline, an ambitious mindset and control of their money." />
     <meta property="og:url" content="https://richandfriends.xyz/" />
     <meta property="og:image" content="https://richandfriends.xyz/brand/wordmark-pink.png" />
     <meta property="og:image:alt" content="Rich &amp; Friends" />
@@ -35,7 +49,7 @@
     <meta property="og:locale:alternate" content="fr_CA" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Rich &amp; Friends" />
-    <meta name="twitter:description" content="One check-in a day, at the same time, with the same people. Sixty seconds." />
+    <meta name="twitter:description" content="The goal: help millions of people transform how they live, through personal discipline, an ambitious mindset and control of their money." />
     <meta name="twitter:image" content="https://richandfriends.xyz/brand/wordmark-pink.png" />
 
     <!--
@@ -50,7 +64,7 @@
         "name": "Rich & Friends",
         "url": "https://richandfriends.xyz",
         "logo": "https://richandfriends.xyz/brand/wordmark-pink.png",
-        "description": "A daily group check-in for two to six people."
+        "description": "The goal: help millions of people transform how they live, through personal discipline, an ambitious mindset and control of their money."
       }
     </script>
     <!--
@@ -125,7 +139,12 @@
       there is no third-party connection on the critical path and nothing to
       fall back from when a network blocks Google Fonts.
     -->
-    <title>Rich &amp; Friends</title>
+    <!--
+      The name, then what it is. "Rich & Friends" alone gives a search engine
+      no subject, and the name competes with a song of the same title. Same
+      string usePageMeta sets on mount, so the two agree.
+    -->
+    <title>Rich &amp; Friends &middot; Daily check-ins, goals and money</title>
   </head>
   <body>
     <div id="root"></div>
