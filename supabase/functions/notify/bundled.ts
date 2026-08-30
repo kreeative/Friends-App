@@ -254,7 +254,11 @@ function plain(title: string, blocks: Block[], footnote?: string): string {
  *             but send a message
  *
  * Deploy:  supabase functions deploy notify --no-verify-jwt
- * Secrets: supabase secrets set RESEND_API_KEY=... MAIL_FROM="Friends <hi@yourdomain>"
+ * Secrets: supabase secrets set RESEND_API_KEY=...
+ *
+ * MAIL_FROM is optional and should usually be left alone. See the note on it
+ * below: the default is the address the rest of the product already sends from,
+ * and using a second one costs deliverability for no gain.
  */
 
 
@@ -266,7 +270,26 @@ const supabase = createClient(
 )
 
 const RESEND_KEY = Deno.env.get('RESEND_API_KEY')
-const MAIL_FROM = Deno.env.get('MAIL_FROM') ?? 'Friends <onboarding@resend.dev>'
+/**
+ * ONE SENDING ADDRESS FOR THE WHOLE PRODUCT, AND WHY IT MATTERS.
+ *
+ * This defaulted to Resend's shared sandbox domain, and the deploy note above
+ * used to suggest MAIL_FROM="Friends <hi@yourdomain>" as the example to copy.
+ * Both were wrong, and the second one caused a real problem: the sign-in codes
+ * go out as hello@, because that is what Supabase's own mail settings use, so
+ * following the example split the product across two senders.
+ *
+ * Mailbox providers build reputation per ADDRESS, not only per domain. A
+ * verified domain gets the message accepted; it does not decide which folder
+ * it lands in. hello@ had weeks of one-to-one sign-in mail behind it, and hi@
+ * had never sent anything until nine near-identical messages went out at once,
+ * which is the exact profile of a bulk send from a stranger.
+ *
+ * So the default is the address that already reaches people. Overriding it is
+ * still possible and is still the right thing when the domain is different,
+ * but it should not be done to pick a nicer word before the @.
+ */
+const MAIL_FROM = Deno.env.get('MAIL_FROM') ?? 'Rich & Friends <hello@richandfriends.xyz>'
 
 /**
  * A human address, used for two different jobs.
