@@ -164,7 +164,16 @@ ok('so a canonical never doubles its slash', !seoFor('/about').canonical.include
   const unescape = (v) =>
     v.replace(/&amp;/g, '&').replace(/&middot;/g, '\u00b7').replace(/&quot;/g, '"')
 
-  const body = LANDING.en.hero.body
+  /**
+   * FRENCH, because that is what the file is.
+   *
+   * One HTML file carries one language. The app switches on the browser's, so
+   * a person always gets their own; a link preview cannot, because the bot
+   * rendering the card has no reader to ask. French is what most of the people
+   * this app is for speak, the same call supabase/functions/notify makes when
+   * it falls back to French rather than English.
+   */
+  const body = LANDING.fr.hero.body
 
   ok('the static description is the landing copy',
      unescape(attr(/<meta name="description" content="([^"]*)"/)) === body,
@@ -182,7 +191,7 @@ ok('so a canonical never doubles its slash', !seoFor('/about').canonical.include
      search engine nothing to weigh, and this one competes with a song. */
   const title = unescape(attr(/<title>([^<]*)<\/title>/))
   ok('the static title names the product', title.startsWith('Rich & Friends'), title)
-  ok('and then says what it is', title.includes(LANDING.en.tagline), title)
+  ok('and then says what it is', title.includes(LANDING.fr.tagline), title)
   ok('and is short enough to survive a result', title.length <= 64, String(title.length))
 
   for (const lang of ['en', 'fr']) {
@@ -201,6 +210,19 @@ ok('so a canonical never doubles its slash', !seoFor('/about').canonical.include
   }
 
   ok('the head carries no noindex', !/noindex/i.test(html))
+
+  /* The document declares the language it is actually written in. A French
+     card under lang="en" tells a crawler the wrong thing about every word in
+     it, and og:locale has to agree or the two are arguing. */
+  ok('the document is declared French', /<html lang="fr">/.test(html))
+  ok('og:locale agrees', /<meta property="og:locale" content="fr_FR"/.test(html))
+  ok('and English is named as the alternate, so it is known to exist',
+     /<meta property="og:locale:alternate" content="en_GB"/.test(html))
+
+  /* The English copy has not been deleted, only moved off the static file.
+     It is what an English reader gets the moment the page runs. */
+  ok('the English positioning still exists for readers who get it',
+     typeof LANDING.en.hero.body === 'string' && LANDING.en.hero.body.length > 60)
 }
 
 console.log(`\n  ${pass} passed, ${fail} failed\n`)
