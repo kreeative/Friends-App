@@ -10,6 +10,11 @@
  * notifications_log, whose unique (user_id, cycle_id, kind) constraint makes a
  * duplicate physically impossible even if this function runs twice.
  *
+ * A claim is GIVEN BACK when the send does not happen. Taking it first is what
+ * makes the ceiling real; keeping it after a failure made the ceiling into a
+ * trap, where one refused send cost somebody their only message of the cycle
+ * for good. See release().
+ *
  *   digest  . A few hours before the window opens: what you committed to
  *   nudge   . A day after somebody goes quiet, addressed TO them. If a friend
  *             volunteered in the app it is sent in that friend's name, which
@@ -209,10 +214,24 @@ async function send(
   const html = layout({ title, preheader, blocks, footnote, smallPrint })
   const text = plain(title, blocks, footnote)
 
+  /**
+   * NO KEY IS A CONFIGURATION FAULT, NOT A SUCCESS.
+   *
+   * This returned true here, so a deployment with RESEND_API_KEY unset looked
+   * from the outside exactly like one that worked: rows claimed, {"ok":true}
+   * returned, and not one message sent. Because the claim is what the ceiling
+   * is made of, every person it touched became permanently unmailable for
+   * that cycle. One unset secret, silently, forever.
+   *
+   * It is still a dry run, which is right for running this locally. It is
+   * just no longer a lie about having sent something, and the caller releases
+   * the claim so the moment the key appears, everything retries.
+   */
   if (!RESEND_KEY) {
     console.log('[dry-run]', to, subject, `${html.length} bytes html`)
-    return true
+    return 'dry-run' as const
   }
+
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
@@ -221,16 +240,84 @@ async function send(
     },
     body: JSON.stringify({ from: MAIL_FROM, to, subject, html, text }),
   })
-  if (!res.ok) console.error('send failed', await res.text())
-  return res.ok
+  if (!res.ok) {
+    /* Read once. The body is a stream, and a second read throws, which would
+       turn a reportable send failure into an unhandled exception. */
+    const why = await res.text().catch(() => '')
+    console.error('send failed', res.status, why.slice(0, 400))
+    return 'failed' as const
+  }
+  return 'sent' as const
 }
 
+/**
+ * THE THIRD KIND WAS MISSING FROM THIS TYPE.
+ *
+ * It said 'digest' | 'nudge' while sendBirthdays passed 'birthday', which is a
+ * type error, and Supabase type-checks an Edge Function when it deploys. So
+ * every deploy since birthdays were added had something to complain about,
+ * and a function that does not deploy is indistinguishable from one that
+ * deploys and sends nothing.
+ */
+type Kind = 'digest' | 'nudge' | 'birthday'
+
 /** Claim the right to send. Returns false if this message already went out. */
-async function claim(userId: string, cycleId: string, kind: 'digest' | 'nudge') {
+async function claim(userId: string, cycleId: string, kind: Kind) {
   const { error } = await supabase
     .from('notifications_log')
     .insert({ user_id: userId, cycle_id: cycleId, kind })
   return !error
+}
+
+/**
+ * Give the claim back, when the message did not actually go.
+ *
+ * The claim is taken BEFORE the send, and that ordering is right: it is what
+ * makes a duplicate physically impossible even if this function runs twice at
+ * once. What was missing is the other half. A send that fails left its row
+ * behind, so the unique constraint then refused every retry, and one bad
+ * minute at Resend or one unverified sending domain cost somebody their only
+ * message of the cycle, permanently and with nothing written down.
+ *
+ * Releasing narrows the guarantee from "at most once, ever" to "at most once
+ * per successful send", which is the guarantee actually wanted. The window
+ * where two runs could overlap is the length of one HTTP call, and losing that
+ * race sends one duplicate; not releasing loses the message every time.
+ */
+async function release(userId: string, cycleId: string, kind: Kind) {
+  const { error } = await supabase
+    .from('notifications_log')
+    .delete()
+    .eq('user_id', userId)
+    .eq('cycle_id', cycleId)
+    .eq('kind', kind)
+  if (error) console.error('release failed', kind, error.message)
+}
+
+/**
+ * What this run did, returned in the response body.
+ *
+ * net._http_response is the only window into this function from the SQL
+ * editor, and it was showing {"ok":true} whether the run sent four messages or
+ * silently sent none. Counting them is the difference between "the pipeline is
+ * fine, nobody was due" and "it tried and Resend refused", which are the two
+ * answers somebody debugging this actually needs to tell apart.
+ */
+const tally = { digest: 0, nudge: 0, birthday: 0, failed: 0, dryRun: 0 }
+
+/** Record the outcome, and hand the claim back if nothing was sent. */
+async function settle(
+  result: 'sent' | 'failed' | 'dry-run',
+  kind: Kind,
+  userId: string,
+  cycleId: string,
+) {
+  if (result === 'sent') {
+    tally[kind] += 1
+    return
+  }
+  tally[result === 'failed' ? 'failed' : 'dryRun'] += 1
+  await release(userId, cycleId, kind)
 }
 
 async function sendDigests() {
@@ -283,7 +370,7 @@ async function sendDigests() {
 
       const name = (cycle as any).groups?.name ?? (who.loc === 'fr' ? 'ton groupe' : 'your group')
 
-      await send(who.to, c.digestSubject(name), {
+      const outcome = await send(who.to, c.digestSubject(name), {
         title: c.digestTitle,
         // Shown next to the subject in the inbox. Without one, clients scrape
         // the first text in the message, which would be the logo's alt text.
@@ -296,6 +383,7 @@ async function sendDigests() {
         ],
         loc: who.loc,
       })
+      await settle(outcome, 'digest', m.user_id, cycle.id)
     }
   }
 }
@@ -365,7 +453,7 @@ async function sendNudges() {
     /* Deliberately the quiet one: no button colour shouting, no count of what
        was missed, no streak language. The whole design of this message is
        that it must not read as a debt collector. */
-    await send(who.to, from ? c.nudgeFromSubject(from) : c.nudgeSubject(name), {
+    const outcome = await send(who.to, from ? c.nudgeFromSubject(from) : c.nudgeSubject(name), {
       title: from ? c.nudgeFromTitle(from) : c.nudgeTitle,
       preheader: c.nudgePre(name),
       blocks: [
@@ -379,6 +467,7 @@ async function sendNudges() {
       footnote: c.nudgeFoot(name),
       loc: who.loc,
     })
+    await settle(outcome, 'nudge', n.subject_id, n.cycle_id)
   }
 }
 
@@ -494,7 +583,7 @@ async function sendBirthdays() {
       )
       const group = (g as any).name ?? (who.loc === 'fr' ? 'ton groupe' : 'your group')
 
-      await send(who.to, c.birthdaySubject(names.length, names[0]), {
+      const outcome = await send(who.to, c.birthdaySubject(names.length, names[0]), {
         title: c.birthdayTitle(names.length),
         preheader: c.birthdayPre(names.length),
         blocks: [
@@ -506,6 +595,7 @@ async function sendBirthdays() {
         footnote: c.birthdayFoot(group),
         loc: who.loc,
       })
+      await settle(outcome, 'birthday', m.user_id, cyc.id)
     }
   }
 }
@@ -517,9 +607,23 @@ Deno.serve(async () => {
     await sendDigests()
     await sendNudges()
     await sendBirthdays()
-    return new Response(JSON.stringify({ ok: true }), {
-      headers: { 'Content-Type': 'application/json' },
-    })
+
+    /**
+     * SAY WHAT HAPPENED, NOT MERELY THAT NOTHING THREW.
+     *
+     * This returned {"ok":true} whether the run sent four messages, sent none
+     * because nobody was due, or tried and had every one refused. From the SQL
+     * editor, net._http_response is the only window into this function, and
+     * all three looked identical through it.
+     *
+     * `resend` is the one to read first. False means RESEND_API_KEY is not set
+     * on this deployment, which is a configuration fault that used to look
+     * exactly like success.
+     */
+    return new Response(
+      JSON.stringify({ ok: true, resend: Boolean(RESEND_KEY), from: MAIL_FROM, sent: tally }),
+      { headers: { 'Content-Type': 'application/json' } },
+    )
   } catch (err) {
     console.error(err)
     return new Response(JSON.stringify({ ok: false, error: String(err) }), { status: 500 })

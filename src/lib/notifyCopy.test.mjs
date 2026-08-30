@@ -303,5 +303,69 @@ const keysOf = (lang) => [...block(lang).matchAll(/^ {4}(\w+):/gm)].map((m) => m
   ok('and both languages of copy', onDisk.includes('nudgeFoot') && onDisk.includes("fr: {"))
 }
 
+
+/* --- the ceiling gives the claim back ------------------------------------ */
+
+{
+  /**
+   * THE BUG THIS SECTION EXISTS FOR.
+   *
+   * Every send claims a row in notifications_log first, and the unique
+   * constraint on it is what makes a duplicate impossible. Nothing gave the
+   * row back when the send did not happen, so a refused send, an unverified
+   * sending domain or one bad minute at Resend cost somebody their only
+   * message of that cycle, permanently, with nothing written down anywhere.
+   *
+   * Worse: with RESEND_API_KEY unset, send() returned true. Rows claimed,
+   * {"ok":true} returned, not one message sent, and every person it touched
+   * left unmailable. One missing secret, silently, forever.
+   */
+  ok('a claim can be given back', /async function release\(/.test(src))
+  ok('and releasing is what happens when nothing was sent',
+     /if \(result === 'sent'\)[\s\S]{0,120}return[\s\S]{0,200}await release\(/.test(src))
+
+  /* All three senders have to settle, or the one that does not is the one that
+     silently keeps its claim. Counted rather than named so a fourth kind
+     cannot be added without one. */
+  const settles = (src.match(/await settle\(/g) ?? []).length
+  ok('every sender settles its claim', settles === 3, String(settles))
+
+  ok('a missing key is no longer reported as a send',
+     /return 'dry-run' as const/.test(src) && !/console\.log\('\[dry-run\]'[\s\S]{0,80}return true/.test(src))
+
+  /* The run says what it did. net._http_response is the only window into this
+     function from the SQL editor, and {"ok":true} looked the same whether it
+     sent four messages or none. */
+  ok('the response reports whether Resend is configured',
+     /resend: Boolean\(RESEND_KEY\)/.test(src))
+  ok('and how many of each kind went out', /sent: tally/.test(src))
+
+  /**
+   * EVERY KIND PASSED TO claim() IS IN THE TYPE.
+   *
+   * claim was typed 'digest' | 'nudge' while sendBirthdays passed 'birthday'.
+   * That is a type error, and Supabase type-checks an Edge Function when it
+   * deploys, so every deploy after birthdays were added had something to
+   * complain about. A function that will not deploy is indistinguishable, from
+   * the outside, from one that deploys and sends nothing.
+   *
+   * Checked textually rather than with tsc, which is not a dependency of this
+   * project and would make the suite need a toolchain to run.
+   */
+  const union = src.match(/type Kind = ([^\n]+)/)?.[1] ?? ''
+  const declared = [...union.matchAll(/'(\w+)'/g)].map((m) => m[1])
+  const used = [...src.matchAll(/claim\([^,]+,[^,]+,\s*'(\w+)'\)/g)].map((m) => m[1])
+
+  ok('claim has a named union of kinds', declared.length >= 3, union)
+  ok('and it is the same set the database allows',
+     declared.slice().sort().join() === ['birthday', 'digest', 'nudge'].sort().join(),
+     declared.join())
+  for (const kind of [...new Set(used)]) {
+    ok(`claim('${kind}') is a kind claim accepts`, declared.includes(kind), union)
+  }
+  ok('all three kinds are actually claimed somewhere',
+     new Set(used).size === 3, [...new Set(used)].join())
+}
+
 console.log(`\nnotifyCopy\n\n  ${pass} passed, ${fail} failed\n`)
 process.exit(fail === 0 ? 0 : 1)
