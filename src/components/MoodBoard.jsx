@@ -2,7 +2,7 @@ import { MOOD_GROUPS, inMoodGroup, moodById, toggleMood } from '../lib/moods'
 import { useT } from '../lib/i18n'
 
 /**
- * "How are you today?". Fifteen shapes, as many taps as you like.
+ * "How are you today?". Seventeen shapes, as many taps as you like.
  *
  * Deliberately optional, and deliberately first. A check-in that opens with
  * twelve goals and a counter asks "did you perform"; opening with this asks
@@ -61,6 +61,13 @@ const FACE = {
 const SOFT = {
   Reconnaissant: 'Recon\u00ADnais\u00ADsant',
   Nostalgique: 'Nostal\u00ADgique',
+  /* Added with the mood itself. "Decourage" measures 73px against a 66px cell
+     at 320, so it was going to break somewhere; given the choice it breaks
+     where French breaks it. "Discouraged" is the first English label long
+     enough to need this, which is why the note above says the English ones do
+     not: that stopped being true. */
+  'Découragé': 'Décou\u00ADragé',
+  Discouraged: 'Discour\u00ADaged',
 }
 const softWrap = (label) => SOFT[label] ?? label
 
@@ -108,10 +115,10 @@ function MoodGlyph({ mood }) {
  * thing that is no longer true. Toggle buttons with aria-pressed say what this
  * now is.
  *
- * GROUPED, BECAUSE FIFTEEN IN ONE RUN IS A WALL.
+ * GROUPED, BECAUSE SEVENTEEN IN ONE RUN IS A WALL.
  *
  * Twelve ordered by valence carried the meaning implicitly and just about held
- * together. Fifteen does not: the eye has nowhere to land and the pleasant end
+ * together. Seventeen does not: the eye has nowhere to land and the pleasant end
  * and the hard end are the same undifferentiated grid. Three headings give it
  * somewhere, and the order is deliberate, the good ones first, because a
  * picker that opens on "en colère" is one that reads as an accusation before

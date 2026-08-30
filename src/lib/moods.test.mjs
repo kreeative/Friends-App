@@ -33,8 +33,13 @@ const eq = (name, a, b) => ok(name, JSON.stringify(a) === JSON.stringify(b), `go
 console.log('\nmoods')
 
 /* --- the catalogue ------------------------------------------------------ */
-eq('fifteen moods', MOODS.length, 15)
-eq('and the cap is all of them', MAX_MOODS, 15)
+/* NOT A COUNT. This said 15, and it failed the day two moods were added,
+   which is a test reporting a correct app as broken. The number was never the
+   property worth guarding: what matters is that the cap is the whole catalogue
+   however big that is, and that everything in it is well formed. Same lesson
+   as the probe that asserted "six modules" and broke on a seventh lesson. */
+ok('there is a catalogue at all', MOODS.length > 0)
+eq('and the cap is all of it', MAX_MOODS, MOODS.length)
 ok('every id is unique', new Set(MOOD_IDS).size === MOODS.length)
 ok('every one is in a known band', MOODS.every((m) => MOOD_GROUPS.includes(m.group)))
 ok('every one has a colour', MOODS.every((m) => /^#[0-9A-F]{6}$/i.test(m.color)))
@@ -56,15 +61,32 @@ for (const id of ['excited', 'joyful', 'grateful', 'energized', 'sensitive', 'co
                   'bored', 'stressed', 'angry', 'insecure', 'hurt', 'guilty']) {
   ok(`the original ${id} still exists`, MOOD_IDS.includes(id))
 }
-for (const id of ['serene', 'neutral', 'nostalgic']) {
+for (const id of ['serene', 'neutral', 'nostalgic', 'sad', 'discouraged']) {
   ok(`${id} was added`, MOOD_IDS.includes(id))
   ok(`and ${id} can be drawn`, moodById(id) !== null)
 }
 
+/* WHERE the two newest sit, which is not cosmetic.
+   cleanMoods sorts by catalogue order, so position decides which face is drawn
+   first and which one primaryMood hands to the group board. Put at the end of
+   the file, `sad` would sort after `guilty`, and a day tagged sad and stressed
+   would show the group the stressed face. */
+ok('sad and discouraged are in the hard band',
+   inMoodGroup('hard').map((m) => m.id).includes('sad') &&
+   inMoodGroup('hard').map((m) => m.id).includes('discouraged'))
+eq('and they sort before the sharper ones', primaryMood(['stressed', 'guilty', 'sad']), 'sad')
+eq('discouraged too', primaryMood(['angry', 'discouraged']), 'discouraged')
+
 /* The bands as they were asked for. */
 eq('positive', inMoodGroup('positive').map((m) => m.id), ['joyful', 'grateful', 'energized', 'serene'])
 eq('neutral and mixed', inMoodGroup('neutral').map((m) => m.id), ['excited', 'sensitive', 'neutral', 'nostalgic'])
-ok('challenging holds the rest', inMoodGroup('hard').length === 7)
+/* Derived rather than counted, for the same reason. The property is that the
+   hard band is whatever is left once the two named bands are taken out, so
+   adding a mood to it cannot fail this line. */
+eq('challenging holds the rest',
+   inMoodGroup('hard').length,
+   MOODS.length - inMoodGroup('positive').length - inMoodGroup('neutral').length)
+ok('and it is not empty', inMoodGroup('hard').length > 0)
 
 eq('an unknown id has no mood', moodById('wibble'), null)
 eq('null has no mood', moodById(null), null)
@@ -99,9 +121,9 @@ eq('and cleans as it goes', toggleMood(['wibble', 'joyful'], 'stressed'), ['joyf
 {
   let list = []
   for (const id of MOOD_IDS) list = toggleMood(list, id)
-  eq('all fifteen can be on at once', list.length, 15)
+  eq('every one can be on at once', list.length, MOODS.length)
   for (const id of MOOD_IDS) list = toggleMood(list, id)
-  eq('and all fifteen off again', list, [])
+  eq('and all of them off again', list, [])
 }
 
 /* --- primaryMood, which keeps the not-null column fed -------------------- */

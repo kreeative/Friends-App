@@ -36,8 +36,9 @@
  * Grouped, and the grouping is what the grid is drawn from.
  *
  * It used to be one run of twelve ordered by valence, pleasant to sharp, and
- * the order carried the meaning implicitly. Fifteen is too many for that: an
- * unbroken grid of fifteen faces is a wall, and the eye has nowhere to land.
+ * the order carried the meaning implicitly. Seventeen is too many for that:
+ * an unbroken grid of seventeen faces is a wall, and the eye has nowhere to
+ * land.
  * Three named bands give it somewhere, and they say out loud what the ordering
  * was only implying.
  *
@@ -49,6 +50,12 @@ export const MOOD_GROUPS = ['positive', 'neutral', 'hard']
 
 /**
  * THE ARRAY ORDER IS THE BAND ORDER, and that is load-bearing now.
+ *
+ * `sad` and `discouraged` went INSIDE the hard band, after `bored`, and not at
+ * the end of the file where they would have been easier to add. cleanMoods
+ * sorts by this order, so the end of the file would have put them after
+ * `guilty`: a day tagged sad and stressed would draw the stressed face first
+ * and hand that one to primaryMood, which is the face the group sees.
  *
  * It used to be valence, pleasant to sharp, which said the same thing
  * implicitly. Keeping the three new moods at the end of the file would have
@@ -154,6 +161,30 @@ export const MOODS = [
     mouth: 'flat',
     // wide ellipse
     path: 'M10 50a40 38 0 1 1 80 0a40 38 0 1 1-80 0Z',
+  },
+  {
+    id: 'sad',
+    group: 'hard',
+    color: '#6B84A8',
+    eyes: 'closed',
+    mouth: 'frown',
+    // teardrop, point up. The only shape in the set that comes to a point at
+    // the top, and the one whose meaning is legible before the label is read.
+    // The bowl is a circle of r40 centred at y60, so it is 75 wide at the eye
+    // line and the face sits in it without touching the sides.
+    path: 'M50 4C62 26 90 42 90 60A40 40 0 1 1 10 60C10 42 38 26 50 4Z',
+  },
+  {
+    id: 'discouraged',
+    group: 'hard',
+    color: '#A9856B',
+    eyes: 'dots',
+    mouth: 'frown',
+    // trapezoid, wide at the top and narrow at the foot: the one shape here
+    // that is visibly running out. Left as a plain polygon because the glyph
+    // paints a 6px stroke with a round join, which rounds the corners for
+    // free, the same way the triangle and the diamond get theirs.
+    path: 'M12 12H88L72 88H28Z',
   },
   {
     id: 'stressed',

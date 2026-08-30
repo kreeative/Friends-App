@@ -159,6 +159,7 @@ const STRINGS = {
     'birthday.note_early':
       'There is still time to book something, order something, write something worth reading. On the day there is only the message left.',
     'birthday.count': '{n} birthdays coming up. Swipe.',
+    'birthday.hide': 'Hide {name}. This card disappears for you only.',
     'board.this_week': 'Today',
     'board.how_we_are': 'How the group is doing',
     'board.goal_success': 'Goal success rate',
@@ -211,6 +212,7 @@ const STRINGS = {
     'celebrate.alone': 'Nobody else in this group yet. Invite somebody and you can send them a word here.',
     'celebrate.banner': '{name} celebrated you in {group}',
     'celebrate.thanks': 'Lovely, thanks',
+    'celebrate.hide': 'Put this away. Only you stop seeing it.',
     'celebrate.feed_from': '{name} on {about}',
     'celebrate.feed_self': '{name}, about their own week',
     'celebrate.banner_self': 'You put this on the board in {group}',
@@ -878,6 +880,8 @@ const STRINGS = {
     'mood.sensitive': 'Sensitive',
     'mood.confused': 'Confused',
     'mood.bored': 'Bored',
+    'mood.sad': 'Sad',
+    'mood.discouraged': 'Discouraged',
     'mood.stressed': 'Stressed',
     'mood.angry': 'Angry',
     'mood.insecure': 'Insecure',
@@ -1311,6 +1315,9 @@ const STRINGS = {
     'birthday.note_early':
       'Il reste le temps de réserver, de commander, d’écrire quelque chose qui se lit. Le jour même, il ne reste que le message.',
     'birthday.count': '{n} anniversaires arrivent. Glisse.',
+    /* Meme phrase que nudge.hide : la croix est privee partout, et le dire une
+       fois sur deux cartes et pas sur la troisieme laisse croire le contraire. */
+    'birthday.hide': 'Masquer {name}. Cette carte disparaît pour toi seulement.',
     'board.this_week': 'Aujourd’hui',
     'board.how_we_are': 'Où en est le groupe',
     'board.goal_success': 'Taux de réussite des objectifs',
@@ -1363,6 +1370,7 @@ const STRINGS = {
     'celebrate.alone': 'Il n’y a personne d’autre dans ce groupe. Invite quelqu’un et tu pourras lui dire un mot ici.',
     'celebrate.banner': '{name} t’a félicité·e dans {group}',
     'celebrate.thanks': 'Ça fait plaisir, merci',
+    'celebrate.hide': 'Mettre de côté. Toi seulement arrêtes de le voir.',
     'celebrate.feed_from': '{name} à propos de {about}',
     'celebrate.feed_self': '{name}, à propos de sa propre semaine',
     'celebrate.banner_self': 'Tu as mis ça sur le tableau dans {group}',
@@ -2005,6 +2013,8 @@ const STRINGS = {
     'mood.sensitive': 'Sensible',
     'mood.confused': 'Perdu',
     'mood.bored': 'Blasé',
+    'mood.sad': 'Triste',
+    'mood.discouraged': 'Découragé',
     'mood.stressed': 'Stressé',
     'mood.angry': 'En colère',
     'mood.insecure': 'Pas sûr de moi',
