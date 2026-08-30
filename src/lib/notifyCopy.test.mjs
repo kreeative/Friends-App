@@ -367,5 +367,44 @@ const keysOf = (lang) => [...block(lang).matchAll(/^ {4}(\w+):/gm)].map((m) => m
      new Set(used).size === 3, [...new Set(used)].join())
 }
 
+
+/* --- delivered is not the same as received ------------------------------- */
+
+{
+  /**
+   * Resend reported Delivered for a screenful of messages and not one person
+   * had received anything. Delivered means the receiving server ACCEPTED the
+   * message; what Gmail does with it after that is a separate decision, and a
+   * bulk sender with no unsubscribe header and no reply address is one it
+   * files under Promotions or Spam without telling anybody.
+   *
+   * These are the cheapest signals available and the message carried none.
+   */
+  ok('every message offers a way to unsubscribe',
+     /'List-Unsubscribe': UNSUB/.test(src))
+  ok('and it is a mailto, which needs no endpoint',
+     /const UNSUB = `<mailto:\$\{SUPPORT\}/.test(src))
+
+  /* One-click unsubscribe means a provider POSTs to a URL and expects the
+     person to be unsubscribed by the time it answers. Nothing in this app
+     answers such a POST, so declaring it would promise something that does not
+     exist: the provider tries, fails, and trusts the sender less than before. */
+  /* Comments stripped: the note in index.ts names List-Unsubscribe-Post in
+     order to explain why it is absent, and reading it as a use is the third
+     time this suite has caught itself on its own prose. */
+  const code = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')
+  ok('and one-click is NOT claimed, because nothing here could honour it',
+     !/List-Unsubscribe-Post/.test(code))
+
+  ok('a reply goes somewhere a person reads', /reply_to: SUPPORT/.test(src))
+
+  /* Resend's shared sandbox domain is accepted by everyone and trusted by
+     nobody: thousands of unrelated senders, none of them authenticated. If
+     MAIL_FROM still points at it, deliverability is the whole problem and no
+     amount of reading this function will show it, so the run says so. */
+  ok('the run reports whether it is sending from the sandbox domain',
+     /sandboxDomain: MAIL_FROM\.includes\('resend\.dev'\)/.test(src))
+}
+
 console.log(`\nnotifyCopy\n\n  ${pass} passed, ${fail} failed\n`)
 process.exit(fail === 0 ? 0 : 1)

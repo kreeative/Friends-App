@@ -41,6 +41,36 @@ const RESEND_KEY = Deno.env.get('RESEND_API_KEY')
 const MAIL_FROM = Deno.env.get('MAIL_FROM') ?? 'Friends <onboarding@resend.dev>'
 
 /**
+ * A human address, used for two different jobs.
+ *
+ * As Reply-To, because a message nobody can answer is a message from a robot,
+ * and mailbox providers weigh that. It is the same address the settings screen
+ * offers for support, so an answer arrives somewhere a person reads.
+ *
+ * As the List-Unsubscribe target, for the reason below.
+ */
+const SUPPORT = Deno.env.get('SUPPORT_EMAIL') ?? 'contact@richandfriends.xyz'
+
+/**
+ * WHY DELIVERED IS NOT THE SAME AS RECEIVED.
+ *
+ * Resend reporting "Delivered" means the receiving server accepted the message.
+ * What Gmail does with it after that is a separate decision, and a bulk sender
+ * with no unsubscribe header and no reply address is one it files under
+ * Promotions or Spam without telling anybody.
+ *
+ * List-Unsubscribe is the cheapest signal there is and this had none.
+ *
+ * A mailto rather than a URL, and no List-Unsubscribe-Post. One-click
+ * unsubscribe means a provider will POST to that URL and expect the person to
+ * be unsubscribed by the time it answers. Nothing in this app answers such a
+ * POST, so declaring it would be promising something that does not exist,
+ * which is worse than not declaring it: the provider tries, fails, and now
+ * distrusts the sender. A mailto needs no endpoint and is honoured.
+ */
+const UNSUB = `<mailto:${SUPPORT}?subject=Unsubscribe>`
+
+/**
  * THE WORDS, IN BOTH LANGUAGES.
  *
  * These two messages were English only. The app has been bilingual since it
@@ -238,7 +268,15 @@ async function send(
       Authorization: `Bearer ${RESEND_KEY}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ from: MAIL_FROM, to, subject, html, text }),
+    body: JSON.stringify({
+      from: MAIL_FROM,
+      to,
+      subject,
+      html,
+      text,
+      reply_to: SUPPORT,
+      headers: { 'List-Unsubscribe': UNSUB },
+    }),
   })
   if (!res.ok) {
     /* Read once. The body is a stream, and a second read throws, which would
@@ -621,7 +659,19 @@ Deno.serve(async () => {
      * exactly like success.
      */
     return new Response(
-      JSON.stringify({ ok: true, resend: Boolean(RESEND_KEY), from: MAIL_FROM, sent: tally }),
+      JSON.stringify({
+        ok: true,
+        resend: Boolean(RESEND_KEY),
+        from: MAIL_FROM,
+        /* Resend's shared sandbox domain. Mail from it is accepted and then
+           filed under Promotions or Spam by most providers, because it is a
+           domain thousands of unrelated senders share and none of them has
+           authenticated. If this is true, deliverability is the problem and no
+           amount of looking at this function will fix it: the answer is a
+           verified domain in Resend and MAIL_FROM pointed at it. */
+        sandboxDomain: MAIL_FROM.includes('resend.dev'),
+        sent: tally,
+      }),
       { headers: { 'Content-Type': 'application/json' } },
     )
   } catch (err) {
