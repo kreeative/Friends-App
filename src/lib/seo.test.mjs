@@ -94,8 +94,33 @@ eq('a lectures chapter too', canonicalPath('/lectures/evidence-of-yourself'), '/
 eq('with a trailing slash', canonicalPath('/lectures/design-beats-discipline/'), '/books/design-beats-discipline')
 eq('and with a utm tag from a shared link', canonicalPath('/lectures/story-you-tell?utm_source=whatsapp'), '/books/story-you-tell')
 eq('books is already canonical', canonicalPath('/books/story-you-tell'), '/books/story-you-tell')
+/* THE HELP PAGE'S THREE ADDRESSES.
+   It shipped with /aide, /faq and /help all rendering the same questions and
+   all self-canonicalising, which is three copies of one page competing. The
+   same fold /library and /studies already had, missed because the page came
+   later. */
+eq('faq folds onto aide', canonicalPath('/faq'), '/aide')
+eq('help folds onto aide', canonicalPath('/help'), '/aide')
+eq('aide is its own canonical', canonicalPath('/aide'), '/aide')
+eq('and a shared link with a tag folds too',
+   canonicalPath('/help?utm_source=whatsapp'), '/aide')
+
 /* Not a greedy prefix match: /librarian is not /library. */
 eq('a similar name is left alone', canonicalPath('/librarything'), '/librarything')
+eq('and /helper is not /help', canonicalPath('/helper'), '/helper')
+
+/* The help page is in the sitemap. It is public, it wants to be found, and a
+   page nothing links to from outside and no sitemap names is one Google has
+   little reason to fetch. */
+ok('the sitemap lists the help page', sitemapPaths([]).includes('/aide'))
+
+/* Every alias is kept OUT, so the file never asks Google to crawl two copies
+   of one page. Derived from the sitemap rather than listed, so a new alias
+   cannot be added to one place and forgotten in the other. */
+for (const alias of ['/library', '/lectures', '/studies', '/faq', '/help']) {
+  ok(`the sitemap does not list ${alias}`, !sitemapPaths(['x']).includes(alias))
+  ok(`and ${alias} is genuinely an alias`, canonicalPath(alias) !== alias)
+}
 
 /* --- what the head gets ------------------------------------------------ */
 {

@@ -71,6 +71,14 @@ const ALIAS = {
      the readers of these pages are francophone, and /studies renders the same
      thing for an English link so a shared address opens rather than bouncing. */
   '/studies': '/etudes',
+  /* THE HELP PAGE SHIPPED WITH THREE ADDRESSES AND NO CANONICAL.
+     /aide, /faq and /help all render the same questions, and until this line
+     each one told Google it was the original. Three copies of one page,
+     competing with each other, which is the exact thing /library and /studies
+     were folded for; the help page arrived later and was missed. French is
+     canonical for the same reason /etudes is: the people reading it. */
+  '/faq': '/aide',
+  '/help': '/aide',
 }
 
 /**
@@ -181,6 +189,10 @@ export function sitemapPaths(slugs = []) {
        /lectures ne le sont pas : une seule adresse canonique par page. */
     '/etudes',
     ...STUDY_SLUGS.map((s) => `/etudes/${s}`),
+    /* The help page. Public, wants to be found, and was absent from this list
+       while being perfectly indexable: a page nothing links to from outside
+       and no sitemap names is a page Google has little reason to fetch. */
+    '/aide',
     '/legal/terms',
     '/legal/privacy',
     '/legal/notice',
