@@ -148,10 +148,17 @@ const STRINGS = {
     'proof.react_muscle': 'Strong',
     'board.missed_line': '{name} missed their goal: "{goal}" today.',
     'board.birthday_line': 'It is {name}’s birthday today.',
-    'birthday.tomorrow': '{name}’s birthday is tomorrow.',
-    'birthday.in_days_one': '{name}’s birthday is in {n} day.',
-    'birthday.in_days_other': '{name}’s birthday is in {n} days.',
+    /* The heading is the gesture. See the note on the French copy. */
+    'birthday.wish': 'Wish {name} a happy birthday',
+    'birthday.plan': 'Plan something for {name}',
+    'birthday.when_today': 'It is today.',
+    'birthday.when_tomorrow': 'It is tomorrow.',
+    'birthday.when_in_one': 'In {n} day.',
+    'birthday.when_in_other': 'In {n} days.',
     'birthday.note': 'Worth a message on the day, wherever you actually talk. This is the reminder, not the gesture.',
+    'birthday.note_early':
+      'There is still time to book something, order something, write something worth reading. On the day there is only the message left.',
+    'birthday.count': '{n} birthdays coming up. Swipe.',
     'board.this_week': 'Today',
     'board.how_we_are': 'How the group is doing',
     'board.goal_success': 'Goal success rate',
@@ -1284,10 +1291,26 @@ const STRINGS = {
     'proof.react_muscle': 'Costaud',
     'board.missed_line': '{name} a manqué son objectif : « {goal} » aujourd’hui.',
     'board.birthday_line': 'C’est l’anniversaire de {name} aujourd’hui.',
-    'birthday.tomorrow': 'C’est l’anniversaire de {name} demain.',
-    'birthday.in_days_one': 'L’anniversaire de {name} est dans {n} jour.',
-    'birthday.in_days_other': 'L’anniversaire de {name} est dans {n} jours.',
+    /* LE GESTE D'ABORD, LA DATE ENSUITE ET EN PETIT.
+       Meme regle que le rail des rappels, parce que c'est le meme objet : un
+       titre qui enonce un fait laisse le lecteur deviner ce qu'on attend de
+       lui, et plusieurs de suite font une liste de faits au lieu d'une liste
+       d'idees. Le titre dit ce qu'on peut faire ; depuis quand ou dans combien
+       de temps passe en gris dessous.
+
+       "a {name}" et "pour {name}" tiennent avec n'importe quel prenom.
+       "de {name}" non : de s'elide devant une voyelle, donc il aurait fallu
+       une regle par prenom. */
+    'birthday.wish': 'Souhaite un bon anniversaire à {name}',
+    'birthday.plan': 'Prépare quelque chose pour {name}',
+    'birthday.when_today': 'C’est aujourd’hui.',
+    'birthday.when_tomorrow': 'C’est demain.',
+    'birthday.when_in_one': 'Dans {n} jour.',
+    'birthday.when_in_other': 'Dans {n} jours.',
     'birthday.note': 'Un message le jour même, là où vous vous parlez vraiment. Ceci est le rappel, pas le geste.',
+    'birthday.note_early':
+      'Il reste le temps de réserver, de commander, d’écrire quelque chose qui se lit. Le jour même, il ne reste que le message.',
+    'birthday.count': '{n} anniversaires arrivent. Glisse.',
     'board.this_week': 'Aujourd’hui',
     'board.how_we_are': 'Où en est le groupe',
     'board.goal_success': 'Taux de réussite des objectifs',
