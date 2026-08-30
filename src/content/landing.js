@@ -27,7 +27,7 @@ export const LANDING = {
      * Short on purpose. A result truncates around sixty characters including
      * the name, so anything longer is written for nobody.
      */
-    tagline: 'Daily check-ins, goals and money',
+    tagline: 'Take your goals to the next level',
 
     manifesto:
       'A new way of living does not ask for luck. It asks for vision, for discipline every day, and for the right tools to carry it out.',
@@ -255,7 +255,7 @@ export const LANDING = {
     /* Voir la note sur la version anglaise. Le nom seul ne dit rien a un
        moteur de recherche, et il doit se battre contre une chanson qui porte
        le meme titre. */
-    tagline: 'Le point du jour, tes objectifs et ton budget',
+    tagline: 'Passe tes objectifs au niveau supérieur',
 
     manifesto:
       'Un nouveau mode de vie ne demande pas de la chance. Il demande de la vision, de la discipline au quotidien et les bons outils pour l’exécuter.',
