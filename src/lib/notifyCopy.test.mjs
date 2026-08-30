@@ -22,6 +22,22 @@ const here = dirname(fileURLToPath(import.meta.url))
 const SRC = join(here, '..', '..', 'supabase', 'functions', 'notify', 'index.ts')
 const src = readFileSync(SRC, 'utf8')
 
+/**
+ * The same file with its comments removed.
+ *
+ * Four separate assertions in this suite have failed on the prose explaining
+ * the very thing they forbid: the note saying "assigned_to is NOT used here",
+ * the one quoting the feminine agreement that was removed, the one explaining
+ * why List-Unsubscribe-Post is absent, and the one quoting the old MAIL_FROM
+ * example. Each time the fix was to strip comments in that block, and each
+ * time the next "X must not appear" check walked into it again.
+ *
+ * So it is derived once. Any check of the form "this must not be in the code"
+ * reads CODE; anything about the words that get sent reads src, because the
+ * copy lives in string literals and is not affected either way.
+ */
+const CODE = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')
+
 let pass = 0
 let fail = 0
 const ok = (name, cond, extra = '') => {
@@ -151,10 +167,7 @@ const keysOf = (lang) => [...block(lang).matchAll(/^ {4}(\w+):/gm)].map((m) => m
      /if \(n\.claimed_by\)/.test(src))
   /* Comments stripped, for the same reason as the gender check below: the note
      inside sendNudges names assigned_to in order to say why it is not used. */
-  const nudgeCode = src
-    .slice(src.indexOf('async function sendNudges'))
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    .replace(/\/\/.*$/gm, '')
+  const nudgeCode = CODE.slice(CODE.indexOf('async function sendNudges'))
   ok('and never from assigned_to, which is the app choosing for them',
      !/assigned_to/.test(nudgeCode),
      'assigned_to must not decide who the email is from')
@@ -389,12 +402,8 @@ const keysOf = (lang) => [...block(lang).matchAll(/^ {4}(\w+):/gm)].map((m) => m
      person to be unsubscribed by the time it answers. Nothing in this app
      answers such a POST, so declaring it would promise something that does not
      exist: the provider tries, fails, and trusts the sender less than before. */
-  /* Comments stripped: the note in index.ts names List-Unsubscribe-Post in
-     order to explain why it is absent, and reading it as a use is the third
-     time this suite has caught itself on its own prose. */
-  const code = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')
   ok('and one-click is NOT claimed, because nothing here could honour it',
-     !/List-Unsubscribe-Post/.test(code))
+     !/List-Unsubscribe-Post/.test(CODE))
 
   ok('a reply goes somewhere a person reads', /reply_to: SUPPORT/.test(src))
 
@@ -404,6 +413,26 @@ const keysOf = (lang) => [...block(lang).matchAll(/^ {4}(\w+):/gm)].map((m) => m
      amount of reading this function will show it, so the run says so. */
   ok('the run reports whether it is sending from the sandbox domain',
      /sandboxDomain: MAIL_FROM\.includes\('resend\.dev'\)/.test(src))
+
+  /**
+   * ONE SENDING ADDRESS FOR THE WHOLE PRODUCT.
+   *
+   * The default was Resend's sandbox, and the deploy note suggested copying
+   * MAIL_FROM="Friends <hi@yourdomain>". The sign-in codes go out as hello@,
+   * because that is what Supabase's mail settings use, so following that
+   * example split the product across two senders on one domain.
+   *
+   * Providers build reputation per address, not only per domain. A verified
+   * domain gets a message accepted; it does not decide which folder it lands
+   * in. hello@ had weeks of sign-in mail behind it; hi@ had sent nothing until
+   * nine near-identical messages went out at once.
+   */
+  const from = src.match(/const MAIL_FROM = [^\n]*\?\? '([^']+)'/)?.[1] ?? ''
+  ok('the default sender is not the sandbox domain', !from.includes('resend.dev'), from)
+  ok('and it is the address the sign-in codes already come from',
+     from.includes('hello@'), from)
+  ok('the deploy note no longer suggests a second address',
+     !/MAIL_FROM="Friends <hi@/.test(CODE))
 }
 
 console.log(`\nnotifyCopy\n\n  ${pass} passed, ${fail} failed\n`)
