@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useGroup } from '../context/GroupContext'
 import { useT } from '../lib/i18n'
+import { DismissButton } from './ui'
 
 /**
  * The response to silence.
@@ -114,25 +115,16 @@ export default function NudgeBanner() {
               {/* Top right, out of the heading's way. The heading is a person's
                   name and it wraps to two lines at this width, so the cross
                   gets its own corner rather than a slot in a flex row that
-                  would squeeze the name further. */}
-              <button
-                type="button"
+                  would squeeze the name further.
+
+                  Shared with the birthday rail and the celebration banner now.
+                  This was the first of the three and the other two were drawn
+                  from it, which is how a 36px target becomes a 32px one on the
+                  copy nobody compared side by side. */}
+              <DismissButton
                 onClick={() => hide(n.id)}
-                data-hook="nudge-hide"
-                aria-label={t('nudge.hide', { name: nameOf(n.subject_id) })}
-                className="press absolute right-3 top-3 flex h-9 w-9 items-center justify-center
-                           rounded-pill text-muted transition-colors hover:bg-ink/[0.06] hover:text-ink"
-              >
-                <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4">
-                  <path
-                    d="M6 6l12 12M18 6L6 18"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.4"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </button>
+                label={t('nudge.hide', { name: nameOf(n.subject_id) })}
+              />
 
               {/**
                * THE HEADING IS THE GESTURE, NOT THE ABSENCE.

@@ -1,8 +1,9 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useT } from '../lib/i18n'
 import { upcomingBirthdays } from '../lib/birthdays'
-import { Avatar } from './ui'
+import { birthdayCard, dismiss, isDismissed, readDismissed } from '../lib/dismissed'
+import { Avatar, DismissButton } from './ui'
 
 /**
  * A week's notice, as a rail of cards.
@@ -33,13 +34,24 @@ import { Avatar } from './ui'
  * browser's, exactly as in NudgeBanner and the welcome deck, so the physics
  * match every other scroller on the device for nothing.
  *
- * WHAT IT DELIBERATELY DOES NOT HAVE.
+ * THE CROSS, AND WHY IT IS NOT A DATABASE ROW.
  *
- * No cross and no button. The nudge rail has both because a nudge is a job
- * somebody has to pick up and because one person may know a reason not to
- * write. A birthday is neither: nothing to claim, nobody to assign, and no
- * private reason to hide a date that everybody can see anyway. It removes
- * itself the day after, which is the only ending it needs.
+ * This had no cross, on the reasoning that a birthday removes itself the day
+ * after and so needs no ending of its own. That was wrong about what the cross
+ * is for: it is not an ending, it is "I have dealt with this", and somebody who
+ * ordered the present on Monday should not be told about it again on Tuesday,
+ * Wednesday and Thursday.
+ *
+ * It writes to localStorage rather than to a table. A nudge stays open on four
+ * other screens after you dismiss it and has to follow you between devices, so
+ * it earns nudge_hidden. A birthday card is derived from a date, affects nobody
+ * else's screen and lives at most a week; a migration, a policy and a row per
+ * person per year to remember that for seven days is not a trade worth making.
+ * See src/lib/dismissed.js, where the expiry is what makes it come back next
+ * year.
+ *
+ * There is still no button. The nudge has one because a nudge is a job somebody
+ * has to volunteer for; a birthday is nothing to claim and nobody to assign.
  *
  * It never announces your own birthday. See upcomingBirthdays.
  */
@@ -47,12 +59,26 @@ export default function BirthdayBanner({ people, within = 7 }) {
   const { user } = useAuth()
   const { t } = useT()
 
-  const soon = useMemo(
+  const all = useMemo(
     () => upcomingBirthdays(people, { within, exclude: user?.id }),
     [people, within, user?.id],
   )
 
+  /* Read once on mount, then kept in state. Optimistic on tap, exactly as the
+     nudge rail is: the card goes now and the write follows, because waiting on
+     storage to acknowledge a decision already made is what makes an app feel
+     slow. Storage cannot fail in a way worth undoing for, so unlike the nudge
+     there is nothing to put back. */
+  const [hidden, setHidden] = useState(() => readDismissed())
+  const soon = all.filter((p) => !isDismissed(hidden, birthdayCard(p.id, p.days).key))
+
   if (soon.length === 0) return null
+
+  const put = (person) => {
+    const { key, until } = birthdayCard(person.id, person.days)
+    setHidden((m) => ({ ...m, [key]: until }))
+    dismiss(key, until)
+  }
 
   const when = (person) => {
     if (person.days === 0) return t('birthday.when_today')
@@ -84,6 +110,11 @@ export default function BirthdayBanner({ people, within = 7 }) {
                  become one absurd card on a tablet. */
               className="animate-rise relative w-[85%] max-w-sm shrink-0 snap-start rounded-card bg-surface p-6 shadow-raised"
             >
+              <DismissButton
+                onClick={() => put(person)}
+                label={t('birthday.hide', { name })}
+              />
+
               {/* The face, which the nudge card does not have and this one
                   earns: a birthday card is about one specific person, and in a
                   rail the avatar is what tells two cards apart before either
@@ -98,7 +129,7 @@ export default function BirthdayBanner({ people, within = 7 }) {
                   "a {name}" and "pour {name}" both survive any first name.
                   "de {name}" would not: de elides before a vowel, so it would
                   need a rule per name. */}
-              <h3 className="mt-3 text-h2 text-ink">
+              <h3 className="mt-3 pr-10 text-h2 text-ink">
                 {today ? t('birthday.wish', { name }) : t('birthday.plan', { name })}
               </h3>
               <p className="mt-1.5 text-label text-muted" data-hook="birthday-when">

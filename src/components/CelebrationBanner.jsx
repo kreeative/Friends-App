@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useT } from '../lib/i18n'
 import { loadUnseen, markSeen } from '../lib/celebrations'
-import { Avatar } from './ui'
+import { Avatar, DismissButton } from './ui'
 import Confetti from './Confetti'
 
 /**
@@ -66,9 +66,17 @@ export default function CelebrationBanner() {
     <div className="lg relative mb-6 overflow-hidden p-5 sm:p-6">
       <Confetti />
 
+      {/* The same cross every other notification card has.
+          The warm button below already dismissed this, and it stays: "Ca fait
+          plaisir, merci" is the answer most people want to give, and replacing
+          it with an X would make the one unambiguously good message in the app
+          the only one you can just delete. The cross is for the other case,
+          where somebody has read it and does not want to say anything back. */}
+      <DismissButton onClick={dismiss} label={t('celebrate.hide')} />
+
       <div className="relative">
         {rows.map((r) => (
-          <div key={r.id} className="flex items-start gap-3.5 py-1.5">
+          <div key={r.id} className="flex items-start gap-3.5 py-1.5 first:pr-10">
             <Avatar
               profile={{ display_name: r.sender_name, avatar_url: r.sender_avatar }}
               size={36}

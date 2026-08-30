@@ -287,3 +287,49 @@ export function AlertIcon({ className = '' }) {
     </svg>
   )
 }
+
+/**
+ * The cross that puts a notification card away.
+ *
+ * WHY IT IS SHARED.
+ *
+ * The nudge rail grew one first, then the birthday rail and the celebration
+ * banner needed the same thing. Three hand-rolled crosses is three sets of
+ * numbers to disagree: the second one drawn from memory ends up 32px instead
+ * of 36, or 2px of stroke instead of 2.4, and nobody notices until two of them
+ * are on screen together. One component, one target size, one weight.
+ *
+ * `absolute right-3 top-3`, so it always sits in the card's own top corner and
+ * the heading beside it needs pr-10 to clear it. The card is the positioned
+ * ancestor; every caller is already `relative` for its own reasons.
+ *
+ * THE LABEL IS REQUIRED AND IT IS A SENTENCE.
+ *
+ * An icon-only control has no accessible name at all unless one is given, and
+ * "Close" would be a lie here: nothing closes, one card goes away for one
+ * reader. So callers pass the whole thing, naming what goes and saying that it
+ * is private. See nudge.hide for the wording that set the pattern.
+ */
+export function DismissButton({ label, onClick, className = '' }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      data-hook="dismiss"
+      aria-label={label}
+      title={label}
+      className={`press absolute right-3 top-3 flex h-9 w-9 items-center justify-center
+                  rounded-pill text-muted transition-colors hover:bg-ink/[0.06] hover:text-ink ${className}`}
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4">
+        <path
+          d="M6 6l12 12M18 6L6 18"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.4"
+          strokeLinecap="round"
+        />
+      </svg>
+    </button>
+  )
+}
