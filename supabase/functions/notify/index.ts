@@ -33,6 +33,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { type Block, layout, plain } from './template.ts'
+import { sendPush } from './push.ts'
 
 const SITE = Deno.env.get('SITE_URL') ?? 'https://richandfriends.xyz'
 
@@ -92,6 +93,81 @@ const SUPPORT = Deno.env.get('SUPPORT_EMAIL') ?? 'contact@richandfriends.xyz'
  * distrusts the sender. A mailto needs no endpoint and is honoured.
  */
 const UNSUB = `<mailto:${SUPPORT}?subject=Unsubscribe>`
+
+/**
+ * VAPID, which is what lets a push service believe this is us.
+ *
+ * Generated once with `node scripts/vapid.mjs` and set as secrets. The public
+ * half is also compiled into the browser bundle as VITE_VAPID_PUBLIC_KEY and
+ * the two MUST be the same pair: a browser subscribes with the public key, and
+ * a push signed by a different private key is refused with 403 by every
+ * service. That is the one mistake here that produces a clean-looking failure.
+ */
+const VAPID = {
+  publicKey: Deno.env.get('VAPID_PUBLIC_KEY') ?? '',
+  privateKey: Deno.env.get('VAPID_PRIVATE_KEY') ?? '',
+  subject: Deno.env.get('VAPID_SUBJECT') ?? `mailto:${SUPPORT}`,
+}
+const PUSH_READY = Boolean(VAPID.publicKey && VAPID.privateKey)
+
+/**
+ * The same news, on the lock screen.
+ *
+ * WHY THIS IS IN ADDITION TO THE EMAIL AND NOT INSTEAD OF IT.
+ *
+ * The email demonstrably arrives; what it does not do is get noticed, because
+ * whether a message lights up a phone is Gmail's decision on the recipient's
+ * device. A push is the opposite: it appears on the lock screen, the wording is
+ * ours, and nobody has to configure anything. But it only reaches browsers that
+ * have subscribed, which is nobody on the first day and never anybody who said
+ * no. Dropping the email would trade a channel that reaches everyone quietly
+ * for one that reaches some people loudly.
+ *
+ * Both go out under the SAME claim in notifications_log. One piece of news is
+ * one message however many ways it travels, and claiming twice would let
+ * somebody get the push this hour and the email next.
+ *
+ * A dead subscription is deleted rather than retried. 404 and 410 mean the
+ * browser is gone or permission was revoked, and a row that will never work
+ * again would otherwise be posted to every hour forever.
+ */
+async function pushTo(
+  userId: string,
+  note: { title: string; body: string; url: string; tag: string },
+) {
+  if (!PUSH_READY) return
+
+  const { data: subs } = await supabase
+    .from('push_subscription')
+    .select('endpoint, p256dh, auth')
+    .eq('user_id', userId)
+
+  for (const sub of subs ?? []) {
+    let result: string
+    try {
+      result = await sendPush(sub as any, JSON.stringify(note), VAPID)
+    } catch (err) {
+      /* One unreachable push service must not take the run down with it: the
+         email for this person has already gone, and the next person's has not. */
+      console.error('push threw', String(err).slice(0, 200))
+      tally.pushFailed += 1
+      continue
+    }
+
+    if (result === 'sent') {
+      tally.pushed += 1
+      await supabase
+        .from('push_subscription')
+        .update({ last_seen_at: new Date().toISOString() })
+        .eq('endpoint', sub.endpoint)
+    } else if (result === 'gone') {
+      tally.pushDropped += 1
+      await supabase.from('push_subscription').delete().eq('endpoint', sub.endpoint)
+    } else {
+      tally.pushFailed += 1
+    }
+  }
+}
 
 /**
  * THE WORDS, IN BOTH LANGUAGES.
@@ -364,7 +440,12 @@ async function release(userId: string, cycleId: string, kind: Kind) {
  * fine, nobody was due" and "it tried and Resend refused", which are the two
  * answers somebody debugging this actually needs to tell apart.
  */
-const tally = { digest: 0, nudge: 0, birthday: 0, failed: 0, dryRun: 0 }
+const tally = {
+  digest: 0, nudge: 0, birthday: 0, failed: 0, dryRun: 0,
+  /* The other channel, counted separately: a run can send every email and no
+     push, which is the normal state until somebody turns push on. */
+  pushed: 0, pushFailed: 0, pushDropped: 0,
+}
 
 /** Record the outcome, and hand the claim back if nothing was sent. */
 async function settle(
@@ -445,6 +526,14 @@ async function sendDigests() {
         loc: who.loc,
       })
       await settle(outcome, 'digest', m.user_id, cycle.id)
+      if (outcome === 'sent') {
+        await pushTo(m.user_id, {
+          title: c.digestTitle,
+          body: c.digestPre(name, items.length),
+          url: `${SITE}/g/${cycle.group_id}/checkin`,
+          tag: 'digest',
+        })
+      }
     }
   }
 }
@@ -529,6 +618,14 @@ async function sendNudges() {
       loc: who.loc,
     })
     await settle(outcome, 'nudge', n.subject_id, n.cycle_id)
+    if (outcome === 'sent') {
+      await pushTo(n.subject_id, {
+        title: from ? c.nudgeFromTitle(from) : c.nudgeTitle,
+        body: from ? c.nudgeFromLead(from, name) : c.nudgeLead(name),
+        url: `${SITE}/profile`,
+        tag: 'nudge',
+      })
+    }
   }
 }
 
@@ -657,6 +754,14 @@ async function sendBirthdays() {
         loc: who.loc,
       })
       await settle(outcome, 'birthday', m.user_id, cyc.id)
+      if (outcome === 'sent') {
+        await pushTo(m.user_id, {
+          title: c.birthdayTitle(names.length),
+          body: c.birthdaySubject(names.length, names[0]),
+          url: `${SITE}/g/${g.id}`,
+          tag: 'birthday',
+        })
+      }
     }
   }
 }
@@ -693,6 +798,9 @@ Deno.serve(async () => {
            amount of looking at this function will fix it: the answer is a
            verified domain in Resend and MAIL_FROM pointed at it. */
         sandboxDomain: MAIL_FROM.includes('resend.dev'),
+        /* False means VAPID_PUBLIC_KEY or VAPID_PRIVATE_KEY is not set on this
+           deployment, so every push was skipped without trying. */
+        push: PUSH_READY,
         sent: tally,
       }),
       { headers: { 'Content-Type': 'application/json' } },

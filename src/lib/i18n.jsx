@@ -158,6 +158,24 @@ const STRINGS = {
     'birthday.note': 'Worth a message on the day, wherever you actually talk. This is the reminder, not the gesture.',
     'birthday.note_early':
       'There is still time to book something, order something, write something worth reading. On the day there is only the message left.',
+    'push.section': 'Notifications',
+    'push.title': 'Notify me on this device',
+    'push.on_here': 'On for this browser. Tap to turn it off.',
+    'push.off_here': 'Off. A reminder will reach you by email only.',
+    /* Four reasons, four sentences. Three of them are actionable, and saying
+       "unsupported" to all four sends people looking for another browser. */
+    'push.why_ios_needs_home_screen':
+      'On iPhone and iPad, add this site to your home screen first: Share, then Add to Home Screen. Notifications work from there. It is Apple’s rule, not ours.',
+    'push.why_denied':
+      'This browser was told no once and will not ask again. Turn notifications back on for this site in your browser settings.',
+    'push.why_no_key': 'Not set up on this build yet.',
+    'push.why_unsupported': 'This browser cannot show notifications.',
+    'push.problem_refused': 'Not turned on. Nothing was saved.',
+    'push.problem_denied': 'This browser will not ask again. Change it in your browser settings.',
+    'push.problem_save_failed': 'Could not save. Try again in a moment.',
+    'push.problem_no_key': 'Not set up on this build yet.',
+    'push.problem_unsupported': 'This browser cannot show notifications.',
+    'push.problem_ios_needs_home_screen': 'Add this site to your home screen first.',
     'birthday.count': '{n} birthdays coming up. Swipe.',
     'birthday.hide': 'Hide {name}. This card disappears for you only.',
     'board.this_week': 'Today',
@@ -1311,6 +1329,25 @@ const STRINGS = {
     'birthday.note': 'Un message le jour même, là où vous vous parlez vraiment. Ceci est le rappel, pas le geste.',
     'birthday.note_early':
       'Il reste le temps de réserver, de commander, d’écrire quelque chose qui se lit. Le jour même, il ne reste que le message.',
+    'push.section': 'Notifications',
+    'push.title': 'Me notifier sur cet appareil',
+    'push.on_here': 'Activé pour ce navigateur. Touche pour désactiver.',
+    'push.off_here': 'Désactivé. Un rappel ne te parviendra que par e-mail.',
+    /* Quatre raisons, quatre phrases. Trois se règlent, et répondre
+       « non pris en charge » aux quatre envoie les gens installer un autre
+       navigateur qui se comportera exactement pareil. */
+    'push.why_ios_needs_home_screen':
+      'Sur iPhone et iPad, ajoute d’abord le site à l’écran d’accueil : Partager, puis Ajouter à l’écran d’accueil. Les notifications marchent à partir de là. C’est la règle d’Apple, pas la nôtre.',
+    'push.why_denied':
+      'Ce navigateur a refusé une fois et ne redemandera pas. Réautorise les notifications pour ce site dans ses réglages.',
+    'push.why_no_key': 'Pas encore configuré sur cette version.',
+    'push.why_unsupported': 'Ce navigateur ne peut pas afficher de notifications.',
+    'push.problem_refused': 'Pas activé. Rien n’a été enregistré.',
+    'push.problem_denied': 'Ce navigateur ne redemandera pas. Change-le dans ses réglages.',
+    'push.problem_save_failed': 'Enregistrement impossible. Réessaie dans un instant.',
+    'push.problem_no_key': 'Pas encore configuré sur cette version.',
+    'push.problem_unsupported': 'Ce navigateur ne peut pas afficher de notifications.',
+    'push.problem_ios_needs_home_screen': 'Ajoute d’abord le site à l’écran d’accueil.',
     'birthday.count': '{n} anniversaires arrivent. Glisse.',
     /* Meme phrase que nudge.hide : la croix est privee partout, et le dire une
        fois sur deux cartes et pas sur la troisieme laisse croire le contraire. */

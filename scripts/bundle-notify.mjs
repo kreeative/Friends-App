@@ -33,6 +33,7 @@ const DIR = join(here, '..', 'supabase', 'functions', 'notify')
 
 export function bundle() {
   const template = readFileSync(join(DIR, 'template.ts'), 'utf8')
+  const push = readFileSync(join(DIR, 'push.ts'), 'utf8')
   const index = readFileSync(join(DIR, 'index.ts'), 'utf8')
 
   /* template.ts declares its own SITE from the same env var index.ts does.
@@ -50,12 +51,20 @@ export function bundle() {
        the file honest about being one unit rather than two glued together. */
     .replace(/^export (type|function|const) /gm, '$1 ')
 
-  /* The import of the module we just inlined, and nothing else: the supabase
+  /* push.ts, the same way. It arrived later than template.ts and the first
+     version of this script did not know about it, so the bundle kept a live
+     `import ... from './push.ts'` that resolves to nothing in a single-file
+     editor: the function would have deployed and thrown on its first run.
+     Hence the assertion at the bottom, which fails on ANY surviving relative
+     import rather than on the two this script happens to know. */
+  const pushBody = push
+    .replace(/^export (type|function|const|async function) /gm, '$1 ')
+
+  /* The imports of the modules we just inlined, and nothing else: the supabase
      client import has to stay. */
-  let indexBody = index.replace(
-    /^import \{[^}]*\} from '\.\/template\.ts'\n/m,
-    '',
-  )
+  let indexBody = index
+    .replace(/^import \{[^}]*\} from '\.\/template\.ts'\n/m, '')
+    .replace(/^import \{[^}]*\} from '\.\/push\.ts'\n/m, '')
 
   /* Imports HOISTED to the top of the bundle.
      Concatenating template first leaves index's import of supabase-js a
@@ -69,7 +78,7 @@ export function bundle() {
     return ''
   })
 
-  return `/**
+  const out = `/**
  * GENERATED FILE. DO NOT EDIT.
  *
  * node scripts/bundle-notify.mjs
@@ -87,8 +96,29 @@ ${imports.join('').trim()}
 
 ${templateBody.trim()}
 
+${pushBody.trim()}
+
 ${indexBody.trim()}
 `
+
+  /**
+   * NOTHING RELATIVE MAY SURVIVE.
+   *
+   * The whole point of this file is that it is ONE file pasted into a web
+   * editor. A relative import that reached the output would resolve to nothing
+   * there, and the function would deploy cleanly and throw on its first run,
+   * which is the failure mode this project has already paid for twice.
+   *
+   * Checked as a rule rather than as a list, so a third module inlined by
+   * somebody who forgets to strip its import fails here instead of in
+   * production.
+   */
+  const leftover = out.match(/^import .*from '\.\/.*'$/m)
+  if (leftover) {
+    throw new Error(`bundle-notify: a relative import survived: ${leftover[0]}`)
+  }
+
+  return out
 }
 
 const OUT = join(DIR, 'bundled.ts')

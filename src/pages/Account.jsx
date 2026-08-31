@@ -5,6 +5,7 @@ import { useT } from '../lib/i18n'
 import { usePageMeta } from '../lib/pageMeta'
 import { DOC_ORDER, LEGAL } from '../legal/content'
 import DeleteAccount from '../components/DeleteAccount'
+import PushToggle from '../components/PushToggle'
 import { Screen, Section, TopBar } from '../components/ui'
 
 /**
@@ -106,6 +107,14 @@ export default function Account() {
        * that is merely reading. It is not destructive, but it is the end of
        * the visit, so it does not belong in a list of documents.
        */}
+      {/* Above the account rows, because it is the only thing on this screen
+          that changes what the app DOES rather than what it shows. */}
+      <Section title={t('push.section')}>
+        <div className="lg px-5">
+          <PushToggle />
+        </div>
+      </Section>
+
       <Section title={t('me.account')}>
         <div className="lg px-5">
           <div className="list">
