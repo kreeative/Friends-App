@@ -1,0 +1,164 @@
+/**
+ * Turning push notifications on, from the browser.
+ *
+ * WHAT THIS DELIBERATELY DOES NOT DO.
+ *
+ * It never asks for permission on load. A permission prompt that appears before
+ * anybody has asked for anything is refused by most people, and a refusal is
+ * close to permanent: the browser remembers it, the prompt cannot be shown
+ * again, and the only way back is a settings screen most people will never
+ * find. So the prompt is behind an explicit tap, and one tap is the only thing
+ * that can trigger it.
+ *
+ * THE SAFARI RULE, WHICH IS THE ONE THAT WILL CONFUSE PEOPLE.
+ *
+ * On iPhone, web push works only when the site has been added to the home
+ * screen. In a Safari tab, PushManager does not exist at all. That is Apple's
+ * rule, there is no way around it, and a toggle that simply fails on the device
+ * most of this app's users hold would be the worst version of this feature. So
+ * `pushSupport()` reports that case separately, and the UI says what to do
+ * instead of showing a control that cannot work.
+ */
+
+/** The VAPID public key, compiled in. Public by definition: it is sent to the
+    push service on every subscribe and is in the payload of every message. */
+export const VAPID_PUBLIC_KEY = import.meta.env?.VITE_VAPID_PUBLIC_KEY ?? ''
+
+/** base64url to the Uint8Array applicationServerKey wants. */
+export function urlBase64ToUint8Array(base64) {
+  const padded = String(base64 ?? '')
+    .replace(/-/g, '+')
+    .replace(/_/g, '/')
+  const full = padded + '='.repeat((4 - (padded.length % 4)) % 4)
+  const raw = atob(full)
+  const out = new Uint8Array(raw.length)
+  for (let i = 0; i < raw.length; i += 1) out[i] = raw.charCodeAt(i)
+  return out
+}
+
+/** An ArrayBuffer from the subscription, as the base64url the server stores. */
+export function bufferToBase64Url(buffer) {
+  const bytes = new Uint8Array(buffer)
+  let bin = ''
+  for (const b of bytes) bin += String.fromCharCode(b)
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+}
+
+/**
+ * Can this browser do it, and if not, why not.
+ *
+ * The reasons are separated because they need different words on screen. "Your
+ * browser cannot" and "add this to your home screen first" are different
+ * problems, and telling an iPhone user the first when the second is true sends
+ * them looking for another browser that will behave identically.
+ *
+ * @returns {'ready'|'ios-needs-home-screen'|'unsupported'|'denied'}
+ */
+export function pushSupport(win = typeof window === 'undefined' ? undefined : window) {
+  if (!win) return 'unsupported'
+
+  const nav = win.navigator ?? {}
+  const hasApi = 'serviceWorker' in nav && 'PushManager' in win && 'Notification' in win
+
+  if (hasApi) return win.Notification.permission === 'denied' ? 'denied' : 'ready'
+
+  /* iOS Safari in a tab: no PushManager at all. Standalone means it was added
+     to the home screen, where the API does appear, so a missing API AND
+     standalone is a genuinely unsupported browser rather than the Apple rule. */
+  const iOS =
+    /iPad|iPhone|iPod/.test(nav.userAgent ?? '') ||
+    /* iPadOS reports itself as a Mac; the touch points give it away. */
+    ((nav.platform === 'MacIntel' || /Macintosh/.test(nav.userAgent ?? '')) &&
+      (nav.maxTouchPoints ?? 0) > 1)
+  const standalone = win.navigator?.standalone === true ||
+    win.matchMedia?.('(display-mode: standalone)')?.matches === true
+
+  if (iOS && !standalone) return 'ios-needs-home-screen'
+  return 'unsupported'
+}
+
+/** The registered worker, registering it if this is the first time. */
+export async function ensureWorker() {
+  if (!('serviceWorker' in navigator)) return null
+  const existing = await navigator.serviceWorker.getRegistration('/')
+  if (existing) return existing
+  return navigator.serviceWorker.register('/sw.js', { scope: '/' })
+}
+
+/** The subscription this browser already has, or null. Never prompts. */
+export async function currentSubscription() {
+  if (pushSupport() !== 'ready') return null
+  const reg = await navigator.serviceWorker.getRegistration('/')
+  if (!reg) return null
+  return reg.pushManager.getSubscription()
+}
+
+/** The three fields the server needs, from a PushSubscription. */
+export function subscriptionRow(sub, userId) {
+  const json = typeof sub.toJSON === 'function' ? sub.toJSON() : sub
+  const keys = json.keys ?? {}
+  return {
+    endpoint: json.endpoint,
+    user_id: userId,
+    p256dh: keys.p256dh,
+    auth: keys.auth,
+  }
+}
+
+/**
+ * Ask, subscribe, and hand back the row to store.
+ *
+ * Only ever call this from a click. Browsers require a user gesture for the
+ * permission prompt, and calling it without one fails in a way that looks like
+ * the person refused.
+ *
+ * @returns {Promise<{ok: true, row: object} | {ok: false, reason: string}>}
+ */
+export async function enablePush(userId) {
+  const support = pushSupport()
+  if (support !== 'ready') return { ok: false, reason: support }
+  if (!VAPID_PUBLIC_KEY) return { ok: false, reason: 'no-key' }
+
+  /* Asked here rather than on load. `default` means never asked; `denied` is
+     handled above and cannot be re-prompted. */
+  const permission = await Notification.requestPermission()
+  if (permission !== 'granted') return { ok: false, reason: 'refused' }
+
+  const reg = await ensureWorker()
+  if (!reg) return { ok: false, reason: 'unsupported' }
+  /* The worker has to be active before pushManager will subscribe, and after a
+     first registration it briefly is not. */
+  await navigator.serviceWorker.ready
+
+  const existing = await reg.pushManager.getSubscription()
+  const sub =
+    existing ??
+    (await reg.pushManager.subscribe({
+      /* Required by every browser now, and it is the honest setting: it means
+         every push shows something to the person rather than silently waking
+         the app to do work in the background. */
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+    }))
+
+  return { ok: true, row: subscriptionRow(sub, userId) }
+}
+
+/**
+ * Turn it off on this device.
+ *
+ * Unsubscribing from the push service AND deleting the row have to both happen.
+ * Doing only the first leaves a row the sender will keep posting to until the
+ * service answers 410; doing only the second leaves the browser subscribed to
+ * something nothing sends, which is harmless but means turning it back on
+ * silently reuses a subscription the server has forgotten.
+ *
+ * @returns the endpoint that was removed, so the caller can delete that row.
+ */
+export async function disablePush() {
+  const sub = await currentSubscription()
+  if (!sub) return null
+  const endpoint = sub.endpoint
+  await sub.unsubscribe().catch(() => {})
+  return endpoint
+}
