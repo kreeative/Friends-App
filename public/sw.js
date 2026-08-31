@@ -20,6 +20,21 @@
  * the whole origin and /assets/sw.js could not. It sits in public/ rather than
  * being bundled for that reason, and because a hashed filename would mean a new
  * worker on every deploy.
+ *
+ * AND IT MUST NEVER BE SERVED FROM CACHE.
+ *
+ * That is the `/sw.js` entry in vercel.json, and it is the price of the
+ * unhashed name above. Browsers hold on to a worker for up to 24 hours by
+ * default, so without that header a fix to the push handler below reaches
+ * people a day late, and this is the one file where a stale copy keeps serving
+ * itself: the old worker is what decides whether to fetch the new one. The
+ * bundle under /assets is the opposite case, cached forever, because its name
+ * carries a content hash and a changed file is a changed URL.
+ *
+ * vercel.json cannot say any of this itself. It is JSON, which has no comments,
+ * and Vercel validates it against a schema that rejects unknown keys, so the
+ * "//" trick fails the build rather than being ignored. Hence this paragraph,
+ * here, next to the thing it protects.
  */
 
 /* Take over immediately rather than waiting for every tab to close. A worker

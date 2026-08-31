@@ -17,7 +17,6 @@
       ]
     },
     {
-      "//": "The service worker must never be served from cache. Browsers hold on to sw.js for up to 24 hours by default, so without this a fix to the push handler reaches people a day late, and a worker is the one file where a stale copy keeps serving itself. The bundle under /assets is the opposite case: its name contains a content hash, so it can be cached forever.",
       "source": "/sw.js",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
