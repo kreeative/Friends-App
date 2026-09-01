@@ -71,6 +71,29 @@ if (rows.length === 0) throw new Error('no manuscripts found under content/books
 
 const total = rows.reduce((n, r) => n + r.words, 0)
 
+/**
+ * One chapter's UPDATE, defined once because it is emitted twice: into the
+ * combined 08 file and into the per-book files below. Two copies of this
+ * would be two things to keep in step, and the failure would be a book that
+ * silently stopped updating.
+ *
+ * ASCII separators in the comment, deliberately. This text is pasted into the
+ * Supabase SQL editor through a clipboard, and the repo rule about keeping
+ * that ASCII exists because a mangled byte reports as an invalid byte
+ * sequence at a line number that is not where the problem is. A decorative
+ * middot is not worth carrying that risk 28 times over. The only non-ASCII in
+ * the output is inside the prose itself, where it spells researchers' names
+ * correctly and is worth the two bytes.
+ */
+const statement = (r) => `-- ${r.slug} | chapter ${r.idx} | ${r.words.toLocaleString('en-GB')} words | ${r.file}
+update chapters c
+   set body = ${quote(r.body)},
+       word_count = ${r.words}
+  from books b
+ where b.id = c.book_id
+   and b.slug = '${r.slug}'
+   and c.idx = ${r.idx};`
+
 const sql = `-- ============================================================================
 -- Chapter bodies. GENERATED, do not edit.
 --
@@ -87,18 +110,7 @@ const sql = `-- ================================================================
 
 begin;
 
-${rows
-  .map(
-    (r) => `-- ${r.slug} · chapter ${r.idx} · ${r.words.toLocaleString('en-GB')} words · ${r.file}
-update chapters c
-   set body = ${quote(r.body)},
-       word_count = ${r.words}
-  from books b
- where b.id = c.book_id
-   and b.slug = '${r.slug}'
-   and c.idx = ${r.idx};`,
-  )
-  .join('\n\n')}
+${rows.map(statement).join('\n\n')}
 
 commit;
 
@@ -111,7 +123,62 @@ commit;
 
 fs.writeFileSync(OUT, sql)
 
+/**
+ * The same content, split one file per book.
+ *
+ * WHY BOTH EXIST.
+ *
+ * 08 is the canonical file and it stays. But the three manuscripts finished
+ * at around forty thousand words, which is a quarter of a megabyte of SQL,
+ * and that is past the point where pasting it in one go is comfortable. The
+ * person running these is doing it on an iPad, into a browser textarea, and a
+ * paste that large is slow, is awkward to verify, and takes the whole
+ * transaction down with it if any part of it goes wrong.
+ *
+ * Split per book, each file is a third of the size, each is a complete
+ * transaction on its own, and a failure only costs one book. The statements
+ * are identical and only ever UPDATE, so running the parts and running the
+ * whole are the same operation and the order does not matter.
+ */
+const partDir = path.join(root, 'supabase', 'chapters')
+fs.mkdirSync(partDir, { recursive: true })
+
+const parts = []
+for (const slug of books) {
+  const mine = rows.filter((r) => r.slug === slug)
+  const words = mine.reduce((n, r) => n + r.words, 0)
+  const file = path.join(partDir, `08_${slug.replace(/-/g, '_')}.sql`)
+
+  fs.writeFileSync(
+    file,
+    `-- ============================================================================
+-- ${slug}: chapter bodies. GENERATED, do not edit.
+--
+-- Rebuild: node scripts/build-chapters.mjs
+--
+-- One book's worth of supabase/08_chapter_bodies.sql, which is the same
+-- statements for all three books in one transaction. Run either. These only
+-- UPDATE rows that 07_books_all_in_one.sql already created, so they are safe
+-- to re-run and safe to run in any order.
+--
+-- ${mine.length} chapter(s), ${words.toLocaleString('en-GB')} words.
+-- ============================================================================
+
+begin;
+
+${mine.map(statement).join('\n\n')}
+
+commit;
+`,
+  )
+  parts.push({ slug, count: mine.length, words, file })
+}
+
 for (const r of rows) {
   console.log(`  ${r.slug.padEnd(24)} ch${String(r.idx).padStart(2, '0')}  ${String(r.words).padStart(5)} words`)
 }
-console.log(`\n${rows.length} chapter(s), ${total.toLocaleString('en-GB')} words → supabase/08_chapter_bodies.sql`)
+console.log(`\n${rows.length} chapter(s), ${total.toLocaleString('en-GB')} words -> supabase/08_chapter_bodies.sql`)
+for (const p of parts) {
+  const kb = Math.round(fs.statSync(p.file).size / 1024)
+  console.log(`  ${String(kb).padStart(4)} KB  ${path.relative(root, p.file)}`)
+}

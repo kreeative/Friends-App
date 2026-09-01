@@ -28,6 +28,14 @@ Step 3 is safe to repeat as often as you like. The generated file only ever
 updates bodies and word counts for chapters that already exist; it never
 creates, deletes or reorders anything, so it cannot disagree with the seed.
 
+**If that paste is too big**, and at three finished books it is around a
+quarter of a megabyte, the same build also writes one file per book under
+`supabase/chapters/`. Each is about 80 KB, each is a complete transaction,
+and running all three is identical to running `08`. Order does not matter and
+a failure only costs one book. Use whichever is less painful; do not run a
+partial copy of `08` itself, because a truncated paste ends mid-literal and
+the error will point at the wrong line.
+
 **Order matters once:** `07_books_all_in_one.sql` has to have been run first.
 That is the file that creates the tables, the three books, and the chapters
 with their titles and preview flags. `08` fills in the prose.
