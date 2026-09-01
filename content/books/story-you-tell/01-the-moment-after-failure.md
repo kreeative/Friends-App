@@ -44,7 +44,7 @@ That signal was then tested properly. Under David Yeager, the National Study of 
 
 It worked. It worked modestly, on the order of a tenth of a grade point, and it worked *only for lower-achieving students*, and (this is the part that should have ended the poster industry) it worked only in schools where the surrounding norms actually supported taking on challenge. Where the local culture punished struggle, the belief had nowhere to go.
 
-Elizabeth Macnamara and Alexander Burgoyne have since published still more sceptical analyses, and the argument continues. I am not going to pretend it is settled.
+Brooke Macnamara and Alexander Burgoyne have since published still more sceptical analyses, and the argument continues. I am not going to pretend it is settled.
 
 Here is what I think a fair reading gives you.
 
