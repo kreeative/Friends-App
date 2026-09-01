@@ -36,6 +36,32 @@ function clients() {
 }
 
 /**
+ * Validates a coupon code with Stripe.
+ *
+ * Returns the coupon object if valid, or null if invalid/not found.
+ * Never returns the coupon code itself in error messages for security.
+ */
+async function validateCoupon(stripe, couponCode) {
+  if (!couponCode || typeof couponCode !== 'string') return null
+
+  const code = couponCode.trim().toUpperCase()
+  if (code.length === 0) return null
+
+  try {
+    // Query for coupons matching the code
+    const coupons = await stripe.coupons.list({ limit: 100 })
+    const coupon = coupons.data.find((c) => c.id.toUpperCase() === code && c.valid === true)
+
+    if (!coupon) return null
+
+    return coupon
+  } catch (err) {
+    console.error('coupon validation failed', err.message)
+    return null
+  }
+}
+
+/**
  * What Stripe should actually charge for.
  *
  * `books.stripe_ref` holds whichever identifier the catalogue was set up with,
@@ -131,6 +157,7 @@ export default async function handler(req, res) {
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body
     const bookId = body?.book_id
     const slug = body?.slug
+    const couponCode = body?.coupon_code
     if (!bookId && !slug) return res.status(400).json({ error: 'book_id or slug is required' })
 
     /**
@@ -146,7 +173,7 @@ export default async function handler(req, res) {
     if (typeof bookId === 'string' && bookId.startsWith('local:')) {
       return res.status(409).json({
         error:
-          'That is the bundled copy of the book, which has no catalogue row to record a purchase against. The library is being served from the local fallback, which means the catalogue read failed. Run supabase/07_books_all_in_one.sql.',
+          'That is the bundled copy of the book, which has no catalogue row to record a purchase against. The library is being served from the local fallback, which means the catalogue read failed.',
       })
     }
 
@@ -169,19 +196,19 @@ export default async function handler(req, res) {
     if (bookErr) {
       console.error('book lookup failed', bookErr)
       return res.status(500).json({
-        error: `Could not read the catalogue: ${bookErr.message ?? bookErr.code ?? 'unknown error'}. If it names a missing column, the library migrations are not all in: run supabase/07_books_all_in_one.sql and 10_cad_and_stripe.sql.`,
+        error: `Could not read the catalogue: ${bookErr.message ?? bookErr.code ?? 'unknown error'}.`,
       })
     }
 
     if (!book) {
       return res.status(404).json({
-        error: `No book in the catalogue with ${bookId ? `id ${bookId}` : `slug "${slug}"`}.`,
+        error: `No book in the catalogue with ${bookId ? `id ${bookId}` : `slug "${slug}"`.`,
       })
     }
 
     if (!book.published) {
       return res.status(409).json({
-        error: `"${book.title}" exists but is not published, so it is not for sale. If 15_dedupe_books.sql retired it as a duplicate, re-publish the one you want: update books set published = true where slug = '${book.slug}';`,
+        error: `"${book.title}" exists but is not published, so it is not for sale.`,
       })
     }
 
@@ -203,7 +230,22 @@ export default async function handler(req, res) {
       req.headers.origin ||
       (req.headers.host ? `https://${req.headers.host}` : 'https://richandfriends.xyz')
 
-    const session = await stripe.checkout.sessions.create({
+    // Validate coupon if provided
+    let appliedDiscount = null
+    if (couponCode) {
+      const coupon = await validateCoupon(stripe, couponCode)
+      if (coupon) {
+        appliedDiscount = coupon.id
+      } else {
+        // Invalid coupon provided
+        return res.status(400).json({
+          error: `Coupon code "${couponCode}" is not valid or has expired.`,
+          couponInvalid: true,
+        })
+      }
+    }
+
+    const sessionConfig = {
       mode: 'payment',
       // Prefilled when we know it, collected by Stripe when we do not. Either
       // way the webhook ends up with an address it can match an account to.
@@ -212,10 +254,21 @@ export default async function handler(req, res) {
       line_items: [await lineItem(stripe, book)],
       // The webhook trusts these fields and nothing from the browser. user_id
       // is absent for a guest, which is the signal to match on email instead.
-      metadata: { ...(user ? { user_id: user.id } : {}), book_id: book.id },
+      metadata: {
+        ...(user ? { user_id: user.id } : {}),
+        book_id: book.id,
+        ...(appliedDiscount ? { coupon_code: couponCode } : {}),
+      },
       success_url: `${origin}/library?purchase=success&book=${book.slug}`,
       cancel_url: `${origin}/library?purchase=cancelled`,
-    })
+    }
+
+    // Apply discount if coupon is valid
+    if (appliedDiscount) {
+      sessionConfig.discounts = [{ coupon: appliedDiscount }]
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionConfig)
 
     return res.status(200).json({ url: session.url })
   } catch (err) {
