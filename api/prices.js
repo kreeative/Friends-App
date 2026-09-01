@@ -31,6 +31,26 @@ const REQUIRED = ['stripeSecret', 'supabaseUrl', 'serviceRole']
 const TTL_MS = 5 * 60 * 1000
 let cache = { at: 0, data: null }
 
+/**
+ * An error message that is safe to put on a public endpoint.
+ *
+ * Stripe puts a partially redacted key into the message for an authentication
+ * failure, along the lines of "Invalid API Key provided: sk_live_****abcd".
+ * Stripe's own redaction is not this project's decision to rely on, and the
+ * rule here has always been that no error message carries a credential, so
+ * anything key-shaped is removed before it can be returned. `whsec_` and the
+ * publishable prefixes are in the pattern too: they should never appear in a
+ * message from this file, and a filter that only catches what you expect is
+ * not a filter.
+ *
+ * Truncated as well, because a Stripe error can run to several hundred
+ * characters and this is a diagnostic line, not a log.
+ */
+function safeMessage(err) {
+  const raw = String(err?.message ?? 'lookup failed')
+  return raw.replace(/\b(sk|rk|pk|whsec)_[A-Za-z0-9_*]+/g, '[redacted]').slice(0, 200)
+}
+
 async function amountFor(stripe, ref) {
   const id = (ref ?? '').trim()
   if (!id) return null
@@ -52,6 +72,25 @@ async function amountFor(stripe, ref) {
   return null
 }
 
+/**
+ * WHY THIS ANSWERS WITH A REASON AND NOT JUST AN EMPTY MAP.
+ *
+ * Every branch below used to return `{"prices":{}}`, and that one response
+ * meant five different things: the environment is not configured, Stripe
+ * refused the key, the catalogue read failed, no book has a stripe_ref yet, or
+ * every ref points at something that no longer exists. Those have five
+ * different fixes and the shop looks identical in all of them, because the
+ * fallback to the database columns is deliberately silent.
+ *
+ * That silence is right for a customer and useless for whoever is setting this
+ * up, who is reduced to guessing which of five things went wrong. So the
+ * status is still 200 and the shop still falls back, and the response now says
+ * what happened.
+ *
+ * `missing` names environment variables, which is the same thing
+ * /api/checkout already reports and is not a leak: a name is not a value. No
+ * branch here returns a key, a token, or a Stripe error body.
+ */
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
     res.setHeader('Allow', 'GET')
@@ -60,11 +99,19 @@ export default async function handler(req, res) {
 
   // Not configured is not an error here. The shop falls back to the database
   // columns and keeps working; saying 200 with an empty map is what lets it.
-  if (missingEnv(REQUIRED).length > 0) return res.status(200).json({ prices: {} })
+  const missing = missingEnv(REQUIRED)
+  if (missing.length > 0) {
+    return res.status(200).json({
+      prices: {},
+      configured: false,
+      missing,
+      note: 'Stripe is not configured on this deployment, so prices come from books.price_cents. Set these in Vercel and redeploy.',
+    })
+  }
 
   if (cache.data && Date.now() - cache.at < TTL_MS) {
     res.setHeader('Cache-Control', 'public, max-age=60, s-maxage=300')
-    return res.status(200).json({ prices: cache.data, cached: true })
+    return res.status(200).json({ prices: cache.data, configured: true, cached: true })
   }
 
   try {
@@ -73,10 +120,27 @@ export default async function handler(req, res) {
       auth: { persistSession: false },
     })
 
-    const { data: books } = await admin
+    const { data: books, error: bookErr } = await admin
       .from('books')
       .select('id, slug, stripe_ref')
       .eq('published', true)
+
+    /* The catalogue read failing is a different problem from Stripe failing,
+       and it used to be indistinguishable. Not cached: a transient database
+       error should not pin an empty price list for five minutes. */
+    if (bookErr) {
+      console.error('price list: catalogue read failed', bookErr)
+      return res.status(200).json({
+        prices: {},
+        configured: true,
+        note: `Could not read the catalogue: ${bookErr.message ?? bookErr.code ?? 'unknown error'}. Prices fall back to books.price_cents.`,
+      })
+    }
+
+    /* Which books could not be priced, and why, one line each. This is the
+       part that turns "empty" into "these three refs are gone", which is the
+       answer somebody staring at an empty map actually needs. */
+    const unpriced = []
 
     /* Keyed by id and by slug. The signed-in library holds rows and knows the
        id; the public preview renders from the bundled catalogue, which has a
@@ -84,24 +148,52 @@ export default async function handler(req, res) {
     const prices = {}
     await Promise.all(
       (books ?? []).map(async (b) => {
+        const ref = (b.stripe_ref ?? '').trim()
+        if (!ref) {
+          unpriced.push({ slug: b.slug, reason: 'no stripe_ref set' })
+          return
+        }
         try {
-          const amount = await amountFor(stripe, b.stripe_ref)
+          const amount = await amountFor(stripe, ref)
           if (amount && amount.cents != null) {
             prices[b.id] = amount
             if (b.slug) prices[b.slug] = amount
+          } else {
+            unpriced.push({ slug: b.slug, reason: `${ref} resolved to no amount` })
           }
-        } catch {
+        } catch (err) {
           // One misconfigured book must not take the whole price list down.
-          // Its card falls back to the database column like any other.
+          // Its card falls back to the database column like any other. Only
+          // Stripe's error type and message are echoed, never a request id or
+          // anything carrying the key.
+          unpriced.push({ slug: b.slug, reason: `${ref}: ${safeMessage(err)}` })
         }
       }),
     )
 
-    cache = { at: Date.now(), data: prices }
-    res.setHeader('Cache-Control', 'public, max-age=60, s-maxage=300')
-    return res.status(200).json({ prices })
+    /* Only a good answer is cached. Caching a failure would keep reporting it
+       for five minutes after the fix, which is the wrong way round: the whole
+       point of the five-minute TTL is that a price change shows up while you
+       are still looking at the dashboard wondering whether it worked. */
+    const complete = unpriced.length === 0
+    if (complete) {
+      cache = { at: Date.now(), data: prices }
+      res.setHeader('Cache-Control', 'public, max-age=60, s-maxage=300')
+    } else {
+      res.setHeader('Cache-Control', 'no-store')
+    }
+
+    return res.status(200).json({
+      prices,
+      configured: true,
+      ...(complete ? {} : { unpriced }),
+    })
   } catch (err) {
     console.error('price list failed', err)
-    return res.status(200).json({ prices: {} })
+    return res.status(200).json({
+      prices: {},
+      configured: true,
+      note: `Stripe rejected the request: ${safeMessage(err)}. Prices fall back to books.price_cents.`,
+    })
   }
 }
