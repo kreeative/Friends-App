@@ -14,12 +14,18 @@ import { addDays, dayKey, fromKey } from './cycle.js'
 import {
   CATEGORIES,
   CATEGORY_COLOUR,
+  LAYERS,
+  LAYER_COLOUR,
   agendaFor,
   blockStyle,
   clockOf,
   dayBounds,
+  layerOf,
   minutesOf,
   occurrencesOf,
+  timetableRows,
+  visibleEvents,
+  weekdayName,
 } from './agenda.js'
 
 let pass = 0
@@ -197,6 +203,126 @@ eq('and never wider than the day', dayBounds([{ start_min: 0, end_min: 1440 }]).
 
 eq('the four categories match the check constraint', CATEGORIES, ['cours', 'examen', 'etude', 'perso'])
 ok('and every one has a colour', CATEGORIES.every((c) => CATEGORY_COLOUR[c]))
+
+/* --- the layers the filter toolbar toggles ------------------------------ */
+
+eq('four layers, as asked for', LAYERS, ['scolaire', 'perso', 'objectifs', 'cycle'])
+ok('and every one has a dot colour', LAYERS.every((l) => LAYER_COLOUR[l]))
+
+/* The grouping, which is the whole reason layers and categories are separate
+   lists. Three school categories collapse to one toggle and keep their own
+   colours on the grid. */
+eq('a class is school', layerOf({ category: 'cours' }), 'scolaire')
+eq('so is an exam', layerOf({ category: 'examen' }), 'scolaire')
+eq('so is a revision block', layerOf({ category: 'etude' }), 'scolaire')
+eq('personal is its own layer', layerOf({ category: 'perso' }), 'perso')
+
+/* A row written by a later version of the app, or by hand. It has to stay
+   visible: an event nobody can see and nobody can delete is worse than one
+   filed under the wrong heading. */
+eq('an unknown category is still drawn', layerOf({ category: 'quidditch' }), 'perso')
+eq('and so is one with no category at all', layerOf({}), 'perso')
+
+const mixed = [
+  { id: 'a', category: 'cours' },
+  { id: 'b', category: 'examen' },
+  { id: 'c', category: 'perso' },
+]
+eq('no filter means everything', visibleEvents(mixed, null).length, 3)
+eq('hiding school takes both of its categories', visibleEvents(mixed, new Set(['scolaire'])).map((e) => e.id), ['c'])
+eq('hiding personal leaves the timetable', visibleEvents(mixed, new Set(['perso'])).map((e) => e.id), ['a', 'b'])
+eq('hiding both leaves nothing', visibleEvents(mixed, new Set(['scolaire', 'perso'])).length, 0)
+
+/* Toggling "cycle" off is about the overlay and has no business hiding a
+   lecture. Toggling "objectifs" off hides the synthetic goal rows and nothing
+   else, which is the pair of assertions below. */
+eq('hiding the cycle hides no events', visibleEvents(mixed, new Set(['cycle'])).length, 3)
+eq('hiding goals hides no timetable events', visibleEvents(mixed, new Set(['objectifs'])).length, 3)
+
+/* A goal read out of the goals table and given a synthetic category so it can
+   go through the same expander. It is not in CATEGORIES and the database would
+   refuse it, which is the point: it is drawn here and edited elsewhere. */
+const withGoal = [...mixed, { id: 'g', category: 'objectif', goalId: 'g1' }]
+ok('the goal category is not a database category', !CATEGORIES.includes('objectif'))
+eq('a goal is on the goals layer', layerOf({ category: 'objectif' }), 'objectifs')
+eq('hiding goals takes the goal out', visibleEvents(withGoal, new Set(['objectifs'])).map((e) => e.id), ['a', 'b', 'c'])
+eq('and hiding school leaves the goal', visibleEvents(withGoal, new Set(['scolaire'])).map((e) => e.id), ['c', 'g'])
+
+/* Anything Set-like works, and a caller that passes nonsense gets everything
+   rather than an exception on a page that is mid-render. */
+eq('a bad filter is not a filter', visibleEvents(mixed, { nope: true }).length, 3)
+eq('and neither is undefined', visibleEvents(mixed).length, 3)
+
+/* --- the name behind a one-letter chip ----------------------------------- */
+
+/* The reason this exists: two of the seven French initials are the same
+   letter, so the visible text cannot be the accessible name. */
+eq('day 0 is Sunday', weekdayName(0, 'en-GB'), 'Sunday')
+eq('day 1 is Monday', weekdayName(1, 'en-GB'), 'Monday')
+eq('day 6 is Saturday', weekdayName(6, 'en-GB'), 'Saturday')
+eq('and in French', weekdayName(2, 'fr-FR'), 'mardi')
+ok(
+  'the two chips that share a letter do not share a name',
+  weekdayName(2, 'fr-FR') !== weekdayName(3, 'fr-FR'),
+  `${weekdayName(2, 'fr-FR')} vs ${weekdayName(3, 'fr-FR')}`,
+)
+/* Built in UTC on purpose. Constructing the date locally and formatting it
+   locally is the classic way this lands a day out west of Greenwich. */
+ok('every day has a distinct name', new Set([0, 1, 2, 3, 4, 5, 6].map((d) => weekdayName(d, 'fr-FR'))).size === 7)
+
+/* --- a term entered in one go ------------------------------------------- */
+
+const TERM = { userId: 'u1', startsOn: '2026-09-07', untilOn: '2026-12-18' }
+const cls = (over = {}) => ({ title: 'Biochimie', start: '10:00', end: '12:00', weekdays: [2], ...over })
+
+const built = timetableRows([cls(), cls({ title: 'Physio', weekdays: [1, 3], start: '14:00', end: '15:30' })], TERM)
+eq('two classes make two rows', built.rows.length, 2)
+eq('the term start goes on every one', built.rows.map((r) => r.starts_on), ['2026-09-07', '2026-09-07'])
+eq('and so does the end', built.rows[0].until_on, '2026-12-18')
+eq('times are stored as minutes', [built.rows[0].start_min, built.rows[0].end_min], [600, 720])
+eq('the owner is set, because RLS checks it', built.rows[0].user_id, 'u1')
+eq('the colour comes from the category', built.rows[0].colour, CATEGORY_COLOUR.cours)
+
+/* The wizard opens with empty rows and offers more. Refusing to save because
+   the last two were never filled in is the most annoying thing this shape of
+   form can do. */
+eq('blank rows are skipped, not rejected', timetableRows([cls(), { title: '  ' }, {}], TERM).rows.length, 1)
+eq('but all-blank is an error rather than an empty insert', timetableRows([{}, {}], TERM).error, 'empty')
+
+/* A row that is filled in but wrong takes the whole batch down, and says which
+   one. A partial save leaves somebody with four of six classes and no way to
+   tell which two are missing. */
+eq('a half-filled time is refused', timetableRows([cls(), cls({ title: 'Anat', end: '' })], TERM).error, 'times')
+eq('and names the row', timetableRows([cls(), cls({ title: 'Anat', end: '' })], TERM).at, 'Anat')
+eq('backwards times are refused', timetableRows([cls({ start: '12:00', end: '10:00' })], TERM).error, 'order')
+eq('a class with no day is refused', timetableRows([cls({ weekdays: [] })], TERM).error, 'days')
+eq('a term ending before it starts is refused', timetableRows([cls()], { ...TERM, untilOn: '2026-09-01' }).error, 'until')
+
+/* Tapping Tuesday twice means Tuesday once. This would not error: occurrencesOf
+   builds a Set from the array, so the day draws correctly and the stored row is
+   quietly wrong forever. */
+eq('duplicate days are collapsed', timetableRows([cls({ weekdays: [2, 2, 4, 2] })], TERM).rows[0].weekdays, [2, 4])
+eq('and days are sorted', timetableRows([cls({ weekdays: [5, 1, 3] })], TERM).rows[0].weekdays, [1, 3, 5])
+eq('a day outside the week is dropped', timetableRows([cls({ weekdays: [2, 9] })], TERM).rows[0].weekdays, [2])
+
+/* The category has to be one the check constraint knows, whatever arrives. */
+eq('an unknown category falls back to a class', timetableRows([cls({ category: 'quidditch' })], TERM).rows[0].category, 'cours')
+eq('and a known one is kept', timetableRows([cls({ category: 'examen' })], TERM).rows[0].category, 'examen')
+
+/* Both times empty is an all-day entry, which the constraint allows. The
+   wizard does not invent a stricter rule than the schema. */
+const untimed = timetableRows([cls({ start: '', end: '' })], TERM)
+eq('an all-day class is allowed', untimed.rows.length, 1)
+eq('with no times at all', [untimed.rows[0].start_min, untimed.rows[0].end_min], [null, null])
+
+/* Length caps, so a paste of something long is truncated here rather than
+   rejected by the constraint after the whole batch is assembled. */
+eq('a long title is cut to the column width', timetableRows([cls({ title: 'x'.repeat(200) })], TERM).rows[0].title.length, 120)
+eq('an empty room is null, not an empty string', timetableRows([cls({ location: '   ' })], TERM).rows[0].location, null)
+
+/* No end date is a rule that runs until it is deleted, which is what somebody
+   entering a weekly habit expects. */
+eq('an open-ended term is allowed', timetableRows([cls()], { ...TERM, untilOn: '' }).rows[0].until_on, null)
 
 console.log(`\n  ${pass} passed, ${fail} failed\n`)
 process.exit(fail ? 1 : 0)

@@ -273,3 +273,17 @@ export function remindOn(prediction, daysBefore, from = new Date()) {
  * things people say helped, and none of them can hurt.
  */
 export const PREP = ['prep.water', 'prep.warmth', 'prep.gentle']
+
+/**
+ * Glasses in a day, for the hydration row.
+ *
+ * Eight, which is the number the advice is always given as and therefore the
+ * one people are counting against. It is a target to fill a row toward, not a
+ * threshold: nothing in the app treats seven as a failure, and the count is
+ * shown in words beside the marks so the row is never the only signal.
+ *
+ * Not litres. cycle_day.water is a count of glasses because nobody knows what
+ * their glass holds, and a number that has to be estimated precisely is a
+ * number that does not get entered.
+ */
+export const WATER_GOAL = 8

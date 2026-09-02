@@ -19,6 +19,82 @@ import { addDays, dayKey, daysBetween, fromKey } from './cycle.js'
 export const CATEGORIES = ['cours', 'examen', 'etude', 'perso']
 
 /**
+ * The layers the filter toolbar turns on and off.
+ *
+ * WHY THESE ARE NOT THE CATEGORIES, WHICH IS THE OBVIOUS DESIGN.
+ *
+ * The request asked for four toggles, "Emploi du temps / Personnel /
+ * Objectifs / Cycle et Sante", and separately for the event form to offer four
+ * types with the same names. Those are not the same list, and making them one
+ * list would have cost something real in both directions.
+ *
+ * Downward: "Scolaire" as a single category throws away cours / examen /
+ * etude, which is the distinction a student actually wants on the grid. An
+ * exam and a revision block are not the same thing and the colours already say
+ * so. So the categories stay as they are and a layer is a GROUP of them.
+ *
+ * Upward: "Objectifs" and "Cycle et Sante" cannot be categories of
+ * calendar_event at all. A goal is a row in `goals` with its own deadline,
+ * owner and status, and duplicating one into an event would give it two
+ * places to be edited and one of them would go stale. A period is a row in
+ * cycle_log, and 51_calendar_and_cycle.sql is explicit that the timetable and
+ * the cycle share a migration and not a table, because one set of policies
+ * over data with two sensitivities always ends up at the looser one. Adding a
+ * `category = 'menstrual'` to calendar_event would be exactly that merge.
+ *
+ * So a layer is a view over more than one source: two of them filter events,
+ * one reads goals, one switches the cycle overlay. What the toolbar controls
+ * is what is DRAWN, which is what somebody toggling it means.
+ */
+export const LAYERS = ['scolaire', 'perso', 'objectifs', 'cycle']
+
+/**
+ * Which layer an event's category belongs to.
+ *
+ * 'objectif' is the odd one and is deliberately NOT in CATEGORIES. It is a
+ * synthetic category the calendar page puts on goals it has read out of the
+ * `goals` table so they can go through the same expander and the same grid as
+ * everything else. The database has never heard of it and the check constraint
+ * would refuse it, which is correct: those rows are drawn here and edited on
+ * the goals screen, and nothing on this page ever writes one back.
+ */
+const LAYER_OF = {
+  cours: 'scolaire',
+  examen: 'scolaire',
+  etude: 'scolaire',
+  perso: 'perso',
+  objectif: 'objectifs',
+}
+
+/* Unknown categories fall to 'perso' rather than vanishing. A row written by a
+   later version of the app, or by hand, should still be visible: an event you
+   cannot see and cannot delete is worse than one filed under the wrong
+   heading. */
+export const layerOf = (event) => LAYER_OF[event?.category] ?? 'perso'
+
+/** The dot on each toggle. Same tokens the events themselves paint in. */
+export const LAYER_COLOUR = {
+  scolaire: 'cat-1',
+  perso: 'green',
+  objectifs: 'cat-3',
+  cycle: 'negative',
+}
+
+/**
+ * The events left after the hidden layers are taken out.
+ *
+ * `hidden` is whatever a Set-like thing is to hand, and an absent one means
+ * nothing is hidden, so the caller never has to build an empty Set to ask for
+ * everything. Filtering here rather than inside agendaFor keeps the expansion
+ * honest: a hidden layer costs no walk at all, rather than being expanded and
+ * then dropped.
+ */
+export function visibleEvents(events, hidden) {
+  if (!hidden || typeof hidden.has !== 'function') return events ?? []
+  return (events ?? []).filter((e) => !hidden.has(layerOf(e)))
+}
+
+/**
  * Which palette token each category paints in.
  *
  * Tokens rather than hex, for the reason the migration gives: a stored colour
@@ -36,6 +112,25 @@ export const CATEGORY_COLOUR = {
   examen: 'accent',
   etude: 'cat-3',
   perso: 'green',
+}
+
+/**
+ * The full name of a weekday, for the accessible name on a one-letter chip.
+ *
+ * THE CHIPS SAY "L M M J V S D" AND TWO OF THOSE ARE THE SAME LETTER.
+ *
+ * French abbreviates mardi and mercredi to the same initial, so a screen
+ * reader reading the visible text hears "M" twice with nothing to separate
+ * them, and a 32px chip has no room for a second letter. Intl already knows
+ * every day name in every locale the app will ever add, which is better than
+ * fourteen more translation keys that have to be kept in step.
+ *
+ * 4 January 1970 was a Sunday, so day 0 lands on the 4th and the arithmetic
+ * needs no offset table.
+ */
+export function weekdayName(day, localeTag = 'fr-FR') {
+  const d = new Date(Date.UTC(1970, 0, 4 + Number(day)))
+  return new Intl.DateTimeFormat(localeTag, { weekday: 'long', timeZone: 'UTC' }).format(d)
 }
 
 /** 09:30 from 570, which is how times are stored. */
@@ -154,6 +249,80 @@ export function blockStyle(event, dayFrom = 7 * 60, dayTo = 23 * 60) {
        four pixels and cannot hold a word. */
     height: `${Math.max(2.2, (bottom - top) * 100).toFixed(3)}%`,
   }
+}
+
+/**
+ * A term's worth of classes, from the rows somebody typed into the wizard.
+ *
+ * WHY THIS IS A FUNCTION AND NOT PART OF THE FORM.
+ *
+ * A timetable is the one thing here entered in bulk, so it is also the one
+ * place where a validation mistake costs somebody eight rows of typing rather
+ * than one field. Keeping the rules out of the component means they can be
+ * tested without a browser, and the awkward cases below are the ones a form
+ * written straight into JSX gets wrong.
+ *
+ * A blank row is SKIPPED, not rejected. The wizard opens with empty rows and
+ * offers more; refusing to save because the last two were never filled in is
+ * the single most annoying thing a form of this shape can do.
+ *
+ * A row that is filled in but wrong REJECTS THE WHOLE BATCH, and the error
+ * names which one. A partial save would leave somebody with four of their six
+ * classes and no way to tell which two are missing without checking the grid.
+ *
+ * Returns `{ rows }` or `{ error, at }`. The caller turns the error into a
+ * sentence, because this file does not know what language anybody reads.
+ */
+export function timetableRows(entries, { userId, startsOn, untilOn } = {}) {
+  if (untilOn && startsOn && untilOn < startsOn) return { error: 'until' }
+
+  const rows = []
+  for (const entry of entries ?? []) {
+    const title = String(entry?.title ?? '').trim()
+    if (!title) continue
+
+    const start = minutesOf(entry.start)
+    const end = minutesOf(entry.end)
+
+    /* The same pairing rule as the check constraint. Both empty is an all-day
+       entry and is allowed everywhere else in the app; in a timetable it is
+       almost always a half-filled row, but it is still legal and the database
+       accepts it, so this does not invent a stricter rule than the schema. */
+    if ((start == null) !== (end == null)) return { error: 'times', at: title }
+    if (start != null && end != null && end <= start) return { error: 'order', at: title }
+
+    /* Deduplicated and sorted. Somebody who taps Tuesday twice means Tuesday
+       once, and a duplicate would not error: occurrencesOf builds a Set, so
+       the day would draw correctly and the stored row would be quietly wrong
+       forever. */
+    const weekdays = [
+      ...new Set((entry.weekdays ?? []).filter((d) => Number.isInteger(d) && d >= 0 && d <= 6)),
+    ].sort((a, b) => a - b)
+
+    /* A class with no day is not a timetable entry. The constraint would
+       accept it as a one-off on the term's first day, which is not what
+       anybody filling in this form meant, and it would look like the
+       recurrence being broken. */
+    if (!weekdays.length) return { error: 'days', at: title }
+
+    const category = CATEGORIES.includes(entry.category) ? entry.category : 'cours'
+
+    rows.push({
+      user_id: userId,
+      title: title.slice(0, 120),
+      category,
+      location: String(entry.location ?? '').trim().slice(0, 160) || null,
+      starts_on: startsOn,
+      until_on: untilOn || null,
+      start_min: start,
+      end_min: end,
+      weekdays,
+      colour: CATEGORY_COLOUR[category] ?? 'accent',
+    })
+  }
+
+  if (!rows.length) return { error: 'empty' }
+  return { rows }
 }
 
 /**

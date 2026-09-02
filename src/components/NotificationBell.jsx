@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useT } from '../lib/i18n'
+import { IconBell } from './NavIcons'
 
 /**
  * What arrived while you were not looking.
@@ -31,9 +32,49 @@ import { useT } from '../lib/i18n'
  * watching. It refetches when the panel opens, which is the moment the number
  * actually has to be right.
  */
-export default function NotificationBell() {
+/**
+ * Where the panel hangs, which is the only thing that differs between the two
+ * places this is mounted.
+ *
+ * `bar` is the original: a 36px button in the top bar with the panel dropping
+ * from its right edge. `rail` is the icon column, where the button is a rail
+ * row and the panel has to come out sideways, because below the button is the
+ * bottom of the screen and to its left is 16px of gutter.
+ *
+ * Two placements rather than two components. Everything above this line, the
+ * query, the unread count, the mark-read writes and the outside-click close,
+ * is the same object in both, and duplicating it to change two class strings
+ * is how the two copies start disagreeing about what "read" means.
+ */
+const PLACEMENT = {
+  bar: {
+    button: 'press relative flex h-9 w-9 items-center justify-center rounded-pill transition-colors hover:bg-ink/[0.06]',
+    /**
+     * Anchored to the bell's right edge, and the width has to account for the
+     * fact that the bell is NOT the right edge of the screen: the avatar sits
+     * beyond it. Measured at 360px, `100vw - 2rem` gave a 320px panel whose
+     * left edge landed at -25px, off the side.
+     *
+     * 6rem is the avatar, the gap, the header's own padding and a margin on
+     * the far side, so the panel stays inside on a 320px phone too.
+     */
+    panel: 'absolute right-0 top-11 w-[min(20rem,calc(100vw-6rem))]',
+  },
+  rail: {
+    /* Sized and shaped by the rail, which passes its own row classes. */
+    button: 'press relative flex w-full flex-col items-center gap-1 rounded-inner px-1 py-2 transition-colors hover:bg-ink/[0.06]',
+    /* Out of the right-hand side, sitting on the button's own line. `bottom-0`
+       rather than `top-0` because this row lives at the foot of the rail, and
+       a panel dropping downward from there would open off the bottom of the
+       screen. */
+    panel: 'absolute bottom-0 left-full z-50 ml-3 w-[20rem] max-w-[calc(100vw-8rem)]',
+  },
+}
+
+export default function NotificationBell({ placement = 'bar' }) {
   const { user } = useAuth()
   const { t } = useT()
+  const place = PLACEMENT[placement] ?? PLACEMENT.bar
 
   const [rows, setRows] = useState([])
   const [open, setOpen] = useState(false)
@@ -136,17 +177,16 @@ export default function NotificationBell() {
         aria-label={count ? t('notif.open', { n: count }) : t('notif.open_none')}
         data-hook="notif-bell"
         data-count={count}
-        className="press relative flex h-9 w-9 items-center justify-center rounded-pill transition-colors hover:bg-ink/[0.06]"
+        className={place.button}
       >
-        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
-          <path
-            d="M6 9a6 6 0 1112 0c0 3.6.9 5.4 1.8 6.3.4.4.1 1.2-.5 1.2H4.7c-.6 0-.9-.8-.5-1.2C5.1 14.4 6 12.6 6 9z"
-            stroke="currentColor"
-            strokeWidth="1.7"
-            strokeLinejoin="round"
-          />
-          <path d="M9.5 19a2.5 2.5 0 005 0" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-        </svg>
+        {/* Drawn in NavIcons now, so the rail and this trigger cannot drift
+            into being two slightly different bells. */}
+        <IconBell className="h-5 w-5" />
+        {placement === 'rail' && (
+          <span className="w-full truncate text-center text-[0.6875rem] font-semibold leading-tight">
+            {t('nav.notifications')}
+          </span>
+        )}
 
         {/**
          * The count, and it carries a number rather than being a bare dot.
@@ -168,16 +208,7 @@ export default function NotificationBell() {
           role="dialog"
           aria-label={t('notif.title')}
           data-hook="notif-panel"
-          /**
-           * Anchored to the bell's right edge, and the width has to account
-           * for the fact that the bell is NOT the right edge of the screen:
-           * the avatar sits beyond it. Measured at 360px, `100vw - 2rem` gave
-           * a 320px panel whose left edge landed at -25px, off the side.
-           *
-           * 6rem is the avatar, the gap, the header's own padding and a margin
-           * on the far side, so the panel stays inside on a 320px phone too.
-           */
-          className="lg lg-chrome absolute right-0 top-11 z-50 w-[min(20rem,calc(100vw-6rem))] overflow-hidden p-2"
+          className={`lg lg-chrome z-50 overflow-hidden p-2 ${place.panel}`}
         >
           <div className="flex items-center justify-between gap-2 px-2 py-1.5">
             <span className="truncate text-label font-semibold uppercase tracking-[0.06em] text-muted">

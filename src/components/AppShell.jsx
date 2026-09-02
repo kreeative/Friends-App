@@ -6,6 +6,7 @@ import { useGroup } from '../context/GroupContext'
 import { useT } from '../lib/i18n'
 import { Avatar } from './ui'
 import { LockupInline } from './Wordmark'
+import { NAV_ICON } from './NavIcons'
 import NotificationBell from './NotificationBell'
 import Stickers from './Stickers'
 import PageTransition from './PageTransition'
@@ -37,12 +38,27 @@ import { Slider, useSlider } from './Segmented'
  * measurements in TabBar below.
  */
 const MINE = [
-  { to: '/', key: 'nav.home', end: true },
+  { to: '/', key: 'nav.home', end: true, icon: 'home' },
   // Your own goals, which no longer require a group to exist in.
-  { to: '/goals', key: 'nav.goals' },
-  { to: '/money', key: 'nav.budget' },
-  { to: '/library', key: 'nav.library' },
+  { to: '/goals', key: 'nav.goals', icon: 'goals' },
+  { to: '/money', key: 'nav.budget', icon: 'budget' },
+  { to: '/library', key: 'nav.library', icon: 'library' },
 ]
+
+/**
+ * The calendar, which is in the rail and NOT in the bottom bar.
+ *
+ * It is personal rather than contextual, so it belongs in both lists and is
+ * appended to whichever one is showing rather than being written into each.
+ *
+ * The bottom bar does not get it, and that asymmetry is deliberate. TabBar's
+ * own note records what a fifth tab did to a 390px phone: French "Objectifs"
+ * wants 70px and an equal fifth of that screen gives it 66, so the tab people
+ * press most read "Objectif...". The rail is a vertical list and has no such
+ * ceiling. On a phone the calendar is reached from the dashboard's own card,
+ * which links straight into it, so it is one tap from home either way.
+ */
+const CALENDAR = { to: '/calendar', key: 'nav.calendar', icon: 'calendar' }
 
 /**
  * Four tabs, and Proof is not one of them.
@@ -58,13 +74,13 @@ const MINE = [
  * and the check-in links straight through for the full grid.
  */
 const IN_GROUP = (id) => [
-  { to: `/g/${id}`, key: 'nav.board', end: true },
+  { to: `/g/${id}`, key: 'nav.board', end: true, icon: 'board' },
   /* Its own key rather than the chip's. "Faire le point" is the right words
      on a button and two characters too many in a tab, where it truncated to
      "Faire le p…" at 390px. */
-  { to: `/g/${id}/checkin`, key: 'nav.checkin' },
-  { to: `/g/${id}/goals`, key: 'nav.goals' },
-  { to: `/g/${id}/settings`, key: 'nav.group' },
+  { to: `/g/${id}/checkin`, key: 'nav.checkin', icon: 'checkin' },
+  { to: `/g/${id}/goals`, key: 'nav.goals', icon: 'goals' },
+  { to: `/g/${id}/settings`, key: 'nav.group', icon: 'group' },
 ]
 
 /**
@@ -105,28 +121,31 @@ function useAutoFlush() {
  * table of contents for a page one tap away that opens with the same name and
  * the same email. The avatar is that link now.
  */
+/**
+ * THE TOP BAR IS A PHONE COMPONENT NOW.
+ *
+ * It used to run at every width, and once the rail took the bell and the
+ * avatar there was nothing left in it above md except the group's name: an
+ * empty 76px strip across the top of every screen, on the layout whose whole
+ * complaint was that the app wasted the space it had. The group name moved
+ * into the rail, which is where the rest of the navigation already is.
+ *
+ * Below md it is unchanged and still carries everything.
+ */
 function TopNav() {
   const { profile } = useAuth()
   const { activeId, group } = useGroup()
   const { t } = useT()
   const { pathname } = useLocation()
   return (
-    <header className="sticky top-0 z-40 px-4 pt-4">
-      {/* Matches the widest page rather than the narrowest. On a laptop the
-          calendar is 68rem and a 40rem bar floating above it reads as two
-          unrelated things; the bar is chrome and should frame whatever is
-          under it. Pages that stay a 40rem column simply centre beneath it,
-          which is what the reference layout does too. */}
-      <nav className="lg lg-chrome mx-auto w-full max-w-content md:max-w-[68rem]">
+    <header className="sticky top-0 z-40 px-4 pt-4 md:hidden">
+      <nav className="lg lg-chrome mx-auto w-full max-w-content">
         {/* One padded box for both halves. The row used to carry the padding
             itself, which left the panel below it no way to line up with the
             logo without repeating the same numbers. */}
         <div className="px-3 py-2.5">
           <div className="flex items-center gap-2.5">
-            {/* Hidden once the rail is showing, which carries the same mark
-                at its top. Two lockups on one screen is a logo competing with
-                itself. */}
-            <Link to="/" aria-label={t('nav.home')} className="press shrink-0 md:hidden">
+            <Link to="/" aria-label={t('nav.home')} className="press shrink-0">
               <LockupInline size={36} />
             </Link>
 
@@ -135,9 +154,7 @@ function TopNav() {
                 chrome down. */}
             {activeId && group && (
               <>
-                {/* The separator only makes sense after something. With the
-                    lockup hidden at md+ it would open the bar with a slash. */}
-                <span aria-hidden="true" className="shrink-0 text-muted/40 md:hidden">
+                <span aria-hidden="true" className="shrink-0 text-muted/40">
                   /
                 </span>
                 <span className="truncate text-small font-semibold tracking-tight text-ink">
@@ -208,56 +225,177 @@ const activeIndex = (tabs, pathname) =>
  * source of truth for which tab is active, and only one of them is ever
  * mounted: `md:hidden` on one and `hidden md:flex` on the other.
  *
- * WHY LABELS AND NOT ICONS.
+ * ICONS, AND WHY THERE IS STILL A WORD UNDER EACH ONE.
  *
- * The reference for this is Wealthsimple's rail, which is icon-only. This app
- * has no icon set for Home, Goals, Budget and Library, and inventing four
- * glyphs that read unambiguously is a larger job than it looks: an icon that
- * has to be learned is worse than a word that does not. So the rail is wide
- * enough for the words, which is also what makes it work in French, where
- * "Objectifs" is the label that has already broken this bar once.
+ * The rail started out as words alone, because this app had no icon set and
+ * four invented glyphs are a bigger job than they look. It was then asked to
+ * be thin and icon-led, so the glyphs got drawn: see NavIcons.jsx.
+ *
+ * The word stayed, at 11px. Icon-only is a hover tooltip for its names, and a
+ * tablet has no hover, which is exactly the device this layout is for. That is
+ * not a small gap: without the word, a first-time user on an iPad has no way
+ * at all to find out what the target with a ring round it means, short of
+ * pressing it. aria-label carries the name for a screen reader; the 11px line
+ * carries it for everybody else. It costs 14px of a 5.5rem column.
+ *
+ * THE WIDTH IS SET BY FRENCH, AS USUAL. "Calendrier" and "Objectifs" are the
+ * long ones. 5.5rem leaves 72px of text box, measured, with truncate as a
+ * backstop rather than as the plan.
  *
  * ON THE LEFT, WHICH IS WHERE THE REFERENCE PUTS IT. Flipping it is one
  * class: `left-4` becomes `right-4` and the content padding swaps side.
+ *
+ * IT IS TRANSPARENT, AND THAT COST A SECOND ELEMENT.
+ *
+ * Measured before any of this was written: the rail's interior painted
+ * #FFFEFF and the page beside it #FFFFFF. One channel apart. A white sheet on
+ * a white page is not glass however low its alpha goes, and lowering the alpha
+ * over a flat ground makes it less visible rather than more like a lens. That
+ * is the trap CLAUDE.md names: backdrop-filter blurs what is behind an
+ * element, and over one flat colour it returns that same flat colour.
+ *
+ * So the wash below comes first and the sheet second. It is the only thing in
+ * the app allowed to put colour on the page ground, and it is confined to the
+ * column the rail already reserves, where at md and up there is nothing else.
  */
+
+/* One row, so the nav links, the bell and the avatar are the same object.
+   Three call sites drifting apart is how a rail ends up with three different
+   hover states. */
+const RAIL_ROW =
+  'press flex w-full flex-col items-center gap-1 rounded-inner px-1 py-2 transition-colors duration-200 ease-settle'
+
+function RailLabel({ children }) {
+  return (
+    <span className="w-full truncate text-center text-[0.6875rem] font-semibold leading-tight">
+      {children}
+    </span>
+  )
+}
+
 function SideRail({ tabs }) {
   const { t } = useT()
+  const { profile } = useAuth()
+  const { activeId, group } = useGroup()
   const { pathname } = useLocation()
-  const activeIdx = activeIndex(tabs, pathname)
+  const rows = [...tabs, CALENDAR]
+  const activeIdx = activeIndex(rows, pathname)
 
   return (
-    <nav
-      className="lg lg-chrome fixed left-4 top-4 bottom-4 z-30 hidden w-[13rem] flex-col p-2 md:flex"
-      data-hook="side-rail"
-      aria-label={t('nav.home')}
-    >
-      <Link to="/" aria-label={t('nav.home')} className="press mb-2 block shrink-0 rounded-inner p-2">
-        <LockupInline size={34} />
-      </Link>
+    <>
+      {/**
+       * Painted before the nav, which is what makes it the nav's backdrop.
+       * Inside the nav it would be a child, painted after, and the sheet would
+       * be blurring the page again rather than this.
+       *
+       * md:block, matched to the rail. On a phone the ground stays flat.
+       */}
+      <div
+        className="rail-ground pointer-events-none fixed inset-y-0 left-0 z-0 hidden w-[12rem] md:block"
+        data-hook="rail-ground"
+        aria-hidden="true"
+      />
 
-      <div className="flex flex-col gap-0.5">
-        {tabs.map((tab, i) => (
+      <nav
+        className="lg lg-rail fixed bottom-4 left-4 top-4 z-30 hidden w-[5.5rem] flex-col p-1.5 md:flex"
+        data-hook="side-rail"
+        aria-label={t('nav.primary')}
+      >
+        <Link
+          to="/"
+          aria-label={t('nav.home')}
+          className="press mb-1 block shrink-0 self-center rounded-inner p-1.5"
+        >
+          <LockupInline size={34} />
+        </Link>
+
+        {/**
+         * Which group you are in, now that the top bar is not saying it above
+         * md. An initial rather than the name: 72px of text box holds about
+         * eleven characters and group names are not written to that limit.
+         * The full name is the accessible name and the tooltip, and the board
+         * it links to opens with the name as its heading.
+         */}
+        {activeId && group?.name && (
+          <Link
+            to={`/g/${activeId}`}
+            aria-label={group.name}
+            title={group.name}
+            data-hook="rail-group"
+            className="press mb-1 flex h-8 w-8 shrink-0 items-center justify-center self-center rounded-pill bg-accent/[0.16] text-small font-bold text-ink"
+          >
+            {[...group.name.trim()][0]?.toUpperCase() ?? '?'}
+          </Link>
+        )}
+
+        {/* Scrolls rather than squashing. Five rows plus a group chip is
+            comfortable at 700px; a short laptop window in landscape is not,
+            and rows silently losing height is worse than a scrollbar nobody
+            usually sees. */}
+        <div className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto">
+          {rows.map((tab, i) => {
+            const Icon = NAV_ICON[tab.icon]
+            return (
+              <NavLink
+                key={tab.to}
+                to={tab.to}
+                end={tab.end}
+                data-active={i === activeIdx}
+                className={({ isActive }) =>
+                  /* The active row is a filled pill rather than a travelling
+                     one. The slider exists because a horizontal bar has to show
+                     that four things are alternatives sharing one strip; a
+                     vertical list already reads as a list, and a pill sliding
+                     down it would be motion carrying no information.
+
+                     lg-pill rather than a flat accent tint, which is what it
+                     was. It is the same mark the bottom bar puts on the same
+                     places, so the two navigations say "you are here" in one
+                     language rather than two, and on a transparent rail a
+                     brighter piece of the same glass is the thing that reads as
+                     selected. The tint would have gone muddy over the wash.
+
+                     Weight is the second signal, per 1.4.1: the active label is
+                     ink at full strength and the rest are dimmed, so the
+                     current place is not carried by the pill's colour alone. */
+                  `${RAIL_ROW} ${
+                    isActive ? 'lg-pill text-ink' : 'text-ink/70 hover:bg-ink/[0.06] hover:text-ink'
+                  }`
+                }
+              >
+                {Icon && <Icon className="h-5 w-5 shrink-0" />}
+                <RailLabel>{t(tab.key)}</RailLabel>
+              </NavLink>
+            )
+          })}
+        </div>
+
+        {/**
+         * You, at the bottom, which is where every rail of this shape puts it.
+         *
+         * The bell and the avatar came out of the top bar to get here. Both
+         * were already the way in to their thing, so this is a move rather than
+         * a new control: TopNav's note records that the avatar became the link
+         * to the profile when the dropdown was deleted, and it still is.
+         */}
+        <div className="mt-1 flex shrink-0 flex-col gap-0.5 border-t border-hairline/60 pt-1">
+          <NotificationBell placement="rail" />
+
           <NavLink
-            key={tab.to}
-            to={tab.to}
-            end={tab.end}
-            data-active={i === activeIdx}
+            to="/profile"
+            data-hook="to-profile"
             className={({ isActive }) =>
-              /* The active row is a filled pill rather than a travelling one.
-                 The slider exists because a horizontal bar has to show that
-                 four things are alternatives sharing one strip; a vertical
-                 list already reads as a list, and a pill sliding down it would
-                 be motion carrying no information. */
-              `press truncate rounded-pill px-3.5 py-2.5 text-small font-semibold transition-colors duration-200 ease-settle ${
-                isActive ? 'bg-accent/[0.14] text-ink' : 'text-ink/70 hover:bg-ink/[0.05] hover:text-ink'
+              `${RAIL_ROW} ${
+                isActive ? 'lg-pill text-ink' : 'text-ink/70 hover:bg-ink/[0.06] hover:text-ink'
               }`
             }
           >
-            {t(tab.key)}
+            <Avatar profile={profile} size={20} />
+            <RailLabel>{t('nav.you')}</RailLabel>
           </NavLink>
-        ))}
-      </div>
-    </nav>
+        </div>
+      </nav>
+    </>
   )
 }
 
@@ -353,16 +491,19 @@ export default function AppShell() {
       {/**
        * Everything to the right of the rail.
        *
-       * 13rem for the rail plus the 1rem it is inset by on each side. Padding
-       * on a wrapper rather than a margin on each page, so a page that has
-       * never heard of the rail is positioned correctly anyway, and so the
-       * pages keep centring their own max-w-content inside whatever room is
-       * left.
+       * 5.5rem for the rail plus the 1rem it is inset by on each side. It was
+       * 15rem when the rail carried words; narrowing it hands 7.5rem back to
+       * the page, which is most of what "the UI is constrained inside a small
+       * central container" was asking for.
+       *
+       * Padding on a wrapper rather than a margin on each page, so a page that
+       * has never heard of the rail is positioned correctly anyway, and so the
+       * pages keep centring their own width inside whatever room is left.
        *
        * Below md the padding is zero and the bottom bar is the navigation, so
        * the phone layout is untouched.
        */}
-      <div className="md:pl-[15rem]">
+      <div className="md:pl-[7.5rem]">
         <TopNav />
         <div className="relative z-10">
           {/* The chrome above and below stays put; only the page moves. */}

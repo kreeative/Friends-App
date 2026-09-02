@@ -3,14 +3,15 @@
  *
  * The two navigations, and the fact that exactly one of them is ever showing.
  *
- * WHAT WAS MEASURED, in headless Chromium at four real device widths, before
- * any of this was written down:
+ * WHAT WAS MEASURED, in headless Chromium at real device widths, before any of
+ * this was written down. The rail was 13rem of words for one round and is now
+ * 5.5rem of icons with a word under each, so the numbers below are the second
+ * set:
  *
- *   390px  phone            rail hidden, bottom bar visible
- *   820px  iPad portrait    rail 16..224, bottom bar hidden
- *   1180px iPad landscape   rail 16..224, bottom bar hidden
- *   1440px laptop           rail 16..224, bottom bar hidden,
- *                           top bar 296..1384 aligned with the page
+ *   390px  phone            rail hidden, bottom bar visible, top bar visible
+ *   820px  iPad portrait    rail 16..104, bottom bar hidden, top bar hidden
+ *   1180px iPad landscape   same, grid takes the rest
+ *   1440px laptop           same
  *
  * This file cannot lay anything out and does not pretend to. What it holds is
  * the set of class contracts that result depends on, because the realistic
@@ -50,7 +51,7 @@ const shell = read('src/components/AppShell.jsx')
 ok('there is a side rail', /data-hook="side-rail"/.test(shell))
 ok(
   'the rail appears only from md up',
-  /hidden w-\[13rem\] flex-col p-2 md:flex/.test(shell),
+  /hidden w-\[5\.5rem\] flex-col p-1\.5 md:flex/.test(shell),
   'without md:flex it would show on a phone alongside the bottom bar',
 )
 ok(
@@ -71,33 +72,61 @@ ok(
 
 ok(
   'content is padded past the rail from md up',
-  /md:pl-\[15rem\]/.test(shell),
-  '13rem of rail plus the 1rem it is inset by on each side',
+  /md:pl-\[7\.5rem\]/.test(shell),
+  '5.5rem of rail plus the 1rem it is inset by on each side',
 )
 ok(
   'and not padded below it',
-  !/\bpl-\[15rem\](?!\])/.test(shell.replace(/md:pl-\[15rem\]/g, '')),
+  !/\bpl-\[7\.5rem\](?!\])/.test(shell.replace(/md:pl-\[7\.5rem\]/g, '')),
   'a phone would be pushed off its own screen',
 )
 
-/* --- one brand mark, not two -------------------------------------------- */
+/* --- one chrome, not two ------------------------------------------------- */
 
-/* Written straight. The first version of this assertion had a ternary whose
-   two branches were identical, so it could not fail for the reason it named,
-   which is worse than not having it. */
+/* The whole top bar is a phone component now. Once the rail took the bell and
+   the avatar there was nothing left in it above md except the group name, and
+   an empty 76px strip is the opposite of what this layout was asked for. */
 ok(
-  'the top bar hides its lockup once the rail shows one',
-  /className="press shrink-0 md:hidden"[\s\S]{0,80}LockupInline size=\{36\}/.test(shell),
-  'two lockups on one screen is a logo competing with itself',
+  'the top bar is hidden from md up',
+  /<header className="sticky top-0 z-40 px-4 pt-4 md:hidden">/.test(shell),
+  'the rail carries the lockup, the bell and the avatar above md',
 )
-ok('the rail carries a lockup of its own', /data-hook="side-rail"[\s\S]{0,600}LockupInline/.test(shell))
-
-/* --- the chrome frames what is under it --------------------------------- */
-
+ok('the rail carries a lockup of its own', /data-hook="side-rail"[\s\S]{0,900}LockupInline/.test(shell))
 ok(
-  'the top bar widens to the widest page',
-  /max-w-content md:max-w-\[68rem\]/.test(shell),
-  'a 40rem bar floating above a 68rem calendar reads as two unrelated things',
+  'and the group name has somewhere to be',
+  /data-hook="rail-group"/.test(shell),
+  'it was in the top bar, which no longer runs at this width',
+)
+
+/* --- the rail says what its icons mean ----------------------------------- */
+
+/**
+ * The one that matters most, and the reason it is an assertion rather than a
+ * comment. An icon-only rail puts its names in a hover tooltip, and a tablet
+ * has no hover: this layout exists FOR tablets. Deleting the label to save
+ * 14px would leave an iPad user with no way to learn what a ring means short
+ * of pressing it, and nothing would look broken.
+ */
+const icons = read('src/components/NavIcons.jsx')
+ok('there is an icon set', /export const NAV_ICON/.test(icons))
+ok(
+  'every icon takes the current colour rather than its own',
+  !/stroke="#|fill="#/.test(icons),
+  'a hard-coded hue is right in exactly one of the two themes',
+)
+ok(
+  'and none of them is announced to a screen reader',
+  /'aria-hidden': 'true'/.test(icons),
+  'the accessible name belongs to the link, not to the drawing',
+)
+ok(
+  'the rail draws an icon and a word, not an icon alone',
+  /<Icon className="h-5 w-5 shrink-0" \/>[\s\S]{0,120}<RailLabel>/.test(shell),
+  'a tablet has no hover, so a tooltip is not a label',
+)
+ok(
+  'the bell in the rail is labelled too',
+  /placement === 'rail' &&[\s\S]{0,200}nav\.notifications/.test(read('src/components/NotificationBell.jsx')),
 )
 
 /* --- the calendar uses the width ---------------------------------------- */
@@ -105,20 +134,44 @@ ok(
 const cal = read('src/pages/Calendar.jsx')
 
 ok(
-  'the calendar is wider than the reading column, and only it is',
-  /max-w-content[^"]*md:max-w-\[68rem\]/.test(cal),
+  'the calendar has no width cap above md, and it is the only page without one',
+  /max-w-content[^"]*md:max-w-none/.test(cal),
   'a grid is the exception; a 1200px settings form is worse, not better',
 )
 ok(
-  'the cycle panel moves beside the grid at xl, not lg',
-  /xl:grid-cols-\[minmax\(0,1fr\)_20rem\]/.test(cal),
-  'at lg an iPad in landscape lost the grid to 572px, barely wider than a phone',
+  'the reading column is still the default everywhere else',
+  /\.shell \{[\s\S]{0,80}max-w-content/.test(read('src/index.css')),
+  'stretching every page is what "fill the width" must not be read as',
 )
 ok('month tiles grow when there is room', /md:min-h-\[6\.5rem\]/.test(cal))
 ok(
   'and show a third entry rather than counting it as hidden',
   /const shown = useWide\(\) \? 3 : 2/.test(cal),
   'a class cannot change the number passed to slice()',
+)
+
+/* The two-column split is gone. It was xl-only and still cost a laptop 20rem
+   for a panel that is mostly four dates; the drawer costs the grid nothing at
+   any width. */
+ok(
+  'the cycle panel no longer takes a column from the grid',
+  !/xl:grid-cols-\[minmax\(0,1fr\)_20rem\]/.test(cal),
+  'this is what left the grid at 572px on an iPad in landscape',
+)
+ok('it is a drawer', /data-hook="cycle-drawer"/.test(read('src/components/CyclePanel.jsx')))
+
+/* --- the layers ---------------------------------------------------------- */
+
+ok('there is a layer toolbar', /data-hook="cal-layers"/.test(cal))
+ok(
+  'a layer that is off is not signalled by colour alone',
+  /line-through/.test(cal) && /border-2 \$\{LAYER_RING\[layer\]\}/.test(cal),
+  'WCAG 1.4.1: the fill, the hollow dot and the struck word all say it',
+)
+ok(
+  'the toggles are buttons that report their own state',
+  /aria-pressed=\{on\}/.test(cal),
+  'a checkbox in a toolbar implies a form that submits',
 )
 
 /* --- decoration stays where it has room --------------------------------- */

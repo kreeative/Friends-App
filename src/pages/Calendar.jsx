@@ -6,13 +6,18 @@ import { addDays, dayKey, daysBetween, fromKey, phaseOn } from '../lib/cycle'
 import {
   CATEGORIES,
   CATEGORY_COLOUR,
+  LAYERS,
+  LAYER_COLOUR,
   agendaFor,
   blockStyle,
   clockOf,
   dayBounds,
   minutesOf,
+  visibleEvents,
+  weekdayName,
 } from '../lib/agenda'
 import CyclePanel from '../components/CyclePanel'
+import TimetableWizard from '../components/TimetableWizard'
 
 /**
  * The whole timetable, on one screen.
@@ -107,7 +112,38 @@ const PHASE_DOT = {
   fertile: 'border-2 border-mark bg-transparent',
 }
 
+/* The layer toggle's dot, filled when the layer is on and a ring when it is
+   off. Whole class strings, because Tailwind scans source text and
+   `bg-${token}` produces no class at build time. */
+const LAYER_DOT = {
+  scolaire: 'bg-cat-1',
+  perso: 'bg-green',
+  objectifs: 'bg-cat-3',
+  cycle: 'bg-negative',
+}
+const LAYER_RING = {
+  scolaire: 'border-cat-1',
+  perso: 'border-green',
+  objectifs: 'border-cat-3',
+  cycle: 'border-negative',
+}
+
 const VIEWS = ['month', 'week', 'day']
+
+/* Which layers are switched OFF, remembered per browser. Off rather than on,
+   so a layer added by a later version is visible by default: somebody who has
+   never opened this toolbar should not have new things silently hidden from
+   them by a stored list that predates the feature. */
+const HIDDEN_KEY = 'friends.cal.hidden'
+
+const readHidden = () => {
+  try {
+    const raw = JSON.parse(localStorage.getItem(HIDDEN_KEY) ?? '[]')
+    return new Set(Array.isArray(raw) ? raw.filter((l) => LAYERS.includes(l)) : [])
+  } catch {
+    return new Set()
+  }
+}
 
 export default function Calendar() {
   const { user } = useAuth()
@@ -119,18 +155,55 @@ export default function Calendar() {
     return new Date(n.getFullYear(), n.getMonth(), n.getDate())
   })
   const [events, setEvents] = useState([])
+  const [goals, setGoals] = useState([])
   const [cycle, setCycle] = useState({ starts: [], prediction: null })
   const [editing, setEditing] = useState(null)
+  const [hidden, setHidden] = useState(readHidden)
+  const [drawer, setDrawer] = useState(false)
+  const [wizard, setWizard] = useState(false)
+  const [added, setAdded] = useState(0)
 
   const load = useCallback(async () => {
     if (!user) return
     const { data } = await supabase.from('calendar_event').select('*')
     setEvents(data ?? [])
+
+    /**
+     * Goals with a deadline, as calendar entries.
+     *
+     * Only `once` goals have a due_on; a recurring goal has a cadence rather
+     * than a date and there is nothing to draw. Only active ones, because a
+     * completed goal's deadline is a fact about the past and putting it on
+     * next week would be a lie.
+     *
+     * These are read-only here. They carry goalId, which is what stops the
+     * grid opening the event form on one: see openEditor below.
+     */
+    const { data: g } = await supabase
+      .from('goals')
+      .select('id, commitment, due_on, group_id')
+      .eq('status', 'active')
+      .not('due_on', 'is', null)
+    setGoals(g ?? [])
   }, [user])
 
   useEffect(() => {
     load()
   }, [load])
+
+  const toggleLayer = (layer) => {
+    setHidden((prev) => {
+      const next = new Set(prev)
+      if (next.has(layer)) next.delete(layer)
+      else next.add(layer)
+      try {
+        localStorage.setItem(HIDDEN_KEY, JSON.stringify([...next]))
+      } catch {
+        /* A browser refusing storage is not a reason to refuse the toggle. */
+      }
+      return next
+    })
+  }
 
   /* The span being drawn. Month is padded to whole weeks so the grid is
      rectangular; week runs Monday to Sunday, which is what a European
@@ -147,7 +220,46 @@ export default function Calendar() {
     return { from: addDays(first, -((first.getDay() + 6) % 7)), to: addDays(last, 6 - ((last.getDay() + 6) % 7)) }
   }, [view, anchor])
 
-  const agenda = useMemo(() => agendaFor(events, range.from, range.to), [events, range])
+  /**
+   * Everything drawn on the grid: stored events plus goals with a deadline,
+   * minus whatever the toolbar has switched off.
+   *
+   * The goals are mapped into the event shape rather than drawn by a second
+   * code path, so recurrence expansion, sorting, the month chips, the week
+   * blocks and the day list all treat them as what they are on a calendar: an
+   * all-day entry on one date. `weekdays: []` makes occurrencesOf take the
+   * one-off branch and never walk.
+   */
+  const drawn = useMemo(() => {
+    const asEvents = goals.map((g) => ({
+      id: `goal:${g.id}`,
+      goalId: g.id,
+      title: g.commitment,
+      category: 'objectif',
+      colour: LAYER_COLOUR.objectifs,
+      starts_on: g.due_on,
+      start_min: null,
+      end_min: null,
+      weekdays: [],
+      until_on: null,
+      location: null,
+    }))
+    return visibleEvents([...events, ...asEvents], hidden)
+  }, [events, goals, hidden])
+
+  const agenda = useMemo(() => agendaFor(drawn, range.from, range.to), [drawn, range])
+
+  /* The cycle overlay is a layer too, so switching it off has to empty what
+     the grids read rather than just hiding a panel. */
+  const shownCycle = hidden.has('cycle') ? { starts: [], prediction: null } : cycle
+
+  /* A goal is drawn here and edited on the goals screen. Without this guard
+     the form would open on one and then insert a brand new calendar_event
+     carrying the goal's text, which is a duplicate nobody asked for. */
+  const openEditor = (entry) => {
+    if (entry?.goalId) return
+    setEditing(entry)
+  }
 
   const step = (n) => {
     if (view === 'month') setAnchor(new Date(anchor.getFullYear(), anchor.getMonth() + n, 1))
@@ -167,26 +279,65 @@ export default function Calendar() {
 
   return (
     /**
-     * Wider than the rest of the app, and only here.
+     * The one page with no width cap above the tablet breakpoint.
      *
      * max-w-content is 40rem, which is right for the pages that are columns of
      * text and forms: a 1200px-wide settings form is worse, not better. A grid
      * is the exception. Seven day columns at 40rem are 80px each, which is why
      * the week view needed a horizontal scroller on a phone and still felt
      * cramped on an iPad that had 700px of empty margin either side.
+     *
+     * It was 68rem for a while and that was still a cap. A timetable is the
+     * one thing here that gets better with every pixel: the hour rows stay the
+     * same height and the columns get wider, so a 90-minute block goes from
+     * holding an abbreviation to holding the course name and the room. The
+     * rail's 7.5rem is already taken out by the shell, so `none` here means
+     * the window minus the rail, not the window.
      */
-    <div className="mx-auto w-full max-w-content space-y-4 px-4 pb-28 pt-4 md:max-w-[68rem] md:pb-8">
+    <div className="mx-auto w-full max-w-content space-y-4 px-4 pb-28 pt-4 md:max-w-none md:pb-8">
       <header className="lg w-full overflow-hidden p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-safe text-h1 font-semibold text-ink">{t('cal.title')}</h1>
-          <button
-            type="button"
-            onClick={() => setEditing({ starts_on: dayKey(anchor), category: 'cours', weekdays: [] })}
-            className="goal-action-done press shrink-0"
-            data-hook="cal-add"
-          >
-            {t('cal.add')}
-          </button>
+
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            {/* A term is transcribed from a printout, not composed. Doing it
+                through the single-event form means retyping the term dates
+                once per class and counting how many are left. */}
+            <button
+              type="button"
+              onClick={() => setWizard(true)}
+              className="press rounded-pill px-3 py-2 text-small font-semibold text-ink hover:bg-ink/[0.06]"
+              data-hook="cal-wiz-open"
+            >
+              {t('wiz.open')}
+            </button>
+
+            {/* The way in to everything about the cycle: the tracker, the
+                recorded periods and the reminder settings. A button rather
+                than a column, see the note on the drawer below. */}
+            <button
+              type="button"
+              onClick={() => setDrawer(true)}
+              className="press rounded-pill px-3 py-2 text-small font-semibold text-ink hover:bg-ink/[0.06]"
+              data-hook="cal-cycle-open"
+            >
+              {t('cycle.manage')}
+            </button>
+
+            {/* The + is the icon and the word is the label, so it reads at a
+                glance and still says what it does. It was the word alone. */}
+            <button
+              type="button"
+              onClick={() => setEditing({ starts_on: dayKey(anchor), category: 'cours', weekdays: [] })}
+              className="goal-action-done press shrink-0"
+              data-hook="cal-add"
+            >
+              <span aria-hidden="true" className="mr-1 text-body leading-none">
+                +
+              </span>
+              {t('cal.add')}
+            </button>
+          </div>
         </div>
 
         {/* View switch and the pager, on one row that is allowed to wrap. At
@@ -229,32 +380,101 @@ export default function Calendar() {
         <p className="mt-3 text-small font-semibold uppercase tracking-[0.06em] text-muted">
           {fmt.format(anchor)}
         </p>
+
+        {/* Eight rows landing at once is a big change to a grid somebody was
+            just looking at, and without a word it reads as the page having
+            done something on its own. Dismissible, and it says how many. */}
+        {added > 0 && (
+          <p className="mt-2 text-small font-semibold text-ink" role="status" data-hook="wiz-done">
+            {t(added === 1 ? 'wiz.done_one' : 'wiz.done_other', { n: added })}{' '}
+            {/* "Fermer", not "Annuler". Cancel on a notice that something was
+                added reads as an offer to undo the add, which this is not. */}
+            <button
+              type="button"
+              onClick={() => setAdded(0)}
+              className="press underline decoration-1 underline-offset-2"
+            >
+              {t('wiz.close')}
+            </button>
+          </p>
+        )}
+
+        {/**
+         * The layers, as pressed-in toggles.
+         *
+         * aria-pressed rather than a checkbox, because these do not submit
+         * anything and a checkbox in a toolbar implies a form. The state is
+         * carried three ways so it is never colour alone, per 1.4.1: the
+         * button's fill, the dot going hollow, and the strikethrough on the
+         * word. A greyscale screenshot still says which two are off.
+         */}
+        <div
+          className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-hairline/60 pt-3"
+          data-hook="cal-layers"
+        >
+          {LAYERS.map((layer) => {
+            const on = !hidden.has(layer)
+            return (
+              <button
+                key={layer}
+                type="button"
+                aria-pressed={on}
+                data-layer={layer}
+                data-on={on}
+                onClick={() => toggleLayer(layer)}
+                className={`press flex items-center gap-1.5 rounded-pill px-2.5 py-1.5 text-small font-semibold transition-colors ${
+                  on ? 'bg-ink/[0.06] text-ink' : 'text-muted hover:bg-ink/[0.04]'
+                }`}
+              >
+                <span
+                  aria-hidden="true"
+                  className={`h-2.5 w-2.5 shrink-0 rounded-pill ${
+                    on ? LAYER_DOT[layer] : `border-2 ${LAYER_RING[layer]}`
+                  }`}
+                />
+                <span className={on ? '' : 'line-through decoration-1'}>{t(`cal.layer_${layer}`)}</span>
+              </button>
+            )
+          })}
+        </div>
       </header>
 
       {/**
-       * Grid beside panel on a laptop, stacked on a phone.
+       * THE GRID GETS THE WHOLE WIDTH AT EVERY SIZE NOW.
        *
-       * xl and not lg, which was measured rather than guessed. At the lg
-       * breakpoint an iPad in landscape is 1180px, and taking 20rem for the
-       * panel left the grid at 572px: seven columns of 82px, barely wider than
-       * the phone gets, on the device with the most room. The split now waits
-       * for 1280px, so both iPad orientations give the whole width to the grid
-       * and only a real laptop shows the two side by side.
+       * This was a two-column split with the cycle panel beside the grid from
+       * xl up, and the measurement that produced xl is the same one that
+       * eventually killed the column: at lg an iPad in landscape gave the grid
+       * 572px, seven columns of 82px, on the device with the most room. Moving
+       * the split to xl fixed the iPad and left a laptop paying 20rem for a
+       * panel that is mostly a summary of four dates.
        *
-       * items-start so the panel keeps its own height instead of stretching to
-       * match a month grid, which would leave it as a mostly empty card.
+       * A drawer costs one press and gives every screen the full seven
+       * columns, and it is also where the editing this panel never had can
+       * actually fit.
        */}
-      <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
-        <div className="min-w-0 space-y-4">
-          {view === 'month' && (
-            <MonthGrid range={range} anchor={anchor} agenda={agenda} cycle={cycle} onPick={(d) => { setAnchor(d); setView('day') }} />
-          )}
-          {view === 'week' && <WeekGrid range={range} agenda={agenda} cycle={cycle} locale={locale} onEdit={setEditing} />}
-          {view === 'day' && <DayList day={anchor} agenda={agenda} cycle={cycle} onEdit={setEditing} onRemove={remove} t={t} />}
-        </div>
-
-        <CyclePanel onChange={setCycle} />
+      <div className="min-w-0 space-y-4">
+        {view === 'month' && (
+          <MonthGrid range={range} anchor={anchor} agenda={agenda} cycle={shownCycle} onPick={(d) => { setAnchor(d); setView('day') }} />
+        )}
+        {view === 'week' && <WeekGrid range={range} agenda={agenda} cycle={shownCycle} locale={locale} onEdit={openEditor} />}
+        {view === 'day' && <DayList day={anchor} agenda={agenda} cycle={shownCycle} onEdit={openEditor} onRemove={remove} t={t} />}
       </div>
+
+      {/* Mounted always, so the tracker's own load runs and the overlay is
+          there before anybody opens the drawer. `open` only draws it. */}
+      <CyclePanel onChange={setCycle} open={drawer} onClose={() => setDrawer(false)} />
+
+      <TimetableWizard
+        open={wizard}
+        startsOn={dayKey(anchor)}
+        onClose={() => setWizard(false)}
+        onSaved={async (n) => {
+          setWizard(false)
+          setAdded(n)
+          await load()
+        }}
+      />
 
       {editing && (
         <EventForm
@@ -509,7 +729,7 @@ function DayList({ day, agenda, cycle, onEdit, onRemove, t }) {
 
 function EventForm({ initial, onClose, onSaved }) {
   const { user } = useAuth()
-  const { t } = useT()
+  const { t, locale } = useT()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
 
@@ -621,6 +841,11 @@ function EventForm({ initial, onClose, onSaved }) {
                 type="button"
                 onClick={() => toggleDay(n)}
                 aria-pressed={f.weekdays.includes(n)}
+                /* The visible text cannot be the accessible name here: mardi
+                   and mercredi share an initial, so a screen reader would hear
+                   "M" twice with nothing to tell them apart, and a 36px chip
+                   has no room for a second letter. */
+                aria-label={weekdayName(n, localeTag(locale))}
                 className={`press h-9 w-9 rounded-pill text-small font-semibold transition-colors ${
                   f.weekdays.includes(n) ? 'bg-accent text-on-accent' : 'bg-ink/[0.06] text-ink hover:bg-ink/[0.11]'
                 }`}
