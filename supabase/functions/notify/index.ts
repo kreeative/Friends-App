@@ -284,6 +284,34 @@ const COPY = {
     goalFoot: (g: string) =>
       `Envoyé une fois par cycle au plus, parce que tu es dans ${g}. Les objectifs ajoutés ensuite arrivent dans le même message.`,
 
+    /**
+     * LE RAPPEL DE CYCLE. LE SEUL MESSAGE QUI TOUCHE A CES DONNEES.
+     *
+     * Adresse a la personne elle-meme et a personne d'autre. Rien dans ce
+     * message ne nomme un groupe, et il ne part que si elle a coche la case.
+     * La migration 51 dit pourquoi : ce sont les donnees les plus sensibles du
+     * produit, et ce rappel est l'unique exception prevue.
+     *
+     * Le mot « regles » n'est pas dans l'objet. Un objet s'affiche sur un
+     * ecran verrouille, dans une salle de cours, a cote de quelqu'un.
+     */
+    cycleSubject: 'Un petit rappel',
+    cycleTitle: 'Un petit rappel',
+    cyclePre: (n: number) =>
+      n === 1 ? 'Pour demain.' : `Pour dans ${n} jours.`,
+    cycleLead: (n: number) =>
+      n === 1
+        ? 'Tes regles sont prevues demain, d\u2019apres tes propres dates.'
+        : `Tes regles sont prevues dans ${n} jours, d\u2019apres tes propres dates.`,
+    cycleNote:
+      'Une estimation, pas une certitude. Trois choses qui aident, si tu veux les preparer aujourd\u2019hui.',
+    cycleCta: 'Ouvrir le calendrier',
+    cycleFoot:
+      'Tu recois ceci parce que tu l\u2019as active. Personne d\u2019autre ne le voit, et tu peux le couper dans le calendrier.',
+    prepWater: 'Bois plus d\u2019eau aujourd\u2019hui.',
+    prepWarmth: 'Prepare quelque chose de chaud, une infusion ou une bouillotte.',
+    prepGentle: 'Prevois quelque chose de plus doux que d\u2019habitude.',
+
     smallPrint:
       'Au plus un message de chaque sorte par cycle. Les rappels d’objectif se coupent objectif par objectif, dans l’application.',
   },
@@ -334,6 +362,22 @@ const COPY = {
     goalCta: 'Open the group',
     goalFoot: (g: string) =>
       `Sent at most once per cycle, because you are in ${g}. Goals added after this arrive in the same message.`,
+
+    cycleSubject: 'A small heads-up',
+    cycleTitle: 'A small heads-up',
+    cyclePre: (n: number) => (n === 1 ? 'For tomorrow.' : `For ${n} days from now.`),
+    cycleLead: (n: number) =>
+      n === 1
+        ? 'Your period is expected tomorrow, going by your own dates.'
+        : `Your period is expected in ${n} days, going by your own dates.`,
+    cycleNote:
+      'An estimate, not a certainty. Three things that help, if you want to get them ready today.',
+    cycleCta: 'Open the calendar',
+    cycleFoot:
+      'You get this because you turned it on. Nobody else sees it, and you can switch it off in the calendar.',
+    prepWater: 'Drink more water today.',
+    prepWarmth: 'Get something warm ready, a tea or a bottle.',
+    prepGentle: 'Plan something gentler than usual.',
 
     smallPrint:
       'At most one message of each kind per cycle. Goal reminders can be switched off per goal, in the app.',
@@ -482,7 +526,7 @@ async function release(userId: string, cycleId: string, kind: Kind) {
  * answers somebody debugging this actually needs to tell apart.
  */
 const tally = {
-  digest: 0, nudge: 0, birthday: 0, group_goal: 0, failed: 0, dryRun: 0,
+  digest: 0, nudge: 0, birthday: 0, group_goal: 0, cycle: 0, failed: 0, dryRun: 0,
   /* The other channel, counted separately: a run can send every email and no
      push, which is the normal state until somebody turns push on. */
   pushed: 0, pushFailed: 0, pushDropped: 0,
@@ -955,6 +999,145 @@ async function sendGroupGoals() {
   }
 }
 
+/**
+ * The cycle reminder. The one message in this function that touches those
+ * tables, and it goes to the person themselves and to nobody else.
+ *
+ * WHY THE ARITHMETIC IS HERE AND NOT IMPORTED.
+ *
+ * src/lib/cycle.js has all of it, under 67 assertions, and this runs in Deno
+ * from a bundled file with no access to the app's source tree. So the two
+ * rules that matter are restated: drop gaps outside 21 to 45 days, because a
+ * short one is two entries for one period and a long one is a period that went
+ * unrecorded, and roll the prediction forward rather than pointing at a date
+ * in the past. Everything else the client does, the window, the confidence,
+ * the fertile span, is for drawing and is not needed to decide whether today
+ * is the day.
+ *
+ * WHAT STOPS IT SENDING TWICE.
+ *
+ * notification_preference.cycle_reminded_for, holding the predicted date the
+ * last reminder was about. Deliberately not a notifications_log claim: that
+ * table keys on a group's cycle_id, and this feature works for somebody with
+ * no group, so anchoring to one would mean the reminder silently never fires
+ * for exactly the people using the app alone.
+ */
+const MIN_CYCLE = 21
+const MAX_CYCLE = 45
+const DAY_MS = 86400000
+
+const asDay = (iso: string) => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso)
+  return m ? Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : null
+}
+const dayString = (ms: number) => new Date(ms).toISOString().slice(0, 10)
+
+async function sendCycleReminders() {
+  const { data: people } = await supabase
+    .from('notification_preference')
+    .select('user_id, cycle_remind, cycle_remind_days, stated_cycle, cycle_reminded_for')
+    .eq('cycle_remind', true)
+
+  if (!people?.length) return
+
+  const now = new Date()
+  const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+
+  for (const person of people) {
+    const { data: logs } = await supabase
+      .from('cycle_log')
+      .select('started_on')
+      .eq('user_id', person.user_id)
+      .order('started_on', { ascending: true })
+
+    /* The annotation on the predicate is not decoration. Deno type-checks this
+       file when it deploys, and `(d): d is number` leaves `d` implicitly any
+       under noImplicitAny, which is an error and a blocked deploy. This repo
+       has lost a deploy to exactly that class of thing before. */
+    const starts = (logs ?? [])
+      .map((l: { started_on: string }) => asDay(l.started_on))
+      .filter((d: number | null): d is number => d !== null)
+    if (!starts.length) continue
+
+    const gaps: number[] = []
+    for (let i = 1; i < starts.length; i += 1) {
+      const gap = Math.round((starts[i] - starts[i - 1]) / DAY_MS)
+      if (gap >= MIN_CYCLE && gap <= MAX_CYCLE) gaps.push(gap)
+    }
+    const recent = gaps.slice(-6)
+    const length =
+      recent.length > 0
+        ? Math.round(recent.reduce((a, b) => a + b, 0) / recent.length)
+        : person.stated_cycle && person.stated_cycle >= MIN_CYCLE && person.stated_cycle <= MAX_CYCLE
+          ? person.stated_cycle
+          : 28
+
+    let next = starts[starts.length - 1] + length * DAY_MS
+    let guard = 0
+    while (next < today && guard < 24) {
+      next += length * DAY_MS
+      guard += 1
+    }
+
+    const ahead = Math.round((next - today) / DAY_MS)
+    const wanted = person.cycle_remind_days ?? 2
+
+    /* Exactly the day, not "within N". Firing on each of the three days before
+       is three notifications about one event, which is how somebody turns the
+       feature off. */
+    if (ahead !== wanted) continue
+
+    const forDate = dayString(next)
+    if (person.cycle_reminded_for === forDate) continue
+
+    const who = await recipient(person.user_id)
+    if (!who) continue
+    const c = COPY[who.loc]
+
+    /* Stamped BEFORE the send, so two overlapping runs cannot both pass the
+       check above. A failed send loses this one reminder rather than
+       repeating it, which is the right way round for a message that is only
+       useful on one specific day: retrying it tomorrow would be a reminder
+       about the wrong number of days. */
+    await supabase
+      .from('notification_preference')
+      .update({ cycle_reminded_for: forDate })
+      .eq('user_id', person.user_id)
+
+    const outcome = await send(who.to, c.cycleSubject, {
+      title: c.cycleTitle,
+      preheader: c.cyclePre(ahead),
+      blocks: [
+        { kind: 'lead', text: c.cycleLead(ahead) },
+        { kind: 'text', text: c.cycleNote },
+        {
+          kind: 'list',
+          items: [
+            { title: c.prepWater },
+            { title: c.prepWarmth },
+            { title: c.prepGentle },
+          ],
+        },
+        { kind: 'button', label: c.cycleCta, href: `${SITE}/calendar` },
+      ],
+      footnote: c.cycleFoot,
+      loc: who.loc,
+    })
+
+    if (outcome === 'sent') {
+      tally.cycle += 1
+      await pushTo(person.user_id, {
+        title: c.cycleTitle,
+        body: c.cycleLead(ahead),
+        url: `${SITE}/calendar`,
+        tag: 'cycle',
+      })
+    } else {
+      tally[outcome === 'failed' ? 'failed' : 'dryRun'] += 1
+    }
+  }
+}
+
 Deno.serve(async () => {
   try {
     // Advance cycles first so the digests and nudges below see current state.
@@ -963,6 +1146,7 @@ Deno.serve(async () => {
     await sendNudges()
     await sendBirthdays()
     await sendGroupGoals()
+    await sendCycleReminders()
 
     /**
      * SAY WHAT HAPPENED, NOT MERELY THAT NOTHING THREW.

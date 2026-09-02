@@ -230,6 +230,23 @@ create table if not exists notification_preference (
    * measurements are better than the recollection.
    */
   stated_cycle      smallint check (stated_cycle is null or stated_cycle between 21 and 45),
+  /**
+   * The predicted date the last reminder was sent about.
+   *
+   * The ceiling for this one message, and deliberately NOT a row in
+   * notifications_log. That table's unique key is (user_id, cycle_id, kind)
+   * and cycle_id is not null, where a cycle is a group's check-in period. The
+   * calendar and the tracker work for somebody with no group at all, so
+   * anchoring this to one would mean the reminder silently never fires for
+   * exactly the people most likely to be using it alone.
+   *
+   * A date rather than a boolean or a timestamp: the thing that must happen
+   * once is one reminder per predicted period, and the predicted date is the
+   * identity of that period. If the estimate moves because a new date was
+   * recorded, the reminder for the new prediction is a different message and
+   * is allowed through.
+   */
+  cycle_reminded_for date,
   updated_at        timestamptz not null default now()
 );
 

@@ -99,10 +99,10 @@ const keysOf = (lang) => [...block(lang).matchAll(/^ {4}(\w+):/gm)].map((m) => m
 {
   ok('the recipient lookup reads profiles.locale',
      /from\('profiles'\)[\s\S]{0,80}select\('locale'\)/.test(src))
-  /* One per sender: digest, nudge, birthday, group_goal. Counted rather than
-     named so that adding a fifth kind and hard-coding its words trips this. */
+  /* One per sender: digest, nudge, birthday, group_goal, cycle. Counted rather
+     than named so that adding a sixth and hard-coding its words trips this. */
   ok('and every sender uses the copy table rather than literals',
-     (src.match(/COPY\[who\.loc\]/g) ?? []).length === 4,
+     (src.match(/COPY\[who\.loc\]/g) ?? []).length === 5,
      String((src.match(/COPY\[who\.loc\]/g) ?? []).length))
 
   /* The English strings that used to be inline. If any of these comes back as
@@ -226,7 +226,7 @@ const keysOf = (lang) => [...block(lang).matchAll(/^ {4}(\w+):/gm)].map((m) => m
   ok('and no longer says it in English in the markup',
      !tpl.includes('You get at most two of these'))
   ok('so every send passes a language to the shell',
-     (src.match(/loc: who\.loc/g) ?? []).length === 4,
+     (src.match(/loc: who\.loc/g) ?? []).length === 5,
      String((src.match(/loc: who\.loc/g) ?? []).length))
 
   /* Three days is the whole argument for the message existing: on the day
@@ -340,8 +340,26 @@ const keysOf = (lang) => [...block(lang).matchAll(/^ {4}(\w+):/gm)].map((m) => m
   /* All three senders have to settle, or the one that does not is the one that
      silently keeps its claim. Counted rather than named so a fourth kind
      cannot be added without one. */
+  /**
+   * Four, not five, and the fifth is deliberate.
+   *
+   * The cycle reminder does not claim a row in notifications_log and so has
+   * nothing to settle. That table keys on (user_id, cycle_id, kind) with
+   * cycle_id not null, where a cycle is a GROUP's check-in period; the cycle
+   * reminder has to work for somebody with no group at all, so anchoring it
+   * there would mean it silently never fired for exactly the people using the
+   * app alone. Its ceiling is notification_preference.cycle_reminded_for,
+   * asserted separately below.
+   */
   const settles = (src.match(/await settle\(/g) ?? []).length
-  ok('every sender settles its claim', settles === 4, String(settles))
+  ok('every sender that claims also settles', settles === 4, String(settles))
+
+  ok('the cycle reminder has a ceiling of its own instead',
+     /cycle_reminded_for/.test(src),
+     'without it the reminder repeats every hour on the day it is due')
+  ok('and it is stamped before the send, not after',
+     src.indexOf('cycle_reminded_for: forDate') < src.indexOf('const outcome = await send(who.to, c.cycleSubject'),
+     'stamping afterwards lets two overlapping runs both send it')
 
   ok('a missing key is no longer reported as a send',
      /return 'dry-run' as const/.test(src) && !/console\.log\('\[dry-run\]'[\s\S]{0,80}return true/.test(src))
