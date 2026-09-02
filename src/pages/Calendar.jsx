@@ -166,7 +166,16 @@ export default function Calendar() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-content space-y-4 px-4 pb-28 pt-4">
+    /**
+     * Wider than the rest of the app, and only here.
+     *
+     * max-w-content is 40rem, which is right for the pages that are columns of
+     * text and forms: a 1200px-wide settings form is worse, not better. A grid
+     * is the exception. Seven day columns at 40rem are 80px each, which is why
+     * the week view needed a horizontal scroller on a phone and still felt
+     * cramped on an iPad that had 700px of empty margin either side.
+     */
+    <div className="mx-auto w-full max-w-content space-y-4 px-4 pb-28 pt-4 md:max-w-[68rem] md:pb-8">
       <header className="lg w-full overflow-hidden p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-safe text-h1 font-semibold text-ink">{t('cal.title')}</h1>
@@ -222,13 +231,30 @@ export default function Calendar() {
         </p>
       </header>
 
-      {view === 'month' && (
-        <MonthGrid range={range} anchor={anchor} agenda={agenda} cycle={cycle} onPick={(d) => { setAnchor(d); setView('day') }} />
-      )}
-      {view === 'week' && <WeekGrid range={range} agenda={agenda} cycle={cycle} locale={locale} onEdit={setEditing} />}
-      {view === 'day' && <DayList day={anchor} agenda={agenda} cycle={cycle} onEdit={setEditing} onRemove={remove} t={t} />}
+      {/**
+       * Grid beside panel on a laptop, stacked on a phone.
+       *
+       * xl and not lg, which was measured rather than guessed. At the lg
+       * breakpoint an iPad in landscape is 1180px, and taking 20rem for the
+       * panel left the grid at 572px: seven columns of 82px, barely wider than
+       * the phone gets, on the device with the most room. The split now waits
+       * for 1280px, so both iPad orientations give the whole width to the grid
+       * and only a real laptop shows the two side by side.
+       *
+       * items-start so the panel keeps its own height instead of stretching to
+       * match a month grid, which would leave it as a mostly empty card.
+       */}
+      <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="min-w-0 space-y-4">
+          {view === 'month' && (
+            <MonthGrid range={range} anchor={anchor} agenda={agenda} cycle={cycle} onPick={(d) => { setAnchor(d); setView('day') }} />
+          )}
+          {view === 'week' && <WeekGrid range={range} agenda={agenda} cycle={cycle} locale={locale} onEdit={setEditing} />}
+          {view === 'day' && <DayList day={anchor} agenda={agenda} cycle={cycle} onEdit={setEditing} onRemove={remove} t={t} />}
+        </div>
 
-      <CyclePanel onChange={setCycle} />
+        <CyclePanel onChange={setCycle} />
+      </div>
 
       {editing && (
         <EventForm
@@ -246,8 +272,36 @@ export default function Calendar() {
 
 /* --- month --------------------------------------------------------------- */
 
+/**
+ * A media query React can act on.
+ *
+ * Needed because how many chips fit in a tile is a number passed to slice(),
+ * and a class cannot change a number. The alternative is rendering three and
+ * hiding the last with `hidden md:block`, which leaves the "+1 more" count
+ * lying on a phone: it would say there is one hidden when there are two.
+ *
+ * Guarded for the server and for older Safari, which had addListener and not
+ * addEventListener on a MediaQueryList until 14.
+ */
+function useWide(query = '(min-width: 768px)') {
+  const [wide, setWide] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia?.(query).matches === true,
+  )
+  useEffect(() => {
+    const mq = window.matchMedia?.(query)
+    if (!mq) return
+    const on = () => setWide(mq.matches)
+    on()
+    mq.addEventListener?.('change', on)
+    return () => mq.removeEventListener?.('change', on)
+  }, [query])
+  return wide
+}
+
 function MonthGrid({ range, anchor, agenda, cycle, onPick }) {
   const { t, locale } = useT()
+  /* Two chips on a phone tile, three once the tile is 6.5rem tall. */
+  const shown = useWide() ? 3 : 2
   const days = []
   for (let i = 0; i <= daysBetween(range.from, range.to); i += 1) days.push(addDays(range.from, i))
 
@@ -279,7 +333,11 @@ function MonthGrid({ range, anchor, agenda, cycle, onPick }) {
                  reader gets "12 September, fertile window" rather than a
                  number and a decorative span it is told to ignore. */
               aria-label={phase ? `${d.getDate()} · ${t(`cycle.phase_${phase}`)}` : String(d.getDate())}
-              className={`press relative flex min-h-[3.4rem] flex-col items-stretch overflow-hidden rounded-inner p-1 text-left transition-colors hover:bg-ink/[0.04] ${
+              /* Taller once there is room, which is what lets a third chip
+                 show instead of collapsing into "+2 autres". The count line is
+                 information about what is hidden; three visible entries is
+                 information about the day. */
+              className={`press relative flex min-h-[3.4rem] flex-col items-stretch overflow-hidden rounded-inner p-1 text-left transition-colors hover:bg-ink/[0.04] md:min-h-[6.5rem] md:p-1.5 ${
                 outside ? 'opacity-40' : ''
               } ${k === today ? 'ring-1 ring-inset ring-accent/50' : ''}`}
             >
@@ -291,17 +349,17 @@ function MonthGrid({ range, anchor, agenda, cycle, onPick }) {
               </span>
 
               {/* Two, then a count. Four chips in a 48px tile is a smear. */}
-              {list.slice(0, 2).map((e) => (
+              {list.slice(0, shown).map((e) => (
                 <span
                   key={e.occurrenceId}
-                  className={`mt-0.5 truncate rounded-[0.35rem] px-1 py-px text-[10px] font-semibold ${SWATCH[e.colour] ?? SWATCH.accent}`}
+                  className={`mt-0.5 truncate rounded-[0.35rem] px-1 py-px text-[10px] font-semibold md:px-1.5 md:py-0.5 md:text-[11px] ${SWATCH[e.colour] ?? SWATCH.accent}`}
                 >
                   {e.title}
                 </span>
               ))}
-              {list.length > 2 && (
+              {list.length > shown && (
                 <span className="mt-0.5 px-1 text-[10px] font-semibold text-muted">
-                  {t('cal.more', { n: list.length - 2 })}
+                  {t('cal.more', { n: list.length - shown })}
                 </span>
               )}
             </button>

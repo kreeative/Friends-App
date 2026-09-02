@@ -112,13 +112,21 @@ function TopNav() {
   const { pathname } = useLocation()
   return (
     <header className="sticky top-0 z-40 px-4 pt-4">
-      <nav className="lg lg-chrome mx-auto w-full max-w-content">
+      {/* Matches the widest page rather than the narrowest. On a laptop the
+          calendar is 68rem and a 40rem bar floating above it reads as two
+          unrelated things; the bar is chrome and should frame whatever is
+          under it. Pages that stay a 40rem column simply centre beneath it,
+          which is what the reference layout does too. */}
+      <nav className="lg lg-chrome mx-auto w-full max-w-content md:max-w-[68rem]">
         {/* One padded box for both halves. The row used to carry the padding
             itself, which left the panel below it no way to line up with the
             logo without repeating the same numbers. */}
         <div className="px-3 py-2.5">
           <div className="flex items-center gap-2.5">
-            <Link to="/" aria-label={t('nav.home')} className="press shrink-0">
+            {/* Hidden once the rail is showing, which carries the same mark
+                at its top. Two lockups on one screen is a logo competing with
+                itself. */}
+            <Link to="/" aria-label={t('nav.home')} className="press shrink-0 md:hidden">
               <LockupInline size={36} />
             </Link>
 
@@ -127,7 +135,9 @@ function TopNav() {
                 chrome down. */}
             {activeId && group && (
               <>
-                <span aria-hidden="true" className="shrink-0 text-muted/40">
+                {/* The separator only makes sense after something. With the
+                    lockup hidden at md+ it would open the bar with a slash. */}
+                <span aria-hidden="true" className="shrink-0 text-muted/40 md:hidden">
                   /
                 </span>
                 <span className="truncate text-small font-semibold tracking-tight text-ink">
@@ -174,22 +184,93 @@ function TopNav() {
   )
 }
 
+/**
+ * Which tab is current. Shared by both bars, because they are two shapes of
+ * the same navigation and the answer must not be worked out twice.
+ *
+ * Same rule NavLink uses: exact match for an `end` tab, prefix otherwise.
+ */
+const activeIndex = (tabs, pathname) =>
+  tabs.findIndex((tab) =>
+    tab.end ? pathname === tab.to : pathname === tab.to || pathname.startsWith(`${tab.to}/`),
+  )
+
+/**
+ * The same four places, down the side, on anything bigger than a phone.
+ *
+ * WHY A SECOND BAR RATHER THAN ONE THAT REFLOWS.
+ *
+ * The bottom bar is built around a horizontal slider measured from the DOM,
+ * and the whole reason it reads the live box is that the labels are words of
+ * different lengths in two languages. Turning that same element sideways with
+ * a media query would mean one measurement serving two axes, and the pill
+ * would be briefly the wrong shape on every resize. Two components, one
+ * source of truth for which tab is active, and only one of them is ever
+ * mounted: `md:hidden` on one and `hidden md:flex` on the other.
+ *
+ * WHY LABELS AND NOT ICONS.
+ *
+ * The reference for this is Wealthsimple's rail, which is icon-only. This app
+ * has no icon set for Home, Goals, Budget and Library, and inventing four
+ * glyphs that read unambiguously is a larger job than it looks: an icon that
+ * has to be learned is worse than a word that does not. So the rail is wide
+ * enough for the words, which is also what makes it work in French, where
+ * "Objectifs" is the label that has already broken this bar once.
+ *
+ * ON THE LEFT, WHICH IS WHERE THE REFERENCE PUTS IT. Flipping it is one
+ * class: `left-4` becomes `right-4` and the content padding swaps side.
+ */
+function SideRail({ tabs }) {
+  const { t } = useT()
+  const { pathname } = useLocation()
+  const activeIdx = activeIndex(tabs, pathname)
+
+  return (
+    <nav
+      className="lg lg-chrome fixed left-4 top-4 bottom-4 z-30 hidden w-[13rem] flex-col p-2 md:flex"
+      data-hook="side-rail"
+      aria-label={t('nav.home')}
+    >
+      <Link to="/" aria-label={t('nav.home')} className="press mb-2 block shrink-0 rounded-inner p-2">
+        <LockupInline size={34} />
+      </Link>
+
+      <div className="flex flex-col gap-0.5">
+        {tabs.map((tab, i) => (
+          <NavLink
+            key={tab.to}
+            to={tab.to}
+            end={tab.end}
+            data-active={i === activeIdx}
+            className={({ isActive }) =>
+              /* The active row is a filled pill rather than a travelling one.
+                 The slider exists because a horizontal bar has to show that
+                 four things are alternatives sharing one strip; a vertical
+                 list already reads as a list, and a pill sliding down it would
+                 be motion carrying no information. */
+              `press truncate rounded-pill px-3.5 py-2.5 text-small font-semibold transition-colors duration-200 ease-settle ${
+                isActive ? 'bg-accent/[0.14] text-ink' : 'text-ink/70 hover:bg-ink/[0.05] hover:text-ink'
+              }`
+            }
+          >
+            {t(tab.key)}
+          </NavLink>
+        ))}
+      </div>
+    </nav>
+  )
+}
+
 function TabBar({ tabs }) {
   const { t } = useT()
   const { pathname } = useLocation()
 
-  /* Which tab is current, worked out here rather than read back from
-     NavLink's isActive, the slider needs to know before the children render
-     so it can be measured in the same layout pass. Same rule NavLink uses:
-     exact match for an `end` tab, prefix match otherwise. */
-  const activeIdx = tabs.findIndex((tab) =>
-    tab.end ? pathname === tab.to : pathname === tab.to || pathname.startsWith(`${tab.to}/`),
-  )
+  const activeIdx = activeIndex(tabs, pathname)
   const { ref, box } = useSlider(tabs[activeIdx]?.to ?? null)
 
   return (
     <nav
-      className="lg lg-chrome fixed inset-x-4 bottom-4 z-30 mx-auto max-w-content"
+      className="lg lg-chrome fixed inset-x-4 bottom-4 z-30 mx-auto max-w-content md:hidden"
       style={{ marginBottom: 'env(safe-area-inset-bottom)' }}
     >
       {/**
@@ -267,13 +348,30 @@ export default function AppShell() {
       {/* Sparser than the public set, this is a tool, not a poster. */}
       <Stickers set="app" />
 
-      <TopNav />
-      <div className="relative z-10">
-        {/* The chrome above and below stays put; only the page moves. */}
-        <PageTransition>
-          <Outlet />
-        </PageTransition>
+      <SideRail tabs={activeId ? IN_GROUP(activeId) : MINE} />
+
+      {/**
+       * Everything to the right of the rail.
+       *
+       * 13rem for the rail plus the 1rem it is inset by on each side. Padding
+       * on a wrapper rather than a margin on each page, so a page that has
+       * never heard of the rail is positioned correctly anyway, and so the
+       * pages keep centring their own max-w-content inside whatever room is
+       * left.
+       *
+       * Below md the padding is zero and the bottom bar is the navigation, so
+       * the phone layout is untouched.
+       */}
+      <div className="md:pl-[15rem]">
+        <TopNav />
+        <div className="relative z-10">
+          {/* The chrome above and below stays put; only the page moves. */}
+          <PageTransition>
+            <Outlet />
+          </PageTransition>
+        </div>
       </div>
+
       <TabBar tabs={activeId ? IN_GROUP(activeId) : MINE} />
     </div>
   )
