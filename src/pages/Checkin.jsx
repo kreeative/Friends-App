@@ -277,7 +277,7 @@ export default function Checkin() {
                 return (
                   <div key={g.id} className="card">
                     <div className="flex items-start justify-between gap-4">
-                      <h3 className="text-h2 text-ink">{g.commitment}</h3>
+                      <h3 className="text-safe text-h2 text-ink">{g.commitment}</h3>
                       {g.kind === 'group' && (
                         <span className="chip-quiet shrink-0">{t('checkin.shared')}</span>
                       )}

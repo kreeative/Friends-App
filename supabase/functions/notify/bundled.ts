@@ -767,6 +767,61 @@ const COPY = {
     birthdayCta: 'Ouvrir le groupe',
     birthdayFoot: (g: string) => `Envoyé une fois par anniversaire, parce que tu es dans ${g}.`,
 
+    /**
+     * QUELQU’UN A AJOUTÉ UN OBJECTIF COMMUN.
+     *
+     * Le nom est un fait quand on l’a : created_by est la personne qui a tapé
+     * l’objectif. Il peut manquer, pour tout objectif commun créé avant la
+     * migration 50, et dans ce cas la phrase ne nomme personne plutôt que
+     * d’inventer un auteur. Même règle que pour le rappel d’ami absent.
+     */
+    goalSubject: (who: string | null, g: string) =>
+      who ? `${who} a ajouté un objectif commun dans ${g}` : `Un nouvel objectif commun dans ${g}`,
+    goalSubjectMany: (n: number, g: string) => `${n} nouveaux objectifs communs dans ${g}`,
+    goalTitle: (n: number) =>
+      n === 1 ? 'Un nouvel objectif commun' : `${n} nouveaux objectifs communs`,
+    goalPre: (n: number, g: string) =>
+      n === 1 ? `Quelque chose de nouveau dans ${g}.` : `${n} choses nouvelles dans ${g}.`,
+    goalLead: (who: string | null, g: string) =>
+      who
+        ? `${who} a ajouté un nouvel objectif commun dans ${g}.`
+        : `Un nouvel objectif commun vient d’arriver dans ${g}.`,
+    goalLeadMany: (g: string) => `Voici ce qui a été ajouté dans ${g}.`,
+    /* Qui a ajouté quoi, sous chaque ligne, parce que dans un groupe la
+       question suivante est toujours celle-là. */
+    goalBy: (who: string) => `ajouté par ${who}`,
+    goalCta: 'Ouvrir le groupe',
+    goalFoot: (g: string) =>
+      `Envoyé une fois par cycle au plus, parce que tu es dans ${g}. Les objectifs ajoutés ensuite arrivent dans le même message.`,
+
+    /**
+     * LE RAPPEL DE CYCLE. LE SEUL MESSAGE QUI TOUCHE A CES DONNEES.
+     *
+     * Adresse a la personne elle-meme et a personne d'autre. Rien dans ce
+     * message ne nomme un groupe, et il ne part que si elle a coche la case.
+     * La migration 51 dit pourquoi : ce sont les donnees les plus sensibles du
+     * produit, et ce rappel est l'unique exception prevue.
+     *
+     * Le mot « regles » n'est pas dans l'objet. Un objet s'affiche sur un
+     * ecran verrouille, dans une salle de cours, a cote de quelqu'un.
+     */
+    cycleSubject: 'Un petit rappel',
+    cycleTitle: 'Un petit rappel',
+    cyclePre: (n: number) =>
+      n === 1 ? 'Pour demain.' : `Pour dans ${n} jours.`,
+    cycleLead: (n: number) =>
+      n === 1
+        ? 'Tes regles sont prevues demain, d\u2019apres tes propres dates.'
+        : `Tes regles sont prevues dans ${n} jours, d\u2019apres tes propres dates.`,
+    cycleNote:
+      'Une estimation, pas une certitude. Trois choses qui aident, si tu veux les preparer aujourd\u2019hui.',
+    cycleCta: 'Ouvrir le calendrier',
+    cycleFoot:
+      'Tu recois ceci parce que tu l\u2019as active. Personne d\u2019autre ne le voit, et tu peux le couper dans le calendrier.',
+    prepWater: 'Bois plus d\u2019eau aujourd\u2019hui.',
+    prepWarmth: 'Prepare quelque chose de chaud, une infusion ou une bouillotte.',
+    prepGentle: 'Prevois quelque chose de plus doux que d\u2019habitude.',
+
     smallPrint:
       'Au plus un message de chaque sorte par cycle. Les rappels d’objectif se coupent objectif par objectif, dans l’application.',
   },
@@ -803,6 +858,36 @@ const COPY = {
       'On the day there is only the message left, and it arrives with everyone else’s. Three days out you can still book something, order something, write something worth reading. This is the reminder, not the gesture.',
     birthdayCta: 'Open the group',
     birthdayFoot: (g: string) => `Sent once per birthday, because you are in ${g}.`,
+
+    goalSubject: (who: string | null, g: string) =>
+      who ? `${who} added a shared goal in ${g}` : `A new shared goal in ${g}`,
+    goalSubjectMany: (n: number, g: string) => `${n} new shared goals in ${g}`,
+    goalTitle: (n: number) => (n === 1 ? 'A new shared goal' : `${n} new shared goals`),
+    goalPre: (n: number, g: string) =>
+      n === 1 ? `Something new in ${g}.` : `${n} new things in ${g}.`,
+    goalLead: (who: string | null, g: string) =>
+      who ? `${who} added a new shared goal in ${g}.` : `A new shared goal has appeared in ${g}.`,
+    goalLeadMany: (g: string) => `Here is what was added in ${g}.`,
+    goalBy: (who: string) => `added by ${who}`,
+    goalCta: 'Open the group',
+    goalFoot: (g: string) =>
+      `Sent at most once per cycle, because you are in ${g}. Goals added after this arrive in the same message.`,
+
+    cycleSubject: 'A small heads-up',
+    cycleTitle: 'A small heads-up',
+    cyclePre: (n: number) => (n === 1 ? 'For tomorrow.' : `For ${n} days from now.`),
+    cycleLead: (n: number) =>
+      n === 1
+        ? 'Your period is expected tomorrow, going by your own dates.'
+        : `Your period is expected in ${n} days, going by your own dates.`,
+    cycleNote:
+      'An estimate, not a certainty. Three things that help, if you want to get them ready today.',
+    cycleCta: 'Open the calendar',
+    cycleFoot:
+      'You get this because you turned it on. Nobody else sees it, and you can switch it off in the calendar.',
+    prepWater: 'Drink more water today.',
+    prepWarmth: 'Get something warm ready, a tea or a bottle.',
+    prepGentle: 'Plan something gentler than usual.',
 
     smallPrint:
       'At most one message of each kind per cycle. Goal reminders can be switched off per goal, in the app.',
@@ -906,7 +991,7 @@ async function send(
  * and a function that does not deploy is indistinguishable from one that
  * deploys and sends nothing.
  */
-type Kind = 'digest' | 'nudge' | 'birthday'
+type Kind = 'digest' | 'nudge' | 'birthday' | 'group_goal'
 
 /** Claim the right to send. Returns false if this message already went out. */
 async function claim(userId: string, cycleId: string, kind: Kind) {
@@ -951,7 +1036,7 @@ async function release(userId: string, cycleId: string, kind: Kind) {
  * answers somebody debugging this actually needs to tell apart.
  */
 const tally = {
-  digest: 0, nudge: 0, birthday: 0, failed: 0, dryRun: 0,
+  digest: 0, nudge: 0, birthday: 0, group_goal: 0, cycle: 0, failed: 0, dryRun: 0,
   /* The other channel, counted separately: a run can send every email and no
      push, which is the normal state until somebody turns push on. */
   pushed: 0, pushFailed: 0, pushDropped: 0,
@@ -1276,6 +1361,293 @@ async function sendBirthdays() {
   }
 }
 
+/**
+ * Shared goals somebody added, emailed once and then left alone.
+ *
+ * THE IN-APP ROW IS WRITTEN BY THE DATABASE, NOT BY THIS FUNCTION.
+ *
+ * A trigger on goals fans the notification out to every member the moment the
+ * goal is inserted, inside the same transaction, so the app shows it
+ * immediately and it exists whether or not this function ever runs. See
+ * migration 50 for why that is a trigger and not a client insert.
+ *
+ * What is left for this to do is the other channel. It picks up the rows that
+ * have not been emailed, groups them per person, sends one message, and stamps
+ * emailed_at so they are never picked up again. emailed_at is the thing that
+ * stops the same news going out twice; the notifications_log claim is what
+ * stops two overlapping runs both sending it once.
+ *
+ * ONE MESSAGE PER PERSON PER CYCLE, LISTING EVERYTHING.
+ *
+ * Four people adding a shared goal on the same evening is four rows in the app
+ * and one email. The alternative is a group being able to generate four emails
+ * for one person in an hour by doing something entirely reasonable, which is
+ * how a product teaches people to filter it.
+ *
+ * That does mean a goal added later in the same cycle gets no email of its
+ * own. It still arrives in the app, and the footer says so rather than leaving
+ * somebody to work out why the second one was quiet.
+ */
+async function sendGroupGoals() {
+  /* Everything unsent, newest information last so the list reads in the order
+     things happened. The join pulls the goal and the group in one go: without
+     the goal there is nothing to name, and a goal deleted since the
+     notification was written takes the row with it by cascade. */
+  const { data: pending } = await supabase
+    .from('notification')
+    .select('id, user_id, group_id, created_at, goals(commitment, status), profiles!notification_actor_id_fkey(display_name), groups(name)')
+    .eq('kind', 'group_goal')
+    .is('emailed_at', null)
+    .order('created_at', { ascending: true })
+
+  if (!pending?.length) return
+
+  /* Per person, then per group. Somebody in two groups who got a goal in each
+     gets two messages, because one message spanning two groups would have to
+     explain which line came from where and the subject could name neither. */
+  const byPerson = new Map<string, typeof pending>()
+  for (const row of pending) {
+    const key = `${row.user_id}|${row.group_id}`
+    const list = byPerson.get(key) ?? []
+    list.push(row)
+    byPerson.set(key, list)
+  }
+
+  for (const [key, rows] of byPerson) {
+    const userId = key.split('|')[0]
+
+    /* A goal that was paused or finished between being added and this run is
+       not news any more. If that empties the batch, the rows are still stamped
+       below so they are not reconsidered every hour forever. */
+    const live = rows.filter((r: any) => r.goals && r.goals.status === 'active')
+
+    const stamp = async () => {
+      await supabase
+        .from('notification')
+        .update({ emailed_at: new Date().toISOString() })
+        .in('id', rows.map((r: any) => r.id))
+    }
+
+    if (!live.length) {
+      await stamp()
+      continue
+    }
+
+    /* The anchor for the ceiling, same as birthdays: the group's newest cycle.
+       A group with no cycles has nothing to claim against. */
+    const { data: cyc } = await supabase
+      .from('cycles')
+      .select('id')
+      .eq('group_id', rows[0].group_id)
+      .order('opens_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    if (!cyc) continue
+
+    if (!(await claim(userId, cyc.id, 'group_goal'))) {
+      /* Already had one this cycle. The rows are stamped rather than left
+         pending, because leaving them would mean the next cycle emails goals
+         that are by then weeks old. They are in the app, which is where a
+         thing that is no longer news belongs. */
+      await stamp()
+      continue
+    }
+
+    const who = await recipient(userId)
+    if (!who) {
+      await release(userId, cyc.id, 'group_goal')
+      continue
+    }
+    const c = COPY[who.loc]
+
+    const group = (rows[0] as any).groups?.name ?? (who.loc === 'fr' ? 'ton groupe' : 'your group')
+    const names = live.map((r: any) => r.profiles?.display_name?.trim() || null)
+    const only = live.length === 1
+
+    const outcome = await send(
+      who.to,
+      only ? c.goalSubject(names[0], group) : c.goalSubjectMany(live.length, group),
+      {
+        title: c.goalTitle(live.length),
+        preheader: c.goalPre(live.length, group),
+        blocks: [
+          {
+            kind: 'lead',
+            text: only ? c.goalLead(names[0], group) : c.goalLeadMany(group),
+          },
+          {
+            kind: 'list',
+            items: live.map((r: any, i: number) => ({
+              title: r.goals.commitment,
+              /* Named only when the name is a fact. A shared goal created
+                 before migration 50 has no author recorded, and guessing one
+                 would put words in somebody's mouth. */
+              note: names[i] ? c.goalBy(names[i]) : undefined,
+            })),
+          },
+          { kind: 'button', label: c.goalCta, href: `${SITE}/g/${rows[0].group_id}` },
+        ],
+        footnote: c.goalFoot(group),
+        loc: who.loc,
+      },
+    )
+
+    await settle(outcome, 'group_goal', userId, cyc.id)
+
+    if (outcome === 'sent') {
+      await stamp()
+      await pushTo(userId, {
+        title: c.goalTitle(live.length),
+        body: only ? c.goalLead(names[0], group) : c.goalLeadMany(group),
+        url: `${SITE}/g/${rows[0].group_id}`,
+        tag: 'group_goal',
+      })
+    }
+    /* Not stamped when the send failed. settle() has already given the claim
+       back, so the next run retries both halves together rather than marking
+       something as emailed that was not. */
+  }
+}
+
+/**
+ * The cycle reminder. The one message in this function that touches those
+ * tables, and it goes to the person themselves and to nobody else.
+ *
+ * WHY THE ARITHMETIC IS HERE AND NOT IMPORTED.
+ *
+ * src/lib/cycle.js has all of it, under 67 assertions, and this runs in Deno
+ * from a bundled file with no access to the app's source tree. So the two
+ * rules that matter are restated: drop gaps outside 21 to 45 days, because a
+ * short one is two entries for one period and a long one is a period that went
+ * unrecorded, and roll the prediction forward rather than pointing at a date
+ * in the past. Everything else the client does, the window, the confidence,
+ * the fertile span, is for drawing and is not needed to decide whether today
+ * is the day.
+ *
+ * WHAT STOPS IT SENDING TWICE.
+ *
+ * notification_preference.cycle_reminded_for, holding the predicted date the
+ * last reminder was about. Deliberately not a notifications_log claim: that
+ * table keys on a group's cycle_id, and this feature works for somebody with
+ * no group, so anchoring to one would mean the reminder silently never fires
+ * for exactly the people using the app alone.
+ */
+const MIN_CYCLE = 21
+const MAX_CYCLE = 45
+const DAY_MS = 86400000
+
+const asDay = (iso: string) => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso)
+  return m ? Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : null
+}
+const dayString = (ms: number) => new Date(ms).toISOString().slice(0, 10)
+
+async function sendCycleReminders() {
+  const { data: people } = await supabase
+    .from('notification_preference')
+    .select('user_id, cycle_remind, cycle_remind_days, stated_cycle, cycle_reminded_for')
+    .eq('cycle_remind', true)
+
+  if (!people?.length) return
+
+  const now = new Date()
+  const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+
+  for (const person of people) {
+    const { data: logs } = await supabase
+      .from('cycle_log')
+      .select('started_on')
+      .eq('user_id', person.user_id)
+      .order('started_on', { ascending: true })
+
+    /* The annotation on the predicate is not decoration. Deno type-checks this
+       file when it deploys, and `(d): d is number` leaves `d` implicitly any
+       under noImplicitAny, which is an error and a blocked deploy. This repo
+       has lost a deploy to exactly that class of thing before. */
+    const starts = (logs ?? [])
+      .map((l: { started_on: string }) => asDay(l.started_on))
+      .filter((d: number | null): d is number => d !== null)
+    if (!starts.length) continue
+
+    const gaps: number[] = []
+    for (let i = 1; i < starts.length; i += 1) {
+      const gap = Math.round((starts[i] - starts[i - 1]) / DAY_MS)
+      if (gap >= MIN_CYCLE && gap <= MAX_CYCLE) gaps.push(gap)
+    }
+    const recent = gaps.slice(-6)
+    const length =
+      recent.length > 0
+        ? Math.round(recent.reduce((a, b) => a + b, 0) / recent.length)
+        : person.stated_cycle && person.stated_cycle >= MIN_CYCLE && person.stated_cycle <= MAX_CYCLE
+          ? person.stated_cycle
+          : 28
+
+    let next = starts[starts.length - 1] + length * DAY_MS
+    let guard = 0
+    while (next < today && guard < 24) {
+      next += length * DAY_MS
+      guard += 1
+    }
+
+    const ahead = Math.round((next - today) / DAY_MS)
+    const wanted = person.cycle_remind_days ?? 2
+
+    /* Exactly the day, not "within N". Firing on each of the three days before
+       is three notifications about one event, which is how somebody turns the
+       feature off. */
+    if (ahead !== wanted) continue
+
+    const forDate = dayString(next)
+    if (person.cycle_reminded_for === forDate) continue
+
+    const who = await recipient(person.user_id)
+    if (!who) continue
+    const c = COPY[who.loc]
+
+    /* Stamped BEFORE the send, so two overlapping runs cannot both pass the
+       check above. A failed send loses this one reminder rather than
+       repeating it, which is the right way round for a message that is only
+       useful on one specific day: retrying it tomorrow would be a reminder
+       about the wrong number of days. */
+    await supabase
+      .from('notification_preference')
+      .update({ cycle_reminded_for: forDate })
+      .eq('user_id', person.user_id)
+
+    const outcome = await send(who.to, c.cycleSubject, {
+      title: c.cycleTitle,
+      preheader: c.cyclePre(ahead),
+      blocks: [
+        { kind: 'lead', text: c.cycleLead(ahead) },
+        { kind: 'text', text: c.cycleNote },
+        {
+          kind: 'list',
+          items: [
+            { title: c.prepWater },
+            { title: c.prepWarmth },
+            { title: c.prepGentle },
+          ],
+        },
+        { kind: 'button', label: c.cycleCta, href: `${SITE}/calendar` },
+      ],
+      footnote: c.cycleFoot,
+      loc: who.loc,
+    })
+
+    if (outcome === 'sent') {
+      tally.cycle += 1
+      await pushTo(person.user_id, {
+        title: c.cycleTitle,
+        body: c.cycleLead(ahead),
+        url: `${SITE}/calendar`,
+        tag: 'cycle',
+      })
+    } else {
+      tally[outcome === 'failed' ? 'failed' : 'dryRun'] += 1
+    }
+  }
+}
+
 Deno.serve(async () => {
   try {
     // Advance cycles first so the digests and nudges below see current state.
@@ -1283,6 +1655,8 @@ Deno.serve(async () => {
     await sendDigests()
     await sendNudges()
     await sendBirthdays()
+    await sendGroupGoals()
+    await sendCycleReminders()
 
     /**
      * SAY WHAT HAPPENED, NOT MERELY THAT NOTHING THREW.

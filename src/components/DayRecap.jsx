@@ -411,7 +411,7 @@ export default function DayRecap({
                         return (
                           <li key={g.id} className="py-4">
                             <div className="flex items-start justify-between gap-3">
-                              <span className="min-w-0 flex-1 text-body text-ink">
+                              <span className="text-safe flex-1 text-body text-ink">
                                 {g.commitment}
                               </span>
                               {item ? (

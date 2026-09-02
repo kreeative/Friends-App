@@ -391,7 +391,11 @@ export default function GoalDetail({
               {/* The commitment is the title. A heading reading "Goal" over a
                   page about one particular goal names the component rather
                   than what is on it. */}
-              <h2 className="text-h1 leading-tight text-ink">{goal.commitment}</h2>
+              {/* text-safe, but deliberately not clamped. This is the view the
+                  card's three-line clamp defers to, so it has to be the place
+                  the whole thing is readable. It still needs permission to
+                  break a long word, or the sheet scrolls sideways instead. */}
+              <h2 className="text-safe text-h1 leading-tight text-ink">{goal.commitment}</h2>
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center rounded-pill bg-accent/[0.14] px-3 py-1 text-label font-semibold text-ink ring-1 ring-inset ring-accent/25">
                   {cadence}

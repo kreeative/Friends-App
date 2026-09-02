@@ -114,7 +114,7 @@ export default function TodayObjective({ cycle, goals, doneGoalIds, groupId, onM
         </p>
       ) : (
         <>
-          <p className="mt-1.5 text-h2 font-semibold leading-[1.15] tracking-[-0.02em]">
+          <p className="text-safe mt-1.5 text-h2 font-semibold leading-[1.15] tracking-[-0.02em]">
             {next.commitment}
           </p>
 

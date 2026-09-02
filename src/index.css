@@ -1456,6 +1456,62 @@
     @apply chip bg-raised text-muted;
   }
 
+  /* --- keeping typed text inside the thing that contains it ------------- */
+  /**
+   * WHAT THIS IS FOR, MEASURED RATHER THAN ASSERTED.
+   *
+   * A goal title of a pasted enrolment URL painted 461px outside a 296px card,
+   * onto the page background, and pushed the document to 749px wide inside a
+   * 360px viewport. That is a horizontally scrolling app on a phone, caused by
+   * one field somebody filled in. The pills carrying the trigger and the proof
+   * did the same, 218px each.
+   *
+   * TWO SEPARATE CAUSES, WHICH IS WHY THERE ARE TWO PARTS BELOW.
+   *
+   * The first is flexbox. A flex child's default `min-width: auto` refuses to
+   * shrink below its content, so a title beside a status chip does not wrap,
+   * it widens its parent and takes the card with it. `min-width: 0` is what
+   * permits the shrink, and it has to be on the child, not the container.
+   *
+   * The second is that a URL is one word. The repo already knows this: "a
+   * single word has nowhere to wrap, it does not truncate, it spills."
+   * `overflow-wrap: break-word` gives it permission to break, and only when it
+   * would otherwise overflow, so ordinary prose is untouched.
+   *
+   * WHY NOT `hyphens` OR `word-break: break-all`. Hyphenation needs a
+   * dictionary Chromium does not ship for French, and `break-all` breaks every
+   * line at the margin including normal sentences, which is how you get words
+   * cut mid-syllable. Both have already been tried in this repo.
+   */
+  .text-safe {
+    @apply min-w-0;
+    overflow-wrap: break-word;
+  }
+
+  /**
+   * The same, for a pill.
+   *
+   * A pill is `inline-flex`, which cannot carry a line clamp, so the clamp
+   * goes on an inner block instead. Two lines rather than unlimited: a pill
+   * holding a wrapped URL over four lines is technically contained and still
+   * looks like the layout has failed, which the screenshot made obvious in a
+   * way the pixel measurement did not.
+   *
+   * `max-w-full` is the part that stops it escaping. Without it the pill sizes
+   * to its content and the clamp never gets the chance to apply.
+   */
+  .pill-safe {
+    @apply max-w-full min-w-0;
+  }
+  .pill-safe > span {
+    @apply block min-w-0;
+    overflow-wrap: break-word;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+
   /* --- motion ----------------------------------------------------------- */
   /**
    * One curve for everything that moves: cubic-bezier(0.32, 0.72, 0, 1).

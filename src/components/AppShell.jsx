@@ -6,6 +6,7 @@ import { useGroup } from '../context/GroupContext'
 import { useT } from '../lib/i18n'
 import { Avatar } from './ui'
 import { LockupInline } from './Wordmark'
+import NotificationBell from './NotificationBell'
 import Stickers from './Stickers'
 import PageTransition from './PageTransition'
 import { Slider, useSlider } from './Segmented'
@@ -149,14 +150,22 @@ function TopNav() {
              * further than before and is the correct distance for the control
              * that ends the session.
              */}
-            <Link
-              to="/profile"
-              aria-label={t('nav.you')}
-              data-hook="to-profile"
-              className="press ml-auto block shrink-0 rounded-pill"
-            >
-              <Avatar profile={profile} size={32} />
-            </Link>
+            {/* Pushed to the far end together, bell then avatar. The bell is
+                the thing with news on it, so it sits where the eye already
+                goes on the way to the avatar rather than on the other side of
+                the bar where the group name lives. */}
+            <div className="ml-auto flex shrink-0 items-center gap-1">
+              <NotificationBell />
+
+              <Link
+                to="/profile"
+                aria-label={t('nav.you')}
+                data-hook="to-profile"
+                className="press block shrink-0 rounded-pill"
+              >
+                <Avatar profile={profile} size={32} />
+              </Link>
+            </div>
           </div>
 
         </div>
