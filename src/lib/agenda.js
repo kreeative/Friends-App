@@ -24,11 +24,17 @@ export const CATEGORIES = ['cours', 'examen', 'etude', 'perso']
  * Tokens rather than hex, for the reason the migration gives: a stored colour
  * is correct on exactly one of this app's two themes. These are the defaults
  * an event gets when it is created; the row can override the colour.
+ *
+ * Every name here must be a token tailwind.config.js actually declares. The
+ * first version used 'blue' and 'violet', which are not among them, so the
+ * chips painted transparent: Tailwind builds each colour as var(--c-<name>)
+ * and an undefined variable is nothing at all. A screenshot did not show it;
+ * sampling the painted pixels did, at 1:1 against the tile behind.
  */
 export const CATEGORY_COLOUR = {
-  cours: 'blue',
+  cours: 'cat-1',
   examen: 'accent',
-  etude: 'violet',
+  etude: 'cat-3',
   perso: 'green',
 }
 

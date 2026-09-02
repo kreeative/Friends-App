@@ -9,6 +9,7 @@
  * the range, and the day-of-week numbering, which is off by one in every
  * implementation that mixes Monday-first display with getDay().
  */
+import { readFileSync } from 'node:fs'
 import { addDays, dayKey, fromKey } from './cycle.js'
 import {
   CATEGORIES,
@@ -141,9 +142,26 @@ ok(
 eq('a category paints its default colour', map.get('2026-09-01')[0].colour, CATEGORY_COLOUR.cours)
 eq(
   'and an explicit colour on the row wins',
-  agendaFor([{ ...course, colour: 'yellow' }], fromKey('2026-09-01'), fromKey('2026-09-02')).get('2026-09-01')[0].colour,
-  'yellow',
+  agendaFor([{ ...course, colour: 'cat-4' }], fromKey('2026-09-01'), fromKey('2026-09-02')).get('2026-09-01')[0].colour,
+  'cat-4',
 )
+
+/**
+ * Every default must be a token tailwind.config.js actually declares.
+ *
+ * 'blue' and 'violet' were used here and are not tokens in this project, so
+ * the chips painted transparent. Read straight out of the config so the two
+ * cannot drift: an invented name fails here rather than in a screenshot
+ * somebody has to squint at.
+ */
+const cfg = readFileSync(new URL('../../tailwind.config.js', import.meta.url), 'utf8')
+const declared = new Set([
+  ...[...cfg.matchAll(/^\s{8}'?([a-z0-9-]+)'?:\s*c\(/gm)].map((m) => m[1]),
+  ...[...cfg.matchAll(/(\d)'?:\s*c\('cat-\1'\)/g)].map((m) => `cat-${m[1]}`),
+])
+for (const [cat, colour] of Object.entries(CATEGORY_COLOUR)) {
+  ok(`${cat} paints in a token that exists (${colour})`, declared.has(colour), [...declared].join(', '))
+}
 
 eq('no events is an empty map', agendaFor([], fromKey('2026-09-01'), fromKey('2026-09-30')).size, 0)
 eq('null events is an empty map', agendaFor(null, fromKey('2026-09-01'), fromKey('2026-09-30')).size, 0)

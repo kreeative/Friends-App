@@ -72,8 +72,16 @@ create table if not exists calendar_event (
   until_on   date,
   /* One of the palette's own tokens, not a hex value. A stored #FF6699 is the
      right colour on exactly one of this app's two themes, which is the same
-     mistake the delete button comment in GoalCard warns about. */
-  colour     text not null default 'accent' check (colour in ('accent','green','blue','yellow','violet','quiet')),
+     mistake the delete button comment in GoalCard warns about.
+
+     The list is exactly what tailwind.config.js declares. The first draft of
+     this constraint allowed 'blue', 'violet' and 'yellow', none of which is a
+     token in this project: Tailwind builds each colour as var(--c-<name>), so
+     those rows would have painted transparent. A screenshot did not reveal it;
+     sampling the painted pixels did, at 1:1 against the tile behind. A check
+     constraint that permits a value the client cannot render is a constraint
+     that is not doing its job. */
+  colour     text not null default 'accent' check (colour in ('accent','green','quiet','cat-1','cat-2','cat-3','cat-4')),
   created_at timestamptz not null default now(),
 
   -- A block that ends before it starts is not a block. Both null is an all-day
@@ -212,6 +220,16 @@ create table if not exists notification_preference (
   -- feature in the product that must never surprise somebody by existing.
   cycle_remind      boolean not null default false,
   cycle_remind_days smallint not null default 2 check (cycle_remind_days between 1 and 7),
+  /**
+   * The average the person stated during setup, if they did.
+   *
+   * It is not a notification preference and it is here anyway, because the
+   * alternative is a fourth table holding one integer per user. The range
+   * matches MIN_CYCLE and MAX_CYCLE in src/lib/cycle.js, and estimate() stops
+   * using it once there are three measured gaps: at that point the
+   * measurements are better than the recollection.
+   */
+  stated_cycle      smallint check (stated_cycle is null or stated_cycle between 21 and 45),
   updated_at        timestamptz not null default now()
 );
 

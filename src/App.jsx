@@ -21,6 +21,7 @@ import GoalEditor from './pages/GoalEditor'
 import Account from './pages/Account'
 import Me from './pages/Me'
 import Money from './pages/Money'
+import Calendar from './pages/Calendar'
 import Settings from './pages/Settings'
 import Legal from './pages/Legal'
 import PublicLayout from './pages/public/PublicLayout'
@@ -265,6 +266,12 @@ function Gate() {
             GROUP's settings and is unreachable to anybody without a group. */}
         <Route path="settings" element={<Account />} />
         <Route path="money" element={<Money />} />
+        {/* The full timetable. The dashboard's WeekStrip links here; it is
+            deliberately not a fifth tab, because the tab bar is capped at four
+            and the comment above MINE records what happened at five: the
+            labels truncated to "Faire le p..." at 390px. */}
+        <Route path="calendar" element={<Calendar />} />
+        <Route path="calendrier" element={<Calendar />} />
         {/**
          * The budget's sections are pages, and they are pages here rather than
          * five sibling routes with five components.

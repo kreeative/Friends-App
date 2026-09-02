@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { localeTag, useT } from '../lib/i18n'
@@ -744,6 +745,26 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
         </span>
         <span className="h-1 w-8 rounded-pill bg-accent/40 transition-colors group-hover:bg-accent/60" />
       </button>
+
+      {/**
+       * The way out to the full timetable.
+       *
+       * This strip is a glance at the current week inside a page about
+       * something else, and it is the obvious place to reach for when the
+       * question is bigger than that. It is a link rather than a fifth tab
+       * because the bar is capped at four: the comment above MINE in AppShell
+       * records what happened at five, where the labels truncated to
+       * "Faire le p..." at 390px.
+       */}
+      <div className="mt-2 border-t border-hairline pt-3">
+        <Link
+          to="/calendar"
+          data-hook="to-calendar"
+          className="press flex w-full items-center justify-center rounded-inner py-2 text-small font-semibold text-accent transition-colors hover:bg-accent/[0.06]"
+        >
+          {t('week.open_calendar')}
+        </Link>
+      </div>
 
       {/* Always open, never a disclosure. There is always a selected day, so a
           panel that had to be opened would be a second tap between you and the
