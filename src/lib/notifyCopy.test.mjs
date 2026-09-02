@@ -99,10 +99,10 @@ const keysOf = (lang) => [...block(lang).matchAll(/^ {4}(\w+):/gm)].map((m) => m
 {
   ok('the recipient lookup reads profiles.locale',
      /from\('profiles'\)[\s\S]{0,80}select\('locale'\)/.test(src))
-  /* One per sender: digest, nudge, birthday. Counted rather than named so
-     that adding a fourth kind and hard-coding its words trips this. */
+  /* One per sender: digest, nudge, birthday, group_goal. Counted rather than
+     named so that adding a fifth kind and hard-coding its words trips this. */
   ok('and every sender uses the copy table rather than literals',
-     (src.match(/COPY\[who\.loc\]/g) ?? []).length === 3,
+     (src.match(/COPY\[who\.loc\]/g) ?? []).length === 4,
      String((src.match(/COPY\[who\.loc\]/g) ?? []).length))
 
   /* The English strings that used to be inline. If any of these comes back as
@@ -226,7 +226,7 @@ const keysOf = (lang) => [...block(lang).matchAll(/^ {4}(\w+):/gm)].map((m) => m
   ok('and no longer says it in English in the markup',
      !tpl.includes('You get at most two of these'))
   ok('so every send passes a language to the shell',
-     (src.match(/loc: who\.loc/g) ?? []).length === 3,
+     (src.match(/loc: who\.loc/g) ?? []).length === 4,
      String((src.match(/loc: who\.loc/g) ?? []).length))
 
   /* Three days is the whole argument for the message existing: on the day
@@ -341,7 +341,7 @@ const keysOf = (lang) => [...block(lang).matchAll(/^ {4}(\w+):/gm)].map((m) => m
      silently keeps its claim. Counted rather than named so a fourth kind
      cannot be added without one. */
   const settles = (src.match(/await settle\(/g) ?? []).length
-  ok('every sender settles its claim', settles === 3, String(settles))
+  ok('every sender settles its claim', settles === 4, String(settles))
 
   ok('a missing key is no longer reported as a send',
      /return 'dry-run' as const/.test(src) && !/console\.log\('\[dry-run\]'[\s\S]{0,80}return true/.test(src))
@@ -371,13 +371,13 @@ const keysOf = (lang) => [...block(lang).matchAll(/^ {4}(\w+):/gm)].map((m) => m
 
   ok('claim has a named union of kinds', declared.length >= 3, union)
   ok('and it is the same set the database allows',
-     declared.slice().sort().join() === ['birthday', 'digest', 'nudge'].sort().join(),
+     declared.slice().sort().join() === ['birthday', 'digest', 'group_goal', 'nudge'].sort().join(),
      declared.join())
   for (const kind of [...new Set(used)]) {
     ok(`claim('${kind}') is a kind claim accepts`, declared.includes(kind), union)
   }
-  ok('all three kinds are actually claimed somewhere',
-     new Set(used).size === 3, [...new Set(used)].join())
+  ok('all four kinds are actually claimed somewhere',
+     new Set(used).size === 4, [...new Set(used)].join())
 }
 
 

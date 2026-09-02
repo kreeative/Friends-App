@@ -767,6 +767,33 @@ const COPY = {
     birthdayCta: 'Ouvrir le groupe',
     birthdayFoot: (g: string) => `Envoyé une fois par anniversaire, parce que tu es dans ${g}.`,
 
+    /**
+     * QUELQU’UN A AJOUTÉ UN OBJECTIF COMMUN.
+     *
+     * Le nom est un fait quand on l’a : created_by est la personne qui a tapé
+     * l’objectif. Il peut manquer, pour tout objectif commun créé avant la
+     * migration 50, et dans ce cas la phrase ne nomme personne plutôt que
+     * d’inventer un auteur. Même règle que pour le rappel d’ami absent.
+     */
+    goalSubject: (who: string | null, g: string) =>
+      who ? `${who} a ajouté un objectif commun dans ${g}` : `Un nouvel objectif commun dans ${g}`,
+    goalSubjectMany: (n: number, g: string) => `${n} nouveaux objectifs communs dans ${g}`,
+    goalTitle: (n: number) =>
+      n === 1 ? 'Un nouvel objectif commun' : `${n} nouveaux objectifs communs`,
+    goalPre: (n: number, g: string) =>
+      n === 1 ? `Quelque chose de nouveau dans ${g}.` : `${n} choses nouvelles dans ${g}.`,
+    goalLead: (who: string | null, g: string) =>
+      who
+        ? `${who} a ajouté un nouvel objectif commun dans ${g}.`
+        : `Un nouvel objectif commun vient d’arriver dans ${g}.`,
+    goalLeadMany: (g: string) => `Voici ce qui a été ajouté dans ${g}.`,
+    /* Qui a ajouté quoi, sous chaque ligne, parce que dans un groupe la
+       question suivante est toujours celle-là. */
+    goalBy: (who: string) => `ajouté par ${who}`,
+    goalCta: 'Ouvrir le groupe',
+    goalFoot: (g: string) =>
+      `Envoyé une fois par cycle au plus, parce que tu es dans ${g}. Les objectifs ajoutés ensuite arrivent dans le même message.`,
+
     smallPrint:
       'Au plus un message de chaque sorte par cycle. Les rappels d’objectif se coupent objectif par objectif, dans l’application.',
   },
@@ -803,6 +830,20 @@ const COPY = {
       'On the day there is only the message left, and it arrives with everyone else’s. Three days out you can still book something, order something, write something worth reading. This is the reminder, not the gesture.',
     birthdayCta: 'Open the group',
     birthdayFoot: (g: string) => `Sent once per birthday, because you are in ${g}.`,
+
+    goalSubject: (who: string | null, g: string) =>
+      who ? `${who} added a shared goal in ${g}` : `A new shared goal in ${g}`,
+    goalSubjectMany: (n: number, g: string) => `${n} new shared goals in ${g}`,
+    goalTitle: (n: number) => (n === 1 ? 'A new shared goal' : `${n} new shared goals`),
+    goalPre: (n: number, g: string) =>
+      n === 1 ? `Something new in ${g}.` : `${n} new things in ${g}.`,
+    goalLead: (who: string | null, g: string) =>
+      who ? `${who} added a new shared goal in ${g}.` : `A new shared goal has appeared in ${g}.`,
+    goalLeadMany: (g: string) => `Here is what was added in ${g}.`,
+    goalBy: (who: string) => `added by ${who}`,
+    goalCta: 'Open the group',
+    goalFoot: (g: string) =>
+      `Sent at most once per cycle, because you are in ${g}. Goals added after this arrive in the same message.`,
 
     smallPrint:
       'At most one message of each kind per cycle. Goal reminders can be switched off per goal, in the app.',
@@ -906,7 +947,7 @@ async function send(
  * and a function that does not deploy is indistinguishable from one that
  * deploys and sends nothing.
  */
-type Kind = 'digest' | 'nudge' | 'birthday'
+type Kind = 'digest' | 'nudge' | 'birthday' | 'group_goal'
 
 /** Claim the right to send. Returns false if this message already went out. */
 async function claim(userId: string, cycleId: string, kind: Kind) {
@@ -951,7 +992,7 @@ async function release(userId: string, cycleId: string, kind: Kind) {
  * answers somebody debugging this actually needs to tell apart.
  */
 const tally = {
-  digest: 0, nudge: 0, birthday: 0, failed: 0, dryRun: 0,
+  digest: 0, nudge: 0, birthday: 0, group_goal: 0, failed: 0, dryRun: 0,
   /* The other channel, counted separately: a run can send every email and no
      push, which is the normal state until somebody turns push on. */
   pushed: 0, pushFailed: 0, pushDropped: 0,
@@ -1276,6 +1317,154 @@ async function sendBirthdays() {
   }
 }
 
+/**
+ * Shared goals somebody added, emailed once and then left alone.
+ *
+ * THE IN-APP ROW IS WRITTEN BY THE DATABASE, NOT BY THIS FUNCTION.
+ *
+ * A trigger on goals fans the notification out to every member the moment the
+ * goal is inserted, inside the same transaction, so the app shows it
+ * immediately and it exists whether or not this function ever runs. See
+ * migration 50 for why that is a trigger and not a client insert.
+ *
+ * What is left for this to do is the other channel. It picks up the rows that
+ * have not been emailed, groups them per person, sends one message, and stamps
+ * emailed_at so they are never picked up again. emailed_at is the thing that
+ * stops the same news going out twice; the notifications_log claim is what
+ * stops two overlapping runs both sending it once.
+ *
+ * ONE MESSAGE PER PERSON PER CYCLE, LISTING EVERYTHING.
+ *
+ * Four people adding a shared goal on the same evening is four rows in the app
+ * and one email. The alternative is a group being able to generate four emails
+ * for one person in an hour by doing something entirely reasonable, which is
+ * how a product teaches people to filter it.
+ *
+ * That does mean a goal added later in the same cycle gets no email of its
+ * own. It still arrives in the app, and the footer says so rather than leaving
+ * somebody to work out why the second one was quiet.
+ */
+async function sendGroupGoals() {
+  /* Everything unsent, newest information last so the list reads in the order
+     things happened. The join pulls the goal and the group in one go: without
+     the goal there is nothing to name, and a goal deleted since the
+     notification was written takes the row with it by cascade. */
+  const { data: pending } = await supabase
+    .from('notification')
+    .select('id, user_id, group_id, created_at, goals(commitment, status), profiles!notification_actor_id_fkey(display_name), groups(name)')
+    .eq('kind', 'group_goal')
+    .is('emailed_at', null)
+    .order('created_at', { ascending: true })
+
+  if (!pending?.length) return
+
+  /* Per person, then per group. Somebody in two groups who got a goal in each
+     gets two messages, because one message spanning two groups would have to
+     explain which line came from where and the subject could name neither. */
+  const byPerson = new Map<string, typeof pending>()
+  for (const row of pending) {
+    const key = `${row.user_id}|${row.group_id}`
+    const list = byPerson.get(key) ?? []
+    list.push(row)
+    byPerson.set(key, list)
+  }
+
+  for (const [key, rows] of byPerson) {
+    const userId = key.split('|')[0]
+
+    /* A goal that was paused or finished between being added and this run is
+       not news any more. If that empties the batch, the rows are still stamped
+       below so they are not reconsidered every hour forever. */
+    const live = rows.filter((r: any) => r.goals && r.goals.status === 'active')
+
+    const stamp = async () => {
+      await supabase
+        .from('notification')
+        .update({ emailed_at: new Date().toISOString() })
+        .in('id', rows.map((r: any) => r.id))
+    }
+
+    if (!live.length) {
+      await stamp()
+      continue
+    }
+
+    /* The anchor for the ceiling, same as birthdays: the group's newest cycle.
+       A group with no cycles has nothing to claim against. */
+    const { data: cyc } = await supabase
+      .from('cycles')
+      .select('id')
+      .eq('group_id', rows[0].group_id)
+      .order('opens_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    if (!cyc) continue
+
+    if (!(await claim(userId, cyc.id, 'group_goal'))) {
+      /* Already had one this cycle. The rows are stamped rather than left
+         pending, because leaving them would mean the next cycle emails goals
+         that are by then weeks old. They are in the app, which is where a
+         thing that is no longer news belongs. */
+      await stamp()
+      continue
+    }
+
+    const who = await recipient(userId)
+    if (!who) {
+      await release(userId, cyc.id, 'group_goal')
+      continue
+    }
+    const c = COPY[who.loc]
+
+    const group = (rows[0] as any).groups?.name ?? (who.loc === 'fr' ? 'ton groupe' : 'your group')
+    const names = live.map((r: any) => r.profiles?.display_name?.trim() || null)
+    const only = live.length === 1
+
+    const outcome = await send(
+      who.to,
+      only ? c.goalSubject(names[0], group) : c.goalSubjectMany(live.length, group),
+      {
+        title: c.goalTitle(live.length),
+        preheader: c.goalPre(live.length, group),
+        blocks: [
+          {
+            kind: 'lead',
+            text: only ? c.goalLead(names[0], group) : c.goalLeadMany(group),
+          },
+          {
+            kind: 'list',
+            items: live.map((r: any, i: number) => ({
+              title: r.goals.commitment,
+              /* Named only when the name is a fact. A shared goal created
+                 before migration 50 has no author recorded, and guessing one
+                 would put words in somebody's mouth. */
+              note: names[i] ? c.goalBy(names[i]) : undefined,
+            })),
+          },
+          { kind: 'button', label: c.goalCta, href: `${SITE}/g/${rows[0].group_id}` },
+        ],
+        footnote: c.goalFoot(group),
+        loc: who.loc,
+      },
+    )
+
+    await settle(outcome, 'group_goal', userId, cyc.id)
+
+    if (outcome === 'sent') {
+      await stamp()
+      await pushTo(userId, {
+        title: c.goalTitle(live.length),
+        body: only ? c.goalLead(names[0], group) : c.goalLeadMany(group),
+        url: `${SITE}/g/${rows[0].group_id}`,
+        tag: 'group_goal',
+      })
+    }
+    /* Not stamped when the send failed. settle() has already given the claim
+       back, so the next run retries both halves together rather than marking
+       something as emailed that was not. */
+  }
+}
+
 Deno.serve(async () => {
   try {
     // Advance cycles first so the digests and nudges below see current state.
@@ -1283,6 +1472,7 @@ Deno.serve(async () => {
     await sendDigests()
     await sendNudges()
     await sendBirthdays()
+    await sendGroupGoals()
 
     /**
      * SAY WHAT HAPPENED, NOT MERELY THAT NOTHING THREW.
