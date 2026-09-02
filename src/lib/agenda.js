@@ -114,6 +114,25 @@ export const CATEGORY_COLOUR = {
   perso: 'green',
 }
 
+/**
+ * The full name of a weekday, for the accessible name on a one-letter chip.
+ *
+ * THE CHIPS SAY "L M M J V S D" AND TWO OF THOSE ARE THE SAME LETTER.
+ *
+ * French abbreviates mardi and mercredi to the same initial, so a screen
+ * reader reading the visible text hears "M" twice with nothing to separate
+ * them, and a 32px chip has no room for a second letter. Intl already knows
+ * every day name in every locale the app will ever add, which is better than
+ * fourteen more translation keys that have to be kept in step.
+ *
+ * 4 January 1970 was a Sunday, so day 0 lands on the 4th and the arithmetic
+ * needs no offset table.
+ */
+export function weekdayName(day, localeTag = 'fr-FR') {
+  const d = new Date(Date.UTC(1970, 0, 4 + Number(day)))
+  return new Intl.DateTimeFormat(localeTag, { weekday: 'long', timeZone: 'UTC' }).format(d)
+}
+
 /** 09:30 from 570, which is how times are stored. */
 export function clockOf(minutes) {
   if (minutes == null) return null
@@ -230,6 +249,80 @@ export function blockStyle(event, dayFrom = 7 * 60, dayTo = 23 * 60) {
        four pixels and cannot hold a word. */
     height: `${Math.max(2.2, (bottom - top) * 100).toFixed(3)}%`,
   }
+}
+
+/**
+ * A term's worth of classes, from the rows somebody typed into the wizard.
+ *
+ * WHY THIS IS A FUNCTION AND NOT PART OF THE FORM.
+ *
+ * A timetable is the one thing here entered in bulk, so it is also the one
+ * place where a validation mistake costs somebody eight rows of typing rather
+ * than one field. Keeping the rules out of the component means they can be
+ * tested without a browser, and the awkward cases below are the ones a form
+ * written straight into JSX gets wrong.
+ *
+ * A blank row is SKIPPED, not rejected. The wizard opens with empty rows and
+ * offers more; refusing to save because the last two were never filled in is
+ * the single most annoying thing a form of this shape can do.
+ *
+ * A row that is filled in but wrong REJECTS THE WHOLE BATCH, and the error
+ * names which one. A partial save would leave somebody with four of their six
+ * classes and no way to tell which two are missing without checking the grid.
+ *
+ * Returns `{ rows }` or `{ error, at }`. The caller turns the error into a
+ * sentence, because this file does not know what language anybody reads.
+ */
+export function timetableRows(entries, { userId, startsOn, untilOn } = {}) {
+  if (untilOn && startsOn && untilOn < startsOn) return { error: 'until' }
+
+  const rows = []
+  for (const entry of entries ?? []) {
+    const title = String(entry?.title ?? '').trim()
+    if (!title) continue
+
+    const start = minutesOf(entry.start)
+    const end = minutesOf(entry.end)
+
+    /* The same pairing rule as the check constraint. Both empty is an all-day
+       entry and is allowed everywhere else in the app; in a timetable it is
+       almost always a half-filled row, but it is still legal and the database
+       accepts it, so this does not invent a stricter rule than the schema. */
+    if ((start == null) !== (end == null)) return { error: 'times', at: title }
+    if (start != null && end != null && end <= start) return { error: 'order', at: title }
+
+    /* Deduplicated and sorted. Somebody who taps Tuesday twice means Tuesday
+       once, and a duplicate would not error: occurrencesOf builds a Set, so
+       the day would draw correctly and the stored row would be quietly wrong
+       forever. */
+    const weekdays = [
+      ...new Set((entry.weekdays ?? []).filter((d) => Number.isInteger(d) && d >= 0 && d <= 6)),
+    ].sort((a, b) => a - b)
+
+    /* A class with no day is not a timetable entry. The constraint would
+       accept it as a one-off on the term's first day, which is not what
+       anybody filling in this form meant, and it would look like the
+       recurrence being broken. */
+    if (!weekdays.length) return { error: 'days', at: title }
+
+    const category = CATEGORIES.includes(entry.category) ? entry.category : 'cours'
+
+    rows.push({
+      user_id: userId,
+      title: title.slice(0, 120),
+      category,
+      location: String(entry.location ?? '').trim().slice(0, 160) || null,
+      starts_on: startsOn,
+      until_on: untilOn || null,
+      start_min: start,
+      end_min: end,
+      weekdays,
+      colour: CATEGORY_COLOUR[category] ?? 'accent',
+    })
+  }
+
+  if (!rows.length) return { error: 'empty' }
+  return { rows }
 }
 
 /**

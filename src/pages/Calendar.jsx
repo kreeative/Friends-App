@@ -14,8 +14,10 @@ import {
   dayBounds,
   minutesOf,
   visibleEvents,
+  weekdayName,
 } from '../lib/agenda'
 import CyclePanel from '../components/CyclePanel'
+import TimetableWizard from '../components/TimetableWizard'
 
 /**
  * The whole timetable, on one screen.
@@ -158,6 +160,8 @@ export default function Calendar() {
   const [editing, setEditing] = useState(null)
   const [hidden, setHidden] = useState(readHidden)
   const [drawer, setDrawer] = useState(false)
+  const [wizard, setWizard] = useState(false)
+  const [added, setAdded] = useState(0)
 
   const load = useCallback(async () => {
     if (!user) return
@@ -295,7 +299,19 @@ export default function Calendar() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-safe text-h1 font-semibold text-ink">{t('cal.title')}</h1>
 
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            {/* A term is transcribed from a printout, not composed. Doing it
+                through the single-event form means retyping the term dates
+                once per class and counting how many are left. */}
+            <button
+              type="button"
+              onClick={() => setWizard(true)}
+              className="press rounded-pill px-3 py-2 text-small font-semibold text-ink hover:bg-ink/[0.06]"
+              data-hook="cal-wiz-open"
+            >
+              {t('wiz.open')}
+            </button>
+
             {/* The way in to everything about the cycle: the tracker, the
                 recorded periods and the reminder settings. A button rather
                 than a column, see the note on the drawer below. */}
@@ -365,6 +381,24 @@ export default function Calendar() {
           {fmt.format(anchor)}
         </p>
 
+        {/* Eight rows landing at once is a big change to a grid somebody was
+            just looking at, and without a word it reads as the page having
+            done something on its own. Dismissible, and it says how many. */}
+        {added > 0 && (
+          <p className="mt-2 text-small font-semibold text-ink" role="status" data-hook="wiz-done">
+            {t(added === 1 ? 'wiz.done_one' : 'wiz.done_other', { n: added })}{' '}
+            {/* "Fermer", not "Annuler". Cancel on a notice that something was
+                added reads as an offer to undo the add, which this is not. */}
+            <button
+              type="button"
+              onClick={() => setAdded(0)}
+              className="press underline decoration-1 underline-offset-2"
+            >
+              {t('wiz.close')}
+            </button>
+          </p>
+        )}
+
         {/**
          * The layers, as pressed-in toggles.
          *
@@ -430,6 +464,17 @@ export default function Calendar() {
       {/* Mounted always, so the tracker's own load runs and the overlay is
           there before anybody opens the drawer. `open` only draws it. */}
       <CyclePanel onChange={setCycle} open={drawer} onClose={() => setDrawer(false)} />
+
+      <TimetableWizard
+        open={wizard}
+        startsOn={dayKey(anchor)}
+        onClose={() => setWizard(false)}
+        onSaved={async (n) => {
+          setWizard(false)
+          setAdded(n)
+          await load()
+        }}
+      />
 
       {editing && (
         <EventForm
@@ -684,7 +729,7 @@ function DayList({ day, agenda, cycle, onEdit, onRemove, t }) {
 
 function EventForm({ initial, onClose, onSaved }) {
   const { user } = useAuth()
-  const { t } = useT()
+  const { t, locale } = useT()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
 
@@ -796,6 +841,11 @@ function EventForm({ initial, onClose, onSaved }) {
                 type="button"
                 onClick={() => toggleDay(n)}
                 aria-pressed={f.weekdays.includes(n)}
+                /* The visible text cannot be the accessible name here: mardi
+                   and mercredi share an initial, so a screen reader would hear
+                   "M" twice with nothing to tell them apart, and a 36px chip
+                   has no room for a second letter. */
+                aria-label={weekdayName(n, localeTag(locale))}
                 className={`press h-9 w-9 rounded-pill text-small font-semibold transition-colors ${
                   f.weekdays.includes(n) ? 'bg-accent text-on-accent' : 'bg-ink/[0.06] text-ink hover:bg-ink/[0.11]'
                 }`}
