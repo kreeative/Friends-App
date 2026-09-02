@@ -14,12 +14,16 @@ import { addDays, dayKey, fromKey } from './cycle.js'
 import {
   CATEGORIES,
   CATEGORY_COLOUR,
+  LAYERS,
+  LAYER_COLOUR,
   agendaFor,
   blockStyle,
   clockOf,
   dayBounds,
+  layerOf,
   minutesOf,
   occurrencesOf,
+  visibleEvents,
 } from './agenda.js'
 
 let pass = 0
@@ -197,6 +201,55 @@ eq('and never wider than the day', dayBounds([{ start_min: 0, end_min: 1440 }]).
 
 eq('the four categories match the check constraint', CATEGORIES, ['cours', 'examen', 'etude', 'perso'])
 ok('and every one has a colour', CATEGORIES.every((c) => CATEGORY_COLOUR[c]))
+
+/* --- the layers the filter toolbar toggles ------------------------------ */
+
+eq('four layers, as asked for', LAYERS, ['scolaire', 'perso', 'objectifs', 'cycle'])
+ok('and every one has a dot colour', LAYERS.every((l) => LAYER_COLOUR[l]))
+
+/* The grouping, which is the whole reason layers and categories are separate
+   lists. Three school categories collapse to one toggle and keep their own
+   colours on the grid. */
+eq('a class is school', layerOf({ category: 'cours' }), 'scolaire')
+eq('so is an exam', layerOf({ category: 'examen' }), 'scolaire')
+eq('so is a revision block', layerOf({ category: 'etude' }), 'scolaire')
+eq('personal is its own layer', layerOf({ category: 'perso' }), 'perso')
+
+/* A row written by a later version of the app, or by hand. It has to stay
+   visible: an event nobody can see and nobody can delete is worse than one
+   filed under the wrong heading. */
+eq('an unknown category is still drawn', layerOf({ category: 'quidditch' }), 'perso')
+eq('and so is one with no category at all', layerOf({}), 'perso')
+
+const mixed = [
+  { id: 'a', category: 'cours' },
+  { id: 'b', category: 'examen' },
+  { id: 'c', category: 'perso' },
+]
+eq('no filter means everything', visibleEvents(mixed, null).length, 3)
+eq('hiding school takes both of its categories', visibleEvents(mixed, new Set(['scolaire'])).map((e) => e.id), ['c'])
+eq('hiding personal leaves the timetable', visibleEvents(mixed, new Set(['perso'])).map((e) => e.id), ['a', 'b'])
+eq('hiding both leaves nothing', visibleEvents(mixed, new Set(['scolaire', 'perso'])).length, 0)
+
+/* Toggling "cycle" off is about the overlay and has no business hiding a
+   lecture. Toggling "objectifs" off hides the synthetic goal rows and nothing
+   else, which is the pair of assertions below. */
+eq('hiding the cycle hides no events', visibleEvents(mixed, new Set(['cycle'])).length, 3)
+eq('hiding goals hides no timetable events', visibleEvents(mixed, new Set(['objectifs'])).length, 3)
+
+/* A goal read out of the goals table and given a synthetic category so it can
+   go through the same expander. It is not in CATEGORIES and the database would
+   refuse it, which is the point: it is drawn here and edited elsewhere. */
+const withGoal = [...mixed, { id: 'g', category: 'objectif', goalId: 'g1' }]
+ok('the goal category is not a database category', !CATEGORIES.includes('objectif'))
+eq('a goal is on the goals layer', layerOf({ category: 'objectif' }), 'objectifs')
+eq('hiding goals takes the goal out', visibleEvents(withGoal, new Set(['objectifs'])).map((e) => e.id), ['a', 'b', 'c'])
+eq('and hiding school leaves the goal', visibleEvents(withGoal, new Set(['scolaire'])).map((e) => e.id), ['c', 'g'])
+
+/* Anything Set-like works, and a caller that passes nonsense gets everything
+   rather than an exception on a page that is mid-render. */
+eq('a bad filter is not a filter', visibleEvents(mixed, { nope: true }).length, 3)
+eq('and neither is undefined', visibleEvents(mixed).length, 3)
 
 console.log(`\n  ${pass} passed, ${fail} failed\n`)
 process.exit(fail ? 1 : 0)

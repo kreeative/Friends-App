@@ -2,12 +2,29 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useT } from '../lib/i18n'
 
-export function Screen({ children, className = '' }) {
+/**
+ * `wide` opts a page out of the 40rem reading column above md.
+ *
+ * NOT THE DEFAULT, AND THAT IS A DELIBERATE READING OF THE REQUEST.
+ *
+ * "Force the main dashboard and calendar layout to stretch and fill 100% of
+ * the available width" is right for those two and wrong as a global. A budget
+ * form or a settings page at 1400px is not using the space, it is a line of
+ * fields with 900px of gap in the middle and an eye that has to travel the
+ * whole way for every row. The measured limit for comfortable reading is
+ * roughly 75 characters and max-w-content is that.
+ *
+ * So the pages that are grids and feeds take `wide` and the pages that are
+ * columns of prose and inputs do not. Calendar sets its own width and is
+ * wider still, because a seven-column grid is the one thing here that gets
+ * better the more room it has.
+ */
+export function Screen({ children, className = '', wide = false }) {
   // Extra bottom room: the tab bar floats clear of the edge, so content has
   // to clear the bar plus its inset.
   return (
     <div className={`min-h-dvh pb-36 ${className}`}>
-      <div className="shell animate-rise">{children}</div>
+      <div className={`${wide ? 'shell-wide' : 'shell'} animate-rise`}>{children}</div>
     </div>
   )
 }

@@ -19,6 +19,82 @@ import { addDays, dayKey, daysBetween, fromKey } from './cycle.js'
 export const CATEGORIES = ['cours', 'examen', 'etude', 'perso']
 
 /**
+ * The layers the filter toolbar turns on and off.
+ *
+ * WHY THESE ARE NOT THE CATEGORIES, WHICH IS THE OBVIOUS DESIGN.
+ *
+ * The request asked for four toggles, "Emploi du temps / Personnel /
+ * Objectifs / Cycle et Sante", and separately for the event form to offer four
+ * types with the same names. Those are not the same list, and making them one
+ * list would have cost something real in both directions.
+ *
+ * Downward: "Scolaire" as a single category throws away cours / examen /
+ * etude, which is the distinction a student actually wants on the grid. An
+ * exam and a revision block are not the same thing and the colours already say
+ * so. So the categories stay as they are and a layer is a GROUP of them.
+ *
+ * Upward: "Objectifs" and "Cycle et Sante" cannot be categories of
+ * calendar_event at all. A goal is a row in `goals` with its own deadline,
+ * owner and status, and duplicating one into an event would give it two
+ * places to be edited and one of them would go stale. A period is a row in
+ * cycle_log, and 51_calendar_and_cycle.sql is explicit that the timetable and
+ * the cycle share a migration and not a table, because one set of policies
+ * over data with two sensitivities always ends up at the looser one. Adding a
+ * `category = 'menstrual'` to calendar_event would be exactly that merge.
+ *
+ * So a layer is a view over more than one source: two of them filter events,
+ * one reads goals, one switches the cycle overlay. What the toolbar controls
+ * is what is DRAWN, which is what somebody toggling it means.
+ */
+export const LAYERS = ['scolaire', 'perso', 'objectifs', 'cycle']
+
+/**
+ * Which layer an event's category belongs to.
+ *
+ * 'objectif' is the odd one and is deliberately NOT in CATEGORIES. It is a
+ * synthetic category the calendar page puts on goals it has read out of the
+ * `goals` table so they can go through the same expander and the same grid as
+ * everything else. The database has never heard of it and the check constraint
+ * would refuse it, which is correct: those rows are drawn here and edited on
+ * the goals screen, and nothing on this page ever writes one back.
+ */
+const LAYER_OF = {
+  cours: 'scolaire',
+  examen: 'scolaire',
+  etude: 'scolaire',
+  perso: 'perso',
+  objectif: 'objectifs',
+}
+
+/* Unknown categories fall to 'perso' rather than vanishing. A row written by a
+   later version of the app, or by hand, should still be visible: an event you
+   cannot see and cannot delete is worse than one filed under the wrong
+   heading. */
+export const layerOf = (event) => LAYER_OF[event?.category] ?? 'perso'
+
+/** The dot on each toggle. Same tokens the events themselves paint in. */
+export const LAYER_COLOUR = {
+  scolaire: 'cat-1',
+  perso: 'green',
+  objectifs: 'cat-3',
+  cycle: 'negative',
+}
+
+/**
+ * The events left after the hidden layers are taken out.
+ *
+ * `hidden` is whatever a Set-like thing is to hand, and an absent one means
+ * nothing is hidden, so the caller never has to build an empty Set to ask for
+ * everything. Filtering here rather than inside agendaFor keeps the expansion
+ * honest: a hidden layer costs no walk at all, rather than being expanded and
+ * then dropped.
+ */
+export function visibleEvents(events, hidden) {
+  if (!hidden || typeof hidden.has !== 'function') return events ?? []
+  return (events ?? []).filter((e) => !hidden.has(layerOf(e)))
+}
+
+/**
  * Which palette token each category paints in.
  *
  * Tokens rather than hex, for the reason the migration gives: a stored colour

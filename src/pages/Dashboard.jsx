@@ -210,7 +210,11 @@ export default function Dashboard() {
   const first = (profile?.display_name ?? '').split(' ')[0]
 
   return (
-    <Screen>
+    /* wide, because this is a feed of cards rather than a column of prose, and
+       at 40rem on a laptop it was a phone layout with 700px of empty margin
+       either side. 64rem, not the full window: the cards here are rows of a
+       list and a 1300px row is a horizon, not a card. */
+    <Screen wide>
       <TopBar
         title={first ? `${greeting}, ${first}.` : greeting}
         sub={waiting ? undefined : t('home.sub')}

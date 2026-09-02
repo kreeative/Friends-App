@@ -1068,6 +1068,120 @@
     --lg-sat: 200%;
   }
 
+  /**
+   * The side rail, and the one surface in the app that is really transparent.
+   *
+   * WHY IT GETS TO BE, AND WHY THE TOP BAR DOES NOT.
+   *
+   * .lg-chrome is 0.72 because arbitrary content scrolls under it, and the
+   * worst thing that can pass is the accent button. Measured: #E60070 under a
+   * 0.40 white sheet composites to #F066A9, and the bar's dimmed label on that
+   * is 2.27:1. That is why the top bar is dense, and lowering it is not a taste
+   * question.
+   *
+   * The rail has the opposite situation. Nothing scrolls under it: the content
+   * is padded past it by md:pl-[15rem], so what is behind it is a ground this
+   * stylesheet chooses, and a ground that is known can be made safe once and
+   * stay safe. So the rail is the surface that gets to be a lens.
+   *
+   * 0.30 rather than lg-clear's 0.16. The labels have to hold 4.5:1 against
+   * whatever the wash does at its strongest, and the yellow band is the worst
+   * of it. Measured off the painted pixels rather than computed from the
+   * tokens, because the sheet is translucent and the number that matters is
+   * what lands.
+   *
+   * WHAT THE BLUR IS AND IS NOT DOING HERE, STATED PLAINLY.
+   *
+   * The note above .ambient already says it: a radial gradient is soft enough
+   * that blurring it returns very nearly the gradient. So the 30px is close to
+   * a no-op on a still page and it is kept for the one case where it is not,
+   * the moment a scroll or a route change moves something behind it. The parts
+   * actually carrying this effect are the alpha, the saturate and the
+   * brightness, which take the wash and make it bloom rather than sit there.
+   * Calling that "the blur" would be repeating the mistake the .ambient note
+   * was written to stop.
+   */
+  .lg-rail {
+    --lg-a: 0.3;
+    --lg-blur: 30px;
+    /* 170 and 1.06, down from 210 and 1.12, which was measured and looked at.
+       The rail interior came back #FFFFB5 in the middle of its height: the
+       saturate had taken a wash meant to read as light and turned the yellow
+       into a highlighter block. The sheet's job is to lighten and bloom what is
+       behind it, not to restate it louder. */
+    --lg-sat: 170%;
+    --lg-bright: 1.06;
+  }
+
+  /**
+   * The light the rail is glass over.
+   *
+   * There is no page ground in this app: .ambient is one flat colour, on
+   * purpose, because a plain ground was asked for. That decision stands and
+   * this does not reopen it. What it does is give the rail's own column
+   * something to be transparent over, in the 15rem down the left where at md
+   * and up there is nothing at all: the content starts after it and the
+   * stickers are on the phone.
+   *
+   * Three soft fields in the theme's own tokens, so it is rose over gold in
+   * sun and steel over gold in sea without either being named here. Wide and
+   * well under half opacity, because it has to read as light falling on the
+   * corner of the page rather than as a coloured stripe with a nav on it.
+   *
+   * IT IS DELIBERATELY WIDER THAN THE RAIL, AND THE FIRST VERSION WAS STILL
+   * WRONG ABOUT WHY.
+   *
+   * A 15rem block behind a 13rem rail inset by 1rem leaves a bare centimetre
+   * showing down each side, which is two vertical bands and looks like a
+   * rendering fault. Widening it to 24rem fixed the right-hand edge and did
+   * nothing for the left, because the fields were centred at 1rem to 3rem and
+   * so were at full strength in the 16px gutter the rail does not cover. The
+   * screenshot showed exactly that: a lilac band down the left of the screen
+   * and a second one under the rail's bottom edge.
+   *
+   * Two things fix it and they are both about where the light is, not how wide
+   * the box is. The fields moved inward, to 6rem and 9rem, which is the rail's
+   * own centre line, so the gutter gets their falloff rather than their peak.
+   * And the third field, which sat at 98%, is gone: it put the brightest part
+   * of the wash exactly where the rail stops, which is the one place a soft
+   * ground turns into a visible edge.
+   *
+   * Alphas roughly halved at the same time. What is left reads as light on the
+   * corner of the page, which is what it is for. It reaches a little under the
+   * content column at its faintest, where it is under 0.03 and lands on
+   * near-white cards.
+   *
+   * Fixed, not absolute. The rail is fixed, so an absolute wash would scroll
+   * out from behind it and the bottom of the rail would go clear halfway down
+   * a long page.
+   */
+  .rail-ground {
+    /* Centred on the rail's own middle, which is 3.25rem once the rail is
+       5.5rem wide and inset by 1rem. The numbers moved when the rail narrowed
+       from 13rem to 5.5rem: left where they were, the bright part of the wash
+       would have sat out in the page beside the rail rather than behind it. */
+    background:
+      radial-gradient(18rem 30rem at 3rem 14%, rgb(var(--c-accent) / 0.1), transparent 72%),
+      radial-gradient(16rem 26rem at 4rem 58%, rgb(var(--c-field) / 0.13), transparent 70%);
+    /**
+     * The falloff, and it had to get much shorter when the rail did.
+     *
+     * These numbers were set for a 13rem rail. Against the 5.5rem one the
+     * screenshot showed roughly 150px of bare gradient standing beside the
+     * glass, which is the coloured stripe this whole element is written to
+     * avoid: past about a centimetre it stops reading as light on the page and
+     * starts reading as a second panel.
+     *
+     * Full strength to 30% of 12rem, which is 58px and lands inside the rail,
+     * then out by 85%. So the right-hand half of the rail sits over a wash
+     * that is already fading, which is what gives the sheet a gradient across
+     * it rather than a flat tint, and only a few pixels of it show past the
+     * glass on either side.
+     */
+    -webkit-mask-image: linear-gradient(to right, black 0, black 30%, transparent 85%);
+    mask-image: linear-gradient(to right, black 0, black 30%, transparent 85%);
+  }
+
   /* Lift and brighten on hover. Two pixels; the rim catching the light does
      more of the work than the movement does. */
   @media (hover: hover) {
@@ -1924,6 +2038,13 @@
 
   .shell {
     @apply mx-auto w-full max-w-content px-6;
+  }
+
+  /* The same column, released above the tablet breakpoint. Below md it is
+     exactly .shell, because a phone has one width and this changes nothing
+     there. See the note on Screen in ui.jsx for which pages get it. */
+  .shell-wide {
+    @apply mx-auto w-full max-w-content px-6 md:max-w-[64rem];
   }
 }
 
