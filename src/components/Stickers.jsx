@@ -130,7 +130,25 @@ export default function Stickers({ set = 'page' }) {
      * header above this is sticky. This wrapper contains nothing but
      * decoration, so it can be clipped without side effects.
      */
-    <div className="pointer-events-none absolute inset-0 z-20 overflow-hidden" aria-hidden="true">
+    /**
+     * PHONE ONLY, once the app grew a side rail.
+     *
+     * The comment above says the column has to match the width of the content
+     * it is flanking, and that anchoring it to the wrong width is what put a
+     * set on top of its own panels. The signed-in layout now breaks that
+     * premise rather than mis-setting it: at md and up there is a 13rem rail
+     * down the left and the calendar runs to 68rem, so at 1440px the content
+     * occupies 296 to 1384 and the remaining margin is 56px. There is no
+     * flanking space left to be in, and the measurement showed exactly that,
+     * with a coin over the page title, a sticker over a calendar tile and a
+     * turntable over the cycle panel.
+     *
+     * Widening the column would move them onto the rail instead, which is not
+     * better. So they stay where they work: the phone, where the margins they
+     * were designed for still exist. Losing them on a laptop is a real cost
+     * and the smaller one.
+     */
+    <div className="pointer-events-none absolute inset-0 z-20 overflow-hidden md:hidden" aria-hidden="true">
       {/* The rails hang off this, not off the viewport. */}
       <div className="relative mx-auto h-full" style={{ maxWidth: conf.column }}>
         {conf.items.map((s) => (
