@@ -36,27 +36,62 @@ function clients() {
 }
 
 /**
- * Validates a coupon code with Stripe.
+ * Resolves a code somebody typed into something Checkout can apply.
  *
- * Returns the coupon object if valid, or null if invalid/not found.
- * Never returns the coupon code itself in error messages for security.
+ * WHY THIS ASKS STRIPE FOR THE CODE INSTEAD OF LISTING EVERYTHING.
+ *
+ * This listed the first hundred coupons and searched them in memory. That
+ * works until the hundred and first coupon, at which point a perfectly valid
+ * code stops being found, no error is raised anywhere, and the customer is
+ * told their code is invalid. A silent cutoff on an unsorted list is the worst
+ * shape a bug can have: it is correct in every test and wrong in production
+ * later, for one campaign, with nothing in the logs.
+ *
+ * PROMOTION CODES, NOT COUPON IDS.
+ *
+ * The two are different objects and only one of them is meant for customers. A
+ * Coupon is the discount itself and its id is frequently an auto-generated
+ * string nobody would type. A Promotion Code is the customer-facing string
+ * attached to a coupon, and it is the only one of the two that carries
+ * per-customer redemption limits, a minimum order amount, a first-time-buyer
+ * restriction, and an active flag that can be switched off without destroying
+ * the coupon. Matching on the coupon id gave up all of that.
+ *
+ * Coupon ids still work as a fallback, because that is what the previous
+ * version accepted and a code that used to work should keep working.
+ *
+ * @returns {Promise<{coupon: string} | {promotion_code: string} | null>}
+ *   the shape Checkout's `discounts` array wants, or null if there is no such
+ *   code. Null is not an error: an unknown code is an ordinary thing for
+ *   somebody to type.
  */
-async function validateCoupon(stripe, couponCode) {
-  if (!couponCode || typeof couponCode !== 'string') return null
-
-  const code = couponCode.trim().toUpperCase()
-  if (code.length === 0) return null
+async function resolveDiscount(stripe, raw) {
+  if (typeof raw !== 'string') return null
+  const code = raw.trim()
+  if (!code) return null
 
   try {
-    // Query for coupons matching the code
-    const coupons = await stripe.coupons.list({ limit: 100 })
-    const coupon = coupons.data.find((c) => c.id.toUpperCase() === code && c.valid === true)
+    /* Stripe matches `code` exactly, and its own dashboard uppercases what you
+       type when creating one, so the uppercase form is tried first and the
+       literal second. Two lookups at worst, against one that could not find
+       the code at all past position one hundred. */
+    for (const candidate of new Set([code.toUpperCase(), code])) {
+      const found = await stripe.promotionCodes.list({ code: candidate, active: true, limit: 1 })
+      if (found.data.length > 0) return { promotion_code: found.data[0].id }
+    }
 
-    if (!coupon) return null
-
-    return coupon
+    /* Fallback: the code is a coupon id. retrieve() throws a resource_missing
+       for an unknown id, which is caught below and reported as not found.
+       `valid` is Stripe's own verdict on expiry and redemption limits. */
+    const coupon = await stripe.coupons.retrieve(code)
+    return coupon?.valid ? { coupon: coupon.id } : null
   } catch (err) {
-    console.error('coupon validation failed', err.message)
+    /* An unknown id is the expected miss, not a fault worth logging loudly.
+       Anything else is a real problem and is worth seeing in the function log,
+       though the answer to the customer is the same either way. */
+    if (err?.code !== 'resource_missing') {
+      console.error('discount lookup failed', err?.message ?? err)
+    }
     return null
   }
 }
@@ -202,7 +237,7 @@ export default async function handler(req, res) {
 
     if (!book) {
       return res.status(404).json({
-        error: `No book in the catalogue with ${bookId ? `id ${bookId}` : `slug "${slug}"`.`,
+        error: `No book in the catalogue with ${bookId ? `id ${bookId}` : `slug "${slug}"`}.`,
       })
     }
 
@@ -230,16 +265,26 @@ export default async function handler(req, res) {
       req.headers.origin ||
       (req.headers.host ? `https://${req.headers.host}` : 'https://richandfriends.xyz')
 
-    // Validate coupon if provided
+    /**
+     * A code sent with the request, if there is one.
+     *
+     * Nothing in src/ sends this today; the promotion box on Stripe's own page
+     * is how a customer enters a code. It is kept because the endpoint already
+     * accepted it and because a checkout started from somewhere else, a link
+     * with a code baked in, should be able to arrive with the discount already
+     * decided rather than asking the customer to retype it.
+     */
     let appliedDiscount = null
     if (couponCode) {
-      const coupon = await validateCoupon(stripe, couponCode)
-      if (coupon) {
-        appliedDiscount = coupon.id
-      } else {
-        // Invalid coupon provided
+      appliedDiscount = await resolveDiscount(stripe, couponCode)
+      if (!appliedDiscount) {
+        /* The code is echoed back so the message names what was rejected,
+           which is the difference between a usable error and "invalid code".
+           It is the customer's own input returning in a JSON body, not
+           rendered as markup, and it is capped so a long string cannot be used
+           to inflate the response. */
         return res.status(400).json({
-          error: `Coupon code "${couponCode}" is not valid or has expired.`,
+          error: `Coupon code "${String(couponCode).slice(0, 40)}" is not valid or has expired.`,
           couponInvalid: true,
         })
       }
@@ -276,30 +321,72 @@ export default async function handler(req, res) {
        * Worth knowing before switching it on for good: an empty promo box is
        * not free. It invites people to leave and go looking for a code. If
        * that is not a trade you want, this line is the only thing to remove.
+       *
+       * ONLY WHEN NO DISCOUNT CAME WITH THE REQUEST, AND THAT IS NOT A STYLE
+       * CHOICE. Stripe refuses a session carrying both `allow_promotion_codes`
+       * and `discounts`, with "You may only specify one of these parameters".
+       * Setting both unconditionally, which is what landed when the promotion
+       * box and the coupon_code parameter were merged within an hour of each
+       * other, turns every checkout that supplies a code into a 500. The
+       * request having already named a discount is also the case where the box
+       * has nothing left to do.
        */
-      allow_promotion_codes: true,
+      ...(appliedDiscount ? {} : { allow_promotion_codes: true }),
       line_items: [await lineItem(stripe, book)],
       // The webhook trusts these fields and nothing from the browser. user_id
       // is absent for a guest, which is the signal to match on email instead.
       metadata: {
         ...(user ? { user_id: user.id } : {}),
         book_id: book.id,
-        ...(appliedDiscount ? { coupon_code: couponCode } : {}),
+        /* Truncated because Stripe caps a metadata value at 500 characters and
+           this one is customer input. An over-long string would fail the whole
+           session create, which would read as checkout being broken rather
+           than as a silly code having been typed. */
+        ...(appliedDiscount ? { coupon_code: String(couponCode).slice(0, 200) } : {}),
       },
       success_url: `${origin}/library?purchase=success&book=${book.slug}`,
       cancel_url: `${origin}/library?purchase=cancelled`,
     }
 
-    // Apply discount if coupon is valid
-    if (appliedDiscount) {
-      sessionConfig.discounts = [{ coupon: appliedDiscount }]
-    }
+    /* resolveDiscount already returns the shape this array wants, either
+       { promotion_code } or { coupon }, so it goes in whole. Wrapping it as
+       { coupon: appliedDiscount } would nest an object where Stripe expects an
+       id and fail with a type error that names neither. */
+    if (appliedDiscount) sessionConfig.discounts = [appliedDiscount]
 
     const session = await stripe.checkout.sessions.create(sessionConfig)
 
     return res.status(200).json({ url: session.url })
   } catch (err) {
     console.error('checkout failed', err)
+
+    /**
+     * A discount can pass resolveDiscount and still be refused here.
+     *
+     * The code exists and is active, and the coupon is still wrong for this
+     * particular sale: an amount_off in a different currency from the session,
+     * a coupon restricted to products this line item is not, a minimum order
+     * amount the book does not reach. Stripe only finds out when it builds the
+     * session, and every one of those used to arrive as "Could not start
+     * checkout", which sends somebody to debug their deployment rather than
+     * their coupon.
+     *
+     * Stripe's own message is specific and safe to pass on. It names the
+     * coupon and the constraint, and carries no credential.
+     */
+    const aboutDiscount =
+      err?.param === 'discounts' ||
+      err?.param === 'coupon' ||
+      err?.param === 'promotion_code' ||
+      /coupon|promotion code|discount/i.test(err?.message ?? '')
+
+    if (appliedDiscount && aboutDiscount) {
+      return res.status(400).json({
+        error: `That code cannot be applied to this purchase. ${String(err?.message ?? '').slice(0, 200)}`,
+        couponInvalid: true,
+      })
+    }
+
     return res.status(500).json({ error: 'Could not start checkout' })
   }
 }
