@@ -181,7 +181,10 @@ export default function GoalCard({
      */
     <article
       ref={article}
-      className={`${finished?.card ?? 'lg p-5'} transition-opacity duration-200 ease-settle ${
+      /* overflow-hidden is the backstop, not the fix. Everything inside is
+         constrained on its own; this is what stops the next field somebody
+         adds from painting onto the page background before anybody notices. */
+      className={`${finished?.card ?? 'lg p-5'} w-full overflow-hidden transition-opacity duration-200 ease-settle ${
         paused ? 'opacity-55' : ''
       }`}
     >
@@ -241,7 +244,18 @@ export default function GoalCard({
       {/* Without the badge above there is nowhere else for the finished chip to
           go, so it sits beside the title instead of disappearing with it. */}
       <div className="flex items-start justify-between gap-3">
-        <h3 className="text-h2 font-semibold text-ink">{goal.commitment}</h3>
+        {/* text-safe is min-width:0 plus permission to break a long word. The
+            chip beside it is shrink-0, so without the first of those the title
+            cannot give way and widens the card instead of wrapping. */}
+        {/* Clamped to three lines, which is a judgement the pixel measurement
+            could not make and the screenshot could: a pasted URL was contained
+            but ran to nine lines and swallowed the card. Three is chosen
+            because an ordinary long commitment, "reviser la biochimie tous les
+            soirs avant de dormir", is exactly three lines at this width, so
+            real titles are untouched and only the pathological ones are cut.
+            GoalDetail renders the same field unclamped, so nothing is lost:
+            the full text is one tap away, and the card is a summary. */}
+        <h3 className="text-safe line-clamp-3 text-h2 font-semibold text-ink">{goal.commitment}</h3>
         {finished && !owner && goal.kind !== 'group' && (
           <span className={`${finished.chip} shrink-0`}>{t(finished.label)}</span>
         )}
@@ -258,21 +272,25 @@ export default function GoalCard({
           {cadence}
         </span>
 
+        {/* These three carry whatever was typed into the form, so they are the
+            ones that escape. pill-safe caps them at the card width and clamps
+            the text to two lines; the inner span is what the clamp needs,
+            since an inline-flex box cannot carry one. */}
         {when && (
-          <span className="inline-flex items-center rounded-pill bg-ink/[0.055] px-3 py-1 text-label font-semibold text-muted">
-            {when}
+          <span className="pill-safe inline-flex items-center rounded-pill bg-ink/[0.055] px-3 py-1 text-label font-semibold text-muted">
+            <span>{when}</span>
           </span>
         )}
 
         {goal.evidence_def && (
-          <span className="inline-flex items-center rounded-pill bg-ink/[0.055] px-3 py-1 text-label font-semibold text-muted">
-            {t('goal.proof', { text: goal.evidence_def })}
+          <span className="pill-safe inline-flex items-center rounded-pill bg-ink/[0.055] px-3 py-1 text-label font-semibold text-muted">
+            <span>{t('goal.proof', { text: goal.evidence_def })}</span>
           </span>
         )}
 
         {goal.stake_text && (
-          <span className="inline-flex items-center rounded-pill bg-ink/[0.055] px-3 py-1 text-label font-semibold text-muted">
-            {goal.stake_text}
+          <span className="pill-safe inline-flex items-center rounded-pill bg-ink/[0.055] px-3 py-1 text-label font-semibold text-muted">
+            <span>{goal.stake_text}</span>
           </span>
         )}
 
