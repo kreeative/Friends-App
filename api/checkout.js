@@ -209,6 +209,33 @@ export default async function handler(req, res) {
       // way the webhook ends up with an address it can match an account to.
       customer_email: user?.email ?? undefined,
       ...(user ? {} : { customer_creation: 'always' }),
+      /**
+       * The promotion code box on the Stripe payment page.
+       *
+       * This is the whole feature: Stripe renders the field, validates the
+       * code, applies the discount and recalculates the total. Nothing about
+       * discounts is decided here, which is the point, because a discount this
+       * endpoint could be told to apply is a discount a customer could apply
+       * to themselves.
+       *
+       * Codes are created in the Stripe dashboard under Product catalogue,
+       * Coupons, then a promotion code on the coupon. The code is the string
+       * somebody types; the coupon is the amount off. One coupon can have
+       * several codes, which is how you tell campaigns apart later.
+       *
+       * ONE THING TO WATCH, given how this catalogue is currently set up. A
+       * coupon restricted to specific products will not match anything here
+       * while books have no stripe_ref, because lineItem() then builds an
+       * ad-hoc product per session and it is not the product the restriction
+       * names. Account-wide coupons, percentage or amount off with no product
+       * restriction, work in both cases. Restricted coupons start working once
+       * the books point at real Stripe prices.
+       *
+       * Worth knowing before switching it on for good: an empty promo box is
+       * not free. It invites people to leave and go looking for a code. If
+       * that is not a trade you want, this line is the only thing to remove.
+       */
+      allow_promotion_codes: true,
       line_items: [await lineItem(stripe, book)],
       // The webhook trusts these fields and nothing from the browser. user_id
       // is absent for a guest, which is the signal to match on email instead.
