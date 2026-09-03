@@ -91,7 +91,61 @@ ok(
   /<header className="sticky top-0 z-40 px-4 pt-4 md:hidden">/.test(shell),
   'the rail carries the lockup, the bell and the avatar above md',
 )
-ok('the rail carries a lockup of its own', /data-hook="side-rail"[\s\S]{0,2600}LockupInline/.test(shell))
+/* Anchored to the rail's own source rather than to a character window from
+   the hook. The window was 2600 and a comment added above the lockup pushed it
+   out of range: the assertion failed on a file where the lockup was exactly
+   where it should be. A distance in characters is not a structural fact. */
+ok(
+  'the rail carries a lockup of its own',
+  /LockupInline/.test(shell.slice(shell.indexOf('function SideRail'), shell.indexOf('function TabBar'))),
+)
+/**
+ * HOME IS IN BOTH NAVIGATIONS.
+ *
+ * The two swap wholesale, so walking into a group replaced every destination at
+ * once and the dashboard left the screen. Getting back meant the wordmark,
+ * which is a logo: it happens to link home and nothing said so.
+ *
+ * First in both, so the icon under your thumb does not move when you cross into
+ * a group. A menu whose items relocate depending on where you are is one you
+ * have to read rather than aim at.
+ *
+ * MEASURED, because five tabs is where this bar has clipped French labels
+ * before and the group set has different words. At 320, 360, 390 and 430, with
+ * scrollWidth compared against clientWidth per label: nothing clipped, and the
+ * bar does not overflow. 320 is narrower than any phone this is built for.
+ */
+ok(
+  'home is in the group navigation too',
+  /const IN_GROUP = \(id\) => \[\s*\n\s*\{ to: '\/', key: 'nav\.home'/.test(shell),
+  'the two navigations swap wholesale, so without this the dashboard is unreachable',
+)
+ok(
+  'and it is first in both, so it does not move',
+  /const MINE = \[\s*\n\s*\{ to: '\/', key: 'nav\.home'/.test(shell),
+)
+
+/**
+ * AND THE LOCKUP IS NAMED FOR THE BRAND, NOT FOR WHERE IT GOES.
+ *
+ * It was aria-label="Accueil", which was right while the rail had no home item.
+ * With one in both navigations that put two links with the same name and the
+ * same destination inside one <nav>: read twice by a screen reader, tabbed
+ * through twice by a keyboard. Verified in Chromium that each rail now lists
+ * exactly one "Accueil".
+ */
+ok(
+  'the wordmark does not claim to be the home control',
+  /aria-label=\{t\('brand\.name'\)\}/.test(shell) &&
+    !/aria-label=\{t\('nav\.home'\)\}[\s\S]{0,120}LockupInline/.test(shell),
+  'two links, one name, one destination, in the same navigation',
+)
+ok(
+  'and the brand name is the same string in both locales',
+  (read('src/lib/i18n.jsx').match(/'brand\.name': 'Rich & Friends'/g) ?? []).length === 2,
+  'a brand name is not translated',
+)
+
 ok(
   'and the group name has somewhere to be',
   /data-hook="rail-group"/.test(shell),
