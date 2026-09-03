@@ -165,8 +165,23 @@ const declared = new Set([
   ...[...cfg.matchAll(/^\s{8}'?([a-z0-9-]+)'?:\s*c\(/gm)].map((m) => m[1]),
   ...[...cfg.matchAll(/(\d)'?:\s*c\('cat-\1'\)/g)].map((m) => `cat-${m[1]}`),
 ])
+/**
+ * 'quiet' is the one allowed value that is NOT a token, and it is not an
+ * oversight in either direction.
+ *
+ * It is in the check constraint on `colour`, and SWATCH renders it as
+ * `bg-ink/[0.06]`: the sentinel for "no colour of its own", which is what the
+ * health category wants. A token would have to be a real hue. So the rule is
+ * "a declared token, or this one name", and stating it that way is what stops
+ * the next invented colour slipping through on the same excuse.
+ */
+const NOT_A_TOKEN = new Set(['quiet'])
 for (const [cat, colour] of Object.entries(CATEGORY_COLOUR)) {
-  ok(`${cat} paints in a token that exists (${colour})`, declared.has(colour), [...declared].join(', '))
+  ok(
+    `${cat} paints in a token that exists, or in quiet (${colour})`,
+    declared.has(colour) || NOT_A_TOKEN.has(colour),
+    [...declared].join(', '),
+  )
 }
 
 eq('no events is an empty map', agendaFor([], fromKey('2026-09-01'), fromKey('2026-09-30')).size, 0)
@@ -201,8 +216,54 @@ eq('and never wider than the day', dayBounds([{ start_min: 0, end_min: 1440 }]).
 
 /* --- the categories the database allows --------------------------------- */
 
-eq('the four categories match the check constraint', CATEGORIES, ['cours', 'examen', 'etude', 'perso'])
+eq('the seven categories match the check constraint', CATEGORIES,
+   ['cours', 'examen', 'etude', 'travail', 'evenement', 'perso', 'sante'])
+/* Seven categories and seven allowed colours is not a coincidence: the check
+   constraint on `colour` lists exactly these. An eighth category needs a token
+   first, and this is where that gets noticed. */
+const ALLOWED_COLOURS = ['accent', 'green', 'quiet', 'cat-1', 'cat-2', 'cat-3', 'cat-4']
+ok('every category paints in a colour the constraint allows',
+   CATEGORIES.every((c) => ALLOWED_COLOURS.includes(CATEGORY_COLOUR[c])),
+   CATEGORIES.map((c) => `${c}:${CATEGORY_COLOUR[c]}`).join(' '))
+ok('and no two share one, so the grid can be read',
+   new Set(CATEGORIES.map((c) => CATEGORY_COLOUR[c])).size === CATEGORIES.length)
+eq('work, parties and appointments are all on the personal layer',
+   ['travail', 'evenement', 'sante'].map((c) => layerOf({ category: c })), ['perso', 'perso', 'perso'])
 ok('and every one has a colour', CATEGORIES.every((c) => CATEGORY_COLOUR[c]))
+
+/* --- skipping one occurrence of a rule ---------------------------------- */
+
+/**
+ * "Delete only this one" on a weekly class has no other honest implementation.
+ * Deleting the row removes the term; setting until_on to the day before
+ * removes the rest of it too; splitting the rule makes one class into two that
+ * drift apart. So the rule stays whole and records the days it skips.
+ */
+const withSkip = { ...course, excluded_on: ['2026-09-03'] }
+const kept = occurrencesOf(withSkip, fromKey('2026-09-01'), fromKey('2026-09-30')).map(dayKey)
+eq('the excluded day is gone', kept.includes('2026-09-03'), false)
+eq('and only that day', kept.length, sept.length - 1)
+eq('the first Tuesday is untouched', kept[0], '2026-09-01')
+eq('and so is the rest of the term', kept[kept.length - 1], '2026-09-29')
+
+eq('two exclusions remove two days',
+   occurrencesOf({ ...course, excluded_on: ['2026-09-01', '2026-09-03'] }, fromKey('2026-09-01'), fromKey('2026-09-30')).length,
+   sept.length - 2)
+eq('an exclusion for a day the rule never lands on changes nothing',
+   occurrencesOf({ ...course, excluded_on: ['2026-09-02'] }, fromKey('2026-09-01'), fromKey('2026-09-30')).length,
+   sept.length)
+eq('an empty list changes nothing', occurrencesOf({ ...course, excluded_on: [] }, fromKey('2026-09-01'), fromKey('2026-09-30')).length, sept.length)
+eq('and neither does a missing one', occurrencesOf(course, fromKey('2026-09-01'), fromKey('2026-09-30')).length, sept.length)
+eq('a non-array is ignored rather than thrown on',
+   occurrencesOf({ ...course, excluded_on: 'nope' }, fromKey('2026-09-01'), fromKey('2026-09-30')).length,
+   sept.length)
+
+/* A one-off has exactly one occurrence, so skipping it skips all of it. That
+   is the right answer: "only this one" and "the whole series" are the same
+   choice when the series is one day long, which is why the dialog does not
+   offer it. */
+eq('excluding a one-off leaves nothing', occurrencesOf({ ...once, excluded_on: ['2026-09-15'] }, fromKey('2026-09-01'), fromKey('2026-09-30')).length, 0)
+eq('and excluding a different day leaves it alone', occurrencesOf({ ...once, excluded_on: ['2026-09-14'] }, fromKey('2026-09-01'), fromKey('2026-09-30')).length, 1)
 
 /* --- the layers the filter toolbar toggles ------------------------------ */
 

@@ -469,5 +469,99 @@ ok(
   'measured at 1440px they landed on the page title, a calendar tile and the cycle panel',
 )
 
+/* --- a dialog is not chrome ---------------------------------------------- */
+
+ok('there is a modal treatment of its own', /\.lg-modal \{/.test(css))
+ok(
+  'and it is nearly opaque',
+  /\.lg-modal \{[\s\S]{0,120}--lg-a: 0\.9[0-9];/.test(css),
+  "at chrome's 0.72 the form picked up whatever colour was behind the dialog",
+)
+ok(
+  'with the saturate pulled down rather than left at the nav bar value',
+  /\.lg-modal \{[\s\S]{0,160}--lg-sat: 1[0-2][0-9]%;/.test(css),
+  '200% took the accent still showing through and pushed it back towards pink',
+)
+
+const wizard = read('src/components/TimetableWizard.jsx')
+const cyclePanel = read('src/components/CyclePanel.jsx')
+for (const [name, src] of [['the event form', cal], ['the wizard', wizard], ['the cycle drawer', cyclePanel]]) {
+  ok(`${name} uses it`, /lg lg-modal/.test(src))
+  ok(`and ${name} is not chrome any more`, !/lg lg-chrome relative/.test(src))
+}
+ok(
+  'the nav still is chrome',
+  /lg lg-chrome/.test(read('src/components/AppShell.jsx')),
+  'the bar is a sheet you see the page through on purpose, that is orientation',
+)
+
+/* --- the input is white, not a rose well --------------------------------- */
+
+ok(
+  'the field is the surface token',
+  /\.field \{[\s\S]{0,300}background-color: rgb\(var\(--c-surface\)\)/.test(css),
+  'every input in the app sat on --c-raised, which is #FFECEF in sun',
+)
+ok(
+  'and it is not the raised tint any more',
+  !/\.field \{[\s\S]{0,300}var\(--c-raised\)/.test(css),
+)
+ok(
+  'it keeps a border, because white on white has no edge',
+  /\.field \{[\s\S]{0,300}border: 1px solid rgb\(var\(--c-ink\)/.test(css),
+)
+ok(
+  'and the accent is on the focus ring, where it is a state and not a fill',
+  /\.field:focus \{[\s\S]{0,200}box-shadow: 0 0 0 3px rgb\(var\(--c-accent\)/.test(css),
+)
+
+/* --- the event form is a centred dialog, not a panel in the page --------- */
+
+ok(
+  'the event form portals to the body',
+  /data-hook="cal-form"[\s\S]{0,400}role="dialog"/.test(cal),
+  'a form nested in the page scrolled with it and sat under the rail',
+)
+ok(
+  'and it centres from sm up',
+  /items-end justify-center sm:items-center"[\s\S]{0,60}data-hook="cal-form"/.test(cal),
+  'a sheet from the bottom on a phone, a centred card on everything else',
+)
+
+/* --- deleting one of a series ------------------------------------------- */
+
+ok('there is a delete dialog', /data-hook="cal-delete"/.test(cal))
+ok('offering the one day', /data-hook="del-one"/.test(cal))
+ok('and the whole rule', /data-hook="del-all"/.test(cal))
+ok(
+  'it sits above the form it was opened from',
+  /data-hook="cal-delete"[\s\S]{0,80}/.test(cal) && /z-\[70\][\s\S]{0,200}data-hook="cal-delete"/.test(cal),
+  'the form is z-60, so a dialog at the same level would have been a coin toss',
+)
+ok(
+  'and only a repeating entry gets asked',
+  /const recurring = Array\.isArray\(entry\?\.weekdays\)[\s\S]{0,120}if \(!recurring\) return removeSeries/.test(cal),
+  'a one-off has one occurrence, so the question has one honest answer',
+)
+
+/* --- a write that did not happen says so --------------------------------- */
+
+ok(
+  'both deletes ask for a row count',
+  (cal.match(/count: 'exact'/g) ?? []).length === 2,
+  'RLS refuses by matching zero rows, with no error to catch',
+)
+ok(
+  'and put the list back when nothing was written',
+  (cal.match(/setEvents\(before\)/g) ?? []).length === 2,
+  'the optimistic update is what makes a failed write invisible',
+)
+ok('with something on screen saying why', /data-hook="cal-notice"/.test(cal))
+ok(
+  'and it is an alert, not a status',
+  /role="alert" data-hook="cal-notice"/.test(cal),
+  'a row that just came back on its own needs the reason read out',
+)
+
 console.log(`\n  ${pass} passed, ${fail} failed\n`)
 process.exit(fail ? 1 : 0)

@@ -569,7 +569,7 @@ export default function CyclePanel({ onChange, open = false, onClose }) {
         role="dialog"
         aria-modal="true"
         aria-label={t('cycle.title')}
-        className="lg lg-chrome relative m-2 flex w-[min(26rem,calc(100vw-1rem))] flex-col overflow-hidden rounded-card p-0 outline-none"
+        className="lg lg-modal relative m-2 flex w-[min(26rem,calc(100vw-1rem))] flex-col overflow-hidden rounded-card p-0 outline-none"
       >
         <div className="flex items-start justify-between gap-3 border-b border-hairline px-5 py-4">
           <h2 className="text-safe text-h2 font-semibold text-ink">{t('cycle.title')}</h2>

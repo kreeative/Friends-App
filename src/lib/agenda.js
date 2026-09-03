@@ -16,7 +16,31 @@
  */
 import { addDays, dayKey, daysBetween, fromKey } from './cycle.js'
 
-export const CATEGORIES = ['cours', 'examen', 'etude', 'perso']
+/**
+ * The seven kinds of thing that can be on this calendar.
+ *
+ * It was four, all academic, and the request was that the calendar stop being
+ * a timetable with a personal section bolted on: a shift, a party and a
+ * doctor's appointment are as much "what is on Thursday" as a lecture is.
+ *
+ * THE ORDER IS THE ORDER THEY APPEAR AS PILLS, and it is grouped rather than
+ * alphabetical: the three school ones, then the two that are somebody else's
+ * clock, then the two that are yours. Somebody adding a shift should not have
+ * to read past "Etude" to find it.
+ *
+ * Every value here must also be in the check constraint. Migration 52 widens
+ * it from the original four; a category the database refuses is a form that
+ * fails on save with a constraint name rather than a sentence.
+ */
+export const CATEGORIES = [
+  'cours',
+  'examen',
+  'etude',
+  'travail',
+  'evenement',
+  'perso',
+  'sante',
+]
 
 /**
  * The layers the filter toolbar turns on and off.
@@ -62,7 +86,13 @@ const LAYER_OF = {
   cours: 'scolaire',
   examen: 'scolaire',
   etude: 'scolaire',
+  /* Work, a party and an appointment all live on the personal layer. A fourth
+     toggle for each would be four switches nobody flips; the layer is "not
+     school and not a goal", which is one idea. */
+  travail: 'perso',
+  evenement: 'perso',
   perso: 'perso',
+  sante: 'perso',
   objectif: 'objectifs',
 }
 
@@ -107,11 +137,21 @@ export function visibleEvents(events, hidden) {
  * and an undefined variable is nothing at all. A screenshot did not show it;
  * sampling the painted pixels did, at 1:1 against the tile behind.
  */
+/* Seven categories, seven colours, and the seven the check constraint on
+   `colour` allows. That is not a coincidence: the constraint lists exactly
+   accent, green, quiet, cat-1, cat-2, cat-3 and cat-4, so the palette had
+   exactly enough room and there is none spare. An eighth category needs a
+   token first. */
 export const CATEGORY_COLOUR = {
   cours: 'cat-1',
   examen: 'accent',
   etude: 'cat-3',
+  travail: 'cat-2',
+  evenement: 'cat-4',
   perso: 'green',
+  /* Grey, and deliberately the quietest of the seven. A health entry sitting
+     on a shared screen should be the one that draws the least attention. */
+  sante: 'quiet',
 }
 
 /**
@@ -165,9 +205,32 @@ export function occurrencesOf(event, from, to) {
   const until = event.until_on ? (event.until_on instanceof Date ? event.until_on : fromKey(event.until_on)) : null
   const days = Array.isArray(event.weekdays) ? event.weekdays.filter((d) => d >= 0 && d <= 6) : []
 
+  /**
+   * The dates this rule has been told to skip.
+   *
+   * WHY A LIST OF EXCEPTIONS AND NOT A DELETE.
+   *
+   * "Delete only this one" on a weekly class has no other honest
+   * implementation. Deleting the row removes the whole term. Setting until_on
+   * to the day before removes the rest of the term as well as the one day.
+   * Splitting the rule into two rows makes one class into two, which then
+   * drift apart the first time somebody edits the room.
+   *
+   * So the rule stays whole and records the days it does not land on, which is
+   * what an iCalendar EXDATE is and what every calendar that has solved this
+   * settled on. Migration 52 adds the column.
+   */
+  const skipped = new Set(
+    (Array.isArray(event.excluded_on) ? event.excluded_on : []).map((d) =>
+      d instanceof Date ? dayKey(d) : String(d),
+    ),
+  )
+
   /* A one-off. It is either in the range or it is not, and no walk is needed
-     to find that out. */
+     to find that out. An excluded one-off is a row somebody deleted "just this
+     one" of, which for a single occurrence means all of it. */
   if (days.length === 0) {
+    if (skipped.has(dayKey(first))) return []
     return daysBetween(from, first) >= 0 && daysBetween(first, to) >= 0 ? [first] : []
   }
 
@@ -182,7 +245,7 @@ export function occurrencesOf(event, from, to) {
   const span = daysBetween(start, stop)
   for (let i = 0; i <= span; i += 1) {
     const d = addDays(start, i)
-    if (wanted.has(d.getDay())) out.push(d)
+    if (wanted.has(d.getDay()) && !skipped.has(dayKey(d))) out.push(d)
   }
   return out
 }

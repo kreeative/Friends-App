@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { localeTag, useT } from '../lib/i18n'
@@ -162,6 +163,13 @@ export default function Calendar() {
   const [drawer, setDrawer] = useState(false)
   const [wizard, setWizard] = useState(false)
   const [added, setAdded] = useState(0)
+  /* The occurrence somebody asked to delete, or null. It carries the whole
+     entry rather than an id, because the dialog has to know the title to name
+     it and the day to skip. */
+  const [deleting, setDeleting] = useState(null)
+  /* Whatever the last write said when it did not work. Null the rest of the
+     time, which is nearly always. */
+  const [notice, setNotice] = useState(null)
 
   const load = useCallback(async () => {
     if (!user) return
@@ -272,9 +280,81 @@ export default function Calendar() {
     ...(view === 'day' ? { day: 'numeric', weekday: 'long' } : {}),
   })
 
-  const remove = async (id) => {
+  /**
+   * Deleting, and the question that has to be asked first.
+   *
+   * A row is a RULE. Deleting the row for "Biochimie, Tuesdays and Thursdays
+   * until December" because somebody wanted to cancel one Tuesday removes the
+   * whole term, silently, with no undo. That was the behaviour and it is the
+   * bug this pair of functions exists to fix.
+   *
+   * A one-off skips the dialog entirely: "only this one" and "the whole
+   * series" are the same choice when the series is one day long, and a
+   * confirmation that offers two identical options is a confirmation people
+   * learn to click through.
+   */
+  const askRemove = (entry) => {
+    const recurring = Array.isArray(entry?.weekdays) && entry.weekdays.length > 0
+    if (!recurring) return removeSeries(entry.id)
+    setDeleting(entry)
+  }
+
+  /**
+   * BOTH OF THESE PUT THE ROW BACK IF THE WRITE DID NOT HAPPEN.
+   *
+   * The optimistic update is what makes the dialog feel instant, and it is
+   * also what makes a failed write invisible: the row leaves the screen either
+   * way and comes back on the next reload with no explanation. Two ways that
+   * happens here, and neither is hypothetical:
+   *
+   *   * RLS refuses an UPDATE or a DELETE by matching zero rows. No error, no
+   *     exception, an empty result. That is the documented behaviour and it is
+   *     why `count` is asked for rather than trusted.
+   *   * excluded_on does not exist until migration 52 has been run, and until
+   *     it has, every "only this one" is a postgrest 400 that nothing reads.
+   *
+   * Both were made to happen against the running app rather than argued about:
+   * the 400 puts the row back and prints what postgrest said, and a 200 whose
+   * Content-Range reports zero rows puts it back and prints cal.err_gone.
+   */
+  const removeSeries = async (id) => {
+    setDeleting(null)
+    const before = events
     setEvents((e) => e.filter((x) => x.id !== id))
-    await supabase.from('calendar_event').delete().eq('id', id)
+    const { error, count } = await supabase
+      .from('calendar_event')
+      .delete({ count: 'exact' })
+      .eq('id', id)
+    if (error || count === 0) {
+      setEvents(before)
+      setNotice(error?.message ?? t('cal.err_gone'))
+    }
+  }
+
+  /**
+   * One occurrence: the rule stays, the day is added to its exception list.
+   *
+   * Read-modify-write rather than an array append in SQL, because the client
+   * already holds the row and postgrest has no `array_append` in its update
+   * syntax. The race is two tabs skipping two different days of the same rule
+   * within the same second, which loses one exception; the cost of that is one
+   * class reappearing, and the alternative is an RPC for a feature used a
+   * handful of times a term.
+   */
+  const removeOne = async (entry) => {
+    const key = dayKey(entry.day)
+    const next = [...new Set([...(entry.excluded_on ?? []), key])]
+    setDeleting(null)
+    const before = events
+    setEvents((list) => list.map((x) => (x.id === entry.id ? { ...x, excluded_on: next } : x)))
+    const { error, count } = await supabase
+      .from('calendar_event')
+      .update({ excluded_on: next }, { count: 'exact' })
+      .eq('id', entry.id)
+    if (error || count === 0) {
+      setEvents(before)
+      setNotice(error?.message ?? t('cal.err_gone'))
+    }
   }
 
   return (
@@ -396,6 +476,22 @@ export default function Calendar() {
         </p>
       )}
 
+      {/* A write that did not happen. role="alert" and not "status", because
+          the thing that was on screen a second ago has just come back and the
+          reason is the only way to make sense of that. */}
+      {notice && (
+        <p className="text-safe text-small font-semibold text-negative" role="alert" data-hook="cal-notice">
+          {notice}{' '}
+          <button
+            type="button"
+            onClick={() => setNotice(null)}
+            className="press font-normal underline decoration-1 underline-offset-2"
+          >
+            {t('wiz.close')}
+          </button>
+        </p>
+      )}
+
       {/**
        * Row two: moving around, and nothing else.
        *
@@ -484,12 +580,31 @@ export default function Calendar() {
           <MonthGrid range={range} anchor={anchor} agenda={agenda} cycle={shownCycle} onPick={(d) => { setAnchor(d); setView('day') }} />
         )}
         {view === 'week' && <WeekGrid range={range} agenda={agenda} cycle={shownCycle} locale={locale} onEdit={openEditor} />}
-        {view === 'day' && <DayList day={anchor} agenda={agenda} cycle={shownCycle} onEdit={openEditor} onRemove={remove} t={t} />}
+        {view === 'day' && <DayList day={anchor} agenda={agenda} cycle={shownCycle} onEdit={openEditor} onRemove={askRemove} t={t} />}
       </div>
 
       {/* Mounted always, so the tracker's own load runs and the overlay is
           there before anybody opens the drawer. `open` only draws it. */}
       <CyclePanel onChange={setCycle} open={drawer} onClose={() => setDrawer(false)} />
+
+      {/**
+       * The choice, before anything is lost.
+       *
+       * Three buttons and no default. "Toute la serie" is the destructive one
+       * and is styled as such rather than being the primary: the safe answer
+       * should be the easy one to hit, and on a phone this is a sheet where
+       * the first button is under the thumb.
+       */}
+      {deleting && (
+        <DeleteChoice
+          entry={deleting}
+          onOne={() => removeOne(deleting)}
+          onAll={() => removeSeries(deleting.id)}
+          onCancel={() => setDeleting(null)}
+          locale={locale}
+          t={t}
+        />
+      )}
 
       <TimetableWizard
         open={wizard}
@@ -747,6 +862,68 @@ function WeekGrid({ range, agenda, cycle, locale, onEdit }) {
 
 /* --- day ----------------------------------------------------------------- */
 
+/**
+ * "Just this one, or all of them?"
+ *
+ * Only ever shown for a rule that recurs. See askRemove for why a one-off
+ * skips it: two options that do the same thing teach people to stop reading.
+ *
+ * A dialog rather than a window.confirm, because confirm() cannot offer three
+ * answers and cannot say which day it is about. Naming the date is most of the
+ * value here: "Supprimer le cours du jeudi 3 septembre" is a different
+ * question from "Supprimer Biochimie".
+ */
+function DeleteChoice({ entry, onOne, onAll, onCancel, locale, t }) {
+  const when = entry.day.toLocaleDateString(localeTag(locale), {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  })
+
+  return createPortal(
+    <div className="fixed inset-0 z-[70] flex items-end justify-center sm:items-center" data-hook="cal-delete">
+      <button
+        type="button"
+        aria-label={t('cal.cancel')}
+        onClick={onCancel}
+        className="absolute inset-0 bg-ink/25 backdrop-blur-[2px]"
+      />
+
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-label={t('cal.del_title')}
+        className="lg lg-modal relative m-2 w-[min(26rem,calc(100vw-1rem))] p-5"
+      >
+        <h2 className="text-safe text-h2 font-semibold text-ink">{t('cal.del_title')}</h2>
+        <p className="text-safe mt-1.5 text-small text-muted">
+          {t('cal.del_body', { what: entry.title, when })}
+        </p>
+
+        <div className="mt-5 flex flex-col gap-2">
+          {/* The safe answer first, and it is the one under the thumb on a
+              phone where this is a sheet rising from the bottom. */}
+          <button type="button" onClick={onOne} className="goal-action press justify-center" data-hook="del-one">
+            {t('cal.del_one')}
+          </button>
+          <button
+            type="button"
+            onClick={onAll}
+            data-hook="del-all"
+            className="press inline-flex items-center justify-center rounded-pill bg-negative/[0.10] px-4 py-2 text-small font-semibold text-negative transition-colors hover:bg-negative/[0.18]"
+          >
+            {t('cal.del_all')}
+          </button>
+          <button type="button" onClick={onCancel} className="press rounded-pill px-4 py-2 text-small font-semibold text-muted hover:bg-ink/[0.06]">
+            {t('cal.cancel')}
+          </button>
+        </div>
+      </section>
+    </div>,
+    document.body,
+  )
+}
+
 function DayList({ day, agenda, cycle, onEdit, onRemove, t }) {
   const list = agenda.get(dayKey(day)) ?? []
   const phase = phaseOn(day, cycle.starts, cycle.prediction)
@@ -780,7 +957,7 @@ function DayList({ day, agenda, cycle, onEdit, onRemove, t }) {
                 </button>
                 <button
                   type="button"
-                  onClick={() => onRemove(e.id)}
+                  onClick={() => onRemove(e)}
                   className="press rounded-pill px-3 py-2 text-small font-semibold text-negative hover:bg-negative/[0.09]"
                 >
                   {t('cal.delete')}
@@ -856,11 +1033,50 @@ function EventForm({ initial, onClose, onSaved }) {
     await onSaved()
   }
 
-  return (
-    <section className="lg w-full overflow-hidden p-5" data-hook="cal-form">
-      <h2 className="text-h2 font-semibold text-ink">{initial.id ? t('cal.edit_title') : t('cal.new_title')}</h2>
+  /**
+   * A centred dialog, not a card at the bottom of the page.
+   *
+   * It was a section appended below the grid, which meant "+ Ajouter" scrolled
+   * the calendar away and opened a long form where the month had been. The
+   * wizard next door was already a modal, so pressing one button gave you a
+   * dialog and pressing the other gave you a page: two answers to the same
+   * kind of question.
+   *
+   * Same shell as TimetableWizard, deliberately down to the class list. Two
+   * dialogs on one screen that are 90 per cent alike and 10 per cent different
+   * is worse than either being wrong on its own.
+   */
+  return createPortal(
+    <div className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center" data-hook="cal-form">
+      <button
+        type="button"
+        aria-label={t('cal.cancel')}
+        onClick={onClose}
+        className="absolute inset-0 bg-ink/25 backdrop-blur-[2px]"
+      />
 
-      <form onSubmit={save} className="mt-4 space-y-3">
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-label={initial.id ? t('cal.edit_title') : t('cal.new_title')}
+        className="lg lg-modal relative m-2 flex max-h-[92dvh] w-[min(34rem,calc(100vw-1rem))] flex-col overflow-hidden p-0"
+      >
+        <div className="flex items-start justify-between gap-3 border-b border-hairline px-5 py-4">
+          <h2 className="text-safe text-h2 font-semibold text-ink">
+            {initial.id ? t('cal.edit_title') : t('cal.new_title')}
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={t('cal.cancel')}
+            data-hook="cal-form-close"
+            className="press -mr-1 h-9 w-9 shrink-0 rounded-pill text-muted hover:bg-ink/[0.06] hover:text-ink"
+          >
+            &#215;
+          </button>
+        </div>
+
+      <form onSubmit={save} className="flex min-h-0 flex-1 flex-col overflow-y-auto px-5 py-4 space-y-3">
         <label className="block">
           <span className="text-label font-semibold uppercase tracking-[0.06em] text-muted">{t('cal.f_title')}</span>
           <input value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} maxLength={120} className="field mt-1 w-full" />
@@ -951,11 +1167,13 @@ function EventForm({ initial, onClose, onSaved }) {
           <button type="submit" disabled={busy} className="goal-action-done press">
             {busy ? t('cal.saving') : t('cal.save')}
           </button>
-          <button type="button" onClick={onClose} className="goal-action-soft press">
+          <button type="button" onClick={onClose} className="goal-action press">
             {t('cal.cancel')}
           </button>
         </div>
       </form>
-    </section>
+      </section>
+    </div>,
+    document.body,
   )
 }

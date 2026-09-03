@@ -96,7 +96,7 @@ export default function TimetableWizard({ open, onClose, onSaved, startsOn }) {
         role="dialog"
         aria-modal="true"
         aria-label={t('wiz.title')}
-        className="lg lg-chrome relative m-2 flex max-h-[92dvh] w-[min(52rem,calc(100vw-1rem))] flex-col overflow-hidden p-0"
+        className="lg lg-modal relative m-2 flex max-h-[92dvh] w-[min(52rem,calc(100vw-1rem))] flex-col overflow-hidden p-0"
       >
         <div className="flex items-start justify-between gap-3 border-b border-hairline px-5 py-4">
           <div className="min-w-0">
