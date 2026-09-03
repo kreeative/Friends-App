@@ -512,10 +512,11 @@ function TabBar({ tabs }) {
   return (
     <nav
       className="lg lg-chrome fixed inset-x-4 bottom-4 z-30 mx-auto max-w-content md:hidden"
-      /* Hooked so a floating menu can measure it. It is fixed over the page,
-         so the space below any button is the space to THIS, not to the
-         viewport edge, and its height moves with the safe-area inset. See
-         place() in GoalCard. */
+      /* A hook of its own, like the rail above. It was added so a floating
+         menu could measure it; that menu is gone, and this stays because a
+         probe looking for the bottom bar previously fell back to "the last
+         nav on the page", which is the kind of selector the working
+         agreements exist to stop. */
       data-hook="tab-bar"
       style={{ marginBottom: 'env(safe-area-inset-bottom)' }}
     >
