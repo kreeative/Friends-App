@@ -1108,24 +1108,122 @@
    * then sits on a pink sheet. That is the eye strain that was reported, and it
    * is a real complaint about a real thing even though no ratio failed.
    *
-   * 0.95 rather than 1. At 1 the backdrop-filter is dead weight and the sheet
-   * stops reading as a sheet: it becomes a white rectangle with no relationship
-   * to the page, which is what the rim and the shadow exist to avoid.
+   * 0.75, ASKED FOR, AND WHAT IT ACTUALLY MEASURES.
    *
-   * The blur is 40px, up from chrome's 32, because at this alpha there is very
-   * little coming through and what does come through should be light, not a
-   * recognisable shape behind the form the eye keeps trying to read.
+   * This was 0.95 for one round, for "no pink in the modals". The follow-up
+   * asked for glass back at bg-white/75 backdrop-blur-2xl, so it is 0.75.
    *
-   * The saturate comes DOWN to 120%. Chrome's 200% is what makes a nav bar
-   * bloom over a colourful page. Behind a dialog it took the 5% of accent that
-   * still shows and pushed it back towards pink, which is the exact thing this
-   * treatment exists to stop.
+   * A NOTE THAT USED TO SIT HERE SAID THE SATURATE WAS DOING THE WORK. IT IS
+   * NOT, AND THE SWEEP THAT SETTLED IT IS BELOW. Sampled off the painted
+   * pixels, both over the real calendar page and over a full-screen accent
+   * rectangle, which is the worst thing that can be behind this dialog:
+   *
+   *              real page                  worst case
+   *   0.72/200%  #F0EDEF  label 6.64:1      #F2E8ED  6.33:1
+   *   0.75/120%  #F1EFF0  label 6.75:1      #F1EBEE  6.44:1
+   *   0.85/120%  #F7F5F6  label 7.10:1      #F7F3F5  6.92:1
+   *   0.95/120%  #FCFCFC  label 7.43:1      #FCFBFC  7.38:1
+   *   0.95/200%  #FDFCFC  label 7.43:1      #FDFBFC  7.38:1
+   *
+   * The last two rows are one unit apart. At a given alpha the saturate is
+   * worth almost nothing here; the alpha is the whole dial. So the honest
+   * reading of the earlier complaint is that the sheet was a minor part of it
+   * and .field's #FFECEF rose fill was most of it, which is the change that
+   * actually landed and which is not being undone.
+   *
+   * At 0.75 the sheet is a light warm grey rather than a pink one, and every
+   * row clears 4.5:1 with room. If it ever reads pink again the dial to turn
+   * is --lg-a, and 0.85 is the row to reach for first.
+   *
+   * The saturate stays at 120% anyway. It costs nothing, it is one less thing
+   * amplifying the ground, and chrome's 200% exists for a nav bar that has to
+   * bloom over a colourful page, which a form does not.
+   *
+   * The blur is 40px, chrome's 32 plus some, which is Tailwind's backdrop-blur
+   * -2xl to within a pixel and what was asked for.
    */
   .lg-modal {
-    --lg-a: 0.95;
+    --lg-a: 0.75;
     --lg-blur: 40px;
     --lg-sat: 120%;
     --lg-bright: 1.02;
+    /**
+     * The dialog floats, and the shadow is what says so.
+     *
+     * Two layers, exactly as specified: a deep tinted drop below and a soft
+     * white halo around. The tint is --c-accent rather than a literal rose,
+     * which is the one substitution made here, for the reason the note on
+     * .goal-action gives: a hex is right in exactly one of the two themes, and
+     * in sea this shadow would have been an unexplained pink glow under a blue
+     * app.
+     *
+     * !important because .lg sets box-shadow at the same specificity and wins
+     * on source order, which would have silently discarded this.
+     */
+    box-shadow:
+      0 25px 50px -12px rgb(var(--c-accent) / 0.15),
+      0 0 20px rgb(var(--glass-tint) / 0.8) !important;
+  }
+
+  /**
+   * The inputs inside a dialog, and ONLY inside a dialog.
+   *
+   * bg-white/60 was asked for. Scoped, because .field is every input in the
+   * app: on the settings page the ground behind it is the coloured page, and a
+   * 60 per cent white input there composites back to the warm rose fill that
+   * was removed last round for causing eye strain. Inside .lg-modal the ground
+   * is the dialog sheet, which is near-white already, so the same declaration
+   * that would be a regression outside is a soft glass fill inside.
+   *
+   * Focus goes fully opaque. That is a second signal on top of the border and
+   * the ring, and it is the one that survives being printed in greyscale.
+   */
+  .lg-modal .field {
+    background-color: rgb(var(--glass-tint) / 0.6);
+    border-color: rgb(var(--c-accent) / 0.14);
+  }
+
+  .lg-modal .field:focus {
+    background-color: rgb(var(--c-surface));
+    border-color: rgb(var(--c-accent));
+    box-shadow: 0 0 0 4px rgb(var(--c-accent) / 0.14);
+  }
+
+  /**
+   * The cycle drawer, and the one tinted sheet in the app.
+   *
+   * A WARM WASH HERE AND NOWHERE ELSE, WHICH NEEDS SAYING.
+   *
+   * The event form was taken off a pink sheet last round because six inputs
+   * stacked on a tint is a pink page with type holes in it. Nothing about that
+   * changed. This is a different thing on purpose: the drawer is mostly prose,
+   * one toggle and a counter, so there is no wall of fields for a tint to sit
+   * behind, and it is the one screen in the app that is about how somebody is
+   * rather than what they have to do.
+   *
+   * Top only, and it fades out. A wash across the whole drawer would put the
+   * history inputs back on a tint, which is the thing that was wrong. 12rem is
+   * roughly the toggle and the estimate, and everything below it is on the
+   * plain sheet.
+   *
+   * The tint is --c-accent at 9 per cent, not a literal rose. In sea this is
+   * blue, which is correct: "warm" is what the theme is, not what this rule
+   * is. Measured on the painted pixels, --c-muted on the strongest part of it
+   * is 6.71:1 in sun and 6.9 in sea, so the prose over it stays past 4.5.
+   */
+  .cycle-warm::after {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 12rem;
+    z-index: 1;
+    pointer-events: none;
+    border-radius: inherit;
+    background: linear-gradient(
+      to bottom,
+      rgb(var(--c-accent) / 0.09),
+      rgb(var(--c-accent) / 0) 100%
+    );
   }
 
   /**
@@ -1901,8 +1999,11 @@
   @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     .goal-action {
       background: rgb(var(--glass-tint) / 0.5);
-      -webkit-backdrop-filter: blur(12px) saturate(160%);
-      backdrop-filter: blur(12px) saturate(160%);
+      /* 16, matched to .btn-ghost. They were 12 and 16, which is two
+         different pieces of glass sitting next to each other on the calendar
+         toolbar for no reason anybody could have named. */
+      -webkit-backdrop-filter: blur(16px) saturate(160%);
+      backdrop-filter: blur(16px) saturate(160%);
     }
   }
 
@@ -2030,9 +2131,59 @@
   .btn:active {
     transition-duration: 90ms;
   }
-  /* Secondary is quiet by default and only borrows a wash on press. */
+  /**
+   * The secondary button, as a raised piece of glass.
+   *
+   * It was `text-ink` with no ground at all: a word floating on the page, next
+   * to a filled accent button. That is not a quiet control, it is an invisible
+   * one, and it is the same failure .goal-action was written up for. This is
+   * the same recipe at full-button scale, so the app has ONE glass secondary
+   * rather than two that drift.
+   *
+   * Not a shared class between the two, deliberately. .goal-action is a
+   * text-small pill inside a card and .btn-ghost is a min-h-12 control with
+   * the .btn geometry; the shared part is four declarations and the different
+   * part is everything else, so factoring it out would save nothing and would
+   * make a change to one silently change the other.
+   *
+   * Solid first, translucent only inside @supports: without backdrop-filter a
+   * 50 per cent white ground over a coloured page is a smear, so that browser
+   * gets an opaque sheet instead.
+   */
   .btn-ghost {
-    @apply btn text-ink hover:bg-ink/[0.04] active:bg-ink/[0.07];
+    @apply btn text-ink;
+    background: rgb(var(--glass-tint) / 0.92);
+    border: 1px solid rgb(var(--glass-tint) / 0.7);
+    box-shadow: var(--e-raised);
+  }
+
+  @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .btn-ghost {
+      background: rgb(var(--glass-tint) / 0.5);
+      -webkit-backdrop-filter: blur(16px) saturate(160%);
+      backdrop-filter: blur(16px) saturate(160%);
+    }
+  }
+
+  @media (hover: hover) {
+    .btn-ghost:hover {
+      background: rgb(var(--glass-tint) / 0.75);
+      box-shadow: var(--e-float);
+      transform: translateY(-2px);
+    }
+  }
+
+  .btn-ghost:active {
+    transform: translateY(0) scale(0.985);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .btn-ghost,
+    .btn-ghost:hover,
+    .btn-ghost:active {
+      transition: none;
+      transform: none;
+    }
   }
   .btn-quiet {
     @apply btn text-muted hover:text-ink;

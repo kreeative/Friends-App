@@ -12,6 +12,7 @@ import {
   daysBetween,
   estimate,
   fromKey,
+  phaseOn,
   predict,
 } from '../lib/cycle'
 
@@ -66,6 +67,16 @@ const SETUP_DATES = [
   { key: 'd3', label: 'cycle.date_recent' },
 ]
 
+/* One per phase, matched to the four phaseOn returns. Not a colour: the marks
+   on the calendar already carry the phase in two colours and two shapes, and
+   this is a warmer restatement inside the drawer rather than a fifth signal. */
+const PHASE_EMOJI = {
+  period: '🌸',
+  predicted: '🌷',
+  pms: '🌿',
+  fertile: '✨',
+}
+
 export default function CyclePanel({ onChange, open = false, onClose }) {
   const { user } = useAuth()
   const { t } = useT()
@@ -77,7 +88,15 @@ export default function CyclePanel({ onChange, open = false, onClose }) {
   const [setup, setSetup] = useState(false)
   const [busy, setBusy] = useState(false)
   const [failed, setFailed] = useState(false)
+  /* What just happened, for two or three seconds. See flash below. */
+  const [said, setSaid] = useState(null)
+  const saidTimer = useRef(null)
   const panel = useRef(null)
+
+  /* A timer outliving the component would call setState on something that is
+     gone. The drawer unmounts every time it is closed, so this is not a corner
+     case, it is the normal path. */
+  useEffect(() => () => clearTimeout(saidTimer.current), [])
 
   /* The three dates and the stated average, as typed. Kept as strings so a
      half-entered date is not repeatedly parsed and rejected while somebody is
@@ -184,12 +203,39 @@ export default function CyclePanel({ onChange, open = false, onClose }) {
     setForm({ d1: '', d2: '', d3: '', avg: '' })
   }
 
-  const logToday = () =>
-    write(() =>
+  /**
+   * "It started today", and the way back out of it.
+   *
+   * WHY THIS IS A TOGGLE AND NOT A BUTTON.
+   *
+   * It was a one-way tap: press it and today is in the log, with the only undo
+   * being to scroll to the history, find today's date among the others and
+   * press an x. That is a long way round from a control that is one tap and
+   * sits at the top of the panel, and a mis-tap here is not rare: it is the
+   * biggest, most obvious thing in the drawer.
+   *
+   * Pressed twice, it removes what the first press added. Nothing else in the
+   * history is reachable from here, so there is no way to lose a date somebody
+   * meant to keep: it only ever touches today's row.
+   *
+   * aria-pressed, so a screen reader gets the state rather than a label that
+   * changed. Both are provided, because the visible label changing is what a
+   * sighted person reads and the two should not disagree.
+   */
+  const todayRow = starts.find((s) => s.started_on === dayKey(new Date())) ?? null
+
+  const toggleToday = async () => {
+    if (todayRow) {
+      await removeEntry(todayRow.id)
+      return flash(t('cycle.undone'))
+    }
+    await write(() =>
       supabase
         .from('cycle_log')
         .upsert({ user_id: user.id, started_on: dayKey(new Date()) }, { onConflict: 'user_id,started_on' }),
     )
+    flash(t('cycle.logged'))
+  }
 
   /* Correcting a recorded date. An update rather than a delete plus an insert,
      so the row keeps its id and nothing referring to it is orphaned mid-edit. */
@@ -200,6 +246,21 @@ export default function CyclePanel({ onChange, open = false, onClose }) {
   }
 
   const removeEntry = (id) => write(() => supabase.from('cycle_log').delete().eq('id', id))
+
+  /* Deleting a date is the one action in here with no visible result: the row
+     leaves a list somebody may not be looking at. A line that says what just
+     happened is the whole confirmation, and it clears itself. role="status" so
+     it is announced without stealing focus, which a dialog inside a dialog
+     would. */
+  const flash = (text) => {
+    setSaid(text)
+    /* A ref and not a local: `flash` is rebuilt every render, so a timer hung
+       off the function object would be a fresh undefined each time and the
+       clear would never fire. Two deletions inside three seconds would then
+       race, and the first one's timeout would blank the second one's message. */
+    clearTimeout(saidTimer.current)
+    saidTimer.current = setTimeout(() => setSaid(null), 2600)
+  }
 
   const setPref = (patch) => {
     const next = { user_id: user.id, ...(prefs ?? {}), ...patch }
@@ -225,6 +286,9 @@ export default function CyclePanel({ onChange, open = false, onClose }) {
   const daysAway = prediction ? daysBetween(new Date(), prediction.nextStart) : null
   const inPrep = daysAway != null && daysAway >= 0 && daysAway <= 3
   const water = today?.water ?? 0
+  /* The same call the calendar makes for the same day, so the drawer and the
+     grid can never say two different things about today. */
+  const phase = phaseOn(new Date(), starts, prediction)
 
   const body = (() => {
     /* --- not set up yet ------------------------------------------------- */
@@ -307,13 +371,31 @@ export default function CyclePanel({ onChange, open = false, onClose }) {
       <div data-hook="cycle-on" data-confidence={est.confidence}>
         <button
           type="button"
-          onClick={logToday}
+          onClick={toggleToday}
           disabled={busy}
-          className="chip-accent press"
+          aria-pressed={Boolean(todayRow)}
           data-hook="cycle-log-today"
+          data-on={Boolean(todayRow)}
+          className={`press inline-flex items-center gap-2 rounded-pill px-4 py-2 text-small font-semibold transition-all duration-200 ease-settle ${
+            todayRow
+              ? 'bg-accent text-on-accent shadow-[0_4px_12px_-2px_rgb(var(--c-accent)/0.45)]'
+              : 'chip-accent'
+          }`}
         >
-          {t('cycle.started_today')}
+          {/* A tick when it is on. The fill says it too, and 1.4.1 asks that
+              colour is never the only thing saying it. */}
+          <span aria-hidden="true">{todayRow ? '✓' : '🌸'}</span>
+          {todayRow ? t('cycle.started_today_on') : t('cycle.started_today')}
         </button>
+
+        {/* The way out, spelled out rather than left to somebody discovering
+            that the button above toggles. Only there when there is something
+            to undo. */}
+        {todayRow && (
+          <p className="mt-1.5 text-small text-muted" data-hook="cycle-undo-hint">
+            {t('cycle.started_today_undo')}
+          </p>
+        )}
 
         {prediction ? (
           <>
@@ -339,6 +421,39 @@ export default function CyclePanel({ onChange, open = false, onClose }) {
               {t(`cycle.conf_${est.confidence}`)}
               {prediction.window > 1 && ` · ${t('cycle.window', { n: prediction.window })}`}
             </p>
+
+            {/**
+             * One line about where in the cycle today is, and one thing to do
+             * about it.
+             *
+             * WHAT THIS IS CAREFUL NOT TO BE.
+             *
+             * It is not a symptom log, a mood reading or anything the app
+             * infers about how somebody is doing. Migration 51 is explicit
+             * that a "who is having a rough week" signal is the thing these
+             * tables exist to make impossible, and a wellness note that grew
+             * inputs would be the first step towards one.
+             *
+             * So it is a lookup on a phase this panel already computes and
+             * already draws on the calendar, saying nothing the person did not
+             * enter themselves. It is read, never written, and there is
+             * nowhere for it to send anything.
+             *
+             * phaseOn's fourth argument is periodDays and defaults to 5. It is
+             * left alone here: passing the estimate object into it, which was
+             * done once, makes every day inside a NaN-length window read as a
+             * period.
+             */}
+            {phase && (
+              <p
+                className="mt-3 rounded-inner bg-accent/[0.07] px-3 py-2.5 text-small text-ink"
+                data-hook="cycle-care"
+                data-phase={phase}
+              >
+                <span aria-hidden="true" className="mr-1.5">{PHASE_EMOJI[phase]}</span>
+                {t(`cycle.care_${phase}`)}
+              </p>
+            )}
 
             {prediction.missed > 0 && (
               <p className="mt-2 text-small text-negative">{t('cycle.stale', { n: prediction.missed })}</p>
@@ -369,7 +484,10 @@ export default function CyclePanel({ onChange, open = false, onClose }) {
         <div className="mt-4 border-t border-hairline pt-4" data-hook="cycle-water" data-water={water}>
           <div className="flex items-center justify-between gap-3">
             <span className="min-w-0">
-              <span className="block text-small font-semibold text-ink">{t('cycle.water')}</span>
+              <span className="block text-small font-semibold text-ink">
+                <span aria-hidden="true" className="mr-1.5">💧</span>
+                {t('cycle.water')}
+              </span>
               <span className="block text-small text-muted">
                 {t('cycle.water_help', { n: water, goal: WATER_GOAL })}
               </span>
@@ -396,16 +514,41 @@ export default function CyclePanel({ onChange, open = false, onClose }) {
             </div>
           </div>
 
-          {/* Filled glasses, and the count above says the same thing in words.
-              The row is decoration, per 1.4.1: nothing here is carried by the
-              marks alone. */}
-          <div aria-hidden="true" className="mt-2.5 flex flex-wrap gap-1">
-            {Array.from({ length: WATER_GOAL }, (_, i) => (
-              <span
-                key={i}
-                className={`h-2.5 w-5 rounded-pill ${i < water ? 'bg-accent' : 'bg-ink/[0.10]'}`}
-              />
-            ))}
+          {/**
+           * Glasses that look like glasses, and the count above says the same
+           * thing in words. The row is decoration, per 1.4.1: nothing here is
+           * carried by the marks alone, which is why the whole thing is
+           * aria-hidden rather than being given labels nobody needs.
+           *
+           * A drop rather than the eight grey capsules that were here. They
+           * read as a progress bar somebody had chopped up, and the one thing
+           * this counter has going for it is that filling the next one is
+           * mildly satisfying, which a capsule is not.
+           *
+           * Drawn rather than an emoji. The blue droplet emoji is blue in
+           * every font on every platform, and this app has two themes.
+           */}
+          <div aria-hidden="true" className="mt-2.5 flex flex-wrap gap-1.5">
+            {Array.from({ length: WATER_GOAL }, (_, i) => {
+              const full = i < water
+              return (
+                <svg
+                  key={i}
+                  viewBox="0 0 16 20"
+                  className={`h-5 w-4 transition-all duration-300 ease-settle ${
+                    full ? 'scale-105 text-accent' : 'scale-100 text-ink/25'
+                  }`}
+                >
+                  <path
+                    d="M8 1.5C8 1.5 2 8.4 2 12.2a6 6 0 0 0 12 0C14 8.4 8 1.5 8 1.5Z"
+                    fill={full ? 'currentColor' : 'none'}
+                    stroke="currentColor"
+                    strokeWidth="1.6"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              )
+            })}
           </div>
         </div>
 
@@ -433,7 +576,10 @@ export default function CyclePanel({ onChange, open = false, onClose }) {
                 />
                 <button
                   type="button"
-                  onClick={() => removeEntry(row.id)}
+                  onClick={async () => {
+                    await removeEntry(row.id)
+                    flash(t('cycle.undone'))
+                  }}
                   disabled={busy}
                   aria-label={t('cycle.delete_entry')}
                   data-hook="cycle-delete"
@@ -569,7 +715,10 @@ export default function CyclePanel({ onChange, open = false, onClose }) {
         role="dialog"
         aria-modal="true"
         aria-label={t('cycle.title')}
-        className="lg lg-modal relative m-2 flex w-[min(26rem,calc(100vw-1rem))] flex-col overflow-hidden rounded-card p-0 outline-none"
+        /* cycle-warm is the one place in the app with a tinted sheet, and the
+           note in index.css says why this drawer gets it and the event form
+           does not. */
+        className="lg lg-modal cycle-warm relative m-2 flex w-[min(26rem,calc(100vw-1rem))] flex-col overflow-hidden rounded-card p-0 outline-none"
       >
         <div className="flex items-start justify-between gap-3 border-b border-hairline px-5 py-4">
           <h2 className="text-safe text-h2 font-semibold text-ink">{t('cycle.title')}</h2>
@@ -588,6 +737,19 @@ export default function CyclePanel({ onChange, open = false, onClose }) {
           {failed && (
             <p className="mb-3 text-small text-negative" data-hook="cycle-failed">
               {t('cycle.save_failed')}
+            </p>
+          )}
+          {/* Above the content rather than floating over it. A toast pinned to
+              a corner of the screen would be outside the drawer somebody is
+              looking at, and this drawer is already the smallest thing on the
+              page. */}
+          {said && (
+            <p
+              role="status"
+              data-hook="cycle-said"
+              className="mb-3 rounded-inner bg-accent/[0.10] px-3 py-2 text-small font-semibold text-ink"
+            >
+              {said}
             </p>
           )}
           {body}

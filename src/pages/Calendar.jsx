@@ -55,20 +55,75 @@ import TimetableWizard from '../components/TimetableWizard'
  * transparent. The chips looked plausible in a screenshot and a probe that
  * sampled painted pixels found them at 1:1 against the tile behind them.
  *
- * cat-1 to cat-6 are the envelope shades, six hues already chosen to be
- * distinguishable from one another in both themes, which is exactly what a
- * category palette needs and exactly why there is not a seventh.
+ * cat-1 to cat-6 are the envelope shades. They are one ramp per theme rather
+ * than six independent hues, which is the thing that made the sea theme hard:
+ * see agenda.js for why only three of the six steps are spent. Migration 53
+ * lets an event store all six, plus ink, negative and the three named tokens.
+ *
+ * THE CHIP IS THE ORIGINAL CHIP AGAIN. THE COLOURS ARE THE NEW COLOURS.
+ *
+ * These grew a 3px left rule at full strength for one round, on the argument
+ * that a wash at 18 per cent cannot carry a category. The rule was rejected on
+ * sight and the shape of the chip was asked back exactly as it was, so it is
+ * back: same wash, same ring, same padding, same corners, no edge.
+ *
+ * THE ARGUMENT FOR THE RULE WAS ABOUT THE OLD PALETTE, AND IT NO LONGER
+ * APPLIES, WHICH IS WHY REMOVING IT COSTS NOTHING.
+ *
+ * The measurement behind it was cat-1 at #FFE5F1 against cat-3 at #FFE7E4,
+ * fourteen units apart in one channel. Both of those were magenta, because the
+ * old mapping spent accent, cat-1 and cat-2 on three colours inside fifteen
+ * degrees of hue. No wash of three magentas is ever going to read as three
+ * things, and the rule was compensating for a mapping rather than for an
+ * opacity.
+ *
+ * agenda.js fixed the mapping, and most of what the rule was doing came back
+ * for free. The wash goes 0.18 to 0.24, which is the same soft pill and not a
+ * new shape: this table has always carried a different alpha per token, and
+ * yellow needs 0.62 to register at all while grey needs 0.06 to stay quiet.
+ *
+ * MEASURED WITH THE RULE GONE, CIE76 on the composited fills, closest pair:
+ *
+ *   sun   14.6   perso / sante
+ *   sea    5.4   cours / etude
+ *
+ * SUN IS FINE AND SEA IS NOT, AND PRETENDING OTHERWISE WOULD BE THE EASY LIE
+ * HERE.
+ *
+ * Under about 10 two colours read as one. In sun every pair clears it. In sea
+ * they do not, and no amount of styling fixes it: that theme's whole ramp is
+ * one blue gradient, so cours and etude are both blue whichever steps they
+ * take, and a wash of 0.46 is where they finally separate. That is a heavy
+ * tint, well past the chip anybody asked for.
+ *
+ * So this is the best a plain wash does, and the residue is one pair in the
+ * theme that is not the default. The fix if it is ever wanted is a small
+ * full-strength dot inside the chip, the same device the category pills in the
+ * event form already use: full-strength colour, no change to the chip's
+ * padding, corners or height. It is not here because it was not asked for.
  *
  * Whole class strings, because Tailwind scans source text and `bg-cat-${n}`
  * produces no class at build time.
  */
 const SWATCH = {
-  'cat-1': 'bg-cat-1/[0.18] text-ink ring-cat-1/40',
-  'cat-2': 'bg-cat-2/[0.18] text-ink ring-cat-2/40',
-  'cat-3': 'bg-cat-3/[0.18] text-ink ring-cat-3/40',
-  'cat-4': 'bg-cat-4/[0.18] text-ink ring-cat-4/40',
-  accent: 'bg-accent/[0.16] text-ink ring-accent/30',
-  green: 'bg-green/[0.16] text-ink ring-green/30',
+  'cat-1': 'bg-cat-1/[0.24] text-ink ring-cat-1/40',
+  'cat-2': 'bg-cat-2/[0.24] text-ink ring-cat-2/40',
+  'cat-3': 'bg-cat-3/[0.24] text-ink ring-cat-3/40',
+  'cat-4': 'bg-cat-4/[0.24] text-ink ring-cat-4/40',
+  'cat-5': 'bg-cat-5/[0.24] text-ink ring-cat-5/40',
+  'cat-6': 'bg-cat-6/[0.24] text-ink ring-cat-6/40',
+  accent: 'bg-accent/[0.24] text-ink ring-accent/30',
+  green: 'bg-green/[0.24] text-ink ring-green/30',
+  /* Yellow is the lightest hue in either palette, so a quarter of it over
+     white is still white. The alpha is per token here and always was: the
+     original table ran 0.18, 0.16 and 0.06 for exactly this reason, that a
+     wash has to be tuned to the colour rather than to one number. */
+  field: 'bg-field/[0.62] text-ink ring-field-deep/50',
+  /* 0.30, not 0.12. At 0.12 an exam washed to #E4E3E3 and a health entry to
+     #F2F1F2: two greys 5.0 apart in CIE76, which is one grey. Exams are meant
+     to be the darkest thing on the grid and this is what makes that true. */
+  ink: 'bg-ink/[0.30] text-ink ring-ink/35',
+  negative: 'bg-negative/[0.24] text-ink ring-negative/35',
   quiet: 'bg-ink/[0.06] text-ink ring-ink/15',
 }
 
@@ -76,8 +131,10 @@ const SWATCH = {
    full strength rather than as a wash. Same reason the palette has
    `field-deep` alongside `field`: a 4px rule cannot be a tint. */
 const SWATCH_BAR = {
-  'cat-1': 'bg-cat-1', 'cat-2': 'bg-cat-2', 'cat-3': 'bg-cat-3', 'cat-4': 'bg-cat-4',
-  accent: 'bg-accent', green: 'bg-green', quiet: 'bg-ink/30',
+  'cat-1': 'bg-cat-1', 'cat-2': 'bg-cat-2', 'cat-3': 'bg-cat-3',
+  'cat-4': 'bg-cat-4', 'cat-5': 'bg-cat-5', 'cat-6': 'bg-cat-6',
+  accent: 'bg-accent', green: 'bg-green', ink: 'bg-ink',
+  field: 'bg-field-deep', negative: 'bg-negative', quiet: 'bg-ink/30',
 }
 
 /**
@@ -130,6 +187,12 @@ const LAYER_RING = {
 }
 
 const VIEWS = ['month', 'week', 'day']
+
+/* A character no event title can contain, used to find where the title went in
+   a translated sentence. U+0000 rather than something typeable: a title with a
+   "|" or a "@" in it is ordinary and would split the sentence in the wrong
+   place. See DeleteChoice for why this is a split and not three strings. */
+const SPLIT = '\u0000'
 
 /* Which layers are switched OFF, remembered per browser. Off rather than on,
    so a layer added by a later version is visible by default: somebody who has
@@ -880,6 +943,30 @@ function DeleteChoice({ entry, onOne, onAll, onCancel, locale, t }) {
     month: 'long',
   })
 
+  /**
+   * The title, set apart from the sentence it is inside.
+   *
+   * "Biochimie avancee et metabolisme se repete" is one run of grey text in
+   * which the part naming what is about to be deleted is indistinguishable
+   * from the part explaining the question. On a destructive dialog that is the
+   * one word that has to land.
+   *
+   * SPLIT ON A SENTINEL RATHER THAN CONCATENATING THREE STRINGS.
+   *
+   * The obvious version is `pre + <strong>{title}</strong> + post`, which
+   * hard-codes the title coming before the date and after nothing. That is
+   * true in French and English and is not a property of translation: any
+   * locale that fronts the date, or that needs a particle attached to the
+   * name, would have to break the sentence to fit the markup. Interpolating a
+   * character that cannot appear in a title and splitting on it keeps the
+   * whole sentence in the string file where it belongs, and works whatever
+   * order a translator puts the two parts in.
+   *
+   * The quotes live in the template, not here, because which marks a language
+   * quotes with is part of the language.
+   */
+  const [before, after = ''] = t('cal.del_body', { what: SPLIT, when }).split(SPLIT)
+
   return createPortal(
     <div className="fixed inset-0 z-[70] flex items-end justify-center sm:items-center" data-hook="cal-delete">
       <button
@@ -896,8 +983,10 @@ function DeleteChoice({ entry, onOne, onAll, onCancel, locale, t }) {
         className="lg lg-modal relative m-2 w-[min(26rem,calc(100vw-1rem))] p-5"
       >
         <h2 className="text-safe text-h2 font-semibold text-ink">{t('cal.del_title')}</h2>
-        <p className="text-safe mt-1.5 text-small text-muted">
-          {t('cal.del_body', { what: entry.title, when })}
+        <p className="text-safe mt-1.5 text-small text-muted" data-hook="del-body">
+          {before}
+          <strong className="font-semibold text-ink">{entry.title}</strong>
+          {after}
         </p>
 
         <div className="mt-5 flex flex-col gap-2">
@@ -1059,7 +1148,7 @@ function EventForm({ initial, onClose, onSaved }) {
         role="dialog"
         aria-modal="true"
         aria-label={initial.id ? t('cal.edit_title') : t('cal.new_title')}
-        className="lg lg-modal relative m-2 flex max-h-[92dvh] w-[min(34rem,calc(100vw-1rem))] flex-col overflow-hidden p-0"
+        className="lg lg-modal relative m-2 flex max-h-[92dvh] w-[min(42rem,calc(100vw-1rem))] flex-col overflow-hidden p-0"
       >
         <div className="flex items-start justify-between gap-3 border-b border-hairline px-5 py-4">
           <h2 className="text-safe text-h2 font-semibold text-ink">
@@ -1082,20 +1171,47 @@ function EventForm({ initial, onClose, onSaved }) {
           <input value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} maxLength={120} className="field mt-1 w-full" />
         </label>
 
+        {/**
+         * The seven, each carrying the colour it will paint in.
+         *
+         * The dot is not decoration. Picking "Examen" here is the act that
+         * decides what the entry looks like on the month grid for the rest of
+         * the term, and without it the connection between the word and the
+         * black chip that appears afterwards has to be learned by surprise.
+         * SWATCH_BAR is reused rather than a second table, so a category whose
+         * colour changes changes in both places or in neither.
+         *
+         * The active pill lifts one pixel with a tinted shadow under it. The
+         * fill is still the thing that says "selected" and the lift is a
+         * second signal on top of it, per 1.4.1, alongside the dot going white
+         * so it stays visible on the accent.
+         */}
         <div className="flex flex-wrap gap-2">
-          {CATEGORIES.map((c) => (
-            <button
-              key={c}
-              type="button"
-              onClick={() => setF({ ...f, category: c })}
-              aria-pressed={f.category === c}
-              className={`press rounded-pill px-3 py-1.5 text-small font-semibold transition-colors ${
-                f.category === c ? 'bg-accent text-on-accent' : 'bg-ink/[0.06] text-ink hover:bg-ink/[0.11]'
-              }`}
-            >
-              {t(`cal.cat_${c}`)}
-            </button>
-          ))}
+          {CATEGORIES.map((c) => {
+            const on = f.category === c
+            return (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setF({ ...f, category: c })}
+                aria-pressed={on}
+                data-cat={c}
+                className={`press inline-flex items-center gap-1.5 rounded-pill px-3 py-1.5 text-small font-semibold transition-all duration-200 ease-settle ${
+                  on
+                    ? '-translate-y-px bg-accent text-on-accent shadow-[0_4px_12px_-2px_rgb(var(--c-accent)/0.45)]'
+                    : 'bg-ink/[0.06] text-ink hover:bg-ink/[0.11]'
+                }`}
+              >
+                <span
+                  aria-hidden="true"
+                  className={`h-2 w-2 shrink-0 rounded-pill ${
+                    on ? 'bg-on-accent' : SWATCH_BAR[CATEGORY_COLOUR[c]] ?? SWATCH_BAR.accent
+                  }`}
+                />
+                {t(`cal.cat_${c}`)}
+              </button>
+            )
+          })}
         </div>
 
         <div className="grid grid-cols-2 gap-3">

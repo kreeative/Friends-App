@@ -10,6 +10,8 @@
  * implementation that mixes Monday-first display with getDay().
  */
 import { readFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { addDays, dayKey, fromKey } from './cycle.js'
 import {
   CATEGORIES,
@@ -218,15 +220,64 @@ eq('and never wider than the day', dayBounds([{ start_min: 0, end_min: 1440 }]).
 
 eq('the seven categories match the check constraint', CATEGORIES,
    ['cours', 'examen', 'etude', 'travail', 'evenement', 'perso', 'sante'])
-/* Seven categories and seven allowed colours is not a coincidence: the check
-   constraint on `colour` lists exactly these. An eighth category needs a token
-   first, and this is where that gets noticed. */
-const ALLOWED_COLOURS = ['accent', 'green', 'quiet', 'cat-1', 'cat-2', 'cat-3', 'cat-4']
+/**
+ * The allowed colours, READ OUT OF THE MIGRATION rather than copied into here.
+ *
+ * This list was a literal for one round and it went stale the moment the
+ * palette widened: the constraint in 53 and the array in this file were two
+ * copies of one fact, and a test that asserts a copy against itself proves
+ * nothing about the database. Parsing the SQL means the failure this catches
+ * is the one that matters, a client assigning a colour postgres will reject.
+ *
+ * The check is `colour in ('a', 'b', ...)`, so the quoted strings inside the
+ * last such clause are the answer. If somebody restructures the constraint the
+ * match fails loudly rather than silently allowing everything, which is what
+ * the length assertion below is for.
+ */
+const sql = readFileSync(
+  join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'supabase', '53_event_colour_palette.sql'),
+  'utf8',
+)
+const clause = sql.match(/add constraint calendar_event_colour_check\s*\n?\s*check \(colour in \(([\s\S]*?)\)\)/)
+ok('the colour constraint is where this test thinks it is', Boolean(clause))
+const ALLOWED_COLOURS = [...(clause?.[1] ?? '').matchAll(/'([^']+)'/g)].map((m) => m[1])
+ok('and it lists a palette rather than nothing', ALLOWED_COLOURS.length >= 7, String(ALLOWED_COLOURS.length))
 ok('every category paints in a colour the constraint allows',
    CATEGORIES.every((c) => ALLOWED_COLOURS.includes(CATEGORY_COLOUR[c])),
    CATEGORIES.map((c) => `${c}:${CATEGORY_COLOUR[c]}`).join(' '))
+/* The reverse direction. A colour the database accepts that Tailwind cannot
+   build paints transparent, which is the failure the note in Calendar.jsx
+   records: chips that looked plausible in a screenshot and measured 1:1
+   against the tile behind them. */
+const TOKENS = new Set(['accent', 'green', 'quiet', 'ink', 'negative', 'field',
+                        'cat-1', 'cat-2', 'cat-3', 'cat-4', 'cat-5', 'cat-6'])
+ok('and every colour the constraint allows is a token that exists',
+   ALLOWED_COLOURS.every((c) => TOKENS.has(c)),
+   ALLOWED_COLOURS.filter((c) => !TOKENS.has(c)).join(' '))
 ok('and no two share one, so the grid can be read',
    new Set(CATEGORIES.map((c) => CATEGORY_COLOUR[c])).size === CATEGORIES.length)
+/**
+ * THE RAMP IS ONE RAMP PER THEME, NOT SIX INDEPENDENT HUES.
+ *
+ * cat-1 to cat-6 are six steps of one gradient: pink to yellow in sun, navy to
+ * light blue in sea. Adjacent steps of the sea ramp measured 7.6 apart in
+ * CIE76 on the painted pixels, and anything under about 10 reads as one
+ * colour. Four picks from six always leaves an adjacent pair, so the rule is
+ * three picks with a gap of at least two between them.
+ *
+ * This is the assertion that catches somebody adding an eighth category by
+ * reaching for the next free step, which looks obviously correct and puts two
+ * indistinguishable chips on the sea theme's grid.
+ */
+const steps = CATEGORIES
+  .map((c) => /^cat-([1-6])$/.exec(CATEGORY_COLOUR[c]))
+  .filter(Boolean)
+  .map((m) => Number(m[1]))
+  .sort((a, b) => a - b)
+ok('at most two steps of the ramp are spent', steps.length <= 2, steps.join(','))
+ok('and no two of them are adjacent',
+   steps.every((n, i) => i === 0 || n - steps[i - 1] >= 2),
+   steps.join(','))
 eq('work, parties and appointments are all on the personal layer',
    ['travail', 'evenement', 'sante'].map((c) => layerOf({ category: c })), ['perso', 'perso', 'perso'])
 ok('and every one has a colour', CATEGORIES.every((c) => CATEGORY_COLOUR[c]))

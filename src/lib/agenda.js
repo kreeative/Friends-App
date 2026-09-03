@@ -137,17 +137,62 @@ export function visibleEvents(events, hidden) {
  * and an undefined variable is nothing at all. A screenshot did not show it;
  * sampling the painted pixels did, at 1:1 against the tile behind.
  */
-/* Seven categories, seven colours, and the seven the check constraint on
-   `colour` allows. That is not a coincidence: the constraint lists exactly
-   accent, green, quiet, cat-1, cat-2, cat-3 and cat-4, so the palette had
-   exactly enough room and there is none spare. An eighth category needs a
-   token first. */
+/**
+ * SEVEN CATEGORIES, SEVEN COLOURS THAT ARE ACTUALLY DIFFERENT.
+ *
+ * The first mapping used what the constraint already allowed and three of the
+ * seven were the same colour. accent is #E60070, cat-1 is #FF007A and cat-2 is
+ * #FF2D6B: three magentas within 15 degrees of hue, painted at 18 per cent
+ * over white, which is three chips nobody can tell apart on a month grid.
+ * "Un exam peut etre d'une couleur differente d'un cours" is the report and it
+ * was correct.
+ *
+ * Each theme has ONE six-step ramp and four colours declared outside it, and
+ * the four are what make seven possible:
+ *
+ *   cours      cat-1      rose vif in sun, navy in sea
+ *   examen     ink        noir, the one you cannot miss, which is the point
+ *   etude      cat-4      orange in sun, mid blue in sea
+ *   travail    field      jaune, the same in both themes
+ *   evenement  negative   deep red, the same in both themes
+ *   perso      green      the same in both themes
+ *   sante      quiet      gris
+ *
+ * ONLY TWO OF THE SIX RAMP STEPS ARE USED, AND THAT IS THE WHOLE TRICK.
+ *
+ * This went four steps, then three, then two, and each cut was a measurement
+ * rather than a preference. Four (1, 3, 4, 6) measured fine in sun and put
+ * cat-3 and cat-4 7.6 apart in CIE76 in sea, where the ramp is monotone blue,
+ * and anything under about 10 reads as one colour. Three (1, 4, 6) held while
+ * every chip carried a saturated 3px rule. The rule was rejected on sight and
+ * the chip went back to a plain 18 per cent wash, at which point cat-4 and
+ * cat-6 washed to #D2E5F0 and #D3EAF9: 2.9 apart, one pale blue.
+ *
+ * So two, three steps apart, and everything else off the ramp entirely.
+ *
+ * `field`, `negative` and `green` are the three saturated hues in this file
+ * declared once at :root rather than per theme, so they are the only ones that
+ * do not move between sun and sea. That is exactly the property a category
+ * needs here: a shift is yellow and a party is red on both themes, which is
+ * two more answers the blue ramp could never have given.
+ *
+ * That `negative` is the error colour is worth saying out loud rather than
+ * leaving to be discovered. It is not a slip. Nothing about the chip says
+ * "error": it is a pale red tint behind the name of a party.
+ *
+ * cat-2, cat-3, cat-5 and cat-6 are skipped. They sit between steps in use.
+ *
+ * Migration 53 widens the check constraint on `colour` to accept the whole
+ * ramp plus ink and negative. Every name here must be a token
+ * tailwind.config.js declares AND a value that constraint allows; the test
+ * reads the constraint out of the SQL and asserts both directions.
+ */
 export const CATEGORY_COLOUR = {
   cours: 'cat-1',
-  examen: 'accent',
-  etude: 'cat-3',
-  travail: 'cat-2',
-  evenement: 'cat-4',
+  examen: 'ink',
+  etude: 'cat-4',
+  travail: 'field',
+  evenement: 'negative',
   perso: 'green',
   /* Grey, and deliberately the quietest of the seven. A health entry sitting
      on a shared screen should be the one that draws the least attention. */

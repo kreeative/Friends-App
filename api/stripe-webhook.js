@@ -28,13 +28,66 @@ const admin = createClient(
   { auth: { persistSession: false } },
 )
 
-function rawBody(req) {
-  return new Promise((resolve, reject) => {
+/**
+ * The bytes Stripe signed, whatever the runtime already did to them.
+ *
+ * THIS IS THE BUG THAT MADE A COMPLETED PURCHASE DO NOTHING.
+ *
+ * `export const config = { api: { bodyParser: false } }` above is a NEXT.JS
+ * setting. This project is Vite, so `/api/*.js` runs on Vercel's plain Node
+ * runtime, which reads that config for runtime, memory and maxDuration and
+ * ignores `api.bodyParser` entirely. The proof is next door: api/checkout.js
+ * reads `req.body` and works, so the runtime is parsing bodies.
+ *
+ * A parsed body is a consumed stream. So the old reader attached a `data`
+ * listener to a stream that had already ended, got zero chunks, and handed
+ * constructEvent an empty Buffer. Every delivery failed signature
+ * verification, every one returned 400, Stripe retried and got 400 again, and
+ * no entitlement was ever written. The buyer was charged, came back to the
+ * library, and the book was not there.
+ *
+ * FOUR SOURCES, IN ORDER OF HOW MUCH THEY CAN BE TRUSTED.
+ *
+ * WHY THE LAST ONE IS SAFE, WHICH IS THE ONLY PART THAT NEEDS AN ARGUMENT.
+ *
+ * Re-serialising a parsed object cannot reproduce arbitrary bytes: key order
+ * survives JSON.parse then JSON.stringify, but whitespace and unicode escaping
+ * are not guaranteed to. That is a reason for it to be last, not a reason for
+ * it to be absent, because the signature is an HMAC over exact bytes and it is
+ * still the thing deciding. If the reconstruction differs by one byte the
+ * check FAILS and the delivery is rejected. A forged payload cannot be made to
+ * pass by this path; the only thing that can happen is a genuine one being
+ * rejected. So it is a false-negative risk, never a false-positive one.
+ *
+ * Each source is logged, because "which of these fired" is the first question
+ * anybody debugging this will have and the Vercel log is the only place to
+ * answer it.
+ */
+export async function rawBody(req) {
+  /* 1. The stream, if the runtime left it alone. `readable` is false once it
+        has been consumed, so this is asked rather than assumed: attaching to a
+        dead stream is what silently returned an empty buffer before. */
+  if (req.readable) {
     const chunks = []
-    req.on('data', (c) => chunks.push(Buffer.from(c)))
-    req.on('end', () => resolve(Buffer.concat(chunks)))
-    req.on('error', reject)
-  })
+    for await (const c of req) chunks.push(Buffer.from(c))
+    const body = Buffer.concat(chunks)
+    if (body.length) return { body, from: 'stream' }
+  }
+
+  /* 2. Some runtimes keep the original bytes alongside the parsed value. */
+  if (Buffer.isBuffer(req.rawBody)) return { body: req.rawBody, from: 'rawBody' }
+  if (typeof req.rawBody === 'string') return { body: Buffer.from(req.rawBody, 'utf8'), from: 'rawBody' }
+
+  /* 3. A body the runtime did not know how to parse arrives untouched. */
+  if (Buffer.isBuffer(req.body)) return { body: req.body, from: 'body-buffer' }
+  if (typeof req.body === 'string') return { body: Buffer.from(req.body, 'utf8'), from: 'body-string' }
+
+  /* 4. Last resort, per the note above. */
+  if (req.body && typeof req.body === 'object') {
+    return { body: Buffer.from(JSON.stringify(req.body), 'utf8'), from: 'reserialised' }
+  }
+
+  return { body: Buffer.alloc(0), from: 'nothing' }
 }
 
 export default async function handler(req, res) {
@@ -43,18 +96,34 @@ export default async function handler(req, res) {
     return res.status(405).end()
   }
 
+  /* Named separately from a bad signature. A missing secret is a deployment
+     that was never finished and a bad signature is a request that did not come
+     from Stripe; they are fixed in different places and the log said neither. */
+  if (!env('stripeWebhook')) {
+    console.error('STRIPE_WEBHOOK_SECRET is not set, so no delivery can ever verify')
+    return res.status(500).json({ error: 'Webhook secret is not configured' })
+  }
+
   let event
+  const { body, from } = await rawBody(req)
   try {
-    const body = await rawBody(req)
     event = stripe.webhooks.constructEvent(
       body,
       req.headers['stripe-signature'],
       env('stripeWebhook'),
     )
   } catch (err) {
-    // A bad signature means this did not come from Stripe. Never act on it.
-    console.error('signature verification failed', err.message)
+    /* A bad signature means this did not come from Stripe. Never act on it.
+       `from` is logged because it is the difference between "somebody is
+       poking the endpoint" and "the runtime ate the body again", and those
+       look identical without it. */
+    console.error(`signature verification failed (body from: ${from}, ${body.length} bytes)`, err.message)
     return res.status(400).json({ error: `Webhook signature failed: ${err.message}` })
+  }
+  if (from !== 'stream') {
+    /* Not an error. Worth a line, because it means the runtime is parsing
+       bodies and the fallback is load-bearing rather than dead code. */
+    console.log(`webhook verified from ${from} rather than the raw stream`)
   }
 
   try {

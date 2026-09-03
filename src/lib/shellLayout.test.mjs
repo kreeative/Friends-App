@@ -91,7 +91,7 @@ ok(
   /<header className="sticky top-0 z-40 px-4 pt-4 md:hidden">/.test(shell),
   'the rail carries the lockup, the bell and the avatar above md',
 )
-ok('the rail carries a lockup of its own', /data-hook="side-rail"[\s\S]{0,900}LockupInline/.test(shell))
+ok('the rail carries a lockup of its own', /data-hook="side-rail"[\s\S]{0,1800}LockupInline/.test(shell))
 ok(
   'and the group name has somewhere to be',
   /data-hook="rail-group"/.test(shell),
@@ -472,15 +472,46 @@ ok(
 /* --- a dialog is not chrome ---------------------------------------------- */
 
 ok('there is a modal treatment of its own', /\.lg-modal \{/.test(css))
+/**
+ * NEITHER DIAL IS PINNED TO A NUMBER, AND THAT IS DELIBERATE.
+ *
+ * This pinned `--lg-a: 0.9x` for one round and then the alpha was asked to go
+ * back to 0.75, so the test was a record of one afternoon's preference. The
+ * replacement pinned the saturate instead, on the theory that it was the dial
+ * carrying the tint. The sweep in index.css says otherwise: at a fixed alpha,
+ * 120% and 200% land one unit apart. That theory was wrong.
+ *
+ * So what is asserted is the range each dial has to stay inside for the sheet
+ * to be a sheet, and the numbers inside it are taste.
+ */
 ok(
-  'and it is nearly opaque',
-  /\.lg-modal \{[\s\S]{0,120}--lg-a: 0\.9[0-9];/.test(css),
-  "at chrome's 0.72 the form picked up whatever colour was behind the dialog",
+  'the modal is glass rather than a white rectangle',
+  /\.lg-modal \{[\s\S]{0,200}--lg-a: 0\.[5-9][0-9]?;/.test(css),
+  'at 1 the backdrop-filter is dead weight and the sheet stops reading as a sheet',
 )
 ok(
-  'with the saturate pulled down rather than left at the nav bar value',
-  /\.lg-modal \{[\s\S]{0,160}--lg-sat: 1[0-2][0-9]%;/.test(css),
-  '200% took the accent still showing through and pushed it back towards pink',
+  'and not so transparent that the page reads through the form',
+  Number((css.match(/\.lg-modal \{[\s\S]{0,200}--lg-a: (0\.[0-9]+);/) ?? [])[1]) >= 0.7,
+  'measured, 0.75 puts the sheet at #F1EFF0 over the real page; below that it keeps darkening',
+)
+ok(
+  'the dialog floats on a two-layer shadow',
+  /\.lg-modal \{[\s\S]{0,900}box-shadow:\s*\n?\s*0 25px 50px -12px rgb\(var\(--c-accent\)/.test(css),
+  'the deep tinted drop and the white halo that were asked for',
+)
+ok(
+  'and it wins over .lg, which sets box-shadow at the same specificity',
+  /\.lg-modal \{[\s\S]{0,900}!important/.test(css),
+  'without it the shadow is written and silently discarded on source order',
+)
+ok(
+  'the modal input fill is scoped to the modal',
+  /\.lg-modal \.field \{/.test(css),
+  'unscoped, a 60 per cent white input over the coloured page is the rose fill again',
+)
+ok(
+  'and it goes opaque on focus',
+  /\.lg-modal \.field:focus \{[\s\S]{0,160}background-color: rgb\(var\(--c-surface\)\)/.test(css),
 )
 
 const wizard = read('src/components/TimetableWizard.jsx')
@@ -561,6 +592,163 @@ ok(
   'and it is an alert, not a status',
   /role="alert" data-hook="cal-notice"/.test(cal),
   'a row that just came back on its own needs the reason read out',
+)
+
+/* --- the calendar is in both navigations -------------------------------- */
+
+/**
+ * The one that was actually reported: it was in the rail and not in the tab
+ * bar, so on a phone the menu simply did not have it. Both are built from one
+ * list now, and this is the assertion that stops them drifting apart again.
+ */
+ok(
+  'both navigations append the calendar to the same list',
+  (shell.match(/\[\.\.\.tabs, CALENDAR\]/g) ?? []).length === 2,
+  'one of them had it and the other did not, which is how it went missing on the phone',
+)
+ok(
+  'and the tab bar renders that list rather than the raw tabs',
+  /\{rows\.map\(\(tab, i\) => \(/.test(shell),
+  'building rows and then mapping tabs is a fifth destination nobody can reach',
+)
+
+/* --- the rail has room to breathe --------------------------------------- */
+
+ok(
+  'the rail rows are spaced rather than stacked',
+  /flex min-h-0 flex-1 flex-col gap-1\.5 overflow-y-auto/.test(shell),
+  'at gap-0.5 the active pill touched its neighbours and read as a band',
+)
+ok(
+  'and the lockup is separated from the destinations',
+  /LockupInline[\s\S]{0,220}mb-3 mt-2 h-px shrink-0 bg-hairline/.test(shell),
+  'at mb-1 the logo read as the first item of the list rather than its owner',
+)
+
+/* --- an exam does not look like a class --------------------------------- */
+
+/**
+ * THE CHIP HAS NO EDGE, AND THAT IS THE ASSERTION.
+ *
+ * It carried a 3px full-strength left rule for one round. That was rejected on
+ * sight and the original chip was asked back, so this pins the absence: the
+ * rule is the obvious thing to reach for the next time somebody measures the
+ * washes and finds them close, and it is not available.
+ */
+ok(
+  'no swatch carries a rule at its edge',
+  !/border-l-\[3px\]/.test(cal),
+  'the plain soft pill was asked back for explicitly',
+)
+ok(
+  'and there is a dark option, which neither ramp otherwise has',
+  /ink: 'bg-ink\/\[0\.30\] text-ink ring-ink\/35'/.test(cal),
+  'at 0.12 an exam and a health entry were two greys 5.0 apart',
+)
+ok(
+  'yellow gets the alpha it needs rather than the shared one',
+  /field: 'bg-field\/\[0\.6[0-9]\]/.test(cal),
+  'a quarter of #FFD60A over white is white',
+)
+ok(
+  'the category pills show the colour they will paint in',
+  /data-cat=\{c\}/.test(cal) && /SWATCH_BAR\[CATEGORY_COLOUR\[c\]\]/.test(cal),
+  'picking a category decides what the chip looks like for the rest of the term',
+)
+ok(
+  'and the pill dot goes white when selected, so it stays visible on the accent',
+  /on \? 'bg-on-accent'/.test(cal),
+)
+
+/* --- the deletion dialog names what it is deleting ---------------------- */
+
+ok(
+  'the title is set apart from the sentence around it',
+  /<strong className="font-semibold text-ink">\{entry\.title\}<\/strong>/.test(cal),
+)
+ok(
+  'and the sentence is split on a sentinel, not concatenated',
+  /t\('cal\.del_body', \{ what: SPLIT, when \}\)\.split\(SPLIT\)/.test(cal),
+  'three strings hard-code the title coming before the date, which is not a property of translation',
+)
+
+/* --- the secondary button is glass everywhere --------------------------- */
+
+ok(
+  'the outline button has a ground now',
+  /\.btn-ghost \{[\s\S]{0,200}var\(--glass-tint\)/.test(css),
+  'text-ink with no background is a word floating beside a filled button',
+)
+ok('and it lifts on hover', /\.btn-ghost:hover \{[\s\S]{0,200}translateY\(-2px\)/.test(css))
+ok(
+  'with the motion opted out of',
+  /prefers-reduced-motion[\s\S]{0,300}\.btn-ghost/.test(css),
+)
+ok(
+  'the two glass secondaries blur by the same amount',
+  (css.match(/backdrop-filter: blur\(16px\) saturate\(160%\)/g) ?? []).length >= 2,
+  'they were 12 and 16, sitting next to each other on the calendar toolbar',
+)
+
+/* --- the cycle drawer ---------------------------------------------------- */
+
+const cyc = read('src/components/CyclePanel.jsx')
+ok(
+  '"it started today" is a toggle',
+  /aria-pressed=\{Boolean\(todayRow\)\}/.test(cyc),
+  'it was one-way, and the only undo was finding today among the recorded dates',
+)
+ok(
+  'and pressing it again removes only today',
+  /if \(todayRow\) \{[\s\S]{0,120}removeEntry\(todayRow\.id\)/.test(cyc),
+  'nothing else in the history is reachable from that button',
+)
+ok(
+  'the state is not carried by the fill alone',
+  /todayRow \? '✓' : '🌸'/.test(cyc),
+  '1.4.1: colour is never the only thing saying it',
+)
+ok('deleting a date says so', /data-hook="cycle-said"/.test(cyc))
+ok(
+  'and the message clears itself off a ref, not off the function object',
+  /clearTimeout\(saidTimer\.current\)/.test(cyc),
+  'flash is rebuilt every render, so a timer hung off it would never be cleared',
+)
+ok(
+  'the timer is cleaned up on unmount',
+  /useEffect\(\(\) => \(\) => clearTimeout\(saidTimer\.current\), \[\]\)/.test(cyc),
+  'the drawer unmounts every time it is closed, which is the normal path',
+)
+ok('the glasses are drawn, not emoji', /viewBox="0 0 16 20"/.test(cyc),
+   'the droplet emoji is blue in every font, and this app has two themes')
+ok(
+  'there is a note about the phase',
+  /data-hook="cycle-care"/.test(cyc),
+)
+/* Comments stripped first. The previous version of this assertion matched the
+   comment written to explain it, which is a failure this repo has already paid
+   for once: a test that reads its own prose is a test of nothing. */
+const cycCode = cyc.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '')
+ok(
+  'and it reads the phase rather than asking for anything',
+  !/symptom|mood/i.test(cycCode),
+  'migration 51 exists to make a "who is having a rough week" signal impossible',
+)
+ok(
+  'phaseOn is called with three arguments, so periodDays keeps its default',
+  /phaseOn\(new Date\(\), starts, prediction\)/.test(cyc),
+  'passing the estimate object as the fourth makes every day inside a NaN window read as a period',
+)
+ok('the drawer has its warm wash', /cycle-warm/.test(cyc) && /\.cycle-warm::after \{/.test(css))
+ok(
+  'and the wash is the accent token rather than a literal rose',
+  /\.cycle-warm::after \{[\s\S]{0,400}rgb\(var\(--c-accent\) \/ 0\.09\)/.test(css),
+  'a hex here would be an unexplained pink glow inside a blue app',
+)
+ok(
+  'it fades out rather than tinting the whole drawer',
+  /\.cycle-warm::after \{[\s\S]{0,400}height: 12rem/.test(css),
+  'a wash behind the history inputs is the pink-fields problem again',
 )
 
 console.log(`\n  ${pass} passed, ${fail} failed\n`)
