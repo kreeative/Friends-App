@@ -301,7 +301,7 @@ export default function Me() {
       {/* Two columns from lg, so a settings form uses the width instead of
           being stretched across it. See .pane-grid in index.css for the
           measurement that produced this. */}
-      <div className="pane-grid">
+      <div className="profile-grid">
       {quiet >= 2 && (
         <div className="pt-8">
           <div className="card">
@@ -464,7 +464,7 @@ export default function Me() {
        * show somebody who has none. See landing() in src/lib/onboarding.js.
        */}
       {offerGroup({ memberships: groups }) && (
-        <Section title={t('settings.group_title')}>
+        <Section title={t('settings.group_title')} className="pane-aside">
           <div className="lg p-6">
             <p className="max-w-[38ch] text-body text-muted">{t('settings.group_none')}</p>
             <Link to="/start" className="btn-primary press mt-6 inline-flex">
@@ -503,7 +503,7 @@ export default function Me() {
        * They are shared components rather than a second copy, so the two
        * screens cannot drift apart the next time a theme or a locale is added.
        */}
-      <Section title={t('me.preferences')}>
+      <Section title={t('me.preferences')} className="pane-aside">
         <div className="lg space-y-7 p-6">
           <ThemePicker />
           <LanguagePicker />

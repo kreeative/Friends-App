@@ -295,54 +295,123 @@ export default function Calendar() {
      * the window minus the rail, not the window.
      */
     <div className="mx-auto w-full max-w-content space-y-4 px-4 pb-28 pt-4 md:max-w-none md:pb-8">
-      <header className="lg w-full overflow-hidden p-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-safe text-h1 font-semibold text-ink">{t('cal.title')}</h1>
+      {/**
+       * THREE CONTAINERS, NOT ONE HEADER.
+       *
+       * This was a single card carrying the title, three buttons, the view
+       * switch, the pager, the month and four filter chips: nine controls of
+       * five different kinds in one box, which is a box that says nothing
+       * about what belongs with what.
+       *
+       * The split is by WHAT A CONTROL DOES rather than by how it looks.
+       * Row one opens things and turns layers on and off. Row two moves
+       * around inside what is already on screen. Row three is the screen.
+       *
+       * Row one is a flex row of separate pills rather than a card, so it
+       * wraps to two lines on a phone without the box growing a second row of
+       * empty space, and so nothing in it looks like a section heading.
+       */}
+      <div className="flex flex-wrap items-center gap-2" data-hook="cal-actions">
+        {/* A term is transcribed from a printout, not composed. Doing it
+            through the single-event form means retyping the term dates once
+            per class and counting how many are left. */}
+        <button type="button" onClick={() => setWizard(true)} className="goal-action press" data-hook="cal-wiz-open">
+          {t('wiz.open')}
+        </button>
 
-          <div className="flex shrink-0 flex-wrap items-center gap-2">
-            {/* A term is transcribed from a printout, not composed. Doing it
-                through the single-event form means retyping the term dates
-                once per class and counting how many are left. */}
-            <button
-              type="button"
-              onClick={() => setWizard(true)}
-              className="press rounded-pill px-3 py-2 text-small font-semibold text-ink hover:bg-ink/[0.06]"
-              data-hook="cal-wiz-open"
-            >
-              {t('wiz.open')}
-            </button>
+        {/* The way in to everything about the cycle: the tracker, the recorded
+            periods and the reminder settings. */}
+        <button type="button" onClick={() => setDrawer(true)} className="goal-action press" data-hook="cal-cycle-open">
+          {t('cycle.manage')}
+        </button>
 
-            {/* The way in to everything about the cycle: the tracker, the
-                recorded periods and the reminder settings. A button rather
-                than a column, see the note on the drawer below. */}
-            <button
-              type="button"
-              onClick={() => setDrawer(true)}
-              className="press rounded-pill px-3 py-2 text-small font-semibold text-ink hover:bg-ink/[0.06]"
-              data-hook="cal-cycle-open"
-            >
-              {t('cycle.manage')}
-            </button>
+        {/**
+         * The layers, as pressed-in toggles, beside the things that open.
+         *
+         * aria-pressed rather than a checkbox, because these do not submit
+         * anything and a checkbox in a toolbar implies a form. The state is
+         * carried three ways so it is never colour alone, per 1.4.1: the
+         * button's fill, the dot going hollow, and the strikethrough on the
+         * word. A greyscale screenshot still says which are off.
+         */}
+        <span aria-hidden="true" className="mx-1 hidden h-6 w-px bg-hairline sm:block" />
 
-            {/* The + is the icon and the word is the label, so it reads at a
-                glance and still says what it does. It was the word alone. */}
-            <button
-              type="button"
-              onClick={() => setEditing({ starts_on: dayKey(anchor), category: 'cours', weekdays: [] })}
-              className="goal-action-done press shrink-0"
-              data-hook="cal-add"
-            >
-              <span aria-hidden="true" className="mr-1 text-body leading-none">
-                +
-              </span>
-              {t('cal.add')}
-            </button>
-          </div>
+        <div className="flex flex-wrap items-center gap-2" data-hook="cal-layers">
+          {LAYERS.map((layer) => {
+            const on = !hidden.has(layer)
+            return (
+              <button
+                key={layer}
+                type="button"
+                aria-pressed={on}
+                data-layer={layer}
+                data-on={on}
+                onClick={() => toggleLayer(layer)}
+                className={`press flex items-center gap-1.5 rounded-pill px-3 py-2 text-small font-semibold transition-colors ${
+                  on ? 'bg-ink/[0.06] text-ink' : 'text-muted hover:bg-ink/[0.04]'
+                }`}
+              >
+                <span
+                  aria-hidden="true"
+                  className={`h-2.5 w-2.5 shrink-0 rounded-pill ${
+                    on ? LAYER_DOT[layer] : `border-2 ${LAYER_RING[layer]}`
+                  }`}
+                />
+                <span className={on ? '' : 'line-through decoration-1'}>{t(`cal.layer_${layer}`)}</span>
+              </button>
+            )
+          })}
         </div>
 
-        {/* View switch and the pager, on one row that is allowed to wrap. At
-            360px in French these two do not fit side by side. */}
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+        {/* Pinned to the far end, and the only filled control in the row. The
+            + is the icon and the word is the label. */}
+        <button
+          type="button"
+          onClick={() => setEditing({ starts_on: dayKey(anchor), category: 'cours', weekdays: [] })}
+          className="goal-action-done press ml-auto shrink-0"
+          data-hook="cal-add"
+        >
+          <span aria-hidden="true" className="mr-1 text-body leading-none">
+            +
+          </span>
+          {t('cal.add')}
+        </button>
+      </div>
+
+      {/* Eight rows landing at once is a big change to a grid somebody was
+          just looking at, and without a word it reads as the page having done
+          something on its own. Dismissible, and it says how many. */}
+      {added > 0 && (
+        <p className="text-small font-semibold text-ink" role="status" data-hook="wiz-done">
+          {t(added === 1 ? 'wiz.done_one' : 'wiz.done_other', { n: added })}{' '}
+          {/* "Fermer", not "Annuler". Cancel on a notice that something was
+              added reads as an offer to undo the add, which this is not. */}
+          <button
+            type="button"
+            onClick={() => setAdded(0)}
+            className="press underline decoration-1 underline-offset-2"
+          >
+            {t('wiz.close')}
+          </button>
+        </p>
+      )}
+
+      {/**
+       * Row two: moving around, and nothing else.
+       *
+       * No filters in here, deliberately. A toolbar that both changes what is
+       * drawn and changes where you are looking is one where a person cannot
+       * tell which of the two they just did.
+       */}
+      <header className="lg w-full overflow-hidden px-4 py-3" data-hook="cal-toolbar">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          {/* The month is the heading of this screen now that the h1 has gone
+              up into the page. first-letter:uppercase because Intl gives
+              "septembre 2026" in French and "September 2026" in English. */}
+          <h1 className="text-safe text-h2 font-semibold text-ink first-letter:uppercase">
+            {fmt.format(anchor)}
+          </h1>
+
           <div className="flex gap-1 rounded-pill bg-ink/[0.06] p-1" role="tablist" data-hook="cal-views">
             {VIEWS.map((v) => (
               <button
@@ -375,67 +444,6 @@ export default function Calendar() {
               &#8250;
             </button>
           </div>
-        </div>
-
-        <p className="mt-3 text-small font-semibold uppercase tracking-[0.06em] text-muted">
-          {fmt.format(anchor)}
-        </p>
-
-        {/* Eight rows landing at once is a big change to a grid somebody was
-            just looking at, and without a word it reads as the page having
-            done something on its own. Dismissible, and it says how many. */}
-        {added > 0 && (
-          <p className="mt-2 text-small font-semibold text-ink" role="status" data-hook="wiz-done">
-            {t(added === 1 ? 'wiz.done_one' : 'wiz.done_other', { n: added })}{' '}
-            {/* "Fermer", not "Annuler". Cancel on a notice that something was
-                added reads as an offer to undo the add, which this is not. */}
-            <button
-              type="button"
-              onClick={() => setAdded(0)}
-              className="press underline decoration-1 underline-offset-2"
-            >
-              {t('wiz.close')}
-            </button>
-          </p>
-        )}
-
-        {/**
-         * The layers, as pressed-in toggles.
-         *
-         * aria-pressed rather than a checkbox, because these do not submit
-         * anything and a checkbox in a toolbar implies a form. The state is
-         * carried three ways so it is never colour alone, per 1.4.1: the
-         * button's fill, the dot going hollow, and the strikethrough on the
-         * word. A greyscale screenshot still says which two are off.
-         */}
-        <div
-          className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-hairline/60 pt-3"
-          data-hook="cal-layers"
-        >
-          {LAYERS.map((layer) => {
-            const on = !hidden.has(layer)
-            return (
-              <button
-                key={layer}
-                type="button"
-                aria-pressed={on}
-                data-layer={layer}
-                data-on={on}
-                onClick={() => toggleLayer(layer)}
-                className={`press flex items-center gap-1.5 rounded-pill px-2.5 py-1.5 text-small font-semibold transition-colors ${
-                  on ? 'bg-ink/[0.06] text-ink' : 'text-muted hover:bg-ink/[0.04]'
-                }`}
-              >
-                <span
-                  aria-hidden="true"
-                  className={`h-2.5 w-2.5 shrink-0 rounded-pill ${
-                    on ? LAYER_DOT[layer] : `border-2 ${LAYER_RING[layer]}`
-                  }`}
-                />
-                <span className={on ? '' : 'line-through decoration-1'}>{t(`cal.layer_${layer}`)}</span>
-              </button>
-            )
-          })}
         </div>
       </header>
 

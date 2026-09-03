@@ -77,9 +77,12 @@ export function TopBar({ title, right, sub, back, backLabel }) {
   )
 }
 
-export function Section({ title, children, action }) {
+/* `className` so a caller can place one in a grid. It is appended rather than
+   replacing pt-section, because every Section in the app is spaced by that and
+   a prop that silently removes it would break the page it was added to. */
+export function Section({ title, children, action, className = '' }) {
   return (
-    <section className="pt-section">
+    <section className={`pt-section ${className}`}>
       {(title || action) && (
         <div className="mb-5 flex items-baseline justify-between gap-4">
           {title && <h2 className="eyebrow">{title}</h2>}
