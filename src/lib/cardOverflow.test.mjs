@@ -31,7 +31,7 @@
  * subtlety, it is somebody adding a new card or restyling an old one and not
  * knowing this rule exists.
  */
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 
@@ -135,18 +135,19 @@ for (const [file, re, what] of surfaces) {
 }
 
 /**
- * The check-in no longer prints a commitment anywhere, and this is what stops
- * one reappearing without text-safe on it.
+ * The check-in screen is gone entirely, and that is the assertion now.
  *
- * A single unbroken word has nowhere to wrap: it does not truncate, it spills
- * off the card. That is the failure this whole file exists for, and the
- * check-in screen was one of the four surfaces carrying user text. It is now
- * proof and praise only, so the correct assertion is absence.
+ * It was one of the four surfaces carrying user text. Then the check-in moved
+ * onto this page and it held only proof and praise, so the assertion was that
+ * it printed no commitment. Now proof and praise are sections on the goals
+ * page and the file itself has been deleted, so the honest check is that it
+ * has not come back: a screen re-added under that name would arrive without
+ * any of this file's containment on it.
  */
 ok(
-  'the proof screen does not draw a goal title of its own',
-  !/commitment/.test(read('src/pages/Checkin.jsx')),
-  'if one comes back it needs text-safe, like every other surface here',
+  'the old check-in screen is gone rather than emptied',
+  !existsSync(join(root, 'src/pages/Checkin.jsx')),
+  'proof and praise are sections on the goals page now',
 )
 /**
  * The daily question is a carousel now, and it DOES print the commitment: one

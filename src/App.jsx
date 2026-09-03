@@ -14,7 +14,6 @@ import Seo from './components/Seo'
 import Wordmark from './components/Wordmark'
 import Welcome from './pages/Welcome'
 import Board from './pages/Board'
-import Checkin from './pages/Checkin'
 import Proofs from './pages/Proofs'
 import Goals from './pages/Goals'
 import GoalEditor from './pages/GoalEditor'
@@ -40,6 +39,12 @@ import Reader from './pages/Reader'
 function LecturesRedirect() {
   const { slug } = useParams()
   return <Navigate to={`/library/${slug}`} replace />
+}
+
+/** The old check-in tab. See the note on its route below. */
+function CheckinRedirect() {
+  const { groupId } = useParams()
+  return <Navigate to={`/g/${groupId}/goals`} replace />
 }
 
 /** A full screen with a sentence on it. Used for the one case that has
@@ -330,7 +335,21 @@ function Gate() {
 
         <Route path="g/:groupId">
           <Route index element={<Board />} />
-          <Route path="checkin" element={<Checkin />} />
+          {/**
+           * /checkin was a screen and is now a redirect.
+           *
+           * It held the check-in, then held only proof and praise once the
+           * check-in moved onto the goal cards, and that leftover was a page
+           * made of two links. Both jobs live on the goals page now.
+           *
+           * The path stays because links to it exist outside this app: in
+           * push notifications already delivered, in browser history, and in
+           * whatever anybody pasted into a chat. Deleting the route would
+           * turn those into the catch-all, which is the dashboard, and
+           * somebody following "you have not checked in" would arrive
+           * somewhere that does not mention it.
+           */}
+          <Route path="checkin" element={<CheckinRedirect />} />
         <Route path="proofs" element={<Proofs />} />
           <Route path="goals" element={<Goals />} />
           <Route path="goals/new" element={<GoalEditor />} />

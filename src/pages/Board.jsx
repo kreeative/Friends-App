@@ -253,7 +253,7 @@ export default function Board() {
           {!iHaveChecked && openCount > 0 && (
             <div className="mt-4">
               <Link
-                to={`/g/${activeId}/checkin`}
+                to={`/g/${activeId}/goals`}
                 className="text-small text-ink underline-offset-4 hover:underline"
               >
                 {t('board.things_to_look_at', { n: openCount })}

@@ -70,31 +70,25 @@ const MINE = [
 const CALENDAR = { to: '/calendar', key: 'nav.calendar', icon: 'calendar' }
 
 /**
- * Four tabs, and Proof is not one of them.
+ * THREE TABS. BRAVO IS GONE AND THIS IS THE SECOND HALF OF ONE MOVE.
  *
- * It was a fifth, and a fifth is where a bar of this width starts truncating:
- * "Faire le p…", "Object…". It also described a place rather than a thing you
- * do, which is the odd one out here, and it split a single act in two. A photo
- * is proof OF a check-in. Attaching one belongs in the same screen as the
- * thing it is evidence for, and the gallery belongs directly under the form
- * that fills it.
+ * That tab was the check-in. The check-in moved onto the goals page, where the
+ * goals already are, and what was left behind was a destination whose entire
+ * content was two buttons and an empty state: "Proof" and "Celebrate", both of
+ * which only led somewhere else. A tab that exists to offer two links is a
+ * menu with a page around it.
  *
- * The route stays. Anybody with the page open or a link to it still gets it,
- * and the check-in links straight through for the full grid.
+ * So the two jobs went to the page they were always about. Proof is evidence
+ * OF a goal, so the gallery sits under the goal cards; a compliment is the
+ * thing you think of while looking at how the week went, so it sits under
+ * them too. One screen answers "what did I commit to, what did I do about it,
+ * and who else did well", which was three screens and is one act.
+ *
+ * The route stays and redirects. Every link anybody has, and the three places
+ * inside the app that pointed at it, now land on the goals page.
  */
 const IN_GROUP = (id) => [
   { to: `/g/${id}`, key: 'nav.board', end: true, icon: 'board' },
-  /**
-   * Proof and praise, which is what this destination is now.
-   *
-   * It was the check-in, and the check-in has moved onto the goal cards where
-   * the goals are. What was left on that screen was the gallery and the
-   * compliment, so the tab says what it now holds rather than what it used to.
-   *
-   * The route keeps /checkin. Renaming it would break every link anybody has
-   * and the path is not what the screen is called.
-   */
-  { to: `/g/${id}/checkin`, key: 'nav.checkin', icon: 'checkin' },
   { to: `/g/${id}/goals`, key: 'nav.goals', icon: 'goals' },
   { to: `/g/${id}/settings`, key: 'nav.group', icon: 'group' },
 ]

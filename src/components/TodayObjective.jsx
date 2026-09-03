@@ -133,7 +133,7 @@ export default function TodayObjective({ cycle, goals, doneGoalIds, groupId, onM
                 would take the "one tap" out of the one-tap card. */}
             {groupId && (
               <Link
-                to={`/g/${groupId}/checkin`}
+                to={`/g/${groupId}/goals`}
                 className="text-small font-semibold text-on-field/70 underline-offset-4 hover:underline"
               >
                 {t('board.add_proof')}

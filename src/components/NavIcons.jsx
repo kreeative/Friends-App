@@ -117,14 +117,9 @@ export const IconBoard = (p) => (
   </svg>
 )
 
-/* Checking in. A tick inside a ring rather than a bare tick, which reads as
-   "done" and belongs to a completed goal instead. */
-export const IconCheckin = (p) => (
-  <svg {...S} {...p}>
-    <circle cx="12" cy="12" r="8.2" />
-    <path d="M8.4 12.3l2.5 2.5 4.7-5" />
-  </svg>
-)
+/* IconCheckin was the Bravo tab's glyph. That tab is gone: the check-in is on
+   the goals page and so are the proof and the praise that were left behind on
+   it. Nothing in the nav tables names `checkin` any more. */
 
 /* Two people, for the group itself. */
 export const IconGroup = (p) => (
@@ -149,6 +144,5 @@ export const NAV_ICON = {
   calendar: IconCalendar,
   bell: IconBell,
   board: IconBoard,
-  checkin: IconCheckin,
   group: IconGroup,
 }

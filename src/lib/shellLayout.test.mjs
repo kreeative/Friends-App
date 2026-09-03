@@ -24,7 +24,7 @@
  * the tab bar's and the phone layout looked broken when it was not. The
  * assertion below pins the class that actually distinguishes them.
  */
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 
@@ -353,29 +353,108 @@ ok(
     /<div className="relative z-10">/.test(shell),
 )
 
-/* --- the check-in has three steps now, not four ------------------------- */
+/* --- the check-in screen is gone, and so is the tab that outlived it ----- */
 
 /**
- * "Ensuite" is gone. The column and the RPC parameter stay, per the request to
- * leave the schema alone, so old rows keep whatever they recorded; nothing
- * writes a new one and nothing displays it.
+ * BRAVO WAS A PAGE MADE OF TWO LINKS, AND THIS IS WHAT KEEPS IT GONE.
+ *
+ * The tab was the check-in. The check-in moved onto the goals page, and what
+ * was left on that route was a destination whose whole content was "Proof" and
+ * "Celebrate", both of which only led somewhere else. Both jobs are sections
+ * on the goals page now, so the screen has been deleted rather than emptied
+ * again.
+ *
+ * The route survives as a redirect on purpose: links to /checkin exist in push
+ * notifications already delivered, in browser history, and in whatever anybody
+ * pasted into a chat. Without it those fall through to the catch-all, which is
+ * the dashboard, and somebody following "you have not checked in" lands
+ * somewhere that does not mention it.
  */
-const checkin = read('src/pages/Checkin.jsx')
-ok('the next-time step is gone from the wizard', !/id: 'next'/.test(checkin))
-ok('and its pane with it', !/pane === 'next'/.test(checkin))
-ok('nothing writes a next commitment any more', !/next_commitment/.test(checkin))
 ok(
-  'and the board does not show one that can no longer be written',
-  !/next_commitment/.test(read('src/pages/Board.jsx')),
+  'the check-in screen is deleted, not emptied',
+  !existsSync(join(root, 'src/pages/Checkin.jsx')),
 )
 ok(
-  'the icon it used is not left behind',
-  !/ForwardIcon/.test(read('src/components/ActionBar.jsx')),
+  'the tab is out of the group nav',
+  !/nav\.checkin/.test(shell) && !/g\/\$\{id\}\/checkin/.test(shell),
+)
+ok(
+  'but the route still resolves, as a redirect',
+  /path="checkin" element=\{<CheckinRedirect \/>\}/.test(read('src/App.jsx')) &&
+    /Navigate to=\{`\/g\/\$\{groupId\}\/goals`\}/.test(read('src/App.jsx')),
+  'a dead link from a push notification would otherwise land on the dashboard',
+)
+for (const [file, what] of [
+  ['src/pages/Board.jsx', 'the board'],
+  ['src/pages/Dashboard.jsx', 'the dashboard'],
+  ['src/components/TodayObjective.jsx', "today's objective"],
+]) {
+  ok(
+    `${what} sends people to the goals page, not through the redirect`,
+    !/\/checkin`/.test(read(file)),
+    'a redirect is for links we do not control, not for our own',
+  )
+}
+/* Comments stripped first, like cycCode below. The first version of this
+   assertion failed against a codebase that was already correct, because the
+   note explaining WHY CameraIcon was removed names CameraIcon. */
+const code = (p) => read(p).replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '')
+ok(
+  'the glyphs it used are not left behind',
+  !/ForwardIcon|CameraIcon|PartyIcon/.test(code('src/components/ActionBar.jsx')) &&
+    !/IconCheckin/.test(code('src/components/NavIcons.jsx')),
   'an exported glyph with no caller is the start of a sprite sheet',
 )
 ok(
   'and neither are its strings',
-  !/checkin\.tab_next|checkin\.one_thing|'board\.next'/.test(read('src/lib/i18n.jsx')),
+  !/checkin\.tab_next|checkin\.one_thing|'board\.next'|'nav\.checkin'|'checkin\.tab_proof'|'checkin\.tab_celebrate'/.test(
+    read('src/lib/i18n.jsx'),
+  ),
+)
+ok(
+  'the board does not show a next commitment that can no longer be written',
+  !/next_commitment/.test(read('src/pages/Board.jsx')),
+)
+
+/**
+ * THE DAILY QUESTION RUNS IN BOTH MODES, AND THEY WRITE TO DIFFERENT TABLES.
+ *
+ * A group goal is answered into a cycle: submit_checkin upserts the whole
+ * checkin_items list, which is why the group branch posts every answer. A solo
+ * goal has no cycle, because cycles.group_id is not null, so it is written to
+ * goal_days one row at a time through the same setGoalDay the card's tick
+ * calls. Asserting the split is asserting that neither branch was quietly
+ * pointed at the other's table.
+ */
+const goalsPage = read('src/pages/Goals.jsx')
+ok(
+  'the check-in opens for a solo goal too',
+  /const openSolo = !groupId/.test(goalsPage) &&
+    /const open = openGroup \|\| openSolo/.test(goalsPage),
+)
+ok(
+  'solo writes goal_days through setGoalDay, not the cycle queue',
+  /if \(openSolo\)[\s\S]{0,900}setGoalDay\(g, count, now\)/.test(goalsPage),
+)
+ok(
+  'and the cycle queue is still what a group answer goes through',
+  /enqueue\(\{ cycle_id: currentCycle\.id/.test(goalsPage),
+)
+ok(
+  'the evidence picker is off where there is nowhere to store it',
+  /proof=\{openGroup\}/.test(goalsPage) &&
+    /wantProof && proof !== 'none'/.test(read('src/components/CheckinCarousel.jsx')),
+  'goal_days has a count and a date and no column for a photograph',
+)
+ok(
+  'sitting a period out stays group-only',
+  /\{openGroup && \(/.test(goalsPage),
+  'away_periods is keyed by cycle_id, and nobody needs to notify themselves',
+)
+ok(
+  'the card keeps its one-tap tick on solo goals',
+  /const tracks = !groupId/.test(goalsPage),
+  'routing "drink water" through a banner and a modal is three taps for one fact',
 )
 
 /* The second door to the calendar is gone. It existed because the bottom bar
@@ -927,7 +1006,7 @@ ok(
  * assert the separation in both directions, because the tempting fix next time
  * something feels far away is to put a control back on a card.
  */
-const goalsPage = read('src/pages/Goals.jsx')
+/* goalsPage is read once, up with the Bravo assertions. */
 const carousel = read('src/components/CheckinCarousel.jsx')
 const gcard = read('src/components/GoalCard.jsx')
 
@@ -1044,30 +1123,42 @@ ok(
   'a due date is optional on a one-off, so the missing case is ordinary',
 )
 
-/* --- and the old screen is proof and praise ----------------------------- */
+/* --- and where proof and praise ended up -------------------------------- */
 
+/**
+ * These five used to read Checkin.jsx, asserting that the goals pane, the
+ * Submit, the away button and their leftover identifiers had gone from it. The
+ * file is deleted now, which subsumes all of them: its absence is asserted up
+ * with the Bravo block.
+ *
+ * What replaces them is the other half of that move. The two jobs the screen
+ * was carrying had to land somewhere, and "the page is gone" is only half an
+ * answer. These check they arrived.
+ */
 ok(
-  'the goals pane is gone from the old check-in screen',
-  !/pane === 'goals'/.test(checkin),
-  'two copies of the same list is what this was moved to remove',
+  'the proof strip is on the goals page',
+  /data-hook="goals-proof"/.test(goalsPage) &&
+    /<ProofGallery groupId=\{groupId\}/.test(goalsPage),
 )
 ok(
-  'so is the Submit that went with it',
-  !/checkin\.submit/.test(checkin),
-  'a button sending answers filled in on another page is a second source of truth',
+  'with the full grid still one link away',
+  /data-hook="goals-proof-all"/.test(goalsPage) && /\/proofs`/.test(goalsPage),
+  '/proofs already existed behind the same link from the tab that is gone',
 )
 ok(
-  'and the away button',
-  !/checkin\.away/.test(checkin),
+  'and the compliment is there, behind a button rather than open',
+  /data-hook="goals-celebrate-open"/.test(goalsPage) && /<CelebrateStep/.test(goalsPage),
+  'a face row and a textarea between the goals and the archive, every day, unasked',
 )
 ok(
-  'nothing left over references the answers it no longer owns',
-  !/\banswers\[/.test(checkin) && !/setAnswers/.test(checkin),
-  'a free identifier is a runtime ReferenceError that the build does not catch',
+  'both are group-only, because both read a group',
+  (goalsPage.match(/\{groupId && \(/g) ?? []).length >= 2,
+  'group_proofs is a group view and celebrate() posts to a group',
 )
 ok(
-  'and the imports it stopped using are gone',
-  !/enqueue|proofFields|outcomeFor|ProofField/.test(checkin),
+  'the strip refreshes when the carousel attaches a photo',
+  /setProofTick\(\(n\) => n \+ 1\)/.test(goalsPage),
+  'it loads once on mount, which is the whole of "my photo did not appear"',
 )
 
 console.log(`\n  ${pass} passed, ${fail} failed\n`)

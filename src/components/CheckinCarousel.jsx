@@ -37,7 +37,15 @@ import ProofField from './ProofField'
  * single-goal check-in and delete the rest. The page already reads the
  * existing check-in for the same reason.
  */
-export default function CheckinCarousel({ goals = [], answers = {}, onChange, onDone, onClose, busy = false }) {
+/**
+ * @param proof  whether to ask for evidence. False on a goal you keep on your
+ *   own, and that is a storage fact rather than a taste one: proof rides on a
+ *   checkin_item, checkin_items hang off a cycle, and cycles.group_id is not
+ *   null. A solo goal is written to goal_days, which has a count and a date and
+ *   nowhere to put a photograph. Showing the picker anyway would take a file
+ *   somebody chose and drop it.
+ */
+export default function CheckinCarousel({ goals = [], answers = {}, onChange, onDone, onClose, busy = false, proof: wantProof = true }) {
   const { t } = useT()
   const [i, setI] = useState(0)
   const [finished, setFinished] = useState(false)
@@ -189,7 +197,7 @@ export default function CheckinCarousel({ goals = [], answers = {}, onChange, on
                 </div>
               )}
 
-              {proof !== 'none' && (
+              {wantProof && proof !== 'none' && (
                 <div className="mt-6 border-t border-hairline pt-5">
                   <p className="field-label">{goal.evidence_def || t(`proof.want_${proof}`)}</p>
                   <ProofField

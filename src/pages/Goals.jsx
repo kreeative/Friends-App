@@ -7,12 +7,15 @@ import { enqueue, flush } from '../lib/queue'
 import { cheer } from '../lib/burst'
 import { cyclePhase } from '../lib/time'
 import { useT } from '../lib/i18n'
-import { dueOn, outcomeFor } from '../lib/schedule'
+import { dueOn, outcomeFor, targetFor } from '../lib/schedule'
+import { countOn, progressFor } from '../lib/streak'
 import { proofFields, proofTypeOf } from '../lib/proofKinds'
 import { errorText } from '../lib/dberr'
 import { Empty, Screen, Section, TopBar } from '../components/ui'
 import GoalCard from '../components/GoalCard'
 import CheckinCarousel from '../components/CheckinCarousel'
+import ProofGallery from '../components/ProofGallery'
+import CelebrateStep from '../components/CelebrateStep'
 
 /**
  * Goals, in a group or on your own.
@@ -31,7 +34,10 @@ const LIVE = new Set(['active', 'paused'])
 export default function Goals() {
   const { user } = useAuth()
   const { groupId } = useParams()
-  const { goals, soloGoals, members, myRole, cycles, cadence, currentCycle, reloadGroup } = useGroup()
+  const {
+    goals, soloGoals, members, myRole, cycles, cadence, currentCycle, reloadGroup,
+    dayIndex, setGoalDay,
+  } = useGroup()
   const { t } = useT()
   /**
    * Open by default.
@@ -72,25 +78,48 @@ export default function Goals() {
    */
   const canDelete = (g) => g.owner_id === user?.id || (Boolean(groupId) && myRole === 'admin')
 
-  /* The daily tick belongs to goals with no group. Inside a group the check-in
-     asks this question on the card itself, and answering it twice would be two
-     records of one day that can disagree. */
+  /**
+   * The card's own one-tap tick, on solo goals only.
+   *
+   * IT STAYS, EVEN THOUGH THE CAROUSEL NOW ASKS THE SAME QUESTION.
+   *
+   * Two controls for one fact is usually the second-source-of-truth mistake
+   * this file keeps warning about, and here it is not: both write through
+   * setGoalDay, and both read their state back out of dayIndex, so there is
+   * exactly one record and one reader. They cannot disagree because there is
+   * nothing for them to disagree about.
+   *
+   * Keeping it is the point. "Drink water" is one tap on the card; routing
+   * that through a banner and a modal would be three to record the same thing.
+   * The carousel is for the pass over everything due, the tick is for the one
+   * goal you came to mark.
+   */
   const tracks = !groupId
 
   /**
-   * THE CHECK-IN, ON THIS PAGE, ON EACH CARD.
+   * THE CHECK-IN, ON THIS PAGE, IN BOTH MODES.
    *
    * It was a separate screen listing the same goals again with one Submit at
-   * the bottom. Answering where the goal already is, is the shorter sentence,
-   * and a button per card means somebody can answer the one goal they care
-   * about and close the app having recorded it.
+   * the bottom, then a control on every card, and it is now a banner and a
+   * carousel. This page is the only place the daily question is asked.
    *
-   * Only inside a group and only while the period is open. A solo goal already
-   * has its own daily tick above, and a shut period is a thing you cannot
-   * write into.
+   * IT RUNS SOLO TOO, AND THE TWO MODES WRITE TO DIFFERENT TABLES.
+   *
+   * That difference is not a detail to paper over. A group goal is answered
+   * into a cycle: submit_checkin upserts a checkins row and the whole
+   * checkin_items list under it, which is why saving one card has to post all
+   * of them. A solo goal has no cycle at all, because cycles.group_id is not
+   * null, so migration 32 gave it goal_days: one row per goal per day, a count
+   * and a date. See src/lib/streak.js.
+   *
+   * So `open` splits in two. A group is open while its period is, and a shut
+   * period is a thing nobody can write into. Solo has no period to be shut, so
+   * it is open whenever there is anything due.
    */
   const phase = cyclePhase(currentCycle, cycles, cadence)
-  const open = Boolean(groupId) && Boolean(currentCycle) && phase === 'open'
+  const openGroup = Boolean(groupId) && Boolean(currentCycle) && phase === 'open'
+  const openSolo = !groupId
+  const open = openGroup || openSolo
 
   /* Which goals today actually has an answer for. A twice-a-week goal on a
      Thursday and a one-off due in October are not questions today can answer,
@@ -139,7 +168,7 @@ export default function Goals() {
    * starts from blank, which is the old behaviour.
    */
   useEffect(() => {
-    if (!open) return undefined
+    if (!openGroup) return undefined
     let dead = false
     ;(async () => {
       const { data } = await supabase
@@ -166,7 +195,35 @@ export default function Goals() {
     return () => {
       dead = true
     }
-  }, [open, currentCycle?.id, user?.id])
+  }, [openGroup, currentCycle?.id, user?.id])
+
+  /**
+   * The same seeding for solo, and it needs no request at all.
+   *
+   * goal_days for the last four hundred days is already in the context, which
+   * is where the cards get their ticks and their streaks. Reading it again
+   * over the wire would be a second copy of a number already on screen, and
+   * the two would disagree for as long as the request was in flight.
+   *
+   * `complete` rather than a stored outcome, because goal_days has no outcome
+   * column: it has a count. A once-a-day goal is done when the count reached
+   * its target, which is what progressFor already works out for the card.
+   */
+  useEffect(() => {
+    if (!openSolo) return
+    const seeded = {}
+    const now = new Date()
+    for (const g of live) {
+      const p = progressFor(g, dayIndex, now)
+      if (!p.due) continue
+      const done = countOn(dayIndex, g.id, p.day)
+      if (done <= 0) continue
+      seeded[g.id] = { count: done, outcome: p.complete ? 'done' : undefined }
+    }
+    setAnswers(seeded)
+    answersRef.current = seeded
+    setSavedAt(Object.fromEntries(Object.keys(seeded).map((k) => [k, true])))
+  }, [openSolo, live, dayIndex])
 
   const set = (goalId, patch) => {
     setAnswers((a) => {
@@ -187,7 +244,57 @@ export default function Goals() {
    */
   const saveAll = useCallback(
     async () => {
-      if (saving || !currentCycle) return
+      if (saving) return
+
+      /**
+       * SOLO SAVES ONE ROW PER GOAL AND NOTHING ELSE.
+       *
+       * There is no cycle to enqueue against and no RPC that takes a list, so
+       * this is not the group path with a different table name: it is a write
+       * per answered goal through setGoalDay, which is the same call the card's
+       * tick makes. That is deliberate. Two controls writing the same fact by
+       * two different routes is how they come to disagree; both go through the
+       * one function that owns goal_days, so there is nothing to reconcile.
+       *
+       * Only the goals due today, unlike the group branch below. goal_days is
+       * keyed by date, so writing a goal that is not due today would file an
+       * answer under a day that did not ask the question.
+       */
+      if (openSolo) {
+        setSaving('all')
+        setStuck(null)
+        const current = answersRef.current
+        const now = new Date()
+        const written = []
+        let firstError = null
+        for (const g of live) {
+          const a = current[g.id]
+          if (!a) continue
+          if (!progressFor(g, dayIndex, now).due) continue
+          /* An explicit "pas encore" is a zero, which setGoalDay stores by
+             deleting the row. Leaving the old count would mean answering
+             "not yet" had no effect at all. */
+          const count = a.outcome === 'missed' ? 0 : (a.count ?? (a.outcome === 'done' ? targetFor(g) : 0))
+          const { error } = await setGoalDay(g, count, now)
+          if (error) {
+            firstError = firstError ?? error
+            continue
+          }
+          written.push({ goal_id: g.id, count_done: count })
+        }
+
+        if (firstError) {
+          setStuck({ rejected: true, detail: errorText(firstError) })
+          setSaving(null)
+          return
+        }
+        if (written.some((it) => it.count_done > 0)) cheer()
+        setSavedAt(Object.fromEntries(written.map((it) => [it.goal_id, true])))
+        setSaving(null)
+        return
+      }
+
+      if (!currentCycle) return
       setSaving('all')
       setStuck(null)
 
@@ -224,10 +331,14 @@ export default function Goals() {
       if (items.some((it) => it.count_done > 0 || it.outcome === 'done')) cheer()
 
       setSavedAt(Object.fromEntries(items.map((it) => [it.goal_id, true])))
+      /* The gallery below loads once and cannot know a photo was just attached
+         in the carousel. Without this the strip keeps showing the set it had
+         on mount, which is the whole of "my photo did not appear". */
+      setProofTick((n) => n + 1)
       await reloadGroup()
       setSaving(null)
     },
-    [live, currentCycle, saving, reloadGroup],
+    [live, currentCycle, saving, reloadGroup, openSolo, dayIndex, setGoalDay],
   )
 
   const markAway = async () => {
@@ -254,6 +365,32 @@ export default function Goals() {
    * goal at a time. See components/CheckinCarousel.jsx.
    */
   const [carousel, setCarousel] = useState(false)
+
+  /**
+   * PROOF AND PRAISE, WHICH USED TO BE A TAB OF THEIR OWN.
+   *
+   * The Bravo tab was the check-in. When the check-in moved onto this page,
+   * what was left there was a destination whose whole content was two buttons
+   * and an empty state, and both buttons led somewhere else. A tab that exists
+   * to offer two links is a menu with a page around it.
+   *
+   * Both belong here. Proof is evidence OF a goal, so the gallery goes under
+   * the goal cards rather than a tab away from them; a compliment is what
+   * somebody thinks of while looking at how the week went, which is this
+   * screen. One page now answers "what did I commit to, what did I do about
+   * it, and who else did well".
+   *
+   * GROUP ONLY. Both read from a group: the gallery is the group's proof and
+   * the compliment is addressed to a member. On /goals with no group there is
+   * neither a feed to show nor anybody to send to.
+   */
+  const [proofTick, setProofTick] = useState(0)
+  const [party, setParty] = useState({ receiverId: null, message: '' })
+  /* Closed until asked for, which is what CelebrateStep's own note asks of
+     its host: it costs nothing until somebody wants it, and wanting it is one
+     tap. Open by default it would be a face row and a textarea between the
+     goals and the archive on a day nobody meant to write anything. */
+  const [celebrating, setCelebrating] = useState(false)
 
   /* The goals the banner is about, in a stable order so the carousel does not
      reshuffle under somebody halfway through it. */
@@ -334,6 +471,9 @@ export default function Goals() {
           onDone={saveAll}
           onClose={() => setCarousel(false)}
           busy={saving !== null}
+          /* No evidence picker on a solo goal: goal_days has a count and a
+             date and nowhere to put a photograph. See the note on the prop. */
+          proof={openGroup}
         />
       )}
 
@@ -392,24 +532,94 @@ export default function Goals() {
       )}
 
       {/**
-       * A write that did not land, and the way to sit a period out.
+       * The proof, directly under the goals it is proof of.
        *
-       * Both belong to the CYCLE rather than to any one goal, which is why
-       * they are here and not on a card. "I am away" is a statement about the
-       * week; putting it on six cards would be six ways to say it once.
+       * A strip rather than the whole grid: this is the tail of a page about
+       * goals, not a gallery, and "See all" opens the full screen at /proofs
+       * for anybody who came to look through it. That route already existed
+       * behind the same link from the tab that is gone.
        */}
-      {open && (
-        <Section>
-          {stuck && (
-            <div className="mb-4" data-hook="goals-stuck">
-              <p className="text-small text-negative" role="alert">
-                {stuck.rejected ? t('checkin.refused') : t('checkin.queued')}
-              </p>
-              {stuck.detail && (
-                <p className="mt-1 break-words text-label text-muted">{stuck.detail}</p>
-              )}
-            </div>
+      {groupId && (
+        <Section
+          title={t('proof.title')}
+          action={
+            <Link
+              to={`/g/${groupId}/proofs`}
+              data-hook="goals-proof-all"
+              className="text-small text-ink underline-offset-4 hover:underline"
+            >
+              {t('proof.see_all')}
+            </Link>
+          }
+        >
+          <div data-hook="goals-proof">
+            <ProofGallery groupId={groupId} limit={6} refreshToken={proofTick} />
+          </div>
+        </Section>
+      )}
+
+      {/**
+       * And the compliment, which is the one thing on this page that is not
+       * about you.
+       *
+       * Behind a button because it is optional and should stay that way. There
+       * is no prompt, no suggested recipient and no count of how often anybody
+       * has used it: a nudge to say something nice produces things nobody
+       * means. CelebrateStep posts on its own, so nothing here waits on a save.
+       */}
+      {groupId && (
+        <Section title={t('celebrate.title')}>
+          {celebrating ? (
+            <CelebrateStep
+              groupId={groupId}
+              members={members}
+              value={party}
+              onChange={setParty}
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setCelebrating(true)}
+              data-hook="goals-celebrate-open"
+              className="goal-action press"
+            >
+              {t('celebrate.open')}
+            </button>
           )}
+        </Section>
+      )}
+
+      {/**
+       * A write that did not land. Shown in both modes, because both can fail
+       * and a save that quietly did nothing is the worst of the outcomes.
+       */}
+      {stuck && (
+        <Section>
+          <div data-hook="goals-stuck">
+            <p className="text-small text-negative" role="alert">
+              {stuck.rejected ? t('checkin.refused') : t('checkin.queued')}
+            </p>
+            {stuck.detail && (
+              <p className="mt-1 break-words text-label text-muted">{stuck.detail}</p>
+            )}
+          </div>
+        </Section>
+      )}
+
+      {/**
+       * And the way to sit a period out, which is GROUP ONLY.
+       *
+       * It belongs to the cycle rather than to any one goal, which is why it
+       * is here and not on a card: "I am away" is a statement about the week,
+       * and putting it on six cards would be six ways to say it once.
+       *
+       * There is no solo equivalent and inventing one would be wrong. away_periods
+       * is keyed by cycle_id, and more to the point, telling four people you
+       * are out this week is the whole act. Nobody needs to notify themselves
+       * that they are having a quiet week.
+       */}
+      {openGroup && (
+        <Section>
           <button
             type="button"
             onClick={markAway}

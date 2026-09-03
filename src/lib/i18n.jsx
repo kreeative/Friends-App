@@ -211,7 +211,6 @@ const STRINGS = {
     'board.things_to_look_at_one': '{n} thing to look at. Takes about a minute.',
     'board.things_to_look_at_other': '{n} things to look at. Takes about a minute.',
     'board.check_in': 'Check in',
-    'nav.checkin': 'Bravo',
     'settings.add_members': 'Add members',
     'settings.invite_link': 'Invite via link',
     'settings.invite_title': 'Invite somebody',
@@ -366,8 +365,6 @@ const STRINGS = {
     'checkin.saved_one': 'Saved',
     'checkin.proof_optional': 'Proof is optional.',
     'checkin.tab_goals': 'Progress',
-    'checkin.tab_proof': 'Proof',
-    'checkin.tab_celebrate': 'Celebrate',
     'celebrate.title': 'Celebrate a friend',
     'celebrate.prompt': 'Somebody in here did something worth saying out loud? This is optional, and it is not part of your check-in.',
     'celebrate.open': 'Say something',
@@ -1002,14 +999,12 @@ const STRINGS = {
     'start.join': 'Join',
     'start.joining': 'Joining',
 
-    'checkin.title': 'Proof & praise',
+    /* Named for the daily question again. It said "Proof & praise" while the
+       Bravo screen owned it; that screen is gone and the only thing reading
+       this now is the carousel's dialog label. */
+    'checkin.title': 'Today’s check-in',
     'checkin.closes_in': 'Closes in {t}',
     'checkin.window_closed': 'Window closed',
-    'checkin.between': 'Between days',
-    'checkin.between_body':
-      'Yesterday is finished and the new day starts in {t}. You will have the whole day to write it, not just the evening.',
-    'checkin.no_cycle_body':
-      'This group has no check-in window yet. The first one is being set up. It will appear here on the day and hour the group chose.',
     'checkin.closed_body':
       'This cycle’s window has closed. The next one opens in {t}. Nothing to catch up on in the meantime.',
     'checkin.no_goals': 'No active goals yet. Add one first: a check-in needs something to check.',
@@ -1544,7 +1539,6 @@ const STRINGS = {
     'board.things_to_look_at_one': '{n} chose à regarder. Une minute suffit.',
     'board.things_to_look_at_other': '{n} choses à regarder. Une minute suffit.',
     'board.check_in': 'Faire le point',
-    'nav.checkin': 'Bravo',
     'settings.add_members': 'Ajouter des membres',
     'settings.invite_link': 'Inviter par lien',
     'settings.invite_title': 'Inviter quelqu’un',
@@ -1711,8 +1705,6 @@ const STRINGS = {
     'checkin.saved_one': 'Enregistre',
     'checkin.proof_optional': 'La preuve est facultative.',
     'checkin.tab_goals': 'Progrès',
-    'checkin.tab_proof': 'Preuves',
-    'checkin.tab_celebrate': 'Féliciter',
     'celebrate.title': 'Féliciter quelqu’un',
     'celebrate.prompt': 'Quelqu’un ici a fait un truc qui mérite d’être dit ? C’est facultatif, et ça ne fait pas partie de ton point.',
     'celebrate.open': 'Dire un mot',
@@ -2321,14 +2313,9 @@ const STRINGS = {
     'start.join': 'Rejoindre',
     'start.joining': 'Connexion',
 
-    'checkin.title': 'Preuves & bravos',
+    'checkin.title': 'Le point du jour',
     'checkin.closes_in': 'Ferme dans {t}',
     'checkin.window_closed': 'Fenêtre fermée',
-    'checkin.between': 'Entre deux jours',
-    'checkin.between_body':
-      'La journée passée est bouclée et la nouvelle commence dans {t}. Tu auras toute la journée pour l’écrire, pas seulement la soirée.',
-    'checkin.no_cycle_body':
-      'Ce groupe n’a pas encore de fenêtre de point. La première est en cours de création. Elle apparaîtra ici au jour et à l’heure choisis par le groupe.',
     'checkin.closed_body':
       'La fenêtre de ce cycle est fermée. La prochaine ouvre dans {t}. Rien à rattraper d’ici là.',
     'checkin.no_goals':
