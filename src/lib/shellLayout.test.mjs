@@ -1049,6 +1049,67 @@ const gcard = read('src/components/GoalCard.jsx')
 
 ok('there is a banner when something is due', /data-hook="checkin-banner"/.test(goalsPage))
 ok('with one thing to press', /data-hook="checkin-banner-open"/.test(goalsPage))
+
+/**
+ * THE BANNER IS TYPE ON THE PAGE, NOT A CARD.
+ *
+ * It was a `lg` sheet, which put a white rectangle directly above a column of
+ * white rectangles and made the daily question look like the first goal in the
+ * list. Measured in Chromium at 430 and 1024 after the change: background
+ * rgba(0,0,0,0), no shadow, no class list at all on the wrapper.
+ */
+ok(
+  'the check-in banner has no card round it',
+  /data-hook="checkin-banner"[\s\S]{0,200}/.test(goalsPage) &&
+    !/className="lg overflow-hidden px-5 py-4"\s*\n\s*data-hook="checkin-banner"/.test(goalsPage) &&
+    !/<div\s*\n\s*className="lg[^"]*"\s*\n\s*data-hook="checkin-banner"/.test(goalsPage),
+  'a white rectangle above a column of white rectangles is another goal card',
+)
+
+/**
+ * AND THE SLIDE IS SHAPED LIKE A NUDGE CARD, WITH VALIDATE AT THE BOTTOM.
+ *
+ * "un peu comme les notifications dans le groupe": heading, a grey line under
+ * it, the control, one full-width action. What it replaces is dialog chrome, a
+ * bordered header and a bordered footer holding Precedent and Suivant, which
+ * made a small card read as a wizard and made the button that RECORDS the
+ * answer look like the one that skips it.
+ *
+ * Measured at 430 and 1024: the action spans 88% and 81% of the sheet, which
+ * is its full width inside px-6, and there are zero divider rules left.
+ */
+ok(
+  'the slide action is full width, like the nudge card it is modelled on',
+  /data-hook="carousel-next"[\s\S]{0,200}className="btn-primary press w-full"/.test(carousel),
+)
+ok(
+  'and it says what pressing it does',
+  /t\('checkin\.validate'\)/.test(carousel) &&
+    /'checkin\.validate': 'Valider'/.test(read('src/lib/i18n.jsx')) &&
+    /'checkin\.validate': 'Confirm'/.test(read('src/lib/i18n.jsx')),
+  '"Suivant" describes paging, not answering',
+)
+ok(
+  'back only exists once there is somewhere to go back to',
+  /\{i > 0 && \(/.test(carousel) && !/disabled=\{i === 0\}/.test(carousel),
+  'a permanently disabled control on card one of two teaches people it does nothing',
+)
+ok(
+  'the dialog rules are gone from the slide',
+  !/border-b border-hairline px-5 py-4/.test(carousel) &&
+    !/border-t border-hairline px-5 py-4/.test(carousel),
+  'three rules across a card this small read as a wizard',
+)
+ok(
+  'the goal is the heading and the question is the line under it',
+  /data-hook="carousel-title"[\s\S]{0,120}goal\.commitment[\s\S]{0,400}t\('checkin\.carousel_q'\)/.test(carousel),
+  'the goal is what somebody is looking for, so it goes first',
+)
+ok(
+  'and the French question is a question rather than a dangling colon',
+  !/'checkin\.carousel_q': 'As-tu realise :'/.test(read('src/lib/i18n.jsx')),
+  'the colon introduced the goal, which now sits above it',
+)
 ok('and it opens a carousel', /data-hook="checkin-carousel"/.test(carousel))
 ok(
   'which asks one goal at a time',

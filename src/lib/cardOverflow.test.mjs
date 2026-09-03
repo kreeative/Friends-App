@@ -157,11 +157,25 @@ ok(
  * So it needs containment like every other surface here. A single unbroken
  * word has nowhere to wrap; it does not truncate, it spills.
  */
+/**
+ * Keyed to the hook and the one class that matters, not to the whole class
+ * list.
+ *
+ * This pinned the exact string `className="text-safe mt-1 text-h2 font-semibold
+ * text-ink" data-hook="carousel-title"` and broke the moment the slide was
+ * restyled, on a change that kept text-safe throughout. It reported a
+ * containment failure that was not one, which is worse than reporting nothing:
+ * the repo's own rule is that selectors keyed to class names have broken on
+ * every restyle and told us nothing about the app when they did.
+ *
+ * The contract is that the element carrying carousel-title also carries
+ * text-safe. That is what is asserted, in either attribute order.
+ */
+const carouselSrc = read('src/components/CheckinCarousel.jsx')
 ok(
   'the check-in carousel contains the commitment it prints',
-  /className="text-safe mt-1 text-h2 font-semibold text-ink" data-hook="carousel-title"/.test(
-    read('src/components/CheckinCarousel.jsx'),
-  ),
+  /className="[^"]*\btext-safe\b[^"]*"[^>]*data-hook="carousel-title"/.test(carouselSrc) ||
+    /data-hook="carousel-title"[^>]*className="[^"]*\btext-safe\b[^"]*"/.test(carouselSrc),
   'it is the heading of the card, so it is user text on a surface',
 )
 

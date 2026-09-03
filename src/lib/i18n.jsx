@@ -358,6 +358,9 @@ const STRINGS = {
     'checkin.carousel_q': 'Did you do it?',
     'checkin.carousel_step': '{n} of {total}',
     'checkin.carousel_finish': 'Finish',
+    /* The action that records this slide. It said "Next", which describes
+       paging rather than answering. */
+    'checkin.validate': 'Confirm',
     'checkin.carousel_done': 'Check-in done for today.',
     'checkin.carousel_done_sub': 'That is the whole thing. See you tomorrow.',
     'checkin.today_q': 'Did you do it today?',
@@ -1695,9 +1698,13 @@ const STRINGS = {
     'checkin.banner_cta': 'Faire mon check-in',
     'checkin.banner_done': "Aujourd'hui est enregistre.",
     'checkin.banner_again': 'Modifier une reponse',
-    'checkin.carousel_q': 'As-tu realise :',
+    /* A whole question, not a lead-in. It was "As-tu realise :" back when the
+       goal was printed after it; the goal is above it now and the colon had
+       nothing left to introduce. */
+    'checkin.carousel_q': "As-tu fait ca aujourd'hui ?",
     'checkin.carousel_step': '{n} sur {total}',
     'checkin.carousel_finish': 'Terminer',
+    'checkin.validate': 'Valider',
     'checkin.carousel_done': 'Bravo ! Check-in termine pour aujourd\u2019hui.',
     'checkin.carousel_done_sub': "C'est tout. A demain.",
     'checkin.today_q': "Tu l'as fait aujourd'hui ?",

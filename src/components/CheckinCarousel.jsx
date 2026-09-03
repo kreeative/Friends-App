@@ -122,7 +122,21 @@ export default function CheckinCarousel({ goals = [], answers = {}, onChange, on
           </div>
         ) : (
           <>
-            <div className="flex items-center justify-between gap-3 border-b border-hairline px-5 py-4">
+            {/**
+             * THE SLIDE IS SHAPED LIKE A NUDGE CARD.
+             *
+             * "un peu comme les notifications dans le groupe qui signalent
+             * quand quelqu'un n'est pas connecte": heading, a grey line of
+             * context under it, the thing itself, and one full-width action at
+             * the bottom. See NudgeBanner, which is the card being pointed at.
+             *
+             * What that replaces is a dialog chrome: a bordered header with a
+             * step count on the left and a cross on the right, and a bordered
+             * footer with Precedent and Suivant in it. Three rules across a
+             * card this small made it read as a wizard, and "Suivant" made the
+             * action look like paging rather than answering.
+             */}
+            <div className="flex items-start justify-between gap-3 px-6 pt-6">
               {/* How many there are, from the first card, so the end is
                   visible rather than discovered. */}
               <p className="text-label font-semibold uppercase tracking-[0.06em] text-muted">
@@ -133,17 +147,21 @@ export default function CheckinCarousel({ goals = [], answers = {}, onChange, on
                 onClick={onClose}
                 aria-label={t('cal.cancel')}
                 data-hook="carousel-close"
-                className="press -mr-1 h-9 w-9 shrink-0 rounded-pill text-muted hover:bg-ink/[0.06] hover:text-ink"
+                className="press -mr-2 -mt-2 h-9 w-9 shrink-0 rounded-pill text-muted hover:bg-ink/[0.06] hover:text-ink"
               >
                 &#215;
               </button>
             </div>
 
-            <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-5 py-6">
-              <p className="text-small text-muted">{t('checkin.carousel_q')}</p>
-              <h2 className="text-safe mt-1 text-h2 font-semibold text-ink" data-hook="carousel-title">
+            <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 pb-2 pt-3">
+              <h2 className="text-safe pr-2 text-h2 font-semibold leading-tight text-ink" data-hook="carousel-title">
                 {goal.commitment}
               </h2>
+              {/* The question moves UNDER the goal, in grey, where the nudge
+                  card puts "pas de nouvelles depuis deux semaines". The goal
+                  is what somebody is looking for; "as-tu realise" above it in
+                  the same size buried the one word that identifies the slide. */}
+              <p className="mt-1.5 text-small text-muted">{t('checkin.carousel_q')}</p>
 
               {goal.cadence === 'recurring' ? (
                 <div className="mt-8 flex items-center gap-4">
@@ -210,24 +228,41 @@ export default function CheckinCarousel({ goals = [], answers = {}, onChange, on
               )}
             </div>
 
-            <div className="flex items-center justify-between gap-3 border-t border-hairline px-5 py-4">
-              <button
-                type="button"
-                onClick={() => setI((n) => Math.max(0, n - 1))}
-                disabled={i === 0}
-                className="press rounded-pill px-4 py-2 text-small font-semibold text-muted disabled:opacity-30"
-              >
-                {t('cal.prev')}
-              </button>
+            {/**
+             * VALIDATE, FULL WIDTH, AT THE BOTTOM. Like the nudge card's
+             * "Je m'en occupe".
+             *
+             * It said "Suivant" before, sitting in a bordered footer next to
+             * "Precedent", and that is a description of paging rather than of
+             * answering: the button that RECORDS the answer looked like the
+             * button that skips it. "Valider" says what pressing it does, and
+             * the last one says the run is finished.
+             *
+             * Back is underneath and quiet, and it only exists once there is
+             * somewhere to go back to. A disabled control on the first card of
+             * two is a permanently grey button teaching people it does
+             * nothing.
+             */}
+            <div className="px-6 pb-6 pt-4">
               <button
                 type="button"
                 onClick={advance}
                 disabled={busy}
                 data-hook="carousel-next"
-                className="goal-action-done press"
+                className="btn-primary press w-full"
               >
-                {last ? t('checkin.carousel_finish') : t('cal.next')}
+                {last ? t('checkin.carousel_finish') : t('checkin.validate')}
               </button>
+              {i > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setI((n) => Math.max(0, n - 1))}
+                  data-hook="carousel-prev"
+                  className="press mt-2 w-full py-2 text-center text-small font-semibold text-muted transition-colors hover:text-ink"
+                >
+                  {t('cal.prev')}
+                </button>
+              )}
             </div>
           </>
         )}
