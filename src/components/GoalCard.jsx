@@ -1,4 +1,5 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useGroup } from '../context/GroupContext'
@@ -90,6 +91,90 @@ export default function GoalCard({
   /* Whether the overflow menu is open. Per card, so two cards cannot both be
      showing one. */
   const [menu, setMenu] = useState(false)
+  /**
+   * Where to draw it, in viewport coordinates, measured when it opens.
+   *
+   * The menu is portalled to document.body to escape the card's
+   * overflow-hidden, and the price of leaving the card is that it can no
+   * longer be placed by `right-0` relative to the button. So the button is
+   * measured instead.
+   *
+   * `flip` is not a nicety. The last card in a list sits near the bottom of
+   * the viewport, and a menu drawn downwards from it opens off the bottom of
+   * the screen: the same "cannot reach what it offers" as the clipping bug,
+   * arrived at from the other direction. When there is not room below, it
+   * hangs upwards from the button instead.
+   */
+  const [at, setAt] = useState(null)
+  const menuBtn = useRef(null)
+
+  const place = () => {
+    const el = menuBtn.current
+    if (!el) return null
+    const r = el.getBoundingClientRect()
+    /* Roughly what the menu needs: four rows at 2.375rem plus its padding.
+       Approximate on purpose, because the real height is not knowable until
+       it has rendered, and one frame of it in the wrong place is worse than a
+       few pixels of slack. */
+    const need = 200
+
+    /**
+     * The floor is the tab bar, not the bottom of the window.
+     *
+     * The bar is fixed over the page on phones, so the room below a button is
+     * the room down to IT. Measured at 41px of overlap when this used the
+     * viewport height: the menu still worked, because it stacks above the bar,
+     * but "Supprimer" sat on top of the navigation, which is a bad place to
+     * put the one action that cannot be undone.
+     *
+     * Queried rather than assumed, because the bar is `md:hidden` and its
+     * height moves with env(safe-area-inset-bottom).
+     */
+    const bar = document.querySelector('[data-hook="tab-bar"]')
+    const floor = (bar ? bar.getBoundingClientRect().top : window.innerHeight) - 8
+    const ceil = 8
+
+    /* Right edges aligned, which is what right-0 did before, then clamped to
+       both edges: min-w is 11rem and the viewport can be narrower than the
+       card's own margins would suggest. */
+    const left = Math.max(8, Math.min(r.right - 176, window.innerWidth - 184))
+
+    /* Below the button when it fits above the bar. */
+    if (r.bottom + 4 + need <= floor) return { left, top: r.bottom + 4, flip: false }
+    /* Otherwise above it, when THAT fits under the top of the screen. */
+    if (r.top - 4 - need >= ceil) return { left, top: r.top - 4, flip: true }
+    /* Neither: sit on the floor. A menu not quite touching its button is a
+       smaller problem than one hanging off the edge of the screen. */
+    return { left, top: floor, flip: true }
+  }
+
+  const openMenu = () => {
+    if (menu) return setMenu(false)
+    setAt(place())
+    setMenu(true)
+  }
+
+  /**
+   * Scrolling closes it rather than moving it.
+   *
+   * A fixed menu measured once and left alone detaches from its button the
+   * moment the page moves under it, and following the button costs a
+   * measurement on every scroll frame for a control open for two seconds.
+   * Closing is both cheaper and the behaviour every native menu has.
+   */
+  useEffect(() => {
+    if (!menu) return undefined
+    const shut = () => setMenu(false)
+    window.addEventListener('scroll', shut, true)
+    window.addEventListener('resize', shut)
+    const onKey = (e) => e.key === 'Escape' && setMenu(false)
+    window.addEventListener('keydown', onKey)
+    return () => {
+      window.removeEventListener('scroll', shut, true)
+      window.removeEventListener('resize', shut)
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [menu])
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState(null)
   const [ticking, setTicking] = useState(false)
@@ -432,8 +517,9 @@ export default function GoalCard({
         <div className="mt-4 flex justify-end">
           <div className="relative">
             <button
+              ref={menuBtn}
               type="button"
-              onClick={() => setMenu((v) => !v)}
+              onClick={openMenu}
               aria-expanded={menu}
               aria-haspopup="menu"
               aria-label={t('goal.actions')}
@@ -444,7 +530,24 @@ export default function GoalCard({
               <span aria-hidden="true" className="text-h2 leading-none">&#8943;</span>
             </button>
 
-            {menu && (
+            {/**
+             * THE MENU IS PORTALLED, AND THAT IS THE WHOLE FIX.
+             *
+             * It was `absolute` inside the card, and the card carries
+             * overflow-hidden a hundred lines up. An absolutely positioned
+             * child does not escape a clipping ancestor, and z-index has no
+             * say in it: z-50 stacks the menu above its siblings and the card
+             * still cuts it off at its own edge. What people saw was a sliver
+             * of a white sheet at the bottom of the card and no way to reach
+             * anything in it.
+             *
+             * The overflow-hidden is not the thing to remove. It is the
+             * backstop that stops a single unbroken word spilling out of the
+             * card, which is what the whole of cardOverflow.test.mjs exists
+             * for. So the menu leaves the card instead: rendered into
+             * document.body, positioned against the button's own rect.
+             */}
+            {menu && at && createPortal(
               <>
                 {/* A full-screen button behind the menu, so a tap anywhere
                     closes it. A click handler on the document would fire
@@ -453,12 +556,17 @@ export default function GoalCard({
                   type="button"
                   aria-label={t('goal.actions_close')}
                   onClick={() => setMenu(false)}
-                  className="fixed inset-0 z-40 cursor-default"
+                  className="fixed inset-0 z-[70] cursor-default"
                 />
                 <div
                   role="menu"
                   data-hook="goal-menu-items"
-                  className="lg lg-modal absolute right-0 z-50 mt-1 flex w-max min-w-[11rem] flex-col p-1.5"
+                  /* Fixed, so the coordinates are viewport coordinates and no
+                     scrolled ancestor has to be accounted for. Closed on
+                     scroll rather than followed, because a menu that chases
+                     the page is worse than one that gets out of the way. */
+                  style={{ position: 'fixed', top: at.top, left: at.left, ...(at.flip ? { transform: 'translateY(-100%)' } : null) }}
+                  className="lg lg-modal z-[71] flex w-max min-w-[11rem] flex-col p-1.5"
                 >
                   {editHref && (
                     <Link
@@ -499,7 +607,8 @@ export default function GoalCard({
                     </button>
                   )}
                 </div>
-              </>
+              </>,
+              document.body,
             )}
           </div>
         </div>
