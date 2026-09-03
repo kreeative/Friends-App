@@ -51,7 +51,7 @@ const shell = read('src/components/AppShell.jsx')
 ok('there is a side rail', /data-hook="side-rail"/.test(shell))
 ok(
   'the rail appears only from md up',
-  /hidden w-\[5\.5rem\] flex-col p-1\.5 md:flex/.test(shell),
+  /hidden w-\[3\.5rem\] flex-col p-1\.5 md:flex/.test(shell),
   'without md:flex it would show on a phone alongside the bottom bar',
 )
 ok(
@@ -72,12 +72,12 @@ ok(
 
 ok(
   'content is padded past the rail from md up',
-  /md:pl-\[7\.5rem\]/.test(shell),
-  '5.5rem of rail plus the 1rem it is inset by on each side',
+  /md:pl-\[5\.5rem\]/.test(shell),
+  '3.5rem of rail plus the 1rem it is inset by on each side',
 )
 ok(
   'and not padded below it',
-  !/\bpl-\[7\.5rem\](?!\])/.test(shell.replace(/md:pl-\[7\.5rem\]/g, '')),
+  !/\bpl-\[7\.5rem\](?!\])/.test(shell.replace(/md:pl-\[5\.5rem\]/g, '')),
   'a phone would be pushed off its own screen',
 )
 
@@ -119,14 +119,40 @@ ok(
   /'aria-hidden': 'true'/.test(icons),
   'the accessible name belongs to the link, not to the drawing',
 )
+/**
+ * ICONS ALONE, ASKED FOR, AND THE NAMES HAD TO GO SOMEWHERE.
+ *
+ * The 11px word under each icon existed because an icon-only rail puts its
+ * names in a hover tooltip and a tablet has no hover. That argument did not
+ * change; it was overruled, which is a different thing, and these are what
+ * stop the overrule costing a screen reader anything.
+ *
+ * An icon whose link has no text and no aria-label is an unlabelled link. This
+ * is the assertion that catches somebody removing one.
+ */
+/* Scoped to SideRail, and with a window big enough to hold one. The first
+   version searched the whole file at 700 characters and found ONE of the three
+   NavLinks: the rail's blocks are longer than that because of the comment
+   inside the className function, and the tab bar's link was being checked for
+   an aria-label it does not need, since its name is the word inside it. */
+const railSrc = shell.slice(shell.indexOf('function SideRail'), shell.indexOf('function TabBar'))
+const railLinks = railSrc.match(/<NavLink[\s\S]{0,2000}?<\/NavLink>/g) ?? []
+ok('the rail still has its links', railLinks.length >= 2, String(railLinks.length))
 ok(
-  'the rail draws an icon and a word, not an icon alone',
-  /<Icon className="h-5 w-5 shrink-0" \/>[\s\S]{0,120}<RailLabel>/.test(shell),
-  'a tablet has no hover, so a tooltip is not a label',
+  'no rail item is left unlabelled',
+  railLinks.every((l) => /aria-label=/.test(l)),
+  'the visible word is gone, so this is the only accessible name left',
 )
 ok(
-  'the bell in the rail is labelled too',
-  /placement === 'rail' &&[\s\S]{0,200}nav\.notifications/.test(read('src/components/NotificationBell.jsx')),
+  'and every one carries a tooltip as well',
+  railLinks.every((l) => /title=/.test(l)),
+  'the weakest affordance available without a printed word, and better than none',
+)
+ok('there is no label component left over', !/RailLabel/.test(shell))
+ok(
+  'the bell has both too',
+  /aria-label=\{count \?/.test(read('src/components/NotificationBell.jsx')) &&
+    /title=\{count \?/.test(read('src/components/NotificationBell.jsx')),
 )
 
 /* --- the calendar uses the width ---------------------------------------- */
@@ -249,9 +275,9 @@ ok(
 )
 ok(
   'the left bleed is the nav offset plus the shell padding',
-  /\.bleed-row \{[\s\S]{0,600}margin-left: -9\.5rem/.test(css) &&
-    /\.bleed-row \{[\s\S]{0,600}padding-left: 9\.5rem/.test(css),
-  '7.5rem of md:pl on the content wrapper plus 2rem of md:px on the shell',
+  /\.bleed-row \{[\s\S]{0,600}margin-left: -7\.5rem/.test(css) &&
+    /\.bleed-row \{[\s\S]{0,600}padding-left: 7\.5rem/.test(css),
+  '5.5rem of md:pl on the content wrapper plus 2rem of md:px on the shell',
 )
 ok(
   'and the right is the shell padding alone, since nothing is over there',
@@ -259,7 +285,7 @@ ok(
 )
 ok(
   'a snapped card rests on the text column rather than under the nav',
-  /\.bleed-row \{[\s\S]{0,600}scroll-padding-left: 9\.5rem/.test(css),
+  /\.bleed-row \{[\s\S]{0,600}scroll-padding-left: 7\.5rem/.test(css),
   'without this the snap points sit at the scroller edge and card one parks behind the glass',
 )
 /* Matched inside a className rather than anywhere in the file. The first
@@ -309,6 +335,19 @@ ok(
 ok(
   'and neither are its strings',
   !/checkin\.tab_next|checkin\.one_thing|'board\.next'/.test(read('src/lib/i18n.jsx')),
+)
+
+/* The second door to the calendar is gone. It existed because the bottom bar
+   is capped at four tabs and the calendar could not be a fifth; the rail
+   carries it at every width above md now, and the tab bar is one tap away
+   below. */
+ok(
+  'the week strip no longer offers its own way into the calendar',
+  !/to-calendar|week\.open_calendar/.test(read('src/components/WeekStrip.jsx')),
+)
+ok(
+  'and the string went with it',
+  !/week\.open_calendar/.test(read('src/lib/i18n.jsx')),
 )
 
 /* --- decoration stays where it has room --------------------------------- */
