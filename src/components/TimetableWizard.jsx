@@ -150,7 +150,10 @@ export default function TimetableWizard({ open, onClose, onSaved, startsOn }) {
                 <li
                   key={i}
                   data-hook="wiz-row"
-                  className="rounded-card border border-hairline/70 p-3"
+                  /* Raised, like the lesson rows in the course. An outline
+                     inside a dialog is a box drawn on a sheet; a row that sits
+                     on the sheet is the pattern the rest of the app uses. */
+                  className="rounded-card border border-hairline bg-[rgb(var(--glass-tint))] p-3 shadow-raised"
                 >
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto_auto]">
                     <input

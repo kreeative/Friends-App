@@ -199,7 +199,9 @@ export default function Library() {
             data-hook="purchase-note"
             data-state={purchase.state}
             role={purchase.state === 'slow' ? 'alert' : 'status'}
-            className="rounded-3xl border border-hairline px-5 py-4"
+            /* `lg`, like every other card in the app, rather than a hairline
+               rectangle. See the note on the studies banners below. */
+            className="lg overflow-hidden px-5 py-4"
           >
             <p className="text-body font-semibold text-ink">
               {t(purchase.state === 'slow' ? 'library.buy_slow_title' : 'library.buy_wait_title')}
@@ -288,7 +290,23 @@ export default function Library() {
               key={slug}
               to={`/etudes/${slug}`}
               data-hook="studies-banner"
-              className="press flex w-full items-center gap-4 rounded-3xl border border-hairline px-5 py-4 text-left"
+              /**
+               * A RAISED CARD, NOT AN OUTLINED RECTANGLE.
+               *
+               * These were `border border-hairline` with no ground and no
+               * shadow: a thin box drawn on the page. Every other surface in
+               * this app is a sheet that sits ON the page, and the two do not
+               * belong in one column. Next to a `lg` card an outlined one
+               * reads as a placeholder, or as something disabled.
+               *
+               * The note that put them here said "more discreet than the
+               * course above: an edge, not a full card, or the two would look
+               * alike and the page would say start here twice". The distinction
+               * was worth keeping and an outline was the wrong way to make it.
+               * These are the same sheet with less inside them, which separates
+               * them by weight rather than by being a different kind of thing.
+               */
+              className="lg press flex w-full items-center gap-4 overflow-hidden px-5 py-4 text-left"
             >
               <span className="min-w-0 flex-1">
                 <span className="block text-label font-semibold uppercase tracking-wider text-muted">
