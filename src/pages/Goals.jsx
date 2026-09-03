@@ -505,6 +505,10 @@ export default function Goals() {
             <CheckinRail
               goals={todays}
               answers={answers}
+              /* For the streak. It is the same index the rest of the app reads
+                 goal_days from, so the number on the card and the number on the
+                 detail page cannot disagree. */
+              dayIndex={dayIndex}
               busy={saving !== null}
               /* One tap records. saveAll posts every answer rather than the one
                  just given, which is not laziness: submit_checkin upserts the
