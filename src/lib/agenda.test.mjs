@@ -249,7 +249,7 @@ ok('every category paints in a colour the constraint allows',
    build paints transparent, which is the failure the note in Calendar.jsx
    records: chips that looked plausible in a screenshot and measured 1:1
    against the tile behind them. */
-const TOKENS = new Set(['accent', 'green', 'quiet', 'ink', 'negative',
+const TOKENS = new Set(['accent', 'green', 'quiet', 'ink', 'negative', 'field',
                         'cat-1', 'cat-2', 'cat-3', 'cat-4', 'cat-5', 'cat-6'])
 ok('and every colour the constraint allows is a token that exists',
    ALLOWED_COLOURS.every((c) => TOKENS.has(c)),
@@ -274,7 +274,7 @@ const steps = CATEGORIES
   .filter(Boolean)
   .map((m) => Number(m[1]))
   .sort((a, b) => a - b)
-ok('at most three steps of the ramp are spent', steps.length <= 3, steps.join(','))
+ok('at most two steps of the ramp are spent', steps.length <= 2, steps.join(','))
 ok('and no two of them are adjacent',
    steps.every((n, i) => i === 0 || n - steps[i - 1] >= 2),
    steps.join(','))

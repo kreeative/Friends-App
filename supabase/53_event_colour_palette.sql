@@ -39,7 +39,7 @@ alter table calendar_event drop constraint if exists calendar_event_colour_check
 alter table calendar_event
   add constraint calendar_event_colour_check
   check (colour in (
-    'accent', 'green', 'quiet', 'ink', 'negative',
+    'accent', 'green', 'quiet', 'ink', 'negative', 'field',
     'cat-1', 'cat-2', 'cat-3', 'cat-4', 'cat-5', 'cat-6'
   ));
 
@@ -56,7 +56,7 @@ alter table calendar_event
 -- exists to be overridden and this is a repaint, not a reset.
 -- ---------------------------------------------------------------------------
 update calendar_event set colour = 'ink'      where category = 'examen'    and colour = 'accent';
-update calendar_event set colour = 'cat-6'    where category = 'travail'   and colour = 'cat-2';
+update calendar_event set colour = 'field'    where category = 'travail'   and colour = 'cat-2';
 update calendar_event set colour = 'negative' where category = 'evenement' and colour = 'cat-4';
 update calendar_event set colour = 'cat-4'    where category = 'etude'     and colour = 'cat-3';
 

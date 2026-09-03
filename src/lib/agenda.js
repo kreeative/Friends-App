@@ -153,27 +153,34 @@ export function visibleEvents(events, hidden) {
  *   cours      cat-1      rose vif in sun, navy in sea
  *   examen     ink        noir, the one you cannot miss, which is the point
  *   etude      cat-4      orange in sun, mid blue in sea
- *   travail    cat-6      jaune in sun, light blue in sea
+ *   travail    field      jaune, the same in both themes
  *   evenement  negative   deep red, the same in both themes
  *   perso      green      the same in both themes
  *   sante      quiet      gris
  *
- * ONLY THREE OF THE SIX RAMP STEPS ARE USED, AND THAT IS THE WHOLE TRICK.
+ * ONLY TWO OF THE SIX RAMP STEPS ARE USED, AND THAT IS THE WHOLE TRICK.
  *
- * The first version of this mapping took four (1, 3, 4, 6) and measured fine
- * in sun and badly in sea, where the ramp is monotone blue: cat-3 and cat-4
- * came back 7.6 apart in CIE76, and anything under about 10 reads as one
- * colour. Four picks from six adjacent steps always leaves one neighbouring
- * pair, so the fix is not a better set of four, it is taking three.
+ * This went four steps, then three, then two, and each cut was a measurement
+ * rather than a preference. Four (1, 3, 4, 6) measured fine in sun and put
+ * cat-3 and cat-4 7.6 apart in CIE76 in sea, where the ramp is monotone blue,
+ * and anything under about 10 reads as one colour. Three (1, 4, 6) held while
+ * every chip carried a saturated 3px rule. The rule was rejected on sight and
+ * the chip went back to a plain 18 per cent wash, at which point cat-4 and
+ * cat-6 washed to #D2E5F0 and #D3EAF9: 2.9 apart, one pale blue.
  *
- * `negative` is the fourth, and it is worth saying out loud that this is the
- * error colour being used as a palette entry. It is not a slip. It and `green`
- * are the only saturated hues in this file declared once at :root instead of
- * per theme, so they are the only two that are the same colour in sun and sea,
- * and a party needs a hue that does not move. Nothing about the chip says
- * "error": it is a 3px red rule beside the name of a party.
+ * So two, three steps apart, and everything else off the ramp entirely.
  *
- * cat-2, cat-3 and cat-5 are skipped. They sit between steps already in use.
+ * `field`, `negative` and `green` are the three saturated hues in this file
+ * declared once at :root rather than per theme, so they are the only ones that
+ * do not move between sun and sea. That is exactly the property a category
+ * needs here: a shift is yellow and a party is red on both themes, which is
+ * two more answers the blue ramp could never have given.
+ *
+ * That `negative` is the error colour is worth saying out loud rather than
+ * leaving to be discovered. It is not a slip. Nothing about the chip says
+ * "error": it is a pale red tint behind the name of a party.
+ *
+ * cat-2, cat-3, cat-5 and cat-6 are skipped. They sit between steps in use.
  *
  * Migration 53 widens the check constraint on `colour` to accept the whole
  * ramp plus ink and negative. Every name here must be a token
@@ -184,7 +191,7 @@ export const CATEGORY_COLOUR = {
   cours: 'cat-1',
   examen: 'ink',
   etude: 'cat-4',
-  travail: 'cat-6',
+  travail: 'field',
   evenement: 'negative',
   perso: 'green',
   /* Grey, and deliberately the quietest of the seven. A health entry sitting

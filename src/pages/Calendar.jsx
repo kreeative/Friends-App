@@ -60,50 +60,71 @@ import TimetableWizard from '../components/TimetableWizard'
  * see agenda.js for why only three of the six steps are spent. Migration 53
  * lets an event store all six, plus ink, negative and the three named tokens.
  *
- * A WASH AT 18 PER CENT IS NOT A COLOUR, WHICH IS WHY THESE GREW AN EDGE.
+ * THE CHIP IS THE ORIGINAL CHIP AGAIN. THE COLOURS ARE THE NEW COLOURS.
  *
- * Every chip was `bg-<c>/[0.18]` over white. Composited, cat-1 lands on
- * #FFE5F1 and cat-3 on #FFE7E4: fourteen units apart in one channel, on a
- * 10px chip, in a 48px tile. Three of the seven categories were magentas to
- * begin with, so what reached the screen was one pale pink for nearly
- * everything.
+ * These grew a 3px left rule at full strength for one round, on the argument
+ * that a wash at 18 per cent cannot carry a category. The rule was rejected on
+ * sight and the shape of the chip was asked back exactly as it was, so it is
+ * back: same wash, same ring, same padding, same corners, no edge.
  *
- * Two changes. The mapping in agenda.js now spends three well-separated steps
- * of the ramp plus the four colours declared outside it, and each chip carries
- * a 3px left rule at FULL strength. The
- * rule is what actually does the work: a saturated 3px bar is legible at a
- * glance where a 6 per cent difference in a wash is not, and it survives the
- * chip being 10px tall.
+ * THE ARGUMENT FOR THE RULE WAS ABOUT THE OLD PALETTE, AND IT NO LONGER
+ * APPLIES, WHICH IS WHY REMOVING IT COSTS NOTHING.
  *
- * The wash goes up to 22 per cent at the same time. It is still a wash, still
- * ink on near-white, and the type stays above 4.5:1 in both themes, which is
- * checked against the painted pixels rather than argued from the tokens.
+ * The measurement behind it was cat-1 at #FFE5F1 against cat-3 at #FFE7E4,
+ * fourteen units apart in one channel. Both of those were magenta, because the
+ * old mapping spent accent, cat-1 and cat-2 on three colours inside fifteen
+ * degrees of hue. No wash of three magentas is ever going to read as three
+ * things, and the rule was compensating for a mapping rather than for an
+ * opacity.
  *
- * ink is for exams. It is the only truly dark option in either palette and it
- * is the one people most need to spot. Its wash is ink at 12 per cent so the
- * black rule reads as deliberate rather than as the grey of `quiet`, which
- * is 6.
+ * agenda.js fixed the mapping, and most of what the rule was doing came back
+ * for free. The wash goes 0.18 to 0.24, which is the same soft pill and not a
+ * new shape: this table has always carried a different alpha per token, and
+ * yellow needs 0.62 to register at all while grey needs 0.06 to stay quiet.
  *
- * negative is for parties, and agenda.js explains at length why the error
- * colour is in a category palette: it and `green` are the only saturated hues
- * declared once at :root rather than per theme, so they are the only two that
- * do not move between sun and sea.
+ * MEASURED WITH THE RULE GONE, CIE76 on the composited fills, closest pair:
+ *
+ *   sun   14.6   perso / sante
+ *   sea    5.4   cours / etude
+ *
+ * SUN IS FINE AND SEA IS NOT, AND PRETENDING OTHERWISE WOULD BE THE EASY LIE
+ * HERE.
+ *
+ * Under about 10 two colours read as one. In sun every pair clears it. In sea
+ * they do not, and no amount of styling fixes it: that theme's whole ramp is
+ * one blue gradient, so cours and etude are both blue whichever steps they
+ * take, and a wash of 0.46 is where they finally separate. That is a heavy
+ * tint, well past the chip anybody asked for.
+ *
+ * So this is the best a plain wash does, and the residue is one pair in the
+ * theme that is not the default. The fix if it is ever wanted is a small
+ * full-strength dot inside the chip, the same device the category pills in the
+ * event form already use: full-strength colour, no change to the chip's
+ * padding, corners or height. It is not here because it was not asked for.
  *
  * Whole class strings, because Tailwind scans source text and `bg-cat-${n}`
  * produces no class at build time.
  */
 const SWATCH = {
-  'cat-1': 'bg-cat-1/[0.22] text-ink ring-cat-1/40 border-l-[3px] border-cat-1',
-  'cat-2': 'bg-cat-2/[0.22] text-ink ring-cat-2/40 border-l-[3px] border-cat-2',
-  'cat-3': 'bg-cat-3/[0.22] text-ink ring-cat-3/40 border-l-[3px] border-cat-3',
-  'cat-4': 'bg-cat-4/[0.22] text-ink ring-cat-4/40 border-l-[3px] border-cat-4',
-  'cat-5': 'bg-cat-5/[0.22] text-ink ring-cat-5/40 border-l-[3px] border-cat-5',
-  'cat-6': 'bg-cat-6/[0.28] text-ink ring-cat-6/50 border-l-[3px] border-cat-6',
-  accent: 'bg-accent/[0.16] text-ink ring-accent/30 border-l-[3px] border-accent',
-  green: 'bg-green/[0.16] text-ink ring-green/30 border-l-[3px] border-green',
-  ink: 'bg-ink/[0.12] text-ink ring-ink/35 border-l-[3px] border-ink',
-  negative: 'bg-negative/[0.14] text-ink ring-negative/35 border-l-[3px] border-negative',
-  quiet: 'bg-ink/[0.06] text-ink ring-ink/15 border-l-[3px] border-ink/35',
+  'cat-1': 'bg-cat-1/[0.24] text-ink ring-cat-1/40',
+  'cat-2': 'bg-cat-2/[0.24] text-ink ring-cat-2/40',
+  'cat-3': 'bg-cat-3/[0.24] text-ink ring-cat-3/40',
+  'cat-4': 'bg-cat-4/[0.24] text-ink ring-cat-4/40',
+  'cat-5': 'bg-cat-5/[0.24] text-ink ring-cat-5/40',
+  'cat-6': 'bg-cat-6/[0.24] text-ink ring-cat-6/40',
+  accent: 'bg-accent/[0.24] text-ink ring-accent/30',
+  green: 'bg-green/[0.24] text-ink ring-green/30',
+  /* Yellow is the lightest hue in either palette, so a quarter of it over
+     white is still white. The alpha is per token here and always was: the
+     original table ran 0.18, 0.16 and 0.06 for exactly this reason, that a
+     wash has to be tuned to the colour rather than to one number. */
+  field: 'bg-field/[0.62] text-ink ring-field-deep/50',
+  /* 0.30, not 0.12. At 0.12 an exam washed to #E4E3E3 and a health entry to
+     #F2F1F2: two greys 5.0 apart in CIE76, which is one grey. Exams are meant
+     to be the darkest thing on the grid and this is what makes that true. */
+  ink: 'bg-ink/[0.30] text-ink ring-ink/35',
+  negative: 'bg-negative/[0.24] text-ink ring-negative/35',
+  quiet: 'bg-ink/[0.06] text-ink ring-ink/15',
 }
 
 /* The bar down the left of a row in the day list, which needs the colour at
@@ -113,7 +134,7 @@ const SWATCH_BAR = {
   'cat-1': 'bg-cat-1', 'cat-2': 'bg-cat-2', 'cat-3': 'bg-cat-3',
   'cat-4': 'bg-cat-4', 'cat-5': 'bg-cat-5', 'cat-6': 'bg-cat-6',
   accent: 'bg-accent', green: 'bg-green', ink: 'bg-ink',
-  negative: 'bg-negative', quiet: 'bg-ink/30',
+  field: 'bg-field-deep', negative: 'bg-negative', quiet: 'bg-ink/30',
 }
 
 /**

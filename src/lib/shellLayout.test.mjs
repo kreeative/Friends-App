@@ -627,14 +627,28 @@ ok(
 
 /* --- an exam does not look like a class --------------------------------- */
 
+/**
+ * THE CHIP HAS NO EDGE, AND THAT IS THE ASSERTION.
+ *
+ * It carried a 3px full-strength left rule for one round. That was rejected on
+ * sight and the original chip was asked back, so this pins the absence: the
+ * rule is the obvious thing to reach for the next time somebody measures the
+ * washes and finds them close, and it is not available.
+ */
 ok(
-  'every swatch carries a full-strength rule, not only a wash',
-  (cal.match(/border-l-\[3px\]/g) ?? []).length >= 9,
-  'composited, cat-1 and cat-3 at 18 per cent are 14 units apart in one channel',
+  'no swatch carries a rule at its edge',
+  !/border-l-\[3px\]/.test(cal),
+  'the plain soft pill was asked back for explicitly',
 )
 ok(
-  'and there is a dark option, which a warm ramp does not otherwise have',
-  /ink: 'bg-ink\/\[0\.12\] text-ink ring-ink\/35 border-l-\[3px\] border-ink'/.test(cal),
+  'and there is a dark option, which neither ramp otherwise has',
+  /ink: 'bg-ink\/\[0\.30\] text-ink ring-ink\/35'/.test(cal),
+  'at 0.12 an exam and a health entry were two greys 5.0 apart',
+)
+ok(
+  'yellow gets the alpha it needs rather than the shared one',
+  /field: 'bg-field\/\[0\.6[0-9]\]/.test(cal),
+  'a quarter of #FFD60A over white is white',
 )
 ok(
   'the category pills show the colour they will paint in',
