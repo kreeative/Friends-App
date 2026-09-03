@@ -91,7 +91,7 @@ ok(
   /<header className="sticky top-0 z-40 px-4 pt-4 md:hidden">/.test(shell),
   'the rail carries the lockup, the bell and the avatar above md',
 )
-ok('the rail carries a lockup of its own', /data-hook="side-rail"[\s\S]{0,1800}LockupInline/.test(shell))
+ok('the rail carries a lockup of its own', /data-hook="side-rail"[\s\S]{0,2600}LockupInline/.test(shell))
 ok(
   'and the group name has somewhere to be',
   /data-hook="rail-group"/.test(shell),
@@ -616,13 +616,13 @@ ok(
 
 ok(
   'the rail rows are spaced rather than stacked',
-  /flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto/.test(shell),
+  /flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto/.test(shell),
   'at gap-0.5 the active pill touched its neighbours and read as a band',
 )
 ok(
   'and the lockup is separated from the destinations',
-  /LockupInline[\s\S]{0,220}mb-6 mt-3 h-px shrink-0 bg-hairline/.test(shell),
-  'a rule plus 24px is what "leave the logo alone at the top" asked for',
+  /LockupInline[\s\S]{0,220}mb-10 mt-4 h-px shrink-0 bg-hairline/.test(shell),
+  'asked for twice: 4px, then 24, now 40, which is about one empty row',
 )
 
 /* --- an exam does not look like a class --------------------------------- */
@@ -760,23 +760,36 @@ ok(
  * which is why the generator exists and why this asserts the generator rather
  * than the pixels.
  */
-const POP = '214 0 107'
+const POP = '255 0 122'
 ok(
   'the accent, the mark and the head of the ramp are one value',
   (css.match(new RegExp(POP, 'g')) ?? []).length >= 5,
   'sun accent, sun mark, sun cat-1, public accent, public mark',
 )
 ok(
-  'and the old pinks are gone from the sun palette',
-  !/--c-accent: 230 0 112|--c-mark: 255 0 122/.test(css),
-  '#E60070 and #FF007A were the two the app was mixing',
+  'and #E60070 is gone, which was the second pink',
+  !/--c-accent: 230 0 112/.test(css),
+  'the accent and the ramp head were four degrees of hue apart',
+)
+/**
+ * #FF007A IS 3.80:1 AND THAT IS A DECISION, NOT AN OVERSIGHT.
+ *
+ * It was named directly as the brand pink after a deeper one had been tried,
+ * so this asserts that the trade is WRITTEN DOWN rather than asserting a ratio
+ * the colour does not meet. A note somebody has to read before changing
+ * --c-on-accent is the only thing that stops this becoming a discovery later.
+ */
+ok(
+  'the accent contrast is documented where the token is',
+  /3\.80:1/.test(css) && /--c-on-accent. #111111 on/.test(css),
+  'the one-line fix has to be findable from the token itself',
 )
 const gen = read('scripts/brand-icons.py')
-ok('the artwork is generated rather than hand-edited', /POP = \(214, 0, 107\)/.test(gen))
+ok('the artwork is generated rather than hand-edited', /POP = \(255, 0, 122\)/.test(gen))
 ok(
-  'and the generator says why #EC4899 was refused',
-  /3\.53/.test(gen) || /3\.53/.test(css),
-  'white on it is under 4.5, which is the whole reason the accent moved last time',
+  'and the generator points at the token rather than restating the trade',
+  /index\.css/.test(gen),
+  'two copies of a contrast argument is how they end up disagreeing',
 )
 ok(
   'the small icons use the monogram, not the four-line wordmark',
@@ -790,7 +803,7 @@ ok(
 )
 ok(
   'the icon URLs were bumped so Safari notices',
-  /\?v=3/.test(read('index.html')) && /\?v=3/.test(read('public/manifest.webmanifest')),
+  /\?v=4/.test(read('index.html')) && /\?v=4/.test(read('public/manifest.webmanifest')),
   'a favicon is the most aggressively cached asset a browser has',
 )
 
