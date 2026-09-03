@@ -88,11 +88,11 @@ export default function NudgeBanner() {
     <div className="pt-8" data-hook="nudges">
       <div
         ref={rail}
-        /* Bleeds to both screen edges: the shell pads by 6, so the negative
-           margin lets the rail run to the glass and the padding puts the first
-           and last card back on the text column. A rail that stops short of
-           the edge reads as a rail that has ended. */
-        className="-mx-6 flex snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain px-6 pb-2
+        /* Runs to the edges of the screen rather than of its column, and slides
+           under the side nav on the way out. The numbers live in .bleed-row
+           because they are the shell's own padding plus the nav's offset, and
+           inline they were wrong the moment either changed. */
+        className="bleed-row flex snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain pb-2
                    [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {visible.map((n) => {

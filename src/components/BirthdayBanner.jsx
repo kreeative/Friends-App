@@ -89,12 +89,9 @@ export default function BirthdayBanner({ people, within = 7 }) {
   return (
     <div className="pt-8" data-hook="birthdays">
       <div
-        /* Bleeds to both screen edges: the shell pads by 6, so the negative
-           margin lets the rail run to the glass and the padding puts the first
-           and last card back on the text column. Identical to the nudge rail,
-           because two rails on one screen that stop at different places read
-           as a mistake. */
-        className="-mx-6 flex snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain px-6 pb-2
+        /* Identical to the nudge rail, because two rails on one screen that stop
+           at different places read as a mistake. See .bleed-row. */
+        className="bleed-row flex snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain pb-2
                    [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {soon.map((person) => {

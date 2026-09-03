@@ -486,11 +486,6 @@ function Leaderboard({ members, checkins, items, awayIds, revealed, settled, me,
                 .map((i) => (
                   <ItemLine key={i.id} item={i} />
                 ))}
-              {ck.next_commitment && (
-                <p className="pt-1 text-small text-muted">
-                  {t('board.next', { text: ck.next_commitment })}
-                </p>
-              )}
             </div>
           </div>
         )

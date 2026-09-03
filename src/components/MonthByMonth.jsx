@@ -82,7 +82,11 @@ export default function MonthByMonth({ entries, startDay, currency, locale }) {
       {cats.length > 1 && (
         <div
           data-hook="months-filter"
-          className="-mx-6 flex gap-2 overflow-x-auto overscroll-x-contain px-6 py-1
+          /* The last inline `-mx-6 px-6` in the app. It was 8px short of the
+             shell's edge above md the moment the shell went to px-8, which is
+             the sort of thing that is invisible until two rails sit above each
+             other and stop in different places. See .bleed-row. */
+          className="bleed-row flex gap-2 overflow-x-auto overscroll-x-contain py-1
                      [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {[['all', t('months.all')]].concat(cats.map((c) => [c, t(`money.cat_${c}`)])).map(([id, name]) => {

@@ -183,15 +183,6 @@ export function PartyIcon() {
   )
 }
 
-export function ForwardIcon() {
-  return (
-    <Svg>
-      <rect x="3" y="10.4" width="12" height="3.2" rx="1.6" />
-      <path d="M13.4 5.9 20.9 12 13.4 18.1Z" />
-    </Svg>
-  )
-}
-
 /* --- the money screen's four -------------------------------------------- */
 
 export function GaugeIcon() {
