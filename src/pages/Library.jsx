@@ -275,29 +275,40 @@ export default function Library() {
        * pleine. Les deux se ressembleraient trop et la page dirait deux fois
        * "commence par ici".
        */}
+      {/* A list rather than one hand-written banner, because there are two
+          now and a third should not need more JSX. The keys are the i18n
+          prefix so the copy for each lives with the rest of the strings. */}
       <Section>
-        <Link
-          to={`/etudes/${STUDY_SLUGS[0]}`}
-          data-hook="studies-banner"
-          className="press flex w-full items-center gap-4 rounded-3xl border border-hairline px-5 py-4 text-left"
-        >
-          <span className="min-w-0 flex-1">
-            <span className="block text-label font-semibold uppercase tracking-wider text-muted">
-              {t('studies.banner_eyebrow')}
-            </span>
-            <span className="mt-1 block text-body font-semibold leading-tight text-ink">
-              {t('studies.banner_title')}
-            </span>
-            <span className="mt-1 block text-small leading-snug text-muted">
-              {t('studies.banner_sub')}
-            </span>
-          </span>
-          <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-pill bg-ink/[0.06] text-ink">
-            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M5 12h13M13 6l6 6-6 6" />
-            </svg>
-          </span>
-        </Link>
+        <div className="space-y-3">
+          {[
+            { slug: STUDY_SLUGS[0], k: 'studies.banner' },
+            { slug: STUDY_SLUGS[1], k: 'studies.cycle' },
+          ].map(({ slug, k }) => (
+            <Link
+              key={slug}
+              to={`/etudes/${slug}`}
+              data-hook="studies-banner"
+              className="press flex w-full items-center gap-4 rounded-3xl border border-hairline px-5 py-4 text-left"
+            >
+              <span className="min-w-0 flex-1">
+                <span className="block text-label font-semibold uppercase tracking-wider text-muted">
+                  {t(`${k}_eyebrow`)}
+                </span>
+                <span className="text-safe mt-1 block text-body font-semibold leading-tight text-ink">
+                  {t(`${k}_title`)}
+                </span>
+                <span className="text-safe mt-1 block text-small leading-snug text-muted">
+                  {t(`${k}_sub`)}
+                </span>
+              </span>
+              <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-pill bg-ink/[0.06] text-ink">
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 12h13M13 6l6 6-6 6" />
+                </svg>
+              </span>
+            </Link>
+          ))}
+        </div>
       </Section>
 
       {error && (

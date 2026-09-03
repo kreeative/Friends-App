@@ -174,7 +174,9 @@ export function seoFor(pathname) {
  * sous node sans bundler. Le probe verifie que les deux listes concordent, donc
  * un ajout oublie ici se voit.
  */
-export const STUDY_SLUGS = ['epargner-en-tant-que-jeune']
+/* The savings survey first: WealthRank reads STUDY_SLUGS[0] by position to
+   link the peer comparison at its source. A new entry goes after it. */
+export const STUDY_SLUGS = ['epargner-en-tant-que-jeune', 'les-regles-ne-sont-pas-un-detail']
 
 export function sitemapPaths(slugs = []) {
   return [

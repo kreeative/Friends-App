@@ -103,11 +103,17 @@ export default function CycleHeadsUp({ starts = [], prediction = null, remind = 
   }
 
   return (
-    <div
-      className={`mt-3 rounded-3xl px-5 py-4 ${tone.ring}`}
-      data-hook="cycle-headsup"
-      data-phase={phase}
-    >
+    /**
+     * Its own card, under the calendar's, not a block inside it.
+     *
+     * `lg` is the same sheet every other card on this page is made of, so it
+     * reads as a thing in the column rather than as the last row of the
+     * calendar. The phase tint moves inside as a wash on that sheet: on the
+     * card itself it would be a coloured card in a column of white ones, which
+     * is a louder claim than a note about the week ahead should make.
+     */
+    <div className="lg mt-4 overflow-hidden" data-hook="cycle-headsup" data-phase={phase}>
+    <div className={`px-5 py-4 ${tone.ring}`}>
       <div className="flex items-start justify-between gap-3">
         <p className="text-safe min-w-0 flex-1 text-body font-semibold text-ink">
           <span aria-hidden="true" className="mr-1.5">
@@ -137,6 +143,7 @@ export default function CycleHeadsUp({ starts = [], prediction = null, remind = 
       >
         {t('cycle.manage')}
       </Link>
+    </div>
     </div>
   )
 }

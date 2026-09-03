@@ -12,6 +12,7 @@ import MemberSheet from '../components/MemberSheet'
 import ThemePicker from '../components/ThemePicker'
 import LanguagePicker from '../components/LanguagePicker'
 import DangerZone from '../components/DangerZone'
+import PurchaseCheck from '../components/PurchaseCheck'
 import { LegalLinks } from './Legal'
 
 const DAYS_FR = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi']
@@ -254,6 +255,13 @@ export default function Settings() {
           </div>
         </Section>
       )}
+
+      {/* Above Leaving, because it is a thing that helps rather than a thing
+          that removes. Under its own heading so nobody presses it by accident
+          while looking for something else. */}
+      <Section title={t('diag.title')}>
+        <PurchaseCheck />
+      </Section>
 
       {/* Last, and under its own heading. Leaving was previously impossible
           without signing out of the product, which is why people were signing

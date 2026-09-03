@@ -854,10 +854,18 @@ ok(
   /localStorage\.setItem\(KEY, today\)/.test(heads),
   'a card somebody can silence permanently is one they silence once by accident',
 )
+/* It moved OUT of the calendar card and became a sibling under it. "Under"
+   was read the way it was written: under, as in another card. Inside, it was
+   the last row of the calendar. */
 ok(
-  'it sits under the strip rather than somewhere else on the page',
-  /<CycleHeadsUp[\s\S]{0,200}<DayRecap/.test(strip),
-  '"juste en bas du calendrier dans la page d\'accueil"',
+  'it is a sibling of the calendar card, not a block inside it',
+  /<\/div>\s*\n\s*<CycleHeadsUp/.test(strip),
+  '"juste en bas du calendrier" means another card, not the last row of one',
+)
+ok(
+  'and it is a card in its own right',
+  /className="lg mt-4 overflow-hidden" data-hook="cycle-headsup"/.test(heads),
+  'the same sheet every other card in that column is made of',
 )
 
 /* --- the check-in moved onto the goal cards ----------------------------- */
