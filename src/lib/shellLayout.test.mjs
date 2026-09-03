@@ -45,6 +45,20 @@ const ok = (name, cond, extra = '') => {
 console.log('\nshell layout')
 
 const shell = read('src/components/AppShell.jsx')
+/**
+ * Every file this suite reads, declared here rather than beside the block that
+ * first needed it.
+ *
+ * Three separate runs died on "Cannot access 'x' before initialization": a
+ * `const` declared halfway down is in the temporal dead zone for every
+ * assertion above it, so moving one assertion, or adding one that reuses an
+ * existing binding, crashes the whole file rather than failing a test. Read
+ * once, at the top, and the order of the blocks stops mattering.
+ */
+const goalsPage = read('src/pages/Goals.jsx')
+const gcard = read('src/components/GoalCard.jsx')
+const carousel = read('src/components/CheckinCarousel.jsx')
+const rail = read('src/components/CheckinRail.jsx')
 
 /* --- exactly one navigation is visible at any width ---------------------- */
 
@@ -517,7 +531,6 @@ ok(
  * calls. Asserting the split is asserting that neither branch was quietly
  * pointed at the other's table.
  */
-const goalsPage = read('src/pages/Goals.jsx')
 ok(
   'the check-in opens for a solo goal too',
   /const openSolo = !groupId/.test(goalsPage) &&
@@ -538,14 +551,44 @@ ok(
   'goal_days has a count and a date and no column for a photograph',
 )
 ok(
+  'and the carousel is still rendered for the link that opens it',
+  /\{carousel && \(/.test(goalsPage) && /setCarousel\(true\)/.test(goalsPage),
+  'a button that sets state nothing reads is a button that does nothing',
+)
+ok(
   'sitting a period out stays group-only',
   /\{openGroup && \(/.test(goalsPage),
   'away_periods is keyed by cycle_id, and nobody needs to notify themselves',
 )
+/**
+ * THE CARDS CARRY NOTHING UNDER THE RULE, AND THE RAIL CARRIES THE QUESTION.
+ *
+ * The card had a tick, a "not due today" line, a streak and seven dots. Asked
+ * for: "everything after the horizontal line after the objective disappears".
+ * The information was not wrong, it was in the wrong place: the rail at the top
+ * asks whether today is done, once, and repeating it under every card asked it
+ * five more times and made a list of goals read as a list of chores.
+ *
+ * The `track` prop went with the block instead of being left accepted and
+ * ignored. GoalDetail still takes one, because the expanded view is where a
+ * streak and a history belong, and GoalCard derives it from the goal rather
+ * than being told: a prop is a thing a caller can forget, and the answer is
+ * written on the row.
+ */
 ok(
-  'the card keeps its one-tap tick on solo goals',
-  /const tracks = !groupId/.test(goalsPage),
-  'routing "drink water" through a banner and a modal is three taps for one fact',
+  'the goal card no longer asks the daily question',
+  !/track=\{tracks\}/.test(goalsPage) && !/const tracks = /.test(goalsPage),
+  'the rail asks it once, above the list',
+)
+ok(
+  'and the card derives the history flag rather than taking a prop',
+  /const solo = !goal\.group_id/.test(gcard) && !/^\s*track = false,$/m.test(gcard),
+  'goal_days exists for goals with no group; the row already says which',
+)
+ok(
+  'the detail view keeps its streak and history',
+  /track=\{solo\}/.test(gcard),
+  'that is where somebody goes when the history IS the question',
 )
 
 /* The second door to the calendar is gone. It existed because the bottom bar
@@ -1097,12 +1140,40 @@ ok(
  * assert the separation in both directions, because the tempting fix next time
  * something feels far away is to put a control back on a card.
  */
-/* goalsPage is read once, up with the Bravo assertions. */
-const carousel = read('src/components/CheckinCarousel.jsx')
-const gcard = read('src/components/GoalCard.jsx')
 
 ok('there is a banner when something is due', /data-hook="checkin-banner"/.test(goalsPage))
-ok('with one thing to press', /data-hook="checkin-banner-open"/.test(goalsPage))
+/**
+ * THE CHECK-IN IS A RAIL YOU SLIDE, NOT A BUTTON THAT OPENS A MODAL.
+ *
+ * "A sliding chain of goals, like the UI in the groups when people are
+ * missing. You could slide them, and they will be gray. And when you click
+ * done today, there will be bright pink."
+ *
+ * So it is NudgeBanner's shape pointed at your own goals. The button it
+ * replaced was one more tap before the first answer and a layer over a list
+ * somebody was already looking at, on the section whose whole job is speed.
+ */
+ok('with a rail of goals under it', /data-hook="checkin-rail"/.test(rail))
+ok(
+  'that slides, with the next card showing',
+  /snap-x snap-mandatory/.test(rail) && /w-\[78%\]/.test(rail),
+  'a rail whose cards fill the width is indistinguishable from one card',
+)
+ok(
+  'grey until answered, accent once it is',
+  /done \? 'bg-accent shadow-raised' : 'bg-ink\/\[0\.05\]'/.test(rail),
+)
+ok(
+  'and colour is not the only signal',
+  /aria-pressed=\{done\}/.test(rail) &&
+    /done \? t\('goal\.done_today'\) : t\('goal\.mark_today'\)/.test(rail),
+  '1.4.1: the word and the pressed state carry it without the pink',
+)
+ok(
+  'a counter is done only when it reaches its target',
+  /const done = recurring \? count >= target : a\.outcome === 'done'/.test(rail),
+  'colouring 2 of 3 as finished is the card lying about the number on it',
+)
 
 /**
  * THE BANNER IS TYPE ON THE PAGE, NOT A CARD.

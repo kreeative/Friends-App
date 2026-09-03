@@ -35,7 +35,7 @@ export function Screen({ children, className = '' }) {
  * `aria-hidden` and `backLabel` is what a screen reader announces, so the
  * control says "Retour au budget" rather than "left arrow".
  */
-export function TopBar({ title, right, sub, back, backLabel }) {
+export function TopBar({ title, right, sub, hint, back, backLabel }) {
   // pt-10 rather than pt-14: there is a sticky nav above this now, and the
   // heading was clearing chrome that no longer needed clearing.
   return (
@@ -67,13 +67,54 @@ export function TopBar({ title, right, sub, back, backLabel }) {
         </button>
       )}
       <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-h1 text-ink">{title}</h1>
+        <div className="min-w-0">
+          <h1 className="text-h1 text-ink">
+            {title}
+            {hint && <Hint text={hint} />}
+          </h1>
           {sub && <p className="lede mt-2">{sub}</p>}
         </div>
         {right && <div className="pt-1">{right}</div>}
       </div>
     </header>
+  )
+}
+
+/**
+ * A question mark beside a heading, holding the sentence that used to sit
+ * under it.
+ *
+ * "Rien qu'a toi. Personne d'autre ne les voit." is worth saying once and is
+ * not worth a line of the page every time: it answers a question somebody has
+ * on their first visit and never again, and standing copy that everybody has
+ * already read is what pushes the actual content below the fold.
+ *
+ * A <details> rather than state and a click handler. It opens on tap and on
+ * Enter, closes on Escape, is announced as expandable, and none of that had to
+ * be written or can be got wrong. The marker is removed because the heading's
+ * own glyph is the affordance.
+ */
+function Hint({ text }) {
+  return (
+    <details className="group relative ml-2 inline-block align-middle" data-hook="hint">
+      <summary
+        className="press inline-flex h-6 w-6 cursor-pointer list-none items-center justify-center rounded-pill
+                   bg-ink/[0.07] text-label font-bold text-muted marker:hidden hover:bg-ink/[0.12] hover:text-ink
+                   [&::-webkit-details-marker]:hidden"
+        aria-label={text}
+      >
+        ?
+      </summary>
+      {/* Positioned, so opening it does not push the page down and move the
+          thing somebody was about to tap. Left-aligned to the marker and
+          capped, because a tooltip as wide as the viewport is a paragraph. */}
+      <span
+        role="note"
+        className="lg absolute left-0 top-8 z-30 block w-[min(20rem,calc(100vw-3rem))] p-4 text-left text-small font-normal leading-snug text-muted"
+      >
+        {text}
+      </span>
+    </details>
   )
 }
 
