@@ -98,6 +98,43 @@ ok(
   'it was in the top bar, which no longer runs at this width',
 )
 
+/**
+ * THE BADGE IS THE GROUP'S STICKER, NOT ITS FIRST LETTER.
+ *
+ * "F" is not a picture of FUTUR MILLIARDAIRE, it is a picture of the letter F,
+ * and one letter in a rail of glyphs reads as a missing icon. The sticker is
+ * already the group's face on the settings header, derived from the group id
+ * so it is stable for the group's life and identical for everyone in it.
+ *
+ * Verified in Chromium that the two screens agree rather than each picking
+ * their own: the rail badge and the settings header resolved to the same
+ * asset path, and the rail image decoded (naturalWidth > 0) rather than being
+ * an img tag with a good src painting nothing.
+ *
+ * The initial stays UNDER the image rather than being replaced by it. art.js
+ * is explicit that a renamed PNG must not take a page down, and a 404 there is
+ * a network failure rather than a page error, so nothing else would catch it.
+ * An empty tinted disc looks like a design decision; a letter looks like a
+ * group.
+ */
+ok(
+  'the rail badge draws the group sticker',
+  /data-hook="rail-group"[\s\S]{0,700}stickerFor\(activeId\)/.test(shell) &&
+    /from '\.\.\/lib\/art'/.test(shell),
+  'the settings header already uses stickerFor, so this is two surfaces agreeing',
+)
+ok(
+  'and keeps the initial underneath as the fallback',
+  /data-hook="rail-group"[\s\S]{0,600}group\.name\.trim\(\)\]\[0\]\?\.toUpperCase\(\)/.test(shell),
+  'a renamed PNG is a 404, not a page error, so nothing else would catch it',
+)
+ok(
+  'the picture is decorative, so the name is still the accessible one',
+  /data-hook="rail-group"[\s\S]{0,900}alt=""[\s\S]{0,80}aria-hidden="true"/.test(shell) &&
+    /aria-label=\{group\.name\}/.test(shell),
+  'a screen reader gets the group name, not a sticker filename',
+)
+
 /* --- the rail says what its icons mean ----------------------------------- */
 
 /**

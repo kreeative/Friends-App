@@ -4,6 +4,7 @@ import { onPendingChange, startAutoFlush } from '../lib/queue'
 import { useAuth } from '../context/AuthContext'
 import { useGroup } from '../context/GroupContext'
 import { useT } from '../lib/i18n'
+import { stickerFor } from '../lib/art'
 import { Avatar } from './ui'
 import { LockupInline } from './Wordmark'
 import { NAV_ICON } from './NavIcons'
@@ -358,9 +359,31 @@ function SideRail({ tabs }) {
 
         {/**
          * Which group you are in, now that the top bar is not saying it above
-         * md. An initial, because the column is 44px wide and always was going
-         * to be: the full name is the accessible name and the tooltip, and the
-         * board it links to opens with the name as its heading.
+         * md.
+         *
+         * THE GROUP'S OWN STICKER, NOT ITS FIRST LETTER.
+         *
+         * It was an initial, on the reasoning that the column is 44px wide and
+         * a name does not fit. That was the right constraint and the wrong
+         * answer: "F" is not a picture of FUTUR MILLIARDAIRE, it is a picture
+         * of the letter F, and a rail of glyphs with one letter in it reads as
+         * a missing icon rather than as a group.
+         *
+         * The sticker is the group's face everywhere else already: it is what
+         * GroupHeader draws at the top of the settings screen, derived from
+         * the group id by stickerFor, so it is stable for the life of the
+         * group and everyone in it sees the same one. Using it here is making
+         * two surfaces agree, not inventing a motif.
+         *
+         * The initial stays as the fallback. stickerFor returns undefined when
+         * there is no art at all, and art gets renamed: src/lib/art.js is
+         * explicit that a missing picture must not take a page down. So the
+         * letter is rendered underneath and the image sits on top of it, which
+         * also covers a PNG that 404s after a rename.
+         *
+         * The full name is still the accessible name and the tooltip, and the
+         * board it links to opens with the name as its heading, so nothing
+         * depends on reading the picture.
          */}
         {activeId && group?.name && (
           <Link
@@ -368,9 +391,20 @@ function SideRail({ tabs }) {
             aria-label={group.name}
             title={group.name}
             data-hook="rail-group"
-            className="press mb-4 flex h-8 w-8 shrink-0 items-center justify-center self-center rounded-pill bg-accent/[0.16] text-small font-bold text-ink"
+            className="press relative mb-4 flex h-8 w-8 shrink-0 items-center justify-center self-center overflow-hidden rounded-pill bg-accent/[0.16] text-small font-bold text-ink"
           >
-            {[...group.name.trim()][0]?.toUpperCase() ?? '?'}
+            <span aria-hidden="true">{[...group.name.trim()][0]?.toUpperCase() ?? '?'}</span>
+            {stickerFor(activeId) && (
+              <img
+                src={stickerFor(activeId)}
+                alt=""
+                aria-hidden="true"
+                /* Over the letter rather than instead of it, so a src that
+                   fails to load leaves the initial showing rather than an
+                   empty disc. */
+                className="absolute inset-0 h-full w-full object-contain p-0.5"
+              />
+            )}
           </Link>
         )}
 
