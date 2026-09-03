@@ -46,17 +46,26 @@ const MINE = [
 ]
 
 /**
- * The calendar, which is in the rail and NOT in the bottom bar.
+ * The calendar, which is in BOTH navigations now.
  *
  * It is personal rather than contextual, so it belongs in both lists and is
  * appended to whichever one is showing rather than being written into each.
  *
- * The bottom bar does not get it, and that asymmetry is deliberate. TabBar's
- * own note records what a fifth tab did to a 390px phone: French "Objectifs"
- * wants 70px and an equal fifth of that screen gives it 66, so the tab people
- * press most read "Objectif...". The rail is a vertical list and has no such
- * ceiling. On a phone the calendar is reached from the dashboard's own card,
- * which links straight into it, so it is one tap from home either way.
+ * IT USED TO BE MISSING FROM THE PHONE, AND THE REASON WAS OUT OF DATE.
+ *
+ * The note here said a fifth tab truncates: French "Objectifs" wants 70px and
+ * an equal fifth of a 390px phone gives it 66, so the tab people press most
+ * read "Objectif...". That measurement was taken when every tab was flex-1.
+ * They have been flex-auto since, which shares the leftover space out from
+ * each label's own width, and the arithmetic is no longer the same one.
+ *
+ * The fallback was "it is one tap from the dashboard card", which is a
+ * reasonable thing to say about a page and a bad thing to say about a
+ * destination somebody is looking for in the menu. It was reported as missing,
+ * which is what a thing that is not in the menu is.
+ *
+ * Remeasured in Chromium with the calendar added, and TabBar's own note now
+ * carries what came back at 360, 390 and 430.
  */
 const CALENDAR = { to: '/calendar', key: 'nav.calendar', icon: 'calendar' }
 
@@ -306,13 +315,28 @@ function SideRail({ tabs }) {
         data-hook="side-rail"
         aria-label={t('nav.primary')}
       >
+        {/**
+         * The lockup, and the gap under it, which is now a real gap.
+         *
+         * mb-1 put 4px between the mark and the first destination, so the logo
+         * read as the top item of the list rather than as the thing the list
+         * belongs to. It is the one element in the rail that is not a place you
+         * can go, and nothing said so.
+         *
+         * mb-3 plus a hairline under it. The rule is the part that carries it
+         * without spending height: 12px alone still reads as loose spacing, a
+         * line reads as a boundary. Same treatment as the bell and the avatar
+         * at the other end, which are also not destinations, so the rail has
+         * one grammar for "this group is different" rather than two.
+         */}
         <Link
           to="/"
           aria-label={t('nav.home')}
-          className="press mb-1 block shrink-0 self-center rounded-inner p-1.5"
+          className="press block shrink-0 self-center rounded-inner p-1.5"
         >
           <LockupInline size={28} />
         </Link>
+        <span aria-hidden="true" className="mx-1 mb-3 mt-2 h-px shrink-0 bg-hairline/60" />
 
         {/**
          * Which group you are in, now that the top bar is not saying it above
@@ -326,7 +350,7 @@ function SideRail({ tabs }) {
             aria-label={group.name}
             title={group.name}
             data-hook="rail-group"
-            className="press mb-1 flex h-8 w-8 shrink-0 items-center justify-center self-center rounded-pill bg-accent/[0.16] text-small font-bold text-ink"
+            className="press mb-3 flex h-8 w-8 shrink-0 items-center justify-center self-center rounded-pill bg-accent/[0.16] text-small font-bold text-ink"
           >
             {[...group.name.trim()][0]?.toUpperCase() ?? '?'}
           </Link>
@@ -335,8 +359,16 @@ function SideRail({ tabs }) {
         {/* Scrolls rather than squashing. Five rows plus a group chip is
             comfortable at 700px; a short laptop window in landscape is not,
             and rows silently losing height is worse than a scrollbar nobody
-            usually sees. */}
-        <div className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto">
+            usually sees.
+
+            gap-1.5 rather than gap-0.5. At 2px the rows were one column of
+            icons with no rhythm, and the active pill touched its neighbours,
+            so "you are here" read as a band rather than as one item. 6px is
+            still five rows plus a chip inside 700px with the same scroll
+            behaviour, and it is the smallest gap at which the pill has air
+            around it. The row is h-11 and does not change: the space between
+            targets grew, the targets did not shrink. */}
+        <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto">
           {rows.map((tab, i) => {
             const Icon = NAV_ICON[tab.icon]
             return (
@@ -386,7 +418,7 @@ function SideRail({ tabs }) {
          * a new control: TopNav's note records that the avatar became the link
          * to the profile when the dropdown was deleted, and it still is.
          */}
-        <div className="mt-1 flex shrink-0 flex-col gap-0.5 border-t border-hairline/60 pt-1">
+        <div className="mt-3 flex shrink-0 flex-col gap-1.5 border-t border-hairline/60 pt-3">
           <NotificationBell placement="rail" />
 
           <NavLink
@@ -415,8 +447,12 @@ function TabBar({ tabs }) {
   const { t } = useT()
   const { pathname } = useLocation()
 
-  const activeIdx = activeIndex(tabs, pathname)
-  const { ref, box } = useSlider(tabs[activeIdx]?.to ?? null)
+  /* Same list as the rail, built the same way, so the two navigations cannot
+     disagree about what the destinations are. That they did is what put the
+     calendar on the tablet and not on the phone. */
+  const rows = [...tabs, CALENDAR]
+  const activeIdx = activeIndex(rows, pathname)
+  const { ref, box } = useSlider(rows[activeIdx]?.to ?? null)
 
   return (
     <nav
@@ -449,7 +485,7 @@ function TabBar({ tabs }) {
             follows without anything else changing. */}
         <Slider box={box} className="lg-pill" />
 
-        {tabs.map((tab, i) => (
+        {rows.map((tab, i) => (
           <NavLink
             key={tab.to}
             to={tab.to}
@@ -459,20 +495,44 @@ function TabBar({ tabs }) {
             // muted over glass drops to 2.5:1 when the accent button passes
             // underneath. ink/70 holds above 4.5:1 in the worst case.
             className={({ isActive }) =>
-              /* 13px rather than the 14px of text-small, with the line height
-                 kept so the bar does not change height. The last four pixels
-                 had to come from somewhere and the type is where they cost
-                 least: a tab label is a signpost read at a glance, not copy,
-                 and 13px is still above what iOS and Android set theirs at.
-                 Written as an arbitrary size rather than text-label because
-                 that token carries +0.02em tracking for uppercase, which would
-                 have given back most of what the smaller size just bought. */
-              `press relative z-10 flex-auto truncate rounded-pill px-1 py-3 text-center text-[0.8125rem] leading-[1.58] transition-colors duration-200 ease-settle ${
+              /**
+               * AN ICON OVER AN 11PX WORD, WHICH IS WHAT THE FIFTH TAB COST.
+               *
+               * Measured, five 13px labels in one row: at 390px and 430px
+               * nothing clips, at 360px three of the five do (Objectifs,
+               * Budget, Calendrier) and at 320px all five do. 360 is a Galaxy
+               * S-series width, so "it fits on the phones I checked" was not
+               * good enough.
+               *
+               * Two pixels of type buys the room back and the icon replaces
+               * what those two pixels were doing. Below about 12px a word is
+               * being recognised by shape rather than read, which is the same
+               * job the icon does and does better, so the pairing is not two
+               * ways of saying one thing: the glyph is the signpost and the
+               * word is what confirms it, which is the arrangement every
+               * platform bottom bar has converged on.
+               *
+               * Same icon set as the rail. The two navigations are the same
+               * five places, and a person who learns the calendar glyph on an
+               * iPad should not have to learn a different one on their phone.
+               *
+               * The bar gets taller: 45px to about 56. That is the standard
+               * height for this control on both platforms and it is under the
+               * bottom inset, which is padding the phone was giving away.
+               */
+              `press relative z-10 flex-auto rounded-pill px-1 py-2 text-center transition-colors duration-200 ease-settle ${
                 isActive ? 'text-ink' : 'text-ink/70'
               }`
             }
           >
-            {t(tab.key)}
+            {(() => {
+              const Icon = NAV_ICON[tab.icon]
+              return Icon ? <Icon className="mx-auto h-5 w-5 shrink-0" /> : null
+            })()}
+            {/* leading-[1.4] so the block has a predictable height whatever the
+                word, and truncate so a locale with a longer one degrades to an
+                ellipsis rather than pushing the bar sideways. */}
+            <span className="mt-0.5 block truncate text-[0.6875rem] leading-[1.4]">{t(tab.key)}</span>
           </NavLink>
         ))}
       </div>

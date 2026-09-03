@@ -24,6 +24,9 @@ export default function Library() {
   const [error, setError] = useState(null)
   const [busy, setBusy] = useState(null)
   const [sharePrompt, setSharePrompt] = useState(null)
+  /* Coming back from Stripe: null, {state:'waiting'} or {state:'slow'}. See
+     the effect below for why this exists at all. */
+  const [purchase, setPurchase] = useState(null)
   /* The course took over the page, the way the transaction history takes over
      the budget: reading six modules under a shop is reading in a corridor. */
   const [course, setCourse] = useState(false)
@@ -67,28 +70,66 @@ export default function Library() {
    * trusting an app, and a book about confidence is exactly the purchase
    * somebody might not want broadcast.
    */
+  /**
+   * IT SAYS SOMETHING NOW, AND THAT IS THE ACTUAL FIX HERE.
+   *
+   * "It brings me back to the site and nothing happens" was two bugs stacked,
+   * and only one of them was the webhook. This loop polled silently for nine
+   * seconds, and then, whether the book had arrived or not, wiped the query
+   * string and rendered nothing at all. Somebody who had just paid saw the
+   * library exactly as they left it, with no message, no spinner and no error.
+   *
+   * A payment that has been taken is the last thing in an app that should
+   * report by saying nothing. So there are three visible states now: waiting,
+   * arrived, and did not arrive with something to do about it.
+   *
+   * The window goes to about thirty seconds. Stripe delivers in a second or
+   * two normally, but a retry after a cold start is well past nine, and the
+   * old ceiling turned a slow success into a silent failure.
+   *
+   * The timer is cleaned up. It never was, so leaving the page mid-poll left a
+   * chain of timeouts calling setState on an unmounted component, and every
+   * remount started another chain beside it.
+   */
   useEffect(() => {
-    if (params.get('purchase') !== 'success') return
+    if (params.get('purchase') !== 'success') return undefined
     const slug = params.get('book')
     let tries = 0
+    let timer = null
+    let live = true
+
+    setPurchase({ state: 'waiting', slug })
+
     const tick = async () => {
-      // listBooks throws now, and this one runs on a timer rather than from a
-      // render, an unhandled rejection here would surface as a console error
-      // on the success screen and nothing else.
+      /* listBooks throws, and this runs on a timer rather than from a render,
+         so an unhandled rejection here would surface as a console error on the
+         success screen and nothing else. */
       const fresh = await listBooks().catch(() => null)
-      if (!fresh) return setParams({}, { replace: true })
-      setBooks(fresh)
-      const bought = fresh.find((b) => b.slug === slug)
-      if (bought?.owned) {
-        setSharePrompt(bought)
-        setParams({}, { replace: true })
-      } else if (++tries < 6) {
-        setTimeout(tick, 1500)
+      if (!live) return
+      if (fresh) {
+        setBooks(fresh)
+        const bought = fresh.find((b) => b.slug === slug)
+        if (bought?.owned) {
+          setPurchase(null)
+          setSharePrompt(bought)
+          return setParams({}, { replace: true })
+        }
+      }
+      if (++tries < 15) {
+        timer = setTimeout(tick, 2000)
       } else {
+        /* The query string is cleared either way, so a refresh does not start
+           the poll again, but the notice stays until it is dismissed. */
+        setPurchase({ state: 'slow', slug })
         setParams({}, { replace: true })
       }
     }
     tick()
+
+    return () => {
+      live = false
+      clearTimeout(timer)
+    }
   }, [params])
 
   async function buy(book) {
@@ -139,6 +180,61 @@ export default function Library() {
   return (
     <Screen>
       <TopBar title={t('nav.library')} sub={t('library.sub')} />
+
+      {/**
+       * Back from Stripe, at the top of the page, before anything else.
+       *
+       * The card is what the payment bought a moment of certainty about, so it
+       * goes above the catalogue rather than beside the book: somebody
+       * returning from a payment screen is looking for confirmation, not for a
+       * shop.
+       *
+       * role="status" and not "alert" while waiting, because nothing is wrong
+       * yet. It becomes an alert when the wait runs out, which is the point at
+       * which it is worth interrupting for.
+       */}
+      {purchase && (
+        <Section>
+          <div
+            data-hook="purchase-note"
+            data-state={purchase.state}
+            role={purchase.state === 'slow' ? 'alert' : 'status'}
+            className="rounded-3xl border border-hairline px-5 py-4"
+          >
+            <p className="text-body font-semibold text-ink">
+              {t(purchase.state === 'slow' ? 'library.buy_slow_title' : 'library.buy_wait_title')}
+            </p>
+            <p className="mt-1 text-small text-muted">
+              {t(purchase.state === 'slow' ? 'library.buy_slow_body' : 'library.buy_wait_body')}
+            </p>
+            {purchase.state === 'slow' && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {/* Refresh rather than "contact us". The entitlement usually
+                    lands during the minute somebody spends reading this, and a
+                    reload is the whole fix in that case. */}
+                <button
+                  type="button"
+                  data-hook="purchase-retry"
+                  onClick={async () => {
+                    await load()
+                    setPurchase(null)
+                  }}
+                  className="goal-action press"
+                >
+                  {t('library.buy_recheck')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPurchase(null)}
+                  className="press rounded-pill px-4 py-2 text-small font-semibold text-muted hover:bg-ink/[0.06]"
+                >
+                  {t('wiz.close')}
+                </button>
+              </div>
+            )}
+          </div>
+        </Section>
+      )}
 
       {/* Above the catalogue, because it is free, it is short, and it is the
           only thing on this page that does not cost anything to start. */}

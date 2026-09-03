@@ -137,17 +137,55 @@ export function visibleEvents(events, hidden) {
  * and an undefined variable is nothing at all. A screenshot did not show it;
  * sampling the painted pixels did, at 1:1 against the tile behind.
  */
-/* Seven categories, seven colours, and the seven the check constraint on
-   `colour` allows. That is not a coincidence: the constraint lists exactly
-   accent, green, quiet, cat-1, cat-2, cat-3 and cat-4, so the palette had
-   exactly enough room and there is none spare. An eighth category needs a
-   token first. */
+/**
+ * SEVEN CATEGORIES, SEVEN COLOURS THAT ARE ACTUALLY DIFFERENT.
+ *
+ * The first mapping used what the constraint already allowed and three of the
+ * seven were the same colour. accent is #E60070, cat-1 is #FF007A and cat-2 is
+ * #FF2D6B: three magentas within 15 degrees of hue, painted at 18 per cent
+ * over white, which is three chips nobody can tell apart on a month grid.
+ * "Un exam peut etre d'une couleur differente d'un cours" is the report and it
+ * was correct.
+ *
+ * Each theme has ONE six-step ramp and four colours declared outside it, and
+ * the four are what make seven possible:
+ *
+ *   cours      cat-1      rose vif in sun, navy in sea
+ *   examen     ink        noir, the one you cannot miss, which is the point
+ *   etude      cat-4      orange in sun, mid blue in sea
+ *   travail    cat-6      jaune in sun, light blue in sea
+ *   evenement  negative   deep red, the same in both themes
+ *   perso      green      the same in both themes
+ *   sante      quiet      gris
+ *
+ * ONLY THREE OF THE SIX RAMP STEPS ARE USED, AND THAT IS THE WHOLE TRICK.
+ *
+ * The first version of this mapping took four (1, 3, 4, 6) and measured fine
+ * in sun and badly in sea, where the ramp is monotone blue: cat-3 and cat-4
+ * came back 7.6 apart in CIE76, and anything under about 10 reads as one
+ * colour. Four picks from six adjacent steps always leaves one neighbouring
+ * pair, so the fix is not a better set of four, it is taking three.
+ *
+ * `negative` is the fourth, and it is worth saying out loud that this is the
+ * error colour being used as a palette entry. It is not a slip. It and `green`
+ * are the only saturated hues in this file declared once at :root instead of
+ * per theme, so they are the only two that are the same colour in sun and sea,
+ * and a party needs a hue that does not move. Nothing about the chip says
+ * "error": it is a 3px red rule beside the name of a party.
+ *
+ * cat-2, cat-3 and cat-5 are skipped. They sit between steps already in use.
+ *
+ * Migration 53 widens the check constraint on `colour` to accept the whole
+ * ramp plus ink and negative. Every name here must be a token
+ * tailwind.config.js declares AND a value that constraint allows; the test
+ * reads the constraint out of the SQL and asserts both directions.
+ */
 export const CATEGORY_COLOUR = {
   cours: 'cat-1',
-  examen: 'accent',
-  etude: 'cat-3',
-  travail: 'cat-2',
-  evenement: 'cat-4',
+  examen: 'ink',
+  etude: 'cat-4',
+  travail: 'cat-6',
+  evenement: 'negative',
   perso: 'green',
   /* Grey, and deliberately the quietest of the seven. A health entry sitting
      on a shared screen should be the one that draws the least attention. */
