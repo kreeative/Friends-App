@@ -323,13 +323,23 @@ function SideRail({ tabs }) {
          * belongs to. It is the one element in the rail that is not a place you
          * can go, and nothing said so.
          *
-         * A hairline under it, and then a real gap. The rule is the part that
-         * carries the boundary without spending height; the gap is what "leave
-         * the logo alone at the top" asks for, and 24px is the smallest amount
-         * at which the mark stops reading as the first item of the list. Same
-         * treatment as the bell and the avatar at the other end, which are
-         * also not destinations, so the rail has one grammar for "this group
-         * is different" rather than two.
+         * A hairline under it, and then a lot of air. The rule carries the
+         * boundary without spending height; the gap is what "laisse le logo
+         * seul en haut" asks for, and it has been asked for twice.
+         *
+         * 4px, then 24, now 40. The first two were arithmetic about the
+         * smallest gap that would read as a separation, which was answering a
+         * different question: the ask is not "separate these" but "leave the
+         * mark alone up there", and alone means the next thing is far enough
+         * down that the eye does not group them. 40px is roughly one row
+         * height, so the space where an item would be is visibly empty.
+         *
+         * The height budget is what bounds this and it is not close. Five rows
+         * at h-11 plus a group chip, at gap-3, is 320px; the logo block and
+         * this gap are 88; the bell and the avatar at the bottom are 128. That
+         * is 536 inside a rail that is the window height less 32, so the
+         * scroller does not appear until about 570px of viewport, which is
+         * shorter than any tablet this layout is for.
          *
          * The tile is 32 rather than 28. It is alone up there now, so it is
          * the one thing in the rail that is looked at rather than scanned, and
@@ -343,7 +353,7 @@ function SideRail({ tabs }) {
         >
           <LockupInline size={32} />
         </Link>
-        <span aria-hidden="true" className="mx-1 mb-6 mt-3 h-px shrink-0 bg-hairline/60" />
+        <span aria-hidden="true" className="mx-1 mb-10 mt-4 h-px shrink-0 bg-hairline/60" />
 
         {/**
          * Which group you are in, now that the top bar is not saying it above
@@ -357,7 +367,7 @@ function SideRail({ tabs }) {
             aria-label={group.name}
             title={group.name}
             data-hook="rail-group"
-            className="press mb-3 flex h-8 w-8 shrink-0 items-center justify-center self-center rounded-pill bg-accent/[0.16] text-small font-bold text-ink"
+            className="press mb-4 flex h-8 w-8 shrink-0 items-center justify-center self-center rounded-pill bg-accent/[0.16] text-small font-bold text-ink"
           >
             {[...group.name.trim()][0]?.toUpperCase() ?? '?'}
           </Link>
@@ -368,17 +378,17 @@ function SideRail({ tabs }) {
             and rows silently losing height is worse than a scrollbar nobody
             usually sees.
 
-            gap-2 rather than gap-0.5. At 2px the rows were one column of icons
-            with no rhythm, and the active pill touched its neighbours, so "you
-            are here" read as a band rather than as one item. It went to 6px,
-            and then to 8 when that was still asked to open up. Five rows at
-            h-11 plus a group chip plus the 8px gaps is 316px, so a 700px rail
-            still holds all of it without the scroller ever appearing, which is
-            the number that decides how far this can go.
+            gap-3 rather than gap-0.5. At 2px the rows were one column of icons
+            with no rhythm and the active pill touched its neighbours, so "you
+            are here" read as a band rather than as one item. It went to 6, then
+            8, and now 12, because it kept being asked to open up and the
+            constraint that would have stopped it is nowhere near: see the
+            height budget in the note above the lockup.
 
-            The row is h-11 throughout and does not change: the space between
-            targets grew, the targets did not shrink. */}
-        <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
+            The row is h-11 throughout and does not change. The space between
+            targets grew; the targets did not shrink, which is the part that
+            would have cost something. */}
+        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
           {rows.map((tab, i) => {
             const Icon = NAV_ICON[tab.icon]
             return (
@@ -428,7 +438,7 @@ function SideRail({ tabs }) {
          * a new control: TopNav's note records that the avatar became the link
          * to the profile when the dropdown was deleted, and it still is.
          */}
-        <div className="mt-4 flex shrink-0 flex-col gap-2 border-t border-hairline/60 pt-4">
+        <div className="mt-6 flex shrink-0 flex-col gap-3 border-t border-hairline/60 pt-6">
           <NotificationBell placement="rail" />
 
           <NavLink

@@ -40,17 +40,20 @@ PUB = ROOT / 'public'
 # ---------------------------------------------------------------------------
 # The palette. These are the only lines to edit.
 #
-# POP is #D6006B, and the long version of why lives beside --c-accent in
-# index.css. The short version: #EC4899 is 3.53:1 against white and cannot
-# carry the word on a button; #E11D48 is 14 units from the error red in CIE76
-# and reads as a second red beside it; #D6006B is 5.16:1, hue 2, and the same
-# family as the pink that was already inside these PNGs.
+# POP is #FF007A, which is the brand pink, chosen by name. The long version of
+# what that costs lives beside --c-accent in index.css and is not repeated
+# here; the short version is that white on it is 3.80:1 and the deliberate
+# trade was made there, once, in writing.
+#
+# What matters HERE is only that this file and that token are the same value.
+# Three pinks is what started all of this, and the one inside a PNG is the one
+# nobody can find by reading the stylesheet.
 #
 # PRESSED goes DARKER, never lighter. A hover that lightens takes the fill
 # towards the white sitting on it, which is the one direction that cannot be
 # afforded here.
 # ---------------------------------------------------------------------------
-POP = (214, 0, 107)      # #D6006B
+POP = (255, 0, 122)      # #FF007A
 YEL = (248, 203, 2)      # #F8CB02, the brand yellow, unchanged
 SEA = (0, 157, 185)      # #009DB9, the alternate theme's ground, unchanged
 
