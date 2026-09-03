@@ -12,7 +12,6 @@ import MemberSheet from '../components/MemberSheet'
 import ThemePicker from '../components/ThemePicker'
 import LanguagePicker from '../components/LanguagePicker'
 import DangerZone from '../components/DangerZone'
-import PurchaseCheck from '../components/PurchaseCheck'
 import { LegalLinks } from './Legal'
 
 const DAYS_FR = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi']
@@ -256,12 +255,11 @@ export default function Settings() {
         </Section>
       )}
 
-      {/* Above Leaving, because it is a thing that helps rather than a thing
-          that removes. Under its own heading so nobody presses it by accident
-          while looking for something else. */}
-      <Section title={t('diag.title')}>
-        <PurchaseCheck />
-      </Section>
+      {/* The purchase check used to be here, and here is the GROUP settings
+          page. Buying a book is a personal transaction: it has no group, and a
+          person with no group could not reach the diagnostic at all. It lives
+          on the account screen now, which is where the rest of "things about
+          me and my money" already is. */}
 
       {/* Last, and under its own heading. Leaving was previously impossible
           without signing out of the product, which is why people were signing

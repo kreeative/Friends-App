@@ -1521,5 +1521,31 @@ ok(
   'it loads once on mount, which is the whole of "my photo did not appear"',
 )
 
+/**
+ * THE PURCHASE CHECK IS ON THE ACCOUNT SCREEN, NOT THE GROUP ONE.
+ *
+ * It was mounted in Settings.jsx, which despite the name is the GROUP settings
+ * page at /g/:groupId/settings. Wrong screen twice over: a book purchase
+ * belongs to a person rather than to a group, and somebody with no group had
+ * no route to it at all. It was reported as missing, and a page nobody can
+ * navigate to IS missing.
+ *
+ * Verified in Chromium at both addresses: present and clickable on /settings
+ * under a "Purchases" heading, absent from the group page, no page errors on
+ * either.
+ */
+const account = read('src/pages/Account.jsx')
+const groupSettings = read('src/pages/Settings.jsx')
+ok(
+  'the purchase check is on the personal account screen',
+  /<PurchaseCheck \/>/.test(account) && /components\/PurchaseCheck/.test(account),
+)
+ok(
+  'and not on the group settings screen',
+  !/<PurchaseCheck/.test(code('src/pages/Settings.jsx')) &&
+    !/import PurchaseCheck/.test(groupSettings),
+  'a person with no group could not reach it there',
+)
+
 console.log(`\n  ${pass} passed, ${fail} failed\n`)
 process.exit(fail ? 1 : 0)
