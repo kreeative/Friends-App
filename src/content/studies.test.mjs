@@ -274,5 +274,65 @@ const allProse = (w) => [
   }
 }
 
+/**
+ * FRENCH THAT IS MISSING ITS ACCENTS IS NOT FRENCH.
+ *
+ * Reported from the live site: the pages read wrong. It was not a translation
+ * problem, it was that whole strings had been written in ASCII, so a reader got
+ * "Les regles ne sont pas un detail prive" and "Pourquoi ca reste prive quand
+ * meme". Fifty-nine of these in this file and twenty in i18n.
+ *
+ * The words below are ones that are NEVER valid French without their accent, so
+ * finding one is a defect rather than a style choice. Deliberately absent: "a"
+ * and "ou", which are real French words as well as accented ones ("à", "où"),
+ * and no list can tell them apart without reading the sentence.
+ *
+ * Checked ONLY against the `fr` blocks. "detail", "difference" and "decision"
+ * are ordinary English and appear correctly in the `en` blocks and in a URL, so
+ * a whole-file sweep would report the English as broken French.
+ */
+const NEEDS_ACCENT = [
+  'ca', 'meme', 'regles', 'prive', 'privee', 'previsible', 'coute', 'cout',
+  'etaient', 'ete', 'deja', 'realise', 'acces', 'apres', 'facon', 'probleme',
+  'periode', 'systematique', 'declarent', 'represente', 'productivite',
+  'memoire', 'symptomes', 'fonctionnalite', 'verifiable', 'depot', 'publiees',
+  'etudes', 'etude', 'difference', 'decision', 'decisions', 'annee', 'journee',
+  'tache', 'taches', 'ecart', 'echantillon', 'reponses', 'annees', 'premiere',
+  'deuxieme', 'differentes', 'opposees', 'menent', 'derive', 'citees',
+  'concernees', 'recrutees', 'declaratives', 'regularite', 'credible',
+  'decimale', 'definitions', 'agrege', 'avance', 'decrit', 'partagee',
+  'ecrites', 'reglage', 'fatiguee', 'desolee', 'diminuees', 'absentees',
+  'moitie', 'degrade',
+]
+/* Three came out of this list because they are correct French unaccented, and
+   the first run of it failed against prose that was already right:
+     "manque"       the verb and the noun, as in "ce qui manque est ailleurs".
+                    Only the past participle takes one, and that is "manqué".
+     "douloureuses" never takes an accent at all. "des regles douloureuses" was
+                    the accent bug; "douloureuses" was not.
+     "avance"       "l'avance" and "il avance" are unaccented; "avance" as a
+                    past participle is "avancé". Context decides, so a word
+                    list cannot.
+   A test that fails on correct content is worse than no test: it teaches
+   people to edit the prose until the checker stops complaining. */
+const accentRe = new RegExp(`\\b(${NEEDS_ACCENT.join('|')})\\b`)
+
+for (const study of STUDIES) {
+  const fr = study.fr
+  const prose = [
+    fr.eyebrow, fr.title, fr.dek, fr.methodTitle, fr.sourcesTitle,
+    ...fr.sections.flatMap((sec) => [sec.h, ...sec.p]),
+    ...fr.method,
+  ].filter(Boolean)
+  for (const text of prose) {
+    const hit = accentRe.exec(String(text))
+    ok(
+      `fr accents: "${String(text).slice(0, 44)}..."`,
+      hit === null,
+      hit ? `"${hit[1]}" is missing its accent` : '',
+    )
+  }
+}
+
 console.log(`\nstudies\n\n  ${pass} passed, ${fail} failed\n`)
 process.exit(fail === 0 ? 0 : 1)
