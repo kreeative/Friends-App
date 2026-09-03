@@ -31,6 +31,16 @@ import { dirname, join } from 'node:path'
 const here = dirname(fileURLToPath(import.meta.url))
 const root = join(here, '..', '..')
 const read = (p) => readFileSync(join(root, p), 'utf8')
+/**
+ * The same file with its comments removed.
+ *
+ * Assertions of the form "this string is gone" match the note explaining why it
+ * is gone, so they fail against a codebase that is already correct. That has
+ * happened twice here: once for CameraIcon, once for text-on-accent/70. Declared
+ * beside read() rather than halfway down, for the temporal-dead-zone reason
+ * recorded on the file reads below.
+ */
+const code = (p) => read(p).replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '')
 
 let pass = 0
 let fail = 0
@@ -503,7 +513,6 @@ for (const [file, what] of [
 /* Comments stripped first, like cycCode below. The first version of this
    assertion failed against a codebase that was already correct, because the
    note explaining WHY CameraIcon was removed names CameraIcon. */
-const code = (p) => read(p).replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '')
 ok(
   'the glyphs it used are not left behind',
   !/ForwardIcon|CameraIcon|PartyIcon/.test(code('src/components/ActionBar.jsx')) &&
@@ -1159,9 +1168,82 @@ ok(
   /snap-x snap-mandatory/.test(rail) && /w-\[78%\]/.test(rail),
   'a rail whose cards fill the width is indistinguishable from one card',
 )
+/**
+ * PINK IS "NOT YET", GREY IS "DONE", WHICH IS THE SECOND TIME ROUND.
+ *
+ * It shipped the other way. The loud colour was being spent on the goals that
+ * need nothing from you while the ones still waiting sat quiet; inverted, the
+ * pink cards ARE the remaining work and finishing one takes it out of the
+ * queue.
+ *
+ * THAT MOVED A KNOWN CONTRAST PROBLEM FROM THE EXCEPTION TO THE DEFAULT.
+ * White on the accent is 3.80:1, documented in index.css as a decision. It
+ * clears the 3:1 large text needs and fails the 4.5 normal text needs, and it
+ * now applies to every unanswered card rather than the odd finished one.
+ *
+ * So the pink card carries exactly one piece of white-on-pink text, the title,
+ * at 22px bold, which IS large text. Everything smaller sits in an opaque white
+ * pill with ink on it. Audited in Chromium on the painted pixels, compositing
+ * every translucent layer down, in BOTH states:
+ *
+ *   pink  title 3.80 (large, needs 3)   pills 17.48   button 17.48
+ *   grey  title 6.45 (large, needs 3)   pills  5.74   button 12.92
+ *
+ *   0 failing across both states, out of 20 pieces of text.
+ *
+ * The one that did fail first was the counter's denominator at
+ * text-on-accent/70, which composited to 2.28:1, under even the large-text
+ * threshold. It is full opacity now.
+ */
 ok(
-  'grey until answered, accent once it is',
-  /done \? 'bg-accent shadow-raised' : 'bg-ink\/\[0\.05\]'/.test(rail),
+  'pink is unanswered and grey is done',
+  /done \? 'bg-ink\/\[0\.05\]' : 'bg-accent shadow-raised'/.test(rail),
+  'the loud colour belongs on the work that is left',
+)
+ok(
+  'the only white-on-pink text is the title, and it is large',
+  /text-safe line-clamp-2 text-h2 font-bold leading-tight/.test(rail),
+  '22px bold is large text, so 3.80:1 clears the 3:1 it needs',
+)
+ok(
+  'and the small facts sit on an opaque pill instead',
+  /done\s*\n?\s*\? 'bg-ink\/\[0\.06\] text-muted'\s*\n?\s*: 'bg-on-accent text-ink'/.test(rail),
+  'a translucent white would composite back down towards the 3.80',
+)
+/* Comments stripped, like the glyph assertion above. The first version of
+   this matched the note explaining WHY text-on-accent/70 was removed, so it
+   failed on a file that was already correct. */
+ok(
+  'nothing on the card is drawn at partial opacity',
+  !/text-on-accent\/\d/.test(code('src/components/CheckinRail.jsx')),
+  'text-on-accent/70 measured 2.28:1, under even the large-text threshold',
+)
+
+/**
+ * AND THE CARDS SAY MORE THAN WHETHER THEY ARE DONE.
+ *
+ * Asked for: "the number of streak days for a recurring goal, or if you say
+ * you are going to read 3 chapters but you just read 2 out of 3".
+ *
+ * The streak is only ever non-zero for a goal with no group: streakOf walks
+ * goal_days, and a group goal is answered into checkin_items, so it has no
+ * rows there. Showing nothing is the honest outcome rather than a zero. A
+ * group streak would have to come out of completion.js over cycles, which is a
+ * different number and a different piece of work.
+ */
+ok(
+  'the card reports the run behind it',
+  /data-hook="rail-streak"/.test(rail) && /streakOf\(goal, dayIndex, new Date\(\)\)/.test(rail),
+)
+ok(
+  'and how far into today it is',
+  /counted && count > 0/.test(rail) && /t\('goal\.today_count'/.test(rail),
+  '2 of 3 is a started day, and the card should say so',
+)
+ok(
+  'reading the same index the rest of the app reads',
+  /dayIndex=\{dayIndex\}/.test(goalsPage),
+  'a second source for the streak would disagree with the detail page',
 )
 ok(
   'and colour is not the only signal',
@@ -1171,7 +1253,7 @@ ok(
 )
 ok(
   'a counter is done only when it reaches its target',
-  /const done = recurring \? count >= target : a\.outcome === 'done'/.test(rail),
+  /const done = counted \? count >= target : a\.outcome === 'done'/.test(rail),
   'colouring 2 of 3 as finished is the card lying about the number on it',
 )
 
