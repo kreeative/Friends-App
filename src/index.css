@@ -1809,10 +1809,63 @@
    * result you would be sorry to reach by accident, so it should be visible
    * from across the page and impossible to hit while aiming at something else.
    */
+  /**
+   * The secondary button, as a raised piece of glass.
+   *
+   * The outlined version was a hairline round transparent nothing, which reads
+   * as a disabled control next to a filled accent button. This is the same
+   * sheet the cards and the nav are made of, at a button's scale: a
+   * half-transparent white ground, a blurred backdrop, a lit rim and a float
+   * shadow, lifting two pixels on hover.
+   *
+   * THE FILL IS --glass-tint AND NOT `bg-white/50`.
+   *
+   * That was the spec and it is the same trap as `bg-pink-50`: the token is
+   * white today and it is the one place a later dark theme would change it,
+   * whereas a literal white would stay white and turn a dark surface into a
+   * light one. Everything else here is exactly the requested recipe.
+   *
+   * Solid first, translucent only inside @supports, for the reason .lg gives:
+   * a browser without backdrop-filter gets a readable surface rather than a
+   * label floating on the page behind it.
+   */
   .goal-action {
-    @apply inline-flex items-center rounded-pill border border-hairline px-4 py-2
-           text-small font-semibold text-muted no-underline transition-colors
-           duration-200 ease-settle hover:border-ink/20 hover:text-ink;
+    @apply inline-flex items-center rounded-pill px-4 py-2
+           text-small font-semibold text-ink no-underline
+           transition-all duration-200 ease-settle;
+    background: rgb(var(--glass-tint) / 0.92);
+    border: 1px solid rgb(var(--glass-tint) / 0.7);
+    box-shadow: var(--e-raised);
+  }
+
+  @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .goal-action {
+      background: rgb(var(--glass-tint) / 0.5);
+      -webkit-backdrop-filter: blur(12px) saturate(160%);
+      backdrop-filter: blur(12px) saturate(160%);
+    }
+  }
+
+  @media (hover: hover) {
+    .goal-action:hover {
+      background: rgb(var(--glass-tint) / 0.75);
+      box-shadow: var(--e-float);
+      transform: translateY(-2px);
+    }
+  }
+
+  .goal-action:active {
+    transform: translateY(0) scale(0.985);
+  }
+
+  /* Decoration is opt-out, same as everywhere else in this file. */
+  @media (prefers-reduced-motion: reduce) {
+    .goal-action,
+    .goal-action:hover,
+    .goal-action:active {
+      transition: none;
+      transform: none;
+    }
   }
   /* The middle tier: softer than the filled primary, louder than the outline,
      and in the theme's hue so the three read as one family rather than as an
@@ -2136,6 +2189,59 @@
    */
   .pane-grid {
     @apply grid items-start gap-x-8 gap-y-2 lg:grid-cols-2;
+  }
+
+  /**
+   * The profile, as a narrow aside and a wide main column.
+   *
+   * Two equal columns were the previous shape and they were wrong for this
+   * page specifically: the account form is six labelled fields and wants the
+   * room, while the theme picker and the language picker are each one row of
+   * chips and were sitting in 600px of it.
+   *
+   * The placement is explicit rather than left to auto-flow. Every child
+   * defaults to the wide column, and .pane-aside pins one to column 1; grid
+   * then puts each in the first row where its column is free, so the source
+   * order Preferences, Profile, Groups, Regularity comes out as
+   * [Preferences | Profile] over [Groups | Regularity] with no order classes
+   * and nothing reordered for a screen reader.
+   *
+   * items-start, so a short aside does not stretch to the height of the form
+   * beside it. The gap under it is the honest result of two columns of
+   * different lengths and is better than a card padded out to match.
+   */
+  .profile-grid {
+    @apply grid items-start gap-6 lg:grid-cols-3;
+  }
+
+  @media (min-width: 1024px) {
+    /**
+     * `dense`, and it is load bearing rather than a flourish.
+     *
+     * Default auto-flow is sparse: the cursor only moves forward, so an item
+     * with an explicit earlier column than the cursor goes to the NEXT row
+     * rather than backfilling. Measured without it, the wide Profile card took
+     * row one and the narrow Preferences card landed in row two, leaving the
+     * whole top-left of the page empty. The screenshot is what caught it.
+     *
+     * `dense` backfills, which is normally a reason NOT to use it: it can put
+     * things on screen in a different order from the DOM. Here that is exactly
+     * the point and it costs nothing, because the two columns hold unrelated
+     * cards rather than a sequence, and the DOM order stays the reading order
+     * a screen reader and a keyboard get.
+     */
+    .profile-grid {
+      grid-auto-flow: row dense;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .profile-grid > * {
+      grid-column: 2 / span 2;
+    }
+    .profile-grid > .pane-aside {
+      grid-column: 1 / span 1;
+    }
   }
 
   /**

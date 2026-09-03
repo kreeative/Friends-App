@@ -350,6 +350,69 @@ ok(
   !/week\.open_calendar/.test(read('src/lib/i18n.jsx')),
 )
 
+/* --- the calendar's three containers ------------------------------------- */
+
+/**
+ * One header carrying a title, three buttons, a view switch, a pager, the
+ * month and four filter chips was nine controls of five kinds in one box.
+ * The split is by WHAT A CONTROL DOES: row one opens things and turns layers
+ * on and off, row two moves around inside what is already drawn, row three is
+ * the drawing.
+ */
+ok('the actions and the filters are their own row', /data-hook="cal-actions"/.test(cal))
+ok('the pager is its own card', /data-hook="cal-toolbar"/.test(cal))
+ok(
+  'and that card holds no filters',
+  !/data-hook="cal-toolbar"[\s\S]{0,1400}data-hook="cal-layers"/.test(cal),
+  'a toolbar that both changes what is drawn and where you look is one nobody can read',
+)
+ok(
+  'the month is the heading now that the page title has gone up',
+  /<h1[^>]*first-letter:uppercase[\s\S]{0,80}fmt\.format\(anchor\)/.test(cal),
+  'Intl returns "septembre 2026" in French and "September 2026" in English',
+)
+
+/* --- the secondary button is glass --------------------------------------- */
+
+ok(
+  'the secondary button is a raised sheet rather than an outline',
+  /\.goal-action \{[\s\S]{0,400}var\(--glass-tint\)/.test(css),
+  'an outline round transparent nothing reads as disabled beside a filled button',
+)
+ok(
+  'it uses the token and not a literal white',
+  !/\.goal-action \{[\s\S]{0,400}bg-white/.test(css),
+  'a literal white stays white on a surface a token would have darkened',
+)
+ok('and it lifts on hover', /\.goal-action:hover \{[\s\S]{0,200}translateY\(-2px\)/.test(css))
+ok(
+  'with the motion opted out of',
+  /prefers-reduced-motion[\s\S]{0,300}\.goal-action/.test(css),
+)
+
+/* --- the profile is an aside and a main column --------------------------- */
+
+ok('there is a profile grid', /\.profile-grid \{/.test(css))
+ok(
+  'and it backfills, which is what puts the aside beside the form',
+  /\.profile-grid \{[\s\S]{0,120}grid-auto-flow: row dense/.test(css),
+  'measured without it the whole top-left of the page was empty',
+)
+
+/* --- the sign-in is a card, and only where there is room for one ---------- */
+
+const signin = read('src/pages/SignIn.jsx')
+ok(
+  'the sign-in centres from sm up rather than pinning top and bottom',
+  /sm:justify-center/.test(signin),
+  'justify-between on a laptop put the pitch and the button 900px apart',
+)
+ok(
+  'and there is no card on a phone',
+  /sm:lg sm:lg-frost/.test(signin),
+  'a card inside a 390px screen is a border drawn 16px from another border',
+)
+
 /* --- decoration stays where it has room --------------------------------- */
 
 const stickers = read('src/components/Stickers.jsx')

@@ -5,6 +5,9 @@ import { localeTag, useT } from '../lib/i18n'
 import { money } from '../lib/money'
 import { loadBudget } from '../lib/budgetData'
 import { dayKey, weekOf } from '../lib/time'
+import { agendaFor } from '../lib/agenda'
+import { phaseOn, predict } from '../lib/cycle'
+import { MARK_KINDS, countsFor, itemsFor, marksFor } from '../lib/dayMarks'
 import { isDueOn } from '../lib/schedule'
 import { isMissingColumn } from '../lib/dberr'
 import { cleanMoods } from '../lib/moods'
@@ -41,6 +44,34 @@ import DayRecap from './DayRecap'
  * answer, and a component that vanishes when it has nothing to say is one
  * people stop looking for.
  */
+
+/**
+ * The four marks under a date, and why each one is a different SHAPE.
+ *
+ * PHASE_DOT in Calendar.jsx records what happened the last time several states
+ * at this size differed by hue alone: it failed 1.4.1 outright and one of the
+ * hues measured 1.83:1 against white. So each kind here has its own silhouette
+ * and the set survives a greyscale screenshot.
+ *
+ * The colours are the tokens that actually carry at 6px. index.css records the
+ * measurements: in the sun theme cat-1 is 3.80:1 on white, cat-3 is 3.04:1,
+ * and cat-4 through cat-6 are 2.35 and below and marked "fill only". Nothing
+ * below 3:1 is used, because WCAG 1.4.11 asks that of a graphic carrying
+ * meaning. In sea every cat token clears it, so the constraint is sun's.
+ *
+ * Whole class strings, because Tailwind scans source text and a template
+ * literal produces no class at build time.
+ */
+const MARK_STYLE = {
+  /* A bar. The timetable is the thing with a duration. */
+  event: 'h-1.5 w-3 rounded-pill bg-cat-1',
+  /* A square, for a deadline: a date rather than a stretch of time. */
+  goal: 'h-1.5 w-1.5 rounded-[2px] bg-cat-3',
+  /* A ring, matching the calendar's own predicted-period mark. */
+  cycle: 'h-1.5 w-1.5 rounded-pill border-[1.5px] border-negative',
+  /* The circle this strip has always drawn, and the same green. */
+  logged: 'h-1.5 w-1.5 rounded-pill bg-green',
+}
 
 const OUTCOME_TONE = {
   done: 'chip-green',
@@ -107,7 +138,7 @@ function DayCell({
   isSelected,
   isFuture,
   outside = false,
-  marked,
+  marks = [],
   label,
   weekday = false,
   onSelect,
@@ -178,12 +209,20 @@ function DayCell({
         </span>
       </span>
 
-      {/* Presence, not performance. One dot means the day has something in it,
-          which is all a badge this size can honestly carry. */}
-      <span
-        aria-hidden="true"
-        className={`h-1.5 w-1.5 rounded-pill ${marked ? 'bg-green' : 'bg-transparent'}`}
-      />
+      {/**
+       * What is on the day. Up to four marks, deduplicated by kind, so four
+       * classes are one bar rather than four: the count belongs in the panel
+       * below, where it can be a number.
+       *
+       * The row keeps its height whether or not anything is in it, or every
+       * square in a month grid would sit at a different height depending on
+       * how busy its day was.
+       */}
+      <span aria-hidden="true" className="flex h-1.5 items-center justify-center gap-[3px]">
+        {marks.map((kind) => (
+          <span key={kind} className={MARK_STYLE[kind]} />
+        ))}
+      </span>
     </button>
   )
 }
@@ -329,6 +368,23 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
   const [budget, setBudget] = useState(null)
   const [moodByDay, setMoodByDay] = useState({})
 
+  /**
+   * The calendar's own three sources, which this strip never read.
+   *
+   * A person could have four classes and an exam on Thursday, look at the
+   * dashboard, and see a blank square. The dots and the day panel below both
+   * come from these now.
+   *
+   * They are separate reads rather than one join because they are three
+   * tables with three different sensitivities: 51_calendar_and_cycle.sql is
+   * explicit that the timetable and the cycle do not share a table, and the
+   * goals are somebody's own rows in a third.
+   */
+  const [events, setEvents] = useState([])
+  const [dueGoals, setDueGoals] = useState([])
+  const [cycleStarts, setCycleStarts] = useState([])
+  const [statedCycle, setStatedCycle] = useState(null)
+
   /* Which select shape this database can answer. A ref rather than state: it
      changes at most once per session and nothing renders from it. */
   const proofShape = useRef(null)
@@ -443,6 +499,56 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
         /* Offline. The rest of the panel still draws. */
       }
 
+      /**
+       * The calendar, the goals with a deadline, and the cycle.
+       *
+       * Every one of these is wrapped on its own and none of them can take the
+       * others down. They are three tables added at three different times, and
+       * a database that has not run migration 51 has none of them: a select
+       * naming a missing table is an error for that select and nothing else,
+       * so the strip degrades to what it drew before rather than going blank.
+       *
+       * No date filter on calendar_event, deliberately. A row is a RULE, not
+       * an occurrence: "Tuesdays and Thursdays until December" has one
+       * starts_on and would fall outside almost every window asked for, so
+       * filtering by date here would hide exactly the recurring classes this
+       * is for. occurrencesOf does the bounding, in agendaFor below.
+       */
+      try {
+        const { data, error } = await supabase.from('calendar_event').select('*')
+        if (!dead && !error) setEvents(data ?? [])
+      } catch {
+        /* No calendar yet. */
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('goals')
+          .select('id, commitment, due_on')
+          .eq('owner_id', user.id)
+          .eq('status', 'active')
+          .not('due_on', 'is', null)
+        if (!dead && !error) setDueGoals(data ?? [])
+      } catch {
+        /* No goals with a deadline. */
+      }
+
+      /* The cycle, read the same way CyclePanel reads it. The prediction is
+         derived here rather than stored, for the reason migration 51 gives:
+         a stored prediction goes stale the moment a real date is recorded and
+         there is then no way to tell a prediction from a fact. */
+      try {
+        const [{ data: logs }, { data: pref }] = await Promise.all([
+          supabase.from('cycle_log').select('started_on').order('started_on', { ascending: true }),
+          supabase.from('notification_preference').select('stated_cycle').maybeSingle(),
+        ])
+        if (!dead) {
+          setCycleStarts(logs ?? [])
+          setStatedCycle(pref?.stated_cycle ?? null)
+        }
+      } catch {
+        /* Not switched on, or not migrated. The overlay simply is not there. */
+      }
     }
 
     run()
@@ -505,7 +611,6 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
   /* An array now. Empty rather than null so every reader can ask for .length
      and nothing has to remember which of the two shapes it is holding. */
   const moods = moodByDay[selected] ?? []
-  const nothing = live.length === 0 && entries.length === 0 && moods.length === 0
 
   /**
    * Which month the header names, in whichever mode is showing.
@@ -525,16 +630,98 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
   const track = expanded ? monthTrack : weekTrack
   const slides = expanded ? months.length : weeks.length
 
-  /* Whether a day has anything on it at all, which is what the dot under it
-     means. Presence, not performance: one dot is all a badge that size can
-     honestly carry, and it must not become a score. */
-  const isMarked = (k) =>
+  /**
+   * The calendar's three sources, folded into what a day holds.
+   *
+   * Expanded over the whole slider rather than the visible week, because the
+   * month view draws six weeks at once and a per-slide expansion would rebuild
+   * the map on every swipe.
+   */
+  const agenda = useMemo(() => agendaFor(events, from, to), [events, from, to])
+
+  const goalsByDay = useMemo(() => {
+    const map = {}
+    for (const g of dueGoals) {
+      if (!g.due_on) continue
+      ;(map[g.due_on] ??= []).push(g)
+    }
+    return map
+  }, [dueGoals])
+
+  /* Derived, never stored. See the note on the read above and migration 51. */
+  const prediction = useMemo(
+    () => predict(cycleStarts, statedCycle),
+    [cycleStarts, statedCycle],
+  )
+  /* Whether the day had something logged, which is what the green dot has
+     always meant here: a check-in, an entry or a mood. Presence, not
+     performance, and it must not become a score. */
+  const isLogged = (k) =>
     (cyclesByDay[k] ?? []).some((s) => s.status === 'submitted') ||
     (entriesByDay[k] ?? []).length > 0 ||
     Boolean(moodByDay[k]?.length)
 
-  const dayLabel = (d) =>
-    d.toLocaleDateString(localeTag(locale), { weekday: 'long', day: 'numeric', month: 'long' })
+  /* One context object, built once, passed to every square. Rebuilding it per
+     cell would run the cycle arithmetic forty-two times on a month view. */
+  const dayCtx = useMemo(
+    () => ({
+      agenda,
+      goalsByDay,
+      /* Three arguments, not four. The fourth is periodDays and defaults to
+         five; passing the estimate object there was a bug that would have
+         made every day inside a NaN-length window read as a period. */
+      phaseOf: (k) => phaseOn(k, cycleStarts, prediction),
+      logged: isLogged,
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [agenda, goalsByDay, cycleStarts, prediction, cyclesByDay, entriesByDay, moodByDay],
+  )
+
+  /**
+   * The day's accessible name: the date, then what is on it, in words.
+   *
+   * The dots differ by shape as well as colour so they survive greyscale, and
+   * this is what carries them to a screen reader. A square with four silent
+   * marks under it is a square that says nothing to anybody not looking at it.
+   */
+  const dayLabelFull = (d) => {
+    const base = d.toLocaleDateString(localeTag(locale), { weekday: 'long', day: 'numeric', month: 'long' })
+    const c = countsFor(d, dayCtx)
+    const parts = []
+    if (c.event) parts.push(t(c.event === 1 ? 'week.n_events_one' : 'week.n_events_other', { n: c.event }))
+    if (c.goal) parts.push(t(c.goal === 1 ? 'week.n_goals_one' : 'week.n_goals_other', { n: c.goal }))
+    if (c.cycle) parts.push(t('week.mark_cycle'))
+    return parts.length ? `${base}, ${parts.join(', ')}` : base
+  }
+
+  /* The selected day's classes, deadlines and cycle state.
+
+     Declared AFTER dayCtx, not before. The first version sat up with the other
+     day-scoped values and referenced dayCtx a hundred lines before it exists,
+     which is a temporal dead zone: `const` is hoisted but not initialised, so
+     this throws at render rather than reading undefined. */
+  /**
+   * The panel drops the goal rows; the squares keep their dots.
+   *
+   * This panel already lists the day's goals further down, with their status
+   * and the control to mark one done, which is strictly more than a name and a
+   * square. Rendering both put "Rendre le memoire" on screen twice, once bare
+   * and once with "Non enregistre" beside it, which a screenshot caught.
+   *
+   * marksFor is untouched, so a deadline still puts a dot under its date. That
+   * is the half a person scanning the strip needs; the detail is below.
+   */
+  const dayItems = useMemo(
+    () => itemsFor(selectedDate, dayCtx).filter((i) => i.kind !== 'goal' && i.kind !== 'logged'),
+    [selectedDate, dayCtx],
+  )
+
+  /* "Nothing on this day" has to account for the calendar too, or a day with
+     three classes and no check-in says it is empty and hides them behind the
+     emptiness message. That is the bug this whole feature is for, in
+     miniature. */
+  const nothing =
+    live.length === 0 && entries.length === 0 && moods.length === 0 && dayItems.length === 0
 
   /**
    * Opening out, and folding back, without losing your place.
@@ -662,8 +849,8 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
                       isSelected={k === selected}
                       isFuture={k > todayKey}
                       outside={!sameMonth(m, d)}
-                      marked={isMarked(k)}
-                      label={dayLabel(d)}
+                      marks={marksFor(d, dayCtx)}
+                      label={dayLabelFull(d)}
                       onSelect={() => setSelected(k)}
                       onOpen={(el) => openDay(k, el)}
                     />
@@ -695,8 +882,8 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
                     isToday={k === todayKey}
                     isSelected={k === selected}
                     isFuture={k > todayKey}
-                    marked={isMarked(k)}
-                    label={dayLabel(d)}
+                    marks={marksFor(d, dayCtx)}
+                    label={dayLabelFull(d)}
                     onSelect={() => setSelected(k)}
                     onOpen={(el) => openDay(k, el)}
                   />
@@ -727,22 +914,34 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
         aria-label={expanded ? t('week.show_week') : t('week.show_month')}
         data-hook="week-toggle"
         /**
-         * Back to the word between two rules, no pill.
+         * A filled pill, and the two flanking rules are gone.
          *
-         * The pill was asked for and then asked back out again. Two things
-         * survive it: the hook, which the contrast probe reads, and the rules
-         * being in the ACCENT rather than the ink. They used to be a tint of
-         * the ink, and the ink is a near-black now, so leaving them there
-         * would paint them grey instead of the pink they have always been on
-         * this card.
+         * This control has been a pill, then a word between two rules, and is
+         * a pill again. Recording that so the next round knows it is a taste
+         * question that has been answered both ways rather than a bug.
+         *
+         * THE COLOURS ARE TOKENS AND NOT `bg-pink-50` / `text-pink-600`.
+         *
+         * Those were the spec, and they are correct on exactly one of this
+         * app's two themes. tailwind.config.js builds every colour as
+         * var(--c-<name>) so that light and dark, sun and sea, are the same
+         * class names with different values; a literal pink here would leave
+         * a pink badge sitting on the sea theme's blue, which is the mistake
+         * the note on `colour` in migration 51 exists to stop.
+         *
+         * accent/[0.10] is the pastel. The type is NOT the accent: at 13px
+         * semibold this is normal text and wants 4.5:1, and the accent on its
+         * own 10% tint comes out at 3.86:1, which was worked out before the
+         * class was written and then checked on the painted pixels. Ink at
+         * full strength on the same tint is the version that clears it, and
+         * the tint plus the tracking still say "pink badge" without the type
+         * having to be the thing carrying the colour.
          */
-        className="press group mt-1 flex w-full items-center justify-center gap-2 rounded-inner py-2 transition-colors hover:bg-accent/[0.06]"
+        className="press mt-1 flex w-full items-center justify-center rounded-pill bg-accent/[0.10] py-2 transition-colors hover:bg-accent/[0.16]"
       >
-        <span className="h-1 w-8 rounded-pill bg-accent/40 transition-colors group-hover:bg-accent/60" />
-        <span className="text-label font-semibold uppercase tracking-[0.08em] text-ink">
+        <span className="text-label font-semibold uppercase tracking-[0.12em] text-ink">
           {expanded ? t('week.week') : t('week.month')}
         </span>
-        <span className="h-1 w-8 rounded-pill bg-accent/40 transition-colors group-hover:bg-accent/60" />
       </button>
 
       {/**
@@ -801,6 +1000,46 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
           <p className="mt-2 text-small text-muted">{t('week.nothing')}</p>
         ) : (
           <>
+            {/**
+             * The day's classes, deadlines and cycle state.
+             *
+             * Above the mood and the check-in because these are the things
+             * that are still to happen: a 10:00 class is the answer to "what
+             * is today", and how yesterday felt is not.
+             *
+             * The cycle row is a sentence rather than a name, because it is
+             * a state of the day rather than an item in it, and it is the one
+             * row here that carries advice.
+             */}
+            {dayItems.length > 0 && (
+              <ul className="mt-3 space-y-1.5" data-hook="week-day-items">
+                {dayItems.map((item) => (
+                  <li key={item.id} className="flex items-start gap-2">
+                    <span
+                      aria-hidden="true"
+                      className={`mt-1.5 shrink-0 ${MARK_STYLE[item.kind]}`}
+                    />
+                    <span className="min-w-0">
+                      <span className="text-safe block text-small font-semibold text-ink">
+                        {item.kind === 'cycle' ? t(`week.cycle_${item.phase}`) : item.title}
+                      </span>
+                      {/* The clock and the room on one line, joined only when
+                          both are there. A stray separator with nothing after
+                          it is how a dot ends up looking like a typo. */}
+                      {(item.detail || item.location) && (
+                        <span className="block text-small text-muted">
+                          {[item.detail, item.location].filter(Boolean).join(' · ')}
+                        </span>
+                      )}
+                      {item.kind === 'cycle' && item.phase === 'period' && (
+                        <span className="block text-small text-muted">{t('prep.water')}</span>
+                      )}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+
             {/* First, because the day's mood is the frame the rest of it is
                 read in. Asking how somebody was before what they got done is
                 the order this whole product argues for. */}

@@ -225,14 +225,32 @@ export default function SignIn() {
 
   return (
     <div className="relative min-h-dvh bg-bg">
-      <main className="relative z-10 mx-auto flex min-h-dvh w-full max-w-content flex-col justify-between gap-12 px-6 py-14">
+      {/**
+       * A card, centred, rather than a column pinned to the top and bottom of
+       * the window.
+       *
+       * `justify-between` on a full-height column is right on a phone, where
+       * it puts the pitch under the thumb and the button above it. On a laptop
+       * it stretched the same two blocks 900px apart with nothing between
+       * them, which is the "floats loosely in wide empty space" in the report.
+       *
+       * So: still a column on a phone, a centred card from sm up. min-h-dvh
+       * and not min-h-screen, because on iOS Safari the latter is the window
+       * INCLUDING the toolbars that overlap it, which puts the bottom of a
+       * centred card under the address bar.
+       */}
+      <main className="relative z-10 mx-auto flex min-h-dvh w-full max-w-content flex-col justify-between gap-12 px-6 py-14 sm:max-w-[28rem] sm:justify-center">
+        {/* The whole thing is one sheet at sm and up, and nothing at all below
+            it: a card inside a 390px screen is a border drawn 16px from
+            another border. */}
+        <div className="sm:lg sm:lg-frost sm:p-8">
         <div>
           <ArtRow />
-          <h1 className="mt-10 text-hero text-ink">{t('signin.title')}</h1>
+          <h1 className="mt-10 text-hero text-ink sm:mt-6">{t('signin.title')}</h1>
           <p className="lede mt-5 max-w-[34ch]">{t('signin.pitch')}</p>
         </div>
 
-        <div className="animate-rise space-y-3">
+        <div className="animate-rise mt-8 space-y-3">
           {/* Previously a failed sign-in showed nothing at all, so a disabled
               provider or an unlisted redirect URL looked like a dead button. */}
           <ErrorNote error={authError} />
@@ -327,6 +345,7 @@ export default function SignIn() {
           <div className="pt-6">
             <LegalLinks />
           </div>
+        </div>
         </div>
       </main>
     </div>
