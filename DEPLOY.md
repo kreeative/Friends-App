@@ -136,6 +136,40 @@ somebody thought they had revoked it.
 The one thing that must not move is the VAPID private key. It goes in Supabase
 and nowhere else: not in the repository, not in Vercel, not in a message.
 
+### The Stripe publishable key is not needed at all
+
+Checkout here is Stripe-hosted. `api/checkout.js` creates the session on the
+server and returns `session.url`, and the browser navigates to it. There is no
+Stripe.js in the bundle and no `@stripe/stripe-js` dependency, so nothing ever
+asks for a `pk_`. A publishable key set on Vercel is simply unused. It is safe
+to leave and tidier to delete.
+
+`STRIPE_SECRET_KEY` is the one that matters, and it belongs on Vercel exactly
+as it is.
+
+### Never put a Stripe key behind a VITE_ name
+
+Worth stating on its own, because it is the one mistake here that cannot be
+undone by editing a variable.
+
+Vite does not inline only the `VITE_*` values the code reads. It builds
+`import.meta.env` as a static object containing **every** `VITE_*` variable in
+the environment and ships that object in the bundle. A variable nothing
+imports still reaches the browser.
+
+So `STRIPE_SECRET_KEY` is correct and `VITE_STRIPE_SECRET_KEY` publishes a live
+payments key to every visitor, with no error, no warning, and a site that works
+perfectly. The difference between those two names is five characters typed into
+a dashboard field.
+
+`src/lib/apiSyntax.test.mjs` now fails the build on a `VITE_` name that looks
+server-side, and scans `dist/` for `sk_`, `rk_`, `whsec_`, Resend and
+`service_role` shapes. That scan only sees the build on the machine running it,
+so it is a tripwire rather than proof about production.
+
+A publishable key (`pk_`) is designed to be public and is safe anywhere. A
+secret key (`sk_`) grants the account. Check the prefix, not the label.
+
 Then add the Vercel URL to Supabase's redirect list.
 
 ---

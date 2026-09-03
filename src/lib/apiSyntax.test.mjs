@@ -35,13 +35,14 @@
  * to .mjs forces module parsing regardless of where the file sits.
  */
 import { execFileSync } from 'node:child_process'
-import { copyFileSync, mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 
 const here = dirname(fileURLToPath(import.meta.url))
-const API = join(here, '..', '..', 'api')
+const root = join(here, '..', '..')
+const API = join(root, 'api')
 
 let pass = 0
 let fail = 0
@@ -187,6 +188,109 @@ const code = (rel) => src(rel).replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\
     /req\.method !== 'POST'/.test(rec),
     'a GET that grants entitlements can be triggered by a link',
   )
+}
+
+/**
+ * THE VITE_ PREFIX IS A PUBLISHING INSTRUCTION, NOT A NAMING CONVENTION.
+ *
+ * Vite does not inline only the VITE_ variables the code happens to read. It
+ * builds `import.meta.env` as a static object holding EVERY VITE_-prefixed
+ * variable in the environment and ships it in the bundle. So a variable nobody
+ * imports still reaches the browser, and "we never read it" is not a defence.
+ *
+ * That makes one typo catastrophic in a way nothing else here is. Setting
+ * STRIPE_SECRET_KEY on the hosting dashboard is correct. Setting
+ * VITE_STRIPE_SECRET_KEY is a live payments key published to every visitor,
+ * with no error, no warning, and a perfectly working site.
+ *
+ * The question came up honestly: the publishable key and the secret key were
+ * both on Vercel and it was not obvious which of those was a problem. It is
+ * worth being exact. A publishable key (pk_) is designed to be public and is
+ * safe anywhere. A secret key (sk_) grants the account. The names are one
+ * character apart in the middle of a dashboard field.
+ *
+ * Two checks, because they catch different mistakes:
+ *
+ *   1. Source. No VITE_ name in src/ may look like a server-side credential.
+ *      This catches somebody wiring one up in code.
+ *   2. Build output. Scan the actual bundle for live key shapes. This catches
+ *      the case the source check cannot see, which is a dangerous name set
+ *      only in a dashboard and never written down here.
+ */
+{
+  const walk = (dir) => {
+    const out = []
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      const full = join(dir, e.name)
+      if (e.isDirectory()) out.push(...walk(full))
+      else out.push(full)
+    }
+    return out
+  }
+
+  const SRC = join(here, '..')
+  const sources = walk(SRC).filter((f) => /\.(js|jsx|ts|tsx)$/.test(f) && !f.endsWith('.test.mjs'))
+  ok(`there are sources to scan (${sources.length})`, sources.length > 0)
+
+  /* VITE_VAPID_PUBLIC_KEY is read in src/ and belongs there: a push public key
+     is meant to be in the browser, which is the whole point of a keypair. So
+     the rule cannot be "no VITE_ name mentioning a key". It is a list of the
+     words that mean server-side, with PUBLIC deliberately absent. */
+  const DANGEROUS = /^VITE_.*(SECRET|SERVICE_ROLE|STRIPE|PLAID|WEBHOOK|RESEND|PRIVATE|SERVICE_KEY)/
+  const offenders = []
+  for (const file of sources) {
+    for (const m of readFileSync(file, 'utf8').matchAll(/\bVITE_[A-Z0-9_]+/g)) {
+      if (DANGEROUS.test(m[0])) offenders.push(`${file.slice(SRC.length + 1)}: ${m[0]}`)
+    }
+  }
+  ok(
+    'no VITE_ name in src/ reads a server-side credential',
+    offenders.length === 0,
+    offenders.join('; '),
+  )
+
+  /**
+   * The built bundle, if one is lying around. Reported as an explicit skip
+   * rather than a silent pass when it is not: a check that quietly does
+   * nothing is the shape of every false green in this repo's history.
+   *
+   * Only ever reports THAT a pattern matched, never the text that matched it.
+   * A test failure is written to a terminal and pasted into chat, and a check
+   * for a leaked key that prints the leaked key has published it a second way.
+   *
+   * WHAT THIS CANNOT TELL YOU. dist/ is gitignored, so this reads whatever
+   * build happens to be on the machine, which may be old and was certainly
+   * made with local environment variables rather than the hosting dashboard's.
+   * A green here means "the build I can see is clean", not "production is
+   * clean". The only way to know that is to open the deployed bundle. This is a
+   * tripwire on the way out, not an audit of what already shipped.
+   */
+  const dist = join(root, 'dist')
+  if (!existsSync(dist)) {
+    console.log('  skip  bundle scan: no dist/, run `npx vite build` to include it')
+  } else {
+    const bundles = walk(dist).filter((f) => /\.(js|css|html|map)$/.test(f))
+    ok(`there is a build to scan (${bundles.length} files)`, bundles.length > 0)
+
+    const SHAPES = [
+      ['Stripe secret key', /\bsk_(live|test)_[A-Za-z0-9]{10}/],
+      ['Stripe restricted key', /\brk_(live|test)_[A-Za-z0-9]{10}/],
+      ['Stripe webhook signing secret', /\bwhsec_[A-Za-z0-9]{10}/],
+      ['Plaid secret', /\bplaid[_-]?secret["'\s:=]+[A-Za-z0-9]{20}/i],
+      ['Resend key', /\bre_[A-Za-z0-9]{16}/],
+      /* The service role key is a JWT and its role is in the payload, which is
+         base64 and therefore searchable as plain text in the bundle. */
+      ['service_role JWT', /service_role/],
+    ]
+    for (const [what, re] of SHAPES) {
+      const hits = bundles.filter((f) => re.test(readFileSync(f, 'utf8')))
+      ok(
+        `the bundle carries no ${what}`,
+        hits.length === 0,
+        hits.length ? `matched in: ${hits.map((f) => f.slice(dist.length + 1)).join(', ')}` : '',
+      )
+    }
+  }
 }
 
 console.log(`\n  ${pass} passed, ${fail} failed\n`)
