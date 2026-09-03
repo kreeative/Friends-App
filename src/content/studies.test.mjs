@@ -301,7 +301,7 @@ const NEEDS_ACCENT = [
   'tache', 'taches', 'ecart', 'echantillon', 'reponses', 'annees', 'premiere',
   'deuxieme', 'differentes', 'opposees', 'menent', 'derive', 'citees',
   'concernees', 'recrutees', 'declaratives', 'regularite', 'credible',
-  'decimale', 'definitions', 'agrege', 'avance', 'decrit', 'partagee',
+  'decimale', 'definitions', 'agrege', 'decrit', 'partagee',
   'ecrites', 'reglage', 'fatiguee', 'desolee', 'diminuees', 'absentees',
   'moitie', 'degrade',
 ]
@@ -315,7 +315,12 @@ const NEEDS_ACCENT = [
                     past participle is "avancé". Context decides, so a word
                     list cannot.
    A test that fails on correct content is worse than no test: it teaches
-   people to edit the prose until the checker stops complaining. */
+   people to edit the prose until the checker stops complaining.
+
+   "avance" was named in that note and then left in the list anyway, which is
+   its own small lesson: the list passed because no French prose here happened
+   to contain the bare word, so a wrong entry sat there looking correct. A
+   word list is only tested by the prose that runs into it. */
 const accentRe = new RegExp(`\\b(${NEEDS_ACCENT.join('|')})\\b`)
 
 for (const study of STUDIES) {
@@ -336,18 +341,19 @@ for (const study of STUDIES) {
 }
 
 /**
- * THE THANK-YOU PAGE PUBLISHES REAL PEOPLE'S NAMES, SO IT SHIPS EMPTY.
+ * THE THANK-YOU PAGE PUBLISHES REAL PEOPLE'S NAMES.
  *
- * Nobody is added to TESTERS by guessing. A name that turned up in passing in a
- * screenshot, a group roster or a notification is not consent to be printed on
- * a public page that search engines index, and testing an app is not agreeing
- * to be named for it. The list is the author's to fill.
+ * It shipped with the list empty and stayed that way until Anne-Kelly wrote the
+ * six names out herself. Nobody is added by guessing: a name that turned up in
+ * passing in a screenshot, a group roster or a notification is not consent to
+ * be printed on a public page that search engines index, and testing an app is
+ * not agreeing to be named for it.
  *
- * What is asserted here is the part that must hold whatever she puts in it: the
- * page reads correctly with nothing in the list, every entry that IS added has
- * a name, and a way to be removed is printed on the page rather than buried in
- * a policy. Verified in Chromium that the roll is absent while the list is
- * empty and renders when it is not.
+ * Asserted here is what must hold whatever is in the list: the page reads
+ * correctly with nothing in it, every entry has a name, no name is printed
+ * twice, and a way to come off the page is printed on the page rather than
+ * buried in a policy. Verified in Chromium that the roll is absent while the
+ * list is empty and renders when it is not.
  */
 {
   ok('the tester list is an array', Array.isArray(TESTERS))
@@ -356,7 +362,18 @@ for (const study of STUDIES) {
        typeof person.name === 'string' && person.name.trim().length > 0)
     ok('and a note, if present, is a string',
        person.note === undefined || typeof person.note === 'string')
+    /* The name is the React key on the roll, and it is also a person. Leading
+       or trailing space survives a copy and paste out of a message and would
+       print as a name that looks subtly wrong to the one person guaranteed to
+       notice. */
+    ok(`"${person.name}" is stored trimmed`, person.name === person.name?.trim())
   }
+  ok(
+    'no name is printed twice',
+    new Set(TESTERS.map((p) => p.name)).size === TESTERS.length,
+    'the roll keys on name, so a duplicate would also drop a row silently',
+  )
+
   for (const lang of ['fr', 'en']) {
     const c = CREDITS[lang]
     ok(`${lang}: the page has a title, a lede and a body`,
@@ -367,6 +384,19 @@ for (const study of STUDIES) {
   }
   ok('both languages have the same number of paragraphs',
      CREDITS.fr.body.length === CREDITS.en.body.length)
+
+  /* The French thank-you goes through the same accent sweep as the studies.
+     It was not covered before, which is how it got to sit one import away from
+     a checker that would have read it. */
+  for (const text of [CREDITS.fr.title, CREDITS.fr.lede, CREDITS.fr.rollTitle,
+                      CREDITS.fr.removal, ...CREDITS.fr.body]) {
+    const hit = accentRe.exec(String(text))
+    ok(
+      `fr credits accents: "${String(text).slice(0, 40)}..."`,
+      hit === null,
+      hit ? `"${hit[1]}" is missing its accent` : '',
+    )
+  }
 }
 
 console.log(`\nstudies\n\n  ${pass} passed, ${fail} failed\n`)

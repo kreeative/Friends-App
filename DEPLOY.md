@@ -111,6 +111,31 @@ Only `VITE_*` reaches the client bundle, that prefix is the whole mechanism,
 so anything without it stays server-side. Vite inlines the `VITE_*` values at
 build time, so changing one needs a redeploy, not a restart.
 
+### Vercel and Supabase hold different secrets, and neither reads the other's
+
+This has already caused a wasted afternoon, so it is spelled out. There are two
+separate places that run code, and a variable set in the wrong one is not a
+warning, it is silence.
+
+**Vercel** runs everything in `api/`, which reads `process.env` through
+`api/_env.js`. Every Stripe and Plaid variable belongs here and only here:
+`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `PLAID_CLIENT_ID`,
+`PLAID_SECRET`, `PLAID_ENV`.
+
+**Supabase** runs the `notify` edge function, which reads `Deno.env.get`.
+Setting a secret there makes it visible to that function and to nothing else.
+It belongs here and only here: `RESEND_API_KEY`, `MAIL_FROM`, `SUPPORT_EMAIL`,
+`VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`.
+
+Putting `STRIPE_WEBHOOK_SECRET` in Supabase as well as Vercel does not break
+anything and does not help either: no Supabase function reads it. It is still
+worth deleting the spare copy. A key that lives in two places has to be rotated
+in two places, and the forgotten one is the one that is still valid when
+somebody thought they had revoked it.
+
+The one thing that must not move is the VAPID private key. It goes in Supabase
+and nowhere else: not in the repository, not in Vercel, not in a message.
+
 Then add the Vercel URL to Supabase's redirect list.
 
 ---
