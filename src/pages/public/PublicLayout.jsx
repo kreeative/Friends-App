@@ -66,8 +66,11 @@ export default function PublicLayout() {
                     {c.links[l.key]}
                   </NavLink>
                 ))}
-                <Link to="/signin" className="chip-accent press">
-                  {c.links.signin}
+                {/* A joining CTA, not "Sign in". The footer and the About
+                    page keep the plain one, because a returning person is
+                    looking for that sentence and this is not it. */}
+                <Link to="/signin" className="btn-primary press w-auto rounded-pill px-5 py-2.5 text-small" data-hook="nav-join">
+                  {c.links.join}
                 </Link>
               </div>
 
@@ -134,12 +137,15 @@ export default function PublicLayout() {
                       style={{ transitionDelay: open ? `${80 + i * 50}ms` : '0ms' }}
                     >
                       {l.cta ? (
+                        /* The same joining CTA as the desktop bar. Two buttons
+                           to the same place saying different things is how a
+                           person ends up thinking they are two places. */
                         <Link
                           to={l.to}
                           tabIndex={open ? undefined : -1}
                           className="btn-primary press"
                         >
-                          {c.links[l.key]}
+                          {c.links.join}
                         </Link>
                       ) : (
                         <NavLink
