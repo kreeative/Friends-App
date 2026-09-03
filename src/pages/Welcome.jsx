@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import Wordmark from '../components/Wordmark'
 import { useT } from '../lib/i18n'
 import { BRAND, useTheme } from '../lib/theme'
 import { SLIDES, soloKeyFor } from '../lib/onboarding'
 import { isMissingColumn, isNetworkError } from '../lib/dberr'
-import Stickers from '../components/Stickers'
-import Wordmark from '../components/Wordmark'
+
 
 /**
  * The first screen of the app, for somebody who has just signed up.
@@ -177,18 +177,40 @@ export default function Welcome() {
         paddingBottom: 'env(safe-area-inset-bottom)',
       }}
     >
-      <Stickers set="welcome" />
-
-      {/* Above the stickers, which sit at z-20 and deliberately overlap the
-          column. Everything readable or tappable has to clear them. */}
+      {/**
+       * The stickers are gone from this screen.
+       *
+       * They are decoration on a poster and noise behind a modal. This is the
+       * first thing anybody sees and it asks a question in three steps; a
+       * scattering of unicorns and coins around the card competes with the one
+       * thing on it. They stay everywhere else, where there is no card in the
+       * middle to compete with.
+       *
+       * The z-30 below is kept: nothing overlaps the column now, but the
+       * layering is what keeps the header above the swipe track.
+       */}
       <div className="relative z-30 flex min-h-0 flex-1 flex-col">
         {/* The logo centred, with Skip taken out of the flow so it cannot
             push the logo off the middle. Wordmark sizes itself from `size`
             and ignores a height class, so the tile has to be asked for at
             the size it should be rather than constrained afterwards. */}
         <header className="relative shrink-0 px-6 pt-6">
+          {/**
+           * The real lettering, and it sits ON the ground now rather than in a
+           * square on it.
+           *
+           * This was replaced with white type for a round, on the theory that
+           * the artwork's own pink square was the problem. It was not: the
+           * square was invisible until BRAND.sun and the artwork disagreed
+           * about which pink they were. They agree now, so the tile has no
+           * edge to show and the hand-drawn name is back, which is a better
+           * logo than the same words set in the body face.
+           *
+           * `flat` drops the raised shadow, which is the only other thing that
+           * would have given the tile away.
+           */}
           <div className="flex justify-center">
-            <Wordmark size={60} />
+            <Wordmark size={132} flat />
           </div>
           {/* Skip goes where "continue on my own" goes. It is the same
               decision, and a Skip that dumped somebody on the group form
@@ -244,16 +266,25 @@ export default function Welcome() {
                * middle of it, with the ground showing all round.
                */}
               <div className="mx-auto my-auto w-full max-w-content rounded-[1.75rem] bg-surface p-7 shadow-float sm:p-8">
-                <span className="block h-14 w-14 text-accent">
-                  <SlideGlyph name={key} />
-                </span>
-                <div className="eyebrow mt-6">
+                {/**
+                 * The glyph above the step label is gone.
+                 *
+                 * Three of them were a pink line drawing at the top of a white
+                 * card, above a label that already says which step this is.
+                 * The card has one job per slide and the drawing was not it.
+                 *
+                 * The step becomes a badge rather than an eyebrow: a pill says
+                 * "1 of 3" as a piece of state, where uppercase grey type at
+                 * the top of a card reads as a section heading for the
+                 * paragraph under it.
+                 */}
+                <span className="inline-block rounded-pill bg-accent/[0.12] px-3 py-1 text-label font-semibold uppercase tracking-[0.06em] text-accent">
                   {t('welcome.step', { n: n + 1, total: SLIDES.length })}
-                </div>
-                <h1 className="mt-3 text-h1 leading-tight text-ink">
+                </span>
+                <h1 className="text-safe mt-3 text-h1 font-extrabold leading-tight text-ink">
                   {t(n === 0 ? 'welcome.hi' : `welcome.${key}_title`)}
                 </h1>
-                <p className="lede mt-4 max-w-[34ch]">
+                <p className="text-safe mt-2 max-w-[34ch] text-body leading-relaxed text-muted">
                   {t(n === 0 ? 'welcome.hi_body' : `welcome.${key}_body`)}
                 </p>
 
@@ -360,50 +391,3 @@ export default function Welcome() {
  * and sits at a different weight from everything around it. These inherit the
  * accent colour and the type's own scale.
  */
-function SlideGlyph({ name }) {
-  const common = {
-    viewBox: '0 0 48 48',
-    fill: 'none',
-    stroke: 'currentColor',
-    strokeWidth: 2.2,
-    strokeLinecap: 'round',
-    strokeLinejoin: 'round',
-    'aria-hidden': 'true',
-    className: 'h-full w-full',
-  }
-
-  /* Welcome: the three things the app holds, stacked as one. */
-  if (name === 'welcome') {
-    return (
-      <svg {...common}>
-        <path d="M8 12h32M8 24h32M8 36h20" opacity="0.4" />
-        <path d="m30 33 4 4 8-9" />
-        <circle cx="8" cy="12" r="2.2" fill="currentColor" stroke="none" />
-        <circle cx="8" cy="24" r="2.2" fill="currentColor" stroke="none" />
-      </svg>
-    )
-  }
-
-  /* Together: four, facing in. */
-  if (name === 'together') {
-    return (
-      <svg {...common}>
-        <circle cx="16" cy="16" r="5.5" />
-        <circle cx="32" cy="16" r="5.5" />
-        <circle cx="16" cy="32" r="5.5" opacity="0.55" />
-        <circle cx="32" cy="32" r="5.5" opacity="0.55" />
-        <path d="M21 21 27 27" />
-      </svg>
-    )
-  }
-
-  /* Solo: one, with a closed book and a private mark. */
-  return (
-    <svg {...common}>
-      <path d="M12 8h20a4 4 0 0 1 4 4v28H16a4 4 0 0 1-4-4V8Z" />
-      <path d="M12 32h24" opacity="0.5" />
-      <circle cx="24" cy="20" r="4" />
-      <path d="M24 24v4" />
-    </svg>
-  )
-}

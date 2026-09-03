@@ -87,6 +87,9 @@ export default function GoalCard({
   const finished = DONE[goal.status] ?? null
 
   const [asking, setAsking] = useState(false)
+  /* Whether the overflow menu is open. Per card, so two cards cannot both be
+     showing one. */
+  const [menu, setMenu] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState(null)
   const [ticking, setTicking] = useState(false)
@@ -156,10 +159,16 @@ export default function GoalCard({
        the way out is a warning for nothing. */
   }
 
+  /* A one-off with no due date says "une fois" rather than "avant le" with
+     nothing after it. The date is optional by design, so the missing case is
+     ordinary and gets its own sentence instead of a broken one. */
+  const due = shortDate(goal.due_on, localeTag(locale))
   const cadence =
     goal.cadence === 'recurring'
       ? t('goal.times_a_day', { n: goal.target_per_cycle })
-      : t('goal.by_date', { date: shortDate(goal.due_on, localeTag(locale)) })
+      : due
+        ? t('goal.by_date', { date: due })
+        : t('goal.once')
 
   const when = [goal.trigger_when, goal.trigger_where].filter(Boolean).join(', ')
 
@@ -404,27 +413,95 @@ export default function GoalCard({
       )}
 
       {/**
-       * Three tiers, left to right in increasing weight: outline to edit, a
-       * tint to pause, filled to finish. The owner's name has moved to the
-       * badge at the top, so this row is only controls and can simply wrap.
+       * FOUR BUTTONS BECAME A MENU, AND THE CARD IS THE REASON.
+       *
+       * They were a wrapping row of three filled pills and a red word, which
+       * is four things competing at the bottom of every card, none of them the
+       * reason anybody opened the page. Managing a goal is rare; looking at
+       * one is constant. A row that loud for the rare job made the list read
+       * as a settings screen.
+       *
+       * So they collapse behind one discreet control. Nothing is removed and
+       * nothing is harder to reach: it is one tap to open and one to choose,
+       * against one tap before, on actions taken once a month.
+       *
+       * NOT a hover menu. This is a phone first, and a menu that only appears
+       * on hover does not exist on a touch screen.
        */}
       {showControls && !finished && (
-        <div className="mt-5 flex flex-wrap items-center gap-2">
-          {editHref && (
-            <Link to={editHref} className="goal-action press">
-              {t('goal.edit')}
-            </Link>
-          )}
-          <button
-            onClick={() => setStatus(paused ? 'active' : 'paused')}
-            className="goal-action-soft press"
-          >
-            {paused ? t('goal.resume') : t('goal.pause')}
-          </button>
-          <button onClick={() => setStatus('completed')} className="goal-action-done press">
-            {t('goal.mark_done')}
-          </button>
-          {deletable && <DeleteButton onClick={() => setAsking(true)} label={t('goal.delete')} />}
+        <div className="mt-4 flex justify-end">
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setMenu((v) => !v)}
+              aria-expanded={menu}
+              aria-haspopup="menu"
+              aria-label={t('goal.actions')}
+              title={t('goal.actions')}
+              data-hook="goal-menu"
+              className="press flex h-9 w-9 items-center justify-center rounded-pill text-muted hover:bg-ink/[0.06] hover:text-ink"
+            >
+              <span aria-hidden="true" className="text-h2 leading-none">&#8943;</span>
+            </button>
+
+            {menu && (
+              <>
+                {/* A full-screen button behind the menu, so a tap anywhere
+                    closes it. A click handler on the document would fire
+                    before React's own and close it on the opening tap. */}
+                <button
+                  type="button"
+                  aria-label={t('goal.actions_close')}
+                  onClick={() => setMenu(false)}
+                  className="fixed inset-0 z-40 cursor-default"
+                />
+                <div
+                  role="menu"
+                  data-hook="goal-menu-items"
+                  className="lg lg-modal absolute right-0 z-50 mt-1 flex w-max min-w-[11rem] flex-col p-1.5"
+                >
+                  {editHref && (
+                    <Link
+                      to={editHref}
+                      role="menuitem"
+                      className="press rounded-inner px-3 py-2 text-left text-small font-semibold text-ink hover:bg-ink/[0.06]"
+                    >
+                      {t('goal.edit')}
+                    </Link>
+                  )}
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => { setMenu(false); setStatus(paused ? 'active' : 'paused') }}
+                    className="press rounded-inner px-3 py-2 text-left text-small font-semibold text-ink hover:bg-ink/[0.06]"
+                  >
+                    {paused ? t('goal.resume') : t('goal.pause')}
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => { setMenu(false); setStatus('completed') }}
+                    className="press rounded-inner px-3 py-2 text-left text-small font-semibold text-ink hover:bg-ink/[0.06]"
+                  >
+                    {t('goal.mark_done')}
+                  </button>
+                  {deletable && (
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => { setMenu(false); setAsking(true) }}
+                      /* Separated by a rule and set in the negative colour.
+                         The one action here that cannot be undone should not
+                         be adjacent to the three that can. */
+                      className="press mt-1 rounded-inner border-t border-hairline px-3 pb-2 pt-3 text-left text-small font-semibold text-negative hover:bg-negative/[0.09]"
+                    >
+                      {t('goal.delete')}
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
         </div>
       )}
 
