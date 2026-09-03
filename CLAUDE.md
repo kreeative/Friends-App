@@ -85,7 +85,12 @@ at the top of this file.
   time. Write whole class strings.
 - The `--c-` prefix on colour tokens is load-bearing: `tailwind.config.js`
   builds `var(--c-<name>)`.
-- RLS refuses a DELETE or UPDATE **silently**: 0 rows, no error.
+- RLS refuses a DELETE or UPDATE **silently**: 0 rows, no error. Ask for
+  `{ count: 'exact' }` and check it. In a Playwright stub the count comes back
+  `null` unless the fulfilled response also carries
+  `access-control-expose-headers: Content-Range`, because `content-range` is
+  not CORS-safelisted. Real Supabase sends it; a stub that does not makes the
+  rollback look broken when it is the instrument that is wrong.
 - Never chain two `npx vite build` calls in one command. They race and both
   report a bogus rolldown error.
 - `backdrop-filter` blurs what is behind an element. Over a flat ground it

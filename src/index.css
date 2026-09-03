@@ -1085,6 +1085,50 @@
   }
 
   /**
+   * A dialog. Nearly solid white, and the only glass treatment in the file
+   * that is not trying to be transparent.
+   *
+   * WHY A DIALOG IS NOT CHROME.
+   *
+   * .lg-chrome is 0.72, which is a sheet you can see the page through. That is
+   * right for a nav bar, where knowing what is underneath is orientation. It is
+   * wrong for a form, and the reason is NOT contrast, which is worth saying
+   * plainly because the tempting move is to dress a taste judgement up as a
+   * WCAG failure.
+   *
+   * MEASURED, off the painted pixels, with the accent laid behind the dialog so
+   * the sample is the worst case in the app rather than the commonest:
+   *
+   *   0.72 / sat 200%   sheet #F2E2E9   the muted label on it 6.33:1
+   *   0.95 / sat 120%   sheet #FCFAFB   the muted label on it 7.37:1
+   *
+   * Both pass. The scrim behind the dialog is already ink at 25 per cent, so
+   * there was never a contrast cliff here. What 0.72 does is tint the entire
+   * inside of a form pink, and every label, border and white input inside it
+   * then sits on a pink sheet. That is the eye strain that was reported, and it
+   * is a real complaint about a real thing even though no ratio failed.
+   *
+   * 0.95 rather than 1. At 1 the backdrop-filter is dead weight and the sheet
+   * stops reading as a sheet: it becomes a white rectangle with no relationship
+   * to the page, which is what the rim and the shadow exist to avoid.
+   *
+   * The blur is 40px, up from chrome's 32, because at this alpha there is very
+   * little coming through and what does come through should be light, not a
+   * recognisable shape behind the form the eye keeps trying to read.
+   *
+   * The saturate comes DOWN to 120%. Chrome's 200% is what makes a nav bar
+   * bloom over a colourful page. Behind a dialog it took the 5% of accent that
+   * still shows and pushed it back towards pink, which is the exact thing this
+   * treatment exists to stop.
+   */
+  .lg-modal {
+    --lg-a: 0.95;
+    --lg-blur: 40px;
+    --lg-sat: 120%;
+    --lg-bright: 1.02;
+  }
+
+  /**
    * The side rail, and the one surface in the app that is really transparent.
    *
    * WHY IT GETS TO BE, AND WHY THE TOP BAR DOES NOT.
@@ -2007,14 +2051,50 @@
    * rectangle, which is what the banking apps this was compared against do,
    * and focus is a ring rather than a colour change on one edge.
    */
+  /**
+   * WHITE, WITH A HAIRLINE. IT WAS A PINK FILL AND THAT WAS THE EYE STRAIN.
+   *
+   * --c-raised is #FFECEF in sun, a warm rose, and every input in the app sat
+   * on it. One field is a tint; a form of six stacked in a dialog is a pink
+   * page with white type holes in it, which is what "high eye strain and
+   * reduced readability" was about.
+   *
+   * White plus a border says "you can type here" using the shape rather than
+   * the colour, which is the version that also works for somebody who cannot
+   * separate the tint from the card behind it. Ink on white is 17.48:1 against
+   * 15.39 on the tint, and muted 7.61 against 6.70, so the type got better too.
+   * Measured in the running dialog, the input interior now paints #FFFFFF.
+   *
+   * THE FOCUS RING IS THE PART THAT HAD TO STAY LOUD. Focus is the one state
+   * where the colour is doing real work, and softening it to match the rest
+   * would have traded eye strain for a keyboard user not knowing where they
+   * are.
+   *
+   * WHAT CARRIES 1.4.11 HERE IS THE BORDER AND NOT THE RING, and that
+   * distinction is the whole point. The ring is the accent at 18 per cent,
+   * which composites to #FAD1E5 on white and is about 1.2:1: it is a bloom, it
+   * is not the indicator. The border goes to the flat accent, #E60070, which is
+   * 4.57:1 on white and clears the 3:1 a non-text indicator needs on its own.
+   * If the border is ever softened to match the ring, this state stops being
+   * perceivable and nothing on screen will look wrong.
+   *
+   * `border` rather than `border-0` plus a shadow, so the box does not change
+   * size between rest and focus and the form does not shift by a pixel when
+   * somebody tabs through it.
+   */
   .field {
-    @apply w-full rounded-field border-0 px-4 py-3 text-body text-ink
-           transition-shadow duration-200 ease-settle;
-    background-color: rgb(var(--c-raised));
+    @apply w-full rounded-field px-4 py-3 text-body text-ink
+           transition-colors duration-200 ease-settle;
+    background-color: rgb(var(--c-surface));
+    border: 1px solid rgb(var(--c-ink) / 0.14);
   }
   .field:focus {
     outline: none;
-    box-shadow: 0 0 0 2px rgb(var(--c-accent) / 0.55);
+    border-color: rgb(var(--c-accent));
+    box-shadow: 0 0 0 3px rgb(var(--c-accent) / 0.18);
+  }
+  .field::placeholder {
+    color: rgb(var(--c-muted) / 0.75);
   }
   /**
    * The amount, which is the whole reason the sheet is open.

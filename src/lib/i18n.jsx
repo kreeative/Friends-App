@@ -37,9 +37,15 @@ const STRINGS = {
     'cal.f_from': 'From', 'cal.f_until': 'Until',
     'cal.cat_cours': 'Class', 'cal.cat_examen': 'Exam',
     'cal.cat_etude': 'Study', 'cal.cat_perso': 'Personal',
-    'cal.layer_scolaire': 'Timetable', 'cal.layer_perso': 'Personal',
+    'cal.cat_travail': 'Work / shift', 'cal.cat_evenement': 'Event / party',
+    'cal.cat_sante': 'Health',
+    'cal.del_title': 'Delete which?',
+    'cal.del_body': '{what} repeats. This is {when}.',
+    'cal.del_one': 'Only this one',
+    'cal.del_all': 'The whole series',
+    'cal.layer_scolaire': 'Timetable', 'cal.layer_perso': 'Work & life',
     'cal.layer_objectifs': 'Goals', 'cal.layer_cycle': 'Cycle',
-    'wiz.open': 'Add my classes',
+    'wiz.open': 'Add a schedule',
     'wiz.title': 'My weekly classes',
     'wiz.help': 'One row per class. The term dates are shared by all of them.',
     'wiz.term_from': 'Term starts', 'wiz.term_until': 'Term ends (optional)',
@@ -60,6 +66,7 @@ const STRINGS = {
     'cal.err_times': 'Give both a start and an end, or neither for an all-day entry.',
     'cal.err_order': 'It has to end after it starts.',
     'cal.err_title': 'It needs a name.',
+    'cal.err_gone': 'Nothing was changed. Reload and try again.',
     'cycle.title': 'Cycle',
     'cycle.pitch': 'Track your period and see it on the calendar, with a reminder a couple of days ahead.',
     'cycle.private': 'Only you can ever see this. It is never shared with your group.',
@@ -1305,12 +1312,23 @@ const STRINGS = {
     'cal.f_from': 'A partir du', 'cal.f_until': "Jusqu'au",
     'cal.cat_cours': 'Cours', 'cal.cat_examen': 'Examen',
     'cal.cat_etude': 'Etude', 'cal.cat_perso': 'Perso',
+    'cal.cat_travail': 'Travail / Shift', 'cal.cat_evenement': 'Evenement / Fete',
+    /* "Sante" and not "Sante / Cycle", which is what was asked for. The cycle
+       is not a calendar category and cannot become one: it lives in its own
+       tables behind its own policies, and a pill that invites somebody to file
+       a period as a calendar_event row would move that data onto a table four
+       other people can be shown. The dentist at 14:00 is what this pill is. */
+    'cal.cat_sante': 'Sante',
+    'cal.del_title': 'Supprimer quoi ?',
+    'cal.del_body': "{what} se repete. Il s'agit du {when}.",
+    'cal.del_one': 'Supprimer uniquement cet evenement',
+    'cal.del_all': 'Supprimer toute la serie',
     /* "Emploi du temps" is the right phrase and it is three words wide in a
        row of four chips. "Cours" is what the layer is on a student's screen
        and it fits at 390px, where the toolbar has to wrap otherwise. */
-    'cal.layer_scolaire': 'Cours', 'cal.layer_perso': 'Perso',
+    'cal.layer_scolaire': 'Cours', 'cal.layer_perso': 'Travail & Perso',
     'cal.layer_objectifs': 'Objectifs', 'cal.layer_cycle': 'Cycle',
-    'wiz.open': 'Mes cours',
+    'wiz.open': 'Ajouter un programme',
     'wiz.title': 'Ajouter mes cours recurrents',
     'wiz.help': 'Une ligne par cours. Les dates du semestre valent pour tous.',
     'wiz.term_from': 'Debut du semestre', 'wiz.term_until': 'Fin du semestre (facultatif)',
@@ -1334,6 +1352,7 @@ const STRINGS = {
     'cal.err_times': 'Mets un debut et une fin, ou aucun des deux pour toute la journee.',
     'cal.err_order': 'Ca doit finir apres avoir commence.',
     'cal.err_title': 'Il faut un nom.',
+    'cal.err_gone': "Rien n'a ete modifie. Recharge et reessaie.",
     'cycle.title': 'Cycle',
     'cycle.pitch': 'Suis tes regles et vois-les sur le calendrier, avec un rappel deux jours avant.',
     'cycle.private': 'Toi seule peux voir ceci. Ce n\u2019est jamais partage avec ton groupe.',
