@@ -10,11 +10,11 @@ import { useT } from '../lib/i18n'
 import { dueOn, outcomeFor, targetFor } from '../lib/schedule'
 import { proofFields, proofFilled, proofTypeOf } from '../lib/proofKinds'
 import { errorText } from '../lib/dberr'
-import { Field, Screen, Section, TopBar } from '../components/ui'
+import { Screen, Section, TopBar } from '../components/ui'
 import ProofField from '../components/ProofField'
 import CelebrateStep from '../components/CelebrateStep'
 import ProofGallery from '../components/ProofGallery'
-import ActionBar, { CameraIcon, ForwardIcon, PartyIcon, TargetIcon } from '../components/ActionBar'
+import ActionBar, { CameraIcon, PartyIcon, TargetIcon } from '../components/ActionBar'
 
 export default function Checkin() {
   const navigate = useNavigate()
@@ -32,7 +32,6 @@ export default function Checkin() {
   )
 
   const [answers, setAnswers] = useState({})
-  const [next, setNext] = useState('')
   const [busy, setBusy] = useState(false)
 
   /**
@@ -95,7 +94,6 @@ export default function Checkin() {
     // Local first, network second, a bad connection must never lose this.
     enqueue({
       cycle_id: currentCycle.id,
-      next_commitment: next.trim() || null,
       note: null,
       items,
     })
@@ -237,11 +235,6 @@ export default function Checkin() {
       id: 'celebrate',
       icon: <PartyIcon />,
       label: t('checkin.tab_celebrate'),
-    },
-    {
-      id: 'next',
-      icon: <ForwardIcon />,
-      label: t('checkin.tab_next'),
     },
   ]
 
@@ -412,21 +405,6 @@ export default function Checkin() {
             onChange={setParty}
             onSent={() => setPartySent((n) => n + 1)}
           />
-        )}
-
-        {pane === 'next' && (
-          <div className="lg p-5 sm:p-6">
-            <p className="text-small text-muted">{t('checkin.one_thing')}</p>
-            <Field>
-              <input
-                className="field mt-3"
-                value={next}
-                onChange={(e) => setNext(e.target.value)}
-                placeholder={t('checkin.one_thing_ph')}
-                maxLength={280}
-              />
-            </Field>
-          </div>
         )}
       </div>
 

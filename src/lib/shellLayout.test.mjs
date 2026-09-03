@@ -230,6 +230,87 @@ ok(
   'a checkbox in a toolbar implies a form that submits',
 )
 
+/* --- rails run to the screen, not to their column ------------------------ */
+
+/**
+ * .bleed-row's numbers ARE the layout's numbers, and that is the whole reason
+ * these assertions exist.
+ *
+ * 9.5rem is the nav's 7.5 plus the shell's 2. Change either one and the rows
+ * stop at the wrong place: too small and a card hits an invisible wall inside
+ * the window, too large and the document scrolls sideways. Both happened. The
+ * previous version was inline `-mx-6 px-6` on five elements, which was already
+ * 8px wrong the moment the shell went from px-6 to px-8 and nothing said so.
+ */
+ok(
+  'there is one place that knows how far a rail bleeds',
+  /\.bleed-row \{/.test(css),
+  'it was five copies of -mx-6 px-6, and they were already out of step',
+)
+ok(
+  'the left bleed is the nav offset plus the shell padding',
+  /\.bleed-row \{[\s\S]{0,600}margin-left: -9\.5rem/.test(css) &&
+    /\.bleed-row \{[\s\S]{0,600}padding-left: 9\.5rem/.test(css),
+  '7.5rem of md:pl on the content wrapper plus 2rem of md:px on the shell',
+)
+ok(
+  'and the right is the shell padding alone, since nothing is over there',
+  /\.bleed-row \{[\s\S]{0,600}margin-right: -2rem/.test(css),
+)
+ok(
+  'a snapped card rests on the text column rather than under the nav',
+  /\.bleed-row \{[\s\S]{0,600}scroll-padding-left: 9\.5rem/.test(css),
+  'without this the snap points sit at the scroller edge and card one parks behind the glass',
+)
+/* Matched inside a className rather than anywhere in the file. The first
+   version of this looked for the bare string and failed on the comment that
+   explains why the string is gone. */
+ok(
+  'no rail still bleeds by the old inline amount',
+  !['NudgeBanner', 'BirthdayBanner', 'MonthByMonth'].some((f) =>
+    /className="(?:[^"]*\s)?-mx-6/.test(read(`src/components/${f}.jsx`)),
+  ),
+  'a rail that stops 8px short of another rail reads as a mistake',
+)
+ok(
+  'the rails use it',
+  ['NudgeBanner', 'BirthdayBanner', 'MonthByMonth'].every((f) =>
+    /bleed-row/.test(read(`src/components/${f}.jsx`)),
+  ),
+)
+/* The layering that lets a card go behind rather than over. It already existed
+   and is asserted because the effect silently dies if either number moves. */
+ok(
+  'the nav sits above the page, so a card passes under it',
+  /data-hook="side-rail"[\s\S]{0,200}z-30|z-30[\s\S]{0,200}data-hook="side-rail"/.test(shell) &&
+    /<div className="relative z-10">/.test(shell),
+)
+
+/* --- the check-in has three steps now, not four ------------------------- */
+
+/**
+ * "Ensuite" is gone. The column and the RPC parameter stay, per the request to
+ * leave the schema alone, so old rows keep whatever they recorded; nothing
+ * writes a new one and nothing displays it.
+ */
+const checkin = read('src/pages/Checkin.jsx')
+ok('the next-time step is gone from the wizard', !/id: 'next'/.test(checkin))
+ok('and its pane with it', !/pane === 'next'/.test(checkin))
+ok('nothing writes a next commitment any more', !/next_commitment/.test(checkin))
+ok(
+  'and the board does not show one that can no longer be written',
+  !/next_commitment/.test(read('src/pages/Board.jsx')),
+)
+ok(
+  'the icon it used is not left behind',
+  !/ForwardIcon/.test(read('src/components/ActionBar.jsx')),
+  'an exported glyph with no caller is the start of a sprite sheet',
+)
+ok(
+  'and neither are its strings',
+  !/checkin\.tab_next|checkin\.one_thing|'board\.next'/.test(read('src/lib/i18n.jsx')),
+)
+
 /* --- decoration stays where it has room --------------------------------- */
 
 const stickers = read('src/components/Stickers.jsx')

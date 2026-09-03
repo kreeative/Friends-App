@@ -2134,6 +2134,59 @@
   .pane-grid {
     @apply grid items-start gap-x-8 gap-y-2 lg:grid-cols-2;
   }
+
+  /**
+   * A horizontal rail that runs to the edges of the SCREEN, not of its column.
+   *
+   * WHAT THIS REPLACED AND WHY IT STOPPED WORKING.
+   *
+   * Every rail in the app carried `-mx-6 px-6` inline, which bled it out
+   * through the shell's own 1.5rem of padding and put the first card back on
+   * the text column. That was right while the shell was a centred 40rem
+   * column padded by exactly 6.
+   *
+   * Two things broke it. The shell now pads by 8 above md, so the rails were
+   * stopping 8px short of where they thought they were. And the content sits
+   * inside md:pl-[7.5rem] to clear the side rail, so "the edge of the screen"
+   * on a laptop is 9.5rem further left than the negative margin reached: a
+   * card slid left, hit an invisible wall well inside the window, and vanished
+   * there. That is the clipping this fixes.
+   *
+   * THE NUMBERS ARE THE LAYOUT'S OWN, WHICH IS THE POINT.
+   *
+   * 9.5rem is 7.5 of nav offset plus 2 of shell padding, so the left edge
+   * lands at exactly x=0 whatever the window is. The right is the shell's 2rem
+   * alone, since nothing is over there. Get either wrong and the row either
+   * stops short or pushes the document sideways; both were checked.
+   *
+   * scroll-padding matches the padding, so a snapped card comes to rest lined
+   * up with the page's text rather than under the nav. Without it, snap points
+   * sit at the scroller's own edge and the first card parks itself behind the
+   * rail, which is the failure this whole class is meant to prevent.
+   *
+   * The nav is z-30 and the page content is z-10, so a card that scrolls out
+   * of the column passes UNDER the glass rather than over it. That layering
+   * already existed; what was missing was anywhere for the card to go.
+   */
+  .bleed-row {
+    @apply -mx-6 px-6;
+    scroll-padding-left: 1.5rem;
+    scroll-padding-right: 1.5rem;
+  }
+
+  @media (min-width: 768px) {
+    .bleed-row {
+      margin-left: -9.5rem;
+      margin-right: -2rem;
+      padding-left: 9.5rem;
+      padding-right: 2rem;
+      scroll-padding-left: 9.5rem;
+      scroll-padding-right: 2rem;
+    }
+  }
+
+  /* Below md there is no side nav, so the row bleeds by the shell's padding
+     alone and the phone layout is exactly what it was. */
 }
 
 /* Overshoots by a percent and settles. Small enough to register as a
