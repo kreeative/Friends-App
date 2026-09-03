@@ -216,7 +216,7 @@ export default function Library() {
         ) : books.length === 0 ? (
           <Empty>{t('library.empty')}</Empty>
         ) : (
-          <div className="space-y-4">
+          <div className="card-grid">
             {books.map((b) => {
               const pct = b.progress?.scroll_pct ?? 0
               return (
