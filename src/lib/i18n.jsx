@@ -1286,6 +1286,10 @@ const STRINGS = {
     'library.buy_slow_body': 'Your payment went through. Unlocking is handled separately and is running late. Check again in a minute, and if it is still missing, write to us and nothing needs paying twice.',
     'library.buy_recheck': 'Check again',
     'library.sub': 'Three books, read here',
+    /* The course sits under its own heading rather than floating above the
+       shelf unlabelled. It is not one of the books and the page should say so
+       before somebody has to work it out from the icon. */
+    'library.sec_course': 'Course',
     'library.empty':
       'The catalogue is empty. In Supabase, open the SQL Editor and run supabase/07_books_all_in_one.sql. It adds the three books.',
     'library.owned': 'Yours',
@@ -2602,6 +2606,7 @@ const STRINGS = {
     'library.buy_slow_body': "Ton paiement est passe. Le deblocage se fait a part et il tarde. Reverifie dans une minute, et s'il manque toujours, ecris-nous : il n'y a rien a repayer.",
     'library.buy_recheck': 'Reverifier',
     'library.sub': 'Trois livres, à lire ici',
+    'library.sec_course': 'Cours',
     'library.empty':
       'Le catalogue est vide. Dans Supabase, ouvre l’éditeur SQL et exécute supabase/07_books_all_in_one.sql. Il ajoute les trois livres.',
     'library.owned': 'À toi',

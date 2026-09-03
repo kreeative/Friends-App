@@ -238,23 +238,42 @@ export default function Library() {
         </Section>
       )}
 
-      {/* Above the catalogue, because it is free, it is short, and it is the
-          only thing on this page that does not cost anything to start. */}
-      <Section>
+      {/**
+       * THE COURSE, UNDER ITS OWN HEADING AND ON A TINTED CARD.
+       *
+       * It is above the catalogue because it is free, it is short, and it is
+       * the only thing on this page that does not cost anything to start. It
+       * was a white card with no heading over it, which put it in the same
+       * visual class as the shelf below and left it to the reader to work out
+       * that this one is not a book. A heading says which of the two it is,
+       * and the tint says it before the heading is read.
+       *
+       * WHY THE THEME TOKEN AND NOT A PINK.
+       *
+       * `cat-1-soft` is pink on sun and pale blue on sea, so this follows the
+       * theme instead of stamping one hue on both. The alternative is a fixed
+       * #FF007A wash, which would be a pink card in the middle of a blue app
+       * for anybody on sea.
+       *
+       * The icon tile and the arrow chip invert with it: they were the tinted
+       * things on a white card, and on a tinted card they would be the same
+       * colour as their ground. White on pink, rather than pink on pink.
+       */}
+      <Section title={t('library.sec_course')}>
         <button
           type="button"
           data-hook="formation-entry"
+          className="press flex w-full items-center gap-4 rounded-3xl border border-hairline bg-cat-1-soft p-5 text-left shadow-raised"
           onClick={() => setCourse(true)}
-          className="press glass-card flex w-full items-center gap-4 rounded-3xl p-5 text-left"
         >
-          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-cat-1-soft text-ink [&>svg]:h-7 [&>svg]:w-7">
+          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-surface text-ink [&>svg]:h-7 [&>svg]:w-7">
             <BookIcon />
           </span>
           <span className="min-w-0 flex-1">
             <span className="block text-body font-bold leading-tight text-ink">{t('form.title')}</span>
             <span className="mt-1.5 block text-small leading-snug text-muted">{t('form.sub', { n: LESSONS.length })}</span>
           </span>
-          <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-pill bg-accent/[0.18] text-ink">
+          <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-pill bg-surface text-ink">
             <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M5 12h13M13 6l6 6-6 6" />
             </svg>

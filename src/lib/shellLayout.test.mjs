@@ -220,6 +220,47 @@ ok(
   'and the settings pages use the pane grid',
   /pane-grid/.test(read('src/pages/Me.jsx')) && /pane-grid/.test(read('src/pages/Account.jsx')),
 )
+
+/**
+ * THE COURSE CARD, WHICH IS THE ONE TINTED SURFACE ON THE LIBRARY PAGE.
+ *
+ * It was a white `glass-card` sitting above the shelf with no heading over it,
+ * which put it in the same visual class as the three books and left the reader
+ * to work out from an icon that this one is free and is not a book. It is now
+ * a tinted card under a heading of its own.
+ *
+ * Measured at 1440 and 430 on both themes, off the screenshots rather than off
+ * the computed styles:
+ *
+ *   sun   card ground 255,224,236 on a 255,245,247 page   title 14.25:1  sub 6.20:1
+ *   sea   card ground 224,237,245 on a 240,249,255 page   title 14.44:1  sub 5.97:1
+ *
+ * Both pass 4.5:1 for normal text with room to spare, which is why the tint is
+ * safe: cat-1-soft is the palest step of the ramp in both themes.
+ */
+const lib = read('src/pages/Library.jsx')
+ok(
+  'the course sits under a heading of its own',
+  /<Section title=\{t\('library\.sec_course'\)\}>/.test(lib),
+  'without one it reads as a fourth book',
+)
+ok(
+  'and its ground is the theme token, not a fixed pink',
+  /data-hook="formation-entry"[\s\S]{0,240}bg-cat-1-soft/.test(lib) &&
+    !/data-hook="formation-entry"[\s\S]{0,240}glass-card/.test(lib),
+  'a hardcoded #FF007A wash would be a pink card in the middle of a blue app on sea',
+)
+ok(
+  'the tile and the chip invert so they are not their own ground',
+  (lib.match(/bg-surface text-ink/g) ?? []).length >= 2,
+  'they were the tinted things on a white card; on a tinted card that is pink on pink',
+)
+ok(
+  'the heading is written in both locales',
+  /'library\.sec_course': 'Course'/.test(read('src/lib/i18n.jsx')) &&
+    /'library\.sec_course': 'Cours'/.test(read('src/lib/i18n.jsx')),
+  'a key added to one locale only shows the other locale an English word',
+)
 ok(
   'no page opts out with a prop any more',
   !/shell-wide/.test(css) && !/<Screen wide/.test(read('src/pages/Dashboard.jsx')),
