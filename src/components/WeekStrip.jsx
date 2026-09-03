@@ -1,5 +1,4 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { localeTag, useT } from '../lib/i18n'
@@ -747,24 +746,18 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
       </button>
 
       {/**
-       * The way out to the full timetable.
+       * THE "OPEN THE CALENDAR" LINK IS GONE.
        *
-       * This strip is a glance at the current week inside a page about
-       * something else, and it is the obvious place to reach for when the
-       * question is bigger than that. It is a link rather than a fifth tab
-       * because the bar is capped at four: the comment above MINE in AppShell
-       * records what happened at five, where the labels truncated to
-       * "Faire le p..." at 390px.
+       * It existed because the bottom bar is capped at four tabs and the
+       * calendar could not be a fifth, so this strip was the way out to the
+       * full timetable. That premise expired when the side rail arrived: the
+       * calendar is a permanent destination in it at every width above md, and
+       * on a phone the tab bar is one tap away at the bottom of the screen.
+       *
+       * So the link was a second door to a room that already has one, sitting
+       * in the middle of a card about this week. Removed on request, and the
+       * reason it can go without leaving anything unreachable is the rail.
        */}
-      <div className="mt-2 border-t border-hairline pt-3">
-        <Link
-          to="/calendar"
-          data-hook="to-calendar"
-          className="press flex w-full items-center justify-center rounded-inner py-2 text-small font-semibold text-accent transition-colors hover:bg-accent/[0.06]"
-        >
-          {t('week.open_calendar')}
-        </Link>
-      </div>
 
       {/* Always open, never a disclosure. There is always a selected day, so a
           panel that had to be opened would be a second tap between you and the

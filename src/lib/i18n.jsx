@@ -22,7 +22,6 @@ const STRINGS = {
        a screen reader announce a navigation landmark called "Home" that also
        contained a link called "Home". */
     'nav.primary': 'Main navigation',
-    'week.open_calendar': 'Open the calendar',
     'cal.title': 'Calendar',
     'cal.add': 'Add',
     'cal.month': 'Month', 'cal.week': 'Week', 'cal.day': 'Day',
@@ -1281,7 +1280,6 @@ const STRINGS = {
        is the whole reason the word is under the icon at all. */
     'nav.notifications': 'Alertes',
     'nav.primary': 'Navigation principale',
-    'week.open_calendar': 'Ouvrir le calendrier',
     'cal.title': 'Calendrier',
     'cal.add': 'Ajouter',
     'cal.month': 'Mois', 'cal.week': 'Semaine', 'cal.day': 'Jour',

@@ -61,13 +61,15 @@ const PLACEMENT = {
     panel: 'absolute right-0 top-11 w-[min(20rem,calc(100vw-6rem))]',
   },
   rail: {
-    /* Sized and shaped by the rail, which passes its own row classes. */
-    button: 'press relative flex w-full flex-col items-center gap-1 rounded-inner px-1 py-2 transition-colors hover:bg-ink/[0.06]',
+    /* The rail's own row shape. h-11 rather than padding, because with the
+       label gone there is nothing else to give the row height and an icon in a
+       shrink-to-fit box is a 20px tap target. */
+    button: 'press relative flex h-11 w-full items-center justify-center rounded-inner transition-colors hover:bg-ink/[0.06]',
     /* Out of the right-hand side, sitting on the button's own line. `bottom-0`
        rather than `top-0` because this row lives at the foot of the rail, and
        a panel dropping downward from there would open off the bottom of the
        screen. */
-    panel: 'absolute bottom-0 left-full z-50 ml-3 w-[20rem] max-w-[calc(100vw-8rem)]',
+    panel: 'absolute bottom-0 left-full z-50 ml-3 w-[20rem] max-w-[calc(100vw-6rem)]',
   },
 }
 
@@ -177,16 +179,12 @@ export default function NotificationBell({ placement = 'bar' }) {
         aria-label={count ? t('notif.open', { n: count }) : t('notif.open_none')}
         data-hook="notif-bell"
         data-count={count}
+        title={count ? t('notif.open', { n: count }) : t('notif.open_none')}
         className={place.button}
       >
         {/* Drawn in NavIcons now, so the rail and this trigger cannot drift
             into being two slightly different bells. */}
         <IconBell className="h-5 w-5" />
-        {placement === 'rail' && (
-          <span className="w-full truncate text-center text-[0.6875rem] font-semibold leading-tight">
-            {t('nav.notifications')}
-          </span>
-        )}
 
         {/**
          * The count, and it carries a number rather than being a bare dot.

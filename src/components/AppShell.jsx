@@ -225,22 +225,31 @@ const activeIndex = (tabs, pathname) =>
  * source of truth for which tab is active, and only one of them is ever
  * mounted: `md:hidden` on one and `hidden md:flex` on the other.
  *
- * ICONS, AND WHY THERE IS STILL A WORD UNDER EACH ONE.
+ * ICONS ALONE. THE WORDS ARE GONE, ASKED FOR TWICE.
  *
- * The rail started out as words alone, because this app had no icon set and
- * four invented glyphs are a bigger job than they look. It was then asked to
- * be thin and icon-led, so the glyphs got drawn: see NavIcons.jsx.
+ * This rail was words, then icons with an 11px word under each, and is now the
+ * icons on their own. The argument for keeping the word is written here rather
+ * than deleted, because it is still true and it is the cost being accepted: an
+ * icon-only rail puts its names in a hover tooltip, and a tablet has no hover.
+ * A first-time user on an iPad has no way to learn what the target with a ring
+ * round it means except by pressing it.
  *
- * The word stayed, at 11px. Icon-only is a hover tooltip for its names, and a
- * tablet has no hover, which is exactly the device this layout is for. That is
- * not a small gap: without the word, a first-time user on an iPad has no way
- * at all to find out what the target with a ring round it means, short of
- * pressing it. aria-label carries the name for a screen reader; the 11px line
- * carries it for everybody else. It costs 14px of a 5.5rem column.
+ * WHAT IS DONE ABOUT THAT, SINCE "NOTHING" WAS NOT AN OPTION.
  *
- * THE WIDTH IS SET BY FRENCH, AS USUAL. "Calendrier" and "Objectifs" are the
- * long ones. 5.5rem leaves 72px of text box, measured, with truncate as a
- * backstop rather than as the plan.
+ * Every item carries `aria-label`, so a screen reader announces the name it
+ * always did and nothing is lost there. Every item also carries `title`, which
+ * is the browser's own tooltip: it costs nothing, it works with a mouse and a
+ * trackpad, and on the platforms that support it a long press surfaces it on
+ * touch too. It is a weaker affordance than a printed word and it is the
+ * strongest one available without one.
+ *
+ * The active item is still marked by the lg-pill and by full-strength ink
+ * rather than by colour alone, so 1.4.1 holds with no text on screen at all.
+ *
+ * THE WIDTH CAME DOWN WITH THE WORDS. 3.5rem is 56px, which leaves exactly
+ * 44px of tap target inside the 6px of padding: the smallest square a thumb
+ * should be asked to hit, and the number the rest of this app already uses.
+ * Content gains the 2rem the labels were taking.
  *
  * ON THE LEFT, WHICH IS WHERE THE REFERENCE PUTS IT. Flipping it is one
  * class: `left-4` becomes `right-4` and the content padding swaps side.
@@ -261,17 +270,13 @@ const activeIndex = (tabs, pathname) =>
 
 /* One row, so the nav links, the bell and the avatar are the same object.
    Three call sites drifting apart is how a rail ends up with three different
-   hover states. */
-const RAIL_ROW =
-  'press flex w-full flex-col items-center gap-1 rounded-inner px-1 py-2 transition-colors duration-200 ease-settle'
+   hover states.
 
-function RailLabel({ children }) {
-  return (
-    <span className="w-full truncate text-center text-[0.6875rem] font-semibold leading-tight">
-      {children}
-    </span>
-  )
-}
+   h-11 rather than padding: with the label gone the row has nothing to give it
+   height, and an icon in a box that shrinks to fit is a 20px tap target. 44px
+   is the floor everything else in this app uses. */
+const RAIL_ROW =
+  'press flex h-11 w-full items-center justify-center rounded-inner transition-colors duration-200 ease-settle'
 
 function SideRail({ tabs }) {
   const { t } = useT()
@@ -291,13 +296,13 @@ function SideRail({ tabs }) {
        * md:block, matched to the rail. On a phone the ground stays flat.
        */}
       <div
-        className="rail-ground pointer-events-none fixed inset-y-0 left-0 z-0 hidden w-[12rem] md:block"
+        className="rail-ground pointer-events-none fixed inset-y-0 left-0 z-0 hidden w-[10rem] md:block"
         data-hook="rail-ground"
         aria-hidden="true"
       />
 
       <nav
-        className="lg lg-rail fixed bottom-4 left-4 top-4 z-30 hidden w-[5.5rem] flex-col p-1.5 md:flex"
+        className="lg lg-rail fixed bottom-4 left-4 top-4 z-30 hidden w-[3.5rem] flex-col p-1.5 md:flex"
         data-hook="side-rail"
         aria-label={t('nav.primary')}
       >
@@ -306,15 +311,14 @@ function SideRail({ tabs }) {
           aria-label={t('nav.home')}
           className="press mb-1 block shrink-0 self-center rounded-inner p-1.5"
         >
-          <LockupInline size={34} />
+          <LockupInline size={28} />
         </Link>
 
         {/**
          * Which group you are in, now that the top bar is not saying it above
-         * md. An initial rather than the name: 72px of text box holds about
-         * eleven characters and group names are not written to that limit.
-         * The full name is the accessible name and the tooltip, and the board
-         * it links to opens with the name as its heading.
+         * md. An initial, because the column is 44px wide and always was going
+         * to be: the full name is the accessible name and the tooltip, and the
+         * board it links to opens with the name as its heading.
          */}
         {activeId && group?.name && (
           <Link
@@ -341,6 +345,11 @@ function SideRail({ tabs }) {
                 to={tab.to}
                 end={tab.end}
                 data-active={i === activeIdx}
+                /* The whole accessible name, since there is no text left inside
+                   the link to be one. title is the tooltip; without both, this
+                   is an unlabelled link and a puzzle. */
+                aria-label={t(tab.key)}
+                title={t(tab.key)}
                 className={({ isActive }) =>
                   /* The active row is a filled pill rather than a travelling
                      one. The slider exists because a horizontal bar has to show
@@ -364,7 +373,6 @@ function SideRail({ tabs }) {
                 }
               >
                 {Icon && <Icon className="h-5 w-5 shrink-0" />}
-                <RailLabel>{t(tab.key)}</RailLabel>
               </NavLink>
             )
           })}
@@ -384,14 +392,18 @@ function SideRail({ tabs }) {
           <NavLink
             to="/profile"
             data-hook="to-profile"
+            aria-label={t('nav.you')}
+            title={t('nav.you')}
             className={({ isActive }) =>
               `${RAIL_ROW} ${
                 isActive ? 'lg-pill text-ink' : 'text-ink/70 hover:bg-ink/[0.06] hover:text-ink'
               }`
             }
           >
-            <Avatar profile={profile} size={20} />
-            <RailLabel>{t('nav.you')}</RailLabel>
+            {/* 26 rather than 20, since it no longer shares the row with a
+                word. A face is the one item here that is recognised rather
+                than read, so it is the one that most wants the pixels. */}
+            <Avatar profile={profile} size={26} />
           </NavLink>
         </div>
       </nav>
@@ -491,10 +503,9 @@ export default function AppShell() {
       {/**
        * Everything to the right of the rail.
        *
-       * 5.5rem for the rail plus the 1rem it is inset by on each side. It was
-       * 15rem when the rail carried words; narrowing it hands 7.5rem back to
-       * the page, which is most of what "the UI is constrained inside a small
-       * central container" was asking for.
+       * 3.5rem for the rail plus the 1rem it is inset by on each side. It was
+       * 15rem when the rail carried full words and 7.5rem when it carried
+       * small ones; icons alone hand another 2rem back to the page.
        *
        * Padding on a wrapper rather than a margin on each page, so a page that
        * has never heard of the rail is positioned correctly anyway, and so the
@@ -503,7 +514,7 @@ export default function AppShell() {
        * Below md the padding is zero and the bottom bar is the navigation, so
        * the phone layout is untouched.
        */}
-      <div className="md:pl-[7.5rem]">
+      <div className="md:pl-[5.5rem]">
         <TopNav />
         <div className="relative z-10">
           {/* The chrome above and below stays put; only the page moves. */}
