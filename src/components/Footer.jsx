@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { LANDING } from '../content/landing'
-import { DOC_ORDER, LEGAL, OWNER } from '../legal/content'
+import { CONTACT_EMAIL, DOC_ORDER, LEGAL, OWNER } from '../legal/content'
 import { useT } from '../lib/i18n'
 import Wordmark from './Wordmark'
 import ThemePicker from './ThemePicker'
@@ -56,6 +56,13 @@ export default function Footer() {
                   {c.links.faq}
                 </Link>
               </li>
+              {/* Under Help rather than in the legal column: it is a thank-you,
+                  not a notice. */}
+              <li>
+                <Link to="/merci" className="nav-link">
+                  {c.links.credits}
+                </Link>
+              </li>
               <li>
                 <Link to="/signin" className="nav-link">
                   {c.links.signin}
@@ -81,7 +88,7 @@ export default function Footer() {
             <h2 className="eyebrow">{c.contact}</h2>
             <p className="mt-4 text-body text-muted">
               {/* Kept as a placeholder deliberately. See src/legal/content.js */}
-              contact@richandfriends.xyz
+              {CONTACT_EMAIL}
             </p>
             <div className="mt-5 flex gap-2">
               {[

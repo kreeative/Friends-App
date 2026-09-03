@@ -79,6 +79,9 @@ const ALIAS = {
      canonical for the same reason /etudes is: the people reading it. */
   '/faq': '/aide',
   '/help': '/aide',
+  /* Same pairing again: one page, two spellings, French canonical because it
+     is the language the people being thanked were thanked in. */
+  '/credits': '/merci',
 }
 
 /**
