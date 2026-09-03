@@ -60,7 +60,27 @@ export const GROUND = { sun: '#FFF5F7', sea: '#F0F9FF' }
  * words on a white card for that reason and keeps to white only where the
  * type is large enough for the 3:1 bar.
  */
-export const BRAND = { sun: '#DE3578', sea: '#009DB9' }
+/**
+ * The poster colour, and it has to BE the colour inside the logo artwork.
+ *
+ * THIS IS WHAT MADE THE LOGO LOOK LIKE A STICKER STUCK ON THE PAGE.
+ *
+ * sun was #DE3578, which is the pink the brand PNGs were drawn on. The
+ * artwork moved to #FF007A when the palette was unified and this did not,
+ * because it lives in a different file and nothing connects them. The splash
+ * and the onboarding deck then painted a #FF007A rounded square in the middle
+ * of a #DE3578 page: two pinks a few units apart, with a rounded edge between
+ * them, which is exactly the patch effect that was reported.
+ *
+ * One value now. The tile's own ground and the page behind it are the same
+ * colour, so the square has no edge to show and the lettering reads as being
+ * set directly on the background. No wrapper had to be removed and no logotype
+ * had to be replaced with type; there was only ever one colour too many.
+ *
+ * If the artwork colour changes again, scripts/brand-icons.py and this line
+ * move together or the patch comes back.
+ */
+export const BRAND = { sun: '#FF007A', sea: '#009DB9' }
 
 /**
  * Stamp the theme onto the document.

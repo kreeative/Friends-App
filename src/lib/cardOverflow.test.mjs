@@ -148,14 +148,20 @@ ok(
   !/commitment/.test(read('src/pages/Checkin.jsx')),
   'if one comes back it needs text-safe, like every other surface here',
 )
-/* Matched on RENDERING rather than on the identifier. GoalCheckin does pass
-   goal.commitment to ProofField, which uses it to name an uploaded file, and
-   that is not text on a card. The first version of this assertion matched the
-   prop and failed on a component that was correct. */
+/**
+ * The daily question is a carousel now, and it DOES print the commitment: one
+ * goal on screen at a time, with its title as the heading. That is the one
+ * place the words should appear twice, because the card is not on screen.
+ *
+ * So it needs containment like every other surface here. A single unbroken
+ * word has nowhere to wrap; it does not truncate, it spills.
+ */
 ok(
-  'and the per-goal check-in leaves the title to the card above it',
-  !/>\s*\{goal\.commitment\}/.test(read('src/components/GoalCheckin.jsx')),
-  'printing it twice would be the same words in two containers with two rules',
+  'the check-in carousel contains the commitment it prints',
+  /className="text-safe mt-1 text-h2 font-semibold text-ink" data-hook="carousel-title"/.test(
+    read('src/components/CheckinCarousel.jsx'),
+  ),
+  'it is the heading of the card, so it is user text on a surface',
 )
 
 /* WeekStrip is the exception and it is correct: it truncates to a single line

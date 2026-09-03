@@ -24,8 +24,23 @@ export function untilLabel(iso, { prefix = '' } = {}) {
   return ms >= 0 ? `${prefix}${value}`.trim() : `${value} ago`
 }
 
+/**
+ * Null for anything that is not a date, rather than the words "Invalid Date".
+ *
+ * `new Date(undefined)` is an Invalid Date and toLocaleDateString on one
+ * returns the literal string "Invalid Date", which is how a goal card came to
+ * read "avant le Invalid Date". `new Date(null)` is worse: it is 1 January
+ * 1970, a real date that formats cleanly and is a lie.
+ *
+ * A due date is OPTIONAL on a one-off goal, so this is an ordinary state and
+ * not a corrupt row. Returning null lets the caller say nothing, which is the
+ * honest rendering of a date nobody set.
+ */
 export function shortDate(iso, locale) {
-  return new Date(iso).toLocaleDateString(locale, { month: 'short', day: 'numeric' })
+  if (!iso) return null
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return null
+  return d.toLocaleDateString(locale, { month: 'short', day: 'numeric' })
 }
 
 /**

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
@@ -12,7 +12,7 @@ import { proofFields, proofTypeOf } from '../lib/proofKinds'
 import { errorText } from '../lib/dberr'
 import { Empty, Screen, Section, TopBar } from '../components/ui'
 import GoalCard from '../components/GoalCard'
-import GoalCheckin from '../components/GoalCheckin'
+import CheckinCarousel from '../components/CheckinCarousel'
 
 /**
  * Goals, in a group or on your own.
@@ -101,6 +101,25 @@ export default function Goals() {
   )
 
   const [answers, setAnswers] = useState({})
+  /**
+   * The same answers, in a ref, and saveAll reads THIS rather than the state.
+   *
+   * WHY, BECAUSE THIS COST THE LAST ANSWER EVERY TIME.
+   *
+   * The carousel advances on a timer after a tap so the chip has a moment to
+   * show as pressed. That timer's closure captures the `onDone` it was given
+   * at click time, which closed over the answers as they were BEFORE the tap.
+   * On the last card that is the one that saves, so the goal somebody had just
+   * answered was the one goal missing from the payload.
+   *
+   * Nothing about it looked wrong: the celebration played, the modal closed,
+   * and the RPC went out with every other answer in it. It was found by
+   * reading the request body rather than the screen.
+   *
+   * A ref is not the only fix, but it is the one that cannot come back: any
+   * caller, from any closure, at any age, reads what is current.
+   */
+  const answersRef = useRef({})
   const [saving, setSaving] = useState(null)
   const [savedAt, setSavedAt] = useState({})
   const [stuck, setStuck] = useState(null)
@@ -141,6 +160,7 @@ export default function Goals() {
         }
       }
       setAnswers(seeded)
+      answersRef.current = seeded
       setSavedAt(Object.fromEntries(Object.keys(seeded).map((k) => [k, true])))
     })()
     return () => {
@@ -149,7 +169,11 @@ export default function Goals() {
   }, [open, currentCycle?.id, user?.id])
 
   const set = (goalId, patch) => {
-    setAnswers((a) => ({ ...a, [goalId]: { ...(a[goalId] ?? {}), ...patch } }))
+    setAnswers((a) => {
+      const next = { ...a, [goalId]: { ...(a[goalId] ?? {}), ...patch } }
+      answersRef.current = next
+      return next
+    })
     setSavedAt((s) => ({ ...s, [goalId]: false }))
   }
 
@@ -161,16 +185,18 @@ export default function Goals() {
    * inside the same period still belongs in the row, and dropping it because
    * it is not due TODAY would delete that answer.
    */
-  const saveOne = useCallback(
-    async (goalId) => {
+  const saveAll = useCallback(
+    async () => {
       if (saving || !currentCycle) return
-      setSaving(goalId)
+      setSaving('all')
       setStuck(null)
 
+      /* The ref, not the state. See the note beside answersRef. */
+      const current = answersRef.current
       const items = live
-        .filter((g) => answers[g.id])
+        .filter((g) => current[g.id])
         .map((g) => {
-          const a = answers[g.id]
+          const a = current[g.id]
           const count = a.count ?? 0
           return {
             goal_id: g.id,
@@ -195,14 +221,13 @@ export default function Goals() {
 
       /* Only when something was actually recorded. Confetti over a nought is
          the app congratulating somebody for a day they just said went badly. */
-      const a = answers[goalId] ?? {}
-      if ((a.count ?? 0) > 0 || a.outcome === 'done') cheer()
+      if (items.some((it) => it.count_done > 0 || it.outcome === 'done')) cheer()
 
-      setSavedAt((s) => ({ ...s, [goalId]: true }))
+      setSavedAt(Object.fromEntries(items.map((it) => [it.goal_id, true])))
       await reloadGroup()
       setSaving(null)
     },
-    [answers, live, currentCycle, saving, reloadGroup],
+    [live, currentCycle, saving, reloadGroup],
   )
 
   const markAway = async () => {
@@ -216,19 +241,30 @@ export default function Goals() {
     setAway(false)
   }
 
-  /* Rendered under a card rather than passed into GoalCard, so GoalCard stays
-     the thing that draws a goal and does not grow a second job. */
-  const checkinFor = (g) =>
-    open && dueToday.has(g.id) ? (
-      <GoalCheckin
-        goal={g}
-        answer={answers[g.id]}
-        onChange={(patch) => set(g.id, patch)}
-        onSave={() => saveOne(g.id)}
-        busy={saving === g.id}
-        saved={Boolean(savedAt[g.id])}
-      />
-    ) : null
+  /**
+   * THE CONTROLS LEFT THE CARDS, AND THAT IS THE POINT OF THIS ROUND.
+   *
+   * They were rendered into each card's footer, and the card could not carry
+   * them: a title, two badges, an owner, a progress row, four management
+   * actions, and then a question, a counter and a Save. "Modifier" and "Fait"
+   * are not the same kind of thing and were sitting next to each other.
+   *
+   * So the card is a card again and the daily question is its own act: a
+   * banner when there is something to answer, and a carousel that asks one
+   * goal at a time. See components/CheckinCarousel.jsx.
+   */
+  const [carousel, setCarousel] = useState(false)
+
+  /* The goals the banner is about, in a stable order so the carousel does not
+     reshuffle under somebody halfway through it. */
+  const todays = useMemo(
+    () => (open ? live.filter((g) => dueToday.has(g.id)) : []),
+    [open, live, dueToday],
+  )
+
+  /* Answered means recorded, not touched: a card somebody opened and left
+     alone is still a question. */
+  const answered = todays.filter((g) => savedAt[g.id]).length
 
   return (
     <Screen>
@@ -254,6 +290,53 @@ export default function Goals() {
         }
       />
 
+      {/**
+       * The daily question, as one thing to press rather than a control on
+       * every card.
+       *
+       * Only when there is something to answer, and it counts down: a banner
+       * that is on the page every day whether or not it applies is a banner
+       * people stop reading. When everything due has been recorded it says so
+       * once and offers to go back in, rather than disappearing, because
+       * disappearing is indistinguishable from never having worked.
+       */}
+      {open && todays.length > 0 && (
+        <Section>
+          <div
+            className="lg overflow-hidden px-5 py-4"
+            data-hook="checkin-banner"
+            data-answered={answered}
+            data-total={todays.length}
+          >
+            <p className="text-safe text-body font-semibold text-ink">
+              {answered >= todays.length ? t('checkin.banner_done') : t('checkin.banner_q')}
+            </p>
+            <p className="text-safe mt-1 text-small text-muted">
+              {t('checkin.banner_sub', { n: todays.length - answered, total: todays.length })}
+            </p>
+            <button
+              type="button"
+              onClick={() => setCarousel(true)}
+              data-hook="checkin-banner-open"
+              className={`press mt-3 ${answered >= todays.length ? 'goal-action' : 'goal-action-done'}`}
+            >
+              {answered >= todays.length ? t('checkin.banner_again') : t('checkin.banner_cta')}
+            </button>
+          </div>
+        </Section>
+      )}
+
+      {carousel && (
+        <CheckinCarousel
+          goals={todays}
+          answers={answers}
+          onChange={set}
+          onDone={saveAll}
+          onClose={() => setCarousel(false)}
+          busy={saving !== null}
+        />
+      )}
+
       <Section title={t('goals.yours')}>
         {mine.length === 0 ? (
           <Empty
@@ -276,7 +359,6 @@ export default function Goals() {
                 track={tracks}
                 deletable={canDelete(g)}
                 editHref={`${base}/${g.id}/edit`}
-                footer={checkinFor(g)}
               />
             ))}
           </div>
@@ -293,7 +375,6 @@ export default function Goals() {
                 showControls
                 deletable={canDelete(g)}
                 editHref={`${base}/${g.id}/edit`}
-                footer={checkinFor(g)}
               />
             ))}
           </div>

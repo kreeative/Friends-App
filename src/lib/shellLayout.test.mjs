@@ -868,40 +868,58 @@ ok(
   'the same sheet every other card in that column is made of',
 )
 
-/* --- the check-in moved onto the goal cards ----------------------------- */
+/* --- the daily question is its own act ---------------------------------- */
 
 /**
- * It was a screen of its own listing every goal again with one Submit at the
- * bottom. Answering where the goal already is, is the shorter sentence, and a
- * button per card means somebody can answer the one goal they care about and
- * close the app having recorded it.
+ * THIS HAS MOVED TWICE AND BOTH MOVES WERE RIGHT.
+ *
+ * It began as a screen of its own listing every goal again with one Submit.
+ * That was wrong because it asked the question away from the goal.
+ *
+ * It then went onto the goal cards, which was wrong for the opposite reason:
+ * a card already holds a title, two badges, an owner, a progress row and four
+ * management actions, and a question with a counter and a Save on top of that
+ * is a form with a heading. "Modifier" and "Fait" are not the same kind of
+ * thing and were adjacent.
+ *
+ * So the card is a card, and the question is a banner and a carousel. These
+ * assert the separation in both directions, because the tempting fix next time
+ * something feels far away is to put a control back on a card.
  */
 const goalsPage = read('src/pages/Goals.jsx')
-const gcheck = read('src/components/GoalCheckin.jsx')
-/* Checkin.jsx is already read above as `checkin`; one read, one name. */
+const carousel = read('src/components/CheckinCarousel.jsx')
 const gcard = read('src/components/GoalCard.jsx')
 
-ok('there is a per-goal check-in', /data-hook="goal-checkin"/.test(gcheck))
-ok('with its own save', /data-hook="goal-save"/.test(gcheck))
+ok('there is a banner when something is due', /data-hook="checkin-banner"/.test(goalsPage))
+ok('with one thing to press', /data-hook="checkin-banner-open"/.test(goalsPage))
+ok('and it opens a carousel', /data-hook="checkin-carousel"/.test(carousel))
 ok(
-  'and it renders INSIDE the card',
-  /footer = null,/.test(gcard) && /\{footer\}\s*\n\s*<\/article>/.test(gcard),
-  'as a sibling it was a question floating on the page next to a card',
+  'which asks one goal at a time',
+  /data-hook="carousel-title"/.test(carousel) && /goals\[Math\.min\(i, goals\.length - 1\)\]/.test(carousel),
+  'a list in a modal is the old screen with a scrim on it',
 )
 ok(
-  'the page passes it in as the card footer',
-  /footer=\{checkinFor\(g\)\}/.test(goalsPage),
-  'GoalCard draws a goal and must not also learn what a cycle is',
+  'the cards carry no daily controls any more',
+  !/checkinFor/.test(goalsPage) && !/footer=\{/.test(goalsPage),
+  'that is the clutter this round removed',
+)
+ok(
+  'and GoalCard still offers the slot, unused, rather than growing the job back',
+  /footer = null,/.test(gcard),
+)
+ok(
+  'the carousel saves nothing itself',
+  !/supabase|enqueue/.test(carousel),
+  'submit_checkin upserts the whole item list, so only the page can write it',
 )
 
 /**
- * THE ONE THAT WOULD HAVE DESTROYED DATA SILENTLY.
+ * THE ONE THAT WOULD HAVE DESTROYED DATA SILENTLY, AND STILL APPLIES.
  *
  * submit_checkin upserts on (cycle_id, user_id) and carries the whole item
- * list, so saving one card posts all of them. Two things follow and both are
- * asserted, because either one missing loses answers with no error anywhere:
- * the existing check-in has to be READ before anything is written, and the
- * payload has to be built from every goal rather than the one being saved.
+ * list. The existing check-in has to be READ before anything is written, and
+ * the payload built from every answered goal, or a save deletes what was there
+ * with no error anywhere.
  */
 ok(
   'the existing check-in is read before anything is written',
@@ -909,9 +927,53 @@ ok(
   'starting from an empty map means the first save deletes what was there',
 )
 ok(
-  'and the payload is built from every answered goal, not the one being saved',
-  /const items = live\s*\n\s*\.filter\(\(g\) => answers\[g\.id\]\)/.test(goalsPage),
-  'a card that sent only itself would replace the check-in with a one-goal one',
+  'and the payload is built from every answered goal',
+  /const items = live\s*\n\s*\.filter\(\(g\) => current\[g\.id\]\)/.test(goalsPage),
+)
+/**
+ * THE ANSWERS COME FROM A REF, AND THAT IS NOT A STYLE CHOICE.
+ *
+ * The carousel advances on a timer so a tapped chip has a moment to show as
+ * pressed. That timer's closure holds the `onDone` it was handed at click
+ * time, which closed over the answers as they were BEFORE the tap. On the last
+ * card that is the save, so the goal somebody had just answered was the one
+ * missing from the payload, every time.
+ *
+ * Nothing looked wrong: the celebration played, the modal closed, and the
+ * request went out with every OTHER answer in it. It was found by reading the
+ * request body. A ref cannot go stale from any closure of any age.
+ */
+ok(
+  'the save reads a ref rather than the state it closed over',
+  /const current = answersRef\.current/.test(goalsPage) &&
+    /answersRef\.current = next/.test(goalsPage),
+  'a timer-driven save loses the answer that started the timer',
+)
+ok(
+  'and the hydrate seeds the ref too',
+  /answersRef\.current = seeded/.test(goalsPage),
+  'otherwise the first save posts only what was typed this session',
+)
+
+/* --- the card is a card ------------------------------------------------- */
+
+ok(
+  'the four management actions are behind one control',
+  /data-hook="goal-menu"/.test(gcard) && /data-hook="goal-menu-items"/.test(gcard),
+  'three filled pills and a red word at the bottom of every card is a settings screen',
+)
+ok(
+  'the loud row is gone',
+  !/goal-action-soft press[\s\S]{0,200}goal-action-done press/.test(gcard),
+)
+ok(
+  'the menu closes on a tap anywhere, not on a document listener',
+  /className="fixed inset-0 z-40 cursor-default"/.test(gcard),
+  'a document click handler fires before React and closes it on the opening tap',
+)
+ok(
+  'and delete is separated from the three that can be undone',
+  /border-t border-hairline[^"]*text-negative|text-negative[^"]*border-t border-hairline/.test(gcard),
 )
 ok(
   'only goals due today are asked',
@@ -921,12 +983,24 @@ ok(
 ok(
   'and only while the period is open',
   /phase === 'open'/.test(goalsPage),
-  'a shut period is a thing you cannot write into',
 )
 ok(
-  'the away button is on the page, not on six cards',
-  /data-hook="goals-away"/.test(goalsPage) && !/goals-away/.test(gcheck),
-  'it is a statement about the week; per card would be six ways to say it once',
+  'the away button is on the page, not in the carousel',
+  /data-hook="goals-away"/.test(goalsPage) && !/goals-away/.test(carousel),
+)
+
+/* --- a date nobody set is not "Invalid Date" ---------------------------- */
+
+ok(
+  'shortDate refuses a missing or unparseable date',
+  /if \(!iso\) return null/.test(read('src/lib/time.js')) &&
+    /Number\.isNaN\(d\.getTime\(\)\)/.test(read('src/lib/time.js')),
+  'new Date(undefined) formats as the literal words "Invalid Date"',
+)
+ok(
+  'and the card says something else instead of "by" with nothing after it',
+  /: t\('goal\.once'\)/.test(gcard),
+  'a due date is optional on a one-off, so the missing case is ordinary',
 )
 
 /* --- and the old screen is proof and praise ----------------------------- */
