@@ -439,23 +439,36 @@ export default function Goals() {
        */}
       {open && todays.length > 0 && (
         <Section>
+          {/**
+           * NO CARD ROUND IT. It is a question, not an object.
+           *
+           * It was a `lg` sheet, which put a white rectangle above a column of
+           * white rectangles and made the daily question look like the first
+           * goal in the list. A card is the right container for a thing you
+           * can act on in several ways; this is one sentence and one button,
+           * and drawing a box round that only competes with the cards below
+           * for the same attention.
+           *
+           * So it is type on the page: the question at heading weight because
+           * it is the first thing on the screen and is meant to be read, the
+           * count under it in grey, and the way in underneath.
+           */}
           <div
-            className="lg overflow-hidden px-5 py-4"
             data-hook="checkin-banner"
             data-answered={answered}
             data-total={todays.length}
           >
-            <p className="text-safe text-body font-semibold text-ink">
+            <p className="text-safe text-h2 font-semibold leading-tight text-ink">
               {answered >= todays.length ? t('checkin.banner_done') : t('checkin.banner_q')}
             </p>
-            <p className="text-safe mt-1 text-small text-muted">
+            <p className="text-safe mt-1.5 text-small text-muted">
               {t('checkin.banner_sub', { n: todays.length - answered, total: todays.length })}
             </p>
             <button
               type="button"
               onClick={() => setCarousel(true)}
               data-hook="checkin-banner-open"
-              className={`press mt-3 ${answered >= todays.length ? 'goal-action' : 'goal-action-done'}`}
+              className={`press mt-4 ${answered >= todays.length ? 'goal-action' : 'goal-action-done'}`}
             >
               {answered >= todays.length ? t('checkin.banner_again') : t('checkin.banner_cta')}
             </button>
