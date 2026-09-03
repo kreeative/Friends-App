@@ -218,6 +218,37 @@ const allProse = (w) => [
     ok('the sources block has the same number of paragraphs',
        article.fr.method.length === article.en.method.length)
 
+    /**
+     * THE RULE CHANGED SHAPE, NOT STRENGTH.
+     *
+     * This used to assert that the article carried no figures at all, on the
+     * reasoning that having no survey meant having nothing to report. That was
+     * right about our own data and wrong about the world: the article now
+     * rests on published work, so it has figures, and they live in `figures`
+     * with a citation each in `sources`.
+     *
+     * What must still hold is the thing the original rule was protecting: no
+     * number is typed into a sentence. A percentage written into the prose is
+     * a number nobody can trace and nobody will update, and it can drift
+     * between the two languages. So every figure is a {marker}, every marker
+     * must resolve, and no literal percentage may appear in either language.
+     */
+    const keys = new Set(Object.keys(article.figures ?? {}))
+    ok('the article carries its figures outside the language blocks',
+       keys.size > 0, 'they are somebody else\'s published results now')
+    ok('and a citation for each source it draws on',
+       Array.isArray(article.sources) && article.sources.length > 0)
+    for (const s of article.sources ?? []) {
+      ok(`source ${s.id} has a citation and a resolvable link`,
+         Boolean(s.cite) && /^https:\/\//.test(s.url ?? ''))
+    }
+    /* A DOI for every claim taken from a paper. The WHO fact sheet is a
+       standing page rather than an article, so it is the one allowed to be a
+       plain URL. */
+    const dois = (article.sources ?? []).filter((s) => s.url.includes('doi.org'))
+    ok(`the peer-reviewed sources resolve by DOI (${dois.length})`, dois.length >= 3,
+       'a publisher URL rots, a DOI does not')
+
     for (const lang of ['fr', 'en']) {
       const prose = [
         article[lang].dek,
@@ -225,16 +256,20 @@ const allProse = (w) => [
         ...article[lang].method,
       ]
       for (const text of prose) {
-        /* No {marker}, because there is no stats object to fill one from: a
-           marker here renders as literal braces on the page. */
-        ok(`${lang}: no unfillable marker in "${String(text).slice(0, 40)}..."`,
-           (String(text).match(/\{\w+\}/g) ?? []).length === 0)
-        /* And no figure, which is the whole point. */
-        ok(`${lang}: no percentage in "${String(text).slice(0, 40)}..."`,
-           (String(text).match(/\d+\s*%/g) ?? []).length === 0)
+        /* Every marker must be fillable, or it renders as literal braces on
+           the page. This is the assertion that caught six of them. */
+        const markers = String(text).match(/\{(\w+)\}/g) ?? []
+        const unknown = markers.filter((m) => !keys.has(m.slice(1, -1)))
+        ok(`${lang}: every marker resolves in "${String(text).slice(0, 40)}..."`,
+           unknown.length === 0, unknown.join(' '))
+        /* And no number typed straight into a sentence, which is the rule the
+           whole arrangement exists to enforce. */
+        ok(`${lang}: no literal percentage in "${String(text).slice(0, 40)}..."`,
+           (String(text).match(/\d+([.,]\d+)?\s*%/g) ?? []).length === 0)
       }
     }
 
+    ok('both languages name the sources block', Boolean(article.fr.sourcesTitle) && Boolean(article.en.sourcesTitle))
     ok('it answers to its slug', studyBySlug(article.slug) === article)
   }
 }
