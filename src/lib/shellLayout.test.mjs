@@ -860,5 +860,92 @@ ok(
   '"juste en bas du calendrier dans la page d\'accueil"',
 )
 
+/* --- the check-in moved onto the goal cards ----------------------------- */
+
+/**
+ * It was a screen of its own listing every goal again with one Submit at the
+ * bottom. Answering where the goal already is, is the shorter sentence, and a
+ * button per card means somebody can answer the one goal they care about and
+ * close the app having recorded it.
+ */
+const goalsPage = read('src/pages/Goals.jsx')
+const gcheck = read('src/components/GoalCheckin.jsx')
+/* Checkin.jsx is already read above as `checkin`; one read, one name. */
+const gcard = read('src/components/GoalCard.jsx')
+
+ok('there is a per-goal check-in', /data-hook="goal-checkin"/.test(gcheck))
+ok('with its own save', /data-hook="goal-save"/.test(gcheck))
+ok(
+  'and it renders INSIDE the card',
+  /footer = null,/.test(gcard) && /\{footer\}\s*\n\s*<\/article>/.test(gcard),
+  'as a sibling it was a question floating on the page next to a card',
+)
+ok(
+  'the page passes it in as the card footer',
+  /footer=\{checkinFor\(g\)\}/.test(goalsPage),
+  'GoalCard draws a goal and must not also learn what a cycle is',
+)
+
+/**
+ * THE ONE THAT WOULD HAVE DESTROYED DATA SILENTLY.
+ *
+ * submit_checkin upserts on (cycle_id, user_id) and carries the whole item
+ * list, so saving one card posts all of them. Two things follow and both are
+ * asserted, because either one missing loses answers with no error anywhere:
+ * the existing check-in has to be READ before anything is written, and the
+ * payload has to be built from every goal rather than the one being saved.
+ */
+ok(
+  'the existing check-in is read before anything is written',
+  /from\('checkins'\)[\s\S]{0,200}checkin_items\(goal_id/.test(goalsPage),
+  'starting from an empty map means the first save deletes what was there',
+)
+ok(
+  'and the payload is built from every answered goal, not the one being saved',
+  /const items = live\s*\n\s*\.filter\(\(g\) => answers\[g\.id\]\)/.test(goalsPage),
+  'a card that sent only itself would replace the check-in with a one-goal one',
+)
+ok(
+  'only goals due today are asked',
+  /dueOn\(live\.filter/.test(goalsPage),
+  'a twice-a-week goal on a Thursday is not a question today can answer',
+)
+ok(
+  'and only while the period is open',
+  /phase === 'open'/.test(goalsPage),
+  'a shut period is a thing you cannot write into',
+)
+ok(
+  'the away button is on the page, not on six cards',
+  /data-hook="goals-away"/.test(goalsPage) && !/goals-away/.test(gcheck),
+  'it is a statement about the week; per card would be six ways to say it once',
+)
+
+/* --- and the old screen is proof and praise ----------------------------- */
+
+ok(
+  'the goals pane is gone from the old check-in screen',
+  !/pane === 'goals'/.test(checkin),
+  'two copies of the same list is what this was moved to remove',
+)
+ok(
+  'so is the Submit that went with it',
+  !/checkin\.submit/.test(checkin),
+  'a button sending answers filled in on another page is a second source of truth',
+)
+ok(
+  'and the away button',
+  !/checkin\.away/.test(checkin),
+)
+ok(
+  'nothing left over references the answers it no longer owns',
+  !/\banswers\[/.test(checkin) && !/setAnswers/.test(checkin),
+  'a free identifier is a runtime ReferenceError that the build does not catch',
+)
+ok(
+  'and the imports it stopped using are gone',
+  !/enqueue|proofFields|outcomeFor|ProofField/.test(checkin),
+)
+
 console.log(`\n  ${pass} passed, ${fail} failed\n`)
 process.exit(fail ? 1 : 0)

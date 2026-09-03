@@ -123,13 +123,40 @@ ok(`all three user-content pills are contained (found ${pillCount})`, pillCount 
 
 const surfaces = [
   ['src/components/GoalDetail.jsx', /className="text-safe text-h1/, 'the expanded view, deliberately unclamped'],
-  ['src/pages/Checkin.jsx', /className="text-safe text-h2 text-ink"/, 'the check-in list'],
+  /* Checkin.jsx used to be here. It listed every goal again with the
+     commitment as an h2, and that list has moved onto the goal cards, where
+     GoalCard's own containment is asserted at the top of this file. The row is
+     replaced below by the assertion that it does not come back uncontained. */
   ['src/components/DayRecap.jsx', /className="text-safe flex-1 text-body/, 'the daily recap'],
   ['src/components/TodayObjective.jsx', /className="text-safe mt-1\.5 text-h2/, "today's objective"],
 ]
 for (const [file, re, what] of surfaces) {
   ok(`${what} contains the commitment`, re.test(read(file)), file)
 }
+
+/**
+ * The check-in no longer prints a commitment anywhere, and this is what stops
+ * one reappearing without text-safe on it.
+ *
+ * A single unbroken word has nowhere to wrap: it does not truncate, it spills
+ * off the card. That is the failure this whole file exists for, and the
+ * check-in screen was one of the four surfaces carrying user text. It is now
+ * proof and praise only, so the correct assertion is absence.
+ */
+ok(
+  'the proof screen does not draw a goal title of its own',
+  !/commitment/.test(read('src/pages/Checkin.jsx')),
+  'if one comes back it needs text-safe, like every other surface here',
+)
+/* Matched on RENDERING rather than on the identifier. GoalCheckin does pass
+   goal.commitment to ProofField, which uses it to name an uploaded file, and
+   that is not text on a card. The first version of this assertion matched the
+   prop and failed on a component that was correct. */
+ok(
+  'and the per-goal check-in leaves the title to the card above it',
+  !/>\s*\{goal\.commitment\}/.test(read('src/components/GoalCheckin.jsx')),
+  'printing it twice would be the same words in two containers with two rules',
+)
 
 /* WeekStrip is the exception and it is correct: it truncates to a single line
    rather than wrapping, which contains the text by a different route. Asserted
