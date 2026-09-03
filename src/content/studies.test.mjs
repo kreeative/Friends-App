@@ -189,5 +189,55 @@ const allProse = (w) => [
      SAVINGS_QUOTES.every((q) => RESPONDENTS.some((r) => r[1] === q.age)))
 }
 
+/* --- the second entry is an article, and the rules that still apply -------- */
+
+/**
+ * STUDIES[0] is a survey. STUDIES[1] is a piece of writing with no survey
+ * behind it, which is a different thing and is allowed to be.
+ *
+ * What does NOT change is the discipline at the top of studies.js: a number in
+ * the prose is a number somebody typed. A study derives its figures; an
+ * article has none at all. Both are checked the same way, because "I had no
+ * data so I estimated" is exactly the failure that rule exists to stop.
+ */
+{
+  const article = STUDIES.find((x) => !x.stats)
+  ok('there is an article as well as a study', Boolean(article))
+
+  if (article) {
+    ok('it carries no stats block', article.stats === undefined)
+    ok('and no quotes', article.quotes === undefined)
+    ok('both languages exist', Boolean(article.fr) && Boolean(article.en))
+    ok('same number of sections',
+       article.fr.sections.length === article.en.sections.length,
+       `fr[${article.fr.sections.length}] vs en[${article.en.sections.length}]`)
+    for (let i = 0; i < article.fr.sections.length; i += 1) {
+      ok(`section ${i + 1} has the same number of paragraphs in both`,
+         article.fr.sections[i].p.length === article.en.sections[i].p.length)
+    }
+    ok('the sources block has the same number of paragraphs',
+       article.fr.method.length === article.en.method.length)
+
+    for (const lang of ['fr', 'en']) {
+      const prose = [
+        article[lang].dek,
+        ...article[lang].sections.flatMap((sec) => [sec.h, ...sec.p]),
+        ...article[lang].method,
+      ]
+      for (const text of prose) {
+        /* No {marker}, because there is no stats object to fill one from: a
+           marker here renders as literal braces on the page. */
+        ok(`${lang}: no unfillable marker in "${String(text).slice(0, 40)}..."`,
+           (String(text).match(/\{\w+\}/g) ?? []).length === 0)
+        /* And no figure, which is the whole point. */
+        ok(`${lang}: no percentage in "${String(text).slice(0, 40)}..."`,
+           (String(text).match(/\d+\s*%/g) ?? []).length === 0)
+      }
+    }
+
+    ok('it answers to its slug', studyBySlug(article.slug) === article)
+  }
+}
+
 console.log(`\nstudies\n\n  ${pass} passed, ${fail} failed\n`)
 process.exit(fail === 0 ? 0 : 1)

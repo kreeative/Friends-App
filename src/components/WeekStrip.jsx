@@ -769,6 +769,16 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
   }
 
   return (
+    /**
+     * A fragment, because the heads-up is a SIBLING of the calendar card now
+     * rather than a block inside it.
+     *
+     * It sat inside for one round and "under the calendar" was read the way it
+     * was written: under, as in another card. Inside, it was the last row of
+     * the calendar, which makes it look like a property of the week rather
+     * than its own thing to read.
+     */
+    <>
     <div className="lg overflow-hidden p-4 sm:p-5">
       {/**
        * Which week you are looking at, and two ways to leave it.
@@ -1147,13 +1157,6 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
         )}
       </div>
 
-      <CycleHeadsUp
-        starts={cycleStarts}
-        prediction={prediction}
-        remind={remind}
-        days={remindDays}
-      />
-
       <DayRecap
         open={recap}
         origin={origin}
@@ -1173,5 +1176,13 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
         onClose={() => setRecap(false)}
       />
     </div>
+
+    <CycleHeadsUp
+      starts={cycleStarts}
+      prediction={prediction}
+      remind={remind}
+      days={remindDays}
+    />
+    </>
   )
 }

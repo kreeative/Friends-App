@@ -35,7 +35,7 @@
  * to .mjs forces module parsing regardless of where the file sits.
  */
 import { execFileSync } from 'node:child_process'
-import { copyFileSync, mkdtempSync, readdirSync, rmSync } from 'node:fs'
+import { copyFileSync, mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
@@ -83,6 +83,46 @@ try {
   }
 } finally {
   rmSync(scratch, { recursive: true, force: true })
+}
+
+/* --- the diagnostic must never become a way to read a secret ------------- */
+
+/**
+ * /api/stripe-health reports which integrations are configured. That is a
+ * useful thing and a dangerous shape: a diagnostic endpoint is exactly where
+ * somebody helpfully adds "and here are the first four characters of the key,
+ * to check it is the right one".
+ *
+ * So the rule is absolute and asserted rather than remembered: the value of a
+ * secret is never read in that file. Only its presence, via Boolean(env(...)).
+ * The gate is asserted too, because "anyone who guesses the path" is not the
+ * audience for a list of what is misconfigured.
+ */
+{
+  /* This file parses copies rather than reading sources, so it has no `read`
+     of its own; the two assertions below are about CONTENT, not syntax. */
+  const src = (rel) =>
+    readFileSync(new URL(`../../${rel}`, import.meta.url), 'utf8')
+  const health = src('api/stripe-health.js')
+  ok('the health endpoint exists', health.length > 0)
+  ok(
+    'it never puts a secret value in a response',
+    !/env\('stripeSecret'\)\s*\.|slice\(0,\s*\d+\)|substring|\.slice\(-/.test(health),
+    'presence is Boolean(env(...)), and that is all a diagnostic may say',
+  )
+  ok(
+    'the env report is booleans, not values',
+    /Boolean\(env\(k\)\)/.test(health),
+  )
+  ok(
+    'and it requires a signed-in caller',
+    /admin\.auth\.getUser\(token\)/.test(health) && /return res\.status\(401\)/.test(health),
+  )
+  ok(
+    'the browser side sends the live token rather than a stored one',
+    /supabase\.auth\.getSession\(\)/.test(src('src/components/PurchaseCheck.jsx')),
+    'a token read at mount may have rotated by the time the button is pressed',
+  )
 }
 
 console.log(`\n  ${pass} passed, ${fail} failed\n`)

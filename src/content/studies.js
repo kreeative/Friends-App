@@ -243,6 +243,104 @@ export const STUDIES = [
       ],
     },
   },
+  /**
+   * UN ARTICLE, PAS UNE ETUDE, ET LA DIFFERENCE EST VOLONTAIRE.
+   *
+   * Il n'y a pas de `stats` ici et pas de `quotes`. Aucun sondage n'a ete fait
+   * sur ce sujet, donc il n'y a aucun chiffre a deriver, et la note en haut de
+   * ce fichier interdit d'en recopier un a la main. Un pourcentage invente
+   * pour remplir un panneau serait exactement la faute que tout le reste de ce
+   * fichier est construit pour empecher.
+   *
+   * Study.jsx rend les panneaux de chiffres et le mur de citations seulement
+   * quand ils existent, donc cette entree s'affiche comme du texte.
+   *
+   * POURQUOI CE TEXTE EXISTE.
+   *
+   * "Les regles ne devraient pas etre taboues vu que ca nous affecte dans la
+   * societe dans laquelle on vit." L'application a un suivi de cycle prive
+   * depuis la migration 51, et une note sur la semaine a venir sur l'accueil.
+   * Les deux sont des outils. Un outil ne dit pas pourquoi il existe, et le
+   * silence autour du sujet est precisement ce qui transforme quelque chose de
+   * mensuel et previsible en une surprise chaque mois.
+   */
+  {
+    slug: 'les-regles-ne-sont-pas-un-detail',
+    date: '2026-09-03',
+    lang: 'fr',
+
+    fr: {
+      eyebrow: 'Article',
+      title: 'Les regles ne sont pas un detail prive',
+      dek: 'Ca arrive tous les mois, c\u2019est previsible, et ca change ce qu\u2019une semaine permet de faire. Le seul truc qui est vraiment prive, c\u2019est le silence autour.',
+      readTime: '4 min',
+      langNote: null,
+      sections: [
+        {
+          h: 'Ce que le silence coute',
+          p: [
+            'On planifie un semestre, un lancement, une periode d\u2019examens comme si les semaines etaient interchangeables. Elles ne le sont pas, et pour a peu pres la moitie des gens elles ne l\u2019ont jamais ete. Il y a des jours ou la concentration est facile a trouver et des jours ou elle coute cher, et ce n\u2019est pas une question de motivation.',
+            'Le probleme n\u2019est pas le corps. Le probleme est qu\u2019on n\u2019a pas le droit d\u2019en parler dans les endroits ou les plannings se decident, alors on planifie contre soi-meme et on appelle ca de la discipline quand ca casse.',
+          ],
+        },
+        {
+          h: 'Nommer une chose, ce n\u2019est pas s\u2019excuser',
+          p: [
+            'Il y a une difference entre "je suis fatiguee, desolee" et "cette semaine-la je mets les taches lourdes en debut de semaine". La premiere est une excuse, et une excuse demande une permission. La deuxieme est une decision de planification, et une decision de planification ne demande rien a personne.',
+            'C\u2019est tout ce que le suivi de cycle sert a faire ici. Pas un journal de symptomes, pas une note sur ton humeur. Une phase, et une phrase sur ce qu\u2019elle fait a une semaine de travail.',
+          ],
+        },
+        {
+          h: 'Pourquoi ca reste prive quand meme',
+          p: [
+            'Rien de tout ca n\u2019est partage avec ton groupe. Les tables du cycle ont leurs propres regles d\u2019acces, ecrites pour que personne d\u2019autre ne puisse les lire : pas de vue partagee, pas de statistique de groupe, pas de signal "qui a une semaine difficile". Ce n\u2019est pas un reglage a assouplir plus tard, c\u2019est la fonctionnalite.',
+            'Sortir un sujet du tabou et le rendre public sont deux choses differentes. Tu peux planifier autour de quelque chose sans le raconter, et c\u2019est exactement l\u2019ecart que cette application essaie de tenir : le dire a soi-meme, dans un endroit ou personne d\u2019autre ne regarde.',
+          ],
+        },
+      ],
+      methodTitle: 'D\u2019ou ca vient',
+      method: [
+        'Ce texte ne contient aucun chiffre, et c\u2019est volontaire. Les autres pages de cette section reposent sur un sondage dont les reponses sont dans le code, et chaque pourcentage y est calcule a partir de ces reponses. Ici il n\u2019y a pas de sondage, donc il n\u2019y a pas de pourcentage : en inventer un pour faire serieux serait pire que de ne rien avancer.',
+        'Ce qui est decrit du produit est verifiable dans le depot : le suivi de cycle et ses regles d\u2019acces sont dans supabase/51_calendar_and_cycle.sql, et la note sur la semaine a venir est dans src/components/CycleHeadsUp.jsx.',
+      ],
+    },
+
+    en: {
+      eyebrow: 'Article',
+      title: 'A period is not a private detail',
+      dek: 'It happens every month, it is predictable, and it changes what a week can hold. The only genuinely private part is the silence around it.',
+      readTime: '4 min',
+      langNote: null,
+      sections: [
+        {
+          h: 'What the silence costs',
+          p: [
+            'People plan a term, a launch, an exam period as though the weeks were interchangeable. They are not, and for roughly half of everyone they never have been. Some days concentration is easy to find and some days it is expensive, and that is not a question of motivation.',
+            'The body is not the problem. The problem is that it cannot be said out loud in the rooms where plans get made, so people plan against themselves and call it a discipline failure when it breaks.',
+          ],
+        },
+        {
+          h: 'Naming a thing is not apologising for it',
+          p: [
+            'There is a difference between "I am tired, sorry" and "that week I put the heavy work at the front". The first is an excuse, and an excuse asks for permission. The second is a scheduling decision, and a scheduling decision asks nobody for anything.',
+            'That is all the cycle tracker is for here. Not a symptom log, not a note about your mood. A phase, and a sentence about what it does to a working week.',
+          ],
+        },
+        {
+          h: 'Why it stays private anyway',
+          p: [
+            'None of it is shared with your group. The cycle tables have their own access rules, written so that nobody else can read them: no shared view, no group statistic, no "who is having a rough week" signal. That is not a default to be relaxed later, it is the feature.',
+            'Taking a subject out of the taboo and making it public are two different things. You can plan around something without narrating it, and that gap is exactly what this app is trying to hold: saying it to yourself, somewhere nobody else is looking.',
+          ],
+        },
+      ],
+      methodTitle: 'Where this comes from',
+      method: [
+        'This piece contains no figures, on purpose. The other pages in this section rest on a survey whose responses are in the code, and every percentage there is computed from those responses. There is no survey here, so there is no percentage: inventing one to sound rigorous would be worse than claiming nothing.',
+        'What it says about the product is checkable in the repository: the cycle tracker and its access rules are in supabase/51_calendar_and_cycle.sql, and the note about the week ahead is in src/components/CycleHeadsUp.jsx.',
+      ],
+    },
+  },
 ]
 
 /**

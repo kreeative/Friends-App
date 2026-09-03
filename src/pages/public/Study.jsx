@@ -32,19 +32,39 @@ export default function Study() {
 
   const c = (LANDING[locale] ?? LANDING.en).studies
   const w = study[locale] ?? study.en
-  const st = study.stats
+  /**
+   * A study has figures. An article does not, and this page had assumed every
+   * entry was the first one.
+   *
+   * The stat panels, the dot panels and the quote wall are all specific to the
+   * savings survey: they read st.hasApp, st.n and study.quotes by name. A
+   * second entry without a survey behind it crashed on the first of those.
+   * They are guarded now, so an entry that is prose is rendered as prose.
+   *
+   * That is not a missing feature. An article about a subject nobody has
+   * surveyed should not have a number panel at the top, and inventing one to
+   * fill the layout is exactly what the note at the top of studies.js exists
+   * to prevent.
+   */
+  const st = study.stats ?? null
   /* Les montants sont formates ici et pas dans studies.js, parce que formatXof
      pose une espace fine insecable et un suffixe XOF : ecrit dans la prose, ce
      serait un chiffre dans un bloc de langue, ce que l'en-tete de studies.js
      interdit. Tout ce qui est un montant passe par la meme fonction, donc les
      medianes par sexe et par tranche s'ecrivent comme celle de l'echantillon. */
-  const v = {
-    ...st,
-    medianSavers: formatXof(st.medianSavers),
-    womenMedian: formatXof(st.womenMedian),
-    menMedian: formatXof(st.menMedian),
-    coreMedianSavers: formatXof(st.coreMedianSavers),
-  }
+  /* Empty when there are no figures. An article carries no {markers}, so the
+     fill map has nothing to do and must not be built by reading fields off a
+     null: guarding the two blocks below was not enough, because this runs
+     before either of them and crashed on the first amount it formatted. */
+  const v = st
+    ? {
+        ...st,
+        medianSavers: formatXof(st.medianSavers),
+        womenMedian: formatXof(st.womenMedian),
+        menMedian: formatXof(st.menMedian),
+        coreMedianSavers: formatXof(st.coreMedianSavers),
+      }
+    : {}
 
   usePageMeta({ title: `${w.title} · Rich & Friends`, description: fill(w.dek, v) })
 
@@ -71,6 +91,7 @@ export default function Study() {
 
       {/* Les deux chiffres qui ne devraient pas cohabiter. C'est toute
           l'etude ; le reste l'explique. */}
+      {st && (
       <div className="mt-10 grid gap-4 sm:grid-cols-2">
         <div className="panel p-7" data-hook="study-stat">
           <p className="font-display text-[clamp(2.5rem,9vw,3.5rem)] leading-none text-ink [font-variant-numeric:tabular-nums]">
@@ -85,8 +106,10 @@ export default function Study() {
           <p className="lede mt-3 text-small">{c.stat_zero}</p>
         </div>
       </div>
+      )}
 
       {/* Un point par personne, trois fois. */}
+      {st && (
       <section className="mt-12">
         <h2 className="text-h2 font-semibold text-ink">{c.dots_title}</h2>
         <p className="lede mt-2 max-w-[52ch] text-small">{c.dots_note}</p>
@@ -96,6 +119,7 @@ export default function Study() {
           <DotPanel label={c.dots_save} on={savers} n={st.n} warn />
         </div>
       </section>
+      )}
 
       {w.sections.map((sec) => (
         <section key={sec.h} className="mt-12">
@@ -107,6 +131,7 @@ export default function Study() {
       ))}
 
       {/* Ce que les gens ont ecrit, a cote de ce qu'ils mettent de cote. */}
+      {study.quotes?.length > 0 && (
       <section className="mt-12">
         <h2 className="text-h2 font-semibold text-ink">{w.quotesTitle}</h2>
         <p className="lede mt-2 max-w-[52ch] text-small">{w.quotesNote}</p>
@@ -136,7 +161,11 @@ export default function Study() {
           ))}
         </ul>
       </section>
+      )}
 
+      {/* "Method" on a survey and "sources" on an article are the same block
+          doing the same job: where this came from. The heading comes from the
+          entry, so neither has to pretend to be the other. */}
       <section className="mt-12">
         <h2 className="text-h2 font-semibold text-ink">{w.methodTitle}</h2>
         {w.method.map((m) => (
