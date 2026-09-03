@@ -71,24 +71,35 @@ const MINE = [
 const CALENDAR = { to: '/calendar', key: 'nav.calendar', icon: 'calendar' }
 
 /**
- * THREE TABS. BRAVO IS GONE AND THIS IS THE SECOND HALF OF ONE MOVE.
+ * INSIDE A GROUP: HOME, THE BOARD, THE GOALS, THE GROUP.
  *
- * That tab was the check-in. The check-in moved onto the goals page, where the
- * goals already are, and what was left behind was a destination whose entire
- * content was two buttons and an empty state: "Proof" and "Celebrate", both of
- * which only led somewhere else. A tab that exists to offer two links is a
- * menu with a page around it.
+ * BRAVO IS GONE, and that was the second half of one move. That tab was the
+ * check-in; the check-in went to the goals page where the goals already are,
+ * and what was left behind was a destination whose entire content was "Proof"
+ * and "Celebrate", two buttons that only led somewhere else. A tab that exists
+ * to offer two links is a menu with a page around it. Both jobs are sections on
+ * the goals page now. The /checkin route stays and redirects, so every link
+ * anybody already has still lands somewhere that makes sense.
  *
- * So the two jobs went to the page they were always about. Proof is evidence
- * OF a goal, so the gallery sits under the goal cards; a compliment is the
- * thing you think of while looking at how the week went, so it sits under
- * them too. One screen answers "what did I commit to, what did I do about it,
- * and who else did well", which was three screens and is one act.
+ * HOME STAYS WHEN YOU ARE IN A GROUP, which is what refilled the fourth slot.
+ * The two navigations swap wholesale, so walking into a group replaced every
+ * destination at once and the dashboard was simply not on screen. Getting back
+ * meant the wordmark at the top of the rail, which is a logo: it happens to
+ * link home, and nothing said so.
  *
- * The route stays and redirects. Every link anybody has, and the three places
- * inside the app that pointed at it, now land on the goals page.
+ * It is first, the position it holds in the other navigation, so the icon under
+ * your thumb does not move when you cross into a group. That is the argument
+ * for its placement: a menu whose items relocate depending on where you are is
+ * one you have to read every time instead of aiming at.
+ *
+ * FOUR PLUS THE CALENDAR IS FIVE, WHICH IS WHERE THIS BAR HAS CLIPPED BEFORE,
+ * so it was measured rather than assumed. At 320, 360, 390 and 430, comparing
+ * each label's scrollWidth against its clientWidth: nothing clipped and the bar
+ * does not overflow. 320 is narrower than any phone this is built for. The
+ * personal navigation has been five the whole time.
  */
 const IN_GROUP = (id) => [
+  { to: '/', key: 'nav.home', end: true, icon: 'home' },
   { to: `/g/${id}`, key: 'nav.board', end: true, icon: 'board' },
   { to: `/g/${id}/goals`, key: 'nav.goals', icon: 'goals' },
   { to: `/g/${id}/settings`, key: 'nav.group', icon: 'group' },
@@ -156,7 +167,10 @@ function TopNav() {
             logo without repeating the same numbers. */}
         <div className="px-3 py-2.5">
           <div className="flex items-center gap-2.5">
-            <Link to="/" aria-label={t('nav.home')} className="press shrink-0">
+            {/* Named for the brand, like the rail's. See the note there: the tab bar
+                carries a Home item now, so "Accueil" here was the second link
+                with that name on the same screen. */}
+            <Link to="/" aria-label={t('brand.name')} className="press shrink-0">
               <LockupInline size={36} />
             </Link>
 
@@ -348,9 +362,22 @@ function SideRail({ tabs }) {
          * the artwork has internal margin of its own since brand-icons.py
          * started insetting the lettering: at 28 the words had gone soft.
          */}
+        {/**
+         * Named for the brand, not for where it goes.
+         *
+         * It was aria-label="Accueil", which was fine while the rail had no
+         * home item: the logo WAS the way back. Both navigations carry an
+         * explicit Home now, so that label put two links with the same name
+         * and the same destination in one <nav>, which is a list a screen
+         * reader reads twice and a keyboard user tabs through twice.
+         *
+         * It still goes home, because a logo in the corner always does. It
+         * just no longer claims to be the Home control, which the thing three
+         * rows below it actually is.
+         */}
         <Link
           to="/"
-          aria-label={t('nav.home')}
+          aria-label={t('brand.name')}
           className="press block shrink-0 self-center rounded-inner p-1"
         >
           <LockupInline size={32} />
