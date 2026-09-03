@@ -7,10 +7,10 @@
 export const LANDING = {
   en: {
     hero: {
-      title: 'Change your life. Take back your future.',
+      title: 'Change your life. Build your financial freedom.',
       /* An aim, not a count. See the note on the French copy. */
-      body: 'The goal: help millions of people transform how they live, through personal discipline, an ambitious mindset and control of their money.',
-      cta: 'Upgrade your lifestyle',
+      body: 'Freedom is not a matter of luck, it is a matter of discipline. Rich & Friends walks you through it step by step: master your money, build your habits, reach what you are aiming for.',
+      cta: 'Start your transformation',
       secondary: 'How it works',
       note: 'Free, and your budget stays private',
     },
@@ -30,7 +30,7 @@ export const LANDING = {
     tagline: 'Take your goals to the next level',
 
     manifesto:
-      'A new way of living does not ask for luck. It asks for vision, for discipline every day, and for the right tools to carry it out.',
+      'The discipline of today is the freedom of tomorrow.',
 
     pillars: {
       eyebrow: 'The three pillars',
@@ -38,21 +38,21 @@ export const LANDING = {
       items: [
         {
           n: '01',
-          title: 'Discipline & mindset',
+          title: 'Daily discipline',
           body: 'Build the daily habits that shape the better version of you. You say what you are going to do, your friends see it, and you tick it off every day.',
           tone: 'bg-[#FF007A]',
         },
         {
           n: '02',
-          title: 'Upgrade your lifestyle',
+          title: 'Plans & ambitions',
           body: 'Think bigger. Travel, a career change, independence: give your most ambitious plans a date and a number instead of keeping them in your head.',
           tone: 'bg-[#38BDF8]',
         },
         {
           n: '03',
-          title: 'Financial freedom',
+          title: 'Freedom & peace of mind',
           body: 'Put your money behind what you want: envelopes for the everyday, Big Budgets for the large things, and savings for what is left.',
-          tone: 'bg-[#FFE600]',
+          tone: 'bg-[#FFF4AD]',
         },
       ],
     },
@@ -221,7 +221,7 @@ export const LANDING = {
       product: 'Product',
       home: 'Home',
       menu: 'Menu',
-      links: { how: 'How it works', about: 'About', library: 'The books', studies: 'Studies', faq: 'Help', signin: 'Sign in' },
+      links: { how: 'How it works', about: 'About', library: 'The books', studies: 'Studies', faq: 'Help', signin: 'Sign in', join: 'Join the movement' },
       legalHeading: 'Legal',
       contact: 'Contact',
       rights: 'All rights reserved.',
@@ -231,7 +231,7 @@ export const LANDING = {
 
   fr: {
     hero: {
-      title: 'Change de vie. Reprends le contrôle de ton avenir.',
+      title: 'Change de vie. Bâtis ta liberté financière.',
       /**
        * UN OBJECTIF, PAS UNE STATISTIQUE.
        *
@@ -246,8 +246,8 @@ export const LANDING = {
        * se trouve etre vrai, parce que c'est une declaration d'intention et
        * non un compte. Rien a corriger le jour ou le chiffre arrive.
        */
-      body: 'Objectif : aider des millions de personnes à transformer leur mode de vie grâce à la discipline personnelle, un mindset ambitieux et la maîtrise financière.',
-      cta: 'Améliore ton Lifestyle',
+      body: 'La liberté n’est pas une question de chance, c’est une question de discipline. Rich & Friends t’accompagne pas à pas pour maîtriser ton argent, structurer tes habitudes et réaliser tes ambitions.',
+      cta: 'Commence ta transformation',
       secondary: 'Comment ça marche',
       note: 'Gratuit, et ton budget reste privé',
     },
@@ -258,7 +258,7 @@ export const LANDING = {
     tagline: 'Passe tes objectifs au niveau supérieur',
 
     manifesto:
-      'Un nouveau mode de vie ne demande pas de la chance. Il demande de la vision, de la discipline au quotidien et les bons outils pour l’exécuter.',
+      'La discipline quotidienne d’aujourd’hui est la liberté de demain.',
 
     /* Les trois piliers. Chacun pointe vers une partie de l'app qui existe
        vraiment : les objectifs et le point quotidien, les projets et le suivi,
@@ -269,21 +269,21 @@ export const LANDING = {
       items: [
         {
           n: '01',
-          title: 'Discipline & Mindset',
+          title: 'Discipline au Quotidien',
           body: 'Construis les habitudes quotidiennes qui façonnent la meilleure version de toi-même. Tu dis ce que tu vas faire, tes amis le voient, et tu coches chaque jour.',
           tone: 'bg-[#FF007A]',
         },
         {
           n: '02',
-          title: 'Upgrade ton Lifestyle',
+          title: 'Projets & Ambitions',
           body: 'Pense grand. Voyages, reconversion, indépendance : donne une date et un montant à tes projets les plus ambitieux au lieu de les garder dans ta tête.',
           tone: 'bg-[#38BDF8]',
         },
         {
           n: '03',
-          title: 'Liberté Financière',
+          title: 'Liberté & Sérénité',
           body: 'Mets ton argent au service de tes rêves : des enveloppes pour le quotidien, le Haut Budget pour les gros projets, et l’épargne pour ce qui reste.',
-          tone: 'bg-[#FFE600]',
+          tone: 'bg-[#FFF4AD]',
         },
       ],
     },
@@ -483,6 +483,7 @@ export const LANDING = {
         studies: 'Études',
         faq: 'Aide',
         signin: 'Se connecter',
+        join: 'Rejoindre le mouvement',
       },
       legalHeading: 'Légal',
       contact: 'Contact',

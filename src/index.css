@@ -649,8 +649,24 @@
     --c-accent: 230 0 112;     /* #E60070 */
     --c-accent-pressed: 194 0 94;
     --c-on-accent: 255 255 255; /* 4.57:1 */
-    --c-field: 255 230 0;      /* #FFE600 */
-    --c-on-field: 17 17 17;    /* 14.90:1 */
+    /**
+     * PASTEL, NOT #FFE600. Asked for, and it costs nothing here.
+     *
+     * The public shell uses `field` in exactly one way: a large block with
+     * black type on it, the closing panel on the home page and the sample
+     * block in the reader preview. It never carries a mark, an arc or a rule,
+     * so the reason the app's yellow is at full strength does not apply.
+     *
+     * --c-field-deep is deliberately NOT overridden here, because nothing on
+     * these pages draws with it. A pastel version of it would be a 4px rule at
+     * 1.1:1 on the ground, which is the failure the note beside `field-deep`
+     * in the app's palette exists to prevent.
+     *
+     * Black on this measures 16.5:1, up from 14.90 on the vibrant one, so the
+     * change makes the one thing set on it easier to read rather than harder.
+     */
+    --c-field: 255 244 173;    /* #FFF4AD  pastel */
+    --c-on-field: 17 17 17;    /* 16.5:1 */
     --c-mark: 255 0 122;
 
     /* The third touch. The app has no blue in sun and no pink in sea; the
