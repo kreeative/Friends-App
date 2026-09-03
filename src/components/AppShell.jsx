@@ -323,20 +323,27 @@ function SideRail({ tabs }) {
          * belongs to. It is the one element in the rail that is not a place you
          * can go, and nothing said so.
          *
-         * mb-3 plus a hairline under it. The rule is the part that carries it
-         * without spending height: 12px alone still reads as loose spacing, a
-         * line reads as a boundary. Same treatment as the bell and the avatar
-         * at the other end, which are also not destinations, so the rail has
-         * one grammar for "this group is different" rather than two.
+         * A hairline under it, and then a real gap. The rule is the part that
+         * carries the boundary without spending height; the gap is what "leave
+         * the logo alone at the top" asks for, and 24px is the smallest amount
+         * at which the mark stops reading as the first item of the list. Same
+         * treatment as the bell and the avatar at the other end, which are
+         * also not destinations, so the rail has one grammar for "this group
+         * is different" rather than two.
+         *
+         * The tile is 32 rather than 28. It is alone up there now, so it is
+         * the one thing in the rail that is looked at rather than scanned, and
+         * the artwork has internal margin of its own since brand-icons.py
+         * started insetting the lettering: at 28 the words had gone soft.
          */}
         <Link
           to="/"
           aria-label={t('nav.home')}
-          className="press block shrink-0 self-center rounded-inner p-1.5"
+          className="press block shrink-0 self-center rounded-inner p-1"
         >
-          <LockupInline size={28} />
+          <LockupInline size={32} />
         </Link>
-        <span aria-hidden="true" className="mx-1 mb-3 mt-2 h-px shrink-0 bg-hairline/60" />
+        <span aria-hidden="true" className="mx-1 mb-6 mt-3 h-px shrink-0 bg-hairline/60" />
 
         {/**
          * Which group you are in, now that the top bar is not saying it above
@@ -361,14 +368,17 @@ function SideRail({ tabs }) {
             and rows silently losing height is worse than a scrollbar nobody
             usually sees.
 
-            gap-1.5 rather than gap-0.5. At 2px the rows were one column of
-            icons with no rhythm, and the active pill touched its neighbours,
-            so "you are here" read as a band rather than as one item. 6px is
-            still five rows plus a chip inside 700px with the same scroll
-            behaviour, and it is the smallest gap at which the pill has air
-            around it. The row is h-11 and does not change: the space between
+            gap-2 rather than gap-0.5. At 2px the rows were one column of icons
+            with no rhythm, and the active pill touched its neighbours, so "you
+            are here" read as a band rather than as one item. It went to 6px,
+            and then to 8 when that was still asked to open up. Five rows at
+            h-11 plus a group chip plus the 8px gaps is 316px, so a 700px rail
+            still holds all of it without the scroller ever appearing, which is
+            the number that decides how far this can go.
+
+            The row is h-11 throughout and does not change: the space between
             targets grew, the targets did not shrink. */}
-        <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto">
+        <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
           {rows.map((tab, i) => {
             const Icon = NAV_ICON[tab.icon]
             return (
@@ -418,7 +428,7 @@ function SideRail({ tabs }) {
          * a new control: TopNav's note records that the avatar became the link
          * to the profile when the dropdown was deleted, and it still is.
          */}
-        <div className="mt-3 flex shrink-0 flex-col gap-1.5 border-t border-hairline/60 pt-3">
+        <div className="mt-4 flex shrink-0 flex-col gap-2 border-t border-hairline/60 pt-4">
           <NotificationBell placement="rail" />
 
           <NavLink

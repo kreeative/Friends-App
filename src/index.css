@@ -373,8 +373,54 @@
      * The ratio is measured on the painted button rather than on the token,
      * because .btn-primary dims on press and that changes both together.
      */
-    --c-accent: 230 0 112;   /* #E60070, 4.57:1 with white */
-    --c-accent-pressed: 194 0 94;
+    /**
+     * ONE PINK, AND #EC4899 IS NOT IT.
+     *
+     * "Unified POP pink, bg-pink-500 or bg-pink-600, hex #EC4899 or #E11D48"
+     * was the brief, and only one of those two hexes can do the job the accent
+     * does here. Measured against white:
+     *
+     *   #EC4899  pink-500   3.53:1   fails
+     *   #DB2777  pink-600   4.60:1   passes, 0.10 of headroom
+     *   #E11D48  rose-600   4.70:1   passes
+     *   #E60070  the old    4.57:1   passed, 0.07 of headroom
+     *   #D6006B  this one   5.16:1   passes, 0.66 of headroom
+     *
+     * "Pas oblige de suivre exactement ce qui est ecrit, je veux ton rose", so
+     * this is a choice, and here is the reasoning rather than just the result.
+     *
+     * #EC4899 is out on the number. White sits on this colour in three places
+     * and pink type sits on white in several more, and 3.53 fails in both
+     * directions. Shipping it means either going back to black-on-pink, which
+     * was explicitly not wanted, or shipping a known failure.
+     *
+     * #E11D48 is out on a measurement that only appears beside another token.
+     * Its hue is 22 degrees, which is the orange-red direction, and it lands
+     * 14.1 from --c-negative in CIE76. Painted next to each other, the brand
+     * button and the error colour read as two shades of one red. Every other
+     * candidate here is 34 or more away from it.
+     *
+     * #D6006B is hue 2, chroma 74, 34.3 from negative, and has 0.66 of
+     * headroom over 4.5 where the outgoing colour had 0.07. That headroom is
+     * not spare: it is what lets a hover, a pressed state and a translucent
+     * overlay move without a fresh measurement each time. It is also the same
+     * family as the pink already inside the artwork, so this reads as the
+     * brand tidied rather than replaced.
+     *
+     * Chosen by looking at painted swatches, white type on a button, the
+     * colour against the brand yellow and the colour against the error red.
+     * Not off the numbers alone.
+     *
+     * IT IS THE SAME VALUE IN FOUR PLACES NOW, WHICH IS THE ACTUAL REQUEST.
+     * The complaint was inconsistent pinks, and there were three: this token,
+     * --c-mark and --c-cat-1 at #FF007A, and #DE3578 baked inside every logo
+     * PNG. The third is the one nobody could have found by reading the CSS.
+     * scripts/brand-icons.py regenerates the artwork from this value.
+     */
+    --c-accent: 214 0 107;   /* #D6006B, 5.16:1 with white */
+    /* Darker, never lighter. #E11D48 already has only 0.2 of headroom over
+       4.5, so a hover that lightens spends the ratio white is relying on. */
+    --c-accent-pressed: 176 0 88;  /* #B00058, 6.87:1 */
     /**
      * BLACK ON THE PINK, NOT WHITE. THE RATIO IS THE REASON AND THE BRIEF
      * SAID SO ANYWAY.
@@ -399,7 +445,7 @@
      * that cannot hold white to hold white. --c-accent is #E60070 now and this
      * is white again, at 4.57:1.
      */
-    --c-on-accent: 255 255 255;  /* 4.57:1 on #E60070 */
+    --c-on-accent: 255 255 255;  /* 5.16:1 on #D6006B */
     /* Was #A3004A, a deep magenta at 5.6:1. Two problems: it is the wine-red
        family the palette brief banned outright, and black on this yellow is
        13.38:1, so the darker pink was buying nothing and costing compliance. */
@@ -497,7 +543,11 @@
      * because the yellow half cannot be: #FFD600 is 1.41:1 on white and a mark
      * nobody can see is not a mark. That job belongs to --c-mark.
      */
-    --c-cat-1: 255 0 122;     /* #FF007A  3.80:1 on white */
+    /* The head of the ramp is the brand pink now rather than a second one
+       four degrees of hue away from it. #FF007A and #E60070 side by side were
+       two pinks; one of them had to go and the accent is the one with a name
+       and a contrast requirement. */
+    --c-cat-1: 214 0 107;     /* #D6006B  5.16:1 on white */
     --c-cat-2: 255 45 107;    /* #FF2D6B  3.60:1 */
     --c-cat-3: 255 92 77;     /* #FF5C4D  3.04:1 */
     --c-cat-4: 255 138 43;    /* #FF8A2B  2.35:1  fill only */
@@ -515,7 +565,10 @@
      * categories are told apart by the tint behind the mark, and by the name,
      * which is on screen in every place a mark appears.
      */
-    --c-mark: 255 0 122;      /* #FF007A  3.80:1 on white, 3.5:1 on the tints */
+    /* Also the brand pink. It was #FF007A, which passed 1.4.11's 3:1 for a
+       small mark at 3.80 and is now 5.16, so this is a straight improvement as
+       well as one less pink. */
+    --c-mark: 214 0 107;      /* #D6006B  5.16:1 on white */
 
     /* The supplied tints. Each one still reads against its own arc: the
        narrowest pair is cat-6 at 3.21:1, and that boundary is where somebody
@@ -646,9 +699,9 @@
     /* Same pink and same white as the app. The marketing CTA was black on
        #FF007A; "bouton rose, ecriture blanche" applies here too, and #FF007A
        cannot carry white at 3.80:1. */
-    --c-accent: 230 0 112;     /* #E60070 */
-    --c-accent-pressed: 194 0 94;
-    --c-on-accent: 255 255 255; /* 4.57:1 */
+    --c-accent: 214 0 107;     /* #D6006B, the one brand pink */
+    --c-accent-pressed: 176 0 88;
+    --c-on-accent: 255 255 255; /* 5.16:1 */
     /**
      * PASTEL, NOT #FFE600. Asked for, and it costs nothing here.
      *
@@ -667,7 +720,7 @@
      */
     --c-field: 255 244 173;    /* #FFF4AD  pastel */
     --c-on-field: 17 17 17;    /* 16.5:1 */
-    --c-mark: 255 0 122;
+    --c-mark: 214 0 107;
 
     /* The third touch. The app has no blue in sun and no pink in sea; the
        public shell is the one surface that gets all three at once. */
