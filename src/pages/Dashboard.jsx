@@ -271,7 +271,7 @@ export default function Dashboard() {
       {waiting && (
         <div className="animate-rise pt-6">
           <Link
-            to={`/g/${waiting.group.id}/checkin`}
+            to={`/g/${waiting.group.id}/goals`}
             className="press group block rounded-card bg-accent p-6 no-underline transition-transform duration-200 ease-settle hover:-translate-y-0.5 sm:p-7"
           >
             <span className="block text-label font-semibold uppercase tracking-[0.14em] text-on-accent/70">

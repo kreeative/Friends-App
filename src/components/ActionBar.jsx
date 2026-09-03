@@ -161,27 +161,11 @@ export function TargetIcon() {
   )
 }
 
-export function CameraIcon() {
-  return (
-    <Svg>
-      {/* Body with the viewfinder bump, lens knocked out of it. */}
-      <path d="M9.9 3.9H14.1L15.9 6.2H19.4A2.6 2.6 0 0 1 22 8.8V17.5A2.6 2.6 0 0 1 19.4 20.1H4.6A2.6 2.6 0 0 1 2 17.5V8.8A2.6 2.6 0 0 1 4.6 6.2H8.1ZM12 9.7a3.7 3.7 0 1 0 0 7.4 3.7 3.7 0 0 0 0-7.4Z" />
-    </Svg>
-  )
-}
-
-export function PartyIcon() {
-  return (
-    <Svg>
-      {/* A popper and what comes out of it. */}
-      <path d="M3.4 20.6 9.1 8.8 15.4 15.1Z" />
-      <circle cx="16.4" cy="6" r="1.3" />
-      <circle cx="20.1" cy="10.2" r="1" />
-      <circle cx="19.8" cy="5" r=".8" />
-      <circle cx="13" cy="4.4" r=".9" />
-    </Svg>
-  )
-}
+/* CameraIcon and PartyIcon were the two tiles on the Bravo screen's action
+   bar. That screen is gone: proof and praise are sections on the goals page
+   now, and a section has a heading rather than a tile. Removed for the same
+   reason ForwardIcon was, recorded above: an exported glyph with no caller is
+   the start of a sprite sheet. */
 
 /* --- the money screen's four -------------------------------------------- */
 
