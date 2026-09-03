@@ -84,9 +84,16 @@ const CALENDAR = { to: '/calendar', key: 'nav.calendar', icon: 'calendar' }
  */
 const IN_GROUP = (id) => [
   { to: `/g/${id}`, key: 'nav.board', end: true, icon: 'board' },
-  /* Its own key rather than the chip's. "Faire le point" is the right words
-     on a button and two characters too many in a tab, where it truncated to
-     "Faire le p…" at 390px. */
+  /**
+   * Proof and praise, which is what this destination is now.
+   *
+   * It was the check-in, and the check-in has moved onto the goal cards where
+   * the goals are. What was left on that screen was the gallery and the
+   * compliment, so the tab says what it now holds rather than what it used to.
+   *
+   * The route keeps /checkin. Renaming it would break every link anybody has
+   * and the path is not what the screen is called.
+   */
   { to: `/g/${id}/checkin`, key: 'nav.checkin', icon: 'checkin' },
   { to: `/g/${id}/goals`, key: 'nav.goals', icon: 'goals' },
   { to: `/g/${id}/settings`, key: 'nav.group', icon: 'group' },

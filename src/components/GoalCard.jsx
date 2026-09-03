@@ -52,6 +52,20 @@ function DayDots({ days }) {
 export default function GoalCard({
   goal,
   owner,
+  /**
+   * Rendered inside the card, under everything else.
+   *
+   * This is where the daily check-in goes. It was a sibling below the card for
+   * one round and that was visibly wrong: a hairline and a question floating on
+   * the page background next to a card, rather than the card asking it. "Move
+   * it onto each card" is the request and inside the <article> is the only
+   * place that is literally true.
+   *
+   * A slot rather than the check-in itself, because GoalCard draws a goal and
+   * should not also know what a cycle is. The page that has the answers passes
+   * the block in.
+   */
+  footer = null,
   showControls = false,
   progress = null,
   editHref = null,
@@ -426,6 +440,7 @@ export default function GoalCard({
         </div>
       )}
 
+      {footer}
     </article>
       )}
 

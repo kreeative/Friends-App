@@ -1,38 +1,34 @@
-import { useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { supabase } from '../lib/supabase'
-import { useAuth } from '../context/AuthContext'
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useGroup } from '../context/GroupContext'
-import { enqueue, flush } from '../lib/queue'
-import { cheer } from '../lib/burst'
 import { cycleEnd, cyclePhase, untilLabel } from '../lib/time'
 import { useT } from '../lib/i18n'
-import { dueOn, outcomeFor, targetFor } from '../lib/schedule'
-import { proofFields, proofFilled, proofTypeOf } from '../lib/proofKinds'
-import { errorText } from '../lib/dberr'
 import { Screen, Section, TopBar } from '../components/ui'
-import ProofField from '../components/ProofField'
 import CelebrateStep from '../components/CelebrateStep'
 import ProofGallery from '../components/ProofGallery'
-import ActionBar, { CameraIcon, PartyIcon, TargetIcon } from '../components/ActionBar'
+import ActionBar, { CameraIcon, PartyIcon } from '../components/ActionBar'
 
+/**
+ * Proof, and telling somebody they did well.
+ *
+ * THIS SCREEN USED TO BE THE CHECK-IN AND IT IS NOT ANY MORE.
+ *
+ * It had three panes: answer your goals, look at the proof, celebrate
+ * somebody. The first was a second copy of the goals list with one Submit at
+ * the bottom, and it has moved onto the goal cards themselves, where the goal
+ * already is. See components/GoalCheckin.jsx for why.
+ *
+ * What is left is the two jobs that were never about answering: the gallery of
+ * what the group has proved, and the compliment. Both are things you come here
+ * to do rather than things the day asks of you, which is why neither needed
+ * the Submit that has gone with the goals pane.
+ *
+ * The route keeps its name. Renaming /g/:id/checkin would break every link
+ * anybody has, and the path is not what the screen is called.
+ */
 export default function Checkin() {
-  const navigate = useNavigate()
-  const { user } = useAuth()
   const { t } = useT()
-  const { activeId, cycles, cadence, currentCycle, nextCycle, members, myGoals, groupGoals, reloadGroup } =
-    useGroup()
-
-  /* Only what is actually due. A twice-a-week goal on a Thursday and a
-     one-off due in October are not questions today has an answer to, and a
-     form that asks them anyway is one people learn to scroll past. */
-  const goals = useMemo(
-    () => dueOn([...myGoals, ...groupGoals].filter((g) => g.status === 'active')),
-    [myGoals, groupGoals],
-  )
-
-  const [answers, setAnswers] = useState({})
-  const [busy, setBusy] = useState(false)
+  const { activeId, cycles, cadence, currentCycle, nextCycle, members } = useGroup()
 
   /**
    * The celebration draft, and a count of what has actually gone out.
@@ -56,108 +52,13 @@ export default function Checkin() {
      is the whole of "my photo did not appear". */
   const [proofTick, setProofTick] = useState(0)
 
-  /* Which of the four jobs is on screen. Goals first, because it is the only
-     one that is not optional and the only one most days need. */
-  const [pane, setPane] = useState('goals')
-
-  /* Set when a submit did not land: `{ rejected, detail }`. See submit() for
-     why that must not look like success, and why the server's own words are
-     carried rather than replaced with a friendly guess. */
-  const [stuck, setStuck] = useState(null)
+  /* Which of the two jobs is on screen. Proof first: it is the one with
+     something already in it on most days, and the celebration is an act rather
+     than a thing to look at. */
+  const [pane, setPane] = useState('proof')
 
   const phase = cyclePhase(currentCycle, cycles, cadence)
   const ends = cycleEnd(currentCycle, cycles, cadence)
-
-  function set(goalId, patch) {
-    setAnswers((a) => ({ ...a, [goalId]: { ...(a[goalId] ?? {}), ...patch } }))
-  }
-
-  async function submit() {
-    if (busy || !currentCycle) return
-    setBusy(true)
-
-    /* One payload, carrying the count and whatever proof the goal asked for.
-       proofFields sends only the field matching the goal's own proof_type, so
-       a goal switched from link to photo does not keep posting whatever was
-       left in the link box before the switch. See lib/proofKinds.js. */
-    const items = goals.map((g) => {
-      const a = answers[g.id] ?? {}
-      const count = a.count ?? 0
-      return {
-        goal_id: g.id,
-        outcome: a.outcome ?? outcomeFor(g, count),
-        count_done: count,
-        ...proofFields(a, proofTypeOf(g)),
-      }
-    })
-
-    // Local first, network second, a bad connection must never lose this.
-    enqueue({
-      cycle_id: currentCycle.id,
-      note: null,
-      items,
-    })
-
-    /**
-     * A queued check-in is not a sent one, and the difference is visible.
-     *
-     * This used to fire and forget: enqueue, flush, navigate. When the flush
-     * did not go through, the entry stayed in the queue and the app still
-     * moved to the board and showed nothing new, which is exactly the shape of
-     * "I attached a photo and it never appeared". Nothing was lost, but a
-     * failure that looks like a success is worse than one that looks like a
-     * failure, because there is nothing to try again.
-     *
-     * So a submit that is still queued stays on this screen and says so. The
-     * queue keeps retrying underneath either way, and pressing Send again is
-     * safe: submit_checkin upserts on (cycle_id, user_id).
-     */
-    const { failed, rejected, error } = await flush()
-    if (failed > 0 || rejected > 0) {
-      /* The server's own words, kept. "It will send when you are back online"
-         is right for a dead connection and a lie for a constraint violation,
-         and the two were indistinguishable from this screen. A rejection is a
-         different sentence again: it is not queued, it is refused. */
-      setStuck({ rejected: rejected > 0, detail: errorText(error) })
-      setBusy(false)
-      return
-    }
-
-    /**
-     * The one moment this app is allowed to make a noise.
-     *
-     * Fired here rather than on the board, because this is where the server
-     * said yes: anywhere later and it would be celebrating a page load. It
-     * runs before the navigation on purpose, and the canvas lives on the body
-     * rather than in this component, so it carries over and plays across the
-     * board somebody lands on. See lib/burst.js.
-     *
-     * Only when something was actually recorded. Sending a check-in where
-     * every goal is a nought is an honest thing to do and confetti over it
-     * would be the app congratulating somebody for a day they just said went
-     * badly.
-     */
-    if (logged > 0) cheer()
-
-    setStuck(null)
-    await reloadGroup()
-    setProofTick((n) => n + 1)
-    setBusy(false)
-    navigate(`/g/${activeId}`)
-  }
-
-  async function markAway() {
-    if (!currentCycle) return
-    setBusy(true)
-    await supabase.from('away_periods').upsert(
-      { cycle_id: currentCycle.id, user_id: user.id, reason: null },
-      { onConflict: 'cycle_id,user_id' },
-    )
-    await reloadGroup()
-    setProofTick((n) => n + 1)
-    setBusy(false)
-    navigate(`/g/${activeId}`)
-  }
 
   /**
    * No cycle at all, a group whose first window has not been materialised
@@ -206,26 +107,15 @@ export default function Checkin() {
     )
   }
 
-  /* What each tile says about itself. Computed here rather than inside the bar
-     because it is all state this page owns, and a bar that fetched its own
-     answers would be a second source of truth for what has been filled in. */
-  const logged = goals.filter((g) => {
-    const a = answers[g.id] ?? {}
-    if (g.cadence === 'once') return Boolean(a.outcome)
-    return (a.count ?? 0) > 0
-  }).length
-  /* Goals whose proof control has something in it. Counted with proofFilled
-     rather than by looking for a photo_url, because proof is now three
-     different things and a link is as filled in as a photograph. */
-  const proved = goals.filter((g) => proofFilled(answers[g.id], proofTypeOf(g))).length
-  const wantProof = goals.filter((g) => proofTypeOf(g) !== 'none').length
-
+  /**
+   * The counters that used to sit here are gone with the goals pane.
+   *
+   * They told the tiles how many goals were answered and how many had proof
+   * attached, which were facts about a form this screen no longer owns. A tile
+   * that reported on state living on another page would be exactly the second
+   * source of truth the goals pane was moved to remove.
+   */
   const tiles = [
-    {
-      id: 'goals',
-      icon: <TargetIcon />,
-      label: t('checkin.tab_goals'),
-    },
     {
       id: 'proof',
       icon: <CameraIcon />,
@@ -247,127 +137,9 @@ export default function Checkin() {
 
       <ActionBar items={tiles} value={pane} onChange={setPane} />
 
-      {/**
-       * One pane at a time, and Submit outside all of them.
-       *
-       * The button belongs to the check-in, not to whichever tile happens to be
-       * open: there is one submission and it carries everything, so hiding it
-       * behind the Goals tile would mean somebody who finished on the Celebrate
-       * pane had to navigate back to a tab to send. Everything filled in on any
-       * pane goes out together whichever one is showing.
-       */}
+      {/* One pane at a time. There is nothing outside them any more: the
+          Submit that used to sit below both went with the goals pane. */}
       <div className="mt-6">
-        {pane === 'goals' && (
-          goals.length === 0 ? (
-            <p className="lg p-5 text-body text-muted">{t('checkin.no_goals')}</p>
-          ) : (
-            <div className="space-y-4">
-              {goals.map((g) => {
-                const a = answers[g.id] ?? {}
-                const count = a.count ?? 0
-                const target = targetFor(g)
-
-                return (
-                  <div key={g.id} className="card">
-                    <div className="flex items-start justify-between gap-4">
-                      <h3 className="text-safe text-h2 text-ink">{g.commitment}</h3>
-                      {g.kind === 'group' && (
-                        <span className="chip-quiet shrink-0">{t('checkin.shared')}</span>
-                      )}
-                    </div>
-                    <p className="mt-1.5 text-small text-muted">
-                      {g.cadence === 'recurring'
-                        ? t('checkin.committed', { n: target })
-                        : t('checkin.committed_once')}
-                      {g.trigger_when ? ` · ${g.trigger_when}` : ''}
-                    </p>
-
-                    {g.cadence === 'recurring' ? (
-                      <div className="mt-6 flex items-center gap-4">
-                        <button
-                          onClick={() => set(g.id, { count: Math.max(0, count - 1) })}
-                          className="press h-14 w-14 shrink-0 rounded-pill bg-ink/[0.07] text-h2 leading-none text-ink"
-                          aria-label={t('checkin.fewer')}
-                        >
-                          −
-                        </button>
-                        <div className="flex-1 text-center">
-                          {/* Green once it is met, so the number itself says so
-                              rather than leaving it to be worked out from two
-                              digits that happen to match. */}
-                          <span
-                            className={`font-display text-metric ${count >= target ? 'text-green' : 'text-ink'}`}
-                          >
-                            {count}
-                          </span>
-                          <span className="text-h2 text-muted"> / {target}</span>
-                        </div>
-                        <button
-                          onClick={() => set(g.id, { count: Math.min(target, count + 1) })}
-                          disabled={count >= target}
-                          className="press h-14 w-14 shrink-0 rounded-pill bg-ink/[0.07] text-h2 leading-none text-ink disabled:opacity-40"
-                          aria-label={t('checkin.more')}
-                        >
-                          +
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="mt-6 flex gap-2">
-                        {[
-                          ['done', t('checkin.did_it')],
-                          ['missed', t('checkin.not_yet')],
-                        ].map(([v, label]) => (
-                          <button
-                            key={v}
-                            onClick={() => set(g.id, { outcome: v, count: v === 'done' ? 1 : 0 })}
-                            className={
-                              (a.outcome ?? '') === v
-                                ? v === 'done'
-                                  ? 'chip-green press'
-                                  : 'chip-accent press'
-                                : 'chip-quiet press'
-                            }
-                          >
-                            {label}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-
-                    {/**
-                     * The proof, here, on the card it is proof of.
-                     *
-                     * It used to be a second list of the same goals on a
-                     * different pane, which is how somebody could count three
-                     * gym sessions and send a check-in with no photograph
-                     * without ever seeing a control that would have taken one.
-                     *
-                     * evidence_def is still the prompt: it is the sentence
-                     * somebody wrote to their future self about what would
-                     * count, so it becomes the hint above the control rather
-                     * than a text box of its own. proof_type decides which
-                     * control gets drawn. See lib/proofKinds.js.
-                     */}
-                    {proofTypeOf(g) !== 'none' && (
-                      <div className="mt-6 border-t border-hairline pt-5">
-                        <p className="field-label">
-                          {g.evidence_def || t(`proof.want_${proofTypeOf(g)}`)}
-                        </p>
-                        <ProofField
-                          type={proofTypeOf(g)}
-                          value={a}
-                          goalTitle={g.commitment}
-                          onChange={(patch) => set(g.id, patch)}
-                        />
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-          )
-        )}
-
         {/**
          * Proof: a gallery, and nothing you can put anything into.
          *
@@ -408,25 +180,14 @@ export default function Checkin() {
         )}
       </div>
 
-      <Section>
-        {stuck && (
-          <div className="mb-4">
-            <p className="text-small text-negative">
-              {stuck.rejected ? t('checkin.refused') : t('checkin.queued')}
-            </p>
-            {stuck.detail && (
-              <p className="mt-1 break-words text-label text-muted">{stuck.detail}</p>
-            )}
-          </div>
-        )}
-        <button onClick={submit} disabled={busy} className="btn-primary press">
-          {busy ? t('checkin.sending') : t('checkin.submit')}
-        </button>
-        <button onClick={markAway} disabled={busy} className="btn-ghost press mt-2">
-          {t('checkin.away')}
-        </button>
-        <p className="mt-4 text-center text-small text-muted">{t('checkin.away_note')}</p>
-      </Section>
+      {/**
+       * No Submit and no "I am away" here any more.
+       *
+       * Both belonged to the check-in, and the check-in is on the goal cards
+       * now. A button on this screen that sent answers filled in on a
+       * different one would be the second source of truth this restructure
+       * exists to remove: goals/away live where the goals are.
+       */}
     </Screen>
   )
 }
