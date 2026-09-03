@@ -26,6 +26,33 @@ export default function PurchaseCheck() {
   const { t } = useT()
   const [state, setState] = useState('idle')
   const [out, setOut] = useState(null)
+  const [fixing, setFixing] = useState(false)
+  const [fixed, setFixed] = useState(null)
+
+  /**
+   * Ask Stripe what was actually paid for, and take delivery of it.
+   *
+   * Separate from the check above, and deliberately so: a diagnostic that
+   * writes while claiming to look is a surprise, and this one grants books.
+   * The check tells you the webhook never fired; this is what you press
+   * afterwards to get the books that payment already bought.
+   */
+  const recover = async () => {
+    setFixing(true)
+    setFixed(null)
+    try {
+      const { data } = await supabase.auth.getSession()
+      const res = await fetch('/api/stripe-recover', {
+        method: 'POST',
+        headers: { authorization: `Bearer ${data?.session?.access_token ?? ''}` },
+      })
+      const type = res.headers.get('content-type') ?? ''
+      setFixed(type.includes('json') ? await res.json() : { error: t('diag.local_only', { code: res.status }) })
+    } catch (e) {
+      setFixed({ error: String(e?.message ?? e) })
+    }
+    setFixing(false)
+  }
 
   const run = async () => {
     setState('running')
@@ -79,6 +106,32 @@ export default function PurchaseCheck() {
               </li>
             ))}
           </ul>
+          {/* Offered under the findings, because it only makes sense once
+              somebody has read what is wrong. */}
+          <button
+            type="button"
+            onClick={recover}
+            disabled={fixing}
+            className="goal-action press mt-4"
+            data-hook="purchase-recover"
+          >
+            {fixing ? t('diag.recovering') : t('diag.recover')}
+          </button>
+
+          {fixed && (
+            <p
+              className="text-safe mt-3 rounded-inner bg-ink/[0.04] px-4 py-3 text-small text-ink"
+              role="status"
+              data-hook="purchase-recover-out"
+            >
+              {fixed.error
+                ? fixed.error
+                : fixed.granted?.length
+                  ? t(fixed.granted.length === 1 ? 'diag.recovered_one' : 'diag.recovered_other', { n: fixed.granted.length })
+                  : t('diag.recovered_none')}
+            </p>
+          )}
+
           <details className="mt-3">
             <summary className="press cursor-pointer text-small font-semibold text-muted">
               {t('diag.detail')}
