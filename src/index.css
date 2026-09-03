@@ -1872,11 +1872,26 @@
   }
 
   /* --- controls ------------------------------------------------------- */
+  /**
+   * w-full, and capped once the page is wider than a phone.
+   *
+   * Full width is right on a phone: a thumb crossing a 390px screen wants the
+   * whole strip, and every button in this app was measured that way. It stopped
+   * being right when .shell was released. Measured at 1440px, "Configurer mon
+   * budget" was a 1213px pink bar with the words in the middle of it, which
+   * reads as a section of the page rather than as a control.
+   *
+   * 26rem rather than w-auto, because shrink-to-fit would resize every button
+   * in the app against layouts that were checked with them full width. A 416px
+   * cap changes nothing below md, so this is a no-op exactly where the original
+   * decision was made.
+   */
   .btn {
-    @apply inline-flex min-h-[3rem] w-full items-center justify-center gap-2
+    @apply inline-flex min-h-[3rem] w-full max-w-full items-center justify-center gap-2
            rounded-pill px-6 py-3 text-body font-semibold
            transition-all duration-200 ease-settle
-           disabled:pointer-events-none disabled:opacity-40;
+           disabled:pointer-events-none disabled:opacity-40
+           md:max-w-[26rem];
   }
   /**
    * The press dims the whole button rather than darkening the fill under it.
@@ -2036,15 +2051,88 @@
     @apply flex items-center gap-4 py-5;
   }
 
+  /**
+   * Every signed-in page, full width from the tablet breakpoint up.
+   *
+   * THIS WAS A 40REM COLUMN AND THE CHANGE WAS ASKED FOR TWICE.
+   *
+   * The argument against is real and is kept here rather than deleted: a single
+   * column of inputs at 1300px is not using the space, it is one line of fields
+   * with a thousand pixels of gap in the middle, and the eye travels the whole
+   * way for every row. Comfortable reading tops out around 75 characters, which
+   * is what max-w-content was.
+   *
+   * That argument lost, and correctly, because it was an argument about CONTENT
+   * being made with a rule about the PAGE. The right place to stop a line of
+   * prose getting too long is the paragraph; the right place to stop an input
+   * getting too wide is the input. Capping the whole page to do it costs every
+   * grid, table and card list on every screen.
+   *
+   * So the page is released and the limits moved inward: .measure, .card-grid
+   * and .pane-grid below. Anything that carries none of them is something that
+   * gets better with room.
+   *
+   * Below md this is exactly what it always was. A phone has one width.
+   */
   .shell {
-    @apply mx-auto w-full max-w-content px-6;
+    @apply mx-auto w-full max-w-content px-6 md:max-w-none md:px-8;
   }
 
-  /* The same column, released above the tablet breakpoint. Below md it is
-     exactly .shell, because a phone has one width and this changes nothing
-     there. See the note on Screen in ui.jsx for which pages get it. */
-  .shell-wide {
-    @apply mx-auto w-full max-w-content px-6 md:max-w-[64rem];
+  /**
+   * The reading limit, on the thing being read.
+   *
+   * 65ch rather than a rem value, because the point is a count of characters
+   * and `ch` is the unit that survives a change of type size or face.
+   */
+  .measure {
+    @apply max-w-[65ch];
+  }
+
+  /* The same, for a form. Wide enough for a label and a field, and it stops
+     well before a text input becomes a horizon. */
+  .measure-form {
+    @apply max-w-[38rem];
+  }
+
+  /**
+   * A list of cards, which becomes a grid once there is room for one.
+   *
+   * THIS IS WHAT "FILL THE WIDTH" ACTUALLY MEANS FOR A LIST.
+   *
+   * Releasing the page turned every one of these into full-width rows, and a
+   * card at 1250px is worse than the same card at 640px: the title sits alone
+   * on a line with a thousand pixels of nothing after it, the description runs
+   * past any comfortable reading length, and the buttons scatter. Measured on
+   * the goals page, "Supprimer" and "Terminer" ended up 800px apart.
+   *
+   * Columns fix all three at once, and they are the reason to want the width in
+   * the first place: three cards visible instead of one and a half.
+   *
+   * Two at lg and three at 2xl rather than an auto-fill minmax, because the
+   * card has a minimum USEFUL width rather than a minimum legible one, and
+   * auto-fill on a 2560px screen gives five columns of chips nobody reads.
+   * items-start so a short card stays short instead of stretching to match the
+   * tallest thing in its row.
+   */
+  .card-grid {
+    @apply grid items-start gap-4 lg:grid-cols-2 2xl:grid-cols-3;
+  }
+
+  /**
+   * A settings page, in two columns rather than one stretched one.
+   *
+   * Measured at 1440px with the shell released: the "Ton nom" field was 1206px
+   * wide holding four characters, and every helper line under it ran the same
+   * width. Capping the page back to 40rem would have fixed that by undoing the
+   * thing that was asked for, and would have left a settings screen looking
+   * like a phone in the middle of a laptop, which is the actual complaint.
+   *
+   * Two columns fix it the other way round: the page keeps the window and each
+   * section gets about 600px, where a text input is a text input. Never three.
+   * A settings screen read in a Z is one where nobody finds anything.
+   */
+  .pane-grid {
+    @apply grid items-start gap-x-8 gap-y-2 lg:grid-cols-2;
   }
 }
 

@@ -105,7 +105,7 @@ export default function Goals() {
             {groupId ? t('goals.empty') : t('goals.empty_solo')}
           </Empty>
         ) : (
-          <div className="space-y-4">
+          <div className="card-grid">
             {mine.map((g) => (
               <GoalCard
                 key={g.id}
@@ -123,7 +123,7 @@ export default function Goals() {
 
       {shared.length > 0 && (
         <Section title={t('board.together')}>
-          <div className="space-y-4">
+          <div className="card-grid">
             {shared.map((g) => (
               <GoalCard
                 key={g.id}
@@ -139,7 +139,7 @@ export default function Goals() {
 
       {others.length > 0 && (
         <Section title={t('goals.everyone_else')}>
-          <div className="space-y-4">
+          <div className="card-grid">
             {others.map((g) => (
               <GoalCard key={g.id} goal={g} owner={ownerOf(g.owner_id)} />
             ))}
@@ -165,7 +165,7 @@ export default function Goals() {
           }
         >
           {showPast && (
-            <div className="space-y-4">
+            <div className="card-grid">
               {past.map((g) => (
                 <GoalCard
                   key={g.id}

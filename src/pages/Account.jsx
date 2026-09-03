@@ -64,6 +64,7 @@ export default function Account() {
         backLabel={t('common.back')}
       />
 
+      <div className="pane-grid">
       {/**
        * Help first, because it is the reason most people open this screen and
        * because everything below it is either a document or a way out.
@@ -148,6 +149,8 @@ export default function Account() {
       <Section title={t('danger.zone')}>
         <DeleteAccount />
       </Section>
+      </div>
+
     </Screen>
   )
 }

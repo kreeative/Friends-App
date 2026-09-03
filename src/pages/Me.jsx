@@ -298,6 +298,10 @@ export default function Me() {
         </div>
       </div>
 
+      {/* Two columns from lg, so a settings form uses the width instead of
+          being stretched across it. See .pane-grid in index.css for the
+          measurement that produced this. */}
+      <div className="pane-grid">
       {quiet >= 2 && (
         <div className="pt-8">
           <div className="card">
@@ -518,7 +522,7 @@ export default function Me() {
       <Section title={t('me.consistency')}>
         <MyCompletion />
       </Section>
-
+      </div>
 
     </Screen>
   )

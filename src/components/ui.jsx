@@ -3,28 +3,21 @@ import { createPortal } from 'react-dom'
 import { useT } from '../lib/i18n'
 
 /**
- * `wide` opts a page out of the 40rem reading column above md.
+ * Every page is full width above md now. `.shell` carries that, and the note on
+ * it in index.css carries the reasoning including the argument that lost.
  *
- * NOT THE DEFAULT, AND THAT IS A DELIBERATE READING OF THE REQUEST.
- *
- * "Force the main dashboard and calendar layout to stretch and fill 100% of
- * the available width" is right for those two and wrong as a global. A budget
- * form or a settings page at 1400px is not using the space, it is a line of
- * fields with 900px of gap in the middle and an eye that has to travel the
- * whole way for every row. The measured limit for comfortable reading is
- * roughly 75 characters and max-w-content is that.
- *
- * So the pages that are grids and feeds take `wide` and the pages that are
- * columns of prose and inputs do not. Calendar sets its own width and is
- * wider still, because a seven-column grid is the one thing here that gets
- * better the more room it has.
+ * There was a `wide` prop for a while, opting individual pages out of the 40rem
+ * column. It is gone rather than kept as a no-op: a prop every caller passes
+ * and nothing reads is a prop the next person has to go and check. What
+ * replaced it is .measure, .card-grid and .pane-grid, applied to the blocks
+ * that need a limit rather than to the page that contains them.
  */
-export function Screen({ children, className = '', wide = false }) {
+export function Screen({ children, className = '' }) {
   // Extra bottom room: the tab bar floats clear of the edge, so content has
   // to clear the bar plus its inset.
   return (
     <div className={`min-h-dvh pb-36 ${className}`}>
-      <div className={`${wide ? 'shell-wide' : 'shell'} animate-rise`}>{children}</div>
+      <div className="shell animate-rise">{children}</div>
     </div>
   )
 }

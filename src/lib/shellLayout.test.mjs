@@ -138,10 +138,66 @@ ok(
   /max-w-content[^"]*md:max-w-none/.test(cal),
   'a grid is the exception; a 1200px settings form is worse, not better',
 )
+/* --- and so does every other page --------------------------------------- */
+
+/**
+ * THE 40REM COLUMN IS GONE, ON PURPOSE, AND THE LIMITS MOVED INWARD.
+ *
+ * The argument for keeping it was about CONTENT and was being made with a rule
+ * about the PAGE, which cost every grid, table and card list on every screen.
+ * These pin the replacement: the page is released, and the things that
+ * genuinely need a limit carry their own.
+ *
+ * If somebody puts a cap back on .shell, the ones below start failing, which is
+ * the signal that the fix belongs on a paragraph or an input instead.
+ */
+const css = read('src/index.css')
+
 ok(
-  'the reading column is still the default everywhere else',
-  /\.shell \{[\s\S]{0,80}max-w-content/.test(read('src/index.css')),
-  'stretching every page is what "fill the width" must not be read as',
+  'the shell is released above md',
+  /\.shell \{[\s\S]{0,140}md:max-w-none/.test(css),
+  'this is the change that was asked for twice',
+)
+ok(
+  'and is still a reading column on a phone',
+  /\.shell \{[\s\S]{0,140}max-w-content/.test(css),
+  'a phone has one width and none of this applies to it',
+)
+ok('there is a limit for prose', /\.measure \{/.test(css))
+ok('and one for a form', /\.measure-form \{/.test(css))
+ok(
+  'a card list becomes columns rather than full-width rows',
+  /\.card-grid \{[\s\S]{0,120}lg:grid-cols-2/.test(css),
+  'measured on goals at 1440: Supprimer and Terminer ended up 800px apart',
+)
+ok(
+  'a settings page is two columns, never three',
+  /\.pane-grid \{[\s\S]{0,120}lg:grid-cols-2/.test(css) &&
+    !/\.pane-grid \{[\s\S]{0,120}grid-cols-3/.test(css),
+  'a settings screen read in a Z is one where nobody finds anything',
+)
+ok(
+  'a button stops before it becomes a section of the page',
+  /\.btn \{[\s\S]{0,300}md:max-w-\[26rem\]/.test(css),
+  'measured at 1440: "Configurer mon budget" was a 1213px pink bar',
+)
+ok(
+  'and is still full width on a phone, where that was decided',
+  /\.btn \{[\s\S]{0,220}w-full/.test(css),
+)
+ok(
+  'the card lists actually use it',
+  (read('src/pages/Goals.jsx').match(/card-grid/g) ?? []).length >= 4 &&
+    /card-grid/.test(read('src/pages/Library.jsx')),
+)
+ok(
+  'and the settings pages use the pane grid',
+  /pane-grid/.test(read('src/pages/Me.jsx')) && /pane-grid/.test(read('src/pages/Account.jsx')),
+)
+ok(
+  'no page opts out with a prop any more',
+  !/shell-wide/.test(css) && !/<Screen wide/.test(read('src/pages/Dashboard.jsx')),
+  'a prop every caller passes and nothing reads is one the next person has to check',
 )
 ok('month tiles grow when there is room', /md:min-h-\[6\.5rem\]/.test(cal))
 ok(
