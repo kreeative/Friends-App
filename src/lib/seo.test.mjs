@@ -87,6 +87,14 @@ eq('nor is a prefix collision', isPrivate('/settings-guide'), false)
 }
 
 /* Three URLs, one chapter. Without this they compete with each other. */
+/* The thank-you page has two spellings for the same reason /etudes does: a
+   link shared in the other language should open rather than bounce. French is
+   canonical because it is the language the people being thanked were thanked
+   in. Without this line each spelling would tell a crawler it was the
+   original, which is the duplicate-page problem /studies and /faq were folded
+   for. */
+eq('credits folds onto merci', canonicalPath('/credits'), '/merci')
+eq('and merci is its own canonical', canonicalPath('/merci'), '/merci')
 eq('library folds onto books', canonicalPath('/library'), '/books')
 eq('lectures folds onto books', canonicalPath('/lectures'), '/books')
 eq('a library chapter folds onto the books one', canonicalPath('/library/story-you-tell'), '/books/story-you-tell')

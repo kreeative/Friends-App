@@ -13,6 +13,15 @@
  */
 
 export const OWNER = 'Anne-Kelly Kouyaté'
+/**
+ * The one contact address in the project.
+ *
+ * It was written out by hand in the footer, on the account screen twice, and
+ * was about to be a fourth time on the credits page. Four copies of an address
+ * is three chances to change it in three places and miss the fourth, which is
+ * the same drift the top of studies.js exists to prevent for numbers.
+ */
+export const CONTACT_EMAIL = 'contact@richandfriends.xyz'
 export const APP_NAME = 'Rich & Friends'
 export const LAST_UPDATED = '2026-08-04'
 

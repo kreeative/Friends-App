@@ -20,6 +20,7 @@
  * listed as exceptions and justified one by one.
  */
 import { SAVINGS_STUDY_STATS, SAVINGS_QUOTES, STUDIES, studyBySlug } from './studies.js'
+import { CREDITS, TESTERS } from './credits.js'
 import { RESPONDENTS, SURVEY, bySex, groupStats } from '../lib/peers.js'
 
 let pass = 0
@@ -332,6 +333,40 @@ for (const study of STUDIES) {
       hit ? `"${hit[1]}" is missing its accent` : '',
     )
   }
+}
+
+/**
+ * THE THANK-YOU PAGE PUBLISHES REAL PEOPLE'S NAMES, SO IT SHIPS EMPTY.
+ *
+ * Nobody is added to TESTERS by guessing. A name that turned up in passing in a
+ * screenshot, a group roster or a notification is not consent to be printed on
+ * a public page that search engines index, and testing an app is not agreeing
+ * to be named for it. The list is the author's to fill.
+ *
+ * What is asserted here is the part that must hold whatever she puts in it: the
+ * page reads correctly with nothing in the list, every entry that IS added has
+ * a name, and a way to be removed is printed on the page rather than buried in
+ * a policy. Verified in Chromium that the roll is absent while the list is
+ * empty and renders when it is not.
+ */
+{
+  ok('the tester list is an array', Array.isArray(TESTERS))
+  for (const person of TESTERS) {
+    ok(`a credited person has a name (${JSON.stringify(person).slice(0, 40)})`,
+       typeof person.name === 'string' && person.name.trim().length > 0)
+    ok('and a note, if present, is a string',
+       person.note === undefined || typeof person.note === 'string')
+  }
+  for (const lang of ['fr', 'en']) {
+    const c = CREDITS[lang]
+    ok(`${lang}: the page has a title, a lede and a body`,
+       Boolean(c.title) && Boolean(c.lede) && c.body.length > 0)
+    ok(`${lang}: and names the roll it will print`, Boolean(c.rollTitle))
+    /* The one that is about somebody other than the reader. */
+    ok(`${lang}: it says how to come off the page`, Boolean(c.removal))
+  }
+  ok('both languages have the same number of paragraphs',
+     CREDITS.fr.body.length === CREDITS.en.body.length)
 }
 
 console.log(`\nstudies\n\n  ${pass} passed, ${fail} failed\n`)

@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useT } from '../lib/i18n'
 import { usePageMeta } from '../lib/pageMeta'
-import { DOC_ORDER, LEGAL } from '../legal/content'
+import { CONTACT_EMAIL, DOC_ORDER, LEGAL } from '../legal/content'
 import DeleteAccount from '../components/DeleteAccount'
 import PushToggle from '../components/PushToggle'
 import PurchaseCheck from '../components/PurchaseCheck'
@@ -77,9 +77,9 @@ export default function Account() {
             {/* mailto rather than a form: a form needs a backend, an inbox and
                 a reply path, and this address already has all three. */}
             <Row
-              href="mailto:contact@richandfriends.xyz"
+              href={`mailto:${CONTACT_EMAIL}`}
               label={t('account.contact')}
-              hint="contact@richandfriends.xyz"
+              hint={CONTACT_EMAIL}
               hook="contact"
             />
           </div>

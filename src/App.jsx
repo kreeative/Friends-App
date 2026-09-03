@@ -30,6 +30,7 @@ import About from './pages/public/About'
 import Books from './pages/public/Books'
 import Faq from './pages/public/Faq'
 import Studies from './pages/public/Studies'
+import Credits from './pages/public/Credits'
 import Study from './pages/public/Study'
 import Preview from './pages/public/Preview'
 import Library from './pages/Library'
@@ -159,6 +160,11 @@ const PUBLIC_ROUTES = (
     {/* Both spellings, like the studies above: the app is bilingual and a
         shared link should not stop working because it was copied from the
         other language. */}
+    {/* Merci et credits. Deux adresses, une page, pour la meme raison que
+        /etudes et /studies : une adresse partagee dans l'autre langue doit
+        ouvrir la page plutot que de rebondir. /merci est canonique. */}
+    <Route path="merci" element={<Credits />} />
+    <Route path="credits" element={<Credits />} />
     <Route path="aide" element={<Faq />} />
     <Route path="faq" element={<Faq />} />
     <Route path="help" element={<Faq />} />
