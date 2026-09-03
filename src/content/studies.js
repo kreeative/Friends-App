@@ -269,18 +269,119 @@ export const STUDIES = [
     date: '2026-09-03',
     lang: 'fr',
 
+    /**
+     * `figures`, DELIBERATELY NOT `stats`.
+     *
+     * `stats` is the savings survey's derived block, and Study.jsx draws its
+     * two number panels and its three dot grids from it by reading hasApp, n
+     * and hasAmbition by name. An article that set `stats` would get a panel
+     * announcing "undefined %" above its first paragraph. These feed the
+     * {markers} in the prose and nothing else.
+     *
+     * THE RULE AT THE TOP OF THIS FILE STILL APPLIES, FOR A SECOND REASON.
+     *
+     * There, numbers live outside `fr` and `en` because they are derived from
+     * peers.js and a hand-copied percentage would drift from the app. Here
+     * they are somebody else's published findings, so there is nothing to
+     * drift from, but a figure written into two language blocks can still
+     * drift from ITSELF: change 71.1 in the French and not the English and the
+     * site quietly says two things. One number, two translations of the
+     * sentence around it.
+     *
+     * EVERY VALUE BELOW IS A PUBLISHED RESULT, NOT AN ESTIMATE. Each one is
+     * attributed in `sources`, and the key names say which study it came from
+     * so a marker cannot be filled from the wrong paper.
+     *
+     * NUMBERS, NOT STRINGS, BECAUSE THE SEPARATOR IS PART OF THE LANGUAGE.
+     *
+     * Written out they would have to be "71,1" in the French and "71.1" in the
+     * English, which puts a figure back inside the two language blocks and
+     * reintroduces exactly the drift this arrangement exists to prevent. Held
+     * as numbers, the value is stored once and Study.jsx formats it for the
+     * locale it is rendering, so the decimal comma and the thousands space are
+     * a rendering detail rather than a second copy of the data.
+     */
+    figures: {
+      /* Armour et al. 2019, systematic review and meta-analysis. */
+      armourStudies: 38,
+      armourN: 21573,
+      armourPain: 71.1,
+      armourMissed: 20.1,
+      armourFocus: 40.9,
+      /* Schoep et al. 2019, nationwide cross-sectional survey, Netherlands. */
+      schoepN: 32748,
+      schoepPresent: 80.7,
+      schoepDays: 8.9,
+      schoepAbsent: 13.8,
+      /* Jang, Zhang and Elfenbein 2025, meta-analysis. */
+      jangArticles: 102,
+      jangN: 3943,
+    },
+
+    /**
+     * Where each figure came from, printed under the piece.
+     *
+     * Asked for in those words: use what is published and cite it. A DOI
+     * rather than a publisher's page, because a DOI resolves from anywhere and
+     * outlives whichever host is serving the PDF this year.
+     */
+    sources: [
+      {
+        id: 'armour',
+        cite: 'Armour M, Parry K, Manohar N, Holmes K, Ferfolja T, Curry C, MacMillan F, Smith CA (2019). The Prevalence and Academic Impact of Dysmenorrhea in 21,573 Young Women: A Systematic Review and Meta-Analysis. Journal of Women’s Health 28(8), 1161-1171.',
+        url: 'https://doi.org/10.1089/jwh.2018.7615',
+      },
+      {
+        id: 'schoep',
+        cite: 'Schoep ME et al. (2019). Productivity loss due to menstruation-related symptoms: a nationwide cross-sectional survey among 32 748 women. BMJ Open 9(6), e026186.',
+        url: 'https://doi.org/10.1136/bmjopen-2018-026186',
+      },
+      {
+        id: 'jang',
+        cite: 'Jang D, Zhang J, Elfenbein HA (2025). Menstrual cycle effects on cognitive performance: A meta-analysis. PLOS ONE.',
+        url: 'https://doi.org/10.1371/journal.pone.0318576',
+      },
+      /* Cited in the language it was published in, like the three above.
+         Translating a title or an issuing body is how a reference stops being
+         findable, and it is why this block sits outside `fr` and `en`: a
+         citation is not prose and must not be localised. */
+      {
+        id: 'who',
+        cite: 'World Health Organization. Menstrual health (fact sheet).',
+        url: 'https://www.who.int/news-room/fact-sheets/detail/menstrual-health',
+      },
+    ],
+
     fr: {
       eyebrow: 'Article',
       title: 'Les regles ne sont pas un detail prive',
       dek: 'Ca arrive tous les mois, c\u2019est previsible, et ca change ce qu\u2019une semaine permet de faire. Le seul truc qui est vraiment prive, c\u2019est le silence autour.',
-      readTime: '4 min',
+      readTime: '5 min',
       langNote: null,
       sections: [
         {
           h: 'Ce que le silence coute',
           p: [
             'On planifie un semestre, un lancement, une periode d\u2019examens comme si les semaines etaient interchangeables. Elles ne le sont pas, et pour a peu pres la moitie des gens elles ne l\u2019ont jamais ete. Il y a des jours ou la concentration est facile a trouver et des jours ou elle coute cher, et ce n\u2019est pas une question de motivation.',
+            'Ce n\u2019est pas une impression. Une revue systematique de {armourStudies} etudes, portant sur {armourN} jeunes femmes, trouve des regles douloureuses chez {armourPain} % d\u2019entre elles. {armourFocus} % declarent que ca degrade leur travail en cours ou leur concentration, et {armourMissed} % ont deja manque des cours pour cette raison. Ces chiffres tiennent aussi bien dans les pays riches que dans les autres.',
+            'Cote travail, une enquete nationale aupres de {schoepN} femmes aux Pays-Bas donne l\u2019autre moitie du tableau : {schoepPresent} % disent avoir deja travaille ou etudie en etant diminuees, ce qui represente environ {schoepDays} jours de productivite perdus par an, contre {schoepAbsent} % qui se sont absentees. Autrement dit, l\u2019essentiel du cout ne se voit pas, parce qu\u2019il est paye par des gens qui sont venus quand meme.',
             'Le probleme n\u2019est pas le corps. Le probleme est qu\u2019on n\u2019a pas le droit d\u2019en parler dans les endroits ou les plannings se decident, alors on planifie contre soi-meme et on appelle ca de la discipline quand ca casse.',
+          ],
+        },
+        {
+          /**
+           * La nuance qui empeche ce texte de dire une betise.
+           *
+           * La pente facile serait "ton cerveau marche moins bien une semaine
+           * par mois", et c\u2019est exactement ce que les donnees ne disent pas.
+           * Ecrire l\u2019inverse serait reprendre le stereotype qu\u2019on pretend
+           * combattre, avec un air de rigueur en plus.
+           */
+          h: 'Ce qui change, et ce qui ne change pas',
+          p: [
+            'Il faut etre precis, parce que le sujet a servi trop longtemps a dire aux femmes qu\u2019elles etaient moins fiables. Une meta-analyse de {jangArticles} publications, {jangN} participantes au total, ne trouve aucun effet robuste du cycle sur les performances cognitives : ni l\u2019attention, ni la memoire, ni le raisonnement ne bougent de facon systematique d\u2019une phase a l\u2019autre.',
+            'Donc l\u2019argument n\u2019est pas que tu penses moins bien. Tu penses pareil. Ce qui change, c\u2019est la douleur, la fatigue et la place qu\u2019elles prennent, et une journee ou une partie de ton attention part ailleurs n\u2019est pas une journee ou tu es devenue moins capable. C\u2019est une journee ou la meme tache coute plus cher.',
+            'La difference compte, parce que les deux versions menent a des decisions opposees. La premiere sert a exclure quelqu\u2019un d\u2019une decision importante. La deuxieme sert a mettre la decision importante un autre jour.',
           ],
         },
         {
@@ -300,23 +401,35 @@ export const STUDIES = [
       ],
       methodTitle: 'D\u2019ou ca vient',
       method: [
-        'Ce texte ne contient aucun chiffre, et c\u2019est volontaire. Les autres pages de cette section reposent sur un sondage dont les reponses sont dans le code, et chaque pourcentage y est calcule a partir de ces reponses. Ici il n\u2019y a pas de sondage, donc il n\u2019y a pas de pourcentage : en inventer un pour faire serieux serait pire que de ne rien avancer.',
+        'Aucun chiffre de cette page ne vient de nous. Les autres textes de cette section reposent sur notre propre sondage ; celui-ci n\u2019en a pas, donc tout ce qui est avance ici est repris d\u2019etudes publiees, listees ci-dessous avec leur DOI pour que ca se verifie sans nous croire sur parole.',
+        'Ce sont des ordres de grandeur, pas des lois. Les enquetes citees sont declaratives et recrutees en ligne, ce qui attire davantage les personnes concernees par le sujet, et la revue sur la douleur agrege des etudes aux definitions variables. La regularite d\u2019un pays a l\u2019autre est ce qui rend le tableau credible, pas la decimale.',
         'Ce qui est decrit du produit est verifiable dans le depot : le suivi de cycle et ses regles d\u2019acces sont dans supabase/51_calendar_and_cycle.sql, et la note sur la semaine a venir est dans src/components/CycleHeadsUp.jsx.',
       ],
+      sourcesTitle: 'Les sources',
     },
 
     en: {
       eyebrow: 'Article',
       title: 'A period is not a private detail',
       dek: 'It happens every month, it is predictable, and it changes what a week can hold. The only genuinely private part is the silence around it.',
-      readTime: '4 min',
+      readTime: '5 min',
       langNote: null,
       sections: [
         {
           h: 'What the silence costs',
           p: [
             'People plan a term, a launch, an exam period as though the weeks were interchangeable. They are not, and for roughly half of everyone they never have been. Some days concentration is easy to find and some days it is expensive, and that is not a question of motivation.',
+            'This is not an impression. A systematic review of {armourStudies} studies, covering {armourN} young women, finds painful periods in {armourPain} % of them. {armourFocus} % say it degrades their classroom work or concentration, and {armourMissed} % have missed school or university because of it. The figures hold in wealthy countries and poorer ones alike.',
+            'At work, a nationwide survey of {schoepN} women in the Netherlands gives the other half of the picture: {schoepPresent} % report having worked or studied while impaired, worth roughly {schoepDays} days of lost productivity a year, against {schoepAbsent} % who took time off. Most of the cost is invisible, because it is paid by people who turned up anyway.',
             'The body is not the problem. The problem is that it cannot be said out loud in the rooms where plans get made, so people plan against themselves and call it a discipline failure when it breaks.',
+          ],
+        },
+        {
+          h: 'What changes, and what does not',
+          p: [
+            'This needs saying precisely, because the subject has been used for too long to tell women they were less reliable. A meta-analysis of {jangArticles} papers, {jangN} participants in total, finds no robust effect of the cycle on cognitive performance: attention, memory and reasoning do not systematically shift from one phase to another.',
+            'So the argument is not that you think less well. You think the same. What changes is pain, tiredness and the room they take up, and a day when part of your attention is elsewhere is not a day when you became less capable. It is a day when the same task costs more.',
+            'The difference matters, because the two versions lead to opposite decisions. The first is used to keep somebody out of an important decision. The second is used to put the important decision on another day.',
           ],
         },
         {
@@ -336,9 +449,11 @@ export const STUDIES = [
       ],
       methodTitle: 'Where this comes from',
       method: [
-        'This piece contains no figures, on purpose. The other pages in this section rest on a survey whose responses are in the code, and every percentage there is computed from those responses. There is no survey here, so there is no percentage: inventing one to sound rigorous would be worse than claiming nothing.',
+        'None of the figures on this page are ours. The other pieces in this section rest on our own survey; this one has none, so everything claimed here is taken from published studies, listed below with their DOI so it can be checked without taking our word for it.',
+        'These are orders of magnitude, not laws. The surveys cited are self-reported and recruited online, which draws in more people who have a stake in the subject, and the pain review pools studies with varying definitions. What makes the picture credible is that it repeats from country to country, not the decimal place.',
         'What it says about the product is checkable in the repository: the cycle tracker and its access rules are in supabase/51_calendar_and_cycle.sql, and the note about the week ahead is in src/components/CycleHeadsUp.jsx.',
       ],
+      sourcesTitle: 'Sources',
     },
   },
 ]

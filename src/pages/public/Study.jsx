@@ -56,6 +56,20 @@ export default function Study() {
      fill map has nothing to do and must not be built by reading fields off a
      null: guarding the two blocks below was not enough, because this runs
      before either of them and crashed on the first amount it formatted. */
+  /**
+   * An article's figures, formatted for the language being rendered.
+   *
+   * They are stored as numbers rather than as written-out strings, so this is
+   * where "71.1" becomes "71,1" in French and "21573" becomes "21 573" or
+   * "21,573". Doing it here rather than in the content file is the point: the
+   * value exists once, and the separator is a property of the locale rather
+   * than a second copy of the data sitting in the other language block.
+   */
+  const nf = new Intl.NumberFormat(locale === 'fr' ? 'fr-CA' : 'en-CA')
+  const figures = Object.fromEntries(
+    Object.entries(study.figures ?? {}).map(([k, n]) => [k, typeof n === 'number' ? nf.format(n) : n]),
+  )
+
   const v = st
     ? {
         ...st,
@@ -64,7 +78,7 @@ export default function Study() {
         menMedian: formatXof(st.menMedian),
         coreMedianSavers: formatXof(st.coreMedianSavers),
       }
-    : {}
+    : figures
 
   usePageMeta({ title: `${w.title} · Rich & Friends`, description: fill(w.dek, v) })
 
@@ -172,6 +186,44 @@ export default function Study() {
           <p key={m.slice(0, 24)} className="lede mt-4 max-w-[62ch] text-small">{fill(m, v)}</p>
         ))}
       </section>
+
+      {/**
+       * The references, when the piece rests on somebody else's work.
+       *
+       * A DOI rather than a publisher's page: it resolves from anywhere and it
+       * outlives whichever host is serving the PDF this year. The link opens in
+       * a new tab because leaving the article to check a citation and losing
+       * your place is how a citation stops being checked.
+       *
+       * rel="noopener noreferrer" with target="_blank", which is not optional:
+       * without noopener the opened page gets a handle on this one through
+       * window.opener.
+       */}
+      {study.sources?.length > 0 && (
+        <section className="mt-12" data-hook="study-sources">
+          <h2 className="text-h2 font-semibold text-ink">{w.sourcesTitle}</h2>
+          <ol className="mt-4 max-w-[62ch] list-none space-y-4">
+            {study.sources.map((s, i) => (
+              <li key={s.id} className="flex gap-3 text-small leading-relaxed text-muted">
+                <span aria-hidden="true" className="shrink-0 font-semibold text-ink [font-variant-numeric:tabular-nums]">
+                  {i + 1}.
+                </span>
+                <span className="min-w-0">
+                  {s.cite}{' '}
+                  <a
+                    href={s.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="break-words font-semibold text-ink underline decoration-1 underline-offset-2"
+                  >
+                    {s.url.replace(/^https?:\/\//, '')}
+                  </a>
+                </span>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
 
       <div className="mt-12 border-t border-hairline pt-8">
         <p className="lede max-w-[46ch]">{c.cta_line}</p>
