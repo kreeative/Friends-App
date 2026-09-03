@@ -134,6 +134,16 @@ const STRINGS = {
     'home.no_books': 'Nothing bought yet. The first chapter of each is free to read.',
 
     'week.today': 'Today',
+    /* The mini calendar's marks, said in words for a screen reader, and the
+       cycle rows in the day panel. The plural pair follows this file's own
+       _one/_other convention: "1 classes" was a real bug here once. */
+    'week.n_events_one': '{n} thing on', 'week.n_events_other': '{n} things on',
+    'week.n_goals_one': '{n} goal due', 'week.n_goals_other': '{n} goals due',
+    'week.mark_cycle': 'cycle day',
+    'week.cycle_period': 'Period, first days',
+    'week.cycle_predicted': 'Period expected',
+    'week.cycle_pms': 'The days before',
+    'week.cycle_fertile': 'Fertile window',
     'week.nothing': 'Nothing on this day.',
     'week.not_recorded': 'Not recorded',
     'week.previous': 'Previous week',
@@ -1395,6 +1405,13 @@ const STRINGS = {
     'home.no_books': 'Rien d’acheté pour l’instant. Le premier chapitre de chacun est en accès libre.',
 
     'week.today': 'Aujourd’hui',
+    'week.n_events_one': '{n} chose prevue', 'week.n_events_other': '{n} choses prevues',
+    'week.n_goals_one': '{n} objectif a rendre', 'week.n_goals_other': '{n} objectifs a rendre',
+    'week.mark_cycle': 'jour de cycle',
+    'week.cycle_period': 'Regles, premiers jours',
+    'week.cycle_predicted': 'Regles prevues',
+    'week.cycle_pms': 'Les jours d’avant',
+    'week.cycle_fertile': 'Fenetre fertile',
     'week.nothing': 'Rien ce jour-là.',
     'week.not_recorded': 'Non enregistré',
     'week.previous': 'Semaine précédente',
