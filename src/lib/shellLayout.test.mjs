@@ -1088,8 +1088,52 @@ ok(
 )
 ok(
   'the menu closes on a tap anywhere, not on a document listener',
-  /className="fixed inset-0 z-40 cursor-default"/.test(gcard),
+  /className="fixed inset-0 z-\[70\] cursor-default"/.test(gcard),
   'a document click handler fires before React and closes it on the opening tap',
+)
+
+/**
+ * THE MENU IS PORTALLED, AND THIS IS THE ASSERTION THAT KEEPS IT THAT WAY.
+ *
+ * It was `absolute right-0 z-50` inside the card, and the card carries
+ * overflow-hidden. An absolutely positioned child does not escape a clipping
+ * ancestor and z-index has no say in it, so the menu was painted and then cut
+ * off at the card's edge: a sliver of a white sheet and no way to reach
+ * anything in it.
+ *
+ * Measured in Chromium against the code as it was, at 430 and 1024: all four
+ * items unreachable on the first card, and on the last card the menu sat at
+ * top -400, entirely off the screen. After the portal, all four reachable at
+ * both widths on both the first and last card.
+ *
+ * The overflow-hidden is NOT the thing to remove. It is the backstop against a
+ * single unbroken word spilling out of the card, which is what the whole of
+ * cardOverflow.test.mjs exists for.
+ */
+ok(
+  'the overflow menu leaves the card rather than being clipped by it',
+  /createPortal\(/.test(gcard) && /document\.body,\s*\n\s*\)\}/.test(gcard),
+  'the card has overflow-hidden and an absolute child cannot escape a clipping ancestor',
+)
+ok(
+  'and it is placed from a measured rect, since it can no longer use right-0',
+  /getBoundingClientRect\(\)/.test(gcard) && /position: 'fixed'/.test(gcard),
+)
+ok(
+  'the bottom bar is the floor, not the viewport edge',
+  /querySelector\('\[data-hook="tab-bar"\]'\)/.test(gcard) &&
+    /data-hook="tab-bar"/.test(shell),
+  'measured at 41px of overlap when this used innerHeight: Supprimer sat on the navigation',
+)
+ok(
+  'it flips above the button when there is no room below',
+  /flip: true/.test(gcard) && /translateY\(-100%\)/.test(gcard),
+  'a menu opening off the bottom of the screen is the same bug from the other side',
+)
+ok(
+  'and scrolling closes it rather than leaving it behind',
+  /addEventListener\('scroll', shut, true\)/.test(gcard),
+  'a fixed menu measured once detaches from its button the moment the page moves',
 )
 ok(
   'and delete is separated from the three that can be undone',
