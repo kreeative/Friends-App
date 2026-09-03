@@ -6,6 +6,7 @@ import { usePageMeta } from '../lib/pageMeta'
 import { DOC_ORDER, LEGAL } from '../legal/content'
 import DeleteAccount from '../components/DeleteAccount'
 import PushToggle from '../components/PushToggle'
+import PurchaseCheck from '../components/PurchaseCheck'
 import { Screen, Section, TopBar } from '../components/ui'
 
 /**
@@ -113,6 +114,21 @@ export default function Account() {
       <Section title={t('push.section')}>
         <div className="lg px-5">
           <PushToggle />
+        </div>
+      </Section>
+
+      {/**
+       * "Why has my book not arrived", on the screen somebody looks at when
+       * something they paid for has not arrived.
+       *
+       * It was on the GROUP settings page, which is the wrong screen twice
+       * over: a purchase belongs to a person rather than to a group, and
+       * somebody with no group had no route to it at all. It was reported as
+       * missing, which is exactly what a page nobody can navigate to is.
+       */}
+      <Section title={t('diag.title')}>
+        <div className="lg px-5 py-5">
+          <PurchaseCheck />
         </div>
       </Section>
 
