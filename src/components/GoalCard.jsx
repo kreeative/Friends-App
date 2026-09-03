@@ -5,7 +5,6 @@ import { useGroup } from '../context/GroupContext'
 import { shortDate } from '../lib/time'
 import { localeTag, useT } from '../lib/i18n'
 import { errorText } from '../lib/dberr'
-import { countOn, nextCount, progressFor, recentDays, streakOf } from '../lib/streak'
 import { rectOf } from '../lib/gesture'
 import { Avatar } from './ui'
 import ConfirmDialog from './ConfirmDialog'
@@ -21,33 +20,10 @@ const DONE = {
   abandoned: { label: 'goal.dropped', card: 'card-dropped', chip: 'chip-quiet' },
 }
 
-/**
- * Seven days of dots, oldest on the left.
- *
- * The streak is one number and a number is a claim; this is the evidence for
- * it, and it is the part that makes a broken streak feel recoverable rather
- * than final. A day the goal was never due is drawn as a gap rather than a
- * miss, because a Mon/Wed goal showing five empty circles is a picture of
- * failing at something nobody asked for.
- */
-function DayDots({ days }) {
-  return (
-    <div className="flex items-center gap-1.5" aria-hidden="true">
-      {days.map((d) =>
-        !d.due ? (
-          <span key={d.day} className="h-1 w-1 rounded-pill bg-ink/15" />
-        ) : (
-          <span
-            key={d.day}
-            className={`h-2.5 w-2.5 rounded-pill transition-colors duration-200 ease-settle ${
-              d.done ? 'bg-accent' : 'bg-ink/[0.13]'
-            }`}
-          />
-        ),
-      )}
-    </div>
-  )
-}
+/* DayDots lived here: seven dots under every card, showing which of the last
+   seven days the goal was done. It went with the rest of the block under the
+   rule. GoalDetail draws the same history at a size you can actually read,
+   which is where somebody goes when that is the question they have. */
 
 export default function GoalCard({
   goal,
@@ -69,19 +45,10 @@ export default function GoalCard({
   showControls = false,
   progress = null,
   editHref = null,
-  /**
-   * Whether this card carries the daily tick.
-   *
-   * On for a goal with no group, which has nowhere else to be marked done: the
-   * check-in runs off cycles, and cycles belong to groups. Off for a goal
-   * inside a group, where the check-in already owns this question and a second
-   * private tick would be two answers to it.
-   */
-  track = false,
   /** Whether the person looking at this may delete it. See canDelete in Goals. */
   deletable = false,
 }) {
-  const { reloadGroup, dayIndex, setGoalDay, removeGoal } = useGroup()
+  const { reloadGroup, removeGoal } = useGroup()
   const { t, locale } = useT()
   const paused = goal.status === 'paused'
   const finished = DONE[goal.status] ?? null
@@ -107,7 +74,6 @@ export default function GoalCard({
 
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState(null)
-  const [ticking, setTicking] = useState(false)
   /**
    * The optimistic half of deleting, and it lives here rather than in the list
    * for one reason: this component owns the dialog. Removing the goal from the
@@ -133,22 +99,19 @@ export default function GoalCard({
     await reloadGroup()
   }
 
-  const today = progressFor(goal, dayIndex, new Date())
-  const streak = track ? streakOf(goal, dayIndex, new Date()) : 0
-
   /**
-   * One tap, and the count it produces is worked out from the same index the
-   * card is drawn from rather than from a piece of local state. Two components
-   * showing one goal would otherwise disagree, and the tick would fight the
-   * refetch.
+   * Whether this goal has a day-by-day history to show.
+   *
+   * Derived from the goal rather than passed in. It was a `track` prop, and a
+   * prop is a thing a caller can forget: the answer is written on the row.
+   * goal_days exists for goals with no group, because cycles.group_id is not
+   * null and a solo goal has no cycle to be counted in. See lib/streak.js.
+   *
+   * The CARD does not use it. It is handed to GoalDetail, which is the place a
+   * single goal is looked at in depth and is where the streak, the total and
+   * the history belong.
    */
-  async function tick() {
-    if (ticking) return
-    setTicking(true)
-    const current = countOn(dayIndex, goal.id, today.day)
-    await setGoalDay(goal, nextCount(goal, current))
-    setTicking(false)
-  }
+  const solo = !goal.group_id
 
   async function confirmDelete() {
     setDeleting(true)
@@ -389,76 +352,23 @@ export default function GoalCard({
       )}
 
       {/**
-       * The daily tick, for a goal with no group behind it.
+       * NOTHING UNDER THE RULE ANY MORE.
        *
-       * This is the whole of what was missing. Migration 09 let a goal exist
-       * without a group; nothing let it be marked done, because every path to
-       * "I did it" ran through cycles, and cycles belong to groups. So a solo
-       * goal sat on the screen unticked forever.
+       * There was a tick, a "not due today" line, a streak and seven day dots
+       * here. Asked for, in these words: "everything after the horizontal line
+       * after the objective disappears".
        *
-       * A checkbox and a streak rather than the check-in screen: the check-in
-       * asks for a mood, a note, a proof and a next commitment, which is the
-       * right ceremony for five people meeting once a day and far too much to
-       * ask of somebody ticking off "drink water" on their own.
+       * The argument is not that the information was wrong, it is that it was
+       * in the wrong place. The check-in rail at the top of the page asks
+       * whether today is done, once, for every goal due. Repeating the
+       * question under each card asked it five more times and made a list of
+       * goals read as a list of chores. What is left is what the goal IS: its
+       * title, when it is due, how often, and the way to change it.
+       *
+       * The `track` prop went with the block rather than being left accepted
+       * and ignored. Nothing passes it, and a prop every caller has stopped
+       * passing is one the next person has to go and check.
        */}
-      {track && !finished && (
-        <div className="mt-5 border-t border-hairline pt-4">
-          {today.due ? (
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <button
-                type="button"
-                onClick={tick}
-                disabled={ticking}
-                aria-pressed={today.complete}
-                className={`press inline-flex items-center gap-2.5 rounded-pill py-2 pl-2 pr-4 text-small font-semibold transition-colors duration-200 ease-settle disabled:opacity-60 ${
-                  today.complete ? 'bg-accent text-on-accent' : 'bg-ink/[0.06] text-ink hover:bg-ink/[0.11]'
-                }`}
-              >
-                {/* A box that fills, not an icon font. It has to read as
-                    checked from arm's length and in both themes, and a tick
-                    drawn in currentColor does that at any density. */}
-                <span
-                  className={`flex h-6 w-6 items-center justify-center rounded-[0.5rem] border-2 transition-colors duration-200 ease-settle ${
-                    today.complete ? 'border-on-accent' : 'border-ink/25'
-                  }`}
-                >
-                  {today.complete && (
-                    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" aria-hidden="true">
-                      <path
-                        d="M5 12.5l4.5 4.5L19 7.5"
-                        stroke="currentColor"
-                        strokeWidth="3"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  )}
-                </span>
-                {today.target > 1
-                  ? t('goal.today_count', { done: today.done, total: today.target })
-                  : today.complete
-                    ? t('goal.done_today')
-                    : t('goal.mark_today')}
-              </button>
-
-              {streak > 0 && (
-                <span className="text-small font-semibold text-muted">
-                  {t('goal.streak', { n: streak })}
-                </span>
-              )}
-            </div>
-          ) : (
-            /* Not due is not the same as not done, and must not look like it.
-               No checkbox at all, because offering one would invite a tick on
-               a day the goal does not run and quietly corrupt the streak. */
-            <p className="text-small text-muted">{t('goal.not_due_today')}</p>
-          )}
-
-          <div className="mt-4">
-            <DayDots days={recentDays(goal, dayIndex, 7, new Date())} />
-          </div>
-        </div>
-      )}
 
       {/**
        * THE ACTIONS EXPAND THE CARD. THEY ARE NOT A LAYER OVER IT.
@@ -550,7 +460,7 @@ export default function GoalCard({
         goal={origin ? goal : null}
         origin={origin}
         owner={owner}
-        track={track}
+        track={solo}
         deletable={deletable}
         editHref={editHref}
         onClose={() => setOrigin(null)}

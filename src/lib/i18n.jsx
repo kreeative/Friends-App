@@ -365,6 +365,9 @@ const STRINGS = {
     /* The action that records this slide. It said "Next", which describes
        paging rather than answering. */
     'checkin.validate': 'Confirm',
+    /* The long way round, for the days there is a photo or a link to attach.
+       The rail card has room for a title and one control and no more. */
+    'checkin.add_proof': 'Add proof to a goal', 
     'checkin.carousel_done': 'Check-in done for today.',
     'checkin.carousel_done_sub': 'That is the whole thing. See you tomorrow.',
     'checkin.today_q': 'Did you do it today?',
@@ -1710,6 +1713,7 @@ const STRINGS = {
     'checkin.carousel_step': '{n} sur {total}',
     'checkin.carousel_finish': 'Terminer',
     'checkin.validate': 'Valider',
+    'checkin.add_proof': 'Ajouter une preuve à un objectif',
     'checkin.carousel_done': 'Bravo ! Check-in terminé pour aujourd\u2019hui.',
     'checkin.carousel_done_sub': "C'est tout. A demain.",
     'checkin.today_q': "Tu l'as fait aujourd'hui ?",

@@ -14,6 +14,7 @@ import { errorText } from '../lib/dberr'
 import { Empty, Screen, Section, TopBar } from '../components/ui'
 import GoalCard from '../components/GoalCard'
 import CheckinCarousel from '../components/CheckinCarousel'
+import CheckinRail from '../components/CheckinRail'
 import ProofGallery from '../components/ProofGallery'
 import CelebrateStep from '../components/CelebrateStep'
 
@@ -79,35 +80,24 @@ export default function Goals() {
   const canDelete = (g) => g.owner_id === user?.id || (Boolean(groupId) && myRole === 'admin')
 
   /**
-   * The card's own one-tap tick, on solo goals only.
-   *
-   * IT STAYS, EVEN THOUGH THE CAROUSEL NOW ASKS THE SAME QUESTION.
-   *
-   * Two controls for one fact is usually the second-source-of-truth mistake
-   * this file keeps warning about, and here it is not: both write through
-   * setGoalDay, and both read their state back out of dayIndex, so there is
-   * exactly one record and one reader. They cannot disagree because there is
-   * nothing for them to disagree about.
-   *
-   * Keeping it is the point. "Drink water" is one tap on the card; routing
-   * that through a banner and a modal would be three to record the same thing.
-   * The carousel is for the pass over everything due, the tick is for the one
-   * goal you came to mark.
-   */
-  const tracks = !groupId
-
-  /**
-   * THE CHECK-IN, ON THIS PAGE, IN BOTH MODES.
+   * THE CHECK-IN, ON THIS PAGE, IN BOTH MODES, AND NOWHERE ELSE ON IT.
    *
    * It was a separate screen listing the same goals again with one Submit at
-   * the bottom, then a control on every card, and it is now a banner and a
-   * carousel. This page is the only place the daily question is asked.
+   * the bottom; then a control on every card; then a banner and a modal
+   * carousel. It is a banner and a rail you slide, and this page is the only
+   * place the daily question is asked.
+   *
+   * THE CARDS BELOW NO LONGER ASK IT. They had a tick, a "not due today" line,
+   * a streak and seven dots, so a list of five goals put the same question
+   * under every one of them, five rows below the place it had already been
+   * asked once. Everything under a card's rule is gone; a goal card shows what
+   * the goal IS, and whether today is done belongs to the rail.
    *
    * IT RUNS SOLO TOO, AND THE TWO MODES WRITE TO DIFFERENT TABLES.
    *
    * That difference is not a detail to paper over. A group goal is answered
    * into a cycle: submit_checkin upserts a checkins row and the whole
-   * checkin_items list under it, which is why saving one card has to post all
+   * checkin_items list under it, which is why saving one answer has to post all
    * of them. A solo goal has no cycle at all, because cycles.group_id is not
    * null, so migration 32 gave it goal_days: one row per goal per day, a count
    * and a date. See src/lib/streak.js.
@@ -226,13 +216,59 @@ export default function Goals() {
   }, [openSolo, live, dayIndex])
 
   const set = (goalId, patch) => {
-    setAnswers((a) => {
-      const next = { ...a, [goalId]: { ...(a[goalId] ?? {}), ...patch } }
-      answersRef.current = next
-      return next
-    })
+    /**
+     * THE REF IS UPDATED SYNCHRONOUSLY, AND THAT IS THE WHOLE POINT OF IT.
+     *
+     * It used to be assigned inside the setAnswers updater. React does not call
+     * an updater at the moment you queue it, so the ref only caught up on the
+     * next render, and any caller that recorded an answer and saved in the same
+     * handler read the value from BEFORE the answer.
+     *
+     * The carousel never showed this: a tap and its save were always separated
+     * by another tap or by the advance timer, so a render had happened in
+     * between. The rail saves on the same tap and lost the write completely.
+     * The card turned pink, nothing went to the network, and a reload put it
+     * back to grey.
+     *
+     * Found by reading the request log, not the screen. The screen was right.
+     */
+    const next = {
+      ...answersRef.current,
+      [goalId]: { ...(answersRef.current[goalId] ?? {}), ...patch },
+    }
+    answersRef.current = next
+    setAnswers(next)
     setSavedAt((s) => ({ ...s, [goalId]: false }))
   }
+
+  /**
+   * Is every goal due today now recorded.
+   *
+   * THIS EXISTS BECAUSE THE RAIL SAVES ON EVERY TAP.
+   *
+   * The old rule was "confetti if anything was recorded", which was right when
+   * a save happened once, at the end of the carousel. The rail writes on each
+   * answer, so that rule fired a full celebration five times while somebody
+   * ticked five goals, which is not a celebration, it is a nuisance with
+   * colour. It fires once now, on the tap that finishes the day.
+   *
+   * Read from the ref rather than from state, for the reason recorded on it:
+   * the caller has just written an answer and the render carrying it may not
+   * have happened.
+   */
+  const dayComplete = useCallback(() => {
+    const current = answersRef.current
+    const due = live.filter((g) => dueToday.has(g.id))
+    if (due.length === 0) return false
+    return due.every((g) => {
+      const a = current[g.id]
+      if (!a) return false
+      const target = targetFor(g)
+      return g.cadence === 'recurring' && target > 1
+        ? (a.count ?? 0) >= target
+        : a.outcome === 'done' || (a.count ?? 0) > 0
+    })
+  }, [live, dueToday])
 
   /**
    * One card's Save, which posts every answer.
@@ -288,7 +324,7 @@ export default function Goals() {
           setSaving(null)
           return
         }
-        if (written.some((it) => it.count_done > 0)) cheer()
+        if (written.some((it) => it.count_done > 0) && dayComplete()) cheer()
         setSavedAt(Object.fromEntries(written.map((it) => [it.goal_id, true])))
         setSaving(null)
         return
@@ -328,7 +364,7 @@ export default function Goals() {
 
       /* Only when something was actually recorded. Confetti over a nought is
          the app congratulating somebody for a day they just said went badly. */
-      if (items.some((it) => it.count_done > 0 || it.outcome === 'done')) cheer()
+      if (dayComplete()) cheer()
 
       setSavedAt(Object.fromEntries(items.map((it) => [it.goal_id, true])))
       /* The gallery below loads once and cannot know a photo was just attached
@@ -338,7 +374,7 @@ export default function Goals() {
       await reloadGroup()
       setSaving(null)
     },
-    [live, currentCycle, saving, reloadGroup, openSolo, dayIndex, setGoalDay],
+    [live, currentCycle, saving, reloadGroup, openSolo, dayIndex, setGoalDay, dayComplete],
   )
 
   const markAway = async () => {
@@ -407,7 +443,16 @@ export default function Goals() {
     <Screen>
       <TopBar
         title={t('nav.goals')}
-        sub={groupId ? undefined : t('goals.solo_sub')}
+        /**
+         * The privacy line moved into a question mark beside the heading.
+         *
+         * "Rien qu'a toi. Personne d'autre ne les voit." answers a question
+         * somebody has once and never again, and as standing copy it cost two
+         * lines at the top of the page on every visit, pushing the goals down.
+         * It is still one tap away and still the first thing under the title;
+         * it just is not read aloud to people who already know.
+         */
+        hint={groupId ? undefined : t('goals.solo_sub')}
         right={
           /**
            * A plus and nothing else. "+ Add" wrapped onto two lines inside the
@@ -428,31 +473,22 @@ export default function Goals() {
       />
 
       {/**
-       * The daily question, as one thing to press rather than a control on
-       * every card.
+       * THE DAILY QUESTION, AND THE CARDS YOU ANSWER IT ON.
        *
-       * Only when there is something to answer, and it counts down: a banner
-       * that is on the page every day whether or not it applies is a banner
-       * people stop reading. When everything due has been recorded it says so
-       * once and offers to go back in, rather than disappearing, because
-       * disappearing is indistinguishable from never having worked.
+       * The question is type on the page rather than a card: a white rectangle
+       * above a column of white rectangles read as the first goal in the list.
+       *
+       * Under it, a rail you slide rather than a button that opens a modal.
+       * The button was one more tap before the first answer and put a layer
+       * between somebody and a list they were already looking at. This section
+       * exists to be fast, so it answers in place. See CheckinRail.
+       *
+       * It counts down, and when everything due is recorded it says so instead
+       * of disappearing: a section that vanishes is indistinguishable from one
+       * that never worked.
        */}
       {open && todays.length > 0 && (
         <Section>
-          {/**
-           * NO CARD ROUND IT. It is a question, not an object.
-           *
-           * It was a `lg` sheet, which put a white rectangle above a column of
-           * white rectangles and made the daily question look like the first
-           * goal in the list. A card is the right container for a thing you
-           * can act on in several ways; this is one sentence and one button,
-           * and drawing a box round that only competes with the cards below
-           * for the same attention.
-           *
-           * So it is type on the page: the question at heading weight because
-           * it is the first thing on the screen and is meant to be read, the
-           * count under it in grey, and the way in underneath.
-           */}
           <div
             data-hook="checkin-banner"
             data-answered={answered}
@@ -464,18 +500,60 @@ export default function Goals() {
             <p className="text-safe mt-1.5 text-small text-muted">
               {t('checkin.banner_sub', { n: todays.length - answered, total: todays.length })}
             </p>
+          </div>
+          <div className="mt-4">
+            <CheckinRail
+              goals={todays}
+              answers={answers}
+              busy={saving !== null}
+              /* One tap records. saveAll posts every answer rather than the one
+                 just given, which is not laziness: submit_checkin upserts the
+                 whole item list for a cycle, so a save that carried only this
+                 goal would delete the rest. The solo branch writes one
+                 goal_days row per answered goal, and an upsert of an unchanged
+                 row is a no-op. */
+              onAnswer={(goal, patch) => {
+                set(goal.id, patch)
+                saveAll()
+              }}
+            />
+          </div>
+
+          {/**
+           * THE ONE THING THE RAIL CANNOT DO, KEPT REACHABLE.
+           *
+           * A rail card is a title and one control; there is no room in it for
+           * a photograph, a link and an evidence note, and cramming them in
+           * would undo the speed the rail exists for. So the carousel stays as
+           * the long way round, for the days there is something to attach.
+           *
+           * GROUP ONLY, and that is a storage fact rather than a layout one:
+           * proof rides on a checkin_item, and a solo goal is a goal_days row
+           * with a count and a date and nowhere to put a file. Offering it on
+           * /goals would be offering to drop what somebody chose.
+           */}
+          {openGroup && todays.some((g) => proofTypeOf(g) !== 'none') && (
             <button
               type="button"
               onClick={() => setCarousel(true)}
-              data-hook="checkin-banner-open"
-              className={`press mt-4 ${answered >= todays.length ? 'goal-action' : 'goal-action-done'}`}
+              data-hook="checkin-proof-open"
+              className="press mt-3 text-small font-semibold text-accent underline decoration-1 underline-offset-2"
             >
-              {answered >= todays.length ? t('checkin.banner_again') : t('checkin.banner_cta')}
+              {t('checkin.add_proof')}
             </button>
-          </div>
+          )}
         </Section>
       )}
 
+      {/**
+       * The carousel, for proof only now.
+       *
+       * It used to be the check-in itself. The rail answers the daily question
+       * in place, so this is the long way round: one goal at a time with the
+       * evidence field, reached from the link under the rail and never opened
+       * by accident. Group only, because that is the only place proof has a
+       * column to live in.
+       */}
       {carousel && (
         <CheckinCarousel
           goals={todays}
@@ -484,8 +562,6 @@ export default function Goals() {
           onDone={saveAll}
           onClose={() => setCarousel(false)}
           busy={saving !== null}
-          /* No evidence picker on a solo goal: goal_days has a count and a
-             date and nowhere to put a photograph. See the note on the prop. */
           proof={openGroup}
         />
       )}
@@ -509,7 +585,6 @@ export default function Goals() {
                 goal={g}
                 owner={ownerOf(g.owner_id)}
                 showControls
-                track={tracks}
                 deletable={canDelete(g)}
                 editHref={`${base}/${g.id}/edit`}
               />
