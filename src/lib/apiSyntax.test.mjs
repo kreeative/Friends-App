@@ -87,6 +87,17 @@ try {
 
 /* --- the diagnostic must never become a way to read a secret ------------- */
 
+/* This file parses copies rather than reading sources, so it has no `read` of
+   its own. Declared at module scope rather than inside the first block that
+   wanted it: a const in a block is invisible to every block after it, which
+   cost a run when the recovery assertions were added below. */
+const src = (rel) => readFileSync(new URL(`../../${rel}`, import.meta.url), 'utf8')
+/* The same file with its comments gone. An assertion of the form "this word is
+   absent" matches the note explaining why it is absent, and fails against a
+   file that is correct. That has now happened three times in this repo, so it
+   gets a helper rather than a fix each time. */
+const code = (rel) => src(rel).replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '')
+
 /**
  * /api/stripe-health reports which integrations are configured. That is a
  * useful thing and a dangerous shape: a diagnostic endpoint is exactly where
@@ -99,10 +110,6 @@ try {
  * audience for a list of what is misconfigured.
  */
 {
-  /* This file parses copies rather than reading sources, so it has no `read`
-     of its own; the two assertions below are about CONTENT, not syntax. */
-  const src = (rel) =>
-    readFileSync(new URL(`../../${rel}`, import.meta.url), 'utf8')
   const health = src('api/stripe-health.js')
   ok('the health endpoint exists', health.length > 0)
   ok(
@@ -122,6 +129,63 @@ try {
     'the browser side sends the live token rather than a stored one',
     /supabase\.auth\.getSession\(\)/.test(src('src/components/PurchaseCheck.jsx')),
     'a token read at mount may have rotated by the time the button is pressed',
+  )
+}
+
+/**
+ * /api/stripe-recover GRANTS BOOKS, WHICH MAKES IT THE MOST DANGEROUS ENDPOINT
+ * IN THE PROJECT.
+ *
+ * It exists because the webhook was never registered in Stripe: three paid
+ * purchases sat there carrying a book_id and a user_id against zero rows in
+ * entitlements, and registering the endpoint would only have fixed the next
+ * one. So this asks Stripe what the caller actually paid for and hands it
+ * over.
+ *
+ * The rule that makes that safe is that the recipient is the BEARER TOKEN and
+ * never anything in the request. A session counts only when its
+ * metadata.user_id equals the verified id.
+ *
+ * NO EMAIL FALLBACK, and that is the assertion most worth keeping. The webhook
+ * has one, correctly: a guest checkout has no user_id and the address Stripe
+ * collected is the only thing identifying the buyer. Copying that here would
+ * turn "I know an address" into "give me that person's books" on an endpoint
+ * anybody can call. A guest purchase stays parked in pending_entitlements for
+ * the sign-in flow to claim.
+ */
+{
+  const rec = src('api/stripe-recover.js')
+
+  ok('it requires a signed-in caller',
+     /admin\.auth\.getUser\(token\)/.test(rec) && /return res\.status\(401\)/.test(rec))
+  ok(
+    'it grants only to the verified caller',
+    /s\.metadata\?\.user_id !== user\.id/.test(rec) && /user_id: user\.id/.test(rec),
+    'the recipient is the token, never the request body',
+  )
+  ok(
+    'and never falls back to an email',
+    !/email/i.test(code('api/stripe-recover.js')),
+    'that would make knowing an address enough to take somebody\u2019s books',
+  )
+  ok(
+    'only a paid session counts',
+    /payment_status !== 'paid'/.test(rec),
+  )
+  ok(
+    'the write is the same upsert the webhook uses',
+    /onConflict: 'user_id,book_id', ignoreDuplicates: true/.test(rec),
+    'two paths granting entitlements must not disagree about what one is',
+  )
+  ok(
+    'it reads no secret into a response',
+    !/env\('stripeSecret'\)\s*[,)}]?\s*(\+|\.slice|\.substring)/.test(rec) &&
+      !/detail: secret|key: secret/.test(rec),
+  )
+  ok(
+    'and it is a POST, because it writes',
+    /req\.method !== 'POST'/.test(rec),
+    'a GET that grants entitlements can be triggered by a link',
   )
 }
 
