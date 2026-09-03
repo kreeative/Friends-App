@@ -366,6 +366,53 @@ ok(
   !/data-hook="cal-toolbar"[\s\S]{0,1400}data-hook="cal-layers"/.test(cal),
   'a toolbar that both changes what is drawn and where you look is one nobody can read',
 )
+/**
+ * THE CANVAS ENDS WHERE THE PAGE DOES.
+ *
+ * The month grid was 6.5rem per row whatever the window, so on a laptop the
+ * card stopped about 220px short of the bottom and left a band of empty ground
+ * under it. Measured after: 32px, which is the page's own bottom padding.
+ *
+ * min-h-0 is the assertion worth having. A flex child defaults to
+ * min-height:auto and refuses to shrink below its content, so flex-1 without
+ * it does nothing at all and the fix looks applied while changing nothing.
+ */
+ok(
+  'the page is a full-height column above md',
+  /md:flex md:h-dvh md:max-w-none md:flex-col/.test(cal),
+  'without a height to fill, nothing below can flex into it',
+)
+ok(
+  'the canvas takes what is left, and can shrink',
+  /md:flex md:min-h-0 md:flex-1 md:flex-col md:overflow-y-auto/.test(cal),
+  'flex-1 without min-h-0 is a no-op, and the day list has to be able to scroll',
+)
+ok(
+  'the month rows share the card',
+  /\.month-fill \{[\s\S]{0,120}grid-template-rows: auto repeat\(var\(--weeks/.test(css),
+  'a month is five or six weeks, so the count cannot be a literal',
+)
+ok(
+  'and they can shrink below their content',
+  /\.month-fill \{[\s\S]{0,120}minmax\(0, 1fr\)/.test(css),
+  'a bare 1fr row will not shrink, so a busy month would push past the card',
+)
+ok(
+  'the fill is above md only',
+  /@media \(min-width: 768px\) \{\s*\.month-fill/.test(css),
+  'six rows across a 600px phone is 90px each, which holds a date and nothing',
+)
+ok(
+  'the week hours fill too, with a floor',
+  /\.week-hours \{[\s\S]{0,200}min-height: calc\(var\(--hours/.test(css),
+  'a short window scrolls the canvas rather than crushing a nine-hour day',
+)
+ok(
+  'and the hour height is not inline',
+  !/style=\{\{ height: `\$\{hours\.length \* 3\}rem` \}\}/.test(cal),
+  'an inline style beats every class, so it could not be released at one breakpoint',
+)
+
 ok(
   'the month is the heading now that the page title has gone up',
   /<h1[^>]*first-letter:uppercase[\s\S]{0,80}fmt\.format\(anchor\)/.test(cal),

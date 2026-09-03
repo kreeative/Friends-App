@@ -2191,6 +2191,44 @@
   }
 
   /**
+   * The month grid's rows, sharing the card rather than each taking 6.5rem.
+   *
+   * Only above md, and that is the whole reason this is a class and a custom
+   * property rather than an inline grid-template-rows. On a phone the tiles
+   * should be their natural height and the page should scroll: six rows split
+   * across a 600px screen is 90px each, and a tile that small cannot hold a
+   * date and a chip.
+   *
+   * --weeks is five or six depending on where the month starts, so it cannot
+   * be a literal. `auto` for the first row is the weekday header, which wants
+   * its own height and not a seventh of the card.
+   *
+   * minmax(0, 1fr) rather than 1fr: a bare 1fr row will not shrink below its
+   * content, so a day with four chips would push the grid past the card and
+   * the fill would silently stop working on exactly the busy months it is for.
+   */
+  @media (min-width: 768px) {
+    .month-fill {
+      grid-template-rows: auto repeat(var(--weeks, 6), minmax(0, 1fr));
+    }
+  }
+
+  /* The week view's hour column, same idea. 3rem per hour is the floor rather
+     than the height above md, so the column grows into the card and a short
+     window scrolls the canvas instead of squashing the day. */
+  .week-hours {
+    height: calc(var(--hours, 16) * 3rem);
+  }
+
+  @media (min-width: 768px) {
+    .week-hours {
+      height: auto;
+      min-height: calc(var(--hours, 16) * 3rem);
+      flex: 1 1 0%;
+    }
+  }
+
+  /**
    * A settings page, in two columns rather than one stretched one.
    *
    * Measured at 1440px with the shell released: the "Ton nom" field was 1206px

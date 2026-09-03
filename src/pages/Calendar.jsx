@@ -294,7 +294,7 @@ export default function Calendar() {
      * rail's 7.5rem is already taken out by the shell, so `none` here means
      * the window minus the rail, not the window.
      */
-    <div className="mx-auto w-full max-w-content space-y-4 px-4 pb-28 pt-4 md:max-w-none md:pb-8">
+    <div className="mx-auto w-full max-w-content space-y-4 px-4 pb-28 pt-4 md:flex md:h-dvh md:max-w-none md:flex-col md:pb-8">
       {/**
        * THREE CONTAINERS, NOT ONE HEADER.
        *
@@ -461,7 +461,25 @@ export default function Calendar() {
        * columns, and it is also where the editing this panel never had can
        * actually fit.
        */}
-      <div className="min-w-0 space-y-4">
+      {/**
+       * The canvas takes whatever the two rows above it did not.
+       *
+       * The month grid was a fixed 6.5rem per row, so on a laptop the card
+       * stopped about 220px short of the bottom of the window and left a band
+       * of empty ground under it. A calendar is the one screen where the grid
+       * IS the page, so it should end where the page does.
+       *
+       * min-h-0 is the part that is easy to miss: a flex child defaults to
+       * min-height:auto, which means it refuses to shrink below its content
+       * and flex-1 cannot do anything. Without it the grid would push the page
+       * taller than the window instead of fitting inside it.
+       *
+       * overflow-y-auto so the views that genuinely can be longer than the
+       * window, the day list with a full timetable on it, scroll INSIDE the
+       * canvas rather than making the whole page scroll and taking the
+       * toolbars off the top with them.
+       */}
+      <div className="min-w-0 space-y-4 md:flex md:min-h-0 md:flex-1 md:flex-col md:overflow-y-auto">
         {view === 'month' && (
           <MonthGrid range={range} anchor={anchor} agenda={agenda} cycle={shownCycle} onPick={(d) => { setAnchor(d); setView('day') }} />
         )}
@@ -537,8 +555,28 @@ function MonthGrid({ range, anchor, agenda, cycle, onPick }) {
   const today = dayKey(new Date())
 
   return (
-    <section className="lg w-full overflow-hidden p-3" data-hook="cal-month">
-      <div className="grid grid-cols-7 gap-1">
+    <section
+      className="lg w-full overflow-hidden p-3 md:flex md:min-h-0 md:flex-1 md:flex-col"
+      data-hook="cal-month"
+    >
+      {/**
+       * The rows share whatever height the card has, instead of being 6.5rem
+       * each and leaving the rest of the window empty.
+       *
+       * The row count is not fixed: a month is five or six weeks depending on
+       * where the first lands, so it is passed in as a custom property rather
+       * than written into a class. An inline grid-template-rows would apply on
+       * a phone too, where the tiles SHOULD be their natural height and the
+       * page should scroll; --weeks plus a class means the fill only happens
+       * above md. See .month-fill in index.css.
+       *
+       * `auto` for the first row is the weekday header, which wants its own
+       * height and not a seventh of the card.
+       */}
+      <div
+        className="month-fill grid grid-cols-7 gap-1 md:min-h-0 md:flex-1"
+        style={{ '--weeks': Math.max(1, Math.round(days.length / 7)) }}
+      >
         {days.slice(0, 7).map((d) => (
           <div key={`h${dayKey(d)}`} className="truncate px-1 pb-1 text-center text-label font-semibold uppercase text-muted">
             {dow.format(d)}
@@ -612,11 +650,18 @@ function WeekGrid({ range, agenda, cycle, locale, onEdit }) {
   const today = dayKey(new Date())
 
   return (
-    <section className="lg w-full overflow-hidden p-3" data-hook="cal-week">
+    <section
+      className="lg w-full overflow-hidden p-3 md:flex md:min-h-0 md:flex-1 md:flex-col"
+      data-hook="cal-week"
+    >
       {/* The grid scrolls sideways rather than squeezing seven columns into
-          360px, where each would be 40px and hold no word at all. */}
-      <div className="overflow-x-auto">
-        <div className="min-w-[38rem]">
+          360px, where each would be 40px and hold no word at all.
+
+          Three levels of flex plumbing to get the hour column to fill: every
+          ancestor between the card and the grid has to be a flex column with
+          min-h-0, or flex-1 on the grid has nothing to grow inside. */}
+      <div className="overflow-x-auto md:flex md:min-h-0 md:flex-1 md:flex-col">
+        <div className="min-w-[38rem] md:flex md:min-h-0 md:flex-1 md:flex-col">
           <div className="grid grid-cols-[3rem_repeat(7,1fr)] gap-1">
             <div />
             {days.map((d) => {
@@ -641,7 +686,23 @@ function WeekGrid({ range, agenda, cycle, locale, onEdit }) {
             })}
           </div>
 
-          <div className="relative grid grid-cols-[3rem_repeat(7,1fr)] gap-1" style={{ height: `${hours.length * 3}rem` }}>
+          {/**
+           * The hours fill the card above md, and are 3rem each below it.
+           *
+           * The height cannot stay inline: an inline style beats every class,
+           * so there would be no way to release it at one breakpoint and not
+           * the other. It is a custom property read by .week-hours instead.
+           *
+           * min-height keeps the 3rem-per-hour floor, so a short window makes
+           * the canvas scroll rather than crushing a nine-hour day into 200px.
+           * blockStyle positions everything as a percentage of the span, so a
+           * taller column makes every block taller in proportion, which is
+           * what was actually asked for.
+           */}
+          <div
+            className="week-hours relative grid grid-cols-[3rem_repeat(7,1fr)] gap-1"
+            style={{ '--hours': hours.length }}
+          >
             <div className="relative">
               {hours.map((m, i) => (
                 <span
