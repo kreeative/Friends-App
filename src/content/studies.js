@@ -354,18 +354,18 @@ export const STUDIES = [
 
     fr: {
       eyebrow: 'Article',
-      title: 'Les regles ne sont pas un detail prive',
-      dek: 'Ca arrive tous les mois, c\u2019est previsible, et ca change ce qu\u2019une semaine permet de faire. Le seul truc qui est vraiment prive, c\u2019est le silence autour.',
+      title: 'Les règles ne sont pas un détail privé',
+      dek: 'Ça arrive tous les mois, c\u2019est prévisible, et ça change ce qu\u2019une semaine permet de faire. Le seul truc qui est vraiment privé, c\u2019est le silence autour.',
       readTime: '5 min',
       langNote: null,
       sections: [
         {
-          h: 'Ce que le silence coute',
+          h: 'Ce que le silence coûte',
           p: [
-            'On planifie un semestre, un lancement, une periode d\u2019examens comme si les semaines etaient interchangeables. Elles ne le sont pas, et pour a peu pres la moitie des gens elles ne l\u2019ont jamais ete. Il y a des jours ou la concentration est facile a trouver et des jours ou elle coute cher, et ce n\u2019est pas une question de motivation.',
-            'Ce n\u2019est pas une impression. Une revue systematique de {armourStudies} etudes, portant sur {armourN} jeunes femmes, trouve des regles douloureuses chez {armourPain} % d\u2019entre elles. {armourFocus} % declarent que ca degrade leur travail en cours ou leur concentration, et {armourMissed} % ont deja manque des cours pour cette raison. Ces chiffres tiennent aussi bien dans les pays riches que dans les autres.',
-            'Cote travail, une enquete nationale aupres de {schoepN} femmes aux Pays-Bas donne l\u2019autre moitie du tableau : {schoepPresent} % disent avoir deja travaille ou etudie en etant diminuees, ce qui represente environ {schoepDays} jours de productivite perdus par an, contre {schoepAbsent} % qui se sont absentees. Autrement dit, l\u2019essentiel du cout ne se voit pas, parce qu\u2019il est paye par des gens qui sont venus quand meme.',
-            'Le probleme n\u2019est pas le corps. Le probleme est qu\u2019on n\u2019a pas le droit d\u2019en parler dans les endroits ou les plannings se decident, alors on planifie contre soi-meme et on appelle ca de la discipline quand ca casse.',
+            'On planifie un semestre, un lancement, une période d\u2019examens comme si les semaines étaient interchangeables. Elles ne le sont pas, et pour à peu près la moitié des gens elles ne l\u2019ont jamais été. Il y a des jours où la concentration est facile à trouver et des jours où elle coûte cher, et ce n\u2019est pas une question de motivation.',
+            'Ce n\u2019est pas une impression. Une revue systématique de {armourStudies} études, portant sur {armourN} jeunes femmes, trouve des règles douloureuses chez {armourPain} % d\u2019entre elles. {armourFocus} % déclarent que ça dégrade leur travail en cours ou leur concentration, et {armourMissed} % ont déjà manqué des cours pour cette raison. Ces chiffres tiennent aussi bien dans les pays riches que dans les autres.',
+            'Côté travail, une enquête nationale auprès de {schoepN} femmes aux Pays-Bas donne l\u2019autre moitié du tableau : {schoepPresent} % disent avoir déjà travaillé ou étudié en étant diminuées, ce qui représente environ {schoepDays} jours de productivité perdus par an, contre {schoepAbsent} % qui se sont absentées. Autrement dit, l\u2019essentiel du coût ne se voit pas, parce qu\u2019il est payé par des gens qui sont venus quand même.',
+            'Le problème n\u2019est pas le corps. Le problème est qu\u2019on n\u2019a pas le droit d\u2019en parler dans les endroits où les plannings se décident, alors on planifie contre soi-même et on appelle ça de la discipline quand ça casse.',
           ],
         },
         {
@@ -379,31 +379,31 @@ export const STUDIES = [
            */
           h: 'Ce qui change, et ce qui ne change pas',
           p: [
-            'Il faut etre precis, parce que le sujet a servi trop longtemps a dire aux femmes qu\u2019elles etaient moins fiables. Une meta-analyse de {jangArticles} publications, {jangN} participantes au total, ne trouve aucun effet robuste du cycle sur les performances cognitives : ni l\u2019attention, ni la memoire, ni le raisonnement ne bougent de facon systematique d\u2019une phase a l\u2019autre.',
-            'Donc l\u2019argument n\u2019est pas que tu penses moins bien. Tu penses pareil. Ce qui change, c\u2019est la douleur, la fatigue et la place qu\u2019elles prennent, et une journee ou une partie de ton attention part ailleurs n\u2019est pas une journee ou tu es devenue moins capable. C\u2019est une journee ou la meme tache coute plus cher.',
-            'La difference compte, parce que les deux versions menent a des decisions opposees. La premiere sert a exclure quelqu\u2019un d\u2019une decision importante. La deuxieme sert a mettre la decision importante un autre jour.',
+            'Il faut être précis, parce que le sujet a servi trop longtemps à dire aux femmes qu\u2019elles étaient moins fiables. Une méta-analyse de {jangArticles} publications, {jangN} participantes au total, ne trouve aucun effet robuste du cycle sur les performances cognitives : ni l\u2019attention, ni la mémoire, ni le raisonnement ne bougent de façon systématique d\u2019une phase à l\u2019autre.',
+            'Donc l\u2019argument n\u2019est pas que tu penses moins bien. Tu penses pareil. Ce qui change, c\u2019est la douleur, la fatigue et la place qu\u2019elles prennent, et une journée où une partie de ton attention part ailleurs n\u2019est pas une journée où tu es devenue moins capable. C\u2019est une journée où la même tâche coûte plus cher.',
+            'La différence compte, parce que les deux versions mènent à des décisions opposées. La première sert à exclure quelqu\u2019un d\u2019une décision importante. La deuxième sert à mettre la décision importante un autre jour.',
           ],
         },
         {
           h: 'Nommer une chose, ce n\u2019est pas s\u2019excuser',
           p: [
-            'Il y a une difference entre "je suis fatiguee, desolee" et "cette semaine-la je mets les taches lourdes en debut de semaine". La premiere est une excuse, et une excuse demande une permission. La deuxieme est une decision de planification, et une decision de planification ne demande rien a personne.',
-            'C\u2019est tout ce que le suivi de cycle sert a faire ici. Pas un journal de symptomes, pas une note sur ton humeur. Une phase, et une phrase sur ce qu\u2019elle fait a une semaine de travail.',
+            'Il y a une différence entre "je suis fatiguée, désolée" et "cette semaine-là je mets les tâches lourdes en début de semaine". La première est une excuse, et une excuse demande une permission. La deuxième est une décision de planification, et une décision de planification ne demande rien à personne.',
+            'C\u2019est tout ce que le suivi de cycle sert à faire ici. Pas un journal de symptômes, pas une note sur ton humeur. Une phase, et une phrase sur ce qu\u2019elle fait à une semaine de travail.',
           ],
         },
         {
-          h: 'Pourquoi ca reste prive quand meme',
+          h: 'Pourquoi ça reste privé quand même',
           p: [
-            'Rien de tout ca n\u2019est partage avec ton groupe. Les tables du cycle ont leurs propres regles d\u2019acces, ecrites pour que personne d\u2019autre ne puisse les lire : pas de vue partagee, pas de statistique de groupe, pas de signal "qui a une semaine difficile". Ce n\u2019est pas un reglage a assouplir plus tard, c\u2019est la fonctionnalite.',
-            'Sortir un sujet du tabou et le rendre public sont deux choses differentes. Tu peux planifier autour de quelque chose sans le raconter, et c\u2019est exactement l\u2019ecart que cette application essaie de tenir : le dire a soi-meme, dans un endroit ou personne d\u2019autre ne regarde.',
+            'Rien de tout ça n\u2019est partagé avec ton groupe. Les tables du cycle ont leurs propres règles d\u2019accès, écrites pour que personne d\u2019autre ne puisse les lire : pas de vue partagée, pas de statistique de groupe, pas de signal "qui a une semaine difficile". Ce n\u2019est pas un réglage à assouplir plus tard, c\u2019est la fonctionnalité.',
+            'Sortir un sujet du tabou et le rendre public sont deux choses différentes. Tu peux planifier autour de quelque chose sans le raconter, et c\u2019est exactement l\u2019écart que cette application essaie de tenir : le dire à soi-même, dans un endroit où personne d\u2019autre ne regarde.',
           ],
         },
       ],
-      methodTitle: 'D\u2019ou ca vient',
+      methodTitle: 'D\u2019où ça vient',
       method: [
-        'Aucun chiffre de cette page ne vient de nous. Les autres textes de cette section reposent sur notre propre sondage ; celui-ci n\u2019en a pas, donc tout ce qui est avance ici est repris d\u2019etudes publiees, listees ci-dessous avec leur DOI pour que ca se verifie sans nous croire sur parole.',
-        'Ce sont des ordres de grandeur, pas des lois. Les enquetes citees sont declaratives et recrutees en ligne, ce qui attire davantage les personnes concernees par le sujet, et la revue sur la douleur agrege des etudes aux definitions variables. La regularite d\u2019un pays a l\u2019autre est ce qui rend le tableau credible, pas la decimale.',
-        'Ce qui est decrit du produit est verifiable dans le depot : le suivi de cycle et ses regles d\u2019acces sont dans supabase/51_calendar_and_cycle.sql, et la note sur la semaine a venir est dans src/components/CycleHeadsUp.jsx.',
+        'Aucun chiffre de cette page ne vient de nous. Les autres textes de cette section reposent sur notre propre sondage ; celui-ci n\u2019en a pas, donc tout ce qui est avancé ici est repris d\u2019études publiées, listées ci-dessous avec leur DOI pour que ça se vérifie sans nous croire sur parole.',
+        'Ce sont des ordres de grandeur, pas des lois. Les enquêtes citées sont déclaratives et recrutées en ligne, ce qui attire davantage les personnes concernées par le sujet, et la revue sur la douleur agrège des études aux définitions variables. La régularité d\u2019un pays à l\u2019autre est ce qui rend le tableau crédible, pas la décimale.',
+        'Ce qui est décrit du produit est vérifiable dans le dépôt : le suivi de cycle et ses règles d\u2019accès sont dans supabase/51_calendar_and_cycle.sql, et la note sur la semaine à venir est dans src/components/CycleHeadsUp.jsx.',
       ],
       sourcesTitle: 'Les sources',
     },
