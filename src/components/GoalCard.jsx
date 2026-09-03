@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useGroup } from '../context/GroupContext'
@@ -92,89 +91,20 @@ export default function GoalCard({
      showing one. */
   const [menu, setMenu] = useState(false)
   /**
-   * Where to draw it, in viewport coordinates, measured when it opens.
+   * Escape closes it, like every other transient thing in this app.
    *
-   * The menu is portalled to document.body to escape the card's
-   * overflow-hidden, and the price of leaving the card is that it can no
-   * longer be placed by `right-0` relative to the button. So the button is
-   * measured instead.
-   *
-   * `flip` is not a nicety. The last card in a list sits near the bottom of
-   * the viewport, and a menu drawn downwards from it opens off the bottom of
-   * the screen: the same "cannot reach what it offers" as the clipping bug,
-   * arrived at from the other direction. When there is not room below, it
-   * hangs upwards from the button instead.
-   */
-  const [at, setAt] = useState(null)
-  const menuBtn = useRef(null)
-
-  const place = () => {
-    const el = menuBtn.current
-    if (!el) return null
-    const r = el.getBoundingClientRect()
-    /* Roughly what the menu needs: four rows at 2.375rem plus its padding.
-       Approximate on purpose, because the real height is not knowable until
-       it has rendered, and one frame of it in the wrong place is worse than a
-       few pixels of slack. */
-    const need = 200
-
-    /**
-     * The floor is the tab bar, not the bottom of the window.
-     *
-     * The bar is fixed over the page on phones, so the room below a button is
-     * the room down to IT. Measured at 41px of overlap when this used the
-     * viewport height: the menu still worked, because it stacks above the bar,
-     * but "Supprimer" sat on top of the navigation, which is a bad place to
-     * put the one action that cannot be undone.
-     *
-     * Queried rather than assumed, because the bar is `md:hidden` and its
-     * height moves with env(safe-area-inset-bottom).
-     */
-    const bar = document.querySelector('[data-hook="tab-bar"]')
-    const floor = (bar ? bar.getBoundingClientRect().top : window.innerHeight) - 8
-    const ceil = 8
-
-    /* Right edges aligned, which is what right-0 did before, then clamped to
-       both edges: min-w is 11rem and the viewport can be narrower than the
-       card's own margins would suggest. */
-    const left = Math.max(8, Math.min(r.right - 176, window.innerWidth - 184))
-
-    /* Below the button when it fits above the bar. */
-    if (r.bottom + 4 + need <= floor) return { left, top: r.bottom + 4, flip: false }
-    /* Otherwise above it, when THAT fits under the top of the screen. */
-    if (r.top - 4 - need >= ceil) return { left, top: r.top - 4, flip: true }
-    /* Neither: sit on the floor. A menu not quite touching its button is a
-       smaller problem than one hanging off the edge of the screen. */
-    return { left, top: floor, flip: true }
-  }
-
-  const openMenu = () => {
-    if (menu) return setMenu(false)
-    setAt(place())
-    setMenu(true)
-  }
-
-  /**
-   * Scrolling closes it rather than moving it.
-   *
-   * A fixed menu measured once and left alone detaches from its button the
-   * moment the page moves under it, and following the button costs a
-   * measurement on every scroll frame for a control open for two seconds.
-   * Closing is both cheaper and the behaviour every native menu has.
+   * That is all that is left of the listeners. The floating version also
+   * closed on scroll and on resize, because a fixed layer measured once
+   * detaches from its button the moment the page moves. The rows are part of
+   * the card now, so they move with it and there is nothing to keep in sync.
    */
   useEffect(() => {
     if (!menu) return undefined
-    const shut = () => setMenu(false)
-    window.addEventListener('scroll', shut, true)
-    window.addEventListener('resize', shut)
     const onKey = (e) => e.key === 'Escape' && setMenu(false)
     window.addEventListener('keydown', onKey)
-    return () => {
-      window.removeEventListener('scroll', shut, true)
-      window.removeEventListener('resize', shut)
-      window.removeEventListener('keydown', onKey)
-    }
+    return () => window.removeEventListener('keydown', onKey)
   }, [menu])
+
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState(null)
   const [ticking, setTicking] = useState(false)
@@ -292,10 +222,38 @@ export default function GoalCard({
       /* overflow-hidden is the backstop, not the fix. Everything inside is
          constrained on its own; this is what stops the next field somebody
          adds from painting onto the page background before anybody notices. */
-      className={`${finished?.card ?? 'lg p-5'} w-full overflow-hidden transition-opacity duration-200 ease-settle ${
+      className={`${finished?.card ?? 'lg p-5'} relative w-full overflow-hidden transition-opacity duration-200 ease-settle ${
         paused ? 'opacity-55' : ''
       }`}
     >
+      {/**
+       * THE THREE DOTS, AT THE TOP, AND A SIBLING OF THE HEADER RATHER THAN
+       * INSIDE IT.
+       *
+       * The region that opens the detail page is a real <button> wrapping the
+       * whole upper half of the card, so a control nested in it would be a
+       * button inside a button: invalid HTML that browsers resolve by dropping
+       * one of the two, and which one is not something to find out per browser.
+       * Absolute, over that region, is how both stay real buttons.
+       *
+       * z-10 and not more: it only has to beat its own card's contents. The
+       * menu it opens is no longer a layer over the page, so there is nothing
+       * else here to out-stack.
+       */}
+      {showControls && !finished && (
+        <button
+          type="button"
+          onClick={() => setMenu((v) => !v)}
+          aria-expanded={menu}
+          aria-controls={`goal-actions-${goal.id}`}
+          aria-label={t('goal.actions')}
+          title={t('goal.actions')}
+          data-hook="goal-menu"
+          className="press absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-pill text-muted transition-colors hover:bg-ink/[0.06] hover:text-ink aria-expanded:bg-ink/[0.06] aria-expanded:text-ink"
+        >
+          <span aria-hidden="true" className="text-h2 leading-none">&#8943;</span>
+        </button>
+      )}
       {/**
        * The upper half of the card is the way in, and only the upper half.
        *
@@ -313,7 +271,12 @@ export default function GoalCard({
         type="button"
         onClick={expand}
         aria-haspopup="dialog"
-        className="press -m-1 block w-full rounded-inner p-1 text-left transition-colors hover:bg-ink/[0.02]"
+        /* pr-10 when the dots are there, so a long title wraps before it runs
+           under them rather than being overprinted by a control it cannot
+           see. */
+        className={`press -m-1 block w-full rounded-inner p-1 text-left transition-colors hover:bg-ink/[0.02] ${
+          showControls && !finished ? 'pr-10' : ''
+        }`}
       >
       {/**
        * Whose goal it is, first and quietly. It was the last line on the card,
@@ -498,119 +461,69 @@ export default function GoalCard({
       )}
 
       {/**
-       * FOUR BUTTONS BECAME A MENU, AND THE CARD IS THE REASON.
+       * THE ACTIONS EXPAND THE CARD. THEY ARE NOT A LAYER OVER IT.
        *
-       * They were a wrapping row of three filled pills and a red word, which
-       * is four things competing at the bottom of every card, none of them the
-       * reason anybody opened the page. Managing a goal is rare; looking at
-       * one is constant. A row that loud for the rare job made the list read
-       * as a settings screen.
+       * Three rounds got here. They were a wrapping row of three filled pills
+       * and a red word, four things competing at the bottom of every card,
+       * none of them the reason anybody opened the page. Then they collapsed
+       * behind a discreet control, which was right, but the menu it opened was
+       * `absolute` inside a card that carries overflow-hidden, so it was drawn
+       * and then clipped away. Then it was portalled to the body and placed
+       * against the button's rect, which worked and cost a scrim, a measured
+       * position, a flip, a scroll listener and a tab-bar floor.
        *
-       * So they collapse behind one discreet control. Nothing is removed and
-       * nothing is harder to reach: it is one tap to open and one to choose,
-       * against one tap before, on actions taken once a month.
+       * All of that machinery existed to hold a floating layer in the right
+       * place. Asked for instead: open the card. So the actions are simply
+       * rows at the bottom of the article, and the card gets taller.
        *
-       * NOT a hover menu. This is a phone first, and a menu that only appears
-       * on hover does not exist on a touch screen.
+       * WHAT THAT DELETES IS THE POINT. No portal, no coordinates, no z-index
+       * race, no scrim to dismiss, nothing to reposition on scroll, and
+       * nothing that can be clipped by an ancestor, because there is no
+       * positioned element left to clip. overflow-hidden stays exactly as it
+       * was and is no longer in anybody's way.
        */}
-      {showControls && !finished && (
-        <div className="mt-4 flex justify-end">
-          <div className="relative">
-            <button
-              ref={menuBtn}
-              type="button"
-              onClick={openMenu}
-              aria-expanded={menu}
-              aria-haspopup="menu"
-              aria-label={t('goal.actions')}
-              title={t('goal.actions')}
-              data-hook="goal-menu"
-              className="press flex h-9 w-9 items-center justify-center rounded-pill text-muted hover:bg-ink/[0.06] hover:text-ink"
+      {showControls && !finished && menu && (
+        <div
+          id={`goal-actions-${goal.id}`}
+          data-hook="goal-menu-items"
+          /* animate-rise is the same entrance the rest of the app uses, so the
+             card grows rather than the rows appearing already in place. */
+          className="animate-rise mt-4 flex flex-col border-t border-hairline pt-3"
+        >
+          {editHref && (
+            <Link
+              to={editHref}
+              className="press rounded-inner px-3 py-2.5 text-left text-small font-semibold text-ink hover:bg-ink/[0.06]"
             >
-              <span aria-hidden="true" className="text-h2 leading-none">&#8943;</span>
+              {t('goal.edit')}
+            </Link>
+          )}
+          <button
+            type="button"
+            onClick={() => { setMenu(false); setStatus(paused ? 'active' : 'paused') }}
+            className="press rounded-inner px-3 py-2.5 text-left text-small font-semibold text-ink hover:bg-ink/[0.06]"
+          >
+            {paused ? t('goal.resume') : t('goal.pause')}
+          </button>
+          <button
+            type="button"
+            onClick={() => { setMenu(false); setStatus('completed') }}
+            className="press rounded-inner px-3 py-2.5 text-left text-small font-semibold text-ink hover:bg-ink/[0.06]"
+          >
+            {t('goal.mark_done')}
+          </button>
+          {deletable && (
+            <button
+              type="button"
+              onClick={() => { setMenu(false); setAsking(true) }}
+              /* Separated by a rule and set in the negative colour. The one
+                 action here that cannot be undone should not be adjacent to
+                 the three that can. */
+              className="press mt-1 rounded-inner border-t border-hairline px-3 pb-2.5 pt-3 text-left text-small font-semibold text-negative hover:bg-negative/[0.09]"
+            >
+              {t('goal.delete')}
             </button>
-
-            {/**
-             * THE MENU IS PORTALLED, AND THAT IS THE WHOLE FIX.
-             *
-             * It was `absolute` inside the card, and the card carries
-             * overflow-hidden a hundred lines up. An absolutely positioned
-             * child does not escape a clipping ancestor, and z-index has no
-             * say in it: z-50 stacks the menu above its siblings and the card
-             * still cuts it off at its own edge. What people saw was a sliver
-             * of a white sheet at the bottom of the card and no way to reach
-             * anything in it.
-             *
-             * The overflow-hidden is not the thing to remove. It is the
-             * backstop that stops a single unbroken word spilling out of the
-             * card, which is what the whole of cardOverflow.test.mjs exists
-             * for. So the menu leaves the card instead: rendered into
-             * document.body, positioned against the button's own rect.
-             */}
-            {menu && at && createPortal(
-              <>
-                {/* A full-screen button behind the menu, so a tap anywhere
-                    closes it. A click handler on the document would fire
-                    before React's own and close it on the opening tap. */}
-                <button
-                  type="button"
-                  aria-label={t('goal.actions_close')}
-                  onClick={() => setMenu(false)}
-                  className="fixed inset-0 z-[70] cursor-default"
-                />
-                <div
-                  role="menu"
-                  data-hook="goal-menu-items"
-                  /* Fixed, so the coordinates are viewport coordinates and no
-                     scrolled ancestor has to be accounted for. Closed on
-                     scroll rather than followed, because a menu that chases
-                     the page is worse than one that gets out of the way. */
-                  style={{ position: 'fixed', top: at.top, left: at.left, ...(at.flip ? { transform: 'translateY(-100%)' } : null) }}
-                  className="lg lg-modal z-[71] flex w-max min-w-[11rem] flex-col p-1.5"
-                >
-                  {editHref && (
-                    <Link
-                      to={editHref}
-                      role="menuitem"
-                      className="press rounded-inner px-3 py-2 text-left text-small font-semibold text-ink hover:bg-ink/[0.06]"
-                    >
-                      {t('goal.edit')}
-                    </Link>
-                  )}
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={() => { setMenu(false); setStatus(paused ? 'active' : 'paused') }}
-                    className="press rounded-inner px-3 py-2 text-left text-small font-semibold text-ink hover:bg-ink/[0.06]"
-                  >
-                    {paused ? t('goal.resume') : t('goal.pause')}
-                  </button>
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={() => { setMenu(false); setStatus('completed') }}
-                    className="press rounded-inner px-3 py-2 text-left text-small font-semibold text-ink hover:bg-ink/[0.06]"
-                  >
-                    {t('goal.mark_done')}
-                  </button>
-                  {deletable && (
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={() => { setMenu(false); setAsking(true) }}
-                      /* Separated by a rule and set in the negative colour.
-                         The one action here that cannot be undone should not
-                         be adjacent to the three that can. */
-                      className="press mt-1 rounded-inner border-t border-hairline px-3 pb-2 pt-3 text-left text-small font-semibold text-negative hover:bg-negative/[0.09]"
-                    >
-                      {t('goal.delete')}
-                    </button>
-                  )}
-                </div>
-              </>,
-              document.body,
-            )}
-          </div>
+          )}
         </div>
       )}
 

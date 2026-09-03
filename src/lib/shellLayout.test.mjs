@@ -1184,54 +1184,65 @@ ok(
   'the loud row is gone',
   !/goal-action-soft press[\s\S]{0,200}goal-action-done press/.test(gcard),
 )
-ok(
-  'the menu closes on a tap anywhere, not on a document listener',
-  /className="fixed inset-0 z-\[70\] cursor-default"/.test(gcard),
-  'a document click handler fires before React and closes it on the opening tap',
-)
-
 /**
- * THE MENU IS PORTALLED, AND THIS IS THE ASSERTION THAT KEEPS IT THAT WAY.
+ * THE ACTIONS EXPAND THE CARD. THEY ARE NOT A LAYER OVER IT.
  *
- * It was `absolute right-0 z-50` inside the card, and the card carries
- * overflow-hidden. An absolutely positioned child does not escape a clipping
- * ancestor and z-index has no say in it, so the menu was painted and then cut
- * off at the card's edge: a sliver of a white sheet and no way to reach
- * anything in it.
+ * Three rounds landed here and the last one deletes the other two. They were
+ * `absolute right-0 z-50` inside a card carrying overflow-hidden, so they were
+ * painted and then clipped away: measured in Chromium at 430 and 1024, all
+ * four items unreachable on the first card, and on the last card the menu sat
+ * at top -400, entirely off screen. Then they were portalled to the body and
+ * placed from the button's rect, which worked and cost a scrim, a measured
+ * position, a flip, a scroll listener and a tab-bar floor.
  *
- * Measured in Chromium against the code as it was, at 430 and 1024: all four
- * items unreachable on the first card, and on the last card the menu sat at
- * top -400, entirely off the screen. After the portal, all four reachable at
- * both widths on both the first and last card.
+ * All of that machinery existed to hold a floating layer in the right place.
+ * The rows are part of the card now, so there is no layer: nothing to
+ * position, nothing to dismiss, nothing to re-measure on scroll, and nothing
+ * an ancestor can clip, because no positioned element is left to clip.
  *
- * The overflow-hidden is NOT the thing to remove. It is the backstop against a
- * single unbroken word spilling out of the card, which is what the whole of
- * cardOverflow.test.mjs exists for.
+ * These assertions are the ones that keep it that way. Each of the three
+ * previous designs fails at least one.
  */
 ok(
-  'the overflow menu leaves the card rather than being clipped by it',
-  /createPortal\(/.test(gcard) && /document\.body,\s*\n\s*\)\}/.test(gcard),
-  'the card has overflow-hidden and an absolute child cannot escape a clipping ancestor',
+  'the actions are rendered inside the card, not into the body',
+  !/createPortal\(/.test(gcard) && !/document\.body/.test(gcard),
+  'a portal is the design this replaced; it needed five other things to hold it up',
 )
 ok(
-  'and it is placed from a measured rect, since it can no longer use right-0',
-  /getBoundingClientRect\(\)/.test(gcard) && /position: 'fixed'/.test(gcard),
+  'and are not positioned at all, so overflow-hidden cannot reach them',
+  !/position: 'fixed'/.test(gcard) && !/data-hook="goal-menu-items"[\s\S]{0,300}absolute/.test(gcard),
+  'the clipping bug and the off-screen bug were both position bugs',
 )
 ok(
-  'the bottom bar is the floor, not the viewport edge',
-  /querySelector\('\[data-hook="tab-bar"\]'\)/.test(gcard) &&
-    /data-hook="tab-bar"/.test(shell),
-  'measured at 41px of overlap when this used innerHeight: Supprimer sat on the navigation',
+  'no scrim, because there is no layer to dismiss',
+  !/fixed inset-0/.test(gcard),
 )
 ok(
-  'it flips above the button when there is no room below',
-  /flip: true/.test(gcard) && /translateY\(-100%\)/.test(gcard),
-  'a menu opening off the bottom of the screen is the same bug from the other side',
+  'nothing re-measures on scroll',
+  !/addEventListener\('scroll'/.test(gcard) && !/getBoundingClientRect\(\)[\s\S]{0,200}floor/.test(gcard),
+  'the rows move with the card because they are in it',
 )
 ok(
-  'and scrolling closes it rather than leaving it behind',
-  /addEventListener\('scroll', shut, true\)/.test(gcard),
-  'a fixed menu measured once detaches from its button the moment the page moves',
+  'the control sits at the top of the card',
+  /data-hook="goal-menu"[\s\S]{0,400}absolute right-3 top-3/.test(gcard),
+  'asked for: the dots at the top rather than under everything',
+)
+ok(
+  'and is a sibling of the header rather than nested in it',
+  /data-hook="goal-menu"[\s\S]{0,600}<\/button>\s*\n\s*\)\}/.test(gcard),
+  'the header is a real button, so a control inside it would be a button in a button',
+)
+ok(
+  'the header leaves room for it',
+  /showControls && !finished \? 'pr-10' : ''/.test(gcard),
+  'without it a long title runs under a control it cannot see',
+)
+ok(
+  'the expanded rows are tied to the control for a screen reader',
+  /aria-expanded=\{menu\}/.test(gcard) &&
+    /aria-controls=\{`goal-actions-\$\{goal\.id\}`\}/.test(gcard) &&
+    /id=\{`goal-actions-\$\{goal\.id\}`\}/.test(gcard),
+  'aria-haspopup="menu" described a popup, and there is no popup any more',
 )
 ok(
   'and delete is separated from the three that can be undone',
