@@ -21,6 +21,7 @@ import {
   sameMonth,
 } from '../lib/calendar'
 import { MoodBadges } from './MoodBoard'
+import CycleHeadsUp from './CycleHeadsUp'
 import DayRecap from './DayRecap'
 
 /**
@@ -383,6 +384,12 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
   const [events, setEvents] = useState([])
   const [dueGoals, setDueGoals] = useState([])
   const [cycleStarts, setCycleStarts] = useState([])
+  /* The heads-up under the strip is gated on the reminder switch the person
+     already owns, rather than on a new always-on surface. Defaults match the
+     column defaults so somebody who has never opened the drawer is not treated
+     as having opted out. */
+  const [remind, setRemind] = useState(true)
+  const [remindDays, setRemindDays] = useState(2)
   const [statedCycle, setStatedCycle] = useState(null)
 
   /* Which select shape this database can answer. A ref rather than state: it
@@ -540,11 +547,13 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
       try {
         const [{ data: logs }, { data: pref }] = await Promise.all([
           supabase.from('cycle_log').select('started_on').order('started_on', { ascending: true }),
-          supabase.from('notification_preference').select('stated_cycle').maybeSingle(),
+          supabase.from('notification_preference').select('stated_cycle, cycle_remind, cycle_remind_days').maybeSingle(),
         ])
         if (!dead) {
           setCycleStarts(logs ?? [])
           setStatedCycle(pref?.stated_cycle ?? null)
+          setRemind(pref?.cycle_remind ?? true)
+          setRemindDays(pref?.cycle_remind_days ?? 2)
         }
       } catch {
         /* Not switched on, or not migrated. The overlay simply is not there. */
@@ -989,6 +998,7 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
                  there is no cell rectangle to use, and the button's own is
                  the honest origin: the card comes from what you touched. */
               onClick={(e) => openDay(selected, e.currentTarget)}
+              data-hook="recap-open"
               className="goal-action press shrink-0"
             >
               {t('recap.open')}
@@ -1137,6 +1147,13 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
         )}
       </div>
 
+      <CycleHeadsUp
+        starts={cycleStarts}
+        prediction={prediction}
+        remind={remind}
+        days={remindDays}
+      />
+
       <DayRecap
         open={recap}
         origin={origin}
@@ -1146,6 +1163,12 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
         goals={live}
         outcomes={outcomes}
         entries={entries}
+        /* The two the strip already had and was not handing on. It reads
+           calendar_event for the dots and computes the phase for the marks, so
+           the recap was the only thing on the dashboard that did not know what
+           was on the day it was describing. */
+        agenda={agenda.get(selected) ?? []}
+        cyclePhase={phaseOn(selectedDate, cycleStarts, prediction)}
         currency={currency}
         onClose={() => setRecap(false)}
       />

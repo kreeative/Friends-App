@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { localeTag, useT } from '../lib/i18n'
 import { money } from '../lib/money'
 import { dragOffset, flipTransform, rectOf, shouldDismiss } from '../lib/gesture'
+import { clockOf } from '../lib/agenda'
 import { MoodBadges } from './MoodBoard'
 
 /**
@@ -92,6 +93,19 @@ const stillness = () => {
 }
 
 /** A titled block, or nothing at all when there is nothing to put in it. */
+/* The dot beside an event, in the colour that event paints in on the grid.
+   Whole class strings, because Tailwind scans source text. Kept here rather
+   than imported from Calendar.jsx: that table is the chip, with a wash, a ring
+   and a text colour, and this is a 10px dot that wants the colour at full
+   strength. Sharing them would mean one of the two carrying declarations it
+   does not use. */
+const RECAP_DOT = {
+  'cat-1': 'bg-cat-1', 'cat-2': 'bg-cat-2', 'cat-3': 'bg-cat-3',
+  'cat-4': 'bg-cat-4', 'cat-5': 'bg-cat-5', 'cat-6': 'bg-cat-6',
+  accent: 'bg-accent', green: 'bg-green', ink: 'bg-ink',
+  field: 'bg-field-deep', negative: 'bg-negative', quiet: 'bg-ink/30',
+}
+
 function Part({ title, children }) {
   if (!children) return null
   return (
@@ -115,6 +129,25 @@ export default function DayRecap({
   goals = [],
   outcomes = new Map(),
   entries = [],
+  /**
+   * What was actually ON that day, which this panel did not know about.
+   *
+   * WeekStrip has been reading calendar_event and computing the phase since
+   * the calendar shipped: it needs both for the dots along the strip. It drew
+   * them and then did not pass either one down here, so the recap listed the
+   * mood, the goals, the money and the proof, and a day with three classes and
+   * an exam on it opened as "rien ce jour-la". That is what "les nouvelles
+   * mises a jour ne s'affichent pas dans le recap" is.
+   *
+   * Both are read-only here. Nothing in this panel writes an event or a cycle
+   * row, and it is the one place in the app where a day's whole contents sit
+   * together, so it is worth being explicit that it is a view.
+   */
+  agenda = [],
+  /* cyclePhase and not `phase`: this component already has a `phase` for the
+     morph state machine, and a prop by the same name is a redeclaration in the
+     same scope, which fails the build rather than doing something subtle. */
+  cyclePhase = null,
   currency = 'CAD',
   onClose,
 }) {
@@ -249,7 +282,15 @@ export default function DayRecap({
   const yearLabel =
     date.getFullYear() === new Date().getFullYear() ? null : String(date.getFullYear())
 
-  const empty = moods.length === 0 && goals.length === 0 && entries.length === 0
+  /* A day with a class on it is not an empty day. It read as one, because
+     this line was the whole definition of "nothing happened" and the calendar
+     was not in it. */
+  const empty =
+    moods.length === 0 &&
+    goals.length === 0 &&
+    entries.length === 0 &&
+    agenda.length === 0 &&
+    !cyclePhase
 
   /* --- swipe down to dismiss ------------------------------------------- */
   /**
@@ -391,9 +432,70 @@ export default function DayRecap({
               </p>
             ) : (
               <>
-                {/* The mood first, because it is the frame the rest is read
-                    in. Asking how somebody was before what they got done is
-                    the order this whole product argues for. */}
+                {/**
+                 * What was booked, above what was felt and what was done.
+                 *
+                 * It is the only part of the day that was decided in advance,
+                 * so it is the context the other three are read against: four
+                 * hours of lectures and an exam is most of the answer to why a
+                 * goal did not move, and the recap could not say it.
+                 *
+                 * Times, room and colour, and nothing to press. The calendar
+                 * is where an event is edited and a recap that also edited
+                 * would be a second place for one thing to be wrong.
+                 */}
+                <Part title={t('recap.agenda')}>
+                  {agenda.length ? (
+                    <ul className="lg divide-y divide-hairline px-5" data-hook="recap-agenda">
+                      {agenda.map((e) => (
+                        <li key={e.occurrenceId ?? e.id} className="flex items-start gap-3 py-3">
+                          <span
+                            aria-hidden="true"
+                            className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-pill ${
+                              RECAP_DOT[e.colour] ?? RECAP_DOT.accent
+                            }`}
+                          />
+                          <span className="min-w-0 flex-1">
+                            <span className="text-safe block text-body text-ink">{e.title}</span>
+                            <span className="block text-small text-muted">
+                              {e.start_min != null
+                                ? `${clockOf(e.start_min)} - ${clockOf(e.end_min)}`
+                                : t('cal.all_day')}
+                              {e.location ? ` · ${e.location}` : ''}
+                            </span>
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </Part>
+
+                {/**
+                 * The cycle, as one line and no numbers.
+                 *
+                 * Same rule the calendar overlay follows: this can be open on
+                 * a table in a lecture theatre, so it is the phase and the
+                 * care note, not a date, a count or a prediction. Migration 51
+                 * is explicit that none of this is ever shown to a group, and
+                 * this panel is only ever the reader's own day.
+                 */}
+                <Part title={cyclePhase ? t('recap.cycle') : null}>
+                  {cyclePhase ? (
+                    <p
+                      className="lg text-safe px-5 py-4 text-body text-ink"
+                      data-hook="recap-cycle"
+                      data-phase={cyclePhase}
+                    >
+                      <span className="font-semibold">{t(`cycle.phase_${cyclePhase}`)}</span>
+                      {'. '}
+                      <span className="text-muted">{t(`cycle.care_${cyclePhase}`)}</span>
+                    </p>
+                  ) : null}
+                </Part>
+
+                {/* The mood, because it is the frame the rest is read in.
+                    Asking how somebody was before what they got done is the
+                    order this whole product argues for. */}
                 <Part title={t('recap.mood')}>
                   {moods.length > 0 ? (
                     <p className="flex items-center gap-3 text-body text-ink">

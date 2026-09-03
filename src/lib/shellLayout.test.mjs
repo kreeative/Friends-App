@@ -616,13 +616,13 @@ ok(
 
 ok(
   'the rail rows are spaced rather than stacked',
-  /flex min-h-0 flex-1 flex-col gap-1\.5 overflow-y-auto/.test(shell),
+  /flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto/.test(shell),
   'at gap-0.5 the active pill touched its neighbours and read as a band',
 )
 ok(
   'and the lockup is separated from the destinations',
-  /LockupInline[\s\S]{0,220}mb-3 mt-2 h-px shrink-0 bg-hairline/.test(shell),
-  'at mb-1 the logo read as the first item of the list rather than its owner',
+  /LockupInline[\s\S]{0,220}mb-6 mt-3 h-px shrink-0 bg-hairline/.test(shell),
+  'a rule plus 24px is what "leave the logo alone at the top" asked for',
 )
 
 /* --- an exam does not look like a class --------------------------------- */
@@ -749,6 +749,102 @@ ok(
   'it fades out rather than tinting the whole drawer',
   /\.cycle-warm::after \{[\s\S]{0,400}height: 12rem/.test(css),
   'a wash behind the history inputs is the pink-fields problem again',
+)
+
+/* --- one pink, and the artwork is part of the palette now --------------- */
+
+/**
+ * The complaint was inconsistent pinks and there were three: --c-accent at
+ * #E60070, --c-mark and --c-cat-1 at #FF007A, and #DE3578 baked inside every
+ * logo PNG. The third is the one nobody could have found by reading the CSS,
+ * which is why the generator exists and why this asserts the generator rather
+ * than the pixels.
+ */
+const POP = '214 0 107'
+ok(
+  'the accent, the mark and the head of the ramp are one value',
+  (css.match(new RegExp(POP, 'g')) ?? []).length >= 5,
+  'sun accent, sun mark, sun cat-1, public accent, public mark',
+)
+ok(
+  'and the old pinks are gone from the sun palette',
+  !/--c-accent: 230 0 112|--c-mark: 255 0 122/.test(css),
+  '#E60070 and #FF007A were the two the app was mixing',
+)
+const gen = read('scripts/brand-icons.py')
+ok('the artwork is generated rather than hand-edited', /POP = \(214, 0, 107\)/.test(gen))
+ok(
+  'and the generator says why #EC4899 was refused',
+  /3\.53/.test(gen) || /3\.53/.test(css),
+  'white on it is under 4.5, which is the whole reason the accent moved last time',
+)
+ok(
+  'the small icons use the monogram, not the four-line wordmark',
+  /tile\(mono, 32/.test(gen) && /tile\(mono, 64/.test(gen),
+  'at 32px the words were a clipped smudge',
+)
+ok(
+  'the apple icon is not pre-rounded',
+  /tile\(word, 180, POP\)\.convert\('RGB'\)/.test(gen),
+  'iOS masks it itself, and transparent corners inside that mask render black',
+)
+ok(
+  'the icon URLs were bumped so Safari notices',
+  /\?v=3/.test(read('index.html')) && /\?v=3/.test(read('public/manifest.webmanifest')),
+  'a favicon is the most aggressively cached asset a browser has',
+)
+
+/* --- the recap knows what was on the day -------------------------------- */
+
+const recap = read('src/components/DayRecap.jsx')
+const strip = read('src/components/WeekStrip.jsx')
+ok(
+  'the strip passes the day it already loaded',
+  /agenda=\{agenda\.get\(selected\) \?\? \[\]\}/.test(strip),
+  'it read calendar_event for the dots and then did not hand it down',
+)
+ok('and the phase with it', /cyclePhase=\{phaseOn\(selectedDate, cycleStarts, prediction\)\}/.test(strip))
+ok(
+  'the prop is not called phase',
+  !/^\s+phase = null,$/m.test(recap),
+  'the component already has a phase for the morph state, and two would not build',
+)
+ok('the recap draws the agenda', /data-hook="recap-agenda"/.test(recap))
+ok('and the cycle line', /data-hook="recap-cycle"/.test(recap))
+ok(
+  'a day with a class on it is not an empty day any more',
+  /agenda\.length === 0 &&\s*\n\s*!cyclePhase/.test(recap),
+  'the emptiness test did not mention the calendar, so a full day opened as "rien"',
+)
+
+/* --- the heads-up under the home calendar ------------------------------- */
+
+const heads = read('src/components/CycleHeadsUp.jsx')
+ok('there is a heads-up', /data-hook="cycle-headsup"/.test(heads))
+ok(
+  'it is gated on the reminder switch that already exists',
+  /if \(!remind \|\| hidden/.test(heads),
+  'no new consent was invented for a card on a screen people open in public',
+)
+ok(
+  'and it reads without writing',
+  !/supabase/.test(heads),
+  'migration 51 exists to make a "who is having a rough week" signal impossible',
+)
+ok(
+  'the predicted phase is bounded by the reminder days',
+  /phase === 'predicted' && away > Math\.max\(1, days\)/.test(heads),
+  'that window widens as the recorded cycles disagree, up to nine days',
+)
+ok(
+  'dismissal is for the day rather than forever',
+  /localStorage\.setItem\(KEY, today\)/.test(heads),
+  'a card somebody can silence permanently is one they silence once by accident',
+)
+ok(
+  'it sits under the strip rather than somewhere else on the page',
+  /<CycleHeadsUp[\s\S]{0,200}<DayRecap/.test(strip),
+  '"juste en bas du calendrier dans la page d\'accueil"',
 )
 
 console.log(`\n  ${pass} passed, ${fail} failed\n`)
