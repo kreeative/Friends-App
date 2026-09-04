@@ -99,19 +99,56 @@ export async function serverPushOutcome() {
 
   /* Read in the order the chain breaks, so the answer names the FIRST broken
      link rather than the last symptom. */
-  if (res?.sent !== null && typeof res?.sent === 'object') return 'stale'
-  if (res?.ok !== true) {
-    if (res?.reason === 'signed_out') return 'signed_out'
-    if (res?.reason === 'not_configured') return 'not_configured'
-    return 'failed'
-  }
+  if (res?.sent !== null && typeof res?.sent === 'object') return { why: 'stale' }
+  if (res?.ok !== true) return refusal(res)
   /* The old function answers ok: true to anything, so a body with no
      self_test echoed back is a deployment that has never heard of it. */
-  if (res.self_test !== true) return 'stale'
-  if (res.push === false) return 'no_keys'
-  if (res.devices === 0) return 'no_device'
-  if (res.delivered === 0) return 'refused'
-  return 'ok'
+  if (res.self_test !== true) return { why: 'stale' }
+  if (res.push === false) return { why: 'no_keys' }
+  if (res.devices === 0) return { why: 'no_device' }
+  if (res.delivered === 0) return { why: 'refused' }
+  return { why: 'ok' }
+}
+
+/**
+ * Why the server would not answer, in the detail it already gave us.
+ *
+ * THIS IS THE PART THAT WAS WRONG.
+ *
+ * Every refusal used to collapse into one sentence, "the server did not
+ * answer, and did not say why". That was false: callNotify knows the HTTP
+ * status, or the exact error the fetch threw, and this function threw it away.
+ * A diagnostic whose answer is "something went wrong" is worse than no
+ * diagnostic, because it looks like an answer.
+ *
+ * The status codes are each a different job:
+ *
+ *   401  Supabase is verifying the JWT before the function ever runs. That is
+ *        the default when a function is deployed from the dashboard, and this
+ *        one has to be deployed with verify_jwt off because it reads and
+ *        checks the token itself.
+ *   404  there is no function called notify at that address
+ *   5xx  the function is deployed and it crashed. Its logs will say why
+ *
+ * Anything that throws rather than returning a status never reached the
+ * server at all: no CORS headers on the preflight, a blocked network, an
+ * address that does not resolve. `detail` carries the browser's own words for
+ * it, so a person can read them out rather than describe them.
+ */
+function refusal(res) {
+  const reason = String(res?.reason ?? '')
+  if (reason === 'signed_out') return { why: 'signed_out' }
+  if (reason === 'not_configured') return { why: 'not_configured' }
+
+  const code = Number(reason.match(/^http_(\d{3})$/)?.[1])
+  if (code === 401) return { why: 'http_401', detail: reason }
+  if (code === 403) return { why: 'http_403', detail: reason }
+  if (code === 404) return { why: 'http_404', detail: reason }
+  if (code >= 500) return { why: 'http_5xx', detail: reason }
+  if (Number.isFinite(code)) return { why: 'http_other', detail: reason }
+
+  /* Not a status at all: the request never got an answer to have a status. */
+  return { why: 'unreachable', detail: reason }
 }
 
 /** The one POST both of the above make. */

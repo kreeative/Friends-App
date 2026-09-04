@@ -894,6 +894,37 @@ const b64 = (b) => Buffer.from(b).toString('base64url')
     )
   }
 
+  /**
+   * A DIAGNOSTIC MUST NOT ANSWER "SOMETHING WENT WRONG".
+   *
+   * Every refusal collapsed into one sentence, "the server did not answer, and
+   * did not say why". That sentence was false. callNotify knows the HTTP
+   * status, or the exact error the fetch threw, and the outcome function threw
+   * it away. Reported from the field as the first thing the new button said.
+   */
+  {
+    const cli = readFileSync(join(here, 'notifications.js'), 'utf8')
+    ok('the status is read rather than discarded',
+       /http_\(\\d\{3\}\)/.test(cli) || /match\(\/\^http_/.test(cli),
+       'every refusal used to become the same sentence')
+    for (const w of ['http_401', 'http_403', 'http_404', 'http_5xx', 'http_other']) {
+      ok(`${w} is its own outcome`, new RegExp(`'${w}'`).test(cli))
+    }
+    ok('and a request that never arrived is not called a refusal',
+       /'unreachable'/.test(cli),
+       'no status means no answer, which is a different problem from a 4xx')
+    ok('the raw detail travels with it',
+       /detail: reason/.test(cli))
+    ok('and the card shows it verbatim, untranslated',
+       /data-hook="push-server-detail"/.test(
+         readFileSync(join(here, '..', 'components', 'PushToggle.jsx'), 'utf8')),
+       'so it can be read out to somebody who can act on it')
+    for (const w of ['http_401', 'http_403', 'http_404', 'http_5xx', 'http_other', 'unreachable']) {
+      const hits = i18nSrc.split(`'push.server_${w}'`).length - 1
+      ok(`push.server_${w} exists in both languages (${hits})`, hits === 2)
+    }
+  }
+
   for (const key of ['nudge.put_away_one', 'nudge.put_away_other', 'nudge.restore']) {
     const hits = i18nSrc.split(`'${key}'`).length - 1
     ok(`${key} exists in both languages (${hits})`, hits === 2)

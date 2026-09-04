@@ -369,6 +369,15 @@ const STRINGS = {
     'push.server_signed_out': 'This session is signed out, so the server would not answer.',
     'push.server_not_configured': 'This build has no Supabase address, so there is no server to ask.',
     'push.server_failed': 'The server did not answer, and did not say why.',
+    /* Each status is a different job. "Something went wrong" was the whole
+       answer here once, which is worse than no answer because it looks like
+       one: the status was known and thrown away. */
+    'push.server_http_401': 'Supabase refused the request before the function ran. That happens when the function is set to verify the token itself: redeploy notify with JWT verification turned off, since the function checks the token in its own code.',
+    'push.server_http_403': 'Supabase refused the request. The notify function is there but this account is not allowed to call it.',
+    'push.server_http_404': 'There is no function called notify at that address. Check the name in Supabase, Edge Functions.',
+    'push.server_http_5xx': 'The function is deployed and it crashed while running. Supabase, Edge Functions, notify, Logs will say on which line.',
+    'push.server_http_other': 'Supabase answered with an error. The code is below.',
+    'push.server_unreachable': 'The request never reached the server at all. Usually that means the function is not answering the browser\u2019s preflight, or this device has no connection. The browser\u2019s own words are below.',
     /* NOT "Rich & Friends". iOS prints "from Rich & Friends" under the title
        itself, so naming the app here rendered as "Rich & Friends / from Rich &
        Friends / ...". The title is for what the notification is about; the
@@ -1816,6 +1825,12 @@ const STRINGS = {
     'push.server_signed_out': 'Cette session est déconnectée, le serveur n’a pas répondu.',
     'push.server_not_configured': 'Cette version n’a pas d’adresse Supabase, il n’y a pas de serveur à interroger.',
     'push.server_failed': 'Le serveur n’a pas répondu, et n’a pas dit pourquoi.',
+    'push.server_http_401': 'Supabase a refusé la requête avant même que la fonction tourne. C’est ce qui arrive quand la fonction est réglée pour vérifier le jeton elle-même : redéploie notify avec la vérification JWT désactivée, la fonction vérifie le jeton dans son propre code.',
+    'push.server_http_403': 'Supabase a refusé la requête. La fonction notify existe mais ce compte n’a pas le droit de l’appeler.',
+    'push.server_http_404': 'Il n’y a aucune fonction appelée notify à cette adresse. Vérifie le nom dans Supabase, Edge Functions.',
+    'push.server_http_5xx': 'La fonction est déployée et elle a planté en s’exécutant. Supabase, Edge Functions, notify, Logs dira à quelle ligne.',
+    'push.server_http_other': 'Supabase a répondu par une erreur. Le code est en dessous.',
+    'push.server_unreachable': 'La requête n’a jamais atteint le serveur. En général la fonction ne répond pas au préflight du navigateur, ou cet appareil n’a pas de connexion. Les mots exacts du navigateur sont en dessous.',
     /* Pas « Rich & Friends » : iOS affiche déjà « from Rich & Friends » sous
        le titre, donc mettre le nom de l'app ici donnait le nom deux fois. */
     'push.test_title': 'Notification test',
