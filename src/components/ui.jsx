@@ -39,7 +39,10 @@ export function TopBar({ title, right, sub, hint, back, backLabel }) {
   // pt-10 rather than pt-14: there is a sticky nav above this now, and the
   // heading was clearing chrome that no longer needed clearing.
   return (
-    <header className={`pb-2 ${back ? 'pt-6' : 'pt-10'}`}>
+    /* `relative` so the hint panel has something page-width to anchor to.
+       See the note in Hint: anchored to the marker instead, it ran off the
+       right edge of a phone and cut its own sentence in half. */
+    <header className={`relative pb-2 ${back ? 'pt-6' : 'pt-10'}`}>
       {back && (
         <button
           type="button"
@@ -94,9 +97,32 @@ export function TopBar({ title, right, sub, hint, back, backLabel }) {
  * be written or can be got wrong. The marker is removed because the heading's
  * own glyph is the affordance.
  */
+/**
+ * WHY THE PANEL IS ANCHORED TO THE HEADER AND NOT TO THE QUESTION MARK.
+ *
+ * It used to be `absolute left-0` on the marker itself, capped at
+ * `min(20rem, calc(100vw - 3rem))`. That cap looks like it prevents overflow
+ * and does not: `100vw - 3rem` is the width available to something starting at
+ * the page margin, and this starts wherever the marker sits. Beside a heading
+ * the marker is a long way in, so the panel began there, ran 20rem to the
+ * right, and went off the screen. Reported from a phone with the sentence cut
+ * mid-word: "Nobody else can see the".
+ *
+ * Anchoring to the marker cannot be made safe by choosing a better side
+ * either. `right-0` fixes a marker near the right edge and breaks one near the
+ * left, and which of those it is depends on the length of a translated
+ * heading.
+ *
+ * So the panel is positioned against the header, which is exactly as wide as
+ * the content column: left-0 right-0 means it can never leave the page in
+ * either direction, in either language, at any width. It still floats rather
+ * than pushing the page down, which was the point of the original.
+ */
 function Hint({ text }) {
   return (
-    <details className="group relative ml-2 inline-block align-middle" data-hook="hint">
+    /* Not `relative`. The panel deliberately anchors to the header above,
+       and a positioned ancestor here would capture it again. */
+    <details className="group ml-2 inline-block align-middle" data-hook="hint">
       <summary
         className="press inline-flex h-6 w-6 cursor-pointer list-none items-center justify-center rounded-pill
                    bg-ink/[0.07] text-label font-bold text-muted marker:hidden hover:bg-ink/[0.12] hover:text-ink
@@ -106,11 +132,12 @@ function Hint({ text }) {
         ?
       </summary>
       {/* Positioned, so opening it does not push the page down and move the
-          thing somebody was about to tap. Left-aligned to the marker and
-          capped, because a tooltip as wide as the viewport is a paragraph. */}
+          thing somebody was about to tap. left-0 right-0 against the header,
+          so it spans the content column and cannot overflow; max-w-sm so it
+          does not become a full-bleed paragraph on a desktop. */}
       <span
         role="note"
-        className="lg absolute left-0 top-8 z-30 block w-[min(20rem,calc(100vw-3rem))] p-4 text-left text-small font-normal leading-snug text-muted"
+        className="lg absolute left-0 right-0 top-full z-30 mt-2 block max-w-sm p-4 text-left text-small font-normal leading-snug text-muted"
       >
         {text}
       </span>
