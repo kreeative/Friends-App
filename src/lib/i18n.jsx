@@ -355,6 +355,20 @@ const STRINGS = {
     'push.test': 'Show a test notification',
     'push.testing': 'Sending…',
     'push.test_sent': 'Sent. If nothing appeared, notifications are switched off for this app in your device settings.',
+    /* The server round trip. Separate from push.test above, which never leaves
+       the browser: these two questions look the same to a person and have
+       completely different answers, so each gets its own button and its own
+       result line. */
+    'push.server_test': 'Send one from the server',
+    'push.server_test_note': 'The button above only asks this device to draw a notification. This one asks the server to send you a real one, which is the part that was impossible to check alone.',
+    'push.server_ok': 'It arrived. The server, the keys and this device all work.',
+    'push.server_stale': 'The notification server is running an old version, so it did not even try. Paste supabase/functions/notify/bundled.ts into Supabase, Edge Functions, notify, and deploy.',
+    'push.server_no_keys': 'The server has no push keys, so it cannot sign a notification. Settings has the page that makes a pair.',
+    'push.server_no_device': 'The server has nothing to send to for this account. Turn the switch above off and on again, and on an iPhone make sure you opened the app from the home screen icon rather than a Safari tab.',
+    'push.server_refused': 'The server sent it and the push service refused it. That usually means this subscription has expired: turn the switch above off and on again.',
+    'push.server_signed_out': 'This session is signed out, so the server would not answer.',
+    'push.server_not_configured': 'This build has no Supabase address, so there is no server to ask.',
+    'push.server_failed': 'The server did not answer, and did not say why.',
     /* NOT "Rich & Friends". iOS prints "from Rich & Friends" under the title
        itself, so naming the app here rendered as "Rich & Friends / from Rich &
        Friends / ...". The title is for what the notification is about; the
@@ -1792,6 +1806,16 @@ const STRINGS = {
     'push.test': 'Afficher une notification test',
     'push.testing': 'Envoi…',
     'push.test_sent': 'Envoyée. Si rien n’est apparu, les notifications sont coupées pour cette app dans les réglages de ton appareil.',
+    'push.server_test': 'En envoyer une depuis le serveur',
+    'push.server_test_note': 'Le bouton ci-dessus demande seulement à cet appareil d’afficher une notification. Celui-ci demande au serveur de t’en envoyer une vraie, la partie qu’il était impossible de vérifier seule.',
+    'push.server_ok': 'Elle est arrivée. Le serveur, les clés et cet appareil fonctionnent.',
+    'push.server_stale': 'Le serveur de notifications tourne sur une ancienne version, il n’a même pas essayé. Colle supabase/functions/notify/bundled.ts dans Supabase, Edge Functions, notify, puis déploie.',
+    'push.server_no_keys': 'Le serveur n’a pas de clés push, il ne peut pas signer de notification. Réglages contient la page qui en crée une paire.',
+    'push.server_no_device': 'Le serveur n’a rien à qui envoyer pour ce compte. Coupe puis rallume l’interrupteur ci-dessus, et sur iPhone vérifie que tu as ouvert l’application depuis l’icône de l’écran d’accueil et pas depuis un onglet Safari.',
+    'push.server_refused': 'Le serveur l’a envoyée et le service de push l’a refusée. En général cet abonnement a expiré : coupe puis rallume l’interrupteur ci-dessus.',
+    'push.server_signed_out': 'Cette session est déconnectée, le serveur n’a pas répondu.',
+    'push.server_not_configured': 'Cette version n’a pas d’adresse Supabase, il n’y a pas de serveur à interroger.',
+    'push.server_failed': 'Le serveur n’a pas répondu, et n’a pas dit pourquoi.',
     /* Pas « Rich & Friends » : iOS affiche déjà « from Rich & Friends » sous
        le titre, donc mettre le nom de l'app ici donnait le nom deux fois. */
     'push.test_title': 'Notification test',
