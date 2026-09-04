@@ -22,6 +22,7 @@
 import { SAVINGS_STUDY_STATS, SAVINGS_QUOTES, STUDIES, studyBySlug } from './studies.js'
 import { CREDITS, TESTERS } from './credits.js'
 import { RESPONDENTS, SURVEY, bySex, groupStats } from '../lib/peers.js'
+import { readFileSync } from 'node:fs'
 
 let pass = 0
 let fail = 0
@@ -397,6 +398,60 @@ for (const study of STUDIES) {
       hit ? `"${hit[1]}" is missing its accent` : '',
     )
   }
+}
+
+/**
+ * AUXILIARY PLUS PARTICIPLE, IN THE APP'S OWN COPY.
+ *
+ * "Rue Sato a ajoute un objectif commun" shipped and reached a screenshot.
+ *
+ * The word list above cannot catch it, and correctly refuses to: "il ajoute"
+ * is present tense and perfectly accented as it stands, so "ajoute" on its own
+ * is not evidence of anything. The three words already removed from that list
+ * came out for exactly this reason.
+ *
+ * What IS unambiguous is the construction. After the auxiliary "a", a verb of
+ * the first group is a past participle and always carries the accent: "a
+ * ajouté", never "a ajoute". So this checks the pair rather than the word,
+ * which is narrow enough to be right every time.
+ *
+ * Run over the French half of i18n rather than the studies, because that is
+ * where the app's own sentences live and where this one was hiding.
+ */
+{
+  const i18n = readFileSync(new URL('../lib/i18n.jsx', import.meta.url), 'utf8')
+
+  /* The `fr` block only. "a complete" and "a valide" are ordinary English in
+     the `en` block and would be reported as broken French. */
+  const frStart = i18n.indexOf("  fr: {")
+  ok('the French block was found', frStart > 0)
+  const fr = i18n.slice(frStart)
+
+  const PARTICIPLES = [
+    'ajoute', 'cree', 'termine', 'valide', 'complete', 'partage', 'envoye',
+    'paye', 'active', 'desactive', 'ferme', 'commence', 'gagne', 'change',
+    'invite', 'quitte', 'supprime', 'enregistre',
+  ]
+  /**
+   * A Unicode lookbehind, not \b.
+   *
+   * \b uses ASCII word characters, so in "Ça change" it happily finds a
+   * boundary between "Ç" and "a" and reports a perfectly correct sentence as a
+   * missing accent. It did, twice, on the first run: "Ça change seulement
+   * l'étiquette" and "ça change ce qu'une semaine permet" are both right.
+   *
+   * (?<!\p{L}) with the u flag asks the real question, which is whether the
+   * "a" is a word of its own rather than the tail of another one. A test that
+   * fails on correct prose teaches people to edit good writing until the
+   * checker stops complaining, which is worse than having no checker.
+   */
+  const re = new RegExp(`(?<!\\p{L})a (${PARTICIPLES.join('|')})\\b`, 'gu')
+  const hits = [...fr.matchAll(re)].map((m) => m[0])
+  ok(
+    `no French string says "a <participle>" without its accent (${hits.length})`,
+    hits.length === 0,
+    hits.length ? `found: ${[...new Set(hits)].join(', ')}` : '',
+  )
 }
 
 console.log(`\nstudies\n\n  ${pass} passed, ${fail} failed\n`)
