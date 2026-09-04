@@ -1547,5 +1547,103 @@ ok(
   'a person with no group could not reach it there',
 )
 
+/**
+ * THE CHAPTER DRAWER OPENED ONTO NOTHING.
+ *
+ * Reported from a real iPad: the reader shows chapter one, "Chapitres" opens a
+ * sheet, and the sheet contains a title, a Fermer button and no chapters.
+ *
+ * The cause was an assignment fifteen lines above the guard that was meant to
+ * prevent it. `setChapters(chs)` ran unconditionally, and only afterwards did
+ * the code check whether `chs` was empty and decide to leave the bundled
+ * chapter alone. By then the bundled table of contents was gone. It also took
+ * the previous and next buttons with it, since those are derived from the same
+ * list, so the book became one unnavigable page.
+ *
+ * The state that produces it is a catalogue with a books row and no chapter
+ * rows, which is what production looks like right now.
+ *
+ * Reproduced in Chromium against that exact fixture before the fix (drawer
+ * empty), confirmed after (nine chapters), and confirmed again by reverting
+ * only this line with the rest of the change in place, which put it back to
+ * empty. The one line is what moved it.
+ */
+const reader = read('src/pages/Reader.jsx')
+ok(
+  'an empty chapter list from the database cannot replace the seeded one',
+  /if \(chs\.length > 0\) setChapters\(chs\)/.test(reader),
+  'seeding exists so the book opens when the catalogue is not loaded',
+)
+ok(
+  'the chapter drawer is reachable by a data hook',
+  /data-hook="chapter-list"/.test(reader),
+  'a probe keyed to the `list` class found zero rows and blamed the app',
+)
+
+/**
+ * NEVER ASK SOMEBODY TO BUY A BOOK THEY ALREADY OWN.
+ *
+ * A chapter comes back locked for two unrelated reasons: the paywall doing its
+ * job, or the entitlement existing while the text does not. The card said the
+ * same thing for both, which put a payment button in front of the person who
+ * had just recovered their purchase. `owned` is read first so that case gets
+ * its own message and no button.
+ */
+ok(
+  'the locked card checks ownership before offering to sell',
+  /book\.owned \? t\('reader\.owned_missing_title'\)/.test(reader) &&
+    /\{book\.owned \? null : book\.local \?/.test(reader),
+  'the alternative is taking money twice for one book',
+)
+
+/**
+ * A PAID BOOK ARRIVES WITHOUT ANYBODY READING A DIAGNOSTIC.
+ *
+ * Recovery started as a button on the settings screen underneath an
+ * explanation of webhooks. It worked, and it asked the wrong thing of somebody
+ * who had just paid: read a paragraph, decide it applies to you, find
+ * Settings, find Purchases, press a button.
+ *
+ * The library now calls the same recovery itself, once, about six seconds into
+ * the wait, which is long after a working webhook would have delivered. Once
+ * rather than per tick: a Stripe call on a two-second timer for thirty seconds
+ * is a lot of requests, and if the first found no paid session the fifteenth
+ * will not either.
+ */
+ok(
+  'the library recovers a missing purchase on its own',
+  /recoverPurchases/.test(lib) && /tries === 3/.test(lib),
+  'a person who paid should not have to find a settings page',
+)
+ok(
+  'recovery lives in one place, used by both callers',
+  /export async function recoverPurchases/.test(read('src/lib/library.js')),
+  'two copies of a granting call is two things to get wrong',
+)
+
+/**
+ * THE READING SURFACE IS WHITE PAPER AND BLACK TYPE.
+ *
+ * Asked for directly. The app ground is a blush in sun and an ice blue in sea,
+ * which works everywhere that is cards and chips and a screenful at most; a
+ * book is forty minutes of continuous prose, and a tint that is pleasant for
+ * ten seconds is something you read THROUGH for forty minutes. The body also
+ * ran at text-ink/85, a translucency invented to soften a wall of type, which
+ * over a tint composites to neither the ink nor the paper.
+ *
+ * Measured from painted pixels in both themes, by screenshotting the prose,
+ * hiding it, screenshotting again and diffing: #111111 on #FFFFFF, 18.88:1.
+ */
+ok(
+  'the reader declares its own surface',
+  /data-surface="reading"/.test(reader) && /\[data-surface='reading'\]/.test(css),
+  'custom properties inherit, so the subtree wins over either theme',
+)
+ok(
+  'and the prose is full ink, not a translucency',
+  !/text-ink\/85/.test(code('src/pages/Reader.jsx')),
+  'ink at 85% over a tinted ground is the grey this change removes',
+)
+
 console.log(`\n  ${pass} passed, ${fail} failed\n`)
 process.exit(fail ? 1 : 0)

@@ -1337,6 +1337,11 @@ const STRINGS = {
       'Chapter 1 is free to read. The rest opens once you have the book.',
     'reader.local_only':
       'The rest of this book is not connected yet. The free chapter is included in the app; the paid chapters arrive once the catalogue is set up in Supabase.',
+    /* Shown instead of the buy button when the entitlement is there and the
+       text is not. Never ask somebody to pay twice for the same book. */
+    'reader.owned_missing_title': 'You own this book',
+    'reader.owned_missing':
+      'This chapter has not been loaded onto this deployment yet, so there is nothing to open. Your purchase is recorded and nothing is owed. The chapter appears here as soon as the manuscript is uploaded.',
     'reader.unlock': 'Get the book',
     'reader.previous': 'Previous',
     'reader.next': 'Next',
@@ -2657,6 +2662,11 @@ const STRINGS = {
       'Le chapitre 1 est en accès libre. La suite s’ouvre une fois le livre acquis.',
     'reader.local_only':
       'La suite de ce livre n’est pas encore connectée. Le chapitre gratuit est inclus dans l’app ; les chapitres payants arrivent une fois le catalogue installé dans Supabase.',
+    /* Affiché à la place du bouton d'achat quand l'accès existe et le texte
+       non. On ne redemande jamais de payer un livre déjà payé. */
+    'reader.owned_missing_title': 'Ce livre est à toi',
+    'reader.owned_missing':
+      'Ce chapitre n’a pas encore été chargé sur ce déploiement, il n’y a donc rien à ouvrir. Ton achat est bien enregistré et tu ne dois rien. Le chapitre apparaîtra ici dès que le manuscrit sera en ligne.',
     'reader.unlock': 'Obtenir le livre',
     'reader.previous': 'Précédent',
     'reader.next': 'Suivant',

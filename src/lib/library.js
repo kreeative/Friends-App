@@ -312,3 +312,49 @@ export async function startCheckout(ref) {
   window.location.href = payload.url
   return {}
 }
+
+/**
+ * Ask Stripe what this person has paid for, and grant whatever is missing.
+ *
+ * WHY THIS IS CALLED WITHOUT ANYBODY PRESSING ANYTHING.
+ *
+ * It started as a button on the settings screen, underneath a diagnostic that
+ * explained the webhook had never been registered. That worked, and it asked
+ * the wrong thing of a customer: read a paragraph about webhooks, understand
+ * that it applies to you, find Settings, find Purchases, press a button. A
+ * person who has paid for a book should get the book.
+ *
+ * So the library calls this on its own, a few seconds after a payment comes
+ * back without a delivery. Safe to call at any time and safe to call twice:
+ * the endpoint grants only to the bearer token, only for sessions marked paid,
+ * and upserts with ignoreDuplicates, so a second call against a book somebody
+ * already has writes nothing.
+ *
+ * Returns { granted: [...], already_had, scanned } or { error }. Never throws:
+ * every caller is somewhere a thrown error would replace a working page with a
+ * blank one, and a recovery that fails should leave the ordinary path alone.
+ */
+export async function recoverPurchases() {
+  try {
+    const { data } = await supabase.auth.getSession()
+    const token = data?.session?.access_token
+    /* No session, nothing to recover for. The endpoint would answer 401 and
+       the caller would report a failure that is really "not signed in". */
+    if (!token) return { error: 'not_signed_in' }
+
+    const res = await fetch('/api/stripe-recover', {
+      method: 'POST',
+      headers: { authorization: `Bearer ${token}` },
+    })
+    /* Same trap as /api/checkout: off the deployed site this path falls
+       through to index.html and returns a 200 full of HTML. */
+    if (!(res.headers.get('content-type') ?? '').includes('json')) {
+      return { error: `not_an_api_${res.status}` }
+    }
+    const payload = await res.json().catch(() => ({}))
+    if (!res.ok) return { error: payload.error || `recover_failed_${res.status}` }
+    return payload
+  } catch (e) {
+    return { error: String(e?.message ?? e) }
+  }
+}

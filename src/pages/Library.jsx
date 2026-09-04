@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useGroup } from '../context/GroupContext'
-import { listBooks, shareToGroup, startCheckout } from '../lib/library'
+import { listBooks, recoverPurchases, shareToGroup, startCheckout } from '../lib/library'
 import { useT } from '../lib/i18n'
 import { money } from '../lib/money'
 import { Empty, Screen, Section, Sheet, TopBar } from '../components/ui'
@@ -115,6 +115,38 @@ export default function Library() {
           return setParams({}, { replace: true })
         }
       }
+
+      /**
+       * THE POLL FIXES IT ITSELF NOW, INSTEAD OF WAITING TO GIVE UP.
+       *
+       * Three tries is about six seconds. A working webhook has delivered long
+       * before that, so reaching here means the entitlement is not coming: the
+       * endpoint is unregistered, or misconfigured, or Stripe dropped the
+       * event. Every one of those was previously resolved by waiting another
+       * twenty-four seconds and then telling somebody who had just paid to go
+       * and read a diagnostic on the settings screen.
+       *
+       * So it asks Stripe directly instead. This is the same recovery the
+       * settings button runs, and it is safe to call here: it grants only to
+       * the signed-in caller, only for sessions Stripe marks paid, and it
+       * upserts, so it cannot double-grant or grant to the wrong person.
+       *
+       * Once, not on every tick. Repeating it would put a Stripe API call on a
+       * two-second timer for the rest of the window, and if the first one did
+       * not find a paid session the fifteenth will not either.
+       */
+      if (tries === 3) {
+        const out = await recoverPurchases()
+        if (!live) return
+        /* Straight back round rather than waiting out the interval: if that
+           granted something, the next listBooks sees it immediately. */
+        if (out?.granted?.length) {
+          tries += 1
+          timer = setTimeout(tick, 200)
+          return
+        }
+      }
+
       if (++tries < 15) {
         timer = setTimeout(tick, 2000)
       } else {
@@ -211,13 +243,17 @@ export default function Library() {
             </p>
             {purchase.state === 'slow' && (
               <div className="mt-3 flex flex-wrap gap-2">
-                {/* Refresh rather than "contact us". The entitlement usually
-                    lands during the minute somebody spends reading this, and a
-                    reload is the whole fix in that case. */}
+                {/* Recover, then refresh. This used to reload only, which
+                    fixed the case where the entitlement landed while somebody
+                    read the notice and did nothing at all for the case where
+                    it was never coming. The automatic attempt inside the poll
+                    has already run by now; this is the second press for a
+                    transient failure, and it costs one request. */}
                 <button
                   type="button"
                   data-hook="purchase-retry"
                   onClick={async () => {
+                    await recoverPurchases()
                     await load()
                     setPurchase(null)
                   }}

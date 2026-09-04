@@ -745,6 +745,42 @@
     background-color: rgb(var(--c-bg));
   }
 
+  /**
+   * THE READING SURFACE: WHITE PAGE, BLACK TEXT.
+   *
+   * Asked for directly, and right. The app ground is a blush (255 245 247 in
+   * sun, an ice blue in sea) and it works everywhere else, because everywhere
+   * else is cards and chips and a screenful of text at most. A book is forty
+   * minutes of continuous prose, and a tint that is pleasant for ten seconds
+   * is something you end up reading THROUGH for forty minutes.
+   *
+   * Body text also ran at text-ink/85, which is a translucency invented to
+   * soften a wall of type. On a tinted ground it composites to a grey that is
+   * neither the ink nor the paper. Full ink on white is what a book is.
+   *
+   * Only the paper and the type change. The accent stays the theme's, so the
+   * chips in the header are still pink in sun and blue in sea and the reader
+   * still belongs to the app it is inside.
+   *
+   * Scoped by an attribute on the page rather than by a competing :root rule:
+   * custom properties inherit, so a value set here wins for this subtree
+   * whatever the theme says, and specificity never enters into it.
+   */
+  [data-surface='reading'] {
+    --c-bg: 255 255 255;
+    --c-surface: 255 255 255;
+    --c-raised: 247 247 247;
+    --c-hairline: 229 229 229;
+
+    /* #111111 on #FFFFFF is 18.88:1. The old pairing was ink at 85% over the
+       blush, which composited to roughly 11:1 and looked greyer than it
+       measured. Both pass; only one of them reads like paper. */
+    --c-ink: 17 17 17;
+    --c-muted: 87 87 87;      /* #575757, 6.90:1 on white */
+
+    background-color: rgb(var(--c-bg));
+  }
+
 
   html {
     background-color: rgb(var(--c-bg));
