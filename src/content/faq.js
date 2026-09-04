@@ -109,6 +109,14 @@ export const FAQ = {
             ],
           },
           {
+            q: 'J’ai fermé la carte d’un ami, elle revient. Pourquoi ?',
+            a: [
+              'La croix veut dire « pas maintenant », pas « plus jamais ». Elle cache la carte pour toi seule, pendant une semaine. Si ton ami est toujours silencieux sept jours plus tard, c’est une semaine de silence de plus et la carte redemande.',
+              'Avant, la croix n’avait pas de fin. Comme l’application ne relance jamais une deuxième alerte pour quelqu’un déjà silencieux, une seule croix retirait cette personne de ton fil pour toujours : plus elle se taisait, plus c’était définitif. C’était un défaut, pas une intention.',
+              'Personne d’autre ne voit ta croix. La carte reste ouverte sur les écrans des autres membres du groupe.',
+            ],
+          },
+          {
             q: 'J’ai payé un livre, pourquoi n’est-il pas arrivé ?',
             a: [
               'Va dans Réglages, section Achats, et appuie sur « Vérifier les achats ». Ça contrôle toute la chaîne : les clés de ce déploiement, si Stripe sait où envoyer un paiement terminé, si les paiements récents ont été livrés, et si les accès peuvent être enregistrés. Aucun secret n’est affiché.',
@@ -204,6 +212,14 @@ export const FAQ = {
             a: [
               'Because it is impossible, not because we chose not to. A browser will only turn notifications on after a gesture from the person: a real tap on a real button, with the permission request immediately after it.',
               'No site can get around that, and that is a good thing. Otherwise any page you opened could put itself on your lock screen.',
+            ],
+          },
+          {
+            q: 'I closed a friend’s card and it came back. Why?',
+            a: [
+              'The cross means "not now", not "not ever". It hides the card for you alone, for a week. If your friend is still quiet seven days later, that is another week of silence and the card asks again.',
+              'It used to have no end. Since the app never raises a second alert for somebody who is already quiet, one cross took that person off your rail permanently: the longer they stayed silent, the more permanent it got. That was a defect, not a decision.',
+              'Nobody else sees your cross. The card stays open on every other member’s screen.',
             ],
           },
           {
