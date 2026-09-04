@@ -255,14 +255,33 @@ export default function PushToggle() {
             <p className="mt-2 text-small text-muted">{t('push.server_test_note')}</p>
 
             {serverOut && (
-              <p
-                className={`mt-2 text-small ${serverOut === 'ok' ? 'text-muted' : 'text-negative'}`}
-                role="status"
-                data-hook="push-server-out"
-                data-why={serverOut}
-              >
-                {t(`push.server_${serverOut}`)}
-              </p>
+              <>
+                <p
+                  className={`mt-2 text-small ${serverOut.why === 'ok' ? 'text-muted' : 'text-negative'}`}
+                  role="status"
+                  data-hook="push-server-out"
+                  data-why={serverOut.why}
+                >
+                  {t(`push.server_${serverOut.why}`)}
+                </p>
+                {/**
+                 * The server's own words, verbatim.
+                 *
+                 * The sentence above is this app's reading of what happened.
+                 * This is the thing itself: an HTTP status, or whatever the
+                 * browser said when the request never arrived. It is here to
+                 * be read out to somebody who can act on it, which is why it
+                 * is selectable and not translated.
+                 */}
+                {serverOut.detail && (
+                  <p
+                    className="mt-1 select-all text-small text-muted"
+                    data-hook="push-server-detail"
+                  >
+                    {serverOut.detail}
+                  </p>
+                )}
+              </>
             )}
           </div>
         </div>
