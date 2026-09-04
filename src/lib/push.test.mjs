@@ -33,6 +33,26 @@ import crypto from 'node:crypto'
 const here = dirname(fileURLToPath(import.meta.url))
 const REF = '/tmp/claude-0/-home-user-Friends-App/a6967461-6e34-5f5f-9257-a65ffd464597/scratchpad/pushref'
 
+/**
+ * A source file with its comments removed.
+ *
+ * An assertion of the form "this text is absent" matches the comment
+ * explaining why it is absent, and then fails against a file that is correct.
+ * That has now happened four times in this repo; the fourth was here, where
+ * the note in pushClient.js says "not `new Notification()`", which is exactly
+ * the string being forbidden.
+ *
+ * AT MODULE SCOPE, not inside the first block that wanted it. Declared in a
+ * block it is invisible to every block below, and this file cost a run to
+ * exactly that when the generator assertions were added at the bottom. The
+ * same mistake has now been made in three separate suites here, which is why
+ * every one of them declares its helpers at the top.
+ *
+ * Copied rather than shared: these suites import nothing of the app's own on
+ * purpose, so that a broken app module cannot make the tests stop running.
+ */
+const stripped = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '')
+
 let pass = 0
 let fail = 0
 const ok = (name, cond, extra = '') => {
@@ -358,20 +378,6 @@ const b64 = (b) => Buffer.from(b).toString('base64url')
 {
   const toggleSrc = readFileSync(join(here, '..', 'components', 'PushToggle.jsx'), 'utf8')
   const clientSrc = readFileSync(join(here, 'pushClient.js'), 'utf8')
-  /**
-   * The same file with its comments removed.
-   *
-   * An assertion of the form "this text is absent" matches the comment
-   * explaining why it is absent, and then fails against a file that is
-   * correct. This is the FOURTH time that has happened in this repo, and it
-   * happened again here: the note in pushClient.js says "not `new
-   * Notification()`", which is precisely the string being forbidden.
-   *
-   * apiSyntax.test.mjs and shellLayout.test.mjs already carry this helper. It
-   * is copied rather than shared because these suites are deliberately
-   * standalone files that import nothing of the app's own.
-   */
-  const stripped = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '')
   const clientCode = stripped(clientSrc)
 
   ok('there is a way to check it on the device',
@@ -411,6 +417,114 @@ const b64 = (b) => Buffer.from(b).toString('base64url')
     'the note says delivery is not what was tested',
     /which this does not test/.test(i18n) && /n’est pas testé ici/.test(i18n),
     'this button must never read as an end-to-end check',
+  )
+}
+
+/**
+ * THE IN-BROWSER KEY GENERATOR.
+ *
+ * scripts/vapid.mjs assumes a computer. This app was built, tested and
+ * deployed from a tablet, so "run node scripts/vapid.mjs" was an instruction
+ * that could not be followed, and web push was going to stay switched off
+ * permanently because of a shell command. The same arithmetic now runs on the
+ * device reading the page.
+ *
+ * What is asserted here is the property that makes that safe rather than
+ * reckless: the private key is generated in the browser and goes nowhere. Not
+ * to Supabase, not to Vercel, not into localStorage, not into a log. It lives
+ * in component state until the tab closes.
+ *
+ * The alternatives actually available to somebody without a computer are
+ * pasting a private key into a chat window, or handing it to one of the "free
+ * VAPID generator" sites, each of which is a stranger's server being told a
+ * key that can send a notification to every subscriber. This is the only one
+ * of the three where the key stays with its owner.
+ *
+ * Verified in Chromium in both languages, and not merely that two strings
+ * appeared: the pair was pulled out of the page, the private half signed a
+ * message, and the public half verified that signature. Two well-formed keys
+ * that are not a pair pass every length check and fail only that one, and
+ * that is precisely the mistake that would paste in cleanly and then fail with
+ * 403 at send time.
+ */
+{
+  const page = readFileSync(join(here, '..', 'pages', 'VapidSetup.jsx'), 'utf8')
+  const pageCode = stripped(page)
+
+  ok('the generator exists', /crypto\.subtle\.generateKey/.test(pageCode))
+  ok(
+    'it signs, so the curve and algorithm match what VAPID needs',
+    /name: 'ECDSA', namedCurve: 'P-256'/.test(pageCode),
+  )
+  ok(
+    'the public key is exported raw, which is the uncompressed point',
+    /exportKey\('raw'/.test(pageCode),
+    'applicationServerKey wants 0x04 then x then y',
+  )
+  ok(
+    'the shape is checked before anything is shown',
+    /bytes\.length !== 65 \|\| bytes\[0\] !== 4/.test(pageCode),
+    'a wrong-shaped key pastes in fine and fails only at send time',
+  )
+
+  /**
+   * The whole safety argument, as assertions. Any one of these appearing would
+   * turn a page that keeps a secret on one device into a page that copies it
+   * somewhere.
+   */
+  ok(
+    'the private key is never stored',
+    !/localStorage|sessionStorage|indexedDB/i.test(pageCode),
+    'a key in storage outlives the tab, which is the one thing that must not happen',
+  )
+  ok(
+    'and never sent anywhere',
+    !/fetch\(|supabase\.|axios|XMLHttpRequest|navigator\.sendBeacon/.test(pageCode),
+    'this page talks to nothing, and that is the feature',
+  )
+  ok(
+    'and never logged',
+    !/console\.(log|warn|error|info)/.test(pageCode),
+    'a console is a place a key can be read back later',
+  )
+
+  ok(
+    'both public fields come from one variable',
+    (pageCode.match(/keys\.publicKey/g) ?? []).length === 2,
+    'two separately generated halves is the 403 failure',
+  )
+  ok(
+    'the fields are readonly rather than disabled',
+    /readOnly/.test(pageCode) && !/disabled\n?\s*value=\{value\}/.test(pageCode),
+    'a disabled input cannot be selected, and the clipboard can be refused',
+  )
+  ok(
+    'the generate button disappears once a pair exists',
+    /\{!keys && \(/.test(pageCode),
+    'pressing it twice silently invalidates every existing subscription',
+  )
+
+  /* Unlisted on purpose. If this ever gets linked from the settings screen,
+     every tester sees a key generator under the notification card. */
+  const app = readFileSync(join(here, '..', 'App.jsx'), 'utf8')
+  ok('the route exists', /settings\/push-keys/.test(app))
+  const linked = ['components/PushToggle.jsx', 'pages/Account.jsx', 'components/AppShell.jsx']
+    .filter((f) => /push-keys/.test(readFileSync(join(here, '..', f), 'utf8')))
+  ok('and nothing links to it', linked.length === 0, linked.join(', '))
+
+  const i18nSrc = readFileSync(join(here, 'i18n.jsx'), 'utf8')
+  for (const key of ['vapid.title', 'vapid.intro', 'vapid.generate', 'vapid.once',
+                     'vapid.step_supabase', 'vapid.step_vercel', 'vapid.then_redeploy',
+                     'vapid.close_tab', 'vapid.copy', 'vapid.copied', 'vapid.secret',
+                     'vapid.done', 'vapid.working', 'vapid.where_supabase',
+                     'vapid.where_vercel']) {
+    const hits = i18nSrc.split(`'${key}'`).length - 1
+    ok(`${key} exists in both languages (${hits})`, hits === 2)
+  }
+  ok(
+    'the one-time warning survives translation',
+    /never again/.test(i18nSrc) && /une seule fois/.test(i18nSrc),
+    'regenerating is the destructive mistake and both languages must say so',
   )
 }
 

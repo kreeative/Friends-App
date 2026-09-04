@@ -330,6 +330,21 @@ const STRINGS = {
     /* Says what it checked, not "it works". The test is local: it proves this
        device will display one, and says plainly that delivery is a separate
        thing it did not test. */
+    'vapid.title': 'Turn on notifications',
+    'vapid.intro': 'This makes the one key pair web push needs. It is generated here, on this device, and never sent anywhere. Copy each value straight into the dashboard it names, then close this tab.',
+    'vapid.generate': 'Generate the keys',
+    'vapid.working': 'Generating\u2026',
+    'vapid.once': 'Do this once and never again. Every device that has turned notifications on did so against the key you make here, and a new pair silently stops all of them.',
+    'vapid.step_supabase': '1. Supabase',
+    'vapid.where_supabase': 'Project Settings, then Edge Functions, then Secrets. Add all three.',
+    'vapid.step_vercel': '2. Vercel',
+    'vapid.where_vercel': 'Settings, then Environment Variables. The same public key as above, under a different name.',
+    'vapid.then_redeploy': 'Then redeploy the site. The public key is compiled in when the site is built, so nothing changes until it is built again.',
+    'vapid.close_tab': 'Close this tab when you are done. The private key is only in this page and closing it is what gets rid of it.',
+    'vapid.copy': 'Copy',
+    'vapid.copied': 'Copied',
+    'vapid.secret': 'never paste this anywhere else',
+    'vapid.done': 'Back to settings',
     'push.test': 'Show a test notification',
     'push.testing': 'Sending…',
     'push.test_sent': 'Sent. If nothing appeared, notifications are switched off for this app in your device settings.',
@@ -1694,6 +1709,21 @@ const STRINGS = {
     /* Dit ce qu'il a vérifié, pas « ça marche ». Le test est local : il prouve
        que l'appareil sait en afficher une, et dit clairement que l'envoi
        depuis le serveur est autre chose, non testée ici. */
+    'vapid.title': 'Activer les notifications',
+    'vapid.intro': 'Ceci fabrique la paire de cl\u00e9s dont les notifications ont besoin. Elle est g\u00e9n\u00e9r\u00e9e ici, sur cet appareil, et n\u2019est envoy\u00e9e nulle part. Copie chaque valeur dans le tableau de bord indiqu\u00e9, puis ferme cet onglet.',
+    'vapid.generate': 'G\u00e9n\u00e9rer les cl\u00e9s',
+    'vapid.working': 'G\u00e9n\u00e9ration\u2026',
+    'vapid.once': '\u00c0 faire une seule fois. Chaque appareil qui a activ\u00e9 les notifications l\u2019a fait avec la cl\u00e9 cr\u00e9\u00e9e ici, et une nouvelle paire les coupe tous en silence.',
+    'vapid.step_supabase': '1. Supabase',
+    'vapid.where_supabase': 'Project Settings, puis Edge Functions, puis Secrets. Ajoute les trois.',
+    'vapid.step_vercel': '2. Vercel',
+    'vapid.where_vercel': 'Settings, puis Environment Variables. La m\u00eame cl\u00e9 publique que ci-dessus, sous un autre nom.',
+    'vapid.then_redeploy': 'Ensuite, red\u00e9ploie le site. La cl\u00e9 publique est int\u00e9gr\u00e9e au moment de la construction du site, donc rien ne change tant qu\u2019il n\u2019est pas reconstruit.',
+    'vapid.close_tab': 'Ferme cet onglet quand tu as fini. La cl\u00e9 priv\u00e9e n\u2019existe que dans cette page et la fermer est ce qui l\u2019efface.',
+    'vapid.copy': 'Copier',
+    'vapid.copied': 'Copi\u00e9',
+    'vapid.secret': '\u00e0 ne coller nulle part ailleurs',
+    'vapid.done': 'Retour aux r\u00e9glages',
     'push.test': 'Afficher une notification test',
     'push.testing': 'Envoi…',
     'push.test_sent': 'Envoyée. Si rien n’est apparu, les notifications sont coupées pour cette app dans les réglages de ton appareil.',
