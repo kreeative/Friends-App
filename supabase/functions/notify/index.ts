@@ -1290,20 +1290,32 @@ async function recentlyNudged(subjectId: string, groupId: string): Promise<boole
   return (data ?? []).length > 0
 }
 
-async function deliverNudge(req: Request): Promise<Response> {
+/**
+ * Is this somebody in the app asking for one message now?
+ *
+ * Pulled out as its own function because getting it wrong stopped every
+ * scheduled message in the product for a day, and a decision that important
+ * should be testable rather than only readable.
+ *
+ * True only for a body that names a nudge or asks for a self test. Everything
+ * else, and above all the empty body pg_cron sends, is the scheduled run.
+ */
+export function wantsInstant(body: { nudge_id?: string; self_test?: boolean } | null): boolean {
+  if (!body) return false
+  if (body.self_test === true) return true
+  return typeof body.nudge_id === 'string' && body.nudge_id.length > 0
+}
+
+async function deliverNudge(
+  req: Request,
+  body: { nudge_id?: string; self_test?: boolean },
+): Promise<Response> {
   const token = (req.headers.get('authorization') ?? '').replace(/^Bearer\s+/i, '')
   if (!token) return json({ ok: false, error: 'signed_out' }, 401)
 
   const { data: who } = await supabase.auth.getUser(token)
   const caller = who?.user
   if (!caller) return json({ ok: false, error: 'bad_session' }, 401)
-
-  let body: { nudge_id?: string; self_test?: boolean } = {}
-  try {
-    body = await req.json()
-  } catch {
-    return json({ ok: false, error: 'bad_body' }, 400)
-  }
 
   /**
    * A real push, from this server, to the person asking for it. Nobody else.
@@ -1483,11 +1495,42 @@ Deno.serve(async (req) => {
      cron asking for the scheduled run, which is what this function was before
      and still is by default. */
   if (req.method === 'POST') {
+    /**
+     * WHICH CALLER THIS IS, DECIDED BY THE BODY AND NEVER BY THE METHOD.
+     *
+     * This read `if (req.method === 'POST') return deliverNudge(req)`, and that
+     * one line killed every scheduled message in the product.
+     *
+     * pg_cron calls this hourly through net.http_post, which is a POST by
+     * definition, carrying `{}` and the service role key. So every hourly run
+     * was handed to the instant-push path, which asks Supabase to resolve that
+     * key as a user session, fails, and answers 401 bad_session. Confirmed
+     * from net._http_response: 401, on the hour, every hour, for as long as
+     * that line has been deployed. No digest, no scheduled nudge, no birthday,
+     * no group goal, no cycle reminder, in silence.
+     *
+     * The two callers are told apart by what they ask for. Somebody in the app
+     * names a nudge or asks for a self test. Cron asks for neither, and gets
+     * the scheduled run it has always been asking for.
+     *
+     * The body is parsed HERE and passed down, because a request body can only
+     * be read once and deliverNudge used to read it itself.
+     */
+    let body: { nudge_id?: string; self_test?: boolean } = {}
     try {
-      return await deliverNudge(req)
-    } catch (err) {
-      console.error('instant push failed', err)
-      return json({ ok: false, error: String(err) }, 500)
+      body = await req.json()
+    } catch {
+      /* No body, or not JSON. That is cron, and it falls through below. */
+      body = {}
+    }
+
+    if (wantsInstant(body)) {
+      try {
+        return await deliverNudge(req, body)
+      } catch (err) {
+        console.error('instant push failed', err)
+        return json({ ok: false, error: String(err) }, 500)
+      }
     }
   }
 
