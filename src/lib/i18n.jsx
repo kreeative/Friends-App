@@ -327,6 +327,15 @@ const STRINGS = {
     'push.problem_no_key': 'Not set up on this build yet.',
     'push.problem_unsupported': 'This browser cannot show notifications.',
     'push.problem_ios_needs_home_screen': 'Add this site to your home screen first.',
+    /* Says what it checked, not "it works". The test is local: it proves this
+       device will display one, and says plainly that delivery is a separate
+       thing it did not test. */
+    'push.test': 'Show a test notification',
+    'push.testing': 'Sending…',
+    'push.test_sent': 'Sent. If nothing appeared, notifications are switched off for this app in your device settings.',
+    'push.test_note': 'This checks that your device will display one. A real reminder also has to travel from the server, which this does not test.',
+    'push.test_title': 'Rich & Friends',
+    'push.test_body': 'This is what a reminder looks like.',
     'birthday.count': '{n} birthdays coming up. Swipe.',
     'birthday.hide': 'Hide {name}. This card disappears for you only.',
     'board.this_week': 'Today',
@@ -1682,6 +1691,15 @@ const STRINGS = {
     'push.problem_no_key': 'Pas encore configuré sur cette version.',
     'push.problem_unsupported': 'Ce navigateur ne peut pas afficher de notifications.',
     'push.problem_ios_needs_home_screen': 'Ajoute d’abord le site à l’écran d’accueil.',
+    /* Dit ce qu'il a vérifié, pas « ça marche ». Le test est local : il prouve
+       que l'appareil sait en afficher une, et dit clairement que l'envoi
+       depuis le serveur est autre chose, non testée ici. */
+    'push.test': 'Afficher une notification test',
+    'push.testing': 'Envoi…',
+    'push.test_sent': 'Envoyée. Si rien n’est apparu, les notifications sont coupées pour cette app dans les réglages de ton appareil.',
+    'push.test_note': 'Ceci vérifie que ton appareil sait en afficher une. Un vrai rappel doit aussi voyager depuis le serveur, ce qui n’est pas testé ici.',
+    'push.test_title': 'Rich & Friends',
+    'push.test_body': 'Voilà à quoi ressemble un rappel.',
     'birthday.count': '{n} anniversaires arrivent. Glisse.',
     /* Meme phrase que nudge.hide : la croix est privee partout, et le dire une
        fois sur deux cartes et pas sur la troisieme laisse croire le contraire. */

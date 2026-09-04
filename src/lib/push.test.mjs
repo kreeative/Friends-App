@@ -330,5 +330,89 @@ const b64 = (b) => Buffer.from(b).toString('base64url')
      plain.endpoint === 'https://e/2' && plain.p256dh === 'A' && plain.auth === 'B')
 }
 
+/**
+ * THE TEST NOTIFICATION, AND THE CAREFUL LIMITS ON WHAT IT CLAIMS.
+ *
+ * Turning push on produces no visible result. The switch moves, and then
+ * nothing happens for hours until a reminder either arrives or does not. If it
+ * does not, there is no way from the device to tell a refused permission from
+ * an app silenced in system settings from a server that never sent anything.
+ *
+ * So the toggle now offers one thing to press with an immediate answer. It
+ * proves permission, worker registration, and the operating system being
+ * willing to paint a notification from this site, which on an iPhone is most
+ * of the failure surface.
+ *
+ * It cannot prove delivery: that is Supabase to push service to browser,
+ * signed with the private half of the VAPID pair, and none of it runs here. A
+ * mismatched pair subscribes cleanly and then fails with 403 at send time,
+ * invisibly from the phone. So the copy has to keep saying so, in both
+ * languages, and that is what these assert. A check that implies more than it
+ * checked is worse than no check.
+ *
+ * Verified in Chromium for real: pressed the button, then read the
+ * notification back off the service worker registration rather than trusting
+ * the button's own success message. Title, body and icon as expected, and a
+ * second press replaced it rather than stacking a duplicate.
+ */
+{
+  const toggleSrc = readFileSync(join(here, '..', 'components', 'PushToggle.jsx'), 'utf8')
+  const clientSrc = readFileSync(join(here, 'pushClient.js'), 'utf8')
+  /**
+   * The same file with its comments removed.
+   *
+   * An assertion of the form "this text is absent" matches the comment
+   * explaining why it is absent, and then fails against a file that is
+   * correct. This is the FOURTH time that has happened in this repo, and it
+   * happened again here: the note in pushClient.js says "not `new
+   * Notification()`", which is precisely the string being forbidden.
+   *
+   * apiSyntax.test.mjs and shellLayout.test.mjs already carry this helper. It
+   * is copied rather than shared because these suites are deliberately
+   * standalone files that import nothing of the app's own.
+   */
+  const stripped = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '')
+  const clientCode = stripped(clientSrc)
+
+  ok('there is a way to check it on the device',
+     /showTestNotification/.test(clientSrc) && /showTestNotification/.test(toggleSrc))
+  ok(
+    'it goes through the registration, not the Notification constructor',
+    /reg\.showNotification\(/.test(clientCode) && !/new Notification\(/.test(clientCode),
+    'the constructor does not exist on iOS, the platform this matters most for',
+  )
+  ok(
+    'the test icon is the one the service worker uses',
+    /icon: '\/icon-192\.png'/.test(clientSrc) &&
+      /icon: '\/icon-192\.png'/.test(readFileSync(join(here, '..', '..', 'public', 'sw.js'), 'utf8')),
+    'a guessed path shows a blank default and makes a working test look broken',
+  )
+  ok(
+    'pressing twice replaces rather than stacks',
+    /tag: 'rf-test'/.test(clientSrc),
+    'no tag means two identical notifications on the lock screen',
+  )
+  ok(
+    'the button only appears once it is actually on',
+    /\{on && \(/.test(toggleSrc),
+    'offering a test for something switched off tests nothing',
+  )
+
+  /* The honesty of the copy is the part worth pinning. Someone shortening this
+     to "Notifications are working" would be making a claim the test did not
+     earn. */
+  const i18n = readFileSync(join(here, 'i18n.jsx'), 'utf8')
+  for (const key of ['push.test', 'push.testing', 'push.test_sent', 'push.test_note',
+                     'push.test_title', 'push.test_body']) {
+    const hits = i18n.split(`'${key}'`).length - 1
+    ok(`${key} exists in both languages (${hits})`, hits === 2)
+  }
+  ok(
+    'the note says delivery is not what was tested',
+    /which this does not test/.test(i18n) && /n’est pas testé ici/.test(i18n),
+    'this button must never read as an end-to-end check',
+  )
+}
+
 console.log(`\npush\n\n  ${pass} passed, ${fail} failed\n`)
 process.exit(fail === 0 ? 0 : 1)

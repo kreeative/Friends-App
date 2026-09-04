@@ -8,6 +8,7 @@ import {
   disablePush,
   enablePush,
   pushSupport,
+  showTestNotification,
 } from '../lib/pushClient'
 
 /**
@@ -45,6 +46,8 @@ export default function PushToggle() {
   const [on, setOn] = useState(false)
   const [busy, setBusy] = useState(false)
   const [problem, setProblem] = useState(null)
+  const [testing, setTesting] = useState(false)
+  const [tested, setTested] = useState(null)
 
   useEffect(() => {
     let dead = false
@@ -152,6 +155,60 @@ export default function PushToggle() {
         <p className="mt-3 text-small text-negative" role="alert">
           {t(`push.problem_${problem.replace(/-/g, '_')}`)}
         </p>
+      )}
+
+      {/**
+       * ONLY ONCE IT IS ON, AND ONLY SAYING WHAT IT CHECKED.
+       *
+       * Turning this on has no visible result. The switch moves and then
+       * nothing happens for hours, until a reminder either arrives or does
+       * not, and if it does not there is no way to tell a refused permission
+       * from a silenced app from a server that never sent anything.
+       *
+       * So there is one thing to press that produces an immediate answer. It
+       * proves the half that actually breaks: permission granted, worker
+       * registered, and the operating system willing to paint a notification
+       * from this site. On an iPhone that is most of the failure surface.
+       *
+       * It cannot prove delivery, and the line under it says so rather than
+       * letting a green tick imply an end-to-end test. The note stays visible
+       * rather than appearing after the press, because the thing it qualifies
+       * is the button, not the result.
+       */}
+      {on && (
+        <div className="mt-4" data-hook="push-test">
+          <button
+            type="button"
+            onClick={async () => {
+              setTesting(true)
+              setTested(null)
+              const res = await showTestNotification({
+                title: t('push.test_title'),
+                body: t('push.test_body'),
+              })
+              setTested(res.ok ? 'sent' : (res.reason ?? 'save-failed'))
+              setTesting(false)
+            }}
+            disabled={testing}
+            className="goal-action press"
+          >
+            {testing ? t('push.testing') : t('push.test')}
+          </button>
+
+          <p className="mt-2 text-small text-muted">{t('push.test_note')}</p>
+
+          {tested && (
+            <p
+              className={`mt-2 text-small ${tested === 'sent' ? 'text-muted' : 'text-negative'}`}
+              role="status"
+              data-hook="push-test-out"
+            >
+              {tested === 'sent'
+                ? t('push.test_sent')
+                : t(`push.problem_${tested.replace(/-/g, '_')}`)}
+            </p>
+          )}
+        </div>
       )}
     </div>
   )

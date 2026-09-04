@@ -162,3 +162,55 @@ export async function disablePush() {
   await sub.unsubscribe().catch(() => {})
   return endpoint
 }
+
+/**
+ * Show one notification on this device, right now.
+ *
+ * WHAT THIS PROVES AND WHAT IT DOES NOT, WHICH IS THE WHOLE REASON IT HAS A
+ * CAREFUL NAME.
+ *
+ * It proves the half that actually breaks: permission was granted, the service
+ * worker is registered and active, and the operating system will paint a
+ * notification from this site. On an iPhone that is nearly the entire failure
+ * surface, because Apple only allows any of it once the site has been added to
+ * the home screen, and a person who has not done that has no way to tell that
+ * from the feature being broken.
+ *
+ * It does NOT prove that a real reminder will arrive. That travels
+ * Supabase -> push service -> this browser, signed with the private half of the
+ * VAPID pair, and none of that is exercised here. A mismatched pair subscribes
+ * fine and then fails with 403 at send time, which is invisible from the
+ * device. So the button that calls this says "test on this device" and the line
+ * under it says what is still untested. A check that implies more than it
+ * checked is worse than no check.
+ *
+ * showNotification on the REGISTRATION, not `new Notification()`. The
+ * constructor does not exist on iOS at all, so the one platform this matters
+ * most for is the one where the obvious call fails.
+ */
+export async function showTestNotification(text) {
+  if (pushSupport() !== 'ready') return { ok: false, reason: pushSupport() }
+  if (Notification.permission !== 'granted') return { ok: false, reason: 'refused' }
+
+  const reg = await ensureWorker()
+  if (!reg) return { ok: false, reason: 'unsupported' }
+  await navigator.serviceWorker.ready
+
+  try {
+    await reg.showNotification(text.title, {
+      body: text.body,
+      /* The same two paths sw.js uses for a real push. A guessed
+         path here would show the browser's blank default and make a working
+         test look broken. */
+      icon: '/icon-192.png',
+      badge: '/icon-192.png',
+      /* Same tag every time, so pressing it twice replaces the first rather
+         than stacking two identical notifications on the lock screen. */
+      tag: 'rf-test',
+      data: { url: '/settings' },
+    })
+    return { ok: true }
+  } catch (e) {
+    return { ok: false, reason: 'save-failed', detail: String(e?.message ?? e) }
+  }
+}
