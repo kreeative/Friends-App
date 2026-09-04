@@ -98,7 +98,37 @@ const keysOf = (lang) => [...block(lang).matchAll(/^ {4}(\w+):/gm)].map((m) => m
 
 {
   ok('the recipient lookup reads profiles.locale',
-     /from\('profiles'\)[\s\S]{0,80}select\('locale'\)/.test(src))
+     /from\('profiles'\)[\s\S]{0,80}select\('locale[^']*'\)/.test(src),
+     'it now asks for pronouns in the same select, see below')
+
+  /**
+   * AND THE ONE OTHER THING IT IS ALLOWED TO KNOW ABOUT A PERSON.
+   *
+   * The nudge title is "X se demande ou tu es passe", and the participle
+   * agrees with the person reading it. The only admissible source for that is
+   * what somebody typed in the pronouns box.
+   *
+   * The assertions that matter are the negative ones. isFeminine must be true
+   * for a stated she/her and false for everything else, and nothing anywhere
+   * may reach for a display name to decide it: guessing gender from a name is
+   * how an app misgenders a real person in a way a default never does.
+   */
+  ok('and reads pronouns, for the participle',
+     /select\('locale, pronouns'\)/.test(src))
+  ok('the agreement is decided in one place',
+     /function isFeminine/.test(src))
+  {
+    const fn = src.slice(src.indexOf('function isFeminine'))
+    const body = fn.slice(0, fn.indexOf('\n}') + 2)
+    ok('and it never looks at a name',
+       !/display_name|name/.test(body), body)
+    ok('it is true only for a set somebody chose',
+       /'she\/her'/.test(body) && /'elle'/.test(body))
+    ok('and it lower-cases first, because the box is free text',
+       /toLowerCase\(\)/.test(body))
+  }
+  ok('the English title ignores the flag, having no agreement to make',
+     /nudgeFromTitle: \(who: string, _fem\?: boolean\)/.test(src))
   /* One per sender: digest, nudge, birthday, group_goal, cycle. Counted rather
      than named so that adding a sixth and hard-coding its words trips this. */
   ok('and every sender uses the copy table rather than literals',
