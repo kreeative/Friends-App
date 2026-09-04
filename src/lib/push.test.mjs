@@ -878,6 +878,57 @@ const b64 = (b) => Buffer.from(b).toString('base64url')
   }
 
   /**
+   * WHY THE MESSAGE DID NOT GO, RATHER THAN SILENCE.
+   *
+   * Pressing the button wrote the claim, reloaded the board and left the other
+   * phone dark, with the app saying nothing. From outside that is exactly what
+   * a broken app looks like, and the app knew which of five reasons it was
+   * every single time.
+   *
+   * The one that matters is `stale`: the Supabase function has not been
+   * redeployed, so a POST reaches the old handler, which ignores the body,
+   * runs its scheduled job and answers { ok: true, sent: <tally object> }.
+   * That is also the response that once made the card claim a delivery which
+   * never happened, so it is checked before ok.
+   */
+  {
+    /* Read as text, not imported: this file is JSX and node will not load it.
+       The five outcomes themselves are driven end to end in Chromium against
+       the exact bodies the server sends; what is pinned here is the shape of
+       the decision, because the ordering inside it is the part that was wrong
+       twice. */
+    const nudge = readFileSync(join(here, '..', 'components', 'NudgeBanner.jsx'), 'utf8')
+    const code = nudge.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
+    const fn = code.slice(code.indexOf('export function why('))
+
+    ok('the old function is detected by sent being an object',
+       /typeof res\.sent === 'object'/.test(fn),
+       'an object is truthy, which is how it once passed for a delivery')
+    ok('and that check comes before the ok check',
+       fn.indexOf("typeof res.sent === 'object'") < fn.indexOf('res.ok !== true'),
+       'the old function answers ok: true while doing nothing')
+    ok('a send with no push keys is its own outcome',
+       /res\.push === false/.test(fn) && /inbox_only/.test(fn))
+    ok('the hour-long ledger is not reported as a failure',
+       /already_sent_recently/.test(fn) && /'recent'/.test(fn))
+
+    /* The success branch has to exclude push: false too, or it swallows the
+       half-success and the card says "told, on their phone" about a phone
+       that never lit up. Found in Chromium: that case produced no line at all. */
+    ok('the success branch excludes a send that reached no phone',
+       /res\?\.sent === true && res\?\.push !== false/.test(code),
+       'otherwise inbox_only never reaches why()')
+
+    for (const w of ['stale', 'inbox_only', 'recent', 'signed_out', 'failed']) {
+      const hits = i18nSrc.split(`'nudge.not_sent_${w}'`).length - 1
+      ok(`nudge.not_sent_${w} exists in both languages (${hits})`, hits === 2)
+    }
+    ok('the stale message says exactly what to paste and where',
+       /bundled\.ts/.test(i18nSrc) && /Edge Functions/.test(i18nSrc),
+       'a reason nobody can act on is only a nicer silence')
+  }
+
+  /**
    * BUNDLE FRESHNESS IS NOT CHECKED HERE, DELIBERATELY.
    *
    * bundled.ts is what gets pasted into the dashboard, so a stale one means
