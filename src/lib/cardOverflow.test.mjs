@@ -38,6 +38,12 @@ import { dirname, join } from 'node:path'
 const here = dirname(fileURLToPath(import.meta.url))
 const root = join(here, '..', '..')
 const read = (p) => readFileSync(join(root, p), 'utf8')
+/* The same file with its comments gone. An assertion of the form "this string
+   is absent" matches the comment explaining why it is absent and then fails
+   against a file that is correct. Four other suites here already carry this;
+   this is the fifth, and it is declared at module scope for the same reason
+   they are: a const inside a block is invisible to every block after it. */
+const code = (p) => read(p).replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '')
 
 let pass = 0
 let fail = 0
@@ -186,6 +192,56 @@ ok(
   'the week strip truncates instead, which is also containment',
   /min-w-0 flex-1 truncate/.test(read('src/components/WeekStrip.jsx')),
 )
+
+/**
+ * THE "?" PANEL CANNOT LEAVE THE PAGE.
+ *
+ * Reported from a phone with the sentence cut mid-word: "Nobody else can see
+ * the". The panel was `absolute left-0` on the question mark itself, capped at
+ * min(20rem, calc(100vw - 3rem)).
+ *
+ * That cap looks like it prevents overflow and does not. `100vw - 3rem` is the
+ * width available to something starting at the page margin; this started at
+ * the marker, which sits beside a heading and is therefore a long way in. At
+ * 390px the panel's right edge measured 490.
+ *
+ * Choosing the other side does not fix it either: `right-0` works for a marker
+ * near the right edge and breaks one near the left, and which of those it is
+ * depends on how long the heading is once translated.
+ *
+ * So it anchors to the header, which is exactly the width of the content
+ * column. left-0 right-0 there cannot leave the page in either direction, in
+ * either language, at any width.
+ *
+ * Measured in Chromium at 390, 430 and 1180 in both languages: the painted
+ * rectangle inside the viewport, nothing clipped by its own box, and the last
+ * six characters painted on screen. Reverting only this pair of classes put
+ * five of those assertions back to failing.
+ */
+{
+  const ui = read('src/components/ui.jsx')
+
+  ok(
+    'the hint panel spans the header rather than hanging off the marker',
+    /absolute left-0 right-0 top-full/.test(ui),
+    'left-0 alone on the marker is what ran off the screen',
+  )
+  ok(
+    'and the marker is not a positioned ancestor that would recapture it',
+    /<details className="group ml-2 inline-block align-middle" data-hook="hint">/.test(ui),
+    '`relative` here would anchor the panel back to the marker',
+  )
+  ok(
+    'the header it anchors to is positioned',
+    /<header className={`relative pb-2/.test(ui),
+    'without this the panel escapes to whatever ancestor happens to be relative',
+  )
+  ok(
+    'the viewport-width cap that never worked is gone',
+    !/calc\(100vw-3rem\)/.test(code('src/components/ui.jsx')),
+    'it measured space from the page margin, not from the marker',
+  )
+}
 
 console.log(`\n  ${pass} passed, ${fail} failed\n`)
 process.exit(fail ? 1 : 0)
