@@ -80,6 +80,17 @@ export function why(res) {
    * zero: the old shape means "not reported", so it falls through to told
    * rather than inventing a failure.
    */
+  /**
+   * MAILED IS A DELIVERY, AND IT IS THE COMMON ONE.
+   *
+   * Push cannot always work: it needs the other person to have subscribed on
+   * a device, which on an iPhone means adding the site to the home screen
+   * first. So when no phone was reached, the server sends the email instead,
+   * under the same claim, and that genuinely reaches them. Reporting it as a
+   * failure, or as "they will see it when they open the app", would be the app
+   * apologising for having succeeded by the other route.
+   */
+  if (res.mailed === true) return 'mailed'
   if (res.devices === 0) return 'no_device'
   if (typeof res.delivered === 'number' && res.delivered === 0) return 'push_refused'
   return 'failed'
@@ -409,7 +420,10 @@ export default function NudgeBanner() {
                   data-why={sendState.get(n.id)}
                   role="status"
                 >
-                  {t('nudge.not_sent', { name: nameOf(n.subject_id) })}
+                  {t(
+                    sendState.get(n.id) === 'mailed' ? 'nudge.mailed' : 'nudge.not_sent',
+                    { name: nameOf(n.subject_id) },
+                  )}
                 </p>
               )}
 

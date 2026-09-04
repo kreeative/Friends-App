@@ -1016,14 +1016,53 @@ const b64 = (b) => Buffer.from(b).toString('base64url')
      * The reason is still carried as data-why, and Settings is where it is
      * acted on. That separation is the assertion.
      */
+    /**
+     * A PUSH THAT CANNOT ARRIVE IS NOT THE END OF THE ROAD.
+     *
+     * "She will see it next time she opens the app" was the card's answer when
+     * no phone could be reached, and it is not an answer: the entire point of
+     * a nudge is reaching somebody who has STOPPED opening the app. Push needs
+     * the recipient to have subscribed on a device, which on an iPhone means
+     * adding the site to the home screen first, so it will never work for
+     * everybody. Email needs nothing and was already built.
+     *
+     * So the server sends the email when no phone was reached, under the same
+     * notifications_log claim so it cannot become a second message, releasing
+     * the claim if the send fails.
+     */
+    const fnSrc2 = readFileSync(
+      join(here, '..', '..', 'supabase', 'functions', 'notify', 'index.ts'), 'utf8')
+    ok('no phone reached means the email goes now',
+       /reach\.delivered === 0/.test(fnSrc2) && /await send\(to\.to/.test(fnSrc2),
+       'the point is reaching somebody who has stopped opening the app')
+    ok('under the same claim, so it cannot double up',
+       /claim\(nudge\.subject_id, nudge\.cycle_id, 'nudge'\)/.test(fnSrc2))
+    ok('and the claim goes back when the send fails',
+       /release\(nudge\.subject_id, nudge\.cycle_id, 'nudge'\)/.test(fnSrc2),
+       'one refused email would otherwise cost their only message of the cycle')
+    ok('the card reports that as a delivery',
+       /res\.mailed === true/.test(fn) && /'mailed'/.test(fn))
+    ok('and never tells the sender to wait for them to open the app',
+       !/open the app/.test(i18nSrc.split("'nudge.not_sent'")[1]?.split('\n')[0] ?? '') &&
+         !/ouvrant l/.test(i18nSrc.split("'nudge.not_sent'")[2]?.split('\n')[0] ?? ''),
+       'that sentence is the failure written politely')
+    for (const key of ['nudge.mailed']) {
+      const hits = i18nSrc.split(`'${key}'`).length - 1
+      ok(`${key} exists in both languages (${hits})`, hits === 2)
+    }
+
+    /* Whitespace collapsed: the call became a ternary across three lines when
+       the mailed case arrived, and the single-line regex failed on a correct
+       file. Third time this exact shape has bitten in this suite. */
     ok('the card prints one sentence, not the reason',
-       /t\('nudge\.not_sent', \{ name: nameOf/.test(code),
+       /'nudge\.mailed' : 'nudge\.not_sent', \{ name: nameOf/.test(code.replace(/\s+/g, ' ')),
        'the per-reason keys belonged to a diagnostic, not to a card about a person')
     ok('and no per-reason card copy is left behind',
        !/'nudge\.not_sent_/.test(i18nSrc),
        'dead copy reads as shipped text and gets translated and edited')
     ok('it names the friend rather than the machinery',
-       /'nudge\.not_sent': '\{name\}/.test(i18nSrc))
+       /'nudge\.not_sent': '[^']*\{name\}/.test(i18nSrc),
+       'the name moved off the front of the sentence, it did not leave it')
     /**
    * THE SWITCH AND THE SERVER HAVE TO AGREE.
    *

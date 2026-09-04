@@ -519,7 +519,11 @@ const STRINGS = {
        somebody doing a kind thing for a friend; the only fact they need is
        that it will reach them. The technical reason lives on the element as
        data-why and is acted on in the notifications check in Settings. */
-    'nudge.not_sent': '{name} will see it next time they open the app.',
+    /* A real delivery by the other channel, said as one. */
+    'nudge.mailed': '{name} has just been emailed.',
+    /* Only when nothing reached them at all. It does not pretend that is
+       fine: the message exists, and that is all it claims. */
+    'nudge.not_sent': 'Nothing reached {name} just now. Your message is saved for them.',
     /* The four ways a claim can fail to reach the other phone. Each one names
        what actually happened, because "something went wrong" is the message
        that sent somebody to ask a person. `stale` is the common one and is
@@ -1965,7 +1969,8 @@ const STRINGS = {
     'nudge.claim': 'Prévenir',
     'nudge.close': 'C’est fait',
     'nudge.notified': 'La personne vient d’être prévenue sur son téléphone.',
-    'nudge.not_sent': '{name} le verra en ouvrant l’application.',
+    'nudge.mailed': '{name} vient de recevoir un e-mail.',
+    'nudge.not_sent': 'Rien n’a pu atteindre {name} à l’instant. Ton message est enregistré.',
     'nudge.hide': 'Masquer {name}. Cette carte disparaît pour toi seulement.',
     'nudge.hide_failed': 'La carte n’a pas pu être rangée. Rien n’est perdu, réessaie dans un instant.',
     'nudge.count': '{n} amis à qui faire signe. Glisse.',
