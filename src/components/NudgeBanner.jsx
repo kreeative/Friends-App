@@ -67,6 +67,21 @@ export function why(res) {
   /* Sent, and the row is in their inbox, but the server has no VAPID keys so
      no lock screen lit up. Worth saying: it is a real half-success. */
   if (res.push === false) return 'inbox_only'
+  /**
+   * Nobody to send to, which is the quiet one and the likeliest.
+   *
+   * push: true only means the server holds signing keys. If the other person
+   * has never turned notifications on, they have no subscription rows, the
+   * send loop runs zero times, and this used to come back as a delivery. On
+   * an iPhone that is the normal state until the site is added to the home
+   * screen, because Safari refuses push to a page in a tab.
+   *
+   * devices is absent from an older deployment's answer, and absence is not
+   * zero: the old shape means "not reported", so it falls through to told
+   * rather than inventing a failure.
+   */
+  if (res.devices === 0) return 'no_device'
+  if (typeof res.delivered === 'number' && res.delivered === 0) return 'push_refused'
   return 'failed'
 }
 
@@ -151,7 +166,25 @@ export default function NudgeBanner() {
          their inbox but it has no VAPID keys, so nothing reached a lock
          screen. Without that clause the success branch swallowed it and the
          card said "told, on their phone" about a phone that never lit up. */
-      if (res?.ok === true && res?.sent === true && res?.push !== false) {
+      /**
+       * A delivery, and nothing weaker.
+       *
+       * Every clause here was added after a case where the card claimed one
+       * that had not happened: sent must be exactly true and not the old
+       * function's truthy tally object; push must not be false, or the server
+       * holds no signing keys; and delivered must not be zero, which is what
+       * comes back when the other person has never turned notifications on.
+       *
+       * `!== 0` rather than `> 0`, because an older deployment does not send
+       * the field at all and undefined means "not reported", not "none".
+       */
+      const told =
+        res?.ok === true &&
+        res?.sent === true &&
+        res?.push !== false &&
+        res?.devices !== 0 &&
+        res?.delivered !== 0
+      if (told) {
         setNotified((s2) => new Set(s2).add(id))
       } else {
         setSendState((s2) => new Map(s2).set(id, why(res)))

@@ -765,12 +765,19 @@ const b64 = (b) => Buffer.from(b).toString('base64url')
       !/est pr\u00e9venue/.test((i18nSrc.match(/'nudge\.claimed_by_me': '[^']*'/g) ?? []).join(' ')),
     'it survives a reload, when nothing records whether a push went out',
   )
-  ok(
-    'the confirmation is gated on an exact true, not a truthy value',
-    /res\?\.ok === true && res\?\.sent === true/.test(
-      readFileSync(join(here, '..', 'components', 'NudgeBanner.jsx'), 'utf8')),
-    'the old function returns sent: tally, an object, which is truthy',
-  )
+  {
+    /* Whitespace collapsed first. The condition grew from one expression to a
+       five-clause const spread over as many lines, and both assertions here
+       were written against the single-line form: they failed on a file that
+       is correct, which is the same shape of mistake as matching a comment. */
+    const flat = readFileSync(join(here, '..', 'components', 'NudgeBanner.jsx'), 'utf8')
+      .replace(/\s+/g, ' ')
+    ok(
+      'the confirmation is gated on an exact true, not a truthy value',
+      /res\?\.ok === true && res\?\.sent === true/.test(flat),
+      'the old function returns sent: tally, an object, which is truthy',
+    )
+  }
   for (const key of ['nudge.notified', 'nudge.hide_failed']) {
     const hits = i18nSrc.split(`'${key}'`).length - 1
     ok(`${key} exists in both languages (${hits})`, hits === 2)
@@ -915,11 +922,43 @@ const b64 = (b) => Buffer.from(b).toString('base64url')
     /* The success branch has to exclude push: false too, or it swallows the
        half-success and the card says "told, on their phone" about a phone
        that never lit up. Found in Chromium: that case produced no line at all. */
+    const flat = code.replace(/\s+/g, ' ')
     ok('the success branch excludes a send that reached no phone',
-       /res\?\.sent === true && res\?\.push !== false/.test(code),
+       /res\?\.sent === true && res\?\.push !== false/.test(flat),
        'otherwise inbox_only never reaches why()')
 
-    for (const w of ['stale', 'inbox_only', 'recent', 'signed_out', 'failed']) {
+    /**
+     * push: true IS NOT A DELIVERY.
+     *
+     * It only means the server holds VAPID signing keys. Somebody who has
+     * never turned notifications on has no rows in push_subscription, the
+     * send loop runs zero times, and this answered sent: true anyway, so the
+     * card said "they have just been told, on their phone" about a phone that
+     * was never contacted. On an iPhone that is the NORMAL state until the
+     * site is added to the home screen, because Safari refuses push to a page
+     * in a tab, so it is the likeliest outcome of all rather than an edge.
+     */
+    const fnSrc = readFileSync(
+      join(here, '..', '..', 'supabase', 'functions', 'notify', 'index.ts'), 'utf8')
+    ok('the server counts the devices it actually reached',
+       /Promise<\{ devices: number; delivered: number \}>/.test(fnSrc),
+       'pushTo returned nothing, so sent: true meant nothing')
+    ok('and hands both numbers back to the caller',
+       /devices: reach\.devices/.test(fnSrc) && /delivered: reach\.delivered/.test(fnSrc))
+    ok('delivered is only incremented on a real send',
+       /result === 'sent'[\s\S]{0,120}delivered \+= 1/.test(fnSrc))
+
+    ok('zero devices is its own outcome, not a delivery',
+       /res\.devices === 0/.test(fn) && /no_device/.test(fn))
+    ok('and zero delivered is another',
+       /res\.delivered === 0/.test(fn) && /push_refused/.test(fn))
+    ok('the told branch requires both numbers to be non-zero',
+       /res\?\.devices !== 0/.test(flat) && /res\?\.delivered !== 0/.test(flat))
+    ok('using !== 0 so an older deployment that omits them still counts as told',
+       !/res\?\.devices > 0/.test(flat) && !/res\?\.delivered > 0/.test(flat),
+       'undefined means not reported, and > 0 would read that as a failure')
+
+    for (const w of ['stale', 'inbox_only', 'no_device', 'push_refused', 'recent', 'signed_out', 'failed']) {
       const hits = i18nSrc.split(`'nudge.not_sent_${w}'`).length - 1
       ok(`nudge.not_sent_${w} exists in both languages (${hits})`, hits === 2)
     }

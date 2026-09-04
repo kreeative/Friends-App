@@ -498,6 +498,11 @@ const STRINGS = {
        entirely fixable: the Supabase function has not been redeployed. */
     'nudge.not_sent_stale': 'Your claim is saved, but nothing was sent: the notification server is still running the old version. Paste supabase/functions/notify/bundled.ts into Supabase, Edge Functions, notify, and deploy.',
     'nudge.not_sent_inbox_only': 'It is in their inbox, but no notification lit up their phone: the server has no push keys set. Settings, then Notifications, has the page that makes them.',
+    /* The likeliest one, and it is nobody's fault. On an iPhone this is the
+       normal state until the site is added to the home screen, because Safari
+       refuses push to a page in a tab. */
+    'nudge.not_sent_no_device': 'Your message is in their inbox, but nothing lit up their phone: they have no device with notifications switched on. They will see it next time they open the app.',
+    'nudge.not_sent_push_refused': 'Your message is in their inbox. Their phone was reachable but refused the notification, so it may not appear until they open the app.',
     'nudge.not_sent_recent': 'They heard from somebody in the last hour, so this one was not sent again.',
     'nudge.not_sent_signed_out': 'Your claim is saved. The message was not sent because this session is signed out.',
     'nudge.not_sent_failed': 'Your claim is saved. The message did not go out, and the server did not say why.',
@@ -1925,6 +1930,8 @@ const STRINGS = {
     'nudge.notified': 'La personne vient d’être prévenue sur son téléphone.',
     'nudge.not_sent_stale': 'Ton engagement est enregistré, mais rien n’a été envoyé : le serveur de notifications tourne encore sur l’ancienne version. Colle supabase/functions/notify/bundled.ts dans Supabase, Edge Functions, notify, puis déploie.',
     'nudge.not_sent_inbox_only': 'C’est dans sa boîte, mais aucune notification ne s’est affichée sur son téléphone : le serveur n’a pas de clés push. Réglages, puis Notifications, contient la page qui les crée.',
+    'nudge.not_sent_no_device': 'Ton message est dans sa boîte, mais rien ne s’est affiché sur son téléphone : les notifications ne sont activées sur aucun de ses appareils. Le message sera là à la prochaine ouverture de l’application.',
+    'nudge.not_sent_push_refused': 'Ton message est dans sa boîte. Son téléphone était joignable mais a refusé la notification. Le message sera là à la prochaine ouverture de l’application.',
     'nudge.not_sent_recent': 'Quelqu’un lui a déjà fait signe dans l’heure, donc ce message n’a pas été renvoyé.',
     'nudge.not_sent_signed_out': 'Ton engagement est enregistré. Le message n’est pas parti parce que cette session est déconnectée.',
     'nudge.not_sent_failed': 'Ton engagement est enregistré. Le message n’est pas parti, et le serveur n’a pas dit pourquoi.',
