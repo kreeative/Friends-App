@@ -158,6 +158,7 @@ const STRINGS = {
     'notif.mark_all': 'All read',
     'notif.open': 'Notifications, {n} unread',
     'notif.open_none': 'Notifications',
+    'notif.settings_link': 'Notification settings',
     'nav.group': 'Group',
     'nav.board': 'Board',
 
@@ -1535,11 +1536,12 @@ const STRINGS = {
     'notif.title': 'Notifications',
     'notif.none': 'Rien de nouveau.',
     'notif.unread': '{n} non lues',
-    'notif.goal_by': '{who} a ajoute un objectif commun',
+    'notif.goal_by': '{who} a ajouté un objectif commun',
     'notif.goal_anon': 'Un nouvel objectif commun',
     'notif.mark_all': 'Tout lu',
     'notif.open': 'Notifications, {n} non lues',
     'notif.open_none': 'Notifications',
+    'notif.settings_link': 'Réglages des notifications',
     'nav.group': 'Groupe',
     'nav.board': 'Tableau',
 

@@ -36,6 +36,7 @@ import Preview from './pages/public/Preview'
 import Library from './pages/Library'
 import Reader from './pages/Reader'
 import VapidSetup from './pages/VapidSetup'
+import Notifications from './pages/Notifications'
 
 /** /lectures/:slug is the same page as /library/:slug, spelled in French. */
 function LecturesRedirect() {
@@ -277,6 +278,10 @@ function Gate() {
         {/* Top level, and distinct from /g/:groupId/settings, which is the
             GROUP's settings and is unreachable to anybody without a group. */}
         <Route path="settings" element={<Account />} />
+        {/* The bell links here now. It used to open a panel anchored to the
+            icon rail, which opened sideways across whatever was on the page.
+            See the note at the top of Notifications.jsx. */}
+        <Route path="notifications" element={<Notifications />} />
         {/**
          * The push key generator. Unlisted: nothing links here, and that is
          * deliberate rather than an oversight.
