@@ -359,12 +359,12 @@ const STRINGS = {
        the browser: these two questions look the same to a person and have
        completely different answers, so each gets its own button and its own
        result line. */
-    'push.server_test': 'Send one from the server',
-    'push.server_test_note': 'The button above only asks this device to draw a notification. This one asks the server to send you a real one, which is the part that was impossible to check alone.',
+    'push.server_test': 'Check notifications',
+    'push.server_test_note': 'Sends you a real one, the whole way through, and says where it stopped if it does not arrive.',
     'push.server_ok': 'It arrived. The server, the keys and this device all work.',
     'push.server_stale': 'The notification server is running an old version, so it did not even try. Paste supabase/functions/notify/bundled.ts into Supabase, Edge Functions, notify, and deploy.',
     'push.server_no_keys': 'The server has no push keys, so it cannot sign a notification. Settings has the page that makes a pair.',
-    'push.server_no_device': 'The server has nothing to send to for this account. Turn the switch above off and on again, and on an iPhone make sure you opened the app from the home screen icon rather than a Safari tab.',
+    'push.server_no_device': 'This device is not registered with the server yet. Turn the switch above off and on again. On an iPhone, open the app from its home screen icon first: Safari does not allow notifications for a page in a tab.',
     'push.server_refused': 'The server sent it and the push service refused it. That usually means this subscription has expired: turn the switch above off and on again.',
     'push.server_signed_out': 'This session is signed out, so the server would not answer.',
     'push.server_not_configured': 'This build has no Supabase address, so there is no server to ask.',
@@ -515,20 +515,18 @@ const STRINGS = {
        closed is the only thing the button actually knows. */
     'nudge.close': 'Done',
     'nudge.notified': 'They have just been told, on their phone.',
+    /* One sentence, whatever went wrong underneath. The card belongs to
+       somebody doing a kind thing for a friend; the only fact they need is
+       that it will reach them. The technical reason lives on the element as
+       data-why and is acted on in the notifications check in Settings. */
+    'nudge.not_sent': '{name} will see it next time they open the app.',
     /* The four ways a claim can fail to reach the other phone. Each one names
        what actually happened, because "something went wrong" is the message
        that sent somebody to ask a person. `stale` is the common one and is
        entirely fixable: the Supabase function has not been redeployed. */
-    'nudge.not_sent_stale': 'Your claim is saved, but nothing was sent: the notification server is still running the old version. Paste supabase/functions/notify/bundled.ts into Supabase, Edge Functions, notify, and deploy.',
-    'nudge.not_sent_inbox_only': 'It is in their inbox, but no notification lit up their phone: the server has no push keys set. Settings, then Notifications, has the page that makes them.',
     /* The likeliest one, and it is nobody's fault. On an iPhone this is the
        normal state until the site is added to the home screen, because Safari
        refuses push to a page in a tab. */
-    'nudge.not_sent_no_device': 'Your message is in their inbox, but nothing lit up their phone: they have no device with notifications switched on. They will see it next time they open the app.',
-    'nudge.not_sent_push_refused': 'Your message is in their inbox. Their phone was reachable but refused the notification, so it may not appear until they open the app.',
-    'nudge.not_sent_recent': 'They heard from somebody in the last hour, so this one was not sent again.',
-    'nudge.not_sent_signed_out': 'Your claim is saved. The message was not sent because this session is signed out.',
-    'nudge.not_sent_failed': 'Your claim is saved. The message did not go out, and the server did not say why.',
     'nudge.hide': 'Hide {name}. This card disappears for you only.',
     /* Shown on the card when the database refuses the cross. It used to fail
        in silence and simply put the card back, so the only way to discover it
@@ -1815,12 +1813,12 @@ const STRINGS = {
     'push.test': 'Afficher une notification test',
     'push.testing': 'Envoi…',
     'push.test_sent': 'Envoyée. Si rien n’est apparu, les notifications sont coupées pour cette app dans les réglages de ton appareil.',
-    'push.server_test': 'En envoyer une depuis le serveur',
-    'push.server_test_note': 'Le bouton ci-dessus demande seulement à cet appareil d’afficher une notification. Celui-ci demande au serveur de t’en envoyer une vraie, la partie qu’il était impossible de vérifier seule.',
+    'push.server_test': 'Vérifier les notifications',
+    'push.server_test_note': 'T’envoie une vraie notification, de bout en bout, et dit où ça bloque si elle n’arrive pas.',
     'push.server_ok': 'Elle est arrivée. Le serveur, les clés et cet appareil fonctionnent.',
     'push.server_stale': 'Le serveur de notifications tourne sur une ancienne version, il n’a même pas essayé. Colle supabase/functions/notify/bundled.ts dans Supabase, Edge Functions, notify, puis déploie.',
     'push.server_no_keys': 'Le serveur n’a pas de clés push, il ne peut pas signer de notification. Réglages contient la page qui en crée une paire.',
-    'push.server_no_device': 'Le serveur n’a rien à qui envoyer pour ce compte. Coupe puis rallume l’interrupteur ci-dessus, et sur iPhone vérifie que tu as ouvert l’application depuis l’icône de l’écran d’accueil et pas depuis un onglet Safari.',
+    'push.server_no_device': 'Cet appareil n’est pas encore inscrit auprès du serveur. Coupe puis rallume l’interrupteur ci-dessus. Sur iPhone, ouvre d’abord l’application depuis son icône sur l’écran d’accueil : Safari n’autorise pas les notifications pour une page dans un onglet.',
     'push.server_refused': 'Le serveur l’a envoyée et le service de push l’a refusée. En général cet abonnement a expiré : coupe puis rallume l’interrupteur ci-dessus.',
     'push.server_signed_out': 'Cette session est déconnectée, le serveur n’a pas répondu.',
     'push.server_not_configured': 'Cette version n’a pas d’adresse Supabase, il n’y a pas de serveur à interroger.',
@@ -1967,13 +1965,7 @@ const STRINGS = {
     'nudge.claim': 'Prévenir',
     'nudge.close': 'C’est fait',
     'nudge.notified': 'La personne vient d’être prévenue sur son téléphone.',
-    'nudge.not_sent_stale': 'Ton engagement est enregistré, mais rien n’a été envoyé : le serveur de notifications tourne encore sur l’ancienne version. Colle supabase/functions/notify/bundled.ts dans Supabase, Edge Functions, notify, puis déploie.',
-    'nudge.not_sent_inbox_only': 'C’est dans sa boîte, mais aucune notification ne s’est affichée sur son téléphone : le serveur n’a pas de clés push. Réglages, puis Notifications, contient la page qui les crée.',
-    'nudge.not_sent_no_device': 'Ton message est dans sa boîte, mais rien ne s’est affiché sur son téléphone : les notifications ne sont activées sur aucun de ses appareils. Le message sera là à la prochaine ouverture de l’application.',
-    'nudge.not_sent_push_refused': 'Ton message est dans sa boîte. Son téléphone était joignable mais a refusé la notification. Le message sera là à la prochaine ouverture de l’application.',
-    'nudge.not_sent_recent': 'Quelqu’un lui a déjà fait signe dans l’heure, donc ce message n’a pas été renvoyé.',
-    'nudge.not_sent_signed_out': 'Ton engagement est enregistré. Le message n’est pas parti parce que cette session est déconnectée.',
-    'nudge.not_sent_failed': 'Ton engagement est enregistré. Le message n’est pas parti, et le serveur n’a pas dit pourquoi.',
+    'nudge.not_sent': '{name} le verra en ouvrant l’application.',
     'nudge.hide': 'Masquer {name}. Cette carte disparaît pour toi seulement.',
     'nudge.hide_failed': 'La carte n’a pas pu être rangée. Rien n’est perdu, réessaie dans un instant.',
     'nudge.count': '{n} amis à qui faire signe. Glisse.',

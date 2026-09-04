@@ -1004,13 +1004,43 @@ const b64 = (b) => Buffer.from(b).toString('base64url')
        !/res\?\.devices > 0/.test(flat) && !/res\?\.delivered > 0/.test(flat),
        'undefined means not reported, and > 0 would read that as a failure')
 
-    for (const w of ['stale', 'inbox_only', 'no_device', 'push_refused', 'recent', 'signed_out', 'failed']) {
-      const hits = i18nSrc.split(`'nudge.not_sent_${w}'`).length - 1
-      ok(`nudge.not_sent_${w} exists in both languages (${hits})`, hits === 2)
+    /**
+     * THE CARD SAYS ONE HUMAN THING, AND KEEPS THE REASON OFF THE SCREEN.
+     *
+     * It used to print the technical reason on a friend's card: which version
+     * the notification server runs, whether it holds signing keys, whether
+     * that person has a subscription. One of those told the reader to paste a
+     * file into a Supabase dashboard. Reported from the field as "a message
+     * that users must not see", which is exactly right.
+     *
+     * The reason is still carried as data-why, and Settings is where it is
+     * acted on. That separation is the assertion.
+     */
+    ok('the card prints one sentence, not the reason',
+       /t\('nudge\.not_sent', \{ name: nameOf/.test(code),
+       'the per-reason keys belonged to a diagnostic, not to a card about a person')
+    ok('and no per-reason card copy is left behind',
+       !/'nudge\.not_sent_/.test(i18nSrc),
+       'dead copy reads as shipped text and gets translated and edited')
+    ok('it names the friend rather than the machinery',
+       /'nudge\.not_sent': '\{name\}/.test(i18nSrc))
+    for (const key of ['nudge.not_sent']) {
+      const hits = i18nSrc.split(`'${key}'`).length - 1
+      ok(`${key} exists in both languages (${hits})`, hits === 2)
     }
-    ok('the stale message says exactly what to paste and where',
+    ok('the reason is still on the element for anybody debugging',
+       /data-why=\{sendState\.get\(n\.id\)\}/.test(
+         readFileSync(join(here, '..', 'components', 'NudgeBanner.jsx'), 'utf8')))
+
+    /* The paste instruction moved to Settings, which is a screen for fixing
+       things rather than a card about a person. It still has to exist. */
+    ok('the settings check still says exactly what to paste and where',
        /bundled\.ts/.test(i18nSrc) && /Edge Functions/.test(i18nSrc),
        'a reason nobody can act on is only a nicer silence')
+    ok('and the button is named in the words this screen already uses',
+       /'push\.server_test': 'Check notifications'/.test(i18nSrc) &&
+         /'push\.server_test': 'V\u00e9rifier les notifications'/.test(i18nSrc),
+       '"Send one from the server" is developer speak, next to "Check purchases"')
   }
 
   /**
