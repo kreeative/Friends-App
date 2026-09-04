@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useParams } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { GroupProvider, useGroup } from './context/GroupContext'
@@ -177,6 +178,33 @@ const PUBLIC_ROUTES = (
 function Gate() {
   const { user, profile, loading, authError } = useAuth()
   const { loading: groupsLoading, memberships, error: groupError, reload } = useGroup()
+
+  /**
+   * Make the server's push list agree with this browser, once per sign-in.
+   *
+   * NOT ONLY ON THE SETTINGS SCREEN, AND THAT IS THE WHOLE POINT.
+   *
+   * The sender deletes a push_subscription row when a push comes back 404 or
+   * 410, while the browser keeps its subscription object. So the switch reads
+   * on, the server has nothing to send to, and messages to that person go
+   * nowhere in silence. Regenerating a VAPID pair does this to everybody at
+   * once.
+   *
+   * Somebody in that state has no reason to visit Settings: as far as they can
+   * see, notifications are on. Healing there would only ever reach the person
+   * who already suspects something is wrong. So it runs here, where every
+   * signed-in person passes.
+   *
+   * Deliberately unawaited and silent. It is a read and, only when the row is
+   * actually missing, one write; nothing on screen depends on it, and a
+   * failure leaves things exactly as they already were.
+   */
+  useEffect(() => {
+    if (!user?.id) return
+    import('./lib/pushClient')
+      .then((m) => m.syncSubscription(user.id))
+      .catch(() => {})
+  }, [user?.id])
 
   // Marketing and legal pages are public in every sense, including when the
   // backend is misconfigured or down. Only the signed-in app needs Supabase.

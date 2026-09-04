@@ -1024,7 +1024,39 @@ const b64 = (b) => Buffer.from(b).toString('base64url')
        'dead copy reads as shipped text and gets translated and edited')
     ok('it names the friend rather than the machinery',
        /'nudge\.not_sent': '\{name\}/.test(i18nSrc))
-    for (const key of ['nudge.not_sent']) {
+    /**
+   * THE SWITCH AND THE SERVER HAVE TO AGREE.
+   *
+   * The sender deletes a push_subscription row when a push comes back 404 or
+   * 410, which is right: that endpoint will never work again. But the BROWSER
+   * keeps its subscription object, and the toggle asks the browser. So the row
+   * disappears, the switch stays on, and every message to that person goes
+   * nowhere in silence. Regenerating a VAPID pair does it to everyone at once.
+   *
+   * Reported as "she has her notifications set" against a server answering
+   * that she had no device. Both were telling the truth.
+   */
+  {
+    const clientSrc = readFileSync(join(here, 'pushClient.js'), 'utf8')
+    ok('there is something that makes the server agree with the browser',
+       /export async function syncSubscription/.test(clientSrc))
+    const sync = clientSrc.slice(clientSrc.indexOf('export async function syncSubscription'))
+    ok('it reads before it writes, so a healthy account costs no write',
+       sync.indexOf(".select('endpoint')") < sync.indexOf('.upsert('),
+       'and so healed means something rather than being always true')
+    ok('it never throws at whoever happened to open the app',
+       /catch \{/.test(sync))
+
+    /* The placement is the point. Somebody whose switch reads on has no reason
+       to visit Settings, so healing only there would reach exactly the people
+       who already suspect something is wrong. */
+    const appSrc = readFileSync(join(here, '..', 'App.jsx'), 'utf8')
+    ok('and it runs for every signed-in person, not only in Settings',
+       /syncSubscription\(user\.id\)/.test(appSrc),
+       'the people it has to reach are the ones who think nothing is wrong')
+  }
+
+  for (const key of ['nudge.not_sent']) {
       const hits = i18nSrc.split(`'${key}'`).length - 1
       ok(`${key} exists in both languages (${hits})`, hits === 2)
     }
