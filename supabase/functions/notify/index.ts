@@ -1417,12 +1417,59 @@ async function deliverNudge(req: Request): Promise<Response> {
    * number is zero. It is simply not a delivery, and must not be reported as
    * one.
    */
+  /**
+   * NO PHONE REACHED MEANS SEND THE EMAIL, NOW.
+   *
+   * "She will see it next time she opens the app" was the answer here, and it
+   * is not an answer. The whole point of this feature is that somebody who has
+   * stopped opening the app gets reached; telling the sender that the message
+   * is sitting where the quiet person is not looking is the failure written
+   * politely.
+   *
+   * Push cannot always work and never will: it needs the recipient to have
+   * subscribed on a device, which on an iPhone means adding the site to the
+   * home screen first. Email needs nothing. It is the channel that reaches
+   * everybody, it is already built, and the scheduled sender was going to use
+   * it for this exact nudge on its next run anyway. Doing it now is the only
+   * part that is new.
+   *
+   * Under the SAME claim in notifications_log, so this cannot become a second
+   * message: one piece of news is one message however many ways it travels. If
+   * the claim is refused, this person has already been written to for this
+   * cycle and nothing more is owed. If the send fails, the claim goes back, or
+   * one refused email would cost them their only message of the cycle.
+   */
+  let mailed = false
+  if (reach.delivered === 0) {
+    if (await claim(nudge.subject_id, nudge.cycle_id, 'nudge')) {
+      const { data: g } = await supabase
+        .from('groups').select('name').eq('id', nudge.group_id).maybeSingle()
+      const name = g?.name ?? (to?.loc === 'fr' ? 'ton groupe' : 'your group')
+      const outcome = to?.to
+        ? await send(to.to, from ? c.nudgeFromSubject(from, to.fem) : c.nudgeSubject(name), {
+            title: from ? c.nudgeFromTitle(from, to.fem) : c.nudgeTitle,
+            preheader: c.nudgePre(name),
+            blocks: [
+              { kind: 'lead', text: from ? c.nudgeFromLead(from, name) : c.nudgeLead(name) },
+              { kind: 'text', text: c.nudgeBody },
+              { kind: 'button', label: c.nudgeCta, href: `${SITE}/profile` },
+            ],
+            footnote: c.nudgeFoot(name),
+            loc: to.loc,
+          })
+        : 'failed'
+      mailed = outcome === 'sent'
+      if (!mailed) await release(nudge.subject_id, nudge.cycle_id, 'nudge')
+    }
+  }
+
   return json({
     ok: true,
     sent: true,
     push: PUSH_READY,
     devices: reach.devices,
     delivered: reach.delivered,
+    mailed,
   })
 }
 
