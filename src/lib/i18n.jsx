@@ -492,6 +492,13 @@ const STRINGS = {
        was to keep tapping. */
     'nudge.hide_failed': 'The card could not be put away. Nothing was lost, try again in a moment.',
     'nudge.count': '{n} friends to say hello to. Swipe.',
+    /* Plain counting, and no word about why. Somebody put a card away for a
+       reason they hold and the app has no business summarising it back at
+       them. Singular and plural because "1 cards" is the tell that nobody
+       read the sentence. */
+    'nudge.put_away_one': '1 card put away.',
+    'nudge.put_away_other': '{n} cards put away.',
+    'nudge.restore': 'Show them again',
     'nudge.busy': 'One moment',
 
     'signin.title': 'Get in with people who move.',
@@ -1904,6 +1911,9 @@ const STRINGS = {
     'nudge.hide': 'Masquer {name}. Cette carte disparaît pour toi seulement.',
     'nudge.hide_failed': 'La carte n’a pas pu être rangée. Rien n’est perdu, réessaie dans un instant.',
     'nudge.count': '{n} amis à qui faire signe. Glisse.',
+    'nudge.put_away_one': '1 carte masquée.',
+    'nudge.put_away_other': '{n} cartes masquées.',
+    'nudge.restore': 'Tout remontrer',
     'nudge.busy': 'Un instant',
 
     'signin.title': 'Rejoins des gens qui avancent.',

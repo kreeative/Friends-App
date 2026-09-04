@@ -41,7 +41,7 @@ import { DismissButton } from './ui'
  */
 export default function NudgeBanner() {
   const { user } = useAuth()
-  const { nudges, members, reloadGroup } = useGroup()
+  const { nudges, hiddenNudges, members, reloadGroup } = useGroup()
   /* Nudges whose push the server confirmed, this session. */
   const [notified, setNotified] = useState(() => new Set())
   const { t } = useT()
@@ -55,7 +55,20 @@ export default function NudgeBanner() {
   const rail = useRef(null)
 
   const visible = nudges.filter((n) => n.subject_id !== user?.id && !hidden.has(n.id))
-  if (visible.length === 0) return null
+  /* Cards this reader crossed off that are still open, and still about
+     somebody else. The rail offers them back. */
+  const putAway = (hiddenNudges ?? []).filter((n) => n.subject_id !== user?.id)
+
+  /**
+   * THE RAIL STAYS WHEN EVERYTHING IS PUT AWAY.
+   *
+   * This was `if (visible.length === 0) return null`, so crossing off every
+   * card removed the whole section: no count, no button, no mention that
+   * anything had been put away at all. Nine open nudges and a board that says
+   * nothing about any of them, with the only route back being somebody running
+   * SQL against the database. That is not a route.
+   */
+  if (visible.length === 0 && putAway.length === 0) return null
 
   const nameOf = (id) =>
     members.find((m) => m.user_id === id)?.profile?.display_name ?? 'Someone'
@@ -171,6 +184,41 @@ export default function NudgeBanner() {
       setHidden((s) => { const n = new Set(s); n.delete(id); return n })
       setHideFailed((s) => new Set(s).add(id))
     }
+  }
+
+  /**
+   * Everything this reader put away, back on the rail.
+   *
+   * The cross had no undo anywhere in the app. Cards went away and the only
+   * way to get one back was to wait out the seven days or to run a DELETE by
+   * hand against the database, which is not something to ask of anybody.
+   *
+   * All of them at once rather than one at a time, because a per-card undo
+   * needs a list of the cards to undo, and that list is the thing that does
+   * not exist: they are hidden. This is one button on the rail that says how
+   * many there are.
+   *
+   * The count matters. RLS refuses a delete silently, with zero rows and no
+   * error, so "no error" is not the same as "it worked" and the button would
+   * otherwise look like it had done something.
+   */
+  async function restoreAll() {
+    if (putAway.length === 0) return
+    setBusy('restore')
+    const { error, count } = await supabase
+      .from('nudge_hidden')
+      .delete({ count: 'exact' })
+      .eq('user_id', user.id)
+      .in('nudge_id', putAway.map((n) => n.id))
+
+    if (!error && count !== 0) {
+      /* The optimistic set too, or a card crossed off a moment ago stays gone
+         on a rail that has just announced it brought everything back. */
+      setHidden(() => new Set())
+      setHideFailed(() => new Set())
+      await reloadGroup()
+    }
+    setBusy(null)
   }
 
   return (
@@ -291,6 +339,36 @@ export default function NudgeBanner() {
       {visible.length > 1 && (
         <p className="mt-1 px-1 text-label text-muted" data-hook="nudge-count">
           {t('nudge.count', { n: visible.length })}
+        </p>
+      )}
+
+      {/**
+       * The way back.
+       *
+       * Quiet: a line of small grey text with a button in it, not a panel and
+       * not a warning. Nothing has gone wrong, somebody put some cards away
+       * and might want them back, and a card that has been put away is
+       * supposed to be out of the way.
+       *
+       * Always rendered when there is something to restore, including when
+       * every card is hidden and the rail above is empty. That is the case
+       * this exists for.
+       *
+       * Measured at 7.12:1 against the worst pixel of the gradient behind it,
+       * and underlined so the control is not a control by colour alone.
+       */}
+      {putAway.length > 0 && (
+        <p className="mt-1 px-1 text-label text-muted" data-hook="nudge-put-away">
+          {t('nudge.put_away', { n: putAway.length })}{' '}
+          <button
+            type="button"
+            onClick={restoreAll}
+            disabled={busy === 'restore'}
+            data-hook="nudge-restore"
+            className="press underline decoration-from-font underline-offset-2"
+          >
+            {busy === 'restore' ? t('nudge.busy') : t('nudge.restore')}
+          </button>
         </p>
       )}
     </div>

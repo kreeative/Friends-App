@@ -829,6 +829,52 @@ const b64 = (b) => Buffer.from(b).toString('base64url')
       /setHideFailed/.test(hide) && /data-hook="nudge-hide-failed"/.test(nudge),
       'it restored the card in silence, so the only symptom was tapping twice',
     )
+
+    /**
+     * THE CROSS HAS AN UNDO, AND IT SURVIVES EVERYTHING BEING HIDDEN.
+     *
+     * The early return was `if (visible.length === 0) return null`, so crossing
+     * off every card removed the whole section from the board. Nine open nudges
+     * and nothing on screen about any of them: no count, no button, no hint
+     * that anything had been put away. The only way back was a DELETE run by
+     * hand against the database.
+     *
+     * The condition is the assertion. A restore button that only renders when
+     * a card is already visible is a button for the case that does not need it.
+     */
+    ok(
+      'the rail still renders when every card is put away',
+      /visible\.length === 0 && putAway\.length === 0/.test(code),
+      'otherwise the board goes silent and there is no way back',
+    )
+    ok(
+      'and it offers them back',
+      /data-hook="nudge-restore"/.test(nudge) && /restoreAll/.test(code),
+    )
+    const restore = code.slice(code.indexOf('async function restoreAll('))
+    ok(
+      'the restore asks for an exact count',
+      /\.delete\(\{ count: 'exact' \}\)/.test(restore),
+      'RLS refuses a delete with zero rows and no error, so no error is not success',
+    )
+    ok(
+      'and checks it before saying anything happened',
+      /count !== 0/.test(restore),
+    )
+    ok(
+      'it is scoped to this reader and to the cards actually put away',
+      /\.eq\('user_id', user\.id\)/.test(restore) && /\.in\('nudge_id'/.test(restore),
+    )
+    ok(
+      'the optimistic set is cleared too',
+      /setHidden\(\(\) => new Set\(\)\)/.test(restore),
+      'a card crossed off a moment ago would otherwise stay gone on a rail that just said everything is back',
+    )
+  }
+
+  for (const key of ['nudge.put_away_one', 'nudge.put_away_other', 'nudge.restore']) {
+    const hits = i18nSrc.split(`'${key}'`).length - 1
+    ok(`${key} exists in both languages (${hits})`, hits === 2)
   }
 
   /**
