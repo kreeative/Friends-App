@@ -469,12 +469,13 @@ const STRINGS = {
        French copy for why. */
     'nudge.reach_out': 'Say hello to {name}',
     'nudge.quiet': 'No word for a couple of weeks.',
-    'nudge.claimed_by_me': 'You’ve got this one. Make it about the two of you, not about the app.',
+    'nudge.claimed_by_me': 'You\u2019ve got this one. Make it about the two of you, not about the app.',
     'nudge.claimed_by_other': '{name} has got this one.',
     'nudge.assigned': 'It is yours this time. A text is plenty.',
     'nudge.open': 'Wherever you actually talk, not in here.',
-    'nudge.claim': 'I’ll check on them',
+    'nudge.claim': 'Notify them',
     'nudge.close': 'Done, we spoke',
+    'nudge.notified': 'They have just been told, on their phone.',
     'nudge.hide': 'Hide {name}. This card disappears for you only.',
     'nudge.count': '{n} friends to say hello to. Swipe.',
     'nudge.busy': 'One moment',
@@ -1874,12 +1875,13 @@ const STRINGS = {
     /* Accords neutres partout. On ne connait pas le genre des gens : la
        version d'avant disait "parle de lui" et "Toi seul arretes", ce qui se
        trompe une fois sur deux et n'apporte rien. */
-    'nudge.claimed_by_me': 'C’est toi qui t’en occupes. Parle de vous deux, pas de l’appli.',
+    'nudge.claimed_by_me': 'C\u2019est toi qui t\u2019en occupes. Parle de vous deux, pas de l\u2019appli.',
     'nudge.claimed_by_other': '{name} s’en occupe.',
     'nudge.assigned': 'C’est à toi cette fois. Un message suffit.',
     'nudge.open': 'Là où vous parlez vraiment, pas ici.',
-    'nudge.claim': 'Je m’en occupe',
+    'nudge.claim': 'Prévenir',
     'nudge.close': 'C’est fait, on s’est parlé',
+    'nudge.notified': 'La personne vient d\u2019\u00eatre pr\u00e9venue sur son t\u00e9l\u00e9phone.',
     'nudge.hide': 'Masquer {name}. Cette carte disparaît pour toi seulement.',
     'nudge.count': '{n} amis à qui faire signe. Glisse.',
     'nudge.busy': 'Un instant',

@@ -42,6 +42,8 @@ import { DismissButton } from './ui'
 export default function NudgeBanner() {
   const { user } = useAuth()
   const { nudges, members, reloadGroup } = useGroup()
+  /* Nudges whose push the server confirmed, this session. */
+  const [notified, setNotified] = useState(() => new Set())
   const { t } = useT()
   const [busy, setBusy] = useState(null)
   /* Optimistic. The row goes to the database and the card goes now: the
@@ -70,7 +72,34 @@ export default function NudgeBanner() {
   async function claim(id) {
     setBusy(id)
     const { error } = await supabase.rpc('claim_nudge', { p_nudge_id: id })
-    if (!error) await pushNudge(id)
+    if (!error) {
+      /**
+       * ONLY SAY THEY WERE TOLD WHEN THE SERVER SAYS SO.
+       *
+       * The button says "notify them", so the obvious next line is "they have
+       * been told" and the obvious place to put it is the standing text under
+       * a claimed card. Both would be wrong.
+       *
+       * The push is sent by the Supabase function, and until the updated one
+       * is deployed the POST reaches the old handler, which ignores the body
+       * and runs its scheduled job. Nothing is written, nobody is told, and a
+       * line printed from the claim alone would say otherwise. The same holds
+       * for a network that dropped the call.
+       *
+       * So this is shown from the RESULT, and only when the server reports it
+       * actually sent. It is transient rather than part of the card, because
+       * on the next load nothing in the nudge row records whether a push went
+       * out, and a standing sentence would have to be guessed at.
+       */
+      const res = await pushNudge(id)
+      /* === true, not merely truthy. The OLD function answers a POST by
+         running its scheduled job and returning { ok, sent: tally }, where
+         tally is an object and therefore truthy. `res?.sent` passed against
+         it, so the line claiming delivery appeared while nothing had been
+         sent, which is precisely the case this check exists to catch. Found
+         by driving that exact response in Chromium. */
+      if (res?.ok === true && res?.sent === true) setNotified((s2) => new Set(s2).add(id))
+    }
     await reloadGroup()
     setBusy(null)
   }
@@ -169,6 +198,12 @@ export default function NudgeBanner() {
                     ? t('nudge.assigned')
                     : t('nudge.open')}
               </p>
+
+              {notified.has(n.id) && (
+                <p className="mt-2 text-small text-muted" data-hook="nudge-notified" role="status">
+                  {t('nudge.notified')}
+                </p>
+              )}
 
               {n.state === 'pending' && (
                 <button
