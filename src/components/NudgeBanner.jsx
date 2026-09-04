@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { pushNudge } from '../lib/notifications'
 import { useAuth } from '../context/AuthContext'
 import { useGroup } from '../context/GroupContext'
 import { useT } from '../lib/i18n'
@@ -55,9 +56,21 @@ export default function NudgeBanner() {
   const nameOf = (id) =>
     members.find((m) => m.user_id === id)?.profile?.display_name ?? 'Someone'
 
+  /**
+   * Claiming is a person saying "I will reach out to them", so the person it
+   * is about hears about it in the same minute rather than in the next digest.
+   *
+   * After the claim, never before: the endpoint checks that the caller is the
+   * one who claimed the nudge, so asking first would simply be refused. And
+   * the result is deliberately not shown. The claim is what the group needed
+   * and it has already happened; whether the other phone was reachable is not
+   * something the claimer did wrong or can fix, and the inbox row is written
+   * server-side either way.
+   */
   async function claim(id) {
     setBusy(id)
-    await supabase.rpc('claim_nudge', { p_nudge_id: id })
+    const { error } = await supabase.rpc('claim_nudge', { p_nudge_id: id })
+    if (!error) await pushNudge(id)
     await reloadGroup()
     setBusy(null)
   }
@@ -161,6 +174,7 @@ export default function NudgeBanner() {
                 <button
                   onClick={() => claim(n.id)}
                   disabled={busy === n.id}
+                  data-hook="nudge-claim"
                   className="btn-primary press mt-6 w-full"
                 >
                   {busy === n.id ? t('nudge.busy') : t('nudge.claim')}

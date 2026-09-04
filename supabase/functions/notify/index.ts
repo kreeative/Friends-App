@@ -1138,7 +1138,166 @@ async function sendCycleReminders() {
   }
 }
 
-Deno.serve(async () => {
+/**
+ * ============================================================================
+ * INSTANT PUSH, ON DEMAND.
+ * ============================================================================
+ *
+ * Everything above this line is a scheduled job: cron calls the function, it
+ * looks at who is due, and it sends. That is right for a digest and wrong for
+ * the one message that is worth being immediate, which is somebody in your
+ * group deciding to reach out to you because you have gone quiet. An hour late
+ * that is a form letter; in the same minute it is a person.
+ *
+ * WHY THIS LIVES HERE AND NOT IN /api.
+ *
+ * A push has to be signed with the VAPID private key, and that key is in
+ * Supabase and nowhere else. Not in the repository, not in Vercel, not in a
+ * message. A Vercel route could not send one without moving it, so the send
+ * happens where the key already is.
+ *
+ * THE REQUEST NEVER NAMES A RECIPIENT, AND THAT IS THE WHOLE SECURITY MODEL.
+ *
+ * It names a NUDGE. The nudge row already records who it is about, which group
+ * it belongs to and who claimed it, and every one of those was written by the
+ * database under policies that had already decided who may do what. So the
+ * caller cannot choose a target: they can only point at a row, and the row
+ * says where the message goes.
+ *
+ * An endpoint shaped the other way, taking { user_id, title, body }, would let
+ * anybody with an account write anything to anybody's lock screen. That is the
+ * obvious API and it is the wrong one.
+ *
+ * Four things are checked before anything is sent, and all four are about the
+ * row rather than about the request:
+ *
+ *   the caller is signed in                    a verified JWT, not a claim
+ *   the nudge exists                           and is loaded server-side
+ *   the caller claimed it                      claimed_by is the caller
+ *   it has not just been sent                  see the ledger below
+ */
+
+const CORS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+}
+
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json', ...CORS },
+  })
+
+/**
+ * One push per nudge per hour, whoever asks and however often.
+ *
+ * The notification table is the ledger rather than a new column, because a row
+ * has to be written anyway: the person being reached out to should find it in
+ * their inbox whether or not their phone was reachable at that moment. Reusing
+ * it means the guard and the record are the same fact, and cannot disagree.
+ *
+ * An hour rather than forever. Claiming a nudge twice in a week is two real
+ * gestures a fortnight apart; twice in a minute is a double tap or a retry.
+ */
+async function recentlyNudged(subjectId: string, groupId: string): Promise<boolean> {
+  const since = new Date(Date.now() - 60 * 60 * 1000).toISOString()
+  const { data } = await supabase
+    .from('notification')
+    .select('id')
+    .eq('user_id', subjectId)
+    .eq('group_id', groupId)
+    .eq('kind', 'nudge')
+    .gte('created_at', since)
+    .limit(1)
+  return (data ?? []).length > 0
+}
+
+async function deliverNudge(req: Request): Promise<Response> {
+  const token = (req.headers.get('authorization') ?? '').replace(/^Bearer\s+/i, '')
+  if (!token) return json({ ok: false, error: 'signed_out' }, 401)
+
+  const { data: who } = await supabase.auth.getUser(token)
+  const caller = who?.user
+  if (!caller) return json({ ok: false, error: 'bad_session' }, 401)
+
+  let body: { nudge_id?: string } = {}
+  try {
+    body = await req.json()
+  } catch {
+    return json({ ok: false, error: 'bad_body' }, 400)
+  }
+  if (!body.nudge_id) return json({ ok: false, error: 'no_nudge' }, 400)
+
+  const { data: nudge } = await supabase
+    .from('nudges')
+    .select('id, group_id, subject_id, claimed_by, state')
+    .eq('id', body.nudge_id)
+    .maybeSingle()
+
+  if (!nudge) return json({ ok: false, error: 'no_such_nudge' }, 404)
+
+  /* The caller has to be the one who claimed it. Membership alone would let
+     any member of the group fire a message about somebody else's gesture. */
+  if (nudge.claimed_by !== caller.id) return json({ ok: false, error: 'not_yours' }, 403)
+  if (nudge.subject_id === caller.id) return json({ ok: false, error: 'self' }, 400)
+
+  if (await recentlyNudged(nudge.subject_id, nudge.group_id)) {
+    return json({ ok: true, sent: false, reason: 'already_sent_recently' })
+  }
+
+  /* The words, in the recipient's language rather than the sender's. This
+     function runs with nobody's browser attached, so the only source is the
+     profile, which is exactly why sendNudges reads it too. */
+  const to = await recipient(nudge.subject_id)
+  const c = COPY[to?.loc ?? 'fr']
+
+  const { data: actor } = await supabase
+    .from('profiles')
+    .select('display_name')
+    .eq('id', caller.id)
+    .maybeSingle()
+  const from = actor?.display_name?.trim()
+
+  /* The inbox row first. If the push fails, is refused, or the phone is off,
+     the message still exists somewhere they will find it. A push that is the
+     only copy of something is a message that can be lost silently. */
+  await supabase.from('notification').insert({
+    user_id: nudge.subject_id,
+    kind: 'nudge',
+    href: `/g/${nudge.group_id}`,
+    actor_id: caller.id,
+    group_id: nudge.group_id,
+  })
+
+  await pushTo(nudge.subject_id, {
+    title: from ? c.nudgeFromTitle(from) : c.nudgeTitle,
+    body: c.nudgeCta,
+    url: `${SITE}/g/${nudge.group_id}`,
+    tag: 'nudge',
+  })
+
+  return json({ ok: true, sent: true, push: PUSH_READY })
+}
+
+Deno.serve(async (req) => {
+  /* The browser asks first, and a preflight that is not answered makes the
+     real request never happen, with nothing in the function's logs to say so:
+     the failure is entirely on the other side. */
+  if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS })
+
+  /* A POST is somebody in the app asking for one message now. Anything else is
+     cron asking for the scheduled run, which is what this function was before
+     and still is by default. */
+  if (req.method === 'POST') {
+    try {
+      return await deliverNudge(req)
+    } catch (err) {
+      console.error('instant push failed', err)
+      return json({ ok: false, error: String(err) }, 500)
+    }
+  }
+
   try {
     // Advance cycles first so the digests and nudges below see current state.
     await supabase.rpc('tick')

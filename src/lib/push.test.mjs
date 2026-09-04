@@ -650,5 +650,112 @@ const b64 = (b) => Buffer.from(b).toString('base64url')
   )
 }
 
+/**
+ * INSTANT PUSH, AND THE ONE RULE THAT MAKES IT SAFE TO EXPOSE.
+ *
+ * Somebody in your group deciding to reach out because you have gone quiet is
+ * the one message worth being immediate. An hour late it is a form letter; in
+ * the same minute it is a person. So claiming a nudge now asks Supabase to
+ * push, rather than waiting for the next scheduled run.
+ *
+ * It lives in the edge function because a push is signed with the VAPID
+ * private key, and that key is in Supabase and nowhere else. A Vercel route
+ * could not send one without moving it.
+ *
+ * THE REQUEST NEVER NAMES A RECIPIENT.
+ *
+ * It names a NUDGE. The row already records who it is about, which group it
+ * belongs to and who claimed it, all written by the database under policies
+ * that had already decided who may do what. The caller cannot choose a target:
+ * they point at a row and the row says where the message goes.
+ *
+ * The obvious API, { user_id, title, body }, would let anybody with an account
+ * write anything to anybody's lock screen. That shape is what these assertions
+ * exist to keep out.
+ *
+ * Verified in Chromium by capturing the bytes the browser actually sends on a
+ * real click: {"nudge_id":"..."} and nothing else, with a bearer token.
+ */
+{
+  const fn = readFileSync(join(here, '..', '..', 'supabase', 'functions', 'notify', 'index.ts'), 'utf8')
+  const fnCode = stripped(fn)
+
+  ok('the function answers a POST as an instant push',
+     /if \(req\.method === 'POST'\)/.test(fnCode) && /deliverNudge/.test(fnCode))
+  ok('and still runs the scheduled job otherwise',
+     /await sendDigests\(\)/.test(fnCode) && /await sendNudges\(\)/.test(fnCode),
+     'adding a mode must not remove the one it already had')
+
+  ok(
+    'the recipient comes from the nudge row, never from the request',
+    /\.from\('nudges'\)/.test(fnCode) && /nudge\.subject_id/.test(fnCode) &&
+      !/body\.user_id|body\.title|body\.body/.test(fnCode),
+    'taking a target from the body is the shape that must never exist here',
+  )
+  ok(
+    'only the person who claimed it can fire it',
+    /nudge\.claimed_by !== caller\.id/.test(fnCode),
+    'membership alone would let anybody send about somebody else\u2019s gesture',
+  )
+  ok(
+    'the caller is a verified token, not an id in the body',
+    /supabase\.auth\.getUser\(token\)/.test(fnCode) && /'bad_session'/.test(fnCode),
+  )
+  ok(
+    'and it will not push somebody to themselves',
+    /nudge\.subject_id === caller\.id/.test(fnCode),
+  )
+  ok(
+    'a second call within the hour sends nothing',
+    /recentlyNudged/.test(fnCode) && /60 \* 60 \* 1000/.test(fnCode),
+    'a double tap or a retry must not buzz somebody twice',
+  )
+  ok(
+    'the inbox row is written before the push',
+    fnCode.indexOf("kind: 'nudge'") < fnCode.indexOf('await pushTo(nudge.subject_id'),
+    'a push that is the only copy of a message can be lost silently',
+  )
+  ok(
+    'the preflight is answered',
+    /req\.method === 'OPTIONS'/.test(fnCode) && /Access-Control-Allow-Headers/.test(fn),
+    'an unanswered preflight makes the real request never happen, with nothing in the logs',
+  )
+  ok(
+    'the words are the recipient\u2019s language, not the sender\u2019s',
+    /COPY\[to\?\.loc \?\? 'fr'\]/.test(fnCode),
+  )
+
+  /* The browser half. */
+  const cli = readFileSync(join(here, 'notifications.js'), 'utf8')
+  ok('the client sends only an id',
+     /JSON\.stringify\(\{ nudge_id: nudgeId \}\)/.test(cli))
+  ok('and never throws at the person who claimed',
+     /catch \(e\)/.test(cli) && /export async function pushNudge/.test(cli),
+     'the claim already succeeded; the other phone is not their problem')
+
+  /**
+   * BUNDLE FRESHNESS IS NOT CHECKED HERE, DELIBERATELY.
+   *
+   * bundled.ts is what gets pasted into the dashboard, so a stale one means
+   * the deployed function is the old one and everything above is theatre. The
+   * first version of this block guarded that with
+   * /deliverNudge/.test(bundled), which is a substring test: renaming the
+   * function to deliverNudgeOLD passed it. A weaker copy of a check that
+   * already exists is worse than no copy, because it reads like coverage.
+   *
+   * notifyCopy.test.mjs owns this properly. It regenerates the bundle in
+   * memory and compares, so any divergence at all fails. Confirmed by deleting
+   * the whole instant-push handler from bundled.ts: that suite failed with
+   * "bundled.ts matches what the script would write now", and this one did
+   * not notice.
+   */
+  ok(
+    'something still checks the bundle is regenerated',
+    /bundled\.ts matches what the script would write now/.test(
+      readFileSync(join(here, 'notifyCopy.test.mjs'), 'utf8')),
+    'if that check is ever removed, a stale paste deploys silently',
+  )
+}
+
 console.log(`\npush\n\n  ${pass} passed, ${fail} failed\n`)
 process.exit(fail === 0 ? 0 : 1)
