@@ -64,9 +64,23 @@ self.addEventListener('push', (event) => {
     }
   }
 
-  const title = data.title || 'Rich & Friends'
+  /**
+   * THE TITLE IS NEVER THE APP'S OWN NAME.
+   *
+   * iOS prints "from Rich & Friends" on its own line under the title, so a
+   * notification titled "Rich & Friends" arrives reading "Rich & Friends /
+   * from Rich & Friends / ...". Reported from a real lock screen. Every real
+   * push already sends something specific, a commitment or a person's name;
+   * this fallback was the one place that did not.
+   *
+   * So an untitled push promotes its body to the title rather than borrowing
+   * the app name, and then clears the body so the same sentence is not printed
+   * twice. The app name survives only for a push carrying neither, where
+   * something has to be shown and there is nothing else to say.
+   */
+  const title = data.title || data.body || 'Rich & Friends'
   const options = {
-    body: data.body || '',
+    body: data.title ? (data.body || '') : '',
     icon: '/icon-192.png',
     badge: '/icon-192.png',
     /* Where a tap goes. Read back in notificationclick below. */

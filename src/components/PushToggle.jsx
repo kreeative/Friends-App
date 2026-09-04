@@ -93,17 +93,33 @@ export default function PushToggle() {
           if (result.reason === 'denied' || result.reason === 'refused') setSupport('denied')
           return
         }
+        /**
+         * THE SWITCH MOVES NOW, NOT AFTER THE ROW IS WRITTEN.
+         *
+         * Reported: turning it on appeared to do nothing, and the switch only
+         * showed as on after closing the app and opening it again.
+         *
+         * That is this ordering. `setOn(true)` used to sit AFTER the upsert,
+         * behind an early return on error, so a failed row write left the
+         * browser genuinely subscribed and the switch showing off. Reopening
+         * the app then read the real subscription off the service worker and
+         * showed on, which is why it looked like it needed a restart.
+         *
+         * The label says "on for this browser", and by this line that is
+         * simply true: enablePush has already asked, subscribed, and been
+         * granted. So the switch reflects it immediately. A row that fails to
+         * save is a separate problem and gets said separately, rather than
+         * being reported as the switch not having worked.
+         */
+        setOn(true)
+
         /* onConflict on the endpoint: subscribing again on the same browser
            returns the same endpoint, and the keys can have rotated. Without
            this it is a duplicate-key error and the switch silently fails. */
         const { error } = await supabase
           .from('push_subscription')
           .upsert(result.row, { onConflict: 'endpoint' })
-        if (error) {
-          setProblem('save-failed')
-          return
-        }
-        setOn(true)
+        if (error) setProblem('save-failed')
       }
     } catch {
       setProblem('save-failed')
@@ -194,8 +210,6 @@ export default function PushToggle() {
           >
             {testing ? t('push.testing') : t('push.test')}
           </button>
-
-          <p className="mt-2 text-small text-muted">{t('push.test_note')}</p>
 
           {tested && (
             <p

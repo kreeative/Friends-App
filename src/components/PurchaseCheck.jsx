@@ -84,7 +84,10 @@ export default function PurchaseCheck() {
 
   return (
     <div data-hook="purchase-check">
-      <p className="text-small text-muted">{t('diag.body')}</p>
+      {/* The paragraph that explained what this checks moved to the help
+          page. Asked for directly: the settings screen should be buttons, not
+          essays. Somebody arriving here already knows why they came, and
+          somebody who does not has a page for that. */}
       <button
         type="button"
         onClick={run}

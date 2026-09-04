@@ -348,8 +348,12 @@ const STRINGS = {
     'push.test': 'Show a test notification',
     'push.testing': 'Sending…',
     'push.test_sent': 'Sent. If nothing appeared, notifications are switched off for this app in your device settings.',
-    'push.test_note': 'This checks that your device will display one. A real reminder also has to travel from the server, which this does not test.',
-    'push.test_title': 'Rich & Friends',
+    /* NOT "Rich & Friends". iOS prints "from Rich & Friends" under the title
+       itself, so naming the app here rendered as "Rich & Friends / from Rich &
+       Friends / ...". The title is for what the notification is about; the
+       platform already says who it is from. Same rule for every real
+       notification, which is why those send a commitment or a person's name. */
+    'push.test_title': 'Test notification',
     'push.test_body': 'This is what a reminder looks like.',
     'birthday.count': '{n} birthdays coming up. Swipe.',
     'birthday.hide': 'Hide {name}. This card disappears for you only.',
@@ -1727,8 +1731,9 @@ const STRINGS = {
     'push.test': 'Afficher une notification test',
     'push.testing': 'Envoi…',
     'push.test_sent': 'Envoyée. Si rien n’est apparu, les notifications sont coupées pour cette app dans les réglages de ton appareil.',
-    'push.test_note': 'Ceci vérifie que ton appareil sait en afficher une. Un vrai rappel doit aussi voyager depuis le serveur, ce qui n’est pas testé ici.',
-    'push.test_title': 'Rich & Friends',
+    /* Pas « Rich & Friends » : iOS affiche déjà « from Rich & Friends » sous
+       le titre, donc mettre le nom de l'app ici donnait le nom deux fois. */
+    'push.test_title': 'Notification test',
     'push.test_body': 'Voilà à quoi ressemble un rappel.',
     'birthday.count': '{n} anniversaires arrivent. Glisse.',
     /* Meme phrase que nudge.hide : la croix est privee partout, et le dire une

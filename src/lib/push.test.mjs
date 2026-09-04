@@ -53,6 +53,13 @@ const REF = '/tmp/claude-0/-home-user-Friends-App/a6967461-6e34-5f5f-9257-a65ffd
  */
 const stripped = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '')
 
+/* The copy, read once at module scope. Two blocks below each read this file
+   into a local with a different name, and an assertion added to the first
+   block referencing the second block's name failed with "i18nSrc is not
+   defined". Same lesson as the stripper above: helpers and shared reads go at
+   the top, or the next person pays for it again. */
+const i18nSrc = readFileSync(join(here, 'i18n.jsx'), 'utf8')
+
 let pass = 0
 let fail = 0
 const ok = (name, cond, extra = '') => {
@@ -407,16 +414,65 @@ const b64 = (b) => Buffer.from(b).toString('base64url')
   /* The honesty of the copy is the part worth pinning. Someone shortening this
      to "Notifications are working" would be making a claim the test did not
      earn. */
-  const i18n = readFileSync(join(here, 'i18n.jsx'), 'utf8')
-  for (const key of ['push.test', 'push.testing', 'push.test_sent', 'push.test_note',
+  for (const key of ['push.test', 'push.testing', 'push.test_sent',
                      'push.test_title', 'push.test_body']) {
-    const hits = i18n.split(`'${key}'`).length - 1
+    const hits = i18nSrc.split(`'${key}'`).length - 1
     ok(`${key} exists in both languages (${hits})`, hits === 2)
   }
+  /**
+   * NO NOTIFICATION TITLE IS EVER THE APP'S OWN NAME.
+   *
+   * iOS prints "from Rich & Friends" on its own line beneath the title, so a
+   * notification titled "Rich & Friends" lands on the lock screen reading
+   * "Rich & Friends / from Rich & Friends / ...". That is what shipped, and it
+   * was reported from a real phone the first time the test button was pressed.
+   *
+   * The title is for what the notification is ABOUT. Every real push already
+   * gets that right, sending a commitment or a person's name; the test title
+   * and the service worker's untitled fallback were the two places that did
+   * not.
+   */
   ok(
-    'the note says delivery is not what was tested',
-    /which this does not test/.test(i18n) && /n’est pas testé ici/.test(i18n),
-    'this button must never read as an end-to-end check',
+    'the test notification is not titled with the app name',
+    !/'push\.test_title': 'Rich & Friends'/.test(i18nSrc),
+    'iOS already says who it is from, on its own line',
+  )
+  ok(
+    'and an untitled push promotes its body instead of borrowing the name',
+    /data\.title \|\| data\.body \|\| 'Rich & Friends'/.test(
+      readFileSync(join(here, '..', '..', 'public', 'sw.js'), 'utf8')),
+    'the same doubling, in the one path that had no title of its own',
+  )
+
+  /**
+   * THE HONESTY MOVED, IT DID NOT GO AWAY.
+   *
+   * The settings screen was asked to be buttons rather than essays, so the
+   * paragraph qualifying what the test proves now lives in the help page. That
+   * is a fine place for it and a terrible thing to lose, so it is asserted
+   * where it went: the button must never come to read as an end-to-end check
+   * just because the sentence that said otherwise was deleted from the screen.
+   */
+  const faq = readFileSync(join(here, '..', 'content', 'faq.js'), 'utf8')
+  ok(
+    'the help page still says the test does not prove delivery',
+    /does not check that a real reminder will arrive/.test(faq) &&
+      /ne v\u00e9rifie pas qu\u2019un vrai rappel arrivera/.test(faq),
+    'moving the caveat off the screen must not delete it',
+  )
+  ok(
+    'and explains the iPhone home-screen rule, which is where this breaks',
+    /Add to Home Screen/.test(faq) && /\u00e9cran d\u2019accueil/.test(faq),
+  )
+  ok(
+    'and says why it cannot be turned on for everybody',
+    /gesture from the person/.test(faq) && /geste de la personne/.test(faq),
+  )
+  ok(
+    'the settings screen no longer carries the paragraph',
+    !/push\.test_note/.test(toggleSrc) && !/diag\.body/.test(
+      readFileSync(join(here, '..', 'components', 'PurchaseCheck.jsx'), 'utf8')),
+    'asked for: keep the buttons, move the explanations to help',
   )
 }
 
@@ -512,7 +568,6 @@ const b64 = (b) => Buffer.from(b).toString('base64url')
     .filter((f) => /push-keys/.test(readFileSync(join(here, '..', f), 'utf8')))
   ok('and nothing links to it', linked.length === 0, linked.join(', '))
 
-  const i18nSrc = readFileSync(join(here, 'i18n.jsx'), 'utf8')
   for (const key of ['vapid.title', 'vapid.intro', 'vapid.generate', 'vapid.once',
                      'vapid.step_supabase', 'vapid.step_vercel', 'vapid.then_redeploy',
                      'vapid.close_tab', 'vapid.copy', 'vapid.copied', 'vapid.secret',
