@@ -475,10 +475,12 @@ const STRINGS = {
     'nudge.claimed_by_me': 'You’ve got this one. Make it about the two of you, not about the app.',
     'nudge.claimed_by_other': '{name} has got this one.',
     'nudge.assigned': 'It is yours this time. A text is plenty.',
-    /* A suggestion, not a rule about where not to talk. "Wherever you actually
-       talk, not in here" told somebody where the app ends without telling them
-       what to do, and the whole card exists to make one small thing easy. */
-    'nudge.open': 'Try calling, or send them a message. Not in here.',
+    /* A suggestion, and nothing else. "Wherever you actually talk, not in
+       here" told somebody where the app ends without telling them what to do.
+       The "not in here" half then survived one rewrite and should not have:
+       there is nowhere in this app to talk to anybody, so ruling it out is
+       ruling out something nobody could have been about to do. */
+    'nudge.open': 'Try calling, or send them a message.',
     'nudge.claim': 'Notify them',
     /* Just "Done". It said "Done, we spoke", which asserts a conversation
        happened, and the button also gets pressed by somebody who called and
@@ -1904,7 +1906,7 @@ const STRINGS = {
     'nudge.assigned': 'C’est à toi cette fois. Un message suffit.',
     /* "l'appeler" and "lui" are the same for everybody, so the suggestion can
        be concrete without the app having to know anything about the person. */
-    'nudge.open': 'Essaie de l’appeler, ou écris-lui. Pas ici.',
+    'nudge.open': 'Essaie de l’appeler, ou écris-lui.',
     'nudge.claim': 'Prévenir',
     'nudge.close': 'C’est fait',
     'nudge.notified': 'La personne vient d’être prévenue sur son téléphone.',

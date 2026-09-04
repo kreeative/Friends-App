@@ -751,22 +751,22 @@ const COPY = {
        version qui a une chance de marcher : ce qui ramène une personne qui a
        arrêté d’ouvrir une application, c’est un ami, pas une notification. */
     /**
-     * "OU TU ES", NOT "OU TU ES PASSE".
+     * Her sentence, with the participle agreed rather than guessed.
      *
-     * The line asked for was "se demande ou tu es passe", and it is the better
-     * sentence. It cannot be written here. "passe" agrees with the person
-     * reading it, so it is "passee" for a woman, and this function knows the
-     * recipient's language and nothing about their gender. Most profiles have
-     * never set pronouns, and pronouns.js is explicit that guessing from a
-     * name is how the app misgenders somebody in a way the neutral default
-     * never does.
+     * "se demande ou tu es passe" is what was asked for. The participle agrees
+     * with the person reading it, so it is "passee" for a woman, and the only
+     * thing the app may consult for that is what somebody put in the pronouns
+     * box. See isFeminine: set to she/her means "passee", everything else
+     * including an empty box takes the masculine, which is French's default
+     * for an unknown subject. A name is never read.
      *
-     * So the participle goes and the rest of the sentence stays. "se demande
-     * ou tu es" is the same thought, one word shorter, and correct for
-     * everybody.
+     * An earlier version dropped the participle to sidestep this. That was the
+     * safe sentence rather than the right one, and it was overruled.
      */
-    nudgeFromSubject: (who: string) => `${who} se demande où tu es`,
-    nudgeFromTitle: (who: string) => `${who} se demande où tu es`,
+    nudgeFromSubject: (who: string, fem?: boolean) =>
+      `${who} se demande où tu es pass${fem ? 'ée' : 'é'}`,
+    nudgeFromTitle: (who: string, fem?: boolean) =>
+      `${who} se demande où tu es pass${fem ? 'ée' : 'é'}`,
     nudgeFromLead: (who: string, g: string) =>
       `${who} se demande comment tu vas. Ça fait deux semaines qu’on ne te voit pas dans ${g}.`,
     /**
@@ -870,8 +870,10 @@ const COPY = {
     nudgeCta: 'I am still in',
     nudgeFoot: (g: string) => `Sent once, because you are in ${g}. There is no second one.`,
 
-    nudgeFromSubject: (who: string) => `${who} is wondering where you are`,
-    nudgeFromTitle: (who: string) => `${who} is wondering where you are`,
+    /* English has no agreement to make, so the flag is accepted and ignored
+       rather than the two locales having different shapes. */
+    nudgeFromSubject: (who: string, _fem?: boolean) => `${who} is wondering where you got to`,
+    nudgeFromTitle: (who: string, _fem?: boolean) => `${who} is wondering where you got to`,
     nudgeFromLead: (who: string, g: string) =>
       `${who} wants to know how you are. Nobody has seen you in ${g} for a couple of weeks.`,
     nudgeNowBody: 'Nothing to do. They just wanted to hear from you.',
@@ -931,18 +933,38 @@ const COPY = {
  * here. Returns null for the whole thing when there is no address, since a
  * language with nowhere to send it is not worth a second query.
  */
-async function recipient(userId: string): Promise<{ to: string; loc: Loc } | null> {
+async function recipient(userId: string): Promise<{ to: string; loc: Loc; fem: boolean } | null> {
   const { data } = await supabase.auth.admin.getUserById(userId)
   const to = data?.user?.email
   if (!to) return null
 
   const { data: prof } = await supabase
     .from('profiles')
-    .select('locale')
+    .select('locale, pronouns')
     .eq('id', userId)
     .maybeSingle()
 
-  return { to, loc: localeOf(prof?.locale) }
+  return { to, loc: localeOf(prof?.locale), fem: isFeminine(prof?.pronouns) }
+}
+
+/**
+ * Whether to write "passee" rather than "passe" about this person.
+ *
+ * French past participles agree with the person the sentence is about, and
+ * "se demande ou tu es passe" is addressed to the recipient, so the app has to
+ * know something about them to write it. It knows exactly one thing: what they
+ * put in the pronouns box, if they put anything.
+ *
+ * TRUE ONLY FOR SOMEBODY WHO SAID SO. Anything else, including an empty box,
+ * a set this does not recognise, and "prefer not to say", falls to the
+ * masculine, which is French's grammatical default for an unknown subject.
+ * That is a real limitation of the language and not a judgement about anybody.
+ * A name is never consulted: guessing gender from a name is how an app
+ * misgenders a real person in a way a default never does.
+ */
+function isFeminine(pronouns?: string | null): boolean {
+  const p = (pronouns ?? '').trim().toLowerCase()
+  return p === 'she/her' || p === 'elle' || p === 'elle/elle'
 }
 
 /**
@@ -1227,8 +1249,8 @@ async function sendNudges() {
     /* Deliberately the quiet one: no button colour shouting, no count of what
        was missed, no streak language. The whole design of this message is
        that it must not read as a debt collector. */
-    const outcome = await send(who.to, from ? c.nudgeFromSubject(from) : c.nudgeSubject(name), {
-      title: from ? c.nudgeFromTitle(from) : c.nudgeTitle,
+    const outcome = await send(who.to, from ? c.nudgeFromSubject(from, who.fem) : c.nudgeSubject(name), {
+      title: from ? c.nudgeFromTitle(from, who.fem) : c.nudgeTitle,
       preheader: c.nudgePre(name),
       blocks: [
         { kind: 'lead', text: from ? c.nudgeFromLead(from, name) : c.nudgeLead(name) },
@@ -1244,7 +1266,7 @@ async function sendNudges() {
     await settle(outcome, 'nudge', n.subject_id, n.cycle_id)
     if (outcome === 'sent') {
       await pushTo(n.subject_id, {
-        title: from ? c.nudgeFromTitle(from) : c.nudgeTitle,
+        title: from ? c.nudgeFromTitle(from, who.fem) : c.nudgeTitle,
         body: from ? c.nudgeFromLead(from, name) : c.nudgeLead(name),
         url: `${SITE}/profile`,
         tag: 'nudge',
@@ -1810,7 +1832,7 @@ async function deliverNudge(req: Request): Promise<Response> {
   })
 
   await pushTo(nudge.subject_id, {
-    title: from ? c.nudgeFromTitle(from) : c.nudgeTitle,
+    title: from ? c.nudgeFromTitle(from, to?.fem) : c.nudgeTitle,
     /* Was nudgeCta, which is the label on a button in an email. On a lock
        screen "Je suis toujours la" reads as something the recipient said. */
     body: c.nudgeNowBody,
