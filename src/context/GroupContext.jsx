@@ -40,6 +40,7 @@ export function GroupProvider({ children }) {
   const [goalDays, setGoalDays] = useState([])
   const [statuses, setStatuses] = useState([])
   const [nudges, setNudges] = useState([])
+  const [hiddenNudges, setHiddenNudges] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -182,7 +183,21 @@ export function GroupProvider({ children }) {
          installed, which reads as "nothing hidden" and is the right way for
          this to fail. */
       const hidden = new Set(openHides(hid?.data))
-      setNudges((nd.data ?? []).filter((n) => !hidden.has(n.id)))
+      const open = nd.data ?? []
+      setNudges(open.filter((n) => !hidden.has(n.id)))
+      /**
+       * The ones this reader crossed off, kept rather than dropped.
+       *
+       * They were thrown away here, and that left no way back. Cross off every
+       * card and the rail returns null, so the group board has nothing on it
+       * about nudges at all: no count, no button, no mention that anything was
+       * put away. The only route back was somebody running SQL, which is not a
+       * route.
+       *
+       * Keeping the rows costs nothing, they were already fetched, and it lets
+       * the rail offer to bring them back.
+       */
+      setHiddenNudges(open.filter((n) => hidden.has(n.id)))
       setError(null)
     } catch (e) {
       // One rejected request used to abort the whole Promise.all and leave
@@ -351,6 +366,7 @@ export function GroupProvider({ children }) {
     statuses,
     statusesFor,
     nudges,
+    hiddenNudges,
     reload: async () => {
       await Promise.all([loadMemberships(), loadGroup(), loadSolo()])
     },
