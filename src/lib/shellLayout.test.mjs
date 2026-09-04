@@ -1645,5 +1645,88 @@ ok(
   'ink at 85% over a tinted ground is the grey this change removes',
 )
 
+/**
+ * A GOAL YOU WRITE DOWN NOW FOR JANUARY 2027.
+ *
+ * Asked for with that exact case: something whose registration opens on the
+ * first of January, worth recording today, and not worth being asked about
+ * every evening for sixteen months.
+ *
+ * The gating already existed. isDueOn has honoured starts_on since it was
+ * written, and a one-off with a deadline already stays out of the list until a
+ * week before. The column was simply never on the form, so the only way to set
+ * it was by hand in the database.
+ *
+ * Verified in Chromium: filled the field, saved, and read the request the
+ * browser actually posted. starts_on: "2027-01-01" is in the row.
+ */
+{
+  const form = read('src/components/GoalForm.jsx')
+  ok('the form can set when a goal starts asking',
+     /starts_on: startsOn \|\| null/.test(form),
+     'the empty string is not a date and Postgres rejects it')
+  ok('and offers it for a habit and for a one-off',
+     (form.match(/t\('form\.starts'\)/g) ?? []).length === 2,
+     'a deadline buys a week of silence, which is useless sixteen months out')
+  ok('the save button has a hook rather than a guessable label',
+     /data-hook="goal-save"/.test(form),
+     'two probe runs timed out guessing at its text and then at its type')
+  ok('isDueOn still honours it',
+     /if \(starts && today < starts\) return false/.test(read('src/lib/schedule.js')))
+}
+
+/**
+ * THE WAIT AFTER PAYING.
+ *
+ * The poll was a flat two seconds, fifteen times. That is a fine ceiling and
+ * the wrong opening: a working webhook lands in about a second, so the usual
+ * case was the book being ready and the page sitting out the rest of the
+ * interval before noticing.
+ *
+ * Measured in Chromium by timestamping the reads the page actually makes:
+ * 188, 807, 1415, 2224, 3236ms, against two reads in the same window before.
+ * The total window is still about half a minute, because a retry after a cold
+ * start is well past ten seconds and an earlier nine-second ceiling turned a
+ * slow success into a silent failure.
+ */
+{
+  const lib2 = read('src/pages/Library.jsx')
+  ok('the purchase poll backs off rather than waiting a flat two seconds',
+     /const BACKOFF = \[0, 600, 600/.test(lib2))
+  ok('and the schedule is at module scope, not rebuilt every render',
+     lib2.indexOf('const BACKOFF') < lib2.indexOf('export default function Library'))
+  const total = (lib2.match(/const BACKOFF = \[([^\]]+)\]/) ?? [])[1]
+    ?.split(',').map(Number).reduce((a, b) => a + b, 0)
+  ok(`the window is still about half a minute (${(total / 1000).toFixed(1)}s)`,
+     total > 20000 && total < 40000)
+}
+
+/**
+ * "LET YOUR FRIENDS KNOW" WROTE TO A TABLE NOTHING READ.
+ *
+ * Reported: pressed it, went looking, saw nothing. shareToGroup inserted into
+ * reading_shares, and no screen in the application has ever selected from that
+ * table. The button worked perfectly and reached nobody.
+ *
+ * Migration 54 gives it a reader by fanning the share into the notification
+ * inbox, which is where the app already shows what arrived while you were
+ * away.
+ */
+{
+  const mig = read('supabase/54_book_share_notifications.sql')
+  ok('a share now becomes a notification', /create trigger reading_shares_notify/.test(mig))
+  ok('and the kind constraint knows about it',
+     /check \(kind in \('group_goal', 'book', 'nudge'\)\)/.test(mig),
+     'a kind the constraint refuses makes the trigger raise and the share fail')
+  ok('everybody but the sharer is told',
+     /gm\.user_id is distinct from new\.user_id/.test(mig))
+  ok('the inbox asks for the book title',
+     /books\(title\)/.test(read('src/lib/notifications.js')),
+     'without the join every book row reads "shared a book" with no book in it')
+  ok('and the page renders a book row as a book',
+     /r\.kind === 'book'/.test(read('src/pages/Notifications.jsx')),
+     'calling a shared book "added a shared goal" is worse than not showing it')
+}
+
 console.log(`\n  ${pass} passed, ${fail} failed\n`)
 process.exit(fail ? 1 : 0)

@@ -243,6 +243,19 @@ export default function GoalForm({ onDone, onCancel, initial = null, groupId = n
   )
   const [dueOn, setDueOn] = useState(initial?.due_on ?? '')
   const [endsOn, setEndsOn] = useState(initial?.ends_on ?? '')
+  /**
+   * WHEN IT STARTS ASKING, WHICH IS NOT THE SAME AS WHEN IT IS DUE.
+   *
+   * Asked for with a real case: a goal set now for something that opens in
+   * January 2027. Writing it down today is the point, being asked about it
+   * every evening for sixteen months is not, and there was no way to say so.
+   *
+   * The gating already existed. isDueOn has honoured starts_on since it was
+   * written, and a one-off with a deadline already stays out of the list until
+   * a week before. The column was simply never on the form, so the only way to
+   * set it was by hand in the database.
+   */
+  const [startsOn, setStartsOn] = useState(initial?.starts_on ?? '')
   const [when, setWhen] = useState(initial?.trigger_when ?? '')
   const [where, setWhere] = useState(initial?.trigger_where ?? '')
   const [evidence, setEvidence] = useState(initial?.evidence_def ?? '')
@@ -309,6 +322,9 @@ export default function GoalForm({ onDone, onCancel, initial = null, groupId = n
         cadence === 'recurring' && days.length > 0 && days.length < 7 ? [...days].sort() : null,
       due_on: cadence === 'once' ? dueOn || null : null,
       ends_on: cadence === 'recurring' ? endsOn || null : null,
+      /* Empty string is not a date. Without the || null an untouched field
+         posts '' and Postgres rejects the row on a date column. */
+      starts_on: startsOn || null,
       stake_text: stake.trim() || null,
       remind,
     }
@@ -458,11 +474,22 @@ export default function GoalForm({ onDone, onCancel, initial = null, groupId = n
               <DateField value={endsOn} onChange={setEndsOn} />
             </Field>
             </div>
+            <Field label={t('form.starts')} hint={t('form.starts_hint')}>
+              <DateField value={startsOn} onChange={setStartsOn} />
+            </Field>
           </>
         ) : (
-          <Field label={t('form.due_by')} hint={t('form.due_by_hint')}>
-            <DateField value={dueOn} onChange={setDueOn} />
-          </Field>
+          <>
+            <Field label={t('form.due_by')} hint={t('form.due_by_hint')}>
+              <DateField value={dueOn} onChange={setDueOn} />
+            </Field>
+            {/* Offered here too. A deadline already buys a week of silence on
+                its own, which is right for something a week away and useless
+                for something sixteen months out. */}
+            <Field label={t('form.starts')} hint={t('form.starts_hint')}>
+              <DateField value={startsOn} onChange={setStartsOn} />
+            </Field>
+          </>
         )}
       </Step>
 
@@ -561,7 +588,7 @@ export default function GoalForm({ onDone, onCancel, initial = null, groupId = n
       {error && <p className="card text-small text-negative">{error}</p>}
 
       <div className="flex flex-col gap-3 border-t border-hairline pt-7 sm:flex-row-reverse">
-        <button className="btn-primary press sm:w-auto sm:px-10" disabled={!canSave || saving}>
+        <button data-hook="goal-save" className="btn-primary press sm:w-auto sm:px-10" disabled={!canSave || saving}>
           {saving ? t('form.saving') : initial ? t('form.save_changes') : t('form.add_goal')}
         </button>
         {onCancel && (
