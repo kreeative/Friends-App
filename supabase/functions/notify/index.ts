@@ -134,13 +134,30 @@ const PUSH_READY = Boolean(VAPID.publicKey && VAPID.privateKey)
 async function pushTo(
   userId: string,
   note: { title: string; body: string; url: string; tag: string },
-) {
-  if (!PUSH_READY) return
+): Promise<{ devices: number; delivered: number }> {
+  if (!PUSH_READY) return { devices: 0, delivered: 0 }
 
   const { data: subs } = await supabase
     .from('push_subscription')
     .select('endpoint, p256dh, auth')
     .eq('user_id', userId)
+
+  /**
+   * COUNTED, AND HANDED BACK.
+   *
+   * This returned nothing, so deliverNudge answered sent: true whether it had
+   * reached five phones or none at all. Somebody who has never turned
+   * notifications on has no rows here, the loop below runs zero times, and the
+   * card in the app then said "they have just been told, on their phone"
+   * about a phone that was never contacted.
+   *
+   * That is the same mistake as claiming a delivery from the old function's
+   * truthy tally, made one layer further down. A send is not a delivery, and
+   * zero devices is not a failure either: it is a fact about the other person
+   * that the sender should simply be told.
+   */
+  let delivered = 0
+  const devices = (subs ?? []).length
 
   for (const sub of subs ?? []) {
     let result: string
@@ -156,6 +173,7 @@ async function pushTo(
 
     if (result === 'sent') {
       tally.pushed += 1
+      delivered += 1
       await supabase
         .from('push_subscription')
         .update({ last_seen_at: new Date().toISOString() })
@@ -167,6 +185,8 @@ async function pushTo(
       tally.pushFailed += 1
     }
   }
+
+  return { devices, delivered }
 }
 
 /**
@@ -1321,7 +1341,7 @@ async function deliverNudge(req: Request): Promise<Response> {
     group_id: nudge.group_id,
   })
 
-  await pushTo(nudge.subject_id, {
+  const reach = await pushTo(nudge.subject_id, {
     title: from ? c.nudgeFromTitle(from, to?.fem) : c.nudgeTitle,
     /* Was nudgeCta, which is the label on a button in an email. On a lock
        screen "Je suis toujours la" reads as something the recipient said. */
@@ -1330,7 +1350,32 @@ async function deliverNudge(req: Request): Promise<Response> {
     tag: 'nudge',
   })
 
-  return json({ ok: true, sent: true, push: PUSH_READY })
+  /**
+   * devices AND delivered, not just "sent".
+   *
+   * This answered { sent: true, push: PUSH_READY } whatever happened, and
+   * PUSH_READY only says whether this server holds VAPID keys. It says nothing
+   * about whether the other person has ever turned notifications on, and
+   * somebody who has not has no rows in push_subscription at all: the loop in
+   * pushTo runs zero times and the app then told the sender "they have just
+   * been told, on their phone".
+   *
+   * Three different facts, and the sender deserves all three:
+   *   push      this server can sign a push at all
+   *   devices   how many of their devices are subscribed
+   *   delivered how many actually accepted it just now
+   *
+   * The inbox row above is written either way, so nothing is lost when the
+   * number is zero. It is simply not a delivery, and must not be reported as
+   * one.
+   */
+  return json({
+    ok: true,
+    sent: true,
+    push: PUSH_READY,
+    devices: reach.devices,
+    delivered: reach.delivered,
+  })
 }
 
 Deno.serve(async (req) => {
