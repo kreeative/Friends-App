@@ -583,5 +583,72 @@ const b64 = (b) => Buffer.from(b).toString('base64url')
   )
 }
 
+/**
+ * THE HOME-PAGE BANNER.
+ *
+ * Asked for: can notifications not simply be switched on for everybody, with
+ * people turning them off if they mind? No, and not as a policy choice. A
+ * browser subscribes only after a genuine user gesture with the permission
+ * request raised in the same tick. There is no server call and no setting that
+ * grants it, and that is the correct design.
+ *
+ * So the closest honest thing is to put the tap somewhere everyone passes.
+ * The button turns them on FROM the banner rather than linking to Settings,
+ * because the trip to Settings was the whole complaint and a banner that only
+ * points at the real control has added a step rather than removed one.
+ *
+ * Verified in Chromium in four states: shown and working when not subscribed,
+ * dismissed across a reload, absent for somebody already subscribed, and
+ * absent when the browser has already refused, since it will never ask again
+ * and the button could not work.
+ */
+{
+  const banner = readFileSync(join(here, '..', 'components', 'PushBanner.jsx'), 'utf8')
+  const bannerCode = stripped(banner)
+
+  ok('the banner turns them on itself rather than linking to settings',
+     /enablePushHere/.test(bannerCode) && !/to="\/settings"/.test(bannerCode),
+     'the trip to settings was the complaint')
+  ok(
+    'both screens share one enable path',
+    /export async function enablePushHere/.test(readFileSync(join(here, 'pushClient.js'), 'utf8')) &&
+      /enablePushHere/.test(readFileSync(join(here, '..', 'components', 'PushToggle.jsx'), 'utf8')),
+    'two copies drift, and the drift is silent: subscribed but no row stored',
+  )
+  ok(
+    'it stays away when there is no key on the build',
+    /if \(!VAPID_PUBLIC_KEY\) return/.test(bannerCode),
+    'offering a button the deployment cannot honour',
+  )
+  ok(
+    'and when the browser has already refused',
+    /support === 'unsupported' \|\| support === 'denied'/.test(bannerCode),
+    'a denied browser never asks again, so this would nag forever',
+  )
+  ok(
+    'and when they are already subscribed',
+    /if \(dead \|\| sub\) return/.test(bannerCode),
+  )
+  ok(
+    'the dismissal is written down, not just hidden',
+    /localStorage\.setItem\(KEY, '1'\)/.test(bannerCode),
+    'a cross that lasts until the next page load has dismissed nothing',
+  )
+  ok(
+    'it still shows on an iPhone in a tab, where the reason is fixable',
+    /banner\.push_ios/.test(bannerCode),
+    'that is the one unavailable state worth explaining rather than hiding',
+  )
+  for (const key of ['banner.push_title', 'banner.push_sub', 'banner.push_ios',
+                     'banner.push_cta', 'banner.push_working', 'banner.push_how']) {
+    const hits = i18nSrc.split(`'${key}'`).length - 1
+    ok(`${key} exists in both languages (${hits})`, hits === 2)
+  }
+  ok(
+    'the how-to names the home-screen step in both languages',
+    /Add to Home Screen/.test(i18nSrc) && /sur l\u2019\u00e9cran d\u2019accueil/i.test(i18nSrc),
+  )
+}
+
 console.log(`\npush\n\n  ${pass} passed, ${fail} failed\n`)
 process.exit(fail === 0 ? 0 : 1)

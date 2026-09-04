@@ -113,12 +113,16 @@ export function TopBar({ title, right, sub, hint, back, backLabel }) {
  * left, and which of those it is depends on the length of a translated
  * heading.
  *
- * So the panel is positioned against the header, which is exactly as wide as
- * the content column: left-0 right-0 means it can never leave the page in
- * either direction, in either language, at any width. It still floats rather
- * than pushing the page down, which was the point of the original.
+ * So the panel is positioned against whichever content-width box contains it,
+ * the header on a page title and the card on the home-page banner: left-0
+ * right-0 there means it can never leave the page in either direction, in
+ * either language, at any width. It still floats rather than pushing the page
+ * down, which was the point of the original.
+ *
+ * That is why this element must NOT be `relative`. Whatever wraps it is the
+ * anchor, and every caller wraps it in something the width of the content.
  */
-function Hint({ text }) {
+export function Hint({ text }) {
   return (
     /* Not `relative`. The panel deliberately anchors to the header above,
        and a positioned ancestor here would capture it again. */

@@ -6,7 +6,7 @@ import {
   VAPID_PUBLIC_KEY,
   currentSubscription,
   disablePush,
-  enablePush,
+  enablePushHere,
   pushSupport,
   showTestNotification,
 } from '../lib/pushClient'
@@ -85,7 +85,7 @@ export default function PushToggle() {
         if (endpoint) await supabase.from('push_subscription').delete().eq('endpoint', endpoint)
         setOn(false)
       } else {
-        const result = await enablePush(user.id)
+        const result = await enablePushHere(user.id)
         if (!result.ok) {
           setProblem(result.reason)
           /* A refusal is permanent in the browser, so the row has to reflect
@@ -112,14 +112,7 @@ export default function PushToggle() {
          * being reported as the switch not having worked.
          */
         setOn(true)
-
-        /* onConflict on the endpoint: subscribing again on the same browser
-           returns the same endpoint, and the keys can have rotated. Without
-           this it is a duplicate-key error and the switch silently fails. */
-        const { error } = await supabase
-          .from('push_subscription')
-          .upsert(result.row, { onConflict: 'endpoint' })
-        if (error) setProblem('save-failed')
+        if (!result.saved) setProblem('save-failed')
       }
     } catch {
       setProblem('save-failed')

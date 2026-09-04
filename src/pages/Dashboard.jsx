@@ -8,6 +8,7 @@ import { cycleEnd, cyclePhase, soonestUpcoming, untilLabel } from '../lib/time'
 import { useT } from '../lib/i18n'
 import { Screen, Section, TopBar } from '../components/ui'
 import BirthdayBanner from '../components/BirthdayBanner'
+import PushBanner from '../components/PushBanner'
 import CelebrationBanner from '../components/CelebrationBanner'
 import MyCompletion from '../components/MyCompletion'
 import WeekStrip from '../components/WeekStrip'
@@ -223,6 +224,10 @@ export default function Dashboard() {
       {/* Above the birthday, because good news somebody wrote by hand outranks
           good news the calendar worked out. */}
       <CelebrationBanner />
+      {/* Above the rest: it is the only one that stops working the longer it
+          is ignored, because a reminder somebody never enabled is a reminder
+          that never arrives. */}
+      <PushBanner />
 
       {/* Only for the week it is true. Everything else on this page is still
           here tomorrow. */}

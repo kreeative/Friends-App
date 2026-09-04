@@ -214,3 +214,28 @@ export async function showTestNotification(text) {
     return { ok: false, reason: 'save-failed', detail: String(e?.message ?? e) }
   }
 }
+
+/**
+ * Turn it on for this browser AND record the row, in one call.
+ *
+ * Two screens now offer this: the settings toggle and the banner on the home
+ * page. They must not drift, because the failure mode when they do is silent:
+ * one of them subscribes the browser without storing the row, and the person
+ * has a browser waiting for pushes that the server does not know to send.
+ *
+ * The two outcomes are kept apart on purpose. `ok` means the BROWSER is
+ * subscribed, which is what the switch on screen describes and is already true
+ * by the time the row is written. `saved` means the server can now reach it.
+ * Reporting a failed row write as "turning it on did not work" is what made
+ * the toggle look like it needed the app restarted.
+ */
+export async function enablePushHere(userId) {
+  const { supabase } = await import('./supabase')
+  const result = await enablePush(userId)
+  if (!result.ok) return { ok: false, saved: false, reason: result.reason }
+
+  const { error } = await supabase
+    .from('push_subscription')
+    .upsert(result.row, { onConflict: 'endpoint' })
+  return { ok: true, saved: !error, reason: error ? 'save-failed' : null }
+}
