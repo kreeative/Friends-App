@@ -802,6 +802,10 @@ const COPY = {
      * message that gets swiped away.
      */
     nudgeNowBody: 'Rien à faire. C’est juste pour prendre de tes nouvelles.',
+    /* The self test. Says what it is, so that a notification arriving out of
+       nowhere on somebody's lock screen is never a mystery. */
+    selfTestTitle: 'Test des notifications',
+    selfTestBody: 'Si tu vois ceci, tout marche : le serveur, les clés, et cet appareil.',
 
     birthdaySubject: (n: number, first: string) =>
       n === 1 ? `L’anniversaire de ${first}, dans trois jours` : `${n} anniversaires dans trois jours`,
@@ -897,6 +901,8 @@ const COPY = {
     nudgeFromLead: (who: string, g: string) =>
       `${who} wants to know how you are. Nobody has seen you in ${g} for a couple of weeks.`,
     nudgeNowBody: 'Nothing to do. They just wanted to hear from you.',
+    selfTestTitle: 'Notification test',
+    selfTestBody: 'If you can see this, the whole chain works: the server, the keys, and this device.',
 
     birthdaySubject: (n: number, first: string) =>
       n === 1 ? `${first}'s birthday, in three days` : `${n} birthdays in three days`,
@@ -1802,12 +1808,54 @@ async function deliverNudge(req: Request): Promise<Response> {
   const caller = who?.user
   if (!caller) return json({ ok: false, error: 'bad_session' }, 401)
 
-  let body: { nudge_id?: string } = {}
+  let body: { nudge_id?: string; self_test?: boolean } = {}
   try {
     body = await req.json()
   } catch {
     return json({ ok: false, error: 'bad_body' }, 400)
   }
+
+  /**
+   * A real push, from this server, to the person asking for it. Nobody else.
+   *
+   * WHY THIS EXISTS.
+   *
+   * There was no way to test the chain alone. You cannot nudge yourself: the
+   * check below refuses it, and the card about you is never shown to you
+   * anyway, so verifying that push works at all took two people and two
+   * phones and a lot of guessing about which link had broken. The button in
+   * Settings only calls showNotification in the browser, which proves the
+   * device can paint one and proves nothing about the server.
+   *
+   * This is the whole chain in one tap: the function is the new one, it has
+   * VAPID keys, this device is subscribed, and the push arrives. The answer
+   * says which of those failed.
+   *
+   * WHY IT IS SAFE.
+   *
+   * The request names no recipient and cannot. The push goes to caller.id,
+   * taken from the verified token, so the worst anybody can do with this
+   * endpoint is send themselves a notification. It writes no inbox row: this
+   * is a diagnostic, not a message, and it should leave nothing behind.
+   */
+  if (body.self_test === true) {
+    const me = await recipient(caller.id)
+    const c = COPY[me?.loc ?? 'fr']
+    const reach = await pushTo(caller.id, {
+      title: c.selfTestTitle,
+      body: c.selfTestBody,
+      url: `${SITE}/settings`,
+      tag: 'rf-self-test',
+    })
+    return json({
+      ok: true,
+      self_test: true,
+      push: PUSH_READY,
+      devices: reach.devices,
+      delivered: reach.delivered,
+    })
+  }
+
   if (!body.nudge_id) return json({ ok: false, error: 'no_nudge' }, 400)
 
   const { data: nudge } = await supabase

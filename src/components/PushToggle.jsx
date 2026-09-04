@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useT } from '../lib/i18n'
+import { serverPushOutcome } from '../lib/notifications'
 import {
   VAPID_PUBLIC_KEY,
   currentSubscription,
@@ -48,6 +49,9 @@ export default function PushToggle() {
   const [problem, setProblem] = useState(null)
   const [testing, setTesting] = useState(false)
   const [tested, setTested] = useState(null)
+  /* The server round trip, which is a different question entirely. */
+  const [serverTesting, setServerTesting] = useState(false)
+  const [serverOut, setServerOut] = useState(null)
 
   useEffect(() => {
     let dead = false
@@ -215,6 +219,52 @@ export default function PushToggle() {
                 : t(`push.problem_${tested.replace(/-/g, '_')}`)}
             </p>
           )}
+
+          {/**
+           * THE OTHER HALF, WHICH IS THE HALF NOBODY COULD TEST.
+           *
+           * The button above calls showNotification in this browser. It never
+           * touches the server, so it says nothing about whether the Supabase
+           * function is the right version, whether it holds signing keys, or
+           * whether this device is subscribed on the server's side.
+           *
+           * Testing that took two people and two phones, because you cannot
+           * nudge yourself: the endpoint refuses it and the card about you is
+           * never shown to you. So an entire afternoon went into guessing
+           * which link of the chain was broken.
+           *
+           * This asks the server to push to the person pressing it, and to
+           * nobody else. It cannot name a recipient, so the worst it can do is
+           * send you your own notification. The result names the broken link.
+           */}
+          <div className="mt-4" data-hook="push-server-test">
+            <button
+              type="button"
+              onClick={async () => {
+                setServerTesting(true)
+                setServerOut(null)
+                setServerOut(await serverPushOutcome())
+                setServerTesting(false)
+              }}
+              disabled={serverTesting}
+              className="goal-action press"
+            >
+              {serverTesting ? t('push.testing') : t('push.server_test')}
+            </button>
+
+            <p className="mt-2 text-small text-muted">{t('push.server_test_note')}</p>
+
+            {serverOut && (
+              <p
+                className={`mt-2 text-small ${serverOut === 'ok' ? 'text-muted' : 'text-negative'}`}
+                role="status"
+                data-hook="push-server-out"
+                data-why={serverOut}
+              >
+                {t(`push.server_${serverOut}`)}
+              </p>
+            )}
+          </div>
         </div>
       )}
     </div>

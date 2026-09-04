@@ -727,8 +727,23 @@ const b64 = (b) => Buffer.from(b).toString('base64url')
 
   /* The browser half. */
   const cli = readFileSync(join(here, 'notifications.js'), 'utf8')
-  ok('the client sends only an id',
-     /JSON\.stringify\(\{ nudge_id: nudgeId \}\)/.test(cli))
+  /* The shape of the body, not the literal that used to build it. Both calls
+     now go through one callNotify(), and this assertion was written against
+     the inline JSON.stringify it replaced: it failed on a file that is
+     correct. What matters is what is IN the body, and the bytes on the wire
+     are checked end to end by probe/nudge.mjs. */
+  ok('the nudge call names a nudge and nothing else',
+     /callNotify\(\{ nudge_id: nudgeId \}\)/.test(cli))
+  ok('the self test names nobody at all',
+     /callNotify\(\{ self_test: true \}\)/.test(cli),
+     'it pushes to the id in the verified token, so it cannot target anyone else')
+  ok('neither one carries a recipient or any words',
+     !/user_id:/.test(cli) && !/title:/.test(cli) && !/body: '/.test(cli),
+     'the server writes the message, in the recipient\u2019s language')
+  ok('the self test leaves no inbox row behind',
+     !/self_test[\s\S]{0,400}from\('notification'\)\.insert/.test(
+       readFileSync(join(here, '..', '..', 'supabase', 'functions', 'notify', 'index.ts'), 'utf8')),
+     'a diagnostic should leave nothing behind')
   ok('and never throws at the person who claimed',
      /catch \(e\)/.test(cli) && /export async function pushNudge/.test(cli),
      'the claim already succeeded; the other phone is not their problem')
