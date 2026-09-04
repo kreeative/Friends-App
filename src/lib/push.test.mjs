@@ -800,5 +800,41 @@ const b64 = (b) => Buffer.from(b).toString('base64url')
   )
 }
 
+/**
+ * A NUDGE IN THE INBOX MUST NOT READ AS A GOAL.
+ *
+ * Migration 54 widened the kind constraint so the edge function could write
+ * kind = 'nudge', and the notifications page had no case for it. Those rows
+ * fell through to the goal wording and rendered as "X a ajoute un objectif
+ * commun".
+ *
+ * That is worse than an unstyled row. The one message in this app most worth
+ * reading is somebody saying they noticed you had gone quiet, and it was being
+ * described as a piece of admin about a shared goal.
+ *
+ * Found by asking what happens after 54 rather than by a report, which is the
+ * uncomfortable part: the constraint and the writer shipped in one change and
+ * the reader was never taught the new word.
+ */
+{
+  const page = readFileSync(join(here, '..', 'pages', 'Notifications.jsx'), 'utf8')
+  ok('the inbox draws a nudge as a nudge',
+     /r\.kind === 'nudge'/.test(page),
+     'without this it falls through to the shared-goal wording')
+  ok('and gives it a second line of its own',
+     /notif\.nudge_sub/.test(page),
+     'a nudge points at no row, so the subject line has nothing to show')
+  for (const key of ['notif.nudge_by', 'notif.nudge_anon', 'notif.nudge_sub']) {
+    const hits = i18nSrc.split(`'${key}'`).length - 1
+    ok(`${key} exists in both languages (${hits})`, hits === 2)
+  }
+  ok(
+    'every kind the constraint allows has a case',
+    ['group_goal', 'book', 'nudge'].every(
+      (k) => k === 'group_goal' || new RegExp(`r\\.kind === '${k}'`).test(page)),
+    'a kind the database can write and the page cannot draw is a silent wrong answer',
+  )
+}
+
 console.log(`\npush\n\n  ${pass} passed, ${fail} failed\n`)
 process.exit(fail === 0 ? 0 : 1)

@@ -87,6 +87,18 @@ export default function Notifications() {
     if (r.kind === 'book') {
       return who ? t('notif.book_by', { who }) : t('notif.book_anon')
     }
+    /**
+     * Somebody reached out because you had gone quiet.
+     *
+     * This was missing, and the fall-through below is what it hit: a nudge
+     * rendered as "added a shared goal", which is not just wrong but wrong in
+     * a way that hides the one message most worth reading. Migration 54 widened
+     * the kind constraint so the edge function could write these, and nothing
+     * here had been taught to draw them.
+     */
+    if (r.kind === 'nudge') {
+      return who ? t('notif.nudge_by', { who }) : t('notif.nudge_anon')
+    }
     /* Named only when the name is a fact. A shared goal created before
        migration 50 has no author recorded, and the anonymous phrasing is the
        true one rather than a guess. */
@@ -96,7 +108,14 @@ export default function Notifications() {
   /* The thing itself, under the line about it. A book row carries a title, a
      goal row carries the commitment; neither is guaranteed, since the join
      returns null for a subject that has since been deleted. */
-  const subject = (r) => (r.kind === 'book' ? r.books?.title : r.goals?.commitment)
+  const subject = (r) => {
+    if (r.kind === 'book') return r.books?.title
+    /* A nudge points at no row of its own. The second line is the invitation
+       rather than a subject, because "somebody is asking after you" with
+       nothing under it reads as an error. */
+    if (r.kind === 'nudge') return t('notif.nudge_sub')
+    return r.goals?.commitment
+  }
 
   return (
     <Screen>
