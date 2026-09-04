@@ -14,6 +14,7 @@
  * constraint, so there is no second chance to get it right.
  */
 import { readFileSync } from 'node:fs'
+import { transformSync } from '/home/user/Friends-App/node_modules/esbuild/lib/main.js'
 import { bundle } from '../../scripts/bundle-notify.mjs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
@@ -92,6 +93,58 @@ const keysOf = (lang) => [...block(lang).matchAll(/^ {4}(\w+):/gm)].map((m) => m
   ok('an unknown locale falls back to French, not English',
      /raw === 'en' \? 'en' : 'fr'/.test(src),
      src.match(/const localeOf[^\n]*\n[^\n]*/)?.[0] ?? 'localeOf not found')
+}
+
+/* --- which caller is which, run rather than read -------------------------- */
+
+/**
+ * THE LINE THAT KILLED EVERY SCHEDULED MESSAGE.
+ *
+ * The handler read `if (req.method === 'POST') return deliverNudge(req)`.
+ * pg_cron calls this hourly through net.http_post, which is a POST carrying
+ * `{}` and the service role key, so every scheduled run was handed to the
+ * instant-push path, which tried to resolve that key as a user session and
+ * answered 401 bad_session. Confirmed from net._http_response: 401, on the
+ * hour, every hour. No digest, no scheduled nudge, no birthday, no group goal,
+ * no cycle reminder, for as long as it was deployed.
+ *
+ * So the predicate is a real function now and this runs it, rather than
+ * grepping for the shape of it. The case that matters is the empty body.
+ */
+{
+  const start = src.indexOf('export function wantsInstant')
+  const body = src.slice(start, src.indexOf('\n}', start) + 2)
+  const js = transformSync(body.replace('export function', 'function'), { loader: 'ts' }).code
+  // eslint-disable-next-line no-eval
+  const wantsInstant = eval(`${js}; wantsInstant`)
+
+  ok('an empty body is cron, and must reach the scheduled run',
+     wantsInstant({}) === false,
+     'this is the exact call that was answering 401 every hour')
+  ok('so is no body at all', wantsInstant(null) === false)
+  ok('and so is a body of unrelated keys', wantsInstant({ hello: 1 }) === false)
+
+  ok('a nudge id is somebody in the app', wantsInstant({ nudge_id: 'abc' }) === true)
+  ok('so is a self test', wantsInstant({ self_test: true }) === true)
+
+  /* The shapes that used to slip through as "truthy enough". */
+  ok('an empty nudge id is not a nudge', wantsInstant({ nudge_id: '' }) === false)
+  ok('nor is a non-string one', wantsInstant({ nudge_id: 123 }) === false)
+  ok('and self_test must be exactly true', wantsInstant({ self_test: 'yes' }) === false)
+  ok('not merely present', wantsInstant({ self_test: false }) === false)
+}
+
+{
+  /* And the handler has to consult it rather than the method. */
+  ok('the POST branch asks what was requested, not how',
+     /if \(wantsInstant\(body\)\)/.test(src),
+     'method alone cannot tell cron from a person, they both POST')
+  ok('and a POST it does not claim falls through to the scheduled run',
+     src.indexOf('if (wantsInstant(body))') < src.indexOf('await sendDigests()'),
+     'cron has to come out the other side of that branch')
+  ok('the body is read once and handed down',
+     /deliverNudge\(req, body\)/.test(src),
+     'a request body cannot be read twice')
 }
 
 /* --- the language is actually looked up ---------------------------------- */
