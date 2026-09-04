@@ -229,6 +229,59 @@ export async function showTestNotification(text) {
  * Reporting a failed row write as "turning it on did not work" is what made
  * the toggle look like it needed the app restarted.
  */
+/**
+ * Make the server's list agree with this browser.
+ *
+ * THE SWITCH READ THE BROWSER AND NOTHING ELSE, AND THOSE TWO DRIFT.
+ *
+ * Reported: somebody has notifications on, the switch says so, and the server
+ * answers that they have no device subscribed. Both were telling the truth.
+ *
+ * The sender deletes a push_subscription row the moment a push comes back 404
+ * or 410, which is correct: an endpoint the service has forgotten will never
+ * work again and posting to it forever is worse than dropping it. But the
+ * BROWSER keeps its subscription object through all of that, and the toggle
+ * asks the browser. So the row disappears server-side, the switch stays on,
+ * and every message to that person silently goes nowhere.
+ *
+ * A whole VAPID pair being regenerated does this to everybody at once: every
+ * subscription made against the old public key is refused, every row is
+ * dropped, and every switch in the product still reads on.
+ *
+ * So: if this browser holds a subscription, make sure the server has the row
+ * for it. Idempotent, cheap, and it heals the drift without asking anybody to
+ * understand any of the above.
+ *
+ * Returns { ok, healed } rather than throwing. Nothing here is worth
+ * interrupting somebody over: the worst case is the state it was already in.
+ */
+export async function syncSubscription(userId) {
+  try {
+    if (!userId || pushSupport() !== 'ready') return { ok: false, healed: false }
+    const sub = await currentSubscription()
+    if (!sub) return { ok: false, healed: false }
+
+    const { supabase } = await import('./supabase')
+    const row = subscriptionRow(sub, userId)
+
+    /* Ask first, so the common case where nothing is wrong costs a read and no
+       write, and so `healed` means something rather than being always true. */
+    const { data } = await supabase
+      .from('push_subscription')
+      .select('endpoint')
+      .eq('endpoint', row.endpoint)
+      .maybeSingle()
+    if (data) return { ok: true, healed: false }
+
+    const { error } = await supabase
+      .from('push_subscription')
+      .upsert(row, { onConflict: 'endpoint' })
+    return { ok: !error, healed: !error }
+  } catch {
+    return { ok: false, healed: false }
+  }
+}
+
 export async function enablePushHere(userId) {
   const { supabase } = await import('./supabase')
   const result = await enablePush(userId)

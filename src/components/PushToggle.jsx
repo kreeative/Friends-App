@@ -10,6 +10,7 @@ import {
   enablePushHere,
   pushSupport,
   showTestNotification,
+  syncSubscription,
 } from '../lib/pushClient'
 
 /**
@@ -61,12 +62,17 @@ export default function PushToggle() {
       if (s !== 'ready') return
       const sub = await currentSubscription().catch(() => null)
       if (!dead) setOn(Boolean(sub))
+      /* And make the server agree. The row is deleted server-side when a push
+         comes back 404 or 410, while this browser keeps its subscription, so
+         the switch can read on for months against a server with nothing to
+         send to. See syncSubscription. */
+      if (sub && user?.id) await syncSubscription(user.id)
     }
     run()
     return () => {
       dead = true
     }
-  }, [])
+  }, [user?.id])
 
   if (support !== 'ready') {
     return (
