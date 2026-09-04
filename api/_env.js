@@ -18,6 +18,13 @@ const NAMES = {
     'SUPABASE_SERVICE_KEY',
   ],
   supabaseUrl: ['SUPABASE_URL', 'VITE_SUPABASE_URL', 'supabase_url'],
+  /* The publishable key, which is public by design and is already set for the
+     browser bundle. Read here so a server-side check can ask a question AS THE
+     CALLER: a client built with the service role ignores row level security
+     whatever Authorization header it carries, so using that to test what a
+     reader can see would always answer "everything" and be worse than not
+     checking. */
+  supabaseAnon: ['SUPABASE_ANON_KEY', 'VITE_SUPABASE_ANON_KEY', 'supabase_anon_key'],
   stripeSecret: ['STRIPE_SECRET_KEY', 'stripe_secret_key'],
   stripeWebhook: ['STRIPE_WEBHOOK_SECRET', 'stripe_webhook_secret'],
   siteUrl: ['SITE_URL', 'PUBLIC_SITE_URL'],

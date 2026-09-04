@@ -293,5 +293,58 @@ const code = (rel) => src(rel).replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\
   }
 }
 
+/**
+ * /api/library-health SAYS WHY A BOOK WILL NOT OPEN.
+ *
+ * "You own this book, the chapter is not loaded" is true for four unrelated
+ * reasons that look identical from a phone: no books row, no chapter rows, the
+ * chapter rows still holding generated filler, or no entitlement. Telling them
+ * apart means comparing what the service role can see against what the CALLER
+ * can see, and that difference is exactly what row level security is doing.
+ *
+ * THE ASSERTION THAT MATTERS MOST IS THE ONE ABOUT THE ANON KEY.
+ *
+ * A Supabase client built with the service role ignores row level security
+ * whatever Authorization header it carries. Using it for the "can this reader
+ * see the chapter" half would report success unconditionally, which is not a
+ * weaker check but one that always passes, and it would say the books were
+ * fine while they were broken. The first draft of this file had exactly that
+ * fallback.
+ */
+{
+  const lib = src('api/library-health.js')
+
+  ok('it requires a signed-in caller',
+     /admin\.auth\.getUser\(token\)/.test(lib) && /return res\.status\(401\)/.test(lib))
+  ok(
+    'the reader-side check uses the anon key, never the service role',
+    /const anon = env\('supabaseAnon'\)/.test(lib) &&
+      !/env\('supabaseAnon'\) \?\? env\('serviceRole'\)/.test(lib),
+    'the service role bypasses RLS, so that check would always pass',
+  )
+  ok(
+    'and says so rather than guessing when the anon key is absent',
+    /SUPABASE_ANON_KEY is not set/.test(lib),
+  )
+  ok(
+    'it never returns a chapter body',
+    !/body: c\.body|detail: c\.body|\.select\('body'\)/.test(code('api/library-health.js')),
+    'a diagnostic that printed a body would be a way to read the book for free',
+  )
+  ok(
+    'it reads no secret into a response',
+    !/serviceRole'\)\s*[,)}]?\s*(\+|\.slice|\.substring)/.test(lib),
+  )
+  ok(
+    'the anon key has a name to be found under',
+    /supabaseAnon: \['SUPABASE_ANON_KEY'/.test(src('api/_env.js')),
+  )
+  ok(
+    'the settings screen can run it',
+    /library-health/.test(src('src/components/PurchaseCheck.jsx')) &&
+      /data-hook="library-check"/.test(src('src/components/PurchaseCheck.jsx')),
+  )
+}
+
 console.log(`\n  ${pass} passed, ${fail} failed\n`)
 process.exit(fail ? 1 : 0)
