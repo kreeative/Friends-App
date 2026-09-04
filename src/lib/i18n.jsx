@@ -480,6 +480,10 @@ const STRINGS = {
     'nudge.close': 'Done, we spoke',
     'nudge.notified': 'They have just been told, on their phone.',
     'nudge.hide': 'Hide {name}. This card disappears for you only.',
+    /* Shown on the card when the database refuses the cross. It used to fail
+       in silence and simply put the card back, so the only way to discover it
+       was to keep tapping. */
+    'nudge.hide_failed': 'The card could not be put away. Nothing was lost, try again in a moment.',
     'nudge.count': '{n} friends to say hello to. Swipe.',
     'nudge.busy': 'One moment',
 
@@ -1889,6 +1893,7 @@ const STRINGS = {
     'nudge.close': 'C’est fait, on s’est parlé',
     'nudge.notified': 'La personne vient d’être prévenue sur son téléphone.',
     'nudge.hide': 'Masquer {name}. Cette carte disparaît pour toi seulement.',
+    'nudge.hide_failed': 'La carte n’a pas pu être rangée. Rien n’est perdu, réessaie dans un instant.',
     'nudge.count': '{n} amis à qui faire signe. Glisse.',
     'nudge.busy': 'Un instant',
 

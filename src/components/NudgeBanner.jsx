@@ -50,6 +50,8 @@ export default function NudgeBanner() {
      question has been answered and waiting on a round trip to acknowledge it
      is what makes an app feel slow on a phone with two bars. */
   const [hidden, setHidden] = useState(() => new Set())
+  /* Cards whose cross the database refused, this session. */
+  const [hideFailed, setHideFailed] = useState(() => new Set())
   const rail = useRef(null)
 
   const visible = nudges.filter((n) => n.subject_id !== user?.id && !hidden.has(n.id))
@@ -114,16 +116,61 @@ export default function NudgeBanner() {
     setBusy(null)
   }
 
+  /**
+   * DELETE then INSERT, and never an upsert. This is the bug that made the
+   * cross do nothing.
+   *
+   * It was `.upsert(..., { onConflict: 'nudge_id,user_id' })`, which PostgREST
+   * sends as INSERT ... ON CONFLICT DO UPDATE. Migration 40 gave nudge_hidden
+   * a select, an insert and a delete policy, and granted select, insert and
+   * delete. No update, in either. Both halves of that are fatal, and which one
+   * bites depends on the database:
+   *
+   *   - With the grant exactly as migration 40 writes it, EVERY cross fails
+   *     with "permission denied for table nudge_hidden". ON CONFLICT DO UPDATE
+   *     requires the update privilege up front, whether or not a row conflicts.
+   *   - With the update privilege present anyway, which is what Supabase's
+   *     default privileges on a new public table hand out, the first cross on
+   *     a card succeeds through the insert path and every cross after it fails
+   *     with "new row violates row-level security policy (USING expression)",
+   *     because there is no update policy for the conflict path to satisfy.
+   *
+   * Both were reproduced against a real Postgres 16 with migration 40's
+   * policies and grants loaded. The second is the one that matches a card that
+   * will not go away however many times it is tapped.
+   *
+   * Delete then insert touches only the two verbs migration 40 actually
+   * granted, so it works under either configuration and needs no migration.
+   * It also refreshes hidden_at for free, which the seven day expiry depends
+   * on: crossing off a card whose earlier cross has expired has to restart the
+   * week, and an insert that swallowed the duplicate would have left the old
+   * timestamp and hidden nothing.
+   *
+   * The delete affecting zero rows is the normal case and not an error. It is
+   * the insert that reports whether the cross landed.
+   */
   async function hide(id) {
     setHidden((s) => new Set(s).add(id))
+    setHideFailed((s) => { const n = new Set(s); n.delete(id); return n })
+
+    await supabase.from('nudge_hidden').delete().eq('nudge_id', id).eq('user_id', user.id)
     const { error } = await supabase
       .from('nudge_hidden')
-      .upsert({ nudge_id: id, user_id: user.id }, { onConflict: 'nudge_id,user_id' })
+      .insert({ nudge_id: id, user_id: user.id })
+
     /* Back on screen if the write did not land. A card that vanishes and
        returns on the next load is worse than one that never went: the reader
        has already decided, and the app quietly disagreeing is the shape of
-       "I dismissed this and it keeps coming back". */
-    if (error) setHidden((s) => { const n = new Set(s); n.delete(id); return n })
+       "I dismissed this and it keeps coming back".
+
+       AND IT SAYS SO NOW. This restored the card in silence, so the only way
+       to find out the cross was broken was to keep tapping it and eventually
+       tell somebody. A failure the person can see is one they can report; one
+       they cannot see is one they carry. */
+    if (error) {
+      setHidden((s) => { const n = new Set(s); n.delete(id); return n })
+      setHideFailed((s) => new Set(s).add(id))
+    }
   }
 
   return (
@@ -198,6 +245,16 @@ export default function NudgeBanner() {
                     ? t('nudge.assigned')
                     : t('nudge.open')}
               </p>
+
+              {hideFailed.has(n.id) && (
+                <p
+                  className="mt-2 text-small text-muted"
+                  data-hook="nudge-hide-failed"
+                  role="status"
+                >
+                  {t('nudge.hide_failed')}
+                </p>
+              )}
 
               {notified.has(n.id) && (
                 <p className="mt-2 text-small text-muted" data-hook="nudge-notified" role="status">
