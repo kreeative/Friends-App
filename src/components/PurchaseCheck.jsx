@@ -28,6 +28,8 @@ export default function PurchaseCheck() {
   const [out, setOut] = useState(null)
   const [fixing, setFixing] = useState(false)
   const [fixed, setFixed] = useState(null)
+  const [lib, setLib] = useState(null)
+  const [libBusy, setLibBusy] = useState(false)
 
   /**
    * Ask Stripe what was actually paid for, and take delivery of it.
@@ -52,6 +54,32 @@ export default function PurchaseCheck() {
       setFixed({ error: String(e?.message ?? e) })
     }
     setFixing(false)
+  }
+
+  /**
+   * Why a book will not open, which is a different question from whether it
+   * was paid for.
+   *
+   * The purchase check above answers "did the money arrive and was access
+   * recorded". This answers "is the text there and can the policy hand it
+   * over", and those fail independently: an entitlement with no chapter rows
+   * behind it produces "you own this book" over an empty page, which is
+   * exactly what was reported after the payment side was fixed.
+   */
+  const checkLibrary = async () => {
+    setLibBusy(true)
+    setLib(null)
+    try {
+      const { data } = await supabase.auth.getSession()
+      const res = await fetch('/api/library-health', {
+        headers: { authorization: `Bearer ${data?.session?.access_token ?? ''}` },
+      })
+      const type = res.headers.get('content-type') ?? ''
+      setLib(type.includes('json') ? await res.json() : { error: t('diag.local_only', { code: res.status }) })
+    } catch (e) {
+      setLib({ error: String(e?.message ?? e) })
+    }
+    setLibBusy(false)
   }
 
   const run = async () => {
@@ -133,6 +161,47 @@ export default function PurchaseCheck() {
                   ? t(fixed.granted.length === 1 ? 'diag.recovered_one' : 'diag.recovered_other', { n: fixed.granted.length })
                   : t('diag.recovered_none')}
             </p>
+          )}
+
+          {/* A separate question, so a separate button. Somebody whose
+              payment landed and whose book will not open needs this one, and
+              folding both into one press would report two unrelated things
+              under one verdict. */}
+          <button
+            type="button"
+            onClick={checkLibrary}
+            disabled={libBusy}
+            className="goal-action press mt-4"
+            data-hook="library-check"
+          >
+            {libBusy ? t('diag.running') : t('diag.check_books')}
+          </button>
+
+          {lib && (
+            <div className="mt-3" data-hook="library-check-out">
+              <ul className="space-y-2">
+                {(lib.error ? [lib.error] : (lib.advice ?? [])).map((a2, i) => (
+                  <li key={i} className="text-safe rounded-inner bg-ink/[0.04] px-4 py-3 text-small text-ink">
+                    {a2}
+                  </li>
+                ))}
+              </ul>
+              {(lib.checks ?? []).length > 0 && (
+                <details className="mt-3">
+                  <summary className="press cursor-pointer text-small font-semibold text-muted">
+                    {t('diag.detail')}
+                  </summary>
+                  <ul className="mt-2 space-y-1">
+                    {lib.checks.map((c2, i) => (
+                      <li key={i} className="text-safe text-small text-muted">
+                        <span className="font-semibold text-ink">{c2.name}</span>: {c2.status}
+                        {c2.detail ? ` \u2014 ${c2.detail}` : ''}
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              )}
+            </div>
           )}
 
           <details className="mt-3">

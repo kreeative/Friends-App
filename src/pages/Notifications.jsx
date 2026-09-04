@@ -75,13 +75,28 @@ export default function Notifications() {
     navigate(r.href ?? '/')
   }
 
+  /**
+   * One line per kind, and the kind decides.
+   *
+   * This used to call every row a shared goal, which was true while there was
+   * only one kind. Migration 54 adds book shares, and rendering one of those
+   * as "added a shared goal" would be worse than not showing it.
+   */
   const line = (r) => {
     const who = r.profiles?.display_name?.trim()
+    if (r.kind === 'book') {
+      return who ? t('notif.book_by', { who }) : t('notif.book_anon')
+    }
     /* Named only when the name is a fact. A shared goal created before
        migration 50 has no author recorded, and the anonymous phrasing is the
        true one rather than a guess. */
     return who ? t('notif.goal_by', { who }) : t('notif.goal_anon')
   }
+
+  /* The thing itself, under the line about it. A book row carries a title, a
+     goal row carries the commitment; neither is guaranteed, since the join
+     returns null for a subject that has since been deleted. */
+  const subject = (r) => (r.kind === 'book' ? r.books?.title : r.goals?.commitment)
 
   return (
     <Screen>
@@ -127,9 +142,9 @@ export default function Notifications() {
                         sets display:block, and whichever Tailwind emits last
                         wins. With both, the clamp silently did nothing and a
                         URL ran to three lines. */}
-                    {r.goals?.commitment && (
+                    {subject(r) && (
                       <span className="text-safe mt-1 line-clamp-2 text-small text-muted">
-                        {r.goals.commitment}
+                        {subject(r)}
                       </span>
                     )}
                   </span>

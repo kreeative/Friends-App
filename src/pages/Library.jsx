@@ -13,6 +13,26 @@ import { localBooks } from '../content/previews'
 import { STUDY_SLUGS } from '../lib/seo'
 import { LESSONS } from '../lib/lessons'
 
+/**
+ * How long to wait before looking again, in milliseconds.
+ *
+ * This was a flat two seconds, fifteen times. That is fine as a ceiling and
+ * wrong at the start: a working webhook delivers in about a second, so the
+ * common case was the book being ready and the page waiting out a full two
+ * seconds anyway before noticing. Reported as the purchase taking a moment to
+ * load.
+ *
+ * The first three are short because that is where the answer almost always
+ * is. The tail is long because by then it is not coming and the only thing
+ * more polling achieves is more requests.
+ *
+ * The total is still about half a minute, which is deliberate: Stripe normally
+ * delivers in a second or two, but a retry after a cold start is well past
+ * ten, and an earlier ceiling of nine seconds turned a slow success into a
+ * silent failure.
+ */
+const BACKOFF = [0, 600, 600, 800, 1000, 1200, 1500, 2000, 2000, 2500, 2500, 3000, 3000, 3000, 3000]
+
 export default function Library() {
   const { user } = useAuth()
   const { group } = useGroup()
@@ -119,8 +139,9 @@ export default function Library() {
       /**
        * THE POLL FIXES IT ITSELF NOW, INSTEAD OF WAITING TO GIVE UP.
        *
-       * Three tries is about six seconds. A working webhook has delivered long
-       * before that, so reaching here means the entitlement is not coming: the
+       * Three tries is about a second and a half on the schedule above. A
+       * working webhook has delivered by then, so reaching here means the
+       * entitlement is not coming: the
        * endpoint is unregistered, or misconfigured, or Stripe dropped the
        * event. Every one of those was previously resolved by waiting another
        * twenty-four seconds and then telling somebody who had just paid to go
@@ -131,9 +152,9 @@ export default function Library() {
        * the signed-in caller, only for sessions Stripe marks paid, and it
        * upserts, so it cannot double-grant or grant to the wrong person.
        *
-       * Once, not on every tick. Repeating it would put a Stripe API call on a
-       * two-second timer for the rest of the window, and if the first one did
-       * not find a paid session the fifteenth will not either.
+       * Once, not on every tick. Repeating it would put a Stripe API call
+       * behind every entry in the backoff, and if the first one did not find
+       * a paid session the fifteenth will not either.
        */
       if (tries === 3) {
         const out = await recoverPurchases()
@@ -147,8 +168,8 @@ export default function Library() {
         }
       }
 
-      if (++tries < 15) {
-        timer = setTimeout(tick, 2000)
+      if (++tries < BACKOFF.length) {
+        timer = setTimeout(tick, BACKOFF[tries])
       } else {
         /* The query string is cleared either way, so a refresh does not start
            the poll again, but the notice stays until it is dismissed. */

@@ -20,7 +20,7 @@ import { supabase } from './supabase'
 export async function listNotifications() {
   const { data, error } = await supabase
     .from('notification')
-    .select('id, kind, href, created_at, goals(commitment), profiles!notification_actor_id_fkey(display_name)')
+    .select('id, kind, href, created_at, goals(commitment), books(title), profiles!notification_actor_id_fkey(display_name)')
     .is('read_at', null)
     .order('created_at', { ascending: false })
     .limit(20)
