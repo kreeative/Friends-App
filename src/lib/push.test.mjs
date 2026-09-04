@@ -734,6 +734,49 @@ const b64 = (b) => Buffer.from(b).toString('base64url')
      'the claim already succeeded; the other phone is not their problem')
 
   /**
+   * THE BUTTON SAYS WHAT IT DOES, AND THE LINE AFTER IT DOES NOT OVERCLAIM.
+   *
+   * It said "I will check on them", which described a private intention back
+   * when claiming only told the group. It notifies somebody now, so it says
+   * so.
+   *
+   * The obvious next step is a standing line under a claimed card reading
+   * "they have been told", and that would be wrong twice. Until the updated
+   * function is deployed the POST reaches the old handler, which ignores the
+   * body and runs its scheduled job: nothing is written and nobody is told. A
+   * dropped request does the same. And on the next page load nothing in the
+   * nudge row records whether a push went out, so a standing sentence would
+   * have to be guessed at.
+   *
+   * So the confirmation is transient and comes from the RESULT.
+   *
+   * `=== true`, NOT MERELY TRUTHY, AND THAT IS NOT PEDANTRY. The old function
+   * answers { ok, sent: tally }, where tally is an object and therefore
+   * truthy. The first version used `res?.sent` and claimed delivery against
+   * the currently deployed function. Caught by driving that exact response in
+   * Chromium.
+   */
+  ok('the claim button names the action',
+     /'nudge\.claim': 'Notify them'/.test(i18nSrc) &&
+       /'nudge\.claim': 'Pr\u00e9venir'/.test(i18nSrc))
+  ok(
+    'the standing line under a claimed card claims no delivery',
+    !/have been told/.test((i18nSrc.match(/'nudge\.claimed_by_me': '[^']*'/g) ?? []).join(' ')) &&
+      !/est pr\u00e9venue/.test((i18nSrc.match(/'nudge\.claimed_by_me': '[^']*'/g) ?? []).join(' ')),
+    'it survives a reload, when nothing records whether a push went out',
+  )
+  ok(
+    'the confirmation is gated on an exact true, not a truthy value',
+    /res\?\.ok === true && res\?\.sent === true/.test(
+      readFileSync(join(here, '..', 'components', 'NudgeBanner.jsx'), 'utf8')),
+    'the old function returns sent: tally, an object, which is truthy',
+  )
+  for (const key of ['nudge.notified']) {
+    const hits = i18nSrc.split(`'${key}'`).length - 1
+    ok(`${key} exists in both languages (${hits})`, hits === 2)
+  }
+
+  /**
    * BUNDLE FRESHNESS IS NOT CHECKED HERE, DELIBERATELY.
    *
    * bundled.ts is what gets pasted into the dashboard, so a stale one means
