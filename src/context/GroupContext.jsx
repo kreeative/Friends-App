@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from './AuthContext'
 import { cyclePhase, lastClosed, soonestUpcoming } from '../lib/time'
 import { dayKey, indexDays, since } from '../lib/streak'
+import { openHides } from '../lib/nudgeHidden'
 
 /* Exported so a test or a preview can supply a value without standing up a
    Supabase client. Application code should use the hook. */
@@ -158,15 +159,17 @@ export function GroupProvider({ children }) {
       supabase.from('member_cycle_status').select('*').eq('group_id', activeId),
       supabase.from('nudges').select('*').eq('group_id', activeId).in('state', ['pending', 'claimed']),
       /**
-       * The ones this reader has put away.
+       * The ones this reader has put away, and when.
        *
        * Its own request rather than a join, for the reason the envelopes and
        * the savings ledger each have one: migration 40 may not have been run,
        * and a missing table must not take the whole group down with it. RLS
        * already limits this to the reader's own rows, so no filter is needed
        * and none would add anything.
+       *
+       * hidden_at comes down because a cross expires. See HIDE_DAYS.
        */
-      supabase.from('nudge_hidden').select('nudge_id'),
+      supabase.from('nudge_hidden').select('nudge_id, hidden_at'),
       ])
 
       setGroup(g.data ?? null)
@@ -178,7 +181,7 @@ export function GroupProvider({ children }) {
          `nudges` sees the same list. hid.data is null when the table is not
          installed, which reads as "nothing hidden" and is the right way for
          this to fail. */
-      const hidden = new Set((hid?.data ?? []).map((r) => r.nudge_id))
+      const hidden = new Set(openHides(hid?.data))
       setNudges((nd.data ?? []).filter((n) => !hidden.has(n.id)))
       setError(null)
     } catch (e) {
