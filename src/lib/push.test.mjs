@@ -414,7 +414,7 @@ const b64 = (b) => Buffer.from(b).toString('base64url')
   /* The honesty of the copy is the part worth pinning. Someone shortening this
      to "Notifications are working" would be making a claim the test did not
      earn. */
-  for (const key of ['push.test', 'push.testing', 'push.test_sent', 'push.test_note',
+  for (const key of ['push.test', 'push.testing', 'push.test_sent',
                      'push.test_title', 'push.test_body']) {
     const hits = i18nSrc.split(`'${key}'`).length - 1
     ok(`${key} exists in both languages (${hits})`, hits === 2)
@@ -444,10 +444,35 @@ const b64 = (b) => Buffer.from(b).toString('base64url')
     'the same doubling, in the one path that had no title of its own',
   )
 
+  /**
+   * THE HONESTY MOVED, IT DID NOT GO AWAY.
+   *
+   * The settings screen was asked to be buttons rather than essays, so the
+   * paragraph qualifying what the test proves now lives in the help page. That
+   * is a fine place for it and a terrible thing to lose, so it is asserted
+   * where it went: the button must never come to read as an end-to-end check
+   * just because the sentence that said otherwise was deleted from the screen.
+   */
+  const faq = readFileSync(join(here, '..', 'content', 'faq.js'), 'utf8')
   ok(
-    'the note says delivery is not what was tested',
-    /which this does not test/.test(i18nSrc) && /n’est pas testé ici/.test(i18nSrc),
-    'this button must never read as an end-to-end check',
+    'the help page still says the test does not prove delivery',
+    /does not check that a real reminder will arrive/.test(faq) &&
+      /ne v\u00e9rifie pas qu\u2019un vrai rappel arrivera/.test(faq),
+    'moving the caveat off the screen must not delete it',
+  )
+  ok(
+    'and explains the iPhone home-screen rule, which is where this breaks',
+    /Add to Home Screen/.test(faq) && /\u00e9cran d\u2019accueil/.test(faq),
+  )
+  ok(
+    'and says why it cannot be turned on for everybody',
+    /gesture from the person/.test(faq) && /geste de la personne/.test(faq),
+  )
+  ok(
+    'the settings screen no longer carries the paragraph',
+    !/push\.test_note/.test(toggleSrc) && !/diag\.body/.test(
+      readFileSync(join(here, '..', 'components', 'PurchaseCheck.jsx'), 'utf8')),
+    'asked for: keep the buttons, move the explanations to help',
   )
 }
 

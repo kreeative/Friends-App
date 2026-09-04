@@ -75,6 +75,49 @@ export const FAQ = {
           },
         ],
       },
+      {
+        id: 'notifs',
+        title: 'Notifications et livres',
+        items: [
+          {
+            q: 'Comment activer les notifications sur iPhone ?',
+            a: [
+              'Ouvre le site dans Safari, appuie sur le bouton Partager, puis « Sur l’écran d’accueil ». Ensuite ouvre l’application depuis cette icône, va dans Réglages et active « Me notifier sur cet appareil ».',
+              'Cette étape n’est pas facultative et ne vient pas de nous : Apple bloque les notifications pour un site ouvert dans un onglet. Tant que l’application n’est pas sur l’écran d’accueil, l’interrupteur n’apparaît même pas.',
+              'Sur Android et sur ordinateur, il n’y a rien à installer : l’interrupteur est directement dans Réglages.',
+            ],
+          },
+          {
+            q: 'C’est par appareil ou par compte ?',
+            a: [
+              'Par appareil, et même par navigateur. L’activer sur ton téléphone ne l’active pas sur ton ordinateur : ce sont deux abonnements séparés.',
+              'C’est pour ça que la ligne dit « sur cet appareil » plutôt que « pour moi ».',
+            ],
+          },
+          {
+            q: 'À quoi sert « Afficher une notification test » ?',
+            a: [
+              'Il vérifie que ton appareil sait afficher une notification : que la permission est donnée, que l’application est bien installée, et que le système accepte de l’afficher. C’est là que ça coince presque toujours.',
+              'Il ne vérifie pas qu’un vrai rappel arrivera : celui-là part du serveur et fait un autre trajet. Un test qui s’affiche ne prouve donc pas que tout fonctionne de bout en bout, et le bouton ne prétend pas le contraire.',
+            ],
+          },
+          {
+            q: 'Pourquoi vous ne les activez pas pour tout le monde ?',
+            a: [
+              'Parce que c’est impossible, et pas par choix. Un navigateur n’accepte d’activer les notifications qu’après un geste de la personne : il faut un vrai appui sur un vrai bouton, et la demande de permission doit venir juste après.',
+              'Aucun site ne peut contourner ça, et c’est tant mieux : sinon la première page venue pourrait s’inviter sur ton écran verrouillé.',
+            ],
+          },
+          {
+            q: 'J’ai payé un livre, pourquoi n’est-il pas arrivé ?',
+            a: [
+              'Va dans Réglages, section Achats, et appuie sur « Vérifier les achats ». Ça contrôle toute la chaîne : les clés de ce déploiement, si Stripe sait où envoyer un paiement terminé, si les paiements récents ont été livrés, et si les accès peuvent être enregistrés. Aucun secret n’est affiché.',
+              'Si un achat manque, le bouton « Récupérer les livres que j’ai payés » demande directement à Stripe ce que tu as payé et te le rend. Il ne peut rien donner que tu n’aies pas payé.',
+              'La bibliothèque essaie déjà toute seule, quelques secondes après un paiement. Ce bouton est le filet en dessous.',
+            ],
+          },
+        ],
+      },
     ],
   },
 
@@ -126,6 +169,49 @@ export const FAQ = {
             a: [
               'The purchase, on the day of the purchase. Not the repayment: that is the same money moving a second time between two places that are both yours, and logging both makes your budget tell you that you are in trouble when you are not.',
               'The formation’s "The credit card" module covers this in full.',
+            ],
+          },
+        ],
+      },
+      {
+        id: 'notifs',
+        title: 'Notifications and books',
+        items: [
+          {
+            q: 'How do I turn notifications on, on an iPhone?',
+            a: [
+              'Open the site in Safari, tap Share, then "Add to Home Screen". Then open the app from that icon, go to Settings, and turn on "Notify me on this device".',
+              'That step is not optional and it is not ours: Apple blocks notifications for a site opened in a browser tab. Until the app is on the home screen the switch does not even appear.',
+              'On Android and on a computer there is nothing to install. The switch is simply there in Settings.',
+            ],
+          },
+          {
+            q: 'Is it per device or per account?',
+            a: [
+              'Per device, and in fact per browser. Turning it on on your phone does not turn it on on your laptop: those are two separate subscriptions.',
+              'That is why the row says "on this device" rather than "for me".',
+            ],
+          },
+          {
+            q: 'What does "Show a test notification" actually check?',
+            a: [
+              'That your device will display one: that permission was granted, that the app is properly installed, and that the operating system is willing to paint it. That is where this almost always breaks.',
+              'It does not check that a real reminder will arrive. That one comes from the server and travels a different route. So a test that appears is not proof the whole chain works, and the button does not claim otherwise.',
+            ],
+          },
+          {
+            q: 'Why not just turn them on for everyone?',
+            a: [
+              'Because it is impossible, not because we chose not to. A browser will only turn notifications on after a gesture from the person: a real tap on a real button, with the permission request immediately after it.',
+              'No site can get around that, and that is a good thing. Otherwise any page you opened could put itself on your lock screen.',
+            ],
+          },
+          {
+            q: 'I paid for a book, why has it not arrived?',
+            a: [
+              'Go to Settings, the Purchases section, and press "Check purchases". It checks the whole chain: the keys on this deployment, whether Stripe knows where to send a completed payment, whether recent payments were delivered, and whether the records can be written. It never shows a secret.',
+              'If a purchase is missing, "Get the books I paid for" asks Stripe directly what you have paid for and hands it over. It cannot give you anything you did not pay for.',
+              'The library already tries this on its own, a few seconds after a payment. That button is the floor underneath it.',
             ],
           },
         ],
