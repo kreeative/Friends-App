@@ -185,7 +185,25 @@ export default function Reader() {
         ])
         if (cancelled) return
 
-        setChapters(chs)
+        /**
+         * AN EMPTY LIST FROM THE DATABASE MUST NOT REPLACE A SEEDED ONE.
+         *
+         * This used to assign unconditionally, and the guard for "the book has
+         * no chapters" sat fifteen lines below it. By the time that guard
+         * decided to leave the bundled chapter alone, this line had already
+         * thrown away the bundled table of contents.
+         *
+         * The result was reported from a real iPad: the reader shows chapter
+         * one, and Chapitres opens a sheet containing a title, a Fermer
+         * button, and nothing else. It also silently removed the previous and
+         * next buttons, because those are derived from this same list, so the
+         * book became a single unnavigable page.
+         *
+         * The state that causes it is a catalogue with a books row and no
+         * chapter rows: 07 run without 08, or 11 never run. That is what
+         * production looks like right now, which is why this reached a device.
+         */
+        if (chs.length > 0) setChapters(chs)
         setNotes(hl)
         /* Set on a copy, through state. Mutating the object already handed to
            setBook happened to work because it was the same reference, which
@@ -374,7 +392,7 @@ export default function Reader() {
   const s = SIZES[size]
 
   return (
-    <div className="relative min-h-dvh bg-bg pb-36">
+    <div className="relative min-h-dvh bg-bg pb-36" data-surface="reading" data-hook="reader">
       <div className="mx-auto w-full max-w-content px-6">
         <header className="flex items-center justify-between gap-4 pt-12">
           <Link to="/library" className="text-small text-muted hover:text-ink">
@@ -394,13 +412,32 @@ export default function Reader() {
         </header>
 
         {current?.locked ? (
-          <div className="card mt-16">
-            <h2 className="text-h2 text-ink">{t('reader.locked_title')}</h2>
-            <p className="mt-2 text-body text-muted">{t('reader.locked_body')}</p>
+          <div className="card mt-16" data-hook="chapter-locked">
+            {/**
+             * NEVER ASK SOMEBODY TO BUY A BOOK THEY HAVE ALREADY BOUGHT.
+             *
+             * A chapter comes back locked for two completely different
+             * reasons, and this card used to say the same thing for both. The
+             * ordinary one is the paywall doing its job. The other is that the
+             * entitlement is there and the TEXT is not: a catalogue whose
+             * chapter rows were never loaded, which is what the recovered
+             * purchases are landing in right now.
+             *
+             * Reading `owned` first means the person who has just got their
+             * book back is told their purchase is recorded, rather than being
+             * shown a payment button for something they own. Getting this
+             * order wrong would take money twice.
+             */}
+            <h2 className="text-h2 text-ink">
+              {book.owned ? t('reader.owned_missing_title') : t('reader.locked_title')}
+            </h2>
+            <p className="mt-2 text-body text-muted">
+              {book.owned ? t('reader.owned_missing') : t('reader.locked_body')}
+            </p>
             {/* A bundled book has no row to record a purchase against, so
                 offering to take money for it would be selling something the
                 app could not then deliver. */}
-            {book.local ? (
+            {book.owned ? null : book.local ? (
               <p className="mt-6 text-small text-muted">{t('reader.local_only')}</p>
             ) : (
               <>
@@ -445,11 +482,15 @@ export default function Reader() {
               </p>
               <h1 className="mt-3 text-h1 text-ink">{current?.title}</h1>
 
+              {/* Full ink, not ink/85. See the reading-surface note in
+                  index.css: the translucency was softening type against a
+                  tinted ground, and on white it only makes the letters
+                  grey. */}
               <div
                 ref={bodyRef}
                 onMouseUp={captureSelection}
                 onTouchEnd={captureSelection}
-                className="mt-10 text-ink/85"
+                className="mt-10 text-ink"
                 style={{
                   fontSize: `${s.px}px`,
                   lineHeight: s.lh,
@@ -496,7 +537,11 @@ export default function Reader() {
       )}
 
       <Sheet open={drawer} onClose={() => setDrawer(false)} title={t('reader.chapters')}>
-        <div className="list">
+        {/* Keyed to a data hook, not to `list`. A probe written against the
+            class found zero rows and reported the drawer empty at a moment
+            when it was empty for a different reason, which made a real bug and
+            a broken selector look identical. */}
+        <div className="list" data-hook="chapter-list">
           {chapters.map((c) => (
             <button
               key={c.id}
