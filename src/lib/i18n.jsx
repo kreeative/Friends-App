@@ -475,9 +475,16 @@ const STRINGS = {
     'nudge.claimed_by_me': 'You’ve got this one. Make it about the two of you, not about the app.',
     'nudge.claimed_by_other': '{name} has got this one.',
     'nudge.assigned': 'It is yours this time. A text is plenty.',
-    'nudge.open': 'Wherever you actually talk, not in here.',
+    /* A suggestion, not a rule about where not to talk. "Wherever you actually
+       talk, not in here" told somebody where the app ends without telling them
+       what to do, and the whole card exists to make one small thing easy. */
+    'nudge.open': 'Try calling, or send them a message. Not in here.',
     'nudge.claim': 'Notify them',
-    'nudge.close': 'Done, we spoke',
+    /* Just "Done". It said "Done, we spoke", which asserts a conversation
+       happened, and the button also gets pressed by somebody who called and
+       got no answer, or who decided to leave it a few days. The card being
+       closed is the only thing the button actually knows. */
+    'nudge.close': 'Done',
     'nudge.notified': 'They have just been told, on their phone.',
     'nudge.hide': 'Hide {name}. This card disappears for you only.',
     /* Shown on the card when the database refuses the cross. It used to fail
@@ -1888,9 +1895,11 @@ const STRINGS = {
     'nudge.claimed_by_me': 'C’est toi qui t’en occupes. Parle de vous deux, pas de l’appli.',
     'nudge.claimed_by_other': '{name} s’en occupe.',
     'nudge.assigned': 'C’est à toi cette fois. Un message suffit.',
-    'nudge.open': 'Là où vous parlez vraiment, pas ici.',
+    /* "l'appeler" and "lui" are the same for everybody, so the suggestion can
+       be concrete without the app having to know anything about the person. */
+    'nudge.open': 'Essaie de l’appeler, ou écris-lui. Pas ici.',
     'nudge.claim': 'Prévenir',
-    'nudge.close': 'C’est fait, on s’est parlé',
+    'nudge.close': 'C’est fait',
     'nudge.notified': 'La personne vient d’être prévenue sur son téléphone.',
     'nudge.hide': 'Masquer {name}. Cette carte disparaît pour toi seulement.',
     'nudge.hide_failed': 'La carte n’a pas pu être rangée. Rien n’est perdu, réessaie dans un instant.',

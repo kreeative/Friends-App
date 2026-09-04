@@ -750,10 +750,38 @@ const COPY = {
        dans le groupe, donc le nom est un fait et pas une tournure. C’est la
        version qui a une chance de marcher : ce qui ramène une personne qui a
        arrêté d’ouvrir une application, c’est un ami, pas une notification. */
-    nudgeFromSubject: (who: string) => `${who} veut de tes nouvelles`,
-    nudgeFromTitle: (who: string) => `${who} veut de tes nouvelles`,
+    /**
+     * "OU TU ES", NOT "OU TU ES PASSE".
+     *
+     * The line asked for was "se demande ou tu es passe", and it is the better
+     * sentence. It cannot be written here. "passe" agrees with the person
+     * reading it, so it is "passee" for a woman, and this function knows the
+     * recipient's language and nothing about their gender. Most profiles have
+     * never set pronouns, and pronouns.js is explicit that guessing from a
+     * name is how the app misgenders somebody in a way the neutral default
+     * never does.
+     *
+     * So the participle goes and the rest of the sentence stays. "se demande
+     * ou tu es" is the same thought, one word shorter, and correct for
+     * everybody.
+     */
+    nudgeFromSubject: (who: string) => `${who} se demande où tu es`,
+    nudgeFromTitle: (who: string) => `${who} se demande où tu es`,
     nudgeFromLead: (who: string, g: string) =>
       `${who} se demande comment tu vas. Ça fait deux semaines qu’on ne te voit pas dans ${g}.`,
+    /**
+     * The body of the instant push, which used to be nudgeCta.
+     *
+     * That is a button label, "Je suis toujours là", and as the second line of
+     * a lock screen notification it read as something the recipient had said
+     * rather than something being offered to them. A body has to be a sentence
+     * about why the phone lit up.
+     *
+     * No obligation in it, deliberately. Somebody who has gone quiet for two
+     * weeks does not need a task, and a message that arrives as one is the
+     * message that gets swiped away.
+     */
+    nudgeNowBody: 'Rien à faire. C’est juste pour prendre de tes nouvelles.',
 
     birthdaySubject: (n: number, first: string) =>
       n === 1 ? `L’anniversaire de ${first}, dans trois jours` : `${n} anniversaires dans trois jours`,
@@ -842,10 +870,11 @@ const COPY = {
     nudgeCta: 'I am still in',
     nudgeFoot: (g: string) => `Sent once, because you are in ${g}. There is no second one.`,
 
-    nudgeFromSubject: (who: string) => `${who} is asking after you`,
-    nudgeFromTitle: (who: string) => `${who} is asking after you`,
+    nudgeFromSubject: (who: string) => `${who} is wondering where you are`,
+    nudgeFromTitle: (who: string) => `${who} is wondering where you are`,
     nudgeFromLead: (who: string, g: string) =>
       `${who} wants to know how you are. Nobody has seen you in ${g} for a couple of weeks.`,
+    nudgeNowBody: 'Nothing to do. They just wanted to hear from you.',
 
     birthdaySubject: (n: number, first: string) =>
       n === 1 ? `${first}'s birthday, in three days` : `${n} birthdays in three days`,
@@ -1782,7 +1811,9 @@ async function deliverNudge(req: Request): Promise<Response> {
 
   await pushTo(nudge.subject_id, {
     title: from ? c.nudgeFromTitle(from) : c.nudgeTitle,
-    body: c.nudgeCta,
+    /* Was nudgeCta, which is the label on a button in an email. On a lock
+       screen "Je suis toujours la" reads as something the recipient said. */
+    body: c.nudgeNowBody,
     url: `${SITE}/g/${nudge.group_id}`,
     tag: 'nudge',
   })
