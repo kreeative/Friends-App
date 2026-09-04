@@ -771,9 +771,64 @@ const b64 = (b) => Buffer.from(b).toString('base64url')
       readFileSync(join(here, '..', 'components', 'NudgeBanner.jsx'), 'utf8')),
     'the old function returns sent: tally, an object, which is truthy',
   )
-  for (const key of ['nudge.notified']) {
+  for (const key of ['nudge.notified', 'nudge.hide_failed']) {
     const hits = i18nSrc.split(`'${key}'`).length - 1
     ok(`${key} exists in both languages (${hits})`, hits === 2)
+  }
+
+  /**
+   * THE CROSS MUST NOT UPSERT.
+   *
+   * This is the bug that made the cross do nothing at all. supabase-js
+   * .upsert() becomes INSERT ... ON CONFLICT DO UPDATE at PostgREST, and
+   * migration 40 gave nudge_hidden a select, an insert and a delete policy and
+   * granted exactly those three verbs. No update, in either place.
+   *
+   * Reproduced against a real Postgres 16 with migration 40 loaded, both ways:
+   * with the grant as written every cross fails with "permission denied for
+   * table nudge_hidden", because ON CONFLICT DO UPDATE needs the update
+   * privilege whether or not anything conflicts; and with the update privilege
+   * present anyway, which is what Supabase's default privileges hand a new
+   * public table, the first cross succeeds and every one after it fails with
+   * "new row violates row-level security policy (USING expression)".
+   *
+   * So the shape of the write is the fix, and it is worth pinning. A future
+   * edit reaching for .upsert() here would look tidier and would silently
+   * break the cross again.
+   */
+  {
+    const nudge = readFileSync(join(here, '..', 'components', 'NudgeBanner.jsx'), 'utf8')
+    /* Comments stripped first. The doc comment above hide() explains the bug
+       by naming .upsert(), and the first run of this check failed on that
+       sentence: the test was reading the explanation as the code. Same
+       stripper the card overflow suite needs, for the same reason. */
+    const code = nudge.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
+    const hide = code.slice(code.indexOf('async function hide('))
+    ok(
+      'the cross never upserts, whatever else it does',
+      !/\.upsert\(/.test(code),
+      'nudge_hidden has no update policy and no update grant',
+    )
+    ok(
+      'it deletes the old row first, so a fresh hidden_at restarts the week',
+      /\.from\('nudge_hidden'\)\s*\.delete\(\)/.test(hide.replace(/\n\s*/g, '\n')) ||
+        /from\('nudge_hidden'\)\.delete\(\)/.test(hide),
+      'an insert that swallowed the duplicate would keep the expired timestamp',
+    )
+    ok(
+      'and then inserts, which is a verb migration 40 actually granted',
+      /\.insert\(\{ nudge_id: id, user_id: user\.id \}\)/.test(hide),
+    )
+    ok(
+      'hidden_at is never sent from the browser',
+      !/hidden_at/.test(hide),
+      'the column defaults to now() server-side, and a phone clock is not a clock',
+    )
+    ok(
+      'a refused cross is shown to the person, not swallowed',
+      /setHideFailed/.test(hide) && /data-hook="nudge-hide-failed"/.test(nudge),
+      'it restored the card in silence, so the only symptom was tapping twice',
+    )
   }
 
   /**
