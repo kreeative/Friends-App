@@ -106,6 +106,7 @@ Set the environment variables under Settings → Environment Variables:
 | `SUPABASE_SERVICE_ROLE_KEY` | service role key | **no, never** |
 | `STRIPE_SECRET_KEY` | `sk_live_…` or `sk_test_…` | no |
 | `STRIPE_WEBHOOK_SECRET` | `whsec_…` (step 3) | no |
+| `VITE_VAPID_PUBLIC_KEY` | the public half, from `node scripts/vapid.mjs` | yes, and that is correct |
 
 Only `VITE_*` reaches the client bundle, that prefix is the whole mechanism,
 so anything without it stays server-side. Vite inlines the `VITE_*` values at
@@ -135,6 +136,44 @@ somebody thought they had revoked it.
 
 The one thing that must not move is the VAPID private key. It goes in Supabase
 and nowhere else: not in the repository, not in Vercel, not in a message.
+
+### Push needs a variable on BOTH sides, and this is what gets missed
+
+The VAPID pair is the one piece of configuration that is split across the two
+dashboards, which is exactly why it ends up half done. The symptom of doing
+only the Supabase half is that the settings screen reads "Not set up on this
+build yet" forever, with no error anywhere, because the browser has no key to
+subscribe with.
+
+Run it once:
+
+```bash
+node scripts/vapid.mjs
+```
+
+It prints the pair and where each half goes, and deliberately writes nothing to
+disk. Then:
+
+- **Supabase** → Project Settings → Edge Functions → Secrets:
+  `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`.
+- **Vercel** → Settings → Environment Variables: `VITE_VAPID_PUBLIC_KEY`, the
+  same public key, then **redeploy**. Vite compiles it in at build time, so
+  setting it without a redeploy changes nothing.
+
+`VITE_VAPID_PUBLIC_KEY` is a deliberate exception to everything the section
+above says about the `VITE_` prefix. A VAPID public key is meant to be in the
+browser: it is what `applicationServerKey` is handed when a device subscribes,
+so shipping it in the bundle is the point of it, not a leak. The private half
+is a different value and never leaves Supabase.
+
+Both halves must be the SAME pair. A mismatch is the nastiest failure mode
+here, because subscribing still succeeds and every send is then refused with
+403 by the push service. From the phone that looks identical to the feature
+simply not working.
+
+Run it once and never again, for the same reason: every browser that has
+subscribed did so against that public key, and a new pair silently invalidates
+all of them, one device at a time.
 
 ### The Stripe publishable key is not needed at all
 
