@@ -35,6 +35,7 @@ import Study from './pages/public/Study'
 import Preview from './pages/public/Preview'
 import Library from './pages/Library'
 import Reader from './pages/Reader'
+import VapidSetup from './pages/VapidSetup'
 
 /** /lectures/:slug is the same page as /library/:slug, spelled in French. */
 function LecturesRedirect() {
@@ -276,6 +277,20 @@ function Gate() {
         {/* Top level, and distinct from /g/:groupId/settings, which is the
             GROUP's settings and is unreachable to anybody without a group. */}
         <Route path="settings" element={<Account />} />
+        {/**
+         * The push key generator. Unlisted: nothing links here, and that is
+         * deliberate rather than an oversight.
+         *
+         * It exists because every other way to make a VAPID pair assumes a
+         * computer, and this app was built and deployed from a tablet. See the
+         * note at the top of VapidSetup.jsx. A tester who lands on the
+         * settings screen does not need a key generator under the notification
+         * card, and gating it by account would mean an owner's email address
+         * in a public repository. Unlisted is enough because the page
+         * discloses nothing: it reads no configuration and generates fresh
+         * random numbers.
+         */}
+        <Route path="settings/push-keys" element={<VapidSetup />} />
         <Route path="money" element={<Money />} />
         {/* The full timetable. The dashboard's WeekStrip links here; it is
             deliberately not a fifth tab, because the tab bar is capped at four
