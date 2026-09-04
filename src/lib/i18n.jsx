@@ -472,7 +472,11 @@ const STRINGS = {
        French copy for why. */
     'nudge.reach_out': 'Say hello to {name}',
     'nudge.quiet': 'No word for a couple of weeks.',
-    'nudge.claimed_by_me': 'You’ve got this one. Make it about the two of you, not about the app.',
+    /* No "not in the app" clause. There is nowhere in this app to talk to
+       anybody, so every version of that sentence rules out something nobody
+       could have been about to do. It was removed from nudge.open and this
+       copy of the same idea survived. */
+    'nudge.claimed_by_me': 'You’ve got this one. A call or a message, whichever suits.',
     'nudge.claimed_by_other': '{name} has got this one.',
     'nudge.assigned': 'It is yours this time. A text is plenty.',
     /* A suggestion, and nothing else. "Wherever you actually talk, not in
@@ -488,6 +492,15 @@ const STRINGS = {
        closed is the only thing the button actually knows. */
     'nudge.close': 'Done',
     'nudge.notified': 'They have just been told, on their phone.',
+    /* The four ways a claim can fail to reach the other phone. Each one names
+       what actually happened, because "something went wrong" is the message
+       that sent somebody to ask a person. `stale` is the common one and is
+       entirely fixable: the Supabase function has not been redeployed. */
+    'nudge.not_sent_stale': 'Your claim is saved, but nothing was sent: the notification server is still running the old version. Paste supabase/functions/notify/bundled.ts into Supabase, Edge Functions, notify, and deploy.',
+    'nudge.not_sent_inbox_only': 'It is in their inbox, but no notification lit up their phone: the server has no push keys set. Settings, then Notifications, has the page that makes them.',
+    'nudge.not_sent_recent': 'They heard from somebody in the last hour, so this one was not sent again.',
+    'nudge.not_sent_signed_out': 'Your claim is saved. The message was not sent because this session is signed out.',
+    'nudge.not_sent_failed': 'Your claim is saved. The message did not go out, and the server did not say why.',
     'nudge.hide': 'Hide {name}. This card disappears for you only.',
     /* Shown on the card when the database refuses the cross. It used to fail
        in silence and simply put the card back, so the only way to discover it
@@ -1901,7 +1914,7 @@ const STRINGS = {
     /* Accords neutres partout. On ne connait pas le genre des gens : la
        version d'avant disait "parle de lui" et "Toi seul arretes", ce qui se
        trompe une fois sur deux et n'apporte rien. */
-    'nudge.claimed_by_me': 'C’est toi qui t’en occupes. Parle de vous deux, pas de l’appli.',
+    'nudge.claimed_by_me': 'C’est toi qui t’en occupes. Un appel ou un message, comme tu veux.',
     'nudge.claimed_by_other': '{name} s’en occupe.',
     'nudge.assigned': 'C’est à toi cette fois. Un message suffit.',
     /* "l'appeler" and "lui" are the same for everybody, so the suggestion can
@@ -1910,6 +1923,11 @@ const STRINGS = {
     'nudge.claim': 'Prévenir',
     'nudge.close': 'C’est fait',
     'nudge.notified': 'La personne vient d’être prévenue sur son téléphone.',
+    'nudge.not_sent_stale': 'Ton engagement est enregistré, mais rien n’a été envoyé : le serveur de notifications tourne encore sur l’ancienne version. Colle supabase/functions/notify/bundled.ts dans Supabase, Edge Functions, notify, puis déploie.',
+    'nudge.not_sent_inbox_only': 'C’est dans sa boîte, mais aucune notification ne s’est affichée sur son téléphone : le serveur n’a pas de clés push. Réglages, puis Notifications, contient la page qui les crée.',
+    'nudge.not_sent_recent': 'Quelqu’un lui a déjà fait signe dans l’heure, donc ce message n’a pas été renvoyé.',
+    'nudge.not_sent_signed_out': 'Ton engagement est enregistré. Le message n’est pas parti parce que cette session est déconnectée.',
+    'nudge.not_sent_failed': 'Ton engagement est enregistré. Le message n’est pas parti, et le serveur n’a pas dit pourquoi.',
     'nudge.hide': 'Masquer {name}. Cette carte disparaît pour toi seulement.',
     'nudge.hide_failed': 'La carte n’a pas pu être rangée. Rien n’est perdu, réessaie dans un instant.',
     'nudge.count': '{n} amis à qui faire signe. Glisse.',

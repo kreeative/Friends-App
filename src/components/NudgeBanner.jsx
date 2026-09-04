@@ -39,6 +39,37 @@ import { DismissButton } from './ui'
  * written. So the cross writes a row to nudge_hidden and hides the card for
  * the reader alone. The nudge stays open. See supabase/40.
  */
+/**
+ * Why the message did not go, in one word the card can print.
+ *
+ * PRESSING THE BUTTON AND HAVING NOTHING HAPPEN IS THE BUG THIS ANSWERS.
+ *
+ * The claim is written, the page reloads, and the other person's phone stays
+ * dark. From the outside that is indistinguishable from the app being broken,
+ * and the only person who could tell the difference was whoever had the
+ * Supabase dashboard open. There are four different reasons and the app knew
+ * which one every time. It just never said.
+ *
+ * The important one is `stale`. The Supabase function has to be redeployed
+ * before any instant message can be sent at all, and until it is, a POST
+ * reaches the OLD handler, which ignores the body, runs its scheduled job and
+ * answers { ok: true, sent: <tally object> }. An object is truthy, so this is
+ * also the response that once made the card claim a delivery that never
+ * happened. Now it names itself.
+ */
+export function why(res) {
+  if (!res) return 'failed'
+  /* sent is an object only in the old function's answer. Checked before ok,
+     because the old function answers ok: true while doing nothing. */
+  if (res.sent !== null && typeof res.sent === 'object') return 'stale'
+  if (res.ok !== true) return res.reason === 'signed_out' ? 'signed_out' : 'failed'
+  if (res.sent === false) return res.reason === 'already_sent_recently' ? 'recent' : 'failed'
+  /* Sent, and the row is in their inbox, but the server has no VAPID keys so
+     no lock screen lit up. Worth saying: it is a real half-success. */
+  if (res.push === false) return 'inbox_only'
+  return 'failed'
+}
+
 export default function NudgeBanner() {
   const { user } = useAuth()
   const { nudges, hiddenNudges, members, reloadGroup } = useGroup()
@@ -52,6 +83,8 @@ export default function NudgeBanner() {
   const [hidden, setHidden] = useState(() => new Set())
   /* Cards whose cross the database refused, this session. */
   const [hideFailed, setHideFailed] = useState(() => new Set())
+  /* Why a claim did not reach the other phone, per card, this session. */
+  const [sendState, setSendState] = useState(() => new Map())
   const rail = useRef(null)
 
   const visible = nudges.filter((n) => n.subject_id !== user?.id && !hidden.has(n.id))
@@ -113,7 +146,16 @@ export default function NudgeBanner() {
          it, so the line claiming delivery appeared while nothing had been
          sent, which is precisely the case this check exists to catch. Found
          by driving that exact response in Chromium. */
-      if (res?.ok === true && res?.sent === true) setNotified((s2) => new Set(s2).add(id))
+      /* push !== false as well as sent === true. The server answers
+         { ok: true, sent: true, push: false } when the row was written to
+         their inbox but it has no VAPID keys, so nothing reached a lock
+         screen. Without that clause the success branch swallowed it and the
+         card said "told, on their phone" about a phone that never lit up. */
+      if (res?.ok === true && res?.sent === true && res?.push !== false) {
+        setNotified((s2) => new Set(s2).add(id))
+      } else {
+        setSendState((s2) => new Map(s2).set(id, why(res)))
+      }
     }
     await reloadGroup()
     setBusy(null)
@@ -307,6 +349,18 @@ export default function NudgeBanner() {
               {notified.has(n.id) && (
                 <p className="mt-2 text-small text-muted" data-hook="nudge-notified" role="status">
                   {t('nudge.notified')}
+                </p>
+              )}
+
+              {/* And when it did not go, which one of the four reasons it was. */}
+              {sendState.has(n.id) && (
+                <p
+                  className="mt-2 text-small text-muted"
+                  data-hook="nudge-not-sent"
+                  data-why={sendState.get(n.id)}
+                  role="status"
+                >
+                  {t(`nudge.not_sent_${sendState.get(n.id)}`)}
                 </p>
               )}
 
