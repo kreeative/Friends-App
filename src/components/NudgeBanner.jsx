@@ -385,7 +385,23 @@ export default function NudgeBanner() {
                 </p>
               )}
 
-              {/* And when it did not go, which one of the four reasons it was. */}
+              {/**
+               * ONE HUMAN SENTENCE, WHATEVER THE TECHNICAL REASON.
+               *
+               * This used to print the reason: which version the notification
+               * server is running, whether it holds signing keys, whether the
+               * other person has a subscription. All true, all useless here,
+               * and one of them told this reader to paste a file into a
+               * Supabase dashboard. Reported as "a message that users must not
+               * see", which is exactly right.
+               *
+               * The person reading this card did a kind thing for a friend.
+               * The only thing they need to know is that it will reach them.
+               * The real reason is still on the element as data-why, and the
+               * place to act on it is the notifications check in Settings,
+               * which is a screen for fixing things rather than a card about
+               * a person.
+               */}
               {sendState.has(n.id) && (
                 <p
                   className="mt-2 text-small text-muted"
@@ -393,7 +409,7 @@ export default function NudgeBanner() {
                   data-why={sendState.get(n.id)}
                   role="status"
                 >
-                  {t(`nudge.not_sent_${sendState.get(n.id)}`)}
+                  {t('nudge.not_sent', { name: nameOf(n.subject_id) })}
                 </p>
               )}
 
