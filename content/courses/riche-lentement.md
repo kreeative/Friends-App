@@ -1,159 +1,342 @@
 # Riche, lentement
 
-Plan de cours, quatre modules, du grand debutant a l'investisseur autonome.
+Plan de cours, cinq modules, du grand débutant à l'investisseur autonome.
 
 Le titre est un parti pris. Une formation qui promet vite ment sur la seule
-variable qui fait le travail, et le module 1 passe une lecon entiere dessus.
+variable qui fait le travail, et le module 1 passe une leçon entière dessus.
+
+Les accents sont là, contrairement à la première version de ce fichier. La
+règle ASCII du dépôt vise le SQL qui voyage par le presse-papiers, pas de la
+prose française destinée à être lue et enregistrée.
 
 ## Comment le cours est construit
 
-**Une seule idee par lecon, et une action a la fin de chaque module.** Une
-lecon qui n'a pas de geste au bout est un article de blogue. Quatre modules,
-quatre gestes: la page unique, le virement automatique, l'enveloppe ouverte,
-le plan ecrit.
+**Une seule idée par leçon, et une action à la fin de chaque module.** Une
+leçon qui n'a pas de geste au bout est un article de blogue. Le module 0 est
+la seule exception: il ne demande rien, il désinstalle quelque chose.
 
-**Aucun chiffre fiscal n'est grave dans le cours.** Les plafonds du CELI, du
-REER et du CELIAPP sont indexes et changent, et une formation qui les recite
-est perimee l'annee suivante sans que personne s'en apercoive. Chaque lecon
-enseigne le mecanisme et renvoie a Mon dossier de l'ARC et a Revenu Quebec
-pour le montant du jour. C'est aussi ce qui permet de tourner les videos une
-fois.
+**Aucun chiffre fiscal n'est gravé dans le cours.** Les plafonds du CELI, du
+REER et du CELIAPP sont indexés et changent, et une formation qui les récite
+est périmée l'année suivante sans que personne s'en aperçoive. Chaque leçon
+enseigne le mécanisme et renvoie à Mon dossier de l'ARC et à Revenu Québec
+pour le montant du jour. C'est aussi ce qui permet de tourner les vidéos une
+seule fois.
 
 **Progression volontairement lente.** Personne n'ouvre un compte de courtage
 au module 1. On ne parle de placement qu'au module 4, quand le coussin est
-la, les dettes cheres sont mortes et le virement part tout seul. L'ordre est
-la pedagogie.
+là, les dettes chères sont mortes et le virement part tout seul. L'ordre est
+la pédagogie.
 
 **Une note sur les sources.** Housel, Sethi et le fisc canadien sont solides.
-Kiyosaki est autre chose: la distinction actif/passif est un outil de tri
-excellent, et une bonne partie du reste du livre est de l'anecdote invendable
+Kiyosaki est autre chose: la distinction actif/passif est un excellent outil
+de tri, et une bonne partie du reste du livre est de l'anecdote invérifiable
 et des conseils que personne ne devrait suivre. Le cours prend le cadre et
-laisse le reste, et le dit a voix haute plutot que de citer l'auteur comme une
-autorite.
+laisse le reste, et le dit à voix haute plutôt que de citer l'auteur comme
+une autorité.
 
 ---
 
-## Module 1. Personne n'est fou
+# Module 0. Mais au fait, c'est quoi l'argent ?
 
-**Objectif d'apprentissage.** A la fin du module, l'apprenant explique ses
-propres decisions d'argent par son histoire plutot que par un manque de
-discipline, et remplit un etat des lieux honnete de sa situation en une page.
+Quatre leçons courtes, conceptuelles, sans un seul chiffre à retenir.
 
-C'est le module qui desamorce la honte. Tant que quelqu'un croit que son
-probleme est un defaut de caractere, il n'ecoute pas la suite, il se defend.
+**Pourquoi ce module existe.** Le module 1 dit à quelqu'un que son rapport à
+l'argent vient de son histoire. C'est vrai, et c'est prématuré: on ne peut pas
+réparer sa relation avec une chose qu'on n'a jamais définie. Presque personne
+ne sait dire ce qu'est l'argent. On sait s'en servir, comme on sait se servir
+d'un ascenseur sans savoir ce qui le tient.
 
-- **1.1 Ton argent a une biographie.** Ce que tu crois sur l'argent a ete
-  ecrit par une epoque, un pays et une famille que tu n'as pas choisis.
+**Le registre.** Narratif, une histoire par leçon, la théorie arrive par la
+porte de derrière. On raconte une île, une grève bancaire, une horloge et une
+douleur qui a disparu. Personne ne doit avoir l'impression d'ouvrir un manuel
+d'économie.
+
+**Ce module ne demande aucune action.** Les quatre autres finissent sur un
+geste. Celui-ci finit sur une question, à chaque fois. C'est le seul module du
+cours dont le but est de retirer quelque chose de la tête de quelqu'un plutôt
+que d'y ajouter.
+
+---
+
+## Leçon 0.1 · La pierre au fond de l'océan
+
+*Du troc aux billets: la grande histoire d'une illusion collective.*
+
+**Objectif pédagogique.** L'étudiant comprend que l'argent n'a aucune valeur
+en lui-même: il est une confiance partagée, et il fonctionne exactement tant
+que tout le monde continue d'y croire. La prise de conscience visée est un
+léger vertige, suivi d'un soulagement: si c'est une convention, alors ce n'est
+pas une loi de la nature, et on peut apprendre à jouer avec.
+
+**Les trois points clés.**
+
+1. **L'histoire du troc est elle-même un mythe.** On nous a tous raconté la
+   même chose à l'école: d'abord on échangeait deux poulets contre une hache,
+   c'était compliqué, alors on a inventé la monnaie. Les anthropologues n'ont
+   jamais trouvé cette société-là. Ce qu'ils trouvent partout, c'est du
+   crédit: on se doit des choses, on s'en souvient, on règle plus tard. La
+   dette est plus vieille que la pièce. Commencer par démolir la version
+   officielle installe tout de suite le vrai sujet de la leçon: ce que tu crois
+   savoir sur l'argent, tu l'as reçu sans jamais le vérifier.
+2. **L'île de Yap, et la pierre qui n'est jamais arrivée.** Sur cette île du
+   Pacifique, la monnaie était d'énormes disques de pierre, trop lourds pour
+   être déplacés. On ne bougeait pas la pierre, on changeait son propriétaire,
+   et tout le monde savait à qui elle appartenait. Un jour, une pierre coule
+   pendant le transport. Personne ne la reverra jamais. Elle continue de servir
+   de monnaie pendant des générations, parce que l'île entière est d'accord sur
+   qui la possède. C'est l'image la plus honnête de ce qu'est un compte en
+   banque.
+3. **Ton solde est une ligne dans une base de données.** Le billet n'est plus
+   adossé à de l'or depuis les années 1970, et l'immense majorité de l'argent
+   qui existe n'a jamais été imprimée: elle est écrite dans les registres des
+   banques. Ce qui la rend réelle, ce n'est pas une matière, c'est le fait que
+   ton propriétaire, ton épicier et l'État acceptent la même écriture.
+
+**La réflexion du jour.** Regarde le solde de ton compte. Ce n'est ni du
+papier, ni de l'or, ni un objet: c'est une ligne dans l'ordinateur d'une
+banque. Pose-toi la question honnêtement: qu'est-ce qui devrait casser dans le
+monde pour que cette ligne cesse de valoir quelque chose? Tu vas trouver la
+réponse en trois secondes, et c'est exactement là qu'est la leçon.
+
+---
+
+## Leçon 0.2 · Un mégaphone, pas un masque
+
+*L'argent est un amplificateur, pas un monstre.*
+
+**Objectif pédagogique.** L'étudiant cesse de traiter l'argent comme une force
+morale, bonne ou mauvaise, et le voit comme un multiplicateur neutre de ce qui
+est déjà là. La prise de conscience visée est le droit d'en vouloir sans se
+sentir sale, et l'obligation d'être honnête sur ce qu'il amplifiera chez soi.
+
+**Les trois points clés.**
+
+1. **L'argent n'invente aucun trait de caractère, il enlève les freins.** Une
+   personne généreuse avec 2 000 $ devient une personne généreuse avec
+   200 000 $. Une personne qui fuit devient une personne qui fuit plus loin et
+   plus confortablement. Ce que la richesse fait vraiment, c'est retirer les
+   contraintes qui obligeaient tout le monde à se comporter à peu près pareil.
+   Ce qui reste ensuite, c'est toi, en plus gros.
+2. **D'où vient le tabou, et à qui il profite.** Presque personne ne connaît le
+   salaire de ses parents. On apprend très tôt que le sujet est gênant, jamais
+   pourquoi. Cette leçon nomme les phrases qui ont été installées dans
+   l'enfance de la plupart des gens: l'argent ne fait pas le bonheur, les riches
+   sont malhonnêtes, on ne parle pas de ça à table. Le silence n'a jamais
+   protégé la personne qui se tait; il protège toujours celle qui sait déjà.
+3. **Ce que la recherche dit vraiment, et où elle s'arrête.** L'idée qu'au-delà
+   d'un certain revenu le bonheur cesse d'augmenter a fait le tour du monde;
+   des travaux plus récents ont montré qu'il continue en fait de monter pour la
+   plupart des gens, sauf pour ceux qui vont déjà mal, chez qui l'argent ne
+   répare rien. La formule utile n'est donc ni « l'argent rend heureux » ni
+   « l'argent ne fait pas le bonheur ». C'est: l'argent achète très
+   efficacement l'absence de certains malheurs, et il n'a jamais su fabriquer
+   du bonheur à partir de rien.
+
+**La réflexion du jour.** Termine cette phrase sans réfléchir: « Chez nous, on
+ne parlait jamais de _______. » Puis deux questions: qui t'a appris ça, et
+est-ce que cette personne avait de l'argent? Tu viens probablement de trouver
+la source d'une règle que tu appliques encore aujourd'hui sans l'avoir choisie.
+
+---
+
+## Leçon 0.3 · Tu ne paies jamais en dollars
+
+*Le temps contre l'argent: ta véritable monnaie d'échange.*
+
+**Objectif pédagogique.** L'étudiant réalise que chaque dépense est payée en
+heures de vie et non en dollars, et que le vrai rendement de l'argent n'est pas
+un pourcentage, c'est le contrôle de son propre emploi du temps. La prise de
+conscience visée est un changement d'unité: on arrête de compter en prix, on
+commence à compter en heures.
+
+**Les trois points clés.**
+
+1. **Le taux de change que personne n'affiche.** Prends ton salaire net, enlève
+   le transport, les vêtements de travail, les heures que tu ne factures pas
+   mais que tu passes quand même. Tu obtiens le vrai prix d'une heure de ta
+   vie. Toute dépense se convertit avec ce taux-là. Un objet à 300 $ ne coûte
+   pas 300 $, il coûte une journée et demie de ton existence, et c'est la
+   seule devise que tu ne peux pas gagner davantage.
+2. **Le plus gros dividende que l'argent paie, c'est le contrôle de ton
+   temps.** C'est la thèse de Housel et c'est la charnière du module. Pouvoir
+   dire non, changer de travail, être malade sans paniquer, se lever sans
+   alarme: aucune de ces choses ne s'achète en magasin, toutes s'achètent avec
+   de l'épargne. Les gens croient qu'ils épargnent pour des choses. Ils
+   épargnent pour des options.
+3. **L'asymétrie qui rend tout ça urgent.** L'argent perdu se regagne. Le temps,
+   non. Et pourtant nous protégeons farouchement notre argent et donnons notre
+   temps à peu près à n'importe qui le demande poliment. Cette leçon retourne
+   la question habituelle « est-ce que j'ai les moyens de me payer ça » en
+   « est-ce que ça vaut le morceau de vie que ça coûte ».
+
+**La réflexion du jour.** Calcule ton taux horaire réel, à la louche, en une
+minute. Prends ensuite le dernier achat de plus de 100 $ que tu as fait, et
+convertis-le en heures de ta vie. Une seule question ensuite, et elle n'a pas
+de bonne réponse: est-ce que tu le referais?
+
+---
+
+## Leçon 0.4 · La douleur qui a disparu
+
+*Le piège de l'argent invisible.*
+
+**Objectif pédagogique.** L'étudiant comprend que son cerveau n'a jamais été
+conçu pour des paiements sans friction, et que dépenser moins n'est pas un
+problème de volonté mais un problème de conception. La prise de conscience
+visée: si la douleur a été retirée exprès, il faut la remettre soi-même,
+ailleurs.
+
+**Les trois points clés.**
+
+1. **Payer faisait mal, et c'était utile.** Sortir un billet de 50 $ et voir la
+   monnaie revenir produit une petite douleur mesurable, que les chercheurs
+   appellent la douleur de payer. C'est un frein, et c'est un bon frein. Les
+   travaux les plus connus sur la carte de crédit ont montré que les gens
+   acceptent de payer sensiblement plus cher pour la même chose quand ils ne
+   paient pas en liquide. L'ordre de grandeur exact se discute encore, la
+   direction, non.
+2. **Chaque étape supprimée coûte de l'argent.** Le liquide, puis la carte,
+   puis la carte sans contact, puis le téléphone, puis le visage. À chaque
+   étape on a retiré une seconde et un geste. Ce n'est pas une conspiration,
+   c'est un design réussi: tout ce qui rend le paiement plus fluide augmente le
+   paiement. Le point de bascule est celui où l'acte de dépenser ne laisse plus
+   aucune trace physique ni aucun souvenir.
+3. **L'abonnement, forme finale de l'argent invisible.** Une dépense qui se
+   répète toute seule, qu'on a autorisée une fois, qui ne demande plus jamais
+   son avis à personne. C'est le seul endroit du module 0 où l'on touche du
+   doigt le module 2: si le système peut dépenser à ta place sans rien te
+   demander, il peut aussi épargner à ta place de la même manière. La friction
+   est un outil neutre. Pour l'instant, elle ne travaille que pour l'autre
+   camp.
+
+**La réflexion du jour.** Ouvre la liste de tes abonnements, sur ton téléphone
+ou dans ton relevé. Compte ceux que tu avais oubliés. Puis, pour chacun, la
+seule question qui compte: si tu devais aller le repayer aujourd'hui, en
+billets, à un guichet, en faisant la file, est-ce que tu y irais?
+
+---
+
+# Module 1. Personne n'est fou
+
+**Objectif d'apprentissage.** À la fin du module, l'apprenant explique ses
+propres décisions d'argent par son histoire plutôt que par un manque de
+discipline, et remplit un état des lieux honnête de sa situation en une page.
+
+C'est le module qui désamorce la honte. Tant que quelqu'un croit que son
+problème est un défaut de caractère, il n'écoute pas la suite, il se défend.
+
+- **1.1 Ton argent a une biographie.** Ce que tu crois sur l'argent a été
+  écrit par une époque, un pays et une famille que tu n'as pas choisis.
   Quelqu'un qui a vu ses parents perdre une maison n'est pas irrationnel, il a
-  vu des donnees differentes des tiennes.
-- **1.2 Riche, ou fortune.** Riche, c'est ce que tu vois: la voiture, le
-  voyage. Fortune, c'est ce que tu ne vois pas, parce que c'est precisement
-  l'argent qui n'a pas ete depense. On copie ce qu'on voit, donc on copie le
+  vu des données différentes des tiennes.
+- **1.2 Riche, ou fortuné.** Riche, c'est ce que tu vois: la voiture, le
+  voyage. Fortuné, c'est ce que tu ne vois pas, parce que c'est précisément
+  l'argent qui n'a pas été dépensé. On copie ce qu'on voit, donc on copie le
   mauvais.
-- **1.3 Le temps fait le travail.** Le rendement fait la vedette, la duree
-  fait le resultat. La quasi-totalite de la fortune de Buffett a ete gagnee
-  apres ses 50 ans, et ce n'est pas parce qu'il a mieux choisi apres 50 ans.
-- **1.4 Ta page unique.** Ce qui rentre, ce qui sort, ce que tu possedes, ce
-  que tu dois. Une page, pas un tableur. Personne n'a jamais tenu un budget a
-  47 categories.
+- **1.3 Le temps fait le travail.** Le rendement fait la vedette, la durée
+  fait le résultat. La quasi-totalité de la fortune de Buffett a été gagnée
+  après ses 50 ans, et ce n'est pas parce qu'il a mieux choisi après 50 ans.
+- **1.4 Ta page unique.** Ce qui rentre, ce qui sort, ce que tu possèdes, ce
+  que tu dois. Une page, pas un tableur. Personne n'a jamais tenu un budget à
+  47 catégories.
 
-**Action du module.** La page unique, remplie, datee.
+**Action du module.** La page unique, remplie, datée.
 
 ---
 
-## Module 2. Ce qui te paie, ce qui te coute
+# Module 2. Ce qui te paie, ce qui te coûte
 
-**Objectif d'apprentissage.** A la fin du module, l'apprenant classe chaque
+**Objectif d'apprentissage.** À la fin du module, l'apprenant classe chaque
 ligne de son argent en actif ou passif, redirige ce qu'il coupe vers ce qui
 compte pour lui, et met en place un virement automatique le lendemain de la
 paie.
 
 - **2.1 La seule question.** Est-ce que cette chose met de l'argent dans ta
   poche, ou est-ce qu'elle en sort? C'est tout le tri, et il est plus utile
-  que n'importe quelle categorie comptable. La nuance qu'il faut dire tout de
-  suite: ta maison n'est pas un simple passif, c'est un actif qui coute, et
-  traiter le slogan comme une regle a fait prendre de mauvaises decisions a
+  que n'importe quelle catégorie comptable. La nuance qu'il faut dire tout de
+  suite: ta maison n'est pas un simple passif, c'est un actif qui coûte, et
+  traiter le slogan comme une règle a fait prendre de mauvaises décisions à
   beaucoup de monde.
-- **2.2 La depense consciente.** Couper sans pitie ce dont tu te fous,
-  depenser sans culpabilite sur ce que tu aimes vraiment. Ce n'est pas une
-  permission deguisee: le mot important est *sans pitie*, et la plupart des
-  gens n'ont jamais nomme les trois choses qui comptent.
-- **2.3 Le coussin avant le rendement.** Rembourser une carte a 21 % est un
-  rendement garanti de 21 %, net d'impot, sans risque. Aucun placement
-  n'offre ca. Fonds d'urgence d'abord, dettes cheres ensuite, marches apres.
-- **2.4 Le systeme qui decide a ta place.** La volonte est une ressource qui
-  s'epuise, un virement automatique non. Une decision prise une fois, le
-  lendemain de la paie, vaut mieux que douze decisions par an prises fatigue.
+- **2.2 La dépense consciente.** Couper sans pitié ce dont tu te fous,
+  dépenser sans culpabilité sur ce que tu aimes vraiment. Ce n'est pas une
+  permission déguisée: le mot important est *sans pitié*, et la plupart des
+  gens n'ont jamais nommé les trois choses qui comptent.
+- **2.3 Le coussin avant le rendement.** Rembourser une carte à 21 % est un
+  rendement garanti de 21 %, net d'impôt, sans risque. Aucun placement
+  n'offre ça. Fonds d'urgence d'abord, dettes chères ensuite, marchés après.
+- **2.4 Le système qui décide à ta place.** La volonté est une ressource qui
+  s'épuise, un virement automatique non. Une décision prise une fois, le
+  lendemain de la paie, vaut mieux que douze décisions par an prises fatigué.
 
-**Action du module.** Une depense coupee, une depense assumee, un virement
-programme.
+**Action du module.** Une dépense coupée, une dépense assumée, un virement
+programmé.
 
 ---
 
-## Module 3. Trois enveloppes, un ordre
+# Module 3. Trois enveloppes, un ordre
 
-**Objectif d'apprentissage.** A la fin du module, l'apprenant choisit, pour
-chaque dollar mis de cote, l'enveloppe qui lui coute le moins d'impot compte
+**Objectif d'apprentissage.** À la fin du module, l'apprenant choisit, pour
+chaque dollar mis de côté, l'enveloppe qui lui coûte le moins d'impôt compte
 tenu de son taux marginal et de son horizon, et il sait dire pourquoi.
 
-C'est le module le plus quebecois du cours, et le plus rentable a l'heure
-investie: le meme dollar, place dans la mauvaise enveloppe, coute des annees
-de rendement en impot.
+C'est le module le plus québécois du cours, et le plus rentable à l'heure
+investie: le même dollar, placé dans la mauvaise enveloppe, coûte des années
+de rendement en impôt.
 
 | | CELI | REER | CELIAPP |
 |---|---|---|---|
-| Deduction a la cotisation | non | oui | oui |
-| Impot au retrait | non | oui | non, pour une premiere maison |
-| Les droits reviennent apres un retrait | oui, le 1er janvier suivant | non | non |
-| Sert surtout a | tout le reste | la retraite, si ton taux baissera | la premiere maison |
+| Déduction à la cotisation | non | oui | oui |
+| Impôt au retrait | non | oui | non, pour une première maison |
+| Les droits reviennent après un retrait | oui, le 1er janvier suivant | non | non |
+| Sert surtout à | tout le reste | la retraite, si ton taux baissera | la première maison |
 
-- **3.1 Le CELI, l'enveloppe qui ne demande rien.** Pas de deduction, pas
-  d'impot, jamais. Le piege classique et couteux: retirer puis recotiser la
-  meme annee. Les droits ne reviennent que le 1er janvier suivant, et
-  l'excedent est penalise chaque mois.
-- **3.2 Le REER, un report et non un cadeau.** Tu deduis aujourd'hui a ton
-  taux marginal et tu paies l'impot au retrait a ton taux d'alors. Il gagne si
-  ton taux baisse, il perd si ton taux monte, et c'est toute la decision. Plus
-  le RAP, qui transforme le REER en levier pour une premiere maison.
-- **3.3 Le CELIAPP, le meilleur des deux.** Tu deduis comme un REER et tu
-  retires en franchise d'impot comme un CELI, si c'est pour une premiere
-  propriete. Le conseil qui vaut la lecon a lui seul: ouvre-le des que tu es
-  admissible, meme avec 0 $ dedans, parce que c'est l'ouverture qui demarre
+- **3.1 Le CELI, l'enveloppe qui ne demande rien.** Pas de déduction, pas
+  d'impôt, jamais. Le piège classique et coûteux: retirer puis recotiser la
+  même année. Les droits ne reviennent que le 1er janvier suivant, et
+  l'excédent est pénalisé chaque mois.
+- **3.2 Le REER, un report et non un cadeau.** Tu déduis aujourd'hui à ton
+  taux marginal et tu paies l'impôt au retrait à ton taux d'alors. Il gagne si
+  ton taux baisse, il perd si ton taux monte, et c'est toute la décision. Plus
+  le RAP, qui transforme le REER en levier pour une première maison.
+- **3.3 Le CELIAPP, le meilleur des deux.** Tu déduis comme un REER et tu
+  retires en franchise d'impôt comme un CELI, si c'est pour une première
+  propriété. Le conseil qui vaut la leçon à lui seul: ouvre-le dès que tu es
+  admissible, même avec 0 $ dedans, parce que c'est l'ouverture qui démarre
   l'horloge et les droits.
-- **3.4 L'ordre de remplissage.** D'abord l'argent gratuit, c'est-a-dire la
-  cotisation de l'employeur si elle existe. Ensuite le CELIAPP si une premiere
+- **3.4 L'ordre de remplissage.** D'abord l'argent gratuit, c'est-à-dire la
+  cotisation de l'employeur si elle existe. Ensuite le CELIAPP si une première
   maison est au programme. Ensuite REER ou CELI selon le taux marginal: en
-  haut de l'echelle le REER, en bas le CELI. Et le detail local que personne
-  n'explique aux gens: les fonds de travailleurs quebecois ajoutent un credit
-  d'impot par-dessus la deduction, avec en contrepartie un argent bloque
-  jusqu'a la retraite.
+  haut de l'échelle le REER, en bas le CELI. Et le détail local que personne
+  n'explique aux gens: les fonds de travailleurs québécois ajoutent un crédit
+  d'impôt par-dessus la déduction, avec en contrepartie un argent bloqué
+  jusqu'à la retraite.
 
 **Action du module.** Une enveloppe ouverte cette semaine, la bonne, avec la
-raison ecrite en une phrase.
+raison écrite en une phrase.
 
 ---
 
-## Module 4. Tenir
+# Module 4. Tenir
 
-**Objectif d'apprentissage.** A la fin du module, l'apprenant construit un
-portefeuille qu'il peut garder trente ans sans le surveiller, et il a ecrit a
-l'avance ce qu'il fera le jour ou il perdra 30 %.
+**Objectif d'apprentissage.** À la fin du module, l'apprenant construit un
+portefeuille qu'il peut garder trente ans sans le surveiller, et il a écrit à
+l'avance ce qu'il fera le jour où il perdra 30 %.
 
 - **4.1 Un fonds, pas quinze.** Un FNB tout-en-un fait le travail de la
-  diversification et du rebalancement pour des frais qui tiennent en une
-  decimale. Choisir quinze titres, c'est se donner quinze occasions de vendre
+  diversification et du rééquilibrage pour des frais qui tiennent en une
+  décimale. Choisir quinze titres, c'est se donner quinze occasions de vendre
   au mauvais moment.
 - **4.2 Les frais sont le seul rendement garanti.** C'est la seule variable du
-  cours que tu controles entierement. Sur trente ans, 2 % contre 0,2 % ne
-  changent pas la marge, ils changent le tiers du resultat.
-- **4.3 Ton plan ecrit.** Une page: dans quoi je place, combien par mois, et
-  ce que je fais quand ca baisse. Ecrite quand tout va bien, parce qu'elle
+  cours que tu contrôles entièrement. Sur trente ans, 2 % contre 0,2 % ne
+  changent pas la marge, ils changent le tiers du résultat.
+- **4.3 Ton plan écrit.** Une page: dans quoi je place, combien par mois, et
+  ce que je fais quand ça baisse. Écrite quand tout va bien, parce qu'elle
   sert exactement quand tout va mal.
-- **4.4 Le krach.** Une strategie raisonnable que tu tiens bat une strategie
-  optimale que tu abandonnes. La difference entre le rendement des fonds et le
-  rendement des gens qui les detiennent est entierement faite d'achats et de
-  ventes decides sous le coup de l'emotion, et c'est la vraie matiere du
+- **4.4 Le krach.** Une stratégie raisonnable que tu tiens bat une stratégie
+  optimale que tu abandonnes. La différence entre le rendement des fonds et le
+  rendement des gens qui les détiennent est entièrement faite d'achats et de
+  ventes décidés sous le coup de l'émotion, et c'est la vraie matière du
   module.
 
-**Action du module.** Le plan ecrit, signe, date, range quelque part ou tu le
+**Action du module.** Le plan écrit, signé, daté, rangé quelque part où tu le
 retrouveras en pleine baisse.
