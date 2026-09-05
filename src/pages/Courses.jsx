@@ -26,14 +26,21 @@ import CountryTabs from '../components/CountryTabs'
  * separer voudrait dire trois copies de la meme resolution de slug et trois
  * occasions qu'elles ne soient plus d'accord sur ce qu'est une lecon.
  *
- * PAS DE GRAND RECTANGLE, ET C'EST UNE CONSIGNE PLUTOT QU'UN GOUT.
+ * LES RECTANGLES, EN DEUX TEMPS.
  *
- * "Pas des rectangles partout surtout pas un rectangle qui rassemble tout a
- * l'interieur". La lecon est donc posee sur la page, ses parties separees par
- * des filets d'un pixel. Les seuls rectangles sont les onglets de pays, et
- * deux marqueurs qui portent une information: le bloc jaune de la reflexion,
- * le bloc rose de l'action. Les cartes de la liste en sont, aussi, parce qu'une
- * liste de choses cliquables a besoin de cibles et pas de paragraphes.
+ * Consigne d'origine: "pas des rectangles partout surtout pas un rectangle qui
+ * rassemble tout a l'interieur". Puis, en voyant le resultat: "rajoute un peu
+ * de rectangle quand meme". Les deux sont vraies ensemble, et la regle qui
+ * sort des deux est plus utile que chacune prise seule.
+ *
+ * Un panneau est rendu quand un bloc est AUTRE CHOSE que de la prose: la
+ * promesse en ouverture, le compte a ouvrir en premier, les phrases a dire, le
+ * quiz, et la liste de lecons d'un module. Rien ne l'est quand le bloc EST la
+ * prose: les trois points cles restent une liste separee par des filets, parce
+ * que trois cartes a la suite refont le mur qui a ete refuse.
+ *
+ * Et rien n'enveloppe la lecon entiere, ce qui est l'autre moitie de la
+ * consigne et la seule qui n'a pas bouge.
  */
 export default function Courses() {
   const { slug, lessonId } = useParams()
@@ -169,9 +176,12 @@ function CourseView({ course, t, navigate }) {
           <h3 className="text-h2 font-semibold text-ink">{m.title}</h3>
           {m.intro && <p className="mt-2 max-w-[52ch] text-body text-muted">{m.intro}</p>}
 
-          {/* Les lecons: une liste de cibles, separees par des filets. Pas une
-              carte chacune, sinon la page redevient un mur de rectangles. */}
-          <ul className="mt-5 divide-y divide-hairline" data-hook="lesson-list">
+          {/* Un panneau par module, pas un pour toute la page, et pas une carte
+              par lecon. Il groupe des cibles tactiles, ce qui est le seul
+              travail qu'un rectangle fait mieux qu'un filet: dire ou commence
+              et ou finit la liste. */}
+          <Panel className="mt-5 px-5 py-1" hook="lesson-list-panel">
+          <ul className="divide-y divide-hairline" data-hook="lesson-list">
             {m.lessons.map((l) => (
               <li key={l.id}>
                 <Link
@@ -197,6 +207,7 @@ function CourseView({ course, t, navigate }) {
               </li>
             ))}
           </ul>
+          </Panel>
 
           {m.action && (
             <p className="mt-5 max-w-[52ch] rounded-inner bg-accent/[0.07] px-4 py-3 text-small text-ink">
@@ -239,10 +250,10 @@ function LessonView({ course, lesson, country, onPick, t, navigate }) {
         ) : (
           <>
             {lesson.objective && (
-              <p className="mt-6 max-w-[46ch] text-body text-ink">
-                <span className="eyebrow block">{t('courses.objective')}</span>
-                <span className="mt-1.5 block">{lesson.objective}</span>
-              </p>
+              <Panel className="mt-6 max-w-[48ch]" hook="lesson-objective">
+                <p className="eyebrow">{t('courses.objective')}</p>
+                <p className="mt-1.5 text-body text-ink">{lesson.objective}</p>
+              </Panel>
             )}
 
             {lesson.universal && (
@@ -258,10 +269,10 @@ function LessonView({ course, lesson, country, onPick, t, navigate }) {
             )}
 
             {variant?.grail && (
-              <p className="mt-7 max-w-[46ch] text-body text-ink">
-                <span className="eyebrow block text-accent">{t('courses.grail')}</span>
-                <span className="mt-1.5 block">{variant.grail}</span>
-              </p>
+              <Panel className="mt-7 max-w-[48ch]" hook="lesson-grail">
+                <p className="eyebrow text-accent">{t('courses.grail')}</p>
+                <p className="mt-1.5 text-body text-ink">{variant.grail}</p>
+              </Panel>
             )}
 
             <ol className="mt-8 divide-y divide-hairline" data-hook="lesson-points">
@@ -291,14 +302,14 @@ function LessonView({ course, lesson, country, onPick, t, navigate }) {
             {lesson.script && (
               <div className="mt-7" data-hook="lesson-script">
                 <p className="eyebrow text-accent">{t('courses.script')}</p>
-                <div className="mt-3 space-y-4">
+                {/* Chacune dans son panneau: ce sont des phrases a recopier et
+                    a dire, pas du texte a lire. Le bord les detache de la
+                    prose qui les entoure. */}
+                <div className="mt-3 space-y-3">
                   {lesson.script.map((s) => (
-                    <p
-                      key={s}
-                      className="max-w-[46ch] border-l-2 border-accent/40 pl-4 text-body text-ink"
-                    >
-                      {s}
-                    </p>
+                    <Panel key={s} className="max-w-[48ch]">
+                      <p className="text-body text-ink">{s}</p>
+                    </Panel>
                   ))}
                 </div>
               </div>
@@ -326,6 +337,33 @@ function LessonView({ course, lesson, country, onPick, t, navigate }) {
         </nav>
       </div>
     </Screen>
+  )
+}
+
+/**
+ * Le panneau de verre, defini une fois.
+ *
+ * "Rajoute un peu de rectangle quand meme": la premiere version avait tout mis
+ * a plat et la lecon etait devenue un long ruban de texte sans relief. Un
+ * panneau est donc rendu la ou un bloc est AUTRE CHOSE que de la prose: la
+ * promesse en ouverture, le compte a ouvrir, les phrases a dire, le quiz.
+ *
+ * Les trois points cles n'en recoivent pas, et c'est la limite: trois cartes
+ * a la suite feraient exactement le mur de rectangles qui a ete refuse. Ils
+ * restent une liste separee par des filets, c'est-a-dire le corps du texte.
+ *
+ * Le verre est le meme que celui des onglets: remplissage translucide et
+ * filet, avec le flou en supplement la ou il y a quelque chose derriere.
+ */
+function Panel({ children, className = '', hook }) {
+  return (
+    <div
+      data-hook={hook}
+      data-panel="glass"
+      className={`rounded-card border border-hairline bg-[rgb(var(--glass-tint)/0.55)] p-5 backdrop-blur-md ${className}`}
+    >
+      {children}
+    </div>
   )
 }
 
@@ -365,8 +403,10 @@ function Marked({ kind, label, text, hook }) {
 function Quiz({ items, t }) {
   const [picked, setPicked] = useState({})
 
+  /* Le quiz est un autre mode: on repond, il repond. Un panneau le dit avant
+     qu'on ait lu la premiere question. */
   return (
-    <section className="mt-12 border-t border-hairline pt-7" data-hook="quiz">
+    <Panel className="mt-12 max-w-[48ch]" hook="quiz">
       <p className="eyebrow">{t('courses.quiz')}</p>
 
       <div className="mt-6 space-y-9">
@@ -421,6 +461,6 @@ function Quiz({ items, t }) {
           )
         })}
       </div>
-    </section>
+    </Panel>
   )
 }
