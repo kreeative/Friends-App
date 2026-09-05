@@ -8,6 +8,7 @@ import { dayKey } from '../lib/time'
 import { ACCEPT, isMissingBucket, removeAvatar, uploadAvatar } from '../lib/avatar'
 import { CURRENCIES, FALLBACK, currencyName } from '../lib/currency'
 import { DECLINED, PRONOUN_OPTIONS } from '../lib/pronouns'
+import { GENDERS, cycleForGender, cycleOn } from '../lib/setup'
 import { localeTag, useT } from '../lib/i18n'
 import { offerGroup } from '../lib/onboarding'
 import ThemePicker from '../components/ThemePicker'
@@ -242,6 +243,40 @@ export default function Me() {
   }
 
   /**
+   * The answer given at sign-up, and the switch it set.
+   *
+   * TWO CONTROLS, NOT ONE, AND THAT IS THE POINT OF THE PAIR.
+   *
+   * The setup screen asks one question and derives the switch from it, because
+   * that is right nearly every time. "Nearly" is doing real work in that
+   * sentence: a woman who does not menstruate should not have to call herself
+   * something else to make a period tracker go away, and somebody who answered
+   * "something else" should not lose the feature because the app could not work
+   * out what they meant.
+   *
+   * So changing the answer moves the switch with it, which is what somebody
+   * correcting a mis-tap expects, and the switch can then be moved back on its
+   * own and stays where it is put.
+   */
+  const [genderError, setGenderError] = useState(false)
+  const [cycleError, setCycleError] = useState(false)
+
+  async function pickGender(value) {
+    setGenderError(false)
+    setCycleError(false)
+    const next = value || null
+    const { error } =
+      (await updateProfile?.({ gender: next, cycle_on: cycleForGender(next) })) ?? {}
+    if (error) setGenderError(true)
+  }
+
+  async function setCycleTracking(next) {
+    setCycleError(false)
+    const { error } = (await updateProfile?.({ cycle_on: next })) ?? {}
+    if (error) setCycleError(true)
+  }
+
+  /**
    * Play the budget intro again.
    *
    * The flag is the whole mechanism: Money renders the carousel whenever it is
@@ -440,6 +475,58 @@ export default function Me() {
           )}
 
           {pronounError && <p className="text-small text-negative">{t('me.pronouns_failed')}</p>}
+
+          {/**
+           * The answer from the setup screen, in the same words it was asked.
+           *
+           * Deliberately next to the pronouns and deliberately not the same
+           * thing. Nothing the app writes about you reads this column: the
+           * sentences use pronouns, which is a free string that defaults to
+           * they and that migration 26 forbids guessing from anything else.
+           * This one decides whether one feature is in your app, which is why
+           * it is here at all rather than being inferred from something.
+           */}
+          <Field label={t('me.gender')} hint={t('me.gender_hint')}>
+            <select
+              className="field"
+              data-hook="me-gender"
+              value={profile?.gender ?? ''}
+              onChange={(e) => pickGender(e.target.value)}
+            >
+              <option value="">{t('me.gender_unset')}</option>
+              {GENDERS.map((key) => (
+                <option key={key} value={key}>
+                  {t(`me.gender_${key}`)}
+                </option>
+              ))}
+            </select>
+          </Field>
+          {genderError && <p className="text-small text-negative">{t('me.gender_failed')}</p>}
+
+          {/* The switch the answer above set, which can be moved back. Nothing
+              recorded is deleted by turning it off; the rows stay and stop
+              being drawn, so turning it on again finds the history where it
+              was left. */}
+          <label
+            className="press flex cursor-pointer items-start gap-3 rounded-inner bg-ink/[0.035] p-4"
+            data-hook="me-cycle"
+            data-on={cycleOn(profile) ? 'yes' : 'no'}
+          >
+            <input
+              type="checkbox"
+              checked={cycleOn(profile)}
+              onChange={(e) => setCycleTracking(e.target.checked)}
+              className="mt-0.5 h-5 w-5 shrink-0 accent-[rgb(var(--c-accent))]"
+            />
+            <span>
+              <span className="block text-body text-ink">{t('me.cycle')}</span>
+              <span className="mt-1 block text-small text-muted">
+                {cycleOn(profile) ? t('me.cycle_on') : t('me.cycle_off')}
+              </span>
+              <span className="mt-2 block text-small text-muted">{t('me.cycle_note')}</span>
+            </span>
+          </label>
+          {cycleError && <p className="text-small text-negative">{t('me.cycle_failed')}</p>}
         </div>
       </Section>
 

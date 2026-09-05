@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { localeTag, useT } from '../lib/i18n'
 import { addDays, dayKey, daysBetween, fromKey, phaseOn } from '../lib/cycle'
+import { cycleOn } from '../lib/setup'
 import {
   CATEGORIES,
   CATEGORY_COLOUR,
@@ -210,8 +211,20 @@ const readHidden = () => {
 }
 
 export default function Calendar() {
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const { t, locale } = useT()
+
+  /**
+   * Whether this calendar has a cycle in it at all.
+   *
+   * Three things follow from it and all three are needed. The layer chip is not
+   * offered, so the row of toggles has three entries rather than a fourth that
+   * governs nothing. The drawer button is gone, so there is no way in. And
+   * CyclePanel is not mounted, which is what actually stops the reading: it is
+   * the component that fetches cycle_log, so leaving it out means a man's
+   * period history is never queried rather than queried and then hidden.
+   */
+  const periodTracking = cycleOn(profile)
 
   const [view, setView] = useState('week')
   const [anchor, setAnchor] = useState(() => {
@@ -321,8 +334,11 @@ export default function Calendar() {
   const agenda = useMemo(() => agendaFor(drawn, range.from, range.to), [drawn, range])
 
   /* The cycle overlay is a layer too, so switching it off has to empty what
-     the grids read rather than just hiding a panel. */
-  const shownCycle = hidden.has('cycle') ? { starts: [], prediction: null } : cycle
+     the grids read rather than just hiding a panel. The same emptying answers
+     both questions: the layer turned off for now, and the tracker not being
+     part of this person's app at all. */
+  const shownCycle =
+    !periodTracking || hidden.has('cycle') ? { starts: [], prediction: null } : cycle
 
   /* A goal is drawn here and edited on the goals screen. Without this guard
      the form would open on one and then insert a brand new calendar_event
@@ -463,10 +479,14 @@ export default function Calendar() {
         </button>
 
         {/* The way in to everything about the cycle: the tracker, the recorded
-            periods and the reminder settings. */}
-        <button type="button" onClick={() => setDrawer(true)} className="goal-action press" data-hook="cal-cycle-open">
-          {t('cycle.manage')}
-        </button>
+            periods and the reminder settings. Absent, rather than disabled, for
+            somebody whose app does not have the tracker in it: a greyed-out
+            button is still an advertisement for a feature they said no to. */}
+        {periodTracking && (
+          <button type="button" onClick={() => setDrawer(true)} className="goal-action press" data-hook="cal-cycle-open">
+            {t('cycle.manage')}
+          </button>
+        )}
 
         {/**
          * The layers, as pressed-in toggles, beside the things that open.
@@ -480,7 +500,10 @@ export default function Calendar() {
         <span aria-hidden="true" className="mx-1 hidden h-6 w-px bg-hairline sm:block" />
 
         <div className="flex flex-wrap items-center gap-2" data-hook="cal-layers">
-          {LAYERS.map((layer) => {
+          {/* Three toggles rather than four when there is no cycle to overlay.
+              A switch that governs nothing is worse than a missing one: it
+              invites a tap and answers with no visible change. */}
+          {LAYERS.filter((l) => l !== 'cycle' || periodTracking).map((layer) => {
             const on = !hidden.has(layer)
             return (
               <button
@@ -648,7 +671,11 @@ export default function Calendar() {
 
       {/* Mounted always, so the tracker's own load runs and the overlay is
           there before anybody opens the drawer. `open` only draws it. */}
-      <CyclePanel onChange={setCycle} open={drawer} onClose={() => setDrawer(false)} />
+      {/* Not mounted at all, which is the line that stops the reading: this is
+          the component that queries cycle_log. */}
+      {periodTracking && (
+        <CyclePanel onChange={setCycle} open={drawer} onClose={() => setDrawer(false)} />
+      )}
 
       {/**
        * The choice, before anything is lost.

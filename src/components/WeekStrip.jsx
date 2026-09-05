@@ -7,6 +7,7 @@ import { loadBudget } from '../lib/budgetData'
 import { dayKey, weekOf } from '../lib/time'
 import { agendaFor } from '../lib/agenda'
 import { phaseOn, predict } from '../lib/cycle'
+import { cycleOn } from '../lib/setup'
 import { MARK_KINDS, countsFor, itemsFor, marksFor } from '../lib/dayMarks'
 import { isDueOn } from '../lib/schedule'
 import { isMissingColumn } from '../lib/dberr'
@@ -301,6 +302,16 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
   const { t, locale } = useT()
 
   /**
+   * Is the period tracker part of this person's app?
+   *
+   * Named periodTracking rather than anything with "cycle" in it, because this
+   * file already uses that word for the check-in cycles a group runs on and
+   * they are two unrelated things three lines apart. cyclesByDay below is
+   * groups; this is the calendar overlay.
+   */
+  const periodTracking = cycleOn(profile)
+
+  /**
    * Eight weeks, one per slide, oldest first.
    *
    * Built from the current week's Sunday by stepping the day-of-month, which
@@ -544,6 +555,18 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
          derived here rather than stored, for the reason migration 51 gives:
          a stored prediction goes stale the moment a real date is recorded and
          there is then no way to tell a prediction from a fact. */
+      /**
+       * Not read at all when the tracker is not part of this person's app.
+       *
+       * The render is gated too, so this is not the only guard. It is here
+       * because the cheapest way to be sure a feature is off is for the data
+       * behind it never to arrive: nothing downstream can then draw a dot from
+       * a stale array, and somebody who said they were a man does not have
+       * their period history fetched onto their phone every time the dashboard
+       * opens. See cycleOn in src/lib/setup.js.
+       */
+      if (!periodTracking) return
+
       try {
         const [{ data: logs }, { data: pref }] = await Promise.all([
           supabase.from('cycle_log').select('started_on').order('started_on', { ascending: true }),
@@ -569,7 +592,7 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
       dead = true
       document.removeEventListener('visibilitychange', onShow)
     }
-  }, [user?.id, from.getTime(), to.getTime()])
+  }, [user?.id, from.getTime(), to.getTime(), periodTracking])
 
   /* Which cycles belong to which day. statuses carries every group at once, so
      a day can have more than one, and all of them count as that day. */
@@ -1177,12 +1200,19 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
       />
     </div>
 
-    <CycleHeadsUp
-      starts={cycleStarts}
-      prediction={prediction}
-      remind={remind}
-      days={remindDays}
-    />
+    {/* The card under the calendar, and only for somebody whose app has the
+        tracker in it. Gated here as well as at the fetch: a component that
+        draws nothing because its props are empty is drawing nothing by
+        accident, and that is the kind of thing a later refactor turns back
+        on without noticing. */}
+    {periodTracking && (
+      <CycleHeadsUp
+        starts={cycleStarts}
+        prediction={prediction}
+        remind={remind}
+        days={remindDays}
+      />
+    )}
     </>
   )
 }

@@ -1,5 +1,6 @@
 import { THEMES, useTheme } from '../lib/theme'
 import { useT } from '../lib/i18n'
+import { useAuth } from '../context/AuthContext'
 
 /**
  * One row now, the ground is no longer a choice, so a theme is just the pair
@@ -17,6 +18,27 @@ import { useT } from '../lib/i18n'
 export default function ThemePicker({ className = '' }) {
   const { theme, setTheme } = useTheme()
   const { t } = useT()
+  const { updateProfile } = useAuth() ?? {}
+
+  /**
+   * The device decides what you see; the account remembers what you chose.
+   *
+   * Same shape as LanguagePicker, and for a related reason. setTheme is what
+   * repaints the page, instantly and with no round trip, and it stays the thing
+   * that does that. The profile write is so the choice survives being made on
+   * one device: this app is used from a phone and a tablet by the same person
+   * on the same day, and picking Sea on the phone used to leave the tablet
+   * pink forever.
+   *
+   * Not awaited, and its failure is swallowed on purpose. On a database where
+   * migration 56 has not been run there is no theme column, so this write comes
+   * back with an error and nothing else happens: the page has already changed
+   * colour, which is the part anybody asked for.
+   */
+  const pick = (name) => {
+    setTheme(name)
+    updateProfile?.({ theme: name })?.catch?.(() => {})
+  }
 
   return (
     <div className={className}>
@@ -27,7 +49,7 @@ export default function ThemePicker({ className = '' }) {
             <button
               key={name}
               type="button"
-              onClick={() => setTheme(name)}
+              onClick={() => pick(name)}
               aria-pressed={theme === name}
               aria-label={t(`theme.name_${name}`)}
               className="press flex items-center gap-2.5 rounded-pill py-1.5 pl-1.5 pr-4 transition-shadow"

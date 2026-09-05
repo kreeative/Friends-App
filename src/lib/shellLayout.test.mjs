@@ -1120,10 +1120,65 @@ ok(
 /* It moved OUT of the calendar card and became a sibling under it. "Under"
    was read the way it was written: under, as in another card. Inside, it was
    the last row of the calendar. */
+/* The regex allows a comment and a gate between the two, and both are real
+   things that now sit there. What it still proves is the only thing it was
+   written to prove: the card follows the calendar's closing tag rather than
+   appearing before it, which is the difference between another card and the
+   last row of one. */
 ok(
   'it is a sibling of the calendar card, not a block inside it',
-  /<\/div>\s*\n\s*<CycleHeadsUp/.test(strip),
+  /<\/div>\s*(?:\{\/\*[\s\S]*?\*\/\}\s*)?(?:\{periodTracking && \(\s*)?<CycleHeadsUp/.test(strip),
   '"juste en bas du calendrier" means another card, not the last row of one',
+)
+
+/* --- and only for somebody whose app has the tracker in it -------------- */
+
+/**
+ * A man who signs up does not get a period tracker on his dashboard.
+ *
+ * Gated in two places on purpose and both are asserted, because the failure
+ * mode of the first alone is invisible: a component handed empty props draws
+ * nothing today and starts drawing again the moment somebody gives it a
+ * fallback. See cycleOn in src/lib/setup.js.
+ */
+ok(
+  'the strip asks whether the tracker is part of this app',
+  /import \{ cycleOn \} from '\.\.\/lib\/setup'/.test(strip) &&
+    /const periodTracking = cycleOn\(profile\)/.test(strip),
+)
+ok(
+  'the heads-up is gated on it',
+  /\{periodTracking && \(\s*\n\s*<CycleHeadsUp/.test(strip),
+  'a card about somebody else’s body on the home screen of somebody who said no',
+)
+ok(
+  'and the period history is never even fetched',
+  /if \(!periodTracking\) return\s*\n\s*try \{\s*\n\s*const \[\{ data: logs \}/.test(strip),
+  'hidden after fetching still means it was read onto the phone',
+)
+
+/* The calendar, same question, three consequences. */
+ok(
+  'the calendar asks it too',
+  /const periodTracking = cycleOn\(profile\)/.test(cal),
+)
+ok(
+  'the drawer button is absent rather than disabled',
+  /\{periodTracking && \(\s*\n\s*<button type="button" onClick=\{\(\) => setDrawer\(true\)\}/.test(cal),
+  'a greyed-out button still advertises the feature',
+)
+ok(
+  'the layer toggle is not offered',
+  /LAYERS\.filter\(\(l\) => l !== 'cycle' \|\| periodTracking\)/.test(cal),
+  'a switch that governs nothing invites a tap and answers with no change',
+)
+ok(
+  'the overlay is emptied, not just hidden',
+  /!periodTracking \|\| hidden\.has\('cycle'\)/.test(cal),
+)
+ok(
+  'and CyclePanel, which is what reads cycle_log, is not mounted',
+  /\{periodTracking && \(\s*\n\s*<CyclePanel/.test(cal),
 )
 ok(
   'and it is a card in its own right',
