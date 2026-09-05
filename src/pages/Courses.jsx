@@ -267,7 +267,9 @@ function LessonView({ course, lesson, country, onPick, t, locale, navigate }) {
             )}
 
             {lesson.universal && (
-              <p className="mt-7 max-w-[46ch] text-body text-ink">{say(lesson.universal, locale)}</p>
+              <Panel className="mt-7 max-w-[48ch]" hook="lesson-universal">
+                <p className="text-body text-ink">{say(lesson.universal, locale)}</p>
+              </Panel>
             )}
 
             {/* Les onglets, et l'unique endroit rectangulaire de la lecon. */}
@@ -279,13 +281,17 @@ function LessonView({ course, lesson, country, onPick, t, locale, navigate }) {
             )}
 
             {variant?.grail && (
-              <Panel className="mt-7 max-w-[48ch]" hook="lesson-grail">
+              <Panel className="mt-7 max-w-[48ch]" hook="lesson-grail" tone="strong">
                 <p className="eyebrow text-accent">{t('courses.grail')}</p>
                 <p className="mt-1.5 text-body text-ink">{say(variant.grail, locale)}</p>
               </Panel>
             )}
 
-            <ol className="mt-8 divide-y divide-hairline" data-hook="lesson-points">
+            {/* Les points cles dans un panneau, pas une carte chacun: un seul
+                rectangle pour les trois, separes a l'interieur par des filets.
+                Trois cartes a la suite refont le mur qui a ete refuse. */}
+            <Panel className="mt-8 max-w-[48ch] py-1" hook="lesson-points-panel">
+            <ol className="divide-y divide-accent/20" data-hook="lesson-points">
               {points.map((p, i) => (
                 <li key={say(p.lead)} className="flex gap-4 py-5">
                   <span className="shrink-0 font-mono text-small text-accent">{i + 1}</span>
@@ -296,9 +302,12 @@ function LessonView({ course, lesson, country, onPick, t, locale, navigate }) {
                 </li>
               ))}
             </ol>
+            </Panel>
 
             {variant?.note && (
-              <p className="mt-6 max-w-[46ch] text-body text-muted">{say(variant.note, locale)}</p>
+              <Panel className="mt-6 max-w-[48ch]" hook="lesson-note">
+                <p className="text-body text-ink">{say(variant.note, locale)}</p>
+              </Panel>
             )}
 
             {lesson.metaphor && (
@@ -353,26 +362,37 @@ function LessonView({ course, lesson, country, onPick, t, locale, navigate }) {
 }
 
 /**
- * Le panneau de verre, defini une fois.
+ * Le panneau, defini une fois, et rose.
  *
- * "Rajoute un peu de rectangle quand meme": la premiere version avait tout mis
- * a plat et la lecon etait devenue un long ruban de texte sans relief. Un
- * panneau est donc rendu la ou un bloc est AUTRE CHOSE que de la prose: la
- * promesse en ouverture, le compte a ouvrir, les phrases a dire, le quiz.
+ * TROIS PASSES, ET LA TROISIEME EST LA BONNE.
  *
- * Les trois points cles n'en recoivent pas, et c'est la limite: trois cartes
- * a la suite feraient exactement le mur de rectangles qui a ete refuse. Ils
- * restent une liste separee par des filets, c'est-a-dire le corps du texte.
+ * D'abord "pas des rectangles partout surtout pas un rectangle qui rassemble
+ * tout a l'interieur", d'ou une page a plat. Puis "rajoute un peu de rectangle
+ * quand meme", d'ou des panneaux de verre blanc sur les blocs qui ne sont pas
+ * de la prose. Puis, capture a l'appui: "en rose c'est joli mais ce type de UI
+ * je veux plus jamais voir ca, fais une rectangle rose".
  *
- * Le verre est le meme que celui des onglets: remplissage translucide et
- * filet, avec le flou en supplement la ou il y a quelque chose derriere.
+ * Ce qui restait a plat, c'etait justement le texte de la lecon, qui flottait
+ * sur la page sans rien autour et passait sous la barre du haut au defilement.
+ * Le seul bloc qui avait l'air fini etait le rose. Donc tout le contenu est
+ * dans un rectangle rose maintenant, et le verre blanc a disparu: il ne se
+ * voyait pas sur un fond deja tres pale, ce qui est exactement le gotcha du
+ * depot sur le verre pose sur un fond plat.
+ *
+ * Ce qui n'a pas bouge, parce que c'etait l'autre moitie de la consigne: il n'y
+ * a toujours PAS un rectangle qui enveloppe la lecon entiere. Il y en a
+ * plusieurs, un par bloc, separes par du vide.
  */
-function Panel({ children, className = '', hook }) {
+function Panel({ children, className = '', hook, tone = 'soft' }) {
   return (
     <div
       data-hook={hook}
-      data-panel="glass"
-      className={`rounded-card border border-hairline bg-[rgb(var(--glass-tint)/0.55)] p-5 backdrop-blur-md ${className}`}
+      data-panel={tone}
+      className={`rounded-card border p-5 ${
+        tone === 'strong'
+          ? 'border-accent/30 bg-accent/[0.10]'
+          : 'border-accent/[0.18] bg-accent/[0.055]'
+      } ${className}`}
     >
       {children}
     </div>
@@ -392,7 +412,7 @@ function Marked({ kind, label, text, hook }) {
     <div
       data-hook={hook}
       className={`mt-7 max-w-[46ch] rounded-inner border-l-[3px] px-4 py-3.5 ${
-        field ? 'border-field bg-field/[0.28]' : 'border-accent bg-accent/[0.07]'
+        field ? 'border-field bg-field/[0.28]' : 'border-accent bg-accent/[0.13]'
       }`}
     >
       <p className={`eyebrow ${field ? 'text-ink/70' : 'text-accent'}`}>{label}</p>
