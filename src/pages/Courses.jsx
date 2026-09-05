@@ -9,6 +9,7 @@ import {
   neighbours,
   progressOf,
   safeCountry,
+  say,
   variantFor,
 } from '../lib/courses'
 import { useT } from '../lib/i18n'
@@ -45,7 +46,7 @@ import CountryTabs from '../components/CountryTabs'
 export default function Courses() {
   const { slug, lessonId } = useParams()
   const navigate = useNavigate()
-  const { t } = useT()
+  const { t, locale } = useT()
 
   /**
    * La region, par appareil.
@@ -79,7 +80,7 @@ export default function Courses() {
   const lesson = course && lessonId ? lessonById(course, lessonId) : null
 
   usePageMeta({
-    title: `${lesson?.title ?? course?.title ?? t('courses.title')} · Rich & Friends`,
+    title: `${say(lesson?.title, locale) || say(course?.title, locale) || t('courses.title')} · Rich & Friends`,
   })
 
   /* Une adresse inventee renvoie a la liste, qui existe toujours, plutot qu'a
@@ -95,14 +96,15 @@ export default function Courses() {
         country={country}
         onPick={pickCountry}
         t={t}
+        locale={locale}
         navigate={navigate}
       />
     )
   }
 
-  if (course) return <CourseView course={course} t={t} navigate={navigate} />
+  if (course) return <CourseView course={course} t={t} locale={locale} navigate={navigate} />
 
-  return <CourseList country={country} onPick={pickCountry} t={t} />
+  return <CourseList country={country} onPick={pickCountry} t={t} locale={locale} />
 }
 
 function Redirect({ to, navigate }) {
@@ -114,7 +116,7 @@ function Redirect({ to, navigate }) {
 
 /* --- la liste des cours --------------------------------------------------- */
 
-function CourseList({ country, onPick, t }) {
+function CourseList({ country, onPick, t, locale }) {
   return (
     <Screen>
       <TopBar title={t('courses.title')} sub={t('courses.sub')} />
@@ -129,7 +131,7 @@ function CourseList({ country, onPick, t }) {
       <Section title={t('courses.where')}>
         <CountryTabs value={country} onPick={onPick} />
         <p className="mt-4 max-w-[46ch] text-body text-muted" data-hook="country-answer">
-          {COUNTRY_ANSWERS[country]}
+          {say(COUNTRY_ANSWERS[country], locale)}
         </p>
         <p className="mt-2 text-small text-muted">{t('courses.change_anytime')}</p>
       </Section>
@@ -145,8 +147,10 @@ function CourseList({ country, onPick, t }) {
                 data-hook="course-card"
                 className="press block rounded-card border border-hairline bg-[rgb(var(--glass-tint)/0.55)] p-5 backdrop-blur-md"
               >
-                <span className="block text-h2 font-semibold text-ink">{c.title}</span>
-                <span className="mt-2 block max-w-[52ch] text-body text-muted">{c.tagline}</span>
+                <span className="block text-h2 font-semibold text-ink">{say(c.title, locale)}</span>
+                <span className="mt-2 block max-w-[52ch] text-body text-muted">
+                  {say(c.tagline, locale)}
+                </span>
                 <span className="mt-3 block text-small text-muted">
                   {t('courses.progress', { written: p.written, total: p.total })}
                 </span>
@@ -161,20 +165,22 @@ function CourseList({ country, onPick, t }) {
 
 /* --- le sommaire d'un cours ----------------------------------------------- */
 
-function CourseView({ course, t, navigate }) {
+function CourseView({ course, t, locale, navigate }) {
   return (
     <Screen>
       <TopBar
-        title={course.title}
-        sub={course.tagline}
+        title={say(course.title, locale)}
+        sub={say(course.tagline, locale)}
         back={() => navigate('/cours')}
         backLabel={t('common.back')}
       />
 
       {course.modules.map((m) => (
         <Section key={String(m.n)} title={t('courses.module_n', { n: m.n })}>
-          <h3 className="text-h2 font-semibold text-ink">{m.title}</h3>
-          {m.intro && <p className="mt-2 max-w-[52ch] text-body text-muted">{m.intro}</p>}
+          <h3 className="text-h2 font-semibold text-ink">{say(m.title, locale)}</h3>
+          {m.intro && (
+            <p className="mt-2 max-w-[52ch] text-body text-muted">{say(m.intro, locale)}</p>
+          )}
 
           {/* Un panneau par module, pas un pour toute la page, et pas une carte
               par lecon. Il groupe des cibles tactiles, ce qui est le seul
@@ -192,8 +198,12 @@ function CourseView({ course, t, navigate }) {
                 >
                   <span className="shrink-0 font-mono text-small text-muted">{l.id}</span>
                   <span className="min-w-0 flex-1">
-                    <span className="block text-body font-semibold text-ink">{l.title}</span>
-                    {l.sub && <span className="mt-0.5 block text-small text-muted">{l.sub}</span>}
+                    <span className="block text-body font-semibold text-ink">
+                      {say(l.title, locale)}
+                    </span>
+                    {l.sub && (
+                      <span className="mt-0.5 block text-small text-muted">{say(l.sub, locale)}</span>
+                    )}
                   </span>
                   {/* Une lecon encore en plan le dit. Masquer les modules non
                       rediges donnerait un cours qui a l'air fini et qui
@@ -212,7 +222,7 @@ function CourseView({ course, t, navigate }) {
           {m.action && (
             <p className="mt-5 max-w-[52ch] rounded-inner bg-accent/[0.07] px-4 py-3 text-small text-ink">
               <span className="eyebrow block text-accent">{t('courses.action')}</span>
-              <span className="mt-1 block">{m.action}</span>
+              <span className="mt-1 block">{say(m.action, locale)}</span>
             </p>
           )}
         </Section>
@@ -223,7 +233,7 @@ function CourseView({ course, t, navigate }) {
 
 /* --- une lecon ------------------------------------------------------------ */
 
-function LessonView({ course, lesson, country, onPick, t, navigate }) {
+function LessonView({ course, lesson, country, onPick, t, locale, navigate }) {
   const { prev, next } = neighbours(course, lesson.id)
   const variant = variantFor(lesson, country)
   const points = variant?.points ?? lesson.points ?? []
@@ -232,8 +242,8 @@ function LessonView({ course, lesson, country, onPick, t, navigate }) {
   return (
     <Screen>
       <TopBar
-        title={lesson.title}
-        sub={lesson.sub}
+        title={say(lesson.title, locale)}
+        sub={say(lesson.sub, locale)}
         back={() => navigate(`/cours/${course.slug}`)}
         backLabel={t('common.back')}
       />
@@ -252,12 +262,12 @@ function LessonView({ course, lesson, country, onPick, t, navigate }) {
             {lesson.objective && (
               <Panel className="mt-6 max-w-[48ch]" hook="lesson-objective">
                 <p className="eyebrow">{t('courses.objective')}</p>
-                <p className="mt-1.5 text-body text-ink">{lesson.objective}</p>
+                <p className="mt-1.5 text-body text-ink">{say(lesson.objective, locale)}</p>
               </Panel>
             )}
 
             {lesson.universal && (
-              <p className="mt-7 max-w-[46ch] text-body text-ink">{lesson.universal}</p>
+              <p className="mt-7 max-w-[46ch] text-body text-ink">{say(lesson.universal, locale)}</p>
             )}
 
             {/* Les onglets, et l'unique endroit rectangulaire de la lecon. */}
@@ -271,32 +281,32 @@ function LessonView({ course, lesson, country, onPick, t, navigate }) {
             {variant?.grail && (
               <Panel className="mt-7 max-w-[48ch]" hook="lesson-grail">
                 <p className="eyebrow text-accent">{t('courses.grail')}</p>
-                <p className="mt-1.5 text-body text-ink">{variant.grail}</p>
+                <p className="mt-1.5 text-body text-ink">{say(variant.grail, locale)}</p>
               </Panel>
             )}
 
             <ol className="mt-8 divide-y divide-hairline" data-hook="lesson-points">
               {points.map((p, i) => (
-                <li key={p.lead} className="flex gap-4 py-5">
+                <li key={say(p.lead)} className="flex gap-4 py-5">
                   <span className="shrink-0 font-mono text-small text-accent">{i + 1}</span>
                   <span className="max-w-[46ch]">
-                    <b className="font-semibold text-ink">{p.lead}</b>{' '}
-                    <span className="text-muted">{p.body}</span>
+                    <b className="font-semibold text-ink">{say(p.lead, locale)}</b>{' '}
+                    <span className="text-muted">{say(p.body, locale)}</span>
                   </span>
                 </li>
               ))}
             </ol>
 
             {variant?.note && (
-              <p className="mt-6 max-w-[46ch] text-body text-muted">{variant.note}</p>
+              <p className="mt-6 max-w-[46ch] text-body text-muted">{say(variant.note, locale)}</p>
             )}
 
             {lesson.metaphor && (
-              <Marked kind="field" label={t('courses.metaphor')} text={lesson.metaphor} hook="lesson-metaphor" />
+              <Marked kind="field" label={t('courses.metaphor')} text={say(lesson.metaphor, locale)} hook="lesson-metaphor" />
             )}
 
             {lesson.reflection && (
-              <Marked kind="field" label={t('courses.reflection')} text={lesson.reflection} hook="lesson-reflection" />
+              <Marked kind="field" label={t('courses.reflection')} text={say(lesson.reflection, locale)} hook="lesson-reflection" />
             )}
 
             {lesson.script && (
@@ -307,17 +317,19 @@ function LessonView({ course, lesson, country, onPick, t, navigate }) {
                     prose qui les entoure. */}
                 <div className="mt-3 space-y-3">
                   {lesson.script.map((s) => (
-                    <Panel key={s} className="max-w-[48ch]">
-                      <p className="text-body text-ink">{s}</p>
+                    <Panel key={say(s)} className="max-w-[48ch]">
+                      <p className="text-body text-ink">{say(s, locale)}</p>
                     </Panel>
                   ))}
                 </div>
               </div>
             )}
 
-            {todo && <Marked kind="accent" label={t('courses.action')} text={todo} hook="lesson-todo" />}
+            {todo && (
+              <Marked kind="accent" label={t('courses.action')} text={say(todo, locale)} hook="lesson-todo" />
+            )}
 
-            {lesson.quiz && <Quiz items={lesson.quiz} t={t} />}
+            {lesson.quiz && <Quiz items={lesson.quiz} t={t} locale={locale} />}
           </>
         )}
 
@@ -326,12 +338,12 @@ function LessonView({ course, lesson, country, onPick, t, navigate }) {
         <nav className="mt-12 flex flex-wrap gap-3" data-hook="lesson-nav">
           {prev && (
             <Link to={`/cours/${course.slug}/${prev.id}`} className="goal-action press">
-              ← {prev.title}
+              ← {say(prev.title, locale)}
             </Link>
           )}
           {next && (
             <Link to={`/cours/${course.slug}/${next.id}`} className="goal-action press">
-              {next.title} →
+              {say(next.title, locale)} →
             </Link>
           )}
         </nav>
@@ -400,7 +412,7 @@ function Marked({ kind, label, text, hook }) {
  * une coche, la mauvaise une croix, et le texte de l'explication dit laquelle
  * etait la bonne.
  */
-function Quiz({ items, t }) {
+function Quiz({ items, t, locale }) {
   const [picked, setPicked] = useState({})
 
   /* Le quiz est un autre mode: on repond, il repond. Un panneau le dit avant
@@ -414,9 +426,9 @@ function Quiz({ items, t }) {
           const chosen = picked[qi]
           const answered = chosen !== undefined
           return (
-            <div key={q.ask} data-hook="quiz-q">
+            <div key={say(q.ask)} data-hook="quiz-q">
               <p className="max-w-[46ch] text-body font-semibold text-ink">
-                {qi + 1}. {q.ask}
+                {qi + 1}. {say(q.ask, locale)}
               </p>
 
               <div className="mt-3 space-y-2">
@@ -426,7 +438,7 @@ function Quiz({ items, t }) {
                   const show = answered && (right || mine)
                   return (
                     <button
-                      key={opt}
+                      key={say(opt)}
                       type="button"
                       onClick={() => setPicked((p) => ({ ...p, [qi]: oi }))}
                       disabled={answered}
@@ -443,7 +455,7 @@ function Quiz({ items, t }) {
                       <span aria-hidden="true" className="shrink-0 font-mono">
                         {show ? (right ? '✓' : '✕') : String.fromCharCode(65 + oi)}
                       </span>
-                      <span className="min-w-0 flex-1">{opt}</span>
+                      <span className="min-w-0 flex-1">{say(opt, locale)}</span>
                     </button>
                   )
                 })}
@@ -454,7 +466,7 @@ function Quiz({ items, t }) {
                   <b className="font-semibold text-ink">
                     {t('courses.answer_is', { letter: String.fromCharCode(65 + q.answer) })}
                   </b>{' '}
-                  {q.why}
+                  {say(q.why, locale)}
                 </p>
               )}
             </div>
