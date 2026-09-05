@@ -1095,6 +1095,64 @@ const b64 = (b) => Buffer.from(b).toString('base64url')
        'the people it has to reach are the ones who think nothing is wrong')
   }
 
+  /**
+   * A NUDGE YOU CAN ANSWER.
+   *
+   * "X is asking after you" arrived and the row offered an arrow to a group
+   * board and nothing else. Reading a message about somebody worrying, with no
+   * way to say the one thing they want to hear, is the app collecting a
+   * gesture and dropping it.
+   *
+   * The reply names a NOTIFICATION, never a person: the server checks it was
+   * addressed to the caller and answers its actor, so nobody replies on
+   * somebody else's behalf and nobody chooses who hears from them. Same shape
+   * as the nudge push, for the same reason.
+   */
+  {
+    const cli2 = readFileSync(join(here, 'notifications.js'), 'utf8')
+    const page = readFileSync(join(here, '..', 'pages', 'Notifications.jsx'), 'utf8')
+    const fnSrc3 = readFileSync(
+      join(here, '..', '..', 'supabase', 'functions', 'notify', 'index.ts'), 'utf8')
+
+    ok('a nudge can be answered', /export async function replyToNudge/.test(cli2))
+    ok('and the request names a notification, not a person',
+       /callNotify\(\{ reply_to: notificationId \}\)/.test(cli2))
+    ok('the server checks the notification was addressed to the caller',
+       /note\.user_id !== caller\.id/.test(fnSrc3),
+       'otherwise anybody could answer on anybody else\u2019s behalf')
+    ok('and refuses to answer anything that is not a nudge',
+       /note\.kind !== 'nudge'/.test(fnSrc3))
+    ok('the answer goes to whoever asked, read off the row',
+       /pushTo\(note\.actor_id/.test(fnSrc3))
+    ok('the row is written before the push',
+       fnSrc3.indexOf("kind: 'nudge_reply'") < fnSrc3.indexOf('pushTo(note.actor_id'),
+       'a push that is the only copy of something can be lost silently')
+    ok('and the nudge is marked read, so it stops asking',
+       /read_at: new Date\(\)\.toISOString\(\)[\s\S]{0,80}\.eq\('id', note\.id\)/.test(fnSrc3))
+
+    ok('the button is only on a nudge',
+       /r\.kind === 'nudge' && \(/.test(page),
+       'a shared goal and a reply are not things to answer')
+    ok('and only an explicit replied:true is a delivery',
+       /res\?\.ok === true && res\?\.replied === true/.test(page),
+       'the rule the nudge button had to learn twice')
+    ok('the reply kind has a case of its own in the list',
+       /r\.kind === 'nudge_reply'/.test(page),
+       'migration 54 widened a constraint and left the renderer behind; not again')
+
+    ok('the constraint allows the new kind',
+       /'nudge_reply'/.test(readFileSync(
+         join(here, '..', '..', 'supabase', '55_nudge_reply.sql'), 'utf8')))
+
+    for (const key of [
+      'notif.reply_cta', 'notif.reply_sending', 'notif.reply_done',
+      'notif.reply_by', 'notif.reply_anon', 'notif.reply_sub',
+    ]) {
+      const hits = i18nSrc.split(`'${key}'`).length - 1
+      ok(`${key} exists in both languages (${hits})`, hits === 2)
+    }
+  }
+
   for (const key of ['nudge.not_sent']) {
       const hits = i18nSrc.split(`'${key}'`).length - 1
       ok(`${key} exists in both languages (${hits})`, hits === 2)

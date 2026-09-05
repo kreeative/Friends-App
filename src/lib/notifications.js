@@ -151,7 +151,25 @@ function refusal(res) {
   return { why: 'unreachable', detail: reason }
 }
 
-/** The one POST both of the above make. */
+/**
+ * Answer a nudge: tell whoever asked that you are fine.
+ *
+ * "X is asking after you" arrived and there was nothing to do with it. Reading
+ * it and having no way to reply is the app collecting a gesture and dropping
+ * it: the whole point is two people making contact, and a message that can
+ * only be received is half of that.
+ *
+ * The request names the NOTIFICATION, never a person. The server checks that
+ * the notification was addressed to the caller and sends the answer to its
+ * actor, so nobody can reply on somebody else's behalf and nobody can pick who
+ * hears from them.
+ */
+export async function replyToNudge(notificationId) {
+  if (!notificationId) return { ok: false, reason: 'not_configured' }
+  return callNotify({ reply_to: notificationId })
+}
+
+/** The one POST all of the above make. */
 async function callNotify(body) {
   try {
     const url = import.meta.env?.VITE_SUPABASE_URL
