@@ -296,6 +296,12 @@ const COPY = {
        nowhere on somebody's lock screen is never a mystery. */
     selfTestTitle: 'Test des notifications',
     selfTestBody: 'Si tu vois ceci, tout marche : le serveur, les clés, et cet appareil.',
+    /* The answer coming back. Short: it is good news and it is one fact. */
+    replyTitle: (who: string) => `${who} va bien`,
+    /* Invariable. The app has no business guessing this person's gender,
+       and "va bien" happens to work for everybody. */
+    replyTitleAnon: 'Tout va bien de son côté',
+    replyBody: 'La personne a vu que tu prenais de ses nouvelles.',
 
     birthdaySubject: (n: number, first: string) =>
       n === 1 ? `L’anniversaire de ${first}, dans trois jours` : `${n} anniversaires dans trois jours`,
@@ -393,6 +399,9 @@ const COPY = {
     nudgeNowBody: 'Nothing to do. They just wanted to hear from you.',
     selfTestTitle: 'Notification test',
     selfTestBody: 'If you can see this, the whole chain works: the server, the keys, and this device.',
+    replyTitle: (who: string) => `${who} is doing fine`,
+    replyTitleAnon: 'They are doing fine',
+    replyBody: 'They saw that you were asking after them.',
 
     birthdaySubject: (n: number, first: string) =>
       n === 1 ? `${first}'s birthday, in three days` : `${n} birthdays in three days`,
@@ -1300,15 +1309,18 @@ async function recentlyNudged(subjectId: string, groupId: string): Promise<boole
  * True only for a body that names a nudge or asks for a self test. Everything
  * else, and above all the empty body pg_cron sends, is the scheduled run.
  */
-export function wantsInstant(body: { nudge_id?: string; self_test?: boolean } | null): boolean {
+export function wantsInstant(
+  body: { nudge_id?: string; self_test?: boolean; reply_to?: string } | null,
+): boolean {
   if (!body) return false
   if (body.self_test === true) return true
+  if (typeof body.reply_to === 'string' && body.reply_to.length > 0) return true
   return typeof body.nudge_id === 'string' && body.nudge_id.length > 0
 }
 
 async function deliverNudge(
   req: Request,
-  body: { nudge_id?: string; self_test?: boolean },
+  body: { nudge_id?: string; self_test?: boolean; reply_to?: string },
 ): Promise<Response> {
   const token = (req.headers.get('authorization') ?? '').replace(/^Bearer\s+/i, '')
   if (!token) return json({ ok: false, error: 'signed_out' }, 401)
@@ -1355,6 +1367,72 @@ async function deliverNudge(
       push: PUSH_READY,
       devices: reach.devices,
       delivered: reach.delivered,
+    })
+  }
+
+  /**
+   * Answering a nudge, in one tap.
+   *
+   * "X is asking after you" arrives and there is nothing to do with it. The
+   * quiet person reads it and has no way to say the one thing the sender wants
+   * to hear: I am fine. So the reply goes back the other way as a notification
+   * of its own, with a push behind it.
+   *
+   * The request names a NOTIFICATION, not a person, for the same reason the
+   * nudge path names a nudge: the row says who is owed the answer. The caller
+   * has to be the person that notification was addressed to, so nobody can
+   * answer on somebody else's behalf, and the reply goes to its actor_id,
+   * which is whoever asked.
+   */
+  if (body.reply_to) {
+    const { data: note } = await supabase
+      .from('notification')
+      .select('id, user_id, actor_id, group_id, kind')
+      .eq('id', body.reply_to)
+      .maybeSingle()
+
+    if (!note) return json({ ok: false, error: 'no_such_notification' }, 404)
+    if (note.user_id !== caller.id) return json({ ok: false, error: 'not_yours' }, 403)
+    if (note.kind !== 'nudge') return json({ ok: false, error: 'not_a_nudge' }, 400)
+    if (!note.actor_id) return json({ ok: false, error: 'nobody_to_answer' }, 400)
+
+    const { data: me } = await supabase
+      .from('profiles').select('display_name').eq('id', caller.id).maybeSingle()
+    const myName = me?.display_name?.trim()
+
+    const to2 = await recipient(note.actor_id)
+    const c2 = COPY[to2?.loc ?? 'fr']
+
+    /* The row first, so the answer exists even if no phone is reachable. */
+    await supabase.from('notification').insert({
+      user_id: note.actor_id,
+      kind: 'nudge_reply',
+      href: note.group_id ? `/g/${note.group_id}` : '/',
+      actor_id: caller.id,
+      group_id: note.group_id,
+    })
+
+    const reach2 = await pushTo(note.actor_id, {
+      title: myName ? c2.replyTitle(myName) : c2.replyTitleAnon,
+      body: c2.replyBody,
+      url: note.group_id ? `${SITE}/g/${note.group_id}` : SITE,
+      tag: 'nudge-reply',
+    })
+
+    /* The nudge is answered, so it stops asking. Marking it read here rather
+       than leaving it for the reader is the difference between a thing you
+       did and a thing you did and then had to tidy up after. */
+    await supabase
+      .from('notification')
+      .update({ read_at: new Date().toISOString() })
+      .eq('id', note.id)
+
+    return json({
+      ok: true,
+      replied: true,
+      push: PUSH_READY,
+      devices: reach2.devices,
+      delivered: reach2.delivered,
     })
   }
 
@@ -1516,7 +1594,7 @@ Deno.serve(async (req) => {
      * The body is parsed HERE and passed down, because a request body can only
      * be read once and deliverNudge used to read it itself.
      */
-    let body: { nudge_id?: string; self_test?: boolean } = {}
+    let body: { nudge_id?: string; self_test?: boolean; reply_to?: string } = {}
     try {
       body = await req.json()
     } catch {

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useT } from '../lib/i18n'
-import { listNotifications, markRead } from '../lib/notifications'
+import { listNotifications, markRead, replyToNudge } from '../lib/notifications'
 import { Empty, Screen, Section, TopBar } from '../components/ui'
 
 /**
@@ -40,6 +40,30 @@ export default function Notifications() {
 
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
+  /* The reply in flight, and the ones that landed this session. */
+  const [replying, setReplying] = useState(null)
+  const [replied, setReplied] = useState(() => new Set())
+
+  /**
+   * Tell whoever asked that you are fine.
+   *
+   * The row stays on screen with a confirmation under it rather than
+   * disappearing. A thing that vanishes the instant you tap it leaves nobody
+   * sure whether it went, and this is the one message where that matters.
+   *
+   * Only an explicit true counts as sent. The server answers { replied: true }
+   * and nothing weaker is a delivery: the same rule the nudge button had to
+   * learn twice.
+   */
+  async function answer(r) {
+    setReplying(r.id)
+    const res = await replyToNudge(r.id)
+    if (res?.ok === true && res?.replied === true) {
+      setReplied((s2) => new Set(s2).add(r.id))
+    }
+    setReplying(null)
+  }
+
 
   const load = useCallback(async () => {
     if (!user) return
@@ -99,6 +123,10 @@ export default function Notifications() {
     if (r.kind === 'nudge') {
       return who ? t('notif.nudge_by', { who }) : t('notif.nudge_anon')
     }
+    /* The answer coming back, to whoever asked. */
+    if (r.kind === 'nudge_reply') {
+      return who ? t('notif.reply_by', { who }) : t('notif.reply_anon')
+    }
     /* Named only when the name is a fact. A shared goal created before
        migration 50 has no author recorded, and the anonymous phrasing is the
        true one rather than a guess. */
@@ -114,6 +142,7 @@ export default function Notifications() {
        rather than a subject, because "somebody is asking after you" with
        nothing under it reads as an error. */
     if (r.kind === 'nudge') return t('notif.nudge_sub')
+    if (r.kind === 'nudge_reply') return t('notif.reply_sub')
     return r.goals?.commitment
   }
 
@@ -146,11 +175,11 @@ export default function Notifications() {
           <div className="lg px-5" data-hook="notif-list">
             <div className="list">
               {rows.map((r) => (
+                <div key={r.id} className="py-5" data-hook="notif-row" data-kind={r.kind}>
                 <button
-                  key={r.id}
                   type="button"
                   onClick={() => openOne(r)}
-                  className="press flex w-full items-start gap-4 py-5 text-left"
+                  className="press flex w-full items-start gap-4 text-left"
                 >
                   <span className="min-w-0 flex-1">
                     <span className="text-safe block text-body font-semibold text-ink">
@@ -171,6 +200,43 @@ export default function Notifications() {
                     →
                   </span>
                 </button>
+
+                {/**
+                 * SOMETHING TO DO WITH IT.
+                 *
+                 * "X is asking after you" arrived and the only thing this row
+                 * offered was an arrow to a group board. Reading a message
+                 * about somebody worrying and having no way to answer is the
+                 * app collecting a gesture and dropping it: the point of the
+                 * whole feature is two people making contact, and a message
+                 * that can only be received is half of that.
+                 *
+                 * One tap, no typing. The person who is quiet is quiet for a
+                 * reason, and a text box is a task.
+                 */}
+                {r.kind === 'nudge' && (
+                  <div className="mt-3">
+                    <button
+                      type="button"
+                      onClick={() => answer(r)}
+                      disabled={replying === r.id}
+                      data-hook="notif-reply"
+                      className="btn-primary press w-full"
+                    >
+                      {replying === r.id ? t('notif.reply_sending') : t('notif.reply_cta')}
+                    </button>
+                    {replied.has(r.id) && (
+                      <p
+                        className="mt-2 text-small text-muted"
+                        role="status"
+                        data-hook="notif-replied"
+                      >
+                        {t('notif.reply_done')}
+                      </p>
+                    )}
+                  </div>
+                )}
+                </div>
               ))}
             </div>
           </div>
