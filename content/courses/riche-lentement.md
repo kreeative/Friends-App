@@ -1,6 +1,6 @@
 # Riche, lentement
 
-Plan de cours, cinq modules, du grand débutant à l'investisseur autonome.
+Plan de cours, six modules, du grand débutant à l'investisseur autonome.
 
 Le titre est un parti pris. Une formation qui promet vite ment sur la seule
 variable qui fait le travail, et le module 1 passe une leçon entière dessus.
@@ -23,7 +23,7 @@ pour le montant du jour. C'est aussi ce qui permet de tourner les vidéos une
 seule fois.
 
 **Progression volontairement lente.** Personne n'ouvre un compte de courtage
-au module 1. On ne parle de placement qu'au module 4, quand le coussin est
+au module 1. On ne parle de placement qu'au module 5, quand le coussin est
 là, les dettes chères sont mortes et le virement part tout seul. L'ordre est
 la pédagogie.
 
@@ -47,11 +47,11 @@ ne sait dire ce qu'est l'argent. On sait s'en servir, comme on sait se servir
 d'un ascenseur sans savoir ce qui le tient.
 
 **Le registre.** Narratif, une histoire par leçon, la théorie arrive par la
-porte de derrière. On raconte une île, une grève bancaire, une horloge et une
+porte de derrière. On raconte une île, une pierre perdue, une horloge et une
 douleur qui a disparu. Personne ne doit avoir l'impression d'ouvrir un manuel
 d'économie.
 
-**Ce module ne demande aucune action.** Les quatre autres finissent sur un
+**Ce module ne demande aucune action.** Les cinq autres finissent sur un
 geste. Celui-ci finit sur une question, à chaque fois. C'est le seul module du
 cours dont le but est de retirer quelque chose de la tête de quelqu'un plutôt
 que d'y ajouter.
@@ -97,6 +97,50 @@ papier, ni de l'or, ni un objet: c'est une ligne dans l'ordinateur d'une
 banque. Pose-toi la question honnêtement: qu'est-ce qui devrait casser dans le
 monde pour que cette ligne cesse de valoir quelque chose? Tu vas trouver la
 réponse en trois secondes, et c'est exactement là qu'est la leçon.
+
+### Le quiz de la leçon 0.1
+
+Trois questions, trois options, une seule bonne réponse, et une explication
+courte à chaque fois. L'explication est le vrai contenu: un quiz dont on sort
+en sachant seulement qu'on a eu faux n'apprend rien à personne. C'est le
+gabarit de tous les quiz du cours.
+
+**1. Que trouvent les anthropologues avant l'apparition de la monnaie ?**
+
+- A) Des sociétés de troc pur, où l'on échangeait deux poulets contre une hache
+- B) Des systèmes de crédit et de dettes dont les gens se souvenaient et qu'ils
+  réglaient plus tard
+- C) Des sociétés sans échange, où chaque foyer produisait tout ce dont il
+  avait besoin
+
+*Bonne réponse: B.* Le troc est l'histoire qu'on raconte à l'école, et
+personne ne l'a jamais trouvée sur le terrain. Ce que l'on trouve partout,
+c'est de la dette. La monnaie n'a donc pas remplacé le troc, elle a rendu le
+crédit transportable entre des inconnus qui ne se reverront jamais.
+
+**2. La pierre de Yap tombée au fond de l'océan a continué de servir de
+monnaie. Pourquoi ?**
+
+- A) Parce que les habitants espéraient encore la repêcher
+- B) Parce qu'un chef garantissait sa valeur et pouvait la remplacer
+- C) Parce que toute l'île restait d'accord sur qui la possédait
+
+*Bonne réponse: C.* La valeur n'était pas dans la pierre, elle était dans
+l'accord. C'est exactement ce qui fait tenir ton compte en banque: personne ne
+va vérifier des billets dans un coffre, tout le monde accepte simplement la
+même écriture.
+
+**3. Qu'est-ce qui rend réel l'argent affiché sur ton compte ?**
+
+- A) Une réserve d'or détenue par la banque centrale
+- B) Le fait que ton propriétaire, ton épicier et l'État acceptent la même
+  écriture
+- C) Les billets imprimés qui correspondent, quelque part, à ton solde
+
+*Bonne réponse: B.* Le lien avec l'or a été coupé dans les années 1970, et la
+très grande majorité de l'argent qui existe n'a jamais été imprimée. Ce qui
+rend ton solde réel, c'est l'acceptation et non la matière. Et c'est une bonne
+nouvelle: une convention, ça s'apprend, et ça se joue.
 
 ---
 
@@ -273,7 +317,200 @@ programmé.
 
 ---
 
-# Module 3. Trois enveloppes, un ordre
+# Module 3. L'argent et les autres
+
+Négocier les codes, la famille et les amis.
+
+**Où il est placé, et pourquoi ici.** Il arrive juste après la dépense
+consciente, parce que c'est exactement là que la dépense consciente se casse
+la figure. Personne n'abandonne son budget seul dans sa cuisine. On l'abandonne
+au restaurant, au téléphone avec sa mère, ou le soir où tout le monde a dit oui
+et qu'on est le seul à hésiter. Un cours qui enseigne la méthode sans enseigner
+la pression sociale enseigne la moitié qui ne sert à rien.
+
+**Objectif d'apprentissage.** À la fin du module, l'apprenant tient une
+décision financière devant quelqu'un qui la conteste, sans mentir, sans se
+justifier pendant dix minutes et sans casser la relation.
+
+**Le registre.** Franc et déculpabilisant. On ne dit à personne d'arrêter
+d'aider sa famille ni de changer d'amis. On nomme les mécanismes, et on donne
+des phrases. C'est le seul module dont chaque leçon repart avec une phrase
+prête à dire, parce que le problème n'a jamais été de savoir quoi penser, il a
+toujours été de savoir quoi répondre sur le moment.
+
+---
+
+## Leçon 3.1 · Tu n'es pas un guichet automatique
+
+*Aime ta famille, mais protège tes finances.*
+
+**Objectif pédagogique.** L'étudiant comprend qu'une limite n'est pas un rejet,
+et désapprend l'équation entre dire non à une demande d'argent et abandonner
+les siens. Ce qu'il repart avec: une règle décidée à froid, qui remplace une
+négociation émotionnelle par mois.
+
+**Les trois règles.**
+
+1. **Le prêt familial n'existe pas.** Dans une famille, un prêt est un don
+   auquel on a ajouté du ressentiment en option: celui qui prête compte, celui
+   qui emprunte évite, et la relation paie la facture bien après l'argent. La
+   règle honnête est de ne donner que ce qu'on peut perdre, et de l'appeler un
+   don dès la première seconde. Ce qui coûte moins cher qu'un remboursement
+   qu'on attend pendant trois ans.
+2. **Un pourcentage, pas un cas par cas.** Une ligne fixe dans le budget,
+   décidée une fois par an, transforme une série infinie de négociations en une
+   seule décision. Elle donne aussi une phrase, et c'est la moitié du travail:
+   « ce mois-ci l'enveloppe famille est à sec » est une information, alors que
+   « je ne peux pas » est une invitation à négocier.
+3. **Ton non a besoin d'un chiffre, pas d'une excuse.** Un non vague appelle la
+   contre-proposition et se termine en interrogatoire. Un non chiffré ferme la
+   discussion sans fermer la porte. C'est aussi le seul format qui protège la
+   personne en face: elle sait à quoi s'en tenir et peut chercher ailleurs.
+
+**Le script de conversation.**
+
+> « Je peux mettre 100 $ ce mois-ci. Je préfère te les donner plutôt qu'on
+> parle de remboursement, comme ça il n'y a rien qui traîne entre nous. Au-delà
+> de ça je ne peux pas, et ce n'est pas contre toi. »
+
+Et pour la version qui revient tous les mois:
+
+> « J'ai une enveloppe pour la famille, elle est à X par mois. Quand elle est
+> vide, elle est vide. Dis-moi quand tu en as besoin et je regarde ce qu'il
+> reste. »
+
+---
+
+## Leçon 3.2 · La note qu'on partage à parts égales
+
+*Choisis tes amis, et ton style de vie avec.*
+
+**Objectif pédagogique.** L'étudiant comprend que l'inflation de son train de
+vie est un phénomène social et non une faiblesse personnelle, et désapprend
+l'idée que refuser une sortie revient à refuser la personne. Ce qu'il repart
+avec: la capacité de refuser le format sans refuser l'invitation.
+
+**Les trois règles.**
+
+1. **Ton style de vie est la moyenne des cinq personnes avec qui tu sors.**
+   Ce n'est pas un défaut de caractère, c'est le fonctionnement normal d'un
+   cerveau social: on ne juge jamais une dépense dans l'absolu, on la juge par
+   rapport à ce que font les gens autour. Changer de groupe change le budget
+   plus sûrement que n'importe quelle application.
+2. **Tu ne paies jamais le repas, tu paies l'appartenance.** C'est le vrai
+   produit, et il n'est écrit sur aucune addition. Le nommer change la
+   décision, parce que la question devient: est-ce que c'est le seul moyen
+   d'appartenir à ce groupe? Si oui, la question n'est plus le budget, c'est le
+   groupe.
+3. **Refuse le format, jamais la personne.** Un non sec sur l'invitation se lit
+   comme un non sur la relation. Une contre-proposition dit l'inverse avec le
+   même argent: le message reçu est « je veux te voir », et le restaurant à
+   80 $ disparaît sans que personne ne perde la face.
+
+**Le script de conversation.**
+
+> « Le resto je passe ce mois-ci. Mais je suis à 100 % partant pour un verre
+> après, ou venez chez moi samedi, je cuisine. »
+
+Et pour l'addition partagée en parts égales quand on a pris une salade et un
+verre d'eau:
+
+> « Moi je règle ce que j'ai pris, ça vous va ? »
+
+Six mots, dits sans s'excuser. La gêne dure trois secondes et coûte
+systématiquement moins cher que le quart d'une bouteille que personne d'autre
+n'a proposé de payer.
+
+---
+
+## Leçon 3.3 · La conversation qui coûte le moins cher
+
+*L'amour et l'argent: les règles du jeu en couple.*
+
+**Objectif pédagogique.** L'étudiant comprend qu'une dispute d'argent n'est
+presque jamais une dispute d'argent, et désapprend le « on verra plus tard ».
+Ce qu'il repart avec: trois architectures possibles et un seuil chiffré.
+
+**Les trois règles.**
+
+1. **Les disputes d'argent sont des disputes de valeurs.** La sécurité de l'un
+   est l'ennui de l'autre; la générosité de l'un est l'imprudence de l'autre.
+   Tant que la conversation reste sur le montant, elle tourne en boucle, parce
+   que le montant n'est pas le sujet. Nommer la valeur en dessous arrête la
+   boucle en une phrase.
+2. **Trois architectures, aucune moralement supérieure.** Tout en commun, tout
+   séparé, ou le modèle mixte: un compte commun pour les charges, alimenté au
+   prorata des revenus, plus un compte personnel chacun où personne ne demande
+   de comptes. Le détail qui compte: à revenus inégaux, le 50/50 n'est pas
+   l'équité, c'est un transfert déguisé de celui qui gagne le moins vers celui
+   qui gagne le plus.
+3. **Le seuil de consultation.** Un montant au-dessus duquel on se prévient,
+   décidé ensemble, une fois. Il fait disparaître la quasi-totalité des
+   frictions quotidiennes, parce qu'il remplace mille micro-jugements par une
+   règle que les deux ont écrite. En dessous du seuil, personne n'a de comptes
+   à rendre, et c'est ça qui le rend tenable.
+
+**Le script de conversation.**
+
+Pour ouvrir sans accuser, et c'est la meilleure question d'ouverture qui
+existe, parce qu'elle parle du passé et pas du relevé de compte:
+
+> « C'est quoi la première chose que tu as apprise sur l'argent, chez toi,
+> quand tu étais petit ? »
+
+Pour poser le seuil:
+
+> « Est-ce qu'on se fixe un montant au-dessus duquel on se prévient avant
+> d'acheter ? Moi je proposerais 200 $. En dessous, chacun fait ce qu'il veut
+> et on ne se demande rien. »
+
+---
+
+## Leçon 3.4 · Personne ne regarde ta voiture
+
+*Maîtriser les codes cachés de la richesse.*
+
+**Objectif pédagogique.** L'étudiant comprend que les signaux extérieurs de
+richesse sont payés avec la richesse elle-même, et désapprend l'équation entre
+visible et riche. Ce qu'il repart avec: une méthode pour ne pas se laisser
+entraîner dans une démonstration, et de quoi répondre aux questions indiscrètes.
+
+**Les trois règles.**
+
+1. **Le paradoxe de l'homme dans la voiture.** Tu vois passer une voiture
+   magnifique et tu admires la voiture. Tu ne penses pas une seconde au
+   conducteur, tu t'imagines toi-même au volant. C'est exactement ce que font
+   les autres devant la tienne. Le respect que tu essaies d'acheter n'est jamais
+   livré, parce que personne ne regarde le propriétaire.
+2. **La richesse est invisible par définition.** Le sac acheté est de l'argent
+   dépensé; la richesse, c'est précisément l'argent qui n'a pas été dépensé.
+   Elle n'a donc aucune apparence, et c'est ce qui rend le modèle impossible à
+   copier: on imite ce qu'on voit, et ce qu'on voit est la partie qui a été
+   détruite.
+3. **Le signal fort est souvent un signal de dette.** Les démonstrations les
+   plus bruyantes viennent rarement des gens les plus solides. Une dépense
+   visible dit ce que quelqu'un peut payer ce mois-ci, pas ce qu'il possède, et
+   il arrive assez souvent qu'elle dise l'inverse.
+
+**Le script de conversation.**
+
+Pour la question qui met mal à l'aise, sans mentir et sans se justifier:
+
+> « Assez pour être tranquille, pas encore assez pour la retraite. Et toi, tu
+> vises quoi ? »
+
+Et pour le « pourquoi tu ne t'achètes pas une vraie voiture »:
+
+> « Je préfère payer ma liberté que mon image. Mais je juge personne, chacun
+> son truc. »
+
+**Action du module.** Une phrase choisie, apprise par coeur, et dite pour de
+vrai à quelqu'un dans les deux semaines. Ce module ne demande pas un tableur,
+il demande une conversation.
+
+---
+
+# Module 4. Trois enveloppes, un ordre
 
 **Objectif d'apprentissage.** À la fin du module, l'apprenant choisit, pour
 chaque dollar mis de côté, l'enveloppe qui lui coûte le moins d'impôt compte
@@ -316,7 +553,7 @@ raison écrite en une phrase.
 
 ---
 
-# Module 4. Tenir
+# Module 5. Tenir
 
 **Objectif d'apprentissage.** À la fin du module, l'apprenant construit un
 portefeuille qu'il peut garder trente ans sans le surveiller, et il a écrit à
