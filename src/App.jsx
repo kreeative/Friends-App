@@ -14,6 +14,7 @@ import Dashboard from './pages/Dashboard'
 import Seo from './components/Seo'
 import Wordmark from './components/Wordmark'
 import Welcome from './pages/Welcome'
+import Setup from './pages/Setup'
 import Board from './pages/Board'
 import Proofs from './pages/Proofs'
 import Goals from './pages/Goals'
@@ -178,6 +179,20 @@ const PUBLIC_ROUTES = (
 function Gate() {
   const { user, profile, loading, authError } = useAuth()
   const { loading: groupsLoading, memberships, error: groupError, reload } = useGroup()
+  const { adopt } = useTheme()
+
+  /**
+   * A theme chosen on the phone, on the tablet as well.
+   *
+   * The choice is stored on this device, which is what makes it survive a
+   * reload and apply before the first paint. It is also why a second device
+   * knew nothing about it. The account carries the answer now, and this hands
+   * it to a device that has never been told one; a device that has is left
+   * alone. See adopt in src/lib/theme.jsx.
+   */
+  useEffect(() => {
+    if (profile?.theme) adopt(profile.theme)
+  }, [profile?.theme, adopt])
 
   /**
    * Make the server's push list agree with this browser, once per sign-in.
@@ -270,6 +285,23 @@ function Gate() {
 
   const where = landing({ loading: groupsLoading, memberships, profile, local })
   if (where === 'wait') return <BrandSplash />
+
+  /**
+   * The five questions, before anything else in the product.
+   *
+   * Outside the AppShell for the same reason the welcome deck is: a tab bar
+   * offering Goals, Budget and the library under a screen whose whole job is
+   * asking your name is four ways to skip it. Nothing links away from here and
+   * nothing needs to; answering finishes it, and landing() stops returning
+   * 'setup' the moment the row is written.
+   */
+  if (where === 'setup') {
+    return (
+      <Routes>
+        <Route path="*" element={<Setup />} />
+      </Routes>
+    )
+  }
 
   /**
    * Outside the AppShell on purpose. The deck is the whole screen: a tab bar

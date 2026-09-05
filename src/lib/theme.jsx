@@ -141,7 +141,33 @@ export function ThemeProvider({ children }) {
     write(KEY_THEME, next)
   }, [])
 
-  const value = useMemo(() => ({ theme, setTheme }), [theme, setTheme])
+  /**
+   * Take the account's theme, but only on a device that has never chosen one.
+   *
+   * The theme has always been per device, which is right: it is what the screen
+   * in your hand looks like and it has to be applied before the first paint, so
+   * localStorage is the only place it can live. It is also why choosing Sea on
+   * a phone left a tablet on the default, and this product is used from a phone
+   * and a tablet by the same person on the same day.
+   *
+   * So the account carries the answer too, and this is the rule for reconciling
+   * them: a device with something stored keeps it, always. Whoever last pressed
+   * the picker ON THIS DEVICE outranks a row written from another one, because
+   * they were looking at this screen when they decided.
+   *
+   * DELIBERATELY DOES NOT WRITE localStorage. Adopting is not choosing. If this
+   * stored the adopted value, this device would immediately have an opinion of
+   * its own and would stop following the account, so changing the theme on the
+   * phone would never again reach the tablet. Re-adopting on every load is
+   * free: it is one string comparison against state that is already correct.
+   */
+  const adopt = useCallback((next) => {
+    if (!THEMES.includes(next)) return
+    if (read(KEY_THEME, THEMES, null)) return
+    setThemeState(next)
+  }, [])
+
+  const value = useMemo(() => ({ theme, setTheme, adopt }), [theme, setTheme, adopt])
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
 }

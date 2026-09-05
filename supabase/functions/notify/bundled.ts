@@ -1686,6 +1686,30 @@ async function sendCycleReminders() {
     const forDate = dayString(next)
     if (person.cycle_reminded_for === forDate) continue
 
+    /**
+     * Not to somebody whose app does not have the tracker in it.
+     *
+     * cycle_remind above is the "do you want to be told" switch and it is a
+     * different question from "is this feature yours at all". Somebody who
+     * recorded dates months ago and has since turned the tracker off still has
+     * those rows and still has cycle_remind set from back then, and this is the
+     * one sender that would keep writing to them about it. The screens went
+     * quiet; the scheduled email would not have.
+     *
+     * ITS OWN SELECT RATHER THAN A FIELD ON recipient(). If migration 56 has
+     * not been run on this database, naming cycle_on in the shared select would
+     * fail that whole query and cost every OTHER sender the recipient's
+     * language and pronouns. Here a missing column returns null, which reads as
+     * "not switched off", and the behaviour is exactly what it was before this
+     * existed.
+     */
+    const { data: prof } = await supabase
+      .from('profiles')
+      .select('cycle_on')
+      .eq('id', person.user_id)
+      .maybeSingle()
+    if (prof?.cycle_on === false) continue
+
     const who = await recipient(person.user_id)
     if (!who) continue
     const c = COPY[who.loc]

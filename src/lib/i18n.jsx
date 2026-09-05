@@ -1109,6 +1109,31 @@ const STRINGS = {
     'welcome.solo_note': 'You can start a group later from Settings.',
     'welcome.saving': 'One moment',
 
+    /* The five questions asked once, on the way in. Every hint ends by saying
+       the answer can be changed, because that is the condition for asking. */
+    'setup.title': 'First, a few things about you',
+    'setup.lede':
+      'Five answers, once. Each of them stays editable in your profile, so nothing here is final.',
+    'setup.name': 'Your name',
+    'setup.name_ph': 'First name',
+    'setup.name_hint': 'What your friends see on the board. Change it whenever you like.',
+    'setup.theme_hint':
+      'The app repaints as you press, so you are choosing something you can already see. Change it whenever you like.',
+    'setup.language_hint':
+      'For the app, and for the messages it sends you. Change it whenever you like.',
+    'setup.gender': 'You are',
+    'setup.gender_woman': 'A woman',
+    'setup.gender_man': 'A man',
+    'setup.gender_other': 'Something else',
+    'setup.gender_hint':
+      'This decides one thing: whether the cycle tracker is part of your app. It comes on for women, and it stays a switch in your profile that you can turn either way at any time.',
+    'setup.gender_articles':
+      'The reading and the studies stay open to everybody, whatever you answer here.',
+    'setup.go': 'Start',
+    'setup.saving': 'One moment',
+    'setup.need_name': 'A name is the one thing needed to carry on.',
+    'setup.failed': 'That did not save. Nothing has been changed.',
+
     'settings.group_title': 'Groups',
     'settings.group_none': 'You are using Rich & Friends on your own. The journal, the budget and your goals all work this way.',
     'settings.group_start': 'Create or join a group',
@@ -1265,6 +1290,22 @@ const STRINGS = {
     'me.pronouns_declined': 'Prefer not to say',
     'me.pronouns_ph': 'ze/hir',
     'me.pronouns_failed': 'That did not save. Pronouns need the database: run supabase/26_pronouns_and_self_celebration.sql in Supabase.',
+
+    /* Not a second pronouns field. This one is read by nothing that writes a
+       sentence about you; it exists to decide whether one feature is part of
+       your app, and the switch under it is what actually decides. */
+    'me.gender': 'You are',
+    'me.gender_hint': 'Used for one thing: whether the cycle tracker is part of your app.',
+    'me.gender_unset': 'Not set',
+    'me.gender_woman': 'A woman',
+    'me.gender_man': 'A man',
+    'me.gender_other': 'Something else',
+    'me.gender_failed': 'That did not save. This needs the database: run supabase/56_setup.sql in Supabase.',
+    'me.cycle': 'Cycle tracking',
+    'me.cycle_on': 'On. The calendar shows your period, the phases and the reminder before the predicted date.',
+    'me.cycle_off': 'Off. None of it appears anywhere, and nothing you have recorded is deleted.',
+    'me.cycle_note': 'The reading and the studies about the cycle stay open either way.',
+    'me.cycle_failed': 'That did not save. This needs the database: run supabase/56_setup.sql in Supabase.',
     'me.currency': 'Currency',
     'me.currency_hint':
       'What your budget is counted in. Changing it relabels your amounts, it does not convert them.',
@@ -2510,6 +2551,32 @@ const STRINGS = {
     'welcome.solo_note': 'Tu pourras créer un groupe plus tard dans les réglages.',
     'welcome.saving': 'Un instant',
 
+    /* Les cinq questions posées une seule fois, à l’entrée. Chaque note finit
+       en disant que la réponse se change, parce que c’est la condition pour
+       poser la question. */
+    'setup.title': 'D’abord, deux ou trois choses sur toi',
+    'setup.lede':
+      'Cinq réponses, une seule fois. Chacune reste modifiable dans ton profil, rien ici n’est définitif.',
+    'setup.name': 'Ton nom',
+    'setup.name_ph': 'Prénom',
+    'setup.name_hint': 'Ce que tes amis voient sur le tableau. Modifiable quand tu veux.',
+    'setup.theme_hint':
+      'L’application se repeint pendant que tu appuies, tu choisis donc quelque chose que tu vois déjà. Modifiable quand tu veux.',
+    'setup.language_hint':
+      'Pour l’application, et pour les messages qu’elle t’envoie. Modifiable quand tu veux.',
+    'setup.gender': 'Tu es',
+    'setup.gender_woman': 'Une femme',
+    'setup.gender_man': 'Un homme',
+    'setup.gender_other': 'Autre chose',
+    'setup.gender_hint':
+      'Ça décide d’une seule chose : est-ce que le suivi du cycle fait partie de ton application. Il s’active pour les femmes, et ça reste un interrupteur dans ton profil, que tu peux changer dans les deux sens à tout moment.',
+    'setup.gender_articles':
+      'Les lectures et les études restent accessibles à tout le monde, quelle que soit ta réponse.',
+    'setup.go': 'C’est parti',
+    'setup.saving': 'Un instant',
+    'setup.need_name': 'Il faut juste un nom pour continuer.',
+    'setup.failed': 'Ça n’a pas été enregistré. Rien n’a été modifié.',
+
     'settings.group_title': 'Groupes',
     'settings.group_none': 'Tu utilises Rich & Friends en solo. Le journal, le budget et tes objectifs fonctionnent tous comme ça.',
     'settings.group_start': 'Créer ou rejoindre un groupe',
@@ -2662,6 +2729,23 @@ const STRINGS = {
     'me.pronouns_declined': 'Je préfère ne pas le dire',
     'me.pronouns_ph': 'iel/ellui',
     'me.pronouns_failed': 'Ça n’a pas été enregistré. Les pronoms ont besoin de la base : exécute supabase/26_pronouns_and_self_celebration.sql dans Supabase.',
+
+    /* Ce n’est pas un deuxième champ de pronoms. Rien de ce que l’application
+       écrit sur toi ne lit cette colonne : elle sert à décider si une
+       fonctionnalité fait partie de ton application, et c’est l’interrupteur
+       en dessous qui décide vraiment. */
+    'me.gender': 'Tu es',
+    'me.gender_hint': 'Sert à une seule chose : est-ce que le suivi du cycle fait partie de ton application.',
+    'me.gender_unset': 'Non renseigné',
+    'me.gender_woman': 'Une femme',
+    'me.gender_man': 'Un homme',
+    'me.gender_other': 'Autre chose',
+    'me.gender_failed': 'Ça n’a pas été enregistré. Il faut la base : exécute supabase/56_setup.sql dans Supabase.',
+    'me.cycle': 'Suivi du cycle',
+    'me.cycle_on': 'Activé. Le calendrier montre tes règles, les phases et le rappel avant la date prévue.',
+    'me.cycle_off': 'Éteint. Plus rien n’apparaît nulle part, et rien de ce que tu as noté n’est effacé.',
+    'me.cycle_note': 'Les lectures et les études sur le cycle restent accessibles dans les deux cas.',
+    'me.cycle_failed': 'Ça n’a pas été enregistré. Il faut la base : exécute supabase/56_setup.sql dans Supabase.',
     'me.currency': 'Devise',
     'me.currency_hint':
       'La devise de ton budget. La changer réétiquette tes montants, elle ne les convertit pas.',

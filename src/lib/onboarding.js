@@ -19,6 +19,7 @@
  * between a blank moment, which people read as loading, and a wrong screen,
  * which people read as broken.
  */
+import { needsSetup } from './setup.js'
 
 /**
  * The three slides.
@@ -57,13 +58,26 @@ export function isSolo(profile, local = false) {
 
 /**
  * @returns 'wait'      nothing is known yet, show whatever the app shows while loading
+ *          'setup'     signed in, never asked who they are: the five questions
  *          'welcome'   no group, no choice made: the deck
  *          'app'       in a group, or chose solo: the dashboard
  */
 export function landing({ loading = false, memberships = null, profile = null, local = false } = {}) {
   if (loading) return 'wait'
 
-  /* A group outranks everything. Somebody who joined one has answered the
+  /**
+   * The five questions, before anything else this function can answer.
+   *
+   * Above the memberships shortcut on purpose: somebody who arrived through an
+   * invite link is in a group from their first second, and sending them
+   * straight to a board would mean the app never asks their name, never asks
+   * their language, and addresses them by the part of their email before the
+   * @ forever. See needsSetup, which answers false for a database where
+   * migration 56 has not been run, so this line cannot trap anybody.
+   */
+  if (profile && needsSetup(profile)) return 'setup'
+
+  /* A group outranks everything else. Somebody who joined one has answered the
      question the deck asks, whatever any flag says, and a person who was solo
      and then joined must not be shown the welcome again. */
   if (Array.isArray(memberships) && memberships.length > 0) return 'app'

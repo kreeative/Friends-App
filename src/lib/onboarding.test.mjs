@@ -73,6 +73,26 @@ eq('a group beats the solo flag', landing({ memberships: [{ group_id: 'g1' }], p
 eq('and beats a missing profile', landing({ memberships: [{ group_id: 'g1' }], profile: null }), 'app')
 eq('and beats a stale local flag', landing({ memberships: [{ group_id: 'g1' }], profile: null, local: true }), 'app')
 
+/* --- landing: the five questions ---------------------------------------- */
+eq('signed in, never asked', landing({ memberships: [], profile: { setup_done_at: null } }), 'setup')
+
+/* Above the deck AND above a membership. Somebody who joined through an invite
+   link has a group from their first second; without this the app would never
+   ask their name and would address them by their email prefix forever. */
+eq('even inside a group', landing({ memberships: [{ group_id: 'g1' }], profile: { setup_done_at: null } }), 'setup')
+eq('even having chosen solo', landing({ memberships: [], profile: { setup_done_at: null, solo_mode: true } }), 'setup')
+
+eq('done, and back to the usual answers', landing({ memberships: [], profile: { setup_done_at: '2026-09-05T10:00:00Z', solo_mode: true } }), 'app')
+eq('done, no group, never chose', landing({ memberships: [], profile: { setup_done_at: '2026-09-05T10:00:00Z' } }), 'welcome')
+
+/* A database without migration 56 answers exactly as it did before this
+   existed. The bundle ships before the SQL is run, every time, on purpose. */
+eq('no such column, no setup', landing({ memberships: [], profile: { display_name: 'Ann' } }), 'welcome')
+eq('and a member still lands in the app', landing({ memberships: [1], profile: { display_name: 'Ann' } }), 'app')
+
+/* The profile has not arrived. Not a setup, and not a guess either way. */
+eq('nothing is known about the profile yet', landing({ memberships: [1], profile: null }), 'app')
+
 /* --- offerGroup -------------------------------------------------------- */
 eq('somebody with no group is offered one', offerGroup({ memberships: [] }), true)
 eq('somebody in a group is not', offerGroup({ memberships: [{ group_id: 'g1' }] }), false)
