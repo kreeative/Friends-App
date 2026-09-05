@@ -52,6 +52,22 @@ export function sayAll(list, locale = SOURCE_LOCALE) {
 /** La cle de la region choisie. Par appareil, comme le theme. */
 export const COUNTRY_KEY = 'rf.course.pays'
 
+/**
+ * Les modules d'un cours, du plus petit numero au plus grand.
+ *
+ * Trie plutot que rendu dans l'ordre du tableau. L'ordre du tableau est
+ * correct aujourd'hui et c'est precisement pour ca qu'il faut trier: rien ne
+ * signale, en ajoutant un module au mauvais endroit du fichier, qu'il vient
+ * d'apparaitre au milieu du cours. Un cours qui commence au module 3 est ce
+ * qui a ete rapporte, et un tri le rend impossible plutot qu'improbable.
+ *
+ * Le module 0 de "Riche, lentement" reste donc en tete, ce qui est voulu: il
+ * est numerote 0 parce qu'il precede le cours.
+ */
+export function modulesOf(course) {
+  return [...(course?.modules ?? [])].sort((a, b) => Number(a.n) - Number(b.n))
+}
+
 export function courseBySlug(slug) {
   return COURSES.find((c) => c.slug === slug) ?? null
 }
@@ -59,7 +75,10 @@ export function courseBySlug(slug) {
 /** Toutes les lecons d'un cours, a plat, dans l'ordre de lecture. */
 export function lessonsOf(course) {
   if (!course) return []
-  return course.modules.flatMap((m) => m.lessons.map((l) => ({ ...l, module: m })))
+  /* Dans l'ordre des modules, pas dans celui du fichier: c'est cette liste qui
+     donne la lecon suivante et la precedente, donc si elle n'est pas triee, le
+     bouton "suivant" saute d'un module a l'autre au hasard. */
+  return modulesOf(course).flatMap((m) => m.lessons.map((l) => ({ ...l, module: m })))
 }
 
 export function lessonById(course, id) {
@@ -89,9 +108,20 @@ export function safeCountry(id) {
   return COUNTRIES.some((c) => c.id === id) ? id : DEFAULT_COUNTRY
 }
 
-export function countryLabel(id) {
+/**
+ * Le drapeau et le nom d'une region, dans la langue demandee.
+ *
+ * Le nom est passe par say(): c'est du contenu, pas de la chrome, et il est
+ * devenu bilingue en meme temps que le reste. Cette fonction interpolait
+ * encore l'objet directement et rendait "[object Object]" a cote du drapeau.
+ * Aucun ecran ne l'appelait, donc rien ne s'est vu, mais deux tests la
+ * couvraient et passaient quand meme: l'un cherchait le drapeau, qui etait
+ * bien la, l'autre cherchait le mot "undefined", et "[object Object]" n'est
+ * pas "undefined". Une assertion peut etre vraie et ne rien prouver.
+ */
+export function countryLabel(id, locale = SOURCE_LOCALE) {
   const c = COUNTRIES.find((x) => x.id === safeCountry(id))
-  return `${c.flag} ${c.label}`
+  return `${c.flag} ${say(c.label, locale)}`
 }
 
 /**

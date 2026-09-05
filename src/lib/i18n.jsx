@@ -880,7 +880,6 @@ const STRINGS = {
        transactions under them. Each card's word is what goes under its
        figure, so it has to read as the tail of a sentence the number starts. */
     'money.sections': 'Sections',
-    'money.recent': 'Latest',
     'money.sc_plan_spent': 'spent this period',
     'money.variable_title': 'What varied',
     'money.sc_plan': 'of {n} paid',
@@ -1107,7 +1106,8 @@ const STRINGS = {
     'courses.plan_body':
       'This lesson is an outline, not a script yet. The title and the promise above are what it will cover; the text is being written.',
     'courses.objective': 'What you will get out of it',
-    'courses.your_region': 'Your region',
+    'courses.showing_region': 'Showing the {region} version.',
+    'courses.change_region': 'Change region',
     'courses.grail': 'The account to open first',
     'courses.metaphor': 'The picture',
     'courses.reflection': 'Today’s question',
@@ -2358,7 +2358,6 @@ const STRINGS = {
        transactions en dessous. Le mot de chaque carte se lit comme la suite de
        la phrase que le chiffre commence. */
     'money.sections': 'Sections',
-    'money.recent': 'Dernières',
     'money.sc_plan_spent': 'dépensés sur la période',
     'money.variable_title': 'Ce qui a varié',
     'money.sc_plan': 'sur {n} payées',
@@ -2577,7 +2576,8 @@ const STRINGS = {
     'courses.plan_body':
       'Cette leçon est encore un plan, pas un texte. Le titre et la promesse au-dessus disent ce qu’elle couvrira ; la rédaction est en cours.',
     'courses.objective': 'Ce que tu vas en retirer',
-    'courses.your_region': 'Ta région',
+    'courses.showing_region': 'Version affichée : {region}.',
+    'courses.change_region': 'Changer de région',
     'courses.grail': 'Le compte à ouvrir en premier',
     'courses.metaphor': 'L’image',
     'courses.reflection': 'La réflexion du jour',

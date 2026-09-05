@@ -4,8 +4,10 @@ import { COUNTRY_ANSWERS, COURSES } from '../content/courses'
 import {
   COUNTRY_KEY,
   DEFAULT_COUNTRY,
+  countryLabel,
   courseBySlug,
   lessonById,
+  modulesOf,
   neighbours,
   progressOf,
   safeCountry,
@@ -94,7 +96,6 @@ export default function Courses() {
         course={course}
         lesson={lesson}
         country={country}
-        onPick={pickCountry}
         t={t}
         locale={locale}
         navigate={navigate}
@@ -175,8 +176,8 @@ function CourseView({ course, t, locale, navigate }) {
         backLabel={t('common.back')}
       />
 
-      {course.modules.map((m) => (
-        <Section key={String(m.n)} title={t('courses.module_n', { n: m.n })}>
+      {modulesOf(course).map((m) => (
+        <Section key={String(m.n)} title={<span data-hook="module-n">{t('courses.module_n', { n: m.n })}</span>}>
           <h3 className="text-h2 font-semibold text-ink">{say(m.title, locale)}</h3>
           {m.intro && (
             <p className="mt-2 max-w-[52ch] text-body text-muted">{say(m.intro, locale)}</p>
@@ -233,7 +234,7 @@ function CourseView({ course, t, locale, navigate }) {
 
 /* --- une lecon ------------------------------------------------------------ */
 
-function LessonView({ course, lesson, country, onPick, t, locale, navigate }) {
+function LessonView({ course, lesson, country, t, locale, navigate }) {
   const { prev, next } = neighbours(course, lesson.id)
   const variant = variantFor(lesson, country)
   const points = variant?.points ?? lesson.points ?? []
@@ -272,12 +273,28 @@ function LessonView({ course, lesson, country, onPick, t, locale, navigate }) {
               </Panel>
             )}
 
-            {/* Les onglets, et l'unique endroit rectangulaire de la lecon. */}
+            {/**
+             * LA REGION EST RAPPELEE, PAS REDEMANDEE.
+             *
+             * Il y avait ici un second jeu d'onglets, identique a celui de la
+             * page des cours. Poser deux fois la meme question a la meme
+             * personne dans le meme parcours est une faute: elle a deja
+             * repondu, et le deuxieme jeu d'onglets suggere que la premiere
+             * reponse n'a pas ete prise.
+             *
+             * Ce qui reste est une ligne, pas un choix. Elle est necessaire:
+             * sans elle, quelqu'un qui arrive sur cette lecon par un lien
+             * direct lit trois paragraphes sur les SGI d'Abidjan sans savoir
+             * pourquoi. Elle dit quelle region est affichee et ou se change ce
+             * reglage, et elle ne le change pas elle-meme.
+             */}
             {lesson.byCountry && (
-              <div className="mt-7" data-hook="lesson-country">
-                <p className="eyebrow mb-3">{t('courses.your_region')}</p>
-                <CountryTabs value={country} onPick={onPick} />
-              </div>
+              <p className="mt-6 text-small text-muted" data-hook="lesson-region">
+                {t('courses.showing_region', { region: countryLabel(country, locale) })}{' '}
+                <Link to="/cours" className="underline underline-offset-4 hover:text-ink">
+                  {t('courses.change_region')}
+                </Link>
+              </p>
             )}
 
             {variant?.grail && (

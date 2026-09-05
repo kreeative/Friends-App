@@ -748,7 +748,11 @@ export const COURSES = [
     },
     modules: [
       {
-        n: 3,
+        /* Numerote depuis SON cours et pas depuis le brief d'origine. Il
+           s'appelait 3 parce que la demande disait "Module 3 : Investir 101",
+           et il ouvrait le cours: un etudiant arrivait sur un cours dont le
+           premier module portait le numero 3. */
+        n: 1,
         title: { fr: 'Faire travailler l’argent pour soi', en: 'Putting money to work' },
         intro: {
           fr: 'Ton rassurant, transparent sur le risque, orienté long terme. Le mot bourse fait peur à la moitié des gens et le module ne gagne rien à faire semblant du contraire : la baisse est nommée dès la première leçon.',
@@ -756,7 +760,7 @@ export const COURSES = [
         },
         lessons: [
           {
-            id: 'i3.1',
+            id: 'i1.1',
             state: 'written',
             title: { fr: 'Ton argent fond pendant que tu dors', en: 'Your money melts while you sleep' },
             sub: {
@@ -803,7 +807,7 @@ export const COURSES = [
             },
           },
           {
-            id: 'i3.2',
+            id: 'i1.2',
             state: 'written',
             title: { fr: 'Prêter ou posséder', en: 'Lend or own' },
             sub: {
@@ -847,7 +851,7 @@ export const COURSES = [
             },
           },
           {
-            id: 'i3.3',
+            id: 'i1.3',
             state: 'written',
             title: { fr: 'Tout acheter d’un coup', en: 'Buy the whole thing at once' },
             sub: {
@@ -894,7 +898,7 @@ export const COURSES = [
             },
           },
           {
-            id: 'i3.4',
+            id: 'i1.4',
             state: 'written',
             title: { fr: 'L’enveloppe n’est pas le placement', en: 'The account is not the investment' },
             sub: {
@@ -940,7 +944,7 @@ export const COURSES = [
         ],
       },
       {
-        n: 'I',
+        n: 2,
         title: {
           fr: 'Où et comment investir selon ton pays',
           en: 'Where and how to invest, depending on your country',
@@ -951,7 +955,7 @@ export const COURSES = [
         },
         lessons: [
           {
-            id: 'i.pays',
+            id: 'i2.1',
             state: 'written',
             title: { fr: 'Le plan de match de ta région', en: 'Your region’s game plan' },
             sub: {
