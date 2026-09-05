@@ -273,13 +273,56 @@ export async function syncSubscription(userId) {
       .maybeSingle()
     if (data) return { ok: true, healed: false }
 
-    const { error } = await supabase
-      .from('push_subscription')
-      .upsert(row, { onConflict: 'endpoint' })
-    return { ok: !error, healed: !error }
+    const written = await saveSubscription(row)
+    return { ok: written.ok, healed: written.ok, detail: written.detail }
   } catch {
     return { ok: false, healed: false }
   }
+}
+
+/**
+ * Write the row, and know whether it landed.
+ *
+ * THE UPSERT COULD FAIL WITHOUT FAILING.
+ *
+ * This was `.upsert(row, { onConflict: 'endpoint' })`, which PostgREST sends
+ * as INSERT ... ON CONFLICT DO UPDATE. When a row with that endpoint already
+ * exists under a DIFFERENT user_id, the update path runs, the RLS policy's
+ * USING clause hides that row, the statement matches zero rows, and Postgres
+ * reports no error at all. The switch went on, nothing was written, and the
+ * server had nothing to send to. Exactly the failure this repo already has a
+ * rule about: RLS refuses an update silently, so "no error" is not "it
+ * worked".
+ *
+ * Delete then insert instead, and ask for the row back. Either the endpoint
+ * comes back, which is proof, or there is a real error to read. An endpoint
+ * registered to somebody else's account now says so with a duplicate key
+ * rather than pretending to succeed.
+ *
+ * `detail` is the database's own words, kept so a person can read them out
+ * instead of describing them.
+ */
+export async function saveSubscription(row) {
+  const { supabase } = await import('./supabase')
+
+  /* Scoped to this reader by RLS, so it clears only a row they own. */
+  await supabase.from('push_subscription').delete().eq('endpoint', row.endpoint)
+
+  const { data, error } = await supabase
+    .from('push_subscription')
+    .insert(row)
+    .select('endpoint')
+    .maybeSingle()
+
+  if (error) {
+    return { ok: false, detail: `${error.code ?? 'error'}: ${error.message ?? String(error)}` }
+  }
+  if (data?.endpoint !== row.endpoint) {
+    /* No error and no row: the write was refused by a policy without saying
+       so. Naming it is the whole point of this function. */
+    return { ok: false, detail: 'no row written (refused by a policy)' }
+  }
+  return { ok: true, detail: null }
 }
 
 export async function enablePushHere(userId) {
@@ -287,8 +330,11 @@ export async function enablePushHere(userId) {
   const result = await enablePush(userId)
   if (!result.ok) return { ok: false, saved: false, reason: result.reason }
 
-  const { error } = await supabase
-    .from('push_subscription')
-    .upsert(result.row, { onConflict: 'endpoint' })
-  return { ok: true, saved: !error, reason: error ? 'save-failed' : null }
+  const written = await saveSubscription(result.row)
+  return {
+    ok: true,
+    saved: written.ok,
+    reason: written.ok ? null : 'save-failed',
+    detail: written.detail,
+  }
 }

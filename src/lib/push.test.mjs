@@ -1153,6 +1153,48 @@ const b64 = (b) => Buffer.from(b).toString('base64url')
     }
   }
 
+  /**
+   * THE ROW EITHER LANDS OR SAYS WHY NOT.
+   *
+   * Reported from an iPhone PWA: the switch on, the local test drawing a
+   * notification, and the server answering that the device is not registered.
+   * All three true at once, because the write was failing and every layer
+   * swallowed it.
+   *
+   * It was `.upsert(row, { onConflict: 'endpoint' })`, which PostgREST sends
+   * as INSERT ... ON CONFLICT DO UPDATE. When that endpoint already exists
+   * under a different user_id, the update path runs, RLS hides the row, the
+   * statement matches ZERO rows, and Postgres reports no error. This repo
+   * already has that written down: RLS refuses silently, so no error is not
+   * the same as it worked.
+   */
+  {
+    const cli3 = readFileSync(join(here, 'pushClient.js'), 'utf8')
+    const code3 = cli3.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
+
+    ok('the subscription row is never written with an upsert',
+       !/\.upsert\(/.test(code3),
+       'push_subscription has an update policy, but a hidden row still matches zero')
+    ok('it deletes then inserts',
+       /\.delete\(\)[\s\S]{0,80}\.eq\('endpoint'/.test(code3) &&
+         /\.from\('push_subscription'\)[\s\S]{0,60}\.insert\(row\)/.test(code3))
+    ok('and asks for the row back, which is the only proof it landed',
+       /\.insert\(row\)[\s\S]{0,60}\.select\('endpoint'\)/.test(code3))
+    ok('a write that returns no row is treated as a failure',
+       /data\?\.endpoint !== row\.endpoint/.test(code3),
+       'that is the silent RLS refusal, and it used to read as success')
+    ok('the database error is carried out rather than discarded',
+       /error\.code/.test(code3) && /error\.message/.test(code3))
+
+    const toggle3 = readFileSync(join(here, '..', 'components', 'PushToggle.jsx'), 'utf8')
+    ok('and shown verbatim on the screen',
+       /data-hook="push-save-detail"/.test(toggle3),
+       'a generic sentence about Safari sent somebody to the wrong settings screen')
+    ok('a heal that could not write is as visible as a toggle that could not',
+       /healed\?\.ok === false && healed\?\.detail/.test(toggle3),
+       'silence there is what let a switch read on against a server with no row')
+  }
+
   for (const key of ['nudge.not_sent']) {
       const hits = i18nSrc.split(`'${key}'`).length - 1
       ok(`${key} exists in both languages (${hits})`, hits === 2)
