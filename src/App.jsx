@@ -39,6 +39,7 @@ import Library from './pages/Library'
 import Reader from './pages/Reader'
 import VapidSetup from './pages/VapidSetup'
 import Notifications from './pages/Notifications'
+import Courses from './pages/Courses'
 
 /** /lectures/:slug is the same page as /library/:slug, spelled in French. */
 function LecturesRedirect() {
@@ -374,6 +375,14 @@ function Gate() {
          * body. See the note on useParams in src/pages/Money.jsx.
          */}
         <Route path="money/:pane" element={<Money />} />
+        {/* Les cours. Trois adresses, un composant: meme raison que Money,
+            les trois vues lisent les memes donnees. /courses est l'orthographe
+            anglaise, servie plutot que cassee. */}
+        <Route path="cours" element={<Courses />} />
+        <Route path="cours/:slug" element={<Courses />} />
+        <Route path="cours/:slug/:lessonId" element={<Courses />} />
+        <Route path="courses" element={<Navigate to="/cours" replace />} />
+
         <Route path="library" element={<Library />} />
         <Route path="library/:slug" element={<Reader />} />
 

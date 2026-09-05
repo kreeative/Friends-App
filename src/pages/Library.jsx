@@ -235,6 +235,26 @@ export default function Library() {
       <TopBar title={t('nav.library')} sub={t('library.sub')} />
 
       {/**
+       * La porte des cours, ici plutot que dans la barre d'onglets.
+       *
+       * La barre est plafonnee a quatre: la note au-dessus de MINE dans
+       * AppShell raconte ce qui est arrive a cinq, les libelles ont tronque a
+       * "Faire le p..." sur un ecran de 390 px. Les lectures et les cours sont
+       * la meme etagere du point de vue de quelqu'un qui cherche a apprendre
+       * quelque chose, donc l'un mene a l'autre.
+       */}
+      <Section title={t('courses.title')}>
+        <Link
+          to="/cours"
+          data-hook="to-courses"
+          className="press block rounded-card border border-hairline bg-[rgb(var(--glass-tint)/0.55)] p-5 backdrop-blur-md"
+        >
+          <span className="block text-body font-semibold text-ink">{t('courses.sub')}</span>
+          <span className="mt-1.5 block text-small text-muted">{t('courses.enter')}</span>
+        </Link>
+      </Section>
+
+      {/**
        * Back from Stripe, at the top of the page, before anything else.
        *
        * The card is what the payment bought a moment of certainty about, so it
