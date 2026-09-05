@@ -48,6 +48,8 @@ export default function PushToggle() {
   const [on, setOn] = useState(false)
   const [busy, setBusy] = useState(false)
   const [problem, setProblem] = useState(null)
+  /* The database's own words for why the row did not land. */
+  const [problemDetail, setProblemDetail] = useState(null)
   const [testing, setTesting] = useState(false)
   const [tested, setTested] = useState(null)
   /* The server round trip, which is a different question entirely. */
@@ -66,7 +68,16 @@ export default function PushToggle() {
          comes back 404 or 410, while this browser keeps its subscription, so
          the switch can read on for months against a server with nothing to
          send to. See syncSubscription. */
-      if (sub && user?.id) await syncSubscription(user.id)
+      if (sub && user?.id) {
+        const healed = await syncSubscription(user.id)
+        /* A heal that could not write is the same failure as a toggle that
+           could not write, and it must be as visible. Silence here is what let
+           a switch read on for a day against a server with no row. */
+        if (!dead && healed?.ok === false && healed?.detail) {
+          setProblem('save-failed')
+          setProblemDetail(healed.detail)
+        }
+      }
     }
     run()
     return () => {
@@ -86,6 +97,7 @@ export default function PushToggle() {
   const toggle = async () => {
     setBusy(true)
     setProblem(null)
+    setProblemDetail(null)
     try {
       if (on) {
         const endpoint = await disablePush()
@@ -122,7 +134,10 @@ export default function PushToggle() {
          * being reported as the switch not having worked.
          */
         setOn(true)
-        if (!result.saved) setProblem('save-failed')
+        if (!result.saved) {
+          setProblem('save-failed')
+          setProblemDetail(result.detail ?? null)
+        }
       }
     } catch {
       setProblem('save-failed')
@@ -171,9 +186,27 @@ export default function PushToggle() {
       </button>
 
       {problem && (
-        <p className="mt-3 text-small text-negative" role="alert">
-          {t(`push.problem_${problem.replace(/-/g, '_')}`)}
-        </p>
+        <>
+          <p className="mt-3 text-small text-negative" role="alert">
+            {t(`push.problem_${problem.replace(/-/g, '_')}`)}
+          </p>
+          {/**
+           * The database's own words, verbatim and selectable.
+           *
+           * "Could not be saved" was the whole message, and it sent somebody
+           * to Safari's settings for a problem that was a policy refusing a
+           * write. The sentence above is this app's reading; this line is the
+           * thing itself, so it can be read out to whoever can act on it.
+           */}
+          {problemDetail && (
+            <p
+              className="mt-1 select-all text-small text-muted"
+              data-hook="push-save-detail"
+            >
+              {problemDetail}
+            </p>
+          )}
+        </>
       )}
 
       {/**
