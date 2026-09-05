@@ -14,6 +14,41 @@ import { COUNTRIES, COURSES } from '../content/courses.js'
 
 export const DEFAULT_COUNTRY = 'ca'
 
+/** La langue dans laquelle le contenu a ete ecrit en premier. */
+export const SOURCE_LOCALE = 'fr'
+
+/**
+ * Un champ de contenu, dans la langue demandee.
+ *
+ * UN SEUL ARBRE, DES FEUILLES BILINGUES.
+ *
+ * L'autre solution etait deux arbres, un par langue. Elle a l'air plus simple
+ * et elle derive: on ajoute une lecon d'un cote, on oublie de l'autre, et
+ * personne ne s'en apercoit avant qu'un anglophone ouvre le module. Ici la
+ * structure est commune et seules les phrases sont doublees, donc une lecon ne
+ * peut pas exister dans une langue et pas dans l'autre.
+ *
+ * LE REPLI EST LE FRANCAIS, ET IL EST VOULU.
+ *
+ * Une traduction manquante rend la phrase francaise plutot qu'une case vide.
+ * Un blanc dans un cours se lit comme une application cassee; une phrase dans
+ * la mauvaise langue se lit comme une traduction en retard, ce qui est
+ * exactement ce que c'est. Le test dit lesquelles manquent.
+ *
+ * Tolere une chaine nue, pour que du contenu ecrit avant ce changement
+ * continue de s'afficher au lieu de rendre `undefined`.
+ */
+export function say(field, locale = SOURCE_LOCALE) {
+  if (field === null || field === undefined) return ''
+  if (typeof field === 'string') return field
+  return field[locale] ?? field[SOURCE_LOCALE] ?? ''
+}
+
+/** Les phrases d'une liste, dans la langue demandee. */
+export function sayAll(list, locale = SOURCE_LOCALE) {
+  return (list ?? []).map((item) => say(item, locale))
+}
+
 /** La cle de la region choisie. Par appareil, comme le theme. */
 export const COUNTRY_KEY = 'rf.course.pays'
 

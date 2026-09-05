@@ -1,4 +1,6 @@
 import { COUNTRIES } from '../content/courses'
+import { say } from '../lib/courses'
+import { useT } from '../lib/i18n'
 
 /**
  * Choisir sa region, une fois, pour tout le cours.
@@ -24,6 +26,8 @@ import { COUNTRIES } from '../content/courses'
  * fond plein, une graisse plus forte, et aria-pressed.
  */
 export default function CountryTabs({ value, onPick, className = '' }) {
+  const { locale } = useT()
+
   return (
     <div className={`flex flex-wrap gap-2 ${className}`} data-hook="country-tabs">
       {COUNTRIES.map((c) => {
@@ -45,7 +49,7 @@ export default function CountryTabs({ value, onPick, className = '' }) {
             <span aria-hidden="true" className="mr-1.5">
               {c.flag}
             </span>
-            {c.label}
+            {say(c.label, locale)}
           </button>
         )
       })}

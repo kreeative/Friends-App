@@ -9,7 +9,9 @@
 import { COUNTRIES, COUNTRY_ANSWERS, COURSES } from '../content/courses.js'
 import {
   DEFAULT_COUNTRY,
+  SOURCE_LOCALE,
   countryLabel,
+  say,
   courseBySlug,
   lessonById,
   lessonsOf,
@@ -56,7 +58,7 @@ for (const course of COURSES) {
   const all = lessonsOf(course)
   ok(`${course.slug}: des identifiants de lecon uniques`,
      new Set(all.map((l) => l.id)).size === all.length)
-  ok(`${course.slug}: chaque lecon a un titre`, all.every((l) => l.title && l.title.length > 2))
+  ok(`${course.slug}: chaque lecon a un titre`, all.every((l) => say(l.title).length > 2))
   ok(`${course.slug}: chaque lecon declare son etat`,
      all.every((l) => l.state === 'written' || l.state === 'plan'),
      all.filter((l) => !['written', 'plan'].includes(l.state)).map((l) => l.id).join(', '))
@@ -74,7 +76,7 @@ for (const course of COURSES) {
     ok(`${course.slug} ${l.id}: une lecon ecrite a un corps`, hasBody)
     if (Array.isArray(l.points)) {
       ok(`${course.slug} ${l.id}: chaque point a une accroche et un texte`,
-         l.points.every((p) => p.lead && p.body))
+         l.points.every((p) => say(p.lead) && say(p.body)))
     }
   }
 
@@ -85,6 +87,90 @@ for (const course of COURSES) {
        Boolean(l.sub))
   }
 }
+
+/* --- les deux langues ---------------------------------------------------- */
+
+/**
+ * LE TEST QUI EMPECHE LA DERIVE.
+ *
+ * Le contenu a ete ecrit en francais et traduit apres coup. Sans ce test, la
+ * prochaine lecon ajoutee n'aura qu'une langue, say() rendra sagement le
+ * francais a un anglophone, et personne ne s'en apercevra: il n'y a ni erreur,
+ * ni case vide, juste une phrase dans la mauvaise langue au milieu d'une page
+ * anglaise. C'est exactement le genre de manque qui se decouvre par un
+ * utilisateur plutot que par une console.
+ *
+ * Il liste ce qui manque au lieu de dire "quelque chose manque", parce qu'un
+ * echec qui ne nomme pas la lecon coute une demi-heure a diagnostiquer.
+ */
+{
+  const missing = []
+  const walk = (node, path) => {
+    if (node === null || node === undefined) return
+    if (typeof node === 'string') return
+    if (Array.isArray(node)) {
+      node.forEach((item, i) => walk(item, `${path}[${i}]`))
+      return
+    }
+    if (typeof node !== 'object') return
+    /**
+     * Une feuille de contenu est un objet dont `fr` est une CHAINE.
+     *
+     * Le test de la seule presence de la cle ne suffit pas, et la premiere
+     * version s'y est fait prendre: byCountry et COUNTRY_ANSWERS sont indexes
+     * par region, et l'une des regions s'appelle `fr`. Le marcheur voyait une
+     * cle `fr`, croyait tenir une phrase francaise, et signalait deux faux
+     * positifs. Pire, il s'arretait la et ne descendait jamais dans la version
+     * francaise de la lecon, donc il aurait pu MASQUER de vrais manques.
+     *
+     * Une phrase est une chaine; une carte de regions contient des objets. La
+     * distinction est nette et ne demande aucune convention de nommage.
+     */
+    if (typeof node[SOURCE_LOCALE] === 'string') {
+      if (!node.en || String(node.en).trim() === '') missing.push(path)
+      return
+    }
+    for (const [k, v] of Object.entries(node)) walk(v, `${path}.${k}`)
+  }
+
+  for (const course of COURSES) walk(course, course.slug)
+  walk(COUNTRY_ANSWERS, 'COUNTRY_ANSWERS')
+  walk(COUNTRIES, 'COUNTRIES')
+
+  ok('tout le contenu existe dans les deux langues', missing.length === 0,
+     missing.slice(0, 12).join(', ') + (missing.length > 12 ? ` (+${missing.length - 12})` : ''))
+
+  /**
+   * ET LA PREUVE QUE LE MARCHEUR A REGARDE QUELQUE CHOSE.
+   *
+   * Sans ce compte, un marcheur casse qui ne descend nulle part trouve zero
+   * manque et passe le test avec les honneurs. C'est la meme classe d'erreur
+   * que la mesure de contraste qui annoncait Infinity:1 sans photographier un
+   * seul pixel.
+   */
+  let leaves = 0
+  const count = (node) => {
+    if (!node || typeof node !== 'string' && typeof node !== 'object') return
+    if (typeof node === 'string') return
+    if (Array.isArray(node)) return node.forEach(count)
+    if (typeof node[SOURCE_LOCALE] === 'string') { leaves += 1; return }
+    Object.values(node).forEach(count)
+  }
+  COURSES.forEach(count)
+  count(COUNTRY_ANSWERS)
+  count(COUNTRIES)
+  ok('et il a bien parcouru tout le contenu', leaves > 150, `${leaves} phrases visitees`)
+}
+
+/* say() lui-meme: le repli est ce qui evite une case vide, et il faut qu'il
+   soit teste sinon on ne saura jamais s'il a jamais servi. */
+eq('say rend la langue demandee', say({ fr: 'oui', en: 'yes' }, 'en'), 'yes')
+eq('et le francais par defaut', say({ fr: 'oui', en: 'yes' }), 'oui')
+eq('une traduction manquante retombe sur la source',
+   say({ fr: 'oui' }, 'en'), 'oui')
+eq('une chaine nue passe telle quelle', say('brut', 'en'), 'brut')
+eq('rien du tout rend une chaine vide, pas undefined', say(null, 'en'), '')
+eq('ni pour un champ absent', say(undefined, 'en'), '')
 
 /* --- la navigation ------------------------------------------------------- */
 {
@@ -105,7 +191,7 @@ for (const course of COURSES) {
 
   eq('une lecon inconnue n’a ni l’une ni l’autre',
      JSON.stringify(neighbours(course, 'nope')), JSON.stringify({ prev: null, next: null }))
-  ok('une lecon se retrouve par son identifiant', lessonById(course, '0.1')?.title.length > 3)
+  ok('une lecon se retrouve par son identifiant', say(lessonById(course, '0.1')?.title).length > 3)
   eq('un identifiant inconnu rend null', lessonById(course, 'nope'), null)
 }
 
@@ -121,8 +207,11 @@ for (const course of COURSES) {
      COUNTRIES.every((c) => lesson.byCountry[c.id].grail && lesson.byCountry[c.id].todo))
   ok('elle a un tronc commun avant les variantes', Boolean(lesson.universal))
 
-  eq('la variante suit la region', variantFor(lesson, 'fr').grail.includes('PEA'), true)
-  eq('et l’Afrique a la sienne', variantFor(lesson, 'af').grail.includes('SGI'), true)
+  eq('la variante suit la region', say(variantFor(lesson, 'fr').grail).includes('PEA'), true)
+  eq('et l’Afrique a la sienne', say(variantFor(lesson, 'af').grail).includes('SGI'), true)
+  /* Et la traduction suit la variante, pas seulement la langue source. */
+  eq('la version anglaise de la variante existe aussi',
+     say(variantFor(lesson, 'af').grail, 'en').includes('licensed broker'), true)
 
   /* Un identifiant traine dans localStorage qui survit a un renommage ne doit
      pas rendre une page vide. */
