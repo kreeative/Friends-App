@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Wordmark from '../components/Wordmark'
 import { useT } from '../lib/i18n'
-import { BRAND, useTheme } from '../lib/theme'
 import { SLIDES, soloKeyFor } from '../lib/onboarding'
 import { isMissingColumn, isNetworkError } from '../lib/dberr'
 
@@ -31,23 +30,34 @@ import { isMissingColumn, isNetworkError } from '../lib/dberr'
  * it would put the same form in front of both of them every morning. See
  * supabase/30_solo_mode.sql and landing() in src/lib/onboarding.js.
  *
- * THE POSTER COLOUR, AND WHAT IT COSTS.
+ * THE CARD IS GONE, AND THE POSTER COLOUR WENT WITH IT.
  *
- * The whole screen is the brand tile's own ground: #DE3578 under sun,
- * #009DB9 under sea, sampled from the artwork rather than guessed. The logo
- * tile shares that colour exactly, so it dissolves and only the yellow
- * lettering floats. This is the one screen in the app allowed to be a poster.
+ * Asked for in one line: "pour le ui des slides d'entree supprimer les
+ * rectangles". The rectangle was a white card holding the words in the middle
+ * of a saturated page, and it could not simply be deleted, because it was not
+ * decoration. It was the contrast fix.
  *
- * It costs something and the cost is not negotiable: white measures 4.30:1 on
- * the pink and 3.22:1 on the teal, both under the 4.5 that body copy needs.
- * A deck with its paragraphs set straight onto the colour would be a deck a
- * good proportion of people cannot comfortably read, on the first screen they
- * ever see.
+ * The page used to be the brand tile's own ground, #FF007A under sun and
+ * #009DB9 under sea. White measures 4.30:1 on that pink and 3.22:1 on that
+ * teal, both under the 4.5 body copy needs, so the paragraphs could not sit on
+ * the colour and the card is where they went instead.
  *
- * So the words go on a white card and the colour holds it. Everything left on
- * the colour is either not text at all (the logo, the stickers, the dots) or
- * large enough for the 3:1 bar. The screen still reads as pink or teal,
- * because the card is a panel in the middle of it rather than the page.
+ * Take the card away and the words have to land somewhere legible, so the
+ * ground is now the app's own: the same near-white every other screen is read
+ * on, with the ink and the muted grey that go with it. Nothing about the type
+ * changed, which is what was asked. The colour has not left the screen either,
+ * it moved into the things that are colour rather than the thing behind the
+ * reading: the logo, the accent button, the dots.
+ *
+ * Three consequences, all of them in the markup below and each one a control
+ * that was white BECAUSE the ground was dark:
+ *
+ *   the dots      white and white/40 would be invisible; they are ink now
+ *   the buttons   a white fill on near-white is not a button. The primary is
+ *                 the app's accent button, which this screen could not use
+ *                 before precisely because the pink was the page
+ *   Skip          white underlined type, now muted like every other quiet
+ *                 control in the product
  *
  * Scroll-snap rather than a transform and a drag handler, exactly as
  * BudgetIntro does. The browser owns the physics, the momentum
@@ -63,7 +73,6 @@ export default function Welcome() {
   const { t } = useT()
   const navigate = useNavigate()
   const { user, profile, updateProfile } = useAuth()
-  const { theme } = useTheme()
 
   const trackRef = useRef(null)
   const [i, setI] = useState(0)
@@ -170,9 +179,8 @@ export default function Welcome() {
        * page taking it, and the header and the buttons are always where they
        * were put.
        */
-      className="relative flex h-dvh w-full flex-col overflow-hidden"
+      className="relative flex h-dvh w-full flex-col overflow-hidden bg-bg"
       style={{
-        backgroundColor: BRAND[theme] ?? BRAND.sun,
         paddingTop: 'env(safe-area-inset-top)',
         paddingBottom: 'env(safe-area-inset-bottom)',
       }}
@@ -218,11 +226,10 @@ export default function Welcome() {
           <button
             onClick={goSolo}
             disabled={busy}
-            /* On the poster colour, so white. It is the same decision as the
-               ghost CTA on the last slide, which is set large enough to pass
-               on its own; this one is a shortcut to it rather than the only
-               way to it, which is why a small label is acceptable here. */
-            className="press absolute right-6 top-1/2 -translate-y-1/2 text-small font-semibold text-white underline underline-offset-4 disabled:opacity-50"
+            /* Muted and underlined, like every other quiet control in the app.
+               It was white because the page was pink; on the near-white ground
+               white type is not quiet, it is gone. */
+            className="press absolute right-6 top-1/2 -translate-y-1/2 text-small font-semibold text-muted underline underline-offset-4 disabled:opacity-50"
           >
             {t('welcome.skip')}
           </button>
@@ -253,19 +260,14 @@ export default function Welcome() {
                   being centred and clipped at BOTH ends with the heading
                   half off the top. */}
               {/**
-               * The card, and why the words are on it rather than on the
-               * colour.
+               * No card. The words sit on the page, which is why the page had
+               * to become something words can sit on. See the note at the top.
                *
-               * White on #DE3578 is 4.30:1 and on #009DB9 is 3.22:1. Body
-               * copy needs 4.5. Set straight onto the poster colour this
-               * paragraph would be a paragraph a lot of people squint at, on
-               * the first screen of the app.
-               *
-               * On white it is the same ink as every other screen, 7:1, and
-               * the colour is still the page: the card is a panel in the
-               * middle of it, with the ground showing all round.
+               * The box is still here as a layout box and only that: it
+               * centres the column and caps its width. It paints nothing, has
+               * no radius and casts no shadow, so there is no rectangle.
                */}
-              <div className="mx-auto my-auto w-full max-w-content rounded-[1.75rem] bg-surface p-7 shadow-float sm:p-8">
+              <div className="mx-auto my-auto w-full max-w-content">
                 {/**
                  * The glyph above the step label is gone.
                  *
@@ -278,7 +280,18 @@ export default function Welcome() {
                  * the top of a card reads as a section heading for the
                  * paragraph under it.
                  */}
-                <span className="inline-block rounded-pill bg-accent/[0.12] px-3 py-1 text-label font-semibold uppercase tracking-[0.06em] text-accent">
+                {/**
+                 * The label is ink, not accent, and that was already wrong
+                 * before this screen changed.
+                 *
+                 * Measured off the paint: #FF007A on its own 12% tint is
+                 * 2.92:1 at 13px, where 4.5 is the bar. It failed on the white
+                 * card too, at much the same number, so this is a fix rather
+                 * than a consequence of removing the card. The pill keeps the
+                 * pink; only the four characters inside it move to ink, which
+                 * is 14:1 on that tint.
+                 */}
+                <span className="inline-block rounded-pill bg-accent/[0.12] px-3 py-1 text-label font-semibold uppercase tracking-[0.06em] text-ink">
                   {t('welcome.step', { n: n + 1, total: SLIDES.length })}
                 </span>
                 <h1 className="text-safe mt-3 text-h1 font-extrabold leading-tight text-ink">
@@ -320,8 +333,13 @@ export default function Welcome() {
                   onClick={() => go(n)}
                   aria-label={t('welcome.step', { n: n + 1, total: SLIDES.length })}
                   aria-current={n === i}
+                  /* Ink, not white. A dot is a graphic and needs 3:1 against
+                     what is behind it (1.4.11); white on the near-white ground
+                     is 1.06:1, which is a dot nobody can see. The inactive one
+                     is the same ink at 25%, so which slide is showing is
+                     carried by width as well as by tone. */
                   className={`h-2 rounded-pill transition-all duration-300 ease-settle ${
-                    n === i ? 'w-6 bg-white' : 'w-2 bg-white/40'
+                    n === i ? 'w-6 bg-ink' : 'w-2 bg-ink/25'
                   }`}
                 />
               ))}
@@ -338,29 +356,31 @@ export default function Welcome() {
              */}
             {last ? (
               <div className="animate-rise space-y-3">
-                {/* White fill, ink label: 17.4:1 on itself, and the fill is
-                    4.30:1 against the pink ground and 3.22:1 against the
-                    teal, both over the 3:1 a control's own edge needs. The
-                    app's accent button cannot be used here, it is the same
-                    pink as the ground. */}
-                <button
-                  className="btn press w-full bg-surface text-ink hover:opacity-90 active:scale-[0.97]"
-                  onClick={() => navigate('/start')}
-                >
+                {/* The app's own accent button, which this screen could not
+                    use while the pink WAS the page. A white fill on the
+                    near-white ground would be an invisible button. */}
+                <button className="btn-primary press w-full" onClick={() => navigate('/start')}>
                   {t('welcome.cta_group')}
                 </button>
                 {/**
-                 * The second answer, and the one place white type sits
-                 * directly on the colour.
+                 * The second answer: outlined, not glass.
                  *
-                 * At 1.25rem and 700 it is large text by the standard's own
-                 * definition, so the bar is 3:1 rather than 4.5, which white
-                 * clears on both grounds. Sized up rather than boxed in
-                 * because a filled second button competes with the first, and
-                 * this is deliberately the quieter of the two.
+                 * `btn-ghost` was the obvious pick and it was measured at
+                 * 1.03:1 against this page. It is exactly the trap written up
+                 * in CLAUDE.md: backdrop-filter blurs what is behind the
+                 * element, and over a flat ground it returns that same flat
+                 * colour, so glass on a plain near-white page is a button with
+                 * no visible edge at all. It works everywhere else in the app
+                 * because everywhere else there is something behind it.
+                 *
+                 * So the edge is drawn instead of blurred. Ink at 60% composites
+                 * to about rgb(133, 122, 127) on this ground, which clears the
+                 * 3:1 that 1.4.11 asks of a control's boundary; the app's own
+                 * .btn-outline is 18% and measures nearer 1.4:1, which is a
+                 * line you can only find if you know it is there.
                  */}
                 <button
-                  className="press w-full rounded-pill px-6 py-3 text-[1.25rem] font-bold leading-tight text-white transition-opacity hover:opacity-80 disabled:opacity-50"
+                  className="btn press w-full border-[1.5px] border-ink/60 text-ink hover:bg-ink/[0.04]"
                   onClick={goSolo}
                   disabled={busy}
                 >
@@ -368,10 +388,7 @@ export default function Welcome() {
                 </button>
               </div>
             ) : (
-              <button
-                className="btn press w-full bg-surface text-ink hover:opacity-90 active:scale-[0.97]"
-                onClick={() => go(i + 1)}
-              >
+              <button className="btn-primary press w-full" onClick={() => go(i + 1)}>
                 {t('welcome.next')}
               </button>
             )}

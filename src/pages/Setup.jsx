@@ -121,10 +121,19 @@ export default function Setup() {
           {t('setup.lede')}
         </p>
 
-        {/* One card, five blocks, hairlines between them. The same panel the
-            rest of the app reads on, so the ink is the 7:1 it is everywhere
-            else rather than white on a poster colour. */}
-        <div className="lg mt-7 divide-y divide-hairline px-6">
+        {/**
+         * No card. Five blocks on the page, with a hairline between them.
+         *
+         * Asked for directly: "enlever le rectangle blanc". The panel was the
+         * thing that made this read as a form to be filled in rather than five
+         * questions to be answered, and unlike the welcome deck's card it was
+         * never load-bearing: this page is already the app's near-white ground,
+         * so the ink was the same 7:1 with or without a white sheet under it.
+         *
+         * The hairlines stay. They are one pixel and they are what keeps five
+         * questions from running into each other; a rule is not a rectangle.
+         */}
+        <div className="mt-7 divide-y divide-hairline">
           {/* --- the name ------------------------------------------------- */}
           <section className="py-6">
             <label className="eyebrow block" htmlFor="setup-name">

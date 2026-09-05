@@ -1497,6 +1497,13 @@ const STRINGS = {
     'reader.owned_missing_title': 'You own this book',
     'reader.owned_missing':
       'This chapter has not been loaded onto this deployment yet, so there is nothing to open. Your purchase is recorded and nothing is owed. The chapter appears here as soon as the manuscript is uploaded.',
+    /* The chapter exists and opens, and what is stored in it is the seed from
+       07 rather than the manuscript from 08. Said as a fact about the text,
+       not as an error, and with no file path in it: the reader is a customer,
+       not somebody who can run a migration. The console carries the path. */
+    'reader.body_missing_title': 'This chapter is not in place yet',
+    'reader.body_missing':
+      'The text has not been published to this deployment. Nothing is wrong with your copy of the book and nothing is owed; the chapter appears here as soon as the manuscript is uploaded.',
     'reader.unlock': 'Get the book',
     'reader.previous': 'Previous',
     'reader.next': 'Next',
@@ -2936,6 +2943,13 @@ const STRINGS = {
     'reader.owned_missing_title': 'Ce livre est à toi',
     'reader.owned_missing':
       'Ce chapitre n’a pas encore été chargé sur ce déploiement, il n’y a donc rien à ouvrir. Ton achat est bien enregistré et tu ne dois rien. Le chapitre apparaîtra ici dès que le manuscrit sera en ligne.',
+    /* Le chapitre s’ouvre, et ce qu’il contient est le texte de remplissage du
+       07 et non le manuscrit du 08. Dit comme un fait sur le texte, pas comme
+       une erreur, et sans chemin de fichier : la personne qui lit est une
+       lectrice, pas quelqu’un qui peut lancer une migration. */
+    'reader.body_missing_title': 'Ce chapitre n’est pas encore en place',
+    'reader.body_missing':
+      'Le texte n’a pas encore été publié sur ce déploiement. Il n’y a rien d’anormal avec ton exemplaire et tu ne dois rien ; le chapitre apparaît ici dès que le manuscrit est en ligne.',
     'reader.unlock': 'Obtenir le livre',
     'reader.previous': 'Précédent',
     'reader.next': 'Suivant',
