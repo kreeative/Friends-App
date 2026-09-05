@@ -18,6 +18,7 @@ import { Screen, Sheet } from '../components/ui'
 import Watermark, { WatermarkNote } from '../components/Watermark'
 import ErrorNote from '../components/ErrorNote'
 import { localBook, localChapterBody } from '../content/previews'
+import { chapterText, isFiller } from '../lib/chapterText'
 
 const SIZES = [
   { key: 's', px: 16, lh: 1.65 },
@@ -301,7 +302,15 @@ export default function Reader() {
            * The bundle has the real chapter one, so it wins over filler.
            */
           const real = localChapterBody(slug, ch.idx)
-          const filler = typeof ch.body === 'string' && ch.body.includes('PLACEHOLDER.')
+          const filler = isFiller(ch.body)
+          if (filler && !real) {
+            /* Not user-facing: the reader gets a sentence, not a path. This is
+               for whoever is looking at a console wondering why a chapter they
+               can see in the repo is not on the screen. */
+            console.warn(
+              `chapter ${ch.idx} is still the seeded filler. Run supabase/08_chapter_bodies.sql.`,
+            )
+          }
           setCurrent(filler && real ? { ...ch, body: real } : ch)
           setError(null)
         } else {
@@ -390,6 +399,16 @@ export default function Reader() {
   const prev = idx > 0 ? chapters[idx - 1] : null
   const next = idx >= 0 && idx < chapters.length - 1 ? chapters[idx + 1] : null
   const s = SIZES[size]
+
+  /**
+   * The body, decided once rather than in the middle of the JSX.
+   *
+   * Two separate faults were reported off one screenshot and they have one
+   * cause: the database is still holding the seed from 07. chapterText answers
+   * both, and it answers the title one by comparing rather than by dropping
+   * any leading heading, so a manuscript that opens on a real section keeps it.
+   */
+  const text = chapterText(current?.body, current?.title)
 
   return (
     <div className="relative min-h-dvh bg-bg pb-36" data-surface="reading" data-hook="reader">
@@ -497,7 +516,33 @@ export default function Reader() {
                   maxWidth: '38em', // ~68 characters at this size
                 }}
               >
-                {render(current?.body ?? '')}
+                {/**
+                 * The seed is not a chapter, and it must not be painted like
+                 * one.
+                 *
+                 * 07_books_all_in_one.sql creates every chapter with generated
+                 * filler and 08_chapter_bodies.sql replaces it with the
+                 * manuscript. A database with the first and not the second
+                 * renders forty-eight identical paragraphs beginning with the
+                 * word PLACEHOLDER, under a heading repeating the title,
+                 * which is what was reported. Somebody who paid for the book
+                 * does not read that as "the text has not been loaded", they
+                 * read it as the writing being nonsense.
+                 *
+                 * The bundle still wins where it has the chapter, which is the
+                 * free preview; open() does that swap. This is what is left
+                 * when there is no manuscript on either side.
+                 */}
+                {text.filler ? (
+                  <div data-hook="reader-body-missing">
+                    <p className="text-body font-semibold text-ink">
+                      {t('reader.body_missing_title')}
+                    </p>
+                    <p className="mt-3 text-body text-muted">{t('reader.body_missing')}</p>
+                  </div>
+                ) : (
+                  render(text.text)
+                )}
               </div>
 
               <WatermarkNote name={profile?.display_name} tag={user?.id?.slice(0, 8)} />
