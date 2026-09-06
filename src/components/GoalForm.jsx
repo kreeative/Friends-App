@@ -5,6 +5,7 @@ import { useGroup } from '../context/GroupContext'
 import { localeTag, useT } from '../lib/i18n'
 import { PROOF_TYPES, proofTypeOf } from '../lib/proofKinds'
 import { errorText, isMissingColumn, isNetworkError } from '../lib/dberr'
+import { goalRow } from '../lib/goalRow'
 import { Field } from './ui'
 import { Slider, useSlider } from './Segmented'
 
@@ -298,36 +299,29 @@ export default function GoalForm({ onDone, onCancel, initial = null, groupId = n
     setSaving(true)
     setError(null)
 
-    // A goal with no group cannot belong to a group, whatever the toggle says
-    //, and the toggle is not shown in that case. Belt and braces, because the
-    // database constraint rejects the combination and the error it gives is
-    // not one anybody should have to read.
-    const effectiveKind = groupId ? kind : 'personal'
-
-    const payload = {
-      group_id: groupId,
-      kind: effectiveKind,
-      owner_id: effectiveKind === 'personal' ? user.id : null,
-      commitment: commitment.trim(),
-      goal_type: goalType,
-      trigger_when: when.trim() || null,
-      trigger_where: where.trim() || null,
-      evidence_def: evidence.trim() || null,
-      proof_type: proofType,
+    /* Le contenu de la ligne vit dans goalRow(), qui est pur et teste. Il y
+       etait au complet ici et une seule de ses vingt lignes s'est trompee de
+       colonne nullable, ce qui a rendu la creation d'objectif impossible pour
+       tout le monde sans qu'aucun test le remarque. */
+    const payload = goalRow({
+      groupId,
+      kind,
+      userId: user.id,
+      commitment,
+      goalType,
+      when,
+      where,
+      evidence,
+      proofType,
       cadence,
-      target_per_cycle: cadence === 'recurring' ? Number(target) || 1 : 1,
-      /* Every day is stored as null rather than as all seven, so "no
-         restriction" has one representation instead of two. */
-      active_days:
-        cadence === 'recurring' && days.length > 0 && days.length < 7 ? [...days].sort() : null,
-      due_on: cadence === 'once' ? dueOn || null : null,
-      ends_on: cadence === 'recurring' ? endsOn || null : null,
-      /* Empty string is not a date. Without the || null an untouched field
-         posts '' and Postgres rejects the row on a date column. */
-      starts_on: startsOn || null,
-      stake_text: stake.trim() || null,
+      target,
+      days,
+      dueOn,
+      endsOn,
+      startsOn,
+      stake,
       remind,
-    }
+    })
 
     const write = (row) =>
       initial

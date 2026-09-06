@@ -1717,9 +1717,25 @@ ok(
  */
 {
   const form = read('src/components/GoalForm.jsx')
-  ok('the form can set when a goal starts asking',
-     /starts_on: startsOn \|\| null/.test(form),
-     'the empty string is not a date and Postgres rejects it')
+  /**
+   * L'ASSERTION QUI ETAIT ICI VERIFIAIT LA PRESENCE DU BOGUE.
+   *
+   * Elle lisait /starts_on: startsOn \|\| null/ dans le source et passait,
+   * parce que la ligne etait bien la. Elle etait la et elle rendait la
+   * creation d'objectif impossible: starts_on est `not null default
+   * current_date`, et un null explicite ecrase le DEFAULT au lieu de le
+   * laisser s'appliquer, donc tout le monde recevait
+   *
+   *   [23502] null value in column "starts_on" of relation "goals"
+   *
+   * Le contenu de la ligne vit maintenant dans goalRow(), et goalRow.test.mjs
+   * regarde ce qu'elle rend au lieu de la chercher dans un fichier. Ce qui
+   * reste ici est ce que ce fichier peut vraiment dire: que le formulaire
+   * envoie bien la ligne construite ailleurs.
+   */
+  ok('the form builds its row with the tested helper',
+     /goalRow\(\{/.test(form) && !/starts_on:/.test(form),
+     'a copy of the row inside the component is a second place for it to be wrong')
   ok('and offers it for a habit and for a one-off',
      (form.match(/t\('form\.starts'\)/g) ?? []).length === 2,
      'a deadline buys a week of silence, which is useless sixteen months out')
