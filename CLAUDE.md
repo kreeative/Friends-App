@@ -26,6 +26,15 @@ and the error points at the wrong thing.
 - Prefer probes that **measure painted pixels** over probes that read
   computed styles. Reading `backgroundColor` and dropping its alpha has
   already produced a probe that passed a real contrast failure.
+- **iPad and laptop are first-class, and nobody should have to ask.** After
+  any UI change: `npm run build && npm run sweep`. It renders every signed-in
+  route at 390, 820 (iPad portrait), 1180 (iPad landscape) and 1440, and
+  fails on a sideways scroll, a wrapping paragraph wider than 800px, an input
+  wider than 40rem, or cards stacked full width above md. Look at the
+  screenshots it writes to `.sweep/`. Limits go on blocks, never on the page:
+  `.measure`, `.measure-form`, `.reading`, `.card-grid`, `.pane-grid`,
+  `.page-grid` in `index.css`. A new page is built with them from the start,
+  not fixed for the iPad afterwards.
 
 ### Contrast
 

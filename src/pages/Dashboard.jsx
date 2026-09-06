@@ -234,6 +234,15 @@ export default function Dashboard() {
       <BirthdayBanner people={friends} />
 
       {/**
+       * Two columns from lg, one below. The banners above stay full width:
+       * they are short rows and they are temporary. What follows is the feed,
+       * and a feed of phone-width cards released to 1030px was a page of
+       * horizons. The side column holds what already came last on a phone,
+       * so the phone order is the DOM order and nothing moves there.
+       */}
+      <div className="page-grid">
+      <div className="page-main min-w-0">
+      {/**
        * The week, directly under the greeting and above everything that is a
        * feed item.
        *
@@ -334,7 +343,9 @@ export default function Dashboard() {
           </div>
         )}
       </Section>
+      </div>
 
+      <div className="page-side min-w-0">
       {/* One card where two saturated panels were. See MyCompletion. */}
       <Section title={t('home.you_overall')}>
         <MyCompletion />
@@ -381,6 +392,8 @@ export default function Dashboard() {
           </div>
         )}
       </Section>
+      </div>
+      </div>
     </Screen>
   )
 }

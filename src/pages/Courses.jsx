@@ -186,6 +186,9 @@ function CourseView({ course, country, onPick, t, locale, navigate }) {
 
   return (
     <Screen>
+      {/* La meme colonne de lecture que la lecon: le sommaire est un texte
+          avec des listes, pas un tableau de bord. Voir .reading. */}
+      <div className="reading">
       <TopBar
         title={say(course.title, locale)}
         sub={say(course.tagline, locale)}
@@ -300,6 +303,7 @@ function CourseView({ course, country, onPick, t, locale, navigate }) {
           )}
         </Section>
       ))}
+      </div>
     </Screen>
   )
 }
@@ -340,6 +344,10 @@ function LessonView({ course, lesson, country, t, locale, navigate }) {
 
   return (
     <Screen>
+      {/* Une colonne de lecture, centree des que la fenetre est plus large
+          qu'elle: voir .reading dans index.css. Les blocs n'ont plus de
+          largeur a eux, c'est la colonne qui la porte. */}
+      <div className="reading">
       <TopBar
         title={say(lesson.title, locale)}
         sub={say(lesson.sub, locale)}
@@ -365,7 +373,7 @@ function LessonView({ course, lesson, country, t, locale, navigate }) {
             )}
 
             {lesson.universal && (
-              <p className="mt-7 max-w-[48ch] text-body text-ink" data-hook="lesson-universal">
+              <p className="mt-7 text-body text-ink" data-hook="lesson-universal">
                 {say(lesson.universal, locale)}
               </p>
             )}
@@ -398,7 +406,7 @@ function LessonView({ course, lesson, country, t, locale, navigate }) {
               </Block>
             )}
 
-            <ol className="mt-8 max-w-[48ch] divide-y divide-hairline" data-hook="lesson-points">
+            <ol className="mt-8 divide-y divide-hairline" data-hook="lesson-points">
               {points.map((p, i) => (
                 <li key={say(p.lead)} className="flex gap-4 py-5 first:pt-0">
                   <span className="shrink-0 font-mono text-small text-muted">{i + 1}</span>
@@ -411,7 +419,7 @@ function LessonView({ course, lesson, country, t, locale, navigate }) {
             </ol>
 
             {variant?.note && (
-              <p className="mt-6 max-w-[48ch] text-body text-ink" data-hook="lesson-note">
+              <p className="mt-6 text-body text-ink" data-hook="lesson-note">
                 {say(variant.note, locale)}
               </p>
             )}
@@ -429,7 +437,7 @@ function LessonView({ course, lesson, country, t, locale, navigate }) {
             )}
 
             {lesson.script && (
-              <div className="mt-8 max-w-[48ch]" data-hook="lesson-script">
+              <div className="mt-8" data-hook="lesson-script">
                 <p className="eyebrow">{t('courses.script')}</p>
                 {/* Des phrases a dire: en italique, ouvertes par un guillemet,
                     et rien d'autre. Un bord ou un fond en ferait des cartes,
@@ -456,7 +464,7 @@ function LessonView({ course, lesson, country, t, locale, navigate }) {
                 seul element de la lecon qui quitte l'application, donc il
                 s'ouvre a cote et le dit avec une fleche. */}
             {variant?.cta && (
-              <div className="mt-6 max-w-[48ch]" data-hook="lesson-cta">
+              <div className="mt-6" data-hook="lesson-cta">
                 <p className="text-body text-ink">{say(variant.cta.text, locale)}</p>
                 <a
                   href={variant.cta.href}
@@ -489,6 +497,7 @@ function LessonView({ course, lesson, country, t, locale, navigate }) {
           )}
         </nav>
       </div>
+      </div>
     </Screen>
   )
 }
@@ -503,7 +512,7 @@ function LessonView({ course, lesson, country, t, locale, navigate }) {
  */
 function Block({ hook, label, children, className = '', strong = false }) {
   return (
-    <div data-hook={hook} className={`max-w-[48ch] ${className}`}>
+    <div data-hook={hook} className={className}>
       <p className="eyebrow">{label}</p>
       <p className={`mt-1.5 text-body text-ink ${strong ? 'font-semibold' : ''}`}>{children}</p>
     </div>
@@ -575,7 +584,7 @@ function Quiz({ items, t, locale }) {
   }
 
   return (
-    <Panel className="mt-12 max-w-[48ch]" hook="quiz" data-total={total}>
+    <Panel className="mt-12" hook="quiz" data-total={total}>
       <div className="flex items-baseline justify-between gap-4">
         <p className="eyebrow">{t('courses.quiz')}</p>
         {!done && (

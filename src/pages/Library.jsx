@@ -368,7 +368,10 @@ export default function Library() {
        */}
       {shelf === 'courses' && (
         <Section>
-          <div className="space-y-3">
+          {/* Une grille, pas une pile: a 1180 px trois cartes empilees sur
+              toute la largeur sont trois horizons. .card-grid passe a deux
+              colonnes a partir de lg et reste une pile sur un telephone. */}
+          <div className="card-grid">
             {COURSES.map((c) => {
               const p = progressOf(c)
               const first = firstLessonOf(c)
@@ -473,7 +476,7 @@ export default function Library() {
        */}
       {(shelf === 'articles' || shelf === 'studies') && (
         <Section>
-          <div className="space-y-3">
+          <div className="card-grid">
             {(shelf === 'articles' ? articles : studies).map((s) => (
               <Link
                 key={s.slug}

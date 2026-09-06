@@ -2335,8 +2335,18 @@
    * size between rest and focus and the form does not shift by a pixel when
    * somebody tabs through it.
    */
+  /**
+   * max-w-[38rem], the same figure as .measure-form, ON THE INPUT.
+   *
+   * The .shell note says it: the right place to stop an input getting too wide
+   * is the input. It was said and not done, and the width sweep found the
+   * profile form at 801px on a laptop, one field per line with a horizon of
+   * white inside each. Capped here, every form in the app is capped, the
+   * ones nobody has looked at on a laptop included. w-full still wins below
+   * 38rem, so a phone sees nothing.
+   */
   .field {
-    @apply w-full rounded-field px-4 py-3 text-body text-ink
+    @apply w-full max-w-[38rem] rounded-field px-4 py-3 text-body text-ink
            transition-colors duration-200 ease-settle;
     background-color: rgb(var(--c-surface));
     border: 1px solid rgb(var(--c-ink) / 0.14);
@@ -2497,6 +2507,43 @@
      well before a text input becomes a horizon. */
   .measure-form {
     @apply max-w-[38rem];
+  }
+
+  /**
+   * A reading column: a lesson, a course summary, anything that is one text.
+   *
+   * .measure caps a paragraph where it stands; this centres the whole page of
+   * text once the window is wider than the text. Left-aligned at 1180px, a
+   * 48ch lesson sat against the rail with six hundred empty pixels to its
+   * right, which reads as a page that forgot to lay itself out. Centred, it
+   * reads as a book page, which is what it is. 60ch is inside the 45 to 75
+   * that reading tolerates, and wide enough that the quiz tiles are not a
+   * stack of slivers.
+   *
+   * Below md the viewport is narrower than 60ch and this is inert: the phone
+   * layout is untouched.
+   */
+  .reading {
+    @apply mx-auto w-full max-w-[60ch];
+  }
+
+  /**
+   * A feed page in two columns once there is room for two.
+   *
+   * The home page is a stack of cards that each want the width of a phone.
+   * Released to full width at 1180px it became one 1030px column, every card
+   * a horizon: "est-ce qu'on pourrait travailler sur l'adaptation pour la
+   * version iPad et ordinateur sans avoir besoin de demander". Three to two,
+   * so the week strip and the groups get the room and the summaries sit
+   * beside them instead of under them.
+   *
+   * Two DOM columns rather than one grid with placed children, so that below
+   * lg the phone order is exactly the DOM order and nothing moves. The price
+   * is that the side column is whatever comes last on a phone, which is why
+   * what goes in it is what already came last.
+   */
+  .page-grid {
+    @apply lg:grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start lg:gap-x-8;
   }
 
   /**

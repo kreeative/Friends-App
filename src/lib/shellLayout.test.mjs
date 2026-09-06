@@ -1864,5 +1864,45 @@ ok(
      'calling a shared book "added a shared goal" is worse than not showing it')
 }
 
+/**
+ * iPad and laptop are first-class, and nobody should have to ask.
+ *
+ * Measured before this was written: at 1180px the home page was one 1030px
+ * column, the library three cards stacked full width, a lesson a 490px column
+ * against the rail with six hundred empty pixels beside it. Every page had
+ * been checked at 390px because that is what was being looked at.
+ *
+ * The rule is the one the .shell note already gives: limits go on blocks, not
+ * on the page. What this pins is that the blocks that need one carry it, and
+ * that the instrument which finds the next one exists and is asked for.
+ */
+{
+  const sheet = read('src/index.css')
+  ok('there is a reading column', /\.reading\s*\{[^}]*max-w-\[60ch\]/.test(sheet))
+  ok('and a two-column feed', /\.page-grid\s*\{[^}]*lg:grid-cols-/.test(sheet))
+
+  const lib = code('src/pages/Library.jsx')
+  ok('the library shelves are grids, not stacks',
+     (lib.match(/className="card-grid"/g) ?? []).length >= 3,
+     String((lib.match(/className="card-grid"/g) ?? []).length))
+  ok('no shelf is a space-y stack of cards',
+     !/className="space-y-3">\s*\{COURSES\.map/.test(lib) && !/className="space-y-3">\s*\{\(shelf ===/.test(lib))
+
+  const home = code('src/pages/Dashboard.jsx')
+  ok('the home feed has a main and a side column',
+     /className="page-grid"/.test(home) && /className="page-main/.test(home) && /className="page-side/.test(home))
+
+  const courses = code('src/pages/Courses.jsx')
+  ok('a lesson and a course summary are reading columns',
+     (courses.match(/className="reading"/g) ?? []).length === 2,
+     String((courses.match(/className="reading"/g) ?? []).length))
+  ok('and no lesson block carries its own 48ch any more', !/max-w-\[48ch\]/.test(courses))
+
+  ok('the width sweep exists and is wired',
+     existsSync(join(root, 'scripts/sweep-widths.mjs')) &&
+       /"sweep": "node scripts\/sweep-widths\.mjs"/.test(read('package.json')))
+  ok('and the working agreements ask for it', /npm run sweep/.test(read('CLAUDE.md')))
+}
+
 console.log(`\n  ${pass} passed, ${fail} failed\n`)
 process.exit(fail ? 1 : 0)

@@ -153,7 +153,10 @@ export default function MyCompletion() {
           : t('analytics.nothing_yet')}
       </p>
 
-      <p className="mt-4 text-small text-muted">{t('analytics.note_mine')}</p>
+      {/* .measure: on the profile page this card is two thirds of a laptop and
+          the note wrapped at 800px, which the width sweep flags as a line too
+          long to read. */}
+      <p className="measure mt-4 text-small text-muted">{t('analytics.note_mine')}</p>
     </div>
   )
 }
