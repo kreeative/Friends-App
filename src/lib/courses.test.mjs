@@ -301,6 +301,42 @@ eq('un cours absent n’a pas de module', modulesOf(null).length, 0)
     if (noQuiz.length) console.log(`       sans quiz: ${noQuiz.map((l) => l.id).join(', ')}`)
   }
 
+  /**
+   * Investir 101 est tenu au meme standard depuis qu'il a ete complete: la
+   * relecture "comme un debutant" lui reprochait zero quiz sur cinq lecons,
+   * pas de lecon sur le geste, pas de recap. Les quatre lecons manquantes
+   * sont ecrites et les cinq anciennes ont leur quiz. Si ce cours retombe a
+   * une lecon redigee sans quiz, c'est une regression, pas un cours en
+   * cours d'ecriture.
+   */
+  for (const slug of ['investir-101']) {
+    const c = COURSES.find((x) => x.slug === slug)
+    const w = lessonsOf(c).filter((l) => l.state === 'written')
+    ok(`${slug}: toutes les lecons redigees ont un quiz`,
+       w.every((l) => l.quiz?.length >= 3),
+       `sans quiz: ${w.filter((l) => !l.quiz?.length).map((l) => l.id).join(', ')}`)
+    ok(`${slug}: et une reflexion`,
+       w.every((l) => l.reflection),
+       `sans reflexion: ${w.filter((l) => !l.reflection).map((l) => l.id).join(', ')}`)
+    ok(`${slug}: et finit par un recapitulatif`,
+       /retenir|take away/i.test(say(w.at(-1).title, 'fr') + say(w.at(-1).title, 'en')),
+       say(w.at(-1).title, 'fr'))
+    /* La lecon du geste nomme quelque chose a taper dans chaque region. C'est
+       ce que la relecture reclamait: "le cours diagnostique la maladie et
+       s'arrete avant l'ordonnance". Sans un nom, le lecteur reste devant la
+       barre de recherche. */
+    const buy = lessonsOf(c).find((l) => /appuies sur acheter|press buy/i.test(say(l.title, 'fr') + say(l.title, 'en')))
+    ok(`${slug}: une lecon montre le geste d achat`, Boolean(buy), 'aucune lecon "le jour ou tu appuies sur acheter"')
+    ok(`${slug}: et elle nomme un symbole par region`,
+       Boolean(buy) && ['ca', 'fr', 'us'].every((r) => /[A-Z]{2,5}/.test(say(buy.byCountry?.[r]?.grail, 'fr'))),
+       'une lecon "acheter" sans nom a taper laisse le lecteur devant la barre de recherche')
+    /* Et l Afrique dit honnetement qu il n y a pas de FNB, au lieu d inventer
+       un symbole qui n existe pas a la BRVM. */
+    ok(`${slug}: et dit qu il n y a pas de FNB a la BRVM plutot que d en inventer un`,
+       Boolean(buy) && /pas de FNB|no all-in-one ETF/i.test(say(buy.byCountry?.af?.grail, 'fr') + say(buy.byCountry?.af?.grail, 'en')),
+       'un symbole invente serait pire qu aucun')
+  }
+
   const cc = COURSES.find((c) => c.slug === 'carte-de-credit')
   ok('le cours carte de credit existe', Boolean(cc))
   const written = lessonsOf(cc).filter((l) => l.state === 'written')

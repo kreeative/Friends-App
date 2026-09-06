@@ -1353,6 +1353,7 @@ export const COURSES = [
             id: 'c2.3',
             state: 'written',
             title: { fr: 'La carte dans ton pays', en: 'The card where you live' },
+            grailLabel: { fr: 'Le réflexe de ta région', en: 'Your region’s one habit' },
             sub: { fr: 'Le même objet ne veut pas dire la même chose partout.', en: 'The same object does not mean the same thing everywhere.' },
             objective: {
               fr: 'Savoir si la carte qu’on te propose est du crédit ou du débit déguisé, et reconnaître le produit piège de sa propre région.',
@@ -1707,6 +1708,51 @@ export const COURSES = [
               fr: 'Trouver le taux d’intérêt réel de son compte d’épargne et le comparer à l’inflation de l’an dernier. Écrire les deux chiffres l’un sous l’autre.',
               en: 'Find the actual interest rate on your savings account and compare it to last year’s inflation. Write the two numbers one under the other.',
             },
+            reflection: {
+              fr: 'Regarde le solde de ton compte épargne. Il n’a pas bougé depuis un an, et pourtant il achète moins qu’il y a un an. Qu’est-ce qui te dérange le plus : le chiffre qui ne monte pas, ou le fait que personne ne te l’ait dit ?',
+              en: 'Look at your savings balance. It has not moved in a year, and yet it buys less than it did a year ago. What bothers you more: the number not rising, or the fact that nobody told you?',
+            },
+            quiz: [
+              {
+                ask: { fr: 'Tu laisses 1 000 $ dans un compte chèque pendant dix ans, avec 3 % d’inflation par an. Que vaut cet argent en pouvoir d’achat ?', en: 'You leave $1,000 in a chequing account for ten years, with 3 % inflation a year. What is it worth in buying power?' },
+                options: [
+                  { fr: 'Toujours 1 000 $, le solde n’a pas bougé', en: 'Still $1,000, the balance has not moved' },
+                  { fr: 'Environ 740 $', en: 'About $740' },
+                  { fr: 'Environ 970 $', en: 'About $970' },
+                ],
+                answer: 1,
+                why: {
+                  fr: 'Le solde affiche 1 000 $ et c’est ce qui rend la perte invisible. Ce qu’on peut acheter avec a fondu d’un quart. L’inflation est une taxe que personne ne facture, et elle se paie sans relevé.',
+                  en: 'The balance shows $1,000 and that is what makes the loss invisible. What it buys has shrunk by a quarter. Inflation is a tax nobody invoices, and it is paid without a statement.',
+                },
+              },
+              {
+                ask: { fr: 'Qui finit avec le plus d’argent : 200 $ par mois à partir de 25 ans, ou 400 $ par mois à partir de 40 ans ?', en: 'Who ends up with more: $200 a month from 25, or $400 a month from 40?' },
+                options: [
+                  { fr: 'Celui qui met 400 $, il épargne le double', en: 'The one putting in $400, they save twice as much' },
+                  { fr: 'Celui qui met 200 $ à partir de 25 ans', en: 'The one putting in $200 from 25' },
+                  { fr: 'À peu près pareil', en: 'About the same' },
+                ],
+                answer: 1,
+                why: {
+                  fr: 'Le second n’a pas été moins sérieux, il a eu quinze ans de moins. Les intérêts composés sont exponentiels et personne n’a d’intuition pour l’exponentiel : la courbe est ennuyeuse pendant les années où il faut tenir.',
+                  en: 'The second was not less serious, they had fifteen fewer years. Compounding is exponential and nobody has intuition for the exponential: the curve is boring during the years you have to hold on.',
+                },
+              },
+              {
+                ask: { fr: 'Pourquoi la métaphore du congélateur débranché ?', en: 'Why the unplugged freezer?' },
+                options: [
+                  { fr: 'Parce que l’argent gèle quand on ne l’investit pas', en: 'Because money freezes when you do not invest it' },
+                  { fr: 'Parce que rien ne bouge, tout a l’air en ordre, et on découvre le dégât en ouvrant plus tard', en: 'Because nothing moves, everything looks fine, and you find the damage when you open it later' },
+                  { fr: 'Parce qu’un compte épargne consomme de l’énergie', en: 'Because a savings account uses energy' },
+                ],
+                answer: 1,
+                why: {
+                  fr: 'La porte est fermée, le voyant est éteint, le solde affiche le même chiffre. C’est un dégât qui ne fait aucun bruit, et c’est pour ça qu’il faut aller le vérifier au lieu d’attendre qu’il se signale.',
+                  en: 'The door is shut, the light is off, the balance shows the same number. It is damage that makes no noise, which is why you go and check instead of waiting for it to announce itself.',
+                },
+              },
+            ],
           },
           {
             id: 'i1.2',
@@ -1751,6 +1797,51 @@ export const COURSES = [
               fr: 'Écrire une seule ligne : « J’ai besoin de cet argent dans ____ ans. » Le chiffre commande tout le reste du module.',
               en: 'Write one line: "I need this money in ____ years." That number drives everything else in the module.',
             },
+            reflection: {
+              fr: 'Si le marché baissait de 30 % le mois prochain, est-ce que tu aurais besoin de cet argent avant qu’il remonte ? Si oui, il n’a rien à faire en actions, et ce n’est pas une question de courage.',
+              en: 'If the market fell 30 % next month, would you need this money before it recovers? If yes, it has no business in shares, and that is not a question of courage.',
+            },
+            quiz: [
+              {
+                ask: { fr: 'Posséder une action, c’est quoi exactement ?', en: 'What exactly is owning a share?' },
+                options: [
+                  { fr: 'Prêter de l’argent à une entreprise contre un intérêt', en: 'Lending money to a company for interest' },
+                  { fr: 'Être copropriétaire d’un morceau de l’entreprise, minuscule mais réel', en: 'Being part owner of a piece of the company, tiny but real' },
+                  { fr: 'Parier sur le cours de demain', en: 'Betting on tomorrow’s price' },
+                ],
+                answer: 1,
+                why: {
+                  fr: 'Prêter, c’est l’obligation. Posséder, c’est l’action : les mauvaises années sont pour toi et les bonnes aussi. Les baisses de 30 % ne sont pas un accident du système, c’est le prix d’entrée de la propriété.',
+                  en: 'Lending is the bond. Owning is the share: the bad years are yours and so are the good ones. The 30 % falls are not a fault in the system, they are ownership’s entry price.',
+                },
+              },
+              {
+                ask: { fr: 'Une obligation est « sans risque ». Vrai ou faux ?', en: 'A bond is "risk free". True or false?' },
+                options: [
+                  { fr: 'Vrai, le capital est garanti à l’échéance', en: 'True, the capital is guaranteed at maturity' },
+                  { fr: 'Faux : l’emprunteur peut faire défaut, et la valeur baisse quand les taux montent', en: 'False: the borrower can default, and the value falls when rates rise' },
+                  { fr: 'Vrai, tant que c’est un État qui emprunte', en: 'True, as long as a government is the borrower' },
+                ],
+                answer: 1,
+                why: {
+                  fr: 'Beaucoup moins de secousses qu’une action, ce qui n’est pas la même chose qu’aucune. Deux risques restent : que l’emprunteur ne rembourse pas, et que la valeur de revente baisse si les taux montent entre-temps.',
+                  en: 'Far fewer shocks than a share, which is not the same as none. Two risks remain: that the borrower does not repay, and that the resale value falls if rates rise in the meantime.',
+                },
+              },
+              {
+                ask: { fr: 'De quoi dépend le bon mélange entre actions et obligations ?', en: 'What decides the right mix of shares and bonds?' },
+                options: [
+                  { fr: 'De ton âge', en: 'Your age' },
+                  { fr: 'Du nombre d’années avant d’avoir besoin de cet argent', en: 'How many years until you need this money' },
+                  { fr: 'De ce que le marché fait cette année', en: 'What the market is doing this year' },
+                ],
+                answer: 1,
+                why: {
+                  fr: 'L’âge n’est qu’un raccourci pour l’horizon. La vraie question est « dans combien d’années », et à trois ans la bourse n’est pas un placement, c’est un pari. C’est la ligne que tu as écrite à la fin de la leçon, et elle commande tout le reste.',
+                  en: 'Age is only a shortcut for horizon. The real question is "in how many years", and at three years the market is not an investment, it is a bet. That is the line you wrote at the end of the lesson, and it drives everything else.',
+                },
+              },
+            ],
           },
           {
             id: 'i1.3',
@@ -1798,6 +1889,51 @@ export const COURSES = [
               fr: 'Ouvrir la page d’un FNB tout-en-un et lire une seule ligne : le ratio des frais de gestion. Le comparer à celui du fonds vendu par sa banque.',
               en: 'Open the page of an all-in-one ETF and read one line: the management expense ratio. Compare it to the fund your bank sells you.',
             },
+            reflection: {
+              fr: 'Est-ce que l’idée de ne pas choisir toi-même te soulage ou te vexe ? Les deux réactions sont normales. La seconde coûte cher, statistiquement, et il vaut mieux le savoir avant.',
+              en: 'Does the idea of not choosing yourself relieve you or sting? Both reactions are normal. The second is expensive, statistically, and it is better to know that beforehand.',
+            },
+            quiz: [
+              {
+                ask: { fr: 'Le marché tombe de 30 %. Que fait ton FNB tout-en-un ?', en: 'The market drops 30 %. What does your all-in-one ETF do?' },
+                options: [
+                  { fr: 'Il te protège, c’est le but de la diversification', en: 'It protects you, that is what diversification is for' },
+                  { fr: 'Il tombe de 30 % aussi, à peu près', en: 'It drops about 30 % too' },
+                  { fr: 'Il tombe moins, parce qu’il contient des centaines d’entreprises', en: 'It falls less, because it holds hundreds of companies' },
+                ],
+                answer: 1,
+                why: {
+                  fr: 'La diversification élimine UN risque : tout perdre sur une seule entreprise. Elle ne protège pas de la baisse du marché entier, et personne ne le fait. Croire le contraire est ce qui fait vendre au pire moment.',
+                  en: 'Diversification removes ONE risk: losing everything on a single company. It does not protect you from the whole market falling, and nothing does. Believing otherwise is what makes people sell at the worst moment.',
+                },
+              },
+              {
+                ask: { fr: 'Sur trente ans, des frais de 2 % contre 0,2 %, ça change quoi ?', en: 'Over thirty years, fees of 2 % against 0.2 %: what changes?' },
+                options: [
+                  { fr: 'Une marge de quelques pour cent', en: 'A margin of a few per cent' },
+                  { fr: 'Une part énorme du résultat final', en: 'An enormous share of the final result' },
+                  { fr: 'Rien, si le rendement est bon', en: 'Nothing, if the return is good' },
+                ],
+                answer: 1,
+                why: {
+                  fr: 'Les frais se composent exactement comme les rendements, mais contre toi. C’est la seule variable de tout le placement que tu contrôles vraiment, et c’est la ligne à lire en premier sur n’importe quel fonds.',
+                  en: 'Fees compound exactly like returns, but against you. It is the one variable in the whole investment you genuinely control, and it is the first line to read on any fund.',
+                },
+              },
+              {
+                ask: { fr: 'Qu’est-ce qu’un FNB tout-en-un fait de plus qu’un FNB ordinaire ?', en: 'What does an all-in-one ETF do that an ordinary one does not?' },
+                options: [
+                  { fr: 'Il choisit les meilleures entreprises', en: 'It picks the best companies' },
+                  { fr: 'Il mélange actions et obligations dans une proportion fixe, et se rééquilibre seul', en: 'It mixes shares and bonds in a fixed proportion, and rebalances itself' },
+                  { fr: 'Il garantit un rendement minimum', en: 'It guarantees a minimum return' },
+                ],
+                answer: 1,
+                why: {
+                  fr: 'Un seul achat, le mélange déjà fait, et l’entretien fait pour toi. C’est ce qui rend « ne pas choisir » une stratégie respectable plutôt qu’un aveu : il n’y a plus rien à décider après la proportion.',
+                  en: 'One purchase, the mix already made, and the maintenance done for you. That is what makes "not choosing" a respectable strategy rather than an admission: there is nothing left to decide after the proportion.',
+                },
+              },
+            ],
           },
           {
             id: 'i1.4',
@@ -1842,6 +1978,223 @@ export const COURSES = [
               fr: 'Vérifier ses droits de cotisation auprès de l’administration de son pays, et regarder si l’argent déjà versé est investi ou s’il dort en comptant.',
               en: 'Check your contribution room with your country’s tax authority, and look at whether the money already in there is invested or sitting in cash.',
             },
+            reflection: {
+              fr: 'Si tu as déjà un compte à l’abri de l’impôt, tu sais ce qu’il y a dedans ? Pas le solde : ce qu’il contient. Si la réponse est « de l’argent », relis le titre de la leçon.',
+              en: 'If you already have a tax-sheltered account, do you know what is in it? Not the balance: what it holds. If the answer is "money", reread the lesson’s title.',
+            },
+            quiz: [
+              {
+                ask: { fr: 'Tu ouvres un compte à l’abri de l’impôt et tu y vires 2 000 $. C’est investi ?', en: 'You open a tax-sheltered account and transfer $2,000 in. Is it invested?' },
+                options: [
+                  { fr: 'Oui, c’est un compte de placement', en: 'Yes, it is an investment account' },
+                  { fr: 'Non : c’est du comptant dans un contenant, il faut encore acheter quelque chose dedans', en: 'No: it is cash in a container, you still have to buy something inside it' },
+                  { fr: 'Oui, la banque le place automatiquement', en: 'Yes, the bank invests it automatically' },
+                ],
+                answer: 1,
+                why: {
+                  fr: 'C’est l’erreur la plus fréquente des débutants du monde entier, et elle ne fait aucun bruit : le compte est ouvert, l’argent est dedans, et il dort. Le contenant ne remplit rien. Le sac isotherme vide reste un sac vide.',
+                  en: 'It is the most common beginner mistake in the world, and it makes no noise: the account is open, the money is in, and it sleeps. The container fills nothing. An empty cool bag is still an empty bag.',
+                },
+              },
+              {
+                ask: { fr: 'Qu’est-ce qu’une enveloppe fiscale change vraiment ?', en: 'What does a tax account actually change?' },
+                options: [
+                  { fr: 'Le rendement du placement', en: 'The investment’s return' },
+                  { fr: 'Ce que tu gardes du rendement', en: 'How much of the return you keep' },
+                  { fr: 'Le risque', en: 'The risk' },
+                ],
+                answer: 1,
+                why: {
+                  fr: 'Même placement, mêmes gains, mêmes baisses. La seule différence est l’impôt que tu ne paies pas, et sur trente ans cette différence est grande. Mais elle ne fait rien pousser : elle garde ce qui a poussé.',
+                  en: 'Same investment, same gains, same falls. The only difference is the tax you do not pay, and over thirty years that difference is large. But it grows nothing: it keeps what grew.',
+                },
+              },
+              {
+                ask: { fr: 'Pourquoi ne pas ouvrir cinq comptes chez quatre institutions ?', en: 'Why not open five accounts at four institutions?' },
+                options: [
+                  { fr: 'C’est illégal', en: 'It is illegal' },
+                  { fr: 'Les frais se multiplient et l’espace de cotisation devient impossible à suivre', en: 'Fees multiply and your contribution room becomes impossible to track' },
+                  { fr: 'Ça baisse ton rendement', en: 'It lowers your return' },
+                ],
+                answer: 1,
+                why: {
+                  fr: 'Chaque compte a ses frais et chaque institution ne voit que le sien. Un dépassement de cotisation est pénalisé chaque mois, et il arrive presque toujours à quelqu’un qui a perdu le compte de ses comptes.',
+                  en: 'Every account has its fees and each institution sees only its own. An over-contribution is penalised monthly, and it almost always happens to somebody who has lost track of their accounts.',
+                },
+              },
+            ],
+          },
+          {
+            id: 'i1.5',
+            state: 'written',
+            title: { fr: 'Combien, et à quel rythme', en: 'How much, and how often' },
+            sub: { fr: 'La deuxième question après « j’achète quoi ».', en: 'The second question after "what do I buy".' },
+            objective: {
+              fr: 'Décider d’un montant et d’un rythme qu’on tiendra, et comprendre que la régularité compte plus que la somme, surtout au début.',
+              en: 'Settle on an amount and a rhythm you will keep, and understand that regularity matters more than the sum, especially at the start.',
+            },
+            points: [
+              {
+                lead: { fr: 'Automatise, le lendemain de la paie.', en: 'Automate it, the day after payday.' },
+                body: {
+                  fr: 'Un virement programmé vers le compte de placement, puis un achat programmé dedans quand le courtier le permet. Ce qui part avant que tu l’aies vu n’est jamais dépensé. La décision se prend une fois ; après, elle s’exécute sans toi, y compris les mois où tu n’y crois plus.',
+                  en: 'A scheduled transfer into the investment account, then a scheduled purchase inside it where the broker allows. What leaves before you see it is never spent. The decision is made once; after that it runs without you, including the months you stop believing in it.',
+                },
+              },
+              {
+                lead: { fr: 'Commence petit. Le premier achat sert à apprendre le geste.', en: 'Start small. The first purchase is for learning the move.' },
+                body: {
+                  fr: '25 $ ou 50 $ par mois suffisent au début. Le rendement sur 50 $ n’a aucune importance ; ce qui compte, c’est d’avoir fait le trajet complet une fois, du virement à la confirmation, et de savoir qu’il ne fait pas peur. On augmente ensuite, quand le geste est devenu ennuyeux.',
+                  en: '$25 or $50 a month is enough at first. The return on $50 does not matter; what matters is having made the whole trip once, from transfer to confirmation, and knowing it is not frightening. You raise it later, once the move has become boring.',
+                },
+              },
+              {
+                lead: { fr: 'Tout d’un coup ou étalé : la bonne réponse est celle que tu tiendras.', en: 'All at once or spread out: the right answer is the one you will keep.' },
+                body: {
+                  fr: 'Sur les données historiques, investir une somme d’un coup a fini devant l’étalement à peu près deux fois sur trois, parce que le marché monte plus souvent qu’il ne baisse. Mais étaler est ce que la plupart des gens arrivent à faire sans paniquer, et une stratégie qu’on abandonne rend zéro. Tenir bat gagner.',
+                  en: 'On the historical record, investing a lump sum has beaten spreading it out roughly two times in three, because markets rise more often than they fall. But spreading is what most people manage without panicking, and a strategy you abandon returns zero. Holding on beats winning.',
+                },
+              },
+            ],
+            metaphor: {
+              fr: 'Le robinet qui goutte dans le seau. Personne ne regarde une goutte. On regarde le seau plein, plus tard, et on ne se souvient pas d’avoir fait quoi que ce soit.',
+              en: 'The dripping tap over a bucket. Nobody watches a drip. You look at the full bucket, later, and cannot remember having done anything.',
+            },
+            reflection: {
+              fr: 'Quel montant pourrais-tu ne pas remarquer chaque mois ? Pas le montant que tu « devrais » mettre : celui dont l’absence ne changerait rien à ta semaine. C’est celui-là qui tiendra.',
+              en: 'What amount could you fail to notice each month? Not the amount you "should" put in: the one whose absence would change nothing about your week. That is the one that will last.',
+            },
+            todo: {
+              fr: 'Programme un virement automatique de ce montant vers ton compte de placement, daté du lendemain de ta paie. Puis crée un objectif récurrent dans Rich & Friends : « vérifier que le virement est passé », une fois par mois.',
+              en: 'Set up an automatic transfer of that amount to your investment account, dated the day after payday. Then create a recurring goal in Rich & Friends: "check the transfer went through", once a month.',
+            },
+            quiz: [
+              {
+                ask: { fr: 'Pourquoi programmer le virement le lendemain de la paie plutôt qu’en fin de mois ?', en: 'Why schedule the transfer the day after payday rather than at month end?' },
+                options: [
+                  { fr: 'Parce que les marchés sont plus bas en début de mois', en: 'Because markets are lower early in the month' },
+                  { fr: 'Parce que ce qui part avant d’être vu n’est jamais dépensé', en: 'Because what leaves before it is seen is never spent' },
+                  { fr: 'Parce que la banque facture moins de frais', en: 'Because the bank charges lower fees' },
+                ],
+                answer: 1,
+                why: {
+                  fr: 'En fin de mois, l’argent qui reste est celui que tout le reste n’a pas pris, et il en reste rarement. Le lendemain de la paie, la décision est déjà exécutée avant que la semaine ait commencé à la contester.',
+                  en: 'At month end, what is left is what everything else did not take, and there is rarely any. The day after payday, the decision is already carried out before the week starts arguing with it.',
+                },
+              },
+              {
+                ask: { fr: 'Tu reçois 6 000 $ d’un coup. Quelle est la réponse honnête à « tout maintenant ou étalé sur douze mois » ?', en: 'You receive $6,000 at once. What is the honest answer to "all now or spread over twelve months"?' },
+                options: [
+                  { fr: 'Étalé, c’est toujours plus rentable', en: 'Spread out, it always returns more' },
+                  { fr: 'Tout d’un coup gagne plus souvent, mais étaler est ce que tu tiendras : les deux sont défendables', en: 'All at once wins more often, but spreading is what you will keep: both are defensible' },
+                  { fr: 'Attendre que le marché baisse pour tout mettre', en: 'Wait for the market to fall, then put it all in' },
+                ],
+                answer: 1,
+                why: {
+                  fr: 'Attendre une baisse est la seule mauvaise réponse : personne ne sait quand elle vient, et l’attente coûte les hausses entre-temps. Entre les deux autres, la différence est petite, et une stratégie abandonnée à mi-chemin rend zéro.',
+                  en: 'Waiting for a fall is the only wrong answer: nobody knows when it comes, and the wait costs the rises in between. Between the other two the gap is small, and a strategy abandoned halfway returns zero.',
+                },
+              },
+              {
+                ask: { fr: 'À quoi sert vraiment le premier achat de 50 $ ?', en: 'What is the first $50 purchase really for?' },
+                options: [
+                  { fr: 'À commencer à faire du rendement', en: 'To start earning a return' },
+                  { fr: 'À faire le trajet complet une fois et découvrir qu’il ne fait pas peur', en: 'To make the whole trip once and find out it is not frightening' },
+                  { fr: 'À tester si le courtier est fiable', en: 'To test whether the broker is reliable' },
+                ],
+                answer: 1,
+                why: {
+                  fr: 'Le rendement sur 50 $ est invisible et n’a aucune importance. Ce qui bloque les débutants n’est pas le manque d’argent, c’est un geste jamais fait. Une fois fait, il devient ennuyeux, et ennuyeux est exactement l’état recherché.',
+                  en: 'The return on $50 is invisible and does not matter. What blocks beginners is not a lack of money, it is a move never made. Once made, it becomes boring, and boring is exactly the state you want.',
+                },
+              },
+            ],
+          },
+          {
+            id: 'i1.6',
+            state: 'written',
+            title: { fr: 'Le jour où ça tombe de 30 %', en: 'The day it drops 30 %' },
+            sub: { fr: 'Ce que tu vas ressentir, et pourquoi ne rien faire est l’action.', en: 'What you will feel, and why doing nothing is the action.' },
+            objective: {
+              fr: 'Savoir à l’avance ce qu’une baisse fait dans la tête, et prendre maintenant la seule décision qui compte, parce que ce jour-là on n’est plus en état de la prendre.',
+              en: 'Know in advance what a fall does to your head, and make the one decision that matters now, because on that day you are no longer in a state to make it.',
+            },
+            points: [
+              {
+                lead: { fr: 'Ça arrivera. Ce n’est pas une nouvelle, c’est le calendrier.', en: 'It will happen. It is not news, it is the calendar.' },
+                body: {
+                  fr: 'Les baisses de 30 % ou plus sont revenues environ une fois par décennie sur le siècle écoulé, et les baisses de 10 % à peu près chaque année. Personne ne sait quand la prochaine arrive ; tout le monde sait qu’elle arrive. Un plan qui ne l’a pas prévue n’est pas un plan.',
+                  en: 'Drops of 30 % or more have come back roughly once a decade over the past century, and 10 % drops about every year. Nobody knows when the next one comes; everybody knows it comes. A plan that has not allowed for it is not a plan.',
+                },
+              },
+              {
+                lead: { fr: 'Tu voudras « sécuriser ». C’est le mot qui coûte le plus cher.', en: 'You will want to "protect what is left". It is the most expensive phrase there is.' },
+                body: {
+                  fr: 'Vendre pendant la baisse transforme une perte sur papier en perte définitive, et rate le rebond, qui arrive sans prévenir et souvent en quelques séances. Les études sur les investisseurs réels montrent le même écart partout : leur rendement est inférieur à celui de leurs propres fonds, parce qu’ils entrent après les hausses et sortent après les baisses.',
+                  en: 'Selling during the fall turns a paper loss into a permanent one, and misses the rebound, which comes unannounced and often within a few sessions. Studies of real investors show the same gap everywhere: they earn less than their own funds, because they get in after rises and out after falls.',
+                },
+              },
+              {
+                lead: { fr: 'Ce qu’il faut faire ce jour-là : rien. Tout a été décidé avant.', en: 'What to do that day: nothing. It was all decided beforehand.' },
+                body: {
+                  fr: 'Si le virement est automatique, il achète moins cher ce mois-là, et c’est la seule bonne nouvelle de la journée. Si l’horizon écrit à la leçon i1.2 dépasse dix ans, rien n’a changé pour cet argent. La seule décision utile se prend maintenant, calmement : celle de ne pas en prendre ce jour-là.',
+                  en: 'If the transfer is automatic, it buys cheaper that month, and that is the day’s only good news. If the horizon you wrote in lesson i1.2 is over ten years, nothing has changed for this money. The only useful decision is made now, calmly: the decision not to make one that day.',
+                },
+              },
+            ],
+            metaphor: {
+              fr: 'Le prix du billet. La baisse n’est pas une amende pour avoir mal fait, c’est le prix d’entrée du rendement des actions, payé d’avance par tout le monde. Ceux qui refusent de le payer sortent du parc, et le parc continue sans eux.',
+              en: 'The ticket price. The fall is not a fine for doing something wrong, it is the entry price of equity returns, paid up front by everyone. Those who refuse to pay it leave the park, and the park goes on without them.',
+            },
+            reflection: {
+              fr: 'Écris aujourd’hui, pendant que tout va bien, la phrase que tu te reliras le jour où ton compte affichera −30 %. Une phrase, à toi. Tu ne seras pas en état de l’écrire ce jour-là.',
+              en: 'Write today, while everything is fine, the sentence you will reread the day your account shows −30 %. One sentence, in your words. You will not be in a state to write it that day.',
+            },
+            todo: {
+              fr: 'Mets cette phrase dans les notes de ton téléphone, avec la date d’aujourd’hui et ton horizon en années. Le jour venu, ouvre-la avant d’ouvrir l’application du courtier.',
+              en: 'Put that sentence in your phone’s notes, with today’s date and your horizon in years. When the day comes, open it before opening the broker’s app.',
+            },
+            quiz: [
+              {
+                ask: { fr: 'Ton compte affiche −30 %. Ton horizon est de quinze ans. Quelle est la bonne action ?', en: 'Your account shows −30 %. Your horizon is fifteen years. What is the right action?' },
+                options: [
+                  { fr: 'Vendre pour protéger ce qui reste, et racheter quand ça se calme', en: 'Sell to protect what is left, and buy back when it settles' },
+                  { fr: 'Rien. Laisser le virement automatique acheter moins cher.', en: 'Nothing. Let the automatic transfer buy cheaper.' },
+                  { fr: 'Tout basculer en obligations', en: 'Move everything to bonds' },
+                ],
+                answer: 1,
+                why: {
+                  fr: '« Racheter quand ça se calme » veut dire racheter plus cher : le rebond arrive sans prévenir et se joue souvent en quelques séances. Rien n’a changé pour un argent qui a quinze ans devant lui, sauf son prix, qui est plus bas.',
+                  en: '"Buy back when it settles" means buy back higher: the rebound comes unannounced and is often over in a few sessions. Nothing has changed for money with fifteen years ahead of it, except its price, which is lower.',
+                },
+              },
+              {
+                ask: { fr: 'Pourquoi les investisseurs réels gagnent-ils moins que les fonds qu’ils détiennent ?', en: 'Why do real investors earn less than the funds they hold?' },
+                options: [
+                  { fr: 'À cause des frais', en: 'Because of fees' },
+                  { fr: 'Parce qu’ils entrent après les hausses et sortent après les baisses', en: 'Because they get in after rises and out after falls' },
+                  { fr: 'Parce que les fonds trichent sur leurs chiffres', en: 'Because funds cheat on their numbers' },
+                ],
+                answer: 1,
+                why: {
+                  fr: 'Le fonds n’a rien fait de spécial ; c’est le comportement autour du fonds qui coûte. Acheter quand on est rassuré et vendre quand on a peur revient à acheter cher et vendre bas, systématiquement, et c’est l’écart que toutes les études mesurent.',
+                  en: 'The fund did nothing special; it is the behaviour around the fund that costs. Buying when reassured and selling when scared means buying high and selling low, systematically, and that is the gap every study measures.',
+                },
+              },
+              {
+                ask: { fr: 'Quand la seule décision utile face à une baisse se prend-elle ?', en: 'When is the only useful decision about a fall made?' },
+                options: [
+                  { fr: 'Le jour de la baisse, en regardant les nouvelles', en: 'On the day of the fall, watching the news' },
+                  { fr: 'Maintenant, pendant que tout va bien', en: 'Now, while everything is fine' },
+                  { fr: 'Une fois que le rebond a commencé', en: 'Once the rebound has begun' },
+                ],
+                answer: 1,
+                why: {
+                  fr: 'Le jour venu, on n’est plus en état de décider : la peur décide à notre place, et elle décide toujours la même chose. La phrase écrite aujourd’hui est ce qui parle à ta place ce jour-là.',
+                  en: 'When the day comes you are no longer in a state to decide: fear decides for you, and it always decides the same thing. The sentence written today is what speaks for you that day.',
+                },
+              },
+            ],
           },
         ],
       },
@@ -1868,10 +2221,59 @@ export const COURSES = [
                versions. C'est la structure demandee, "des rectangles a
                l'interieur des cours", et c'est aussi la seule facon de tenir
                quatre fiscalites sans quatre cours separes. */
+            /* Raccourci: la premiere version repetait mot pour mot le propos de la
+               lecon i1.4 ("le compte est un contenant"). Ce n'etait pas du
+               renforcement, c'etait de la redondance, et un lecteur qui vient
+               de lire i1.4 le sentait. Un renvoi suffit. */
             universal: {
-              fr: 'Partout sur la planète, la même règle : on n’investit pas « dans un compte », on investit à travers un compte. Le compte est un contenant, le placement est ce qu’on met dedans. Un compte ouvert et alimenté qui ne contient que du comptant ne rapporte rien, et c’est l’erreur la plus répandue chez les débutants du monde entier.',
-              en: 'Everywhere on the planet, the same rule: you do not invest "in an account", you invest through one. The account is a container, the investment is what you put in it. An account that is open, funded and holding nothing but cash returns nothing, and it is the most common beginner mistake in the world.',
+              fr: 'La leçon i1.4 l’a dit : le compte est un contenant, pas un placement. Ce qui reste à décider, c’est lequel ouvrir en premier et par où passer, et ça, ça dépend entièrement du pays. Aucun plafond et aucun taux n’est écrit ici : ils changent tous les ans, et la seule source qui ne ment pas est le site de l’administration de ton pays.',
+              en: 'Lesson i1.4 said it: the account is a container, not an investment. What remains to decide is which one to open first and who to go through, and that depends entirely on the country. No limit and no rate is written here: they all change every year, and the only source that does not lie is your country’s tax authority website.',
             },
+            reflection: {
+              fr: 'Avant cette leçon, quel compte croyais-tu qu’il fallait ouvrir en premier ? D’où venait cette idée : d’un conseiller de banque, d’un ami, d’une publicité ? Chacune de ces trois sources a un intérêt, et ce n’est pas le tien.',
+              en: 'Before this lesson, which account did you think you had to open first? Where did that idea come from: a bank adviser, a friend, an advert? Each of those three sources has an interest, and it is not yours.',
+            },
+            quiz: [
+              {
+                ask: { fr: 'Pourquoi cette leçon refuse-t-elle d’écrire les plafonds de cotisation et les taux ?', en: 'Why does this lesson refuse to print contribution limits and rates?' },
+                options: [
+                  { fr: 'Parce qu’ils sont secrets', en: 'Because they are secret' },
+                  { fr: 'Parce qu’ils changent chaque année, et qu’une leçon qui les récite est fausse l’année suivante sans prévenir', en: 'Because they change every year, and a lesson that recites them is wrong the following year without warning' },
+                  { fr: 'Parce qu’ils sont trop compliqués', en: 'Because they are too complicated' },
+                ],
+                answer: 1,
+                why: {
+                  fr: 'Un chiffre imprimé a l’air vrai pour toujours. Le plafond de ton compte est sur le site de l’administration de ton pays, à jour, et c’est la seule adresse qui vaut pour cette question. Le cours enseigne où regarder, pas le chiffre.',
+                  en: 'A printed number looks true forever. Your account’s limit is on your country’s tax authority site, current, and that is the only address that counts for this question. The course teaches where to look, not the number.',
+                },
+              },
+              {
+                ask: { fr: 'Que faut-il vérifier AVANT de verser quoi que ce soit dans un compte à l’abri de l’impôt ?', en: 'What must you check BEFORE putting anything into a tax-sheltered account?' },
+                options: [
+                  { fr: 'Le rendement du marché ce mois-ci', en: 'This month’s market return' },
+                  { fr: 'Ses droits de cotisation, auprès de l’administration et pas de mémoire', en: 'Your contribution room, from the tax authority and not from memory' },
+                  { fr: 'Le nombre de comptes que possèdent tes amis', en: 'How many accounts your friends have' },
+                ],
+                answer: 1,
+                why: {
+                  fr: 'Un dépassement est pénalisé chaque mois et il arrive presque toujours à quelqu’un qui était sûr de son chiffre. Vingt minutes sur le site officiel avant le premier virement évitent une amende qui court en silence.',
+                  en: 'An over-contribution is penalised monthly and almost always happens to somebody who was sure of their number. Twenty minutes on the official site before the first transfer prevent a fine that runs in silence.',
+                },
+              },
+              {
+                ask: { fr: 'Pourquoi ouvrir le compte chez un courtier à escompte plutôt qu’au comptoir de sa banque ?', en: 'Why open the account at a discount broker rather than at your bank counter?' },
+                options: [
+                  { fr: 'Parce que les banques ne proposent pas ces comptes', en: 'Because banks do not offer these accounts' },
+                  { fr: 'Parce que les frais y sont bien plus bas, et que les frais sont la seule chose que tu contrôles', en: 'Because fees are far lower there, and fees are the one thing you control' },
+                  { fr: 'Parce que c’est plus rapide', en: 'Because it is faster' },
+                ],
+                answer: 1,
+                why: {
+                  fr: 'La banque vend ses propres fonds, souvent à 2 % de frais, au comptoir où elle t’a ouvert le compte. Le même compte chez un courtier à escompte donne accès aux mêmes marchés à une fraction du coût. C’est la leçon i1.3, appliquée au choix du guichet.',
+                  en: 'The bank sells its own funds, often at 2 % in fees, at the counter where it opened your account. The same account at a discount broker gives access to the same markets at a fraction of the cost. That is lesson i1.3, applied to the choice of counter.',
+                },
+              },
+            ],
             byCountry: {
               ca: {
                 grail: {
@@ -2029,7 +2431,309 @@ export const COURSES = [
               },
             },
           },
+          {
+            id: 'i2.2',
+            state: 'written',
+            title: { fr: 'Le jour où tu appuies sur acheter', en: 'The day you press buy' },
+            grailLabel: { fr: 'Ce que tu tapes dans la recherche', en: 'What you type in the search' },
+            sub: { fr: 'Ce que tu tapes, sur quoi tu cliques, et ce que tu vois après.', en: 'What you type, what you click, and what you see afterwards.' },
+            objective: {
+              fr: 'Faire le premier achat pour de vrai, avec le nom exact à chercher dans ta région, et savoir lire l’écran de confirmation sans deviner.',
+              en: 'Make the first purchase for real, with the exact name to search in your region, and be able to read the confirmation screen without guessing.',
+            },
+            /**
+             * LA LECON QUI MANQUAIT, ET POURQUOI ELLE NOMME DES SYMBOLES.
+             *
+             * Investir 101 relu comme un debutant: la lecon i1.4 dit que
+             * l'erreur numero un est un compte ouvert qui ne contient que du
+             * comptant, la lecon i2.1 dit d'ouvrir le compte, et le cours
+             * s'arretait la. Le lecteur ouvrait le compte, virait 500 $,
+             * tombait sur une barre de recherche et devenait exactement la
+             * personne que i1.4 decrivait.
+             *
+             * Nommer un symbole aide un debutant plus que n'importe quel
+             * paragraphe, et c'est aussi une ligne que la plupart des cours
+             * refusent de franchir. La decision a ete posee en ces termes et
+             * la reponse a ete "fais ce qui peut les aider enormement". Donc
+             * les noms sont la, avec la seule honnetete qui les rend
+             * defendables: ce sont des paniers larges et bon marche, pas une
+             * recommandation personnelle, et les frais sont a lire soi-meme.
+             */
+            universal: {
+              fr: 'Le geste est le même partout : tu ouvres le compte, tu tapes un nom dans la recherche, tu choisis combien, tu choisis le type d’ordre, tu confirmes. Cinq écrans, une minute. Ce qui change d’un pays à l’autre, c’est le nom que tu tapes. Les noms ci-dessous sont des exemples de paniers larges et bon marché, choisis parce qu’ils font la leçon i1.3 en un seul achat. Ce ne sont pas des recommandations personnelles : lis les frais sur la première page de chacun, c’est la seule ligne qui compte.',
+              en: 'The move is the same everywhere: you open the account, type a name in the search, choose how much, choose the order type, confirm. Five screens, one minute. What changes from country to country is the name you type. The names below are examples of broad, cheap baskets, chosen because they do lesson i1.3 in a single purchase. They are not personal recommendations: read the fee on the first page of each, it is the only line that counts.',
+            },
+            byCountry: {
+              ca: {
+                grail: {
+                  fr: 'Dans le CELI ouvert à la leçon précédente, cherche VEQT ou XEQT si cet argent a dix ans ou plus devant lui : cent pour cent actions, le monde entier, dans une seule part. VGRO ou XGRO pour 80 % d’actions et 20 % d’obligations. VBAL ou XBAL pour 60/40. Le chiffre écrit à la leçon i1.2 choisit la lettre.',
+                  en: 'In the TFSA opened last lesson, search VEQT or XEQT if this money has ten years or more ahead of it: one hundred per cent shares, the whole world, in a single unit. VGRO or XGRO for 80 % shares and 20 % bonds. VBAL or XBAL for 60/40. The number you wrote in lesson i1.2 picks the letter.',
+                },
+                points: [
+                  {
+                    lead: { fr: 'L’écran, dans l’ordre.', en: 'The screen, in order.' },
+                    body: {
+                      fr: 'Recherche, tape le symbole, ouvre la fiche. Bouton Acheter. Entre un montant en dollars : chez Wealthsimple on peut acheter des fractions de part, donc 25 $ suffit. Type d’ordre : au marché. Vérifie le nom, le montant, le compte (CELI et pas Non enregistré), puis Confirmer. La confirmation arrive dans la seconde ; la part apparaît dans le compte quelques secondes plus tard.',
+                      en: 'Search, type the symbol, open the page. Buy button. Enter an amount in dollars: at Wealthsimple you can buy fractions of a unit, so $25 is enough. Order type: market. Check the name, the amount, the account (TFSA and not Non-registered), then Confirm. Confirmation arrives within the second; the unit shows in the account a few seconds later.',
+                    },
+                  },
+                  {
+                    lead: { fr: 'Au marché suffit, pour ça.', en: 'Market order is fine, for this.' },
+                    body: {
+                      fr: 'Un ordre au marché achète au prix du moment. Un ordre à cours limité fixe un plafond et attend. Sur un FNB aussi large et aussi échangé, pendant les heures d’ouverture, l’écart entre les deux se compte en centimes, et l’ordre limité risque surtout de ne jamais s’exécuter. La limite sert sur des titres minces ou hors heures : pas ici.',
+                      en: 'A market order buys at the current price. A limit order sets a ceiling and waits. On an ETF this broad and this heavily traded, during market hours, the gap between the two is cents, and the limit order mostly risks never filling. Limits are for thin names or after hours: not here.',
+                    },
+                  },
+                  {
+                    lead: { fr: 'La ligne à lire : le RFG.', en: 'The line to read: the MER.' },
+                    body: {
+                      fr: 'Sur la fiche de chacun de ces FNB, le ratio des frais de gestion est autour de 0,2 % par an. Le fonds équilibré vendu au comptoir de ta banque est souvent autour de 2 %. C’est la comparaison de la leçon i1.3, et c’est la seule raison pour laquelle le nom du fonds compte.',
+                      en: 'On each of these ETFs’ pages, the management expense ratio is around 0.2 % a year. The balanced fund sold at your bank’s counter is often around 2 %. That is lesson i1.3’s comparison, and it is the only reason the fund’s name matters.',
+                    },
+                  },
+                ],
+                todo: {
+                  fr: 'Aujourd’hui : une part, ou 25 $, du FNB qui correspond à ton horizon, dans ton CELI. Puis fais une capture de l’écran de confirmation. Le premier achat est fait, et il n’était pas plus compliqué qu’un achat en ligne.',
+                  en: 'Today: one unit, or $25, of the ETF matching your horizon, in your TFSA. Then screenshot the confirmation. The first purchase is done, and it was no harder than buying something online.',
+                },
+              },
+              fr: {
+                grail: {
+                  fr: 'Dans ton PEA, cherche WPEA (iShares MSCI World Swap PEA) ou EWLD (Amundi PEA Monde) : les actions mondiales, éligibles au PEA, pour une fraction de pour cent par an. CW8 (Amundi MSCI World) est le classique du genre, avec une part beaucoup plus chère, ce qui compte quand on commence petit.',
+                  en: 'In your PEA, search WPEA (iShares MSCI World Swap PEA) or EWLD (Amundi PEA Monde): world shares, PEA-eligible, for a fraction of a per cent a year. CW8 (Amundi MSCI World) is the classic of the kind, with a much pricier unit, which matters when you start small.',
+                },
+                points: [
+                  {
+                    lead: { fr: 'L’écran, dans l’ordre.', en: 'The screen, in order.' },
+                    body: {
+                      fr: 'Recherche le code, vérifie que la fiche indique « éligible PEA », clique Achat. Quantité : les parts entières seulement, d’où l’intérêt d’un ETF à petite part pour commencer. Type d’ordre : au marché pendant les heures d’Euronext, de 9 h à 17 h 30. Vérifie le compte (PEA et pas compte-titres), puis Valider.',
+                      en: 'Search the code, check the page says "éligible PEA", click Buy. Quantity: whole units only, hence the point of a small-unit ETF to start. Order type: market during Euronext hours, 9:00 to 17:30. Check the account (PEA and not compte-titres), then Confirm.',
+                    },
+                  },
+                  {
+                    lead: { fr: 'Les frais de courtage se paient par ordre : regroupe.', en: 'Brokerage fees are per order: bundle.' },
+                    body: {
+                      fr: 'Un courtier en ligne prend souvent un forfait par ordre, parfois un minimum. Dix achats de 30 € coûtent dix fois ces frais ; un achat de 300 € les paie une fois. Le rythme mensuel de la leçon i1.5 reste bon, mais avec un montant qui rend les frais négligeables.',
+                      en: 'An online broker usually charges a flat fee per order, sometimes a minimum. Ten purchases of €30 pay that fee ten times; one of €300 pays it once. Lesson i1.5’s monthly rhythm still holds, but with an amount that makes the fee negligible.',
+                    },
+                  },
+                  {
+                    lead: { fr: 'Le Livret A n’est pas concerné.', en: 'The Livret A is not part of this.' },
+                    body: {
+                      fr: 'Il ne se met pas dans le PEA et ne doit pas y aller : c’est l’épargne de précaution de la leçon sur le coussin, disponible demain matin sans perte. Ce que tu achètes ici est l’argent dont l’horizon dépasse cinq ans, et lui seul.',
+                      en: 'It does not go in the PEA and should not: it is the emergency fund from the cushion lesson, available tomorrow morning without loss. What you buy here is the money whose horizon is over five years, and that money only.',
+                    },
+                  },
+                ],
+                todo: {
+                  fr: 'Aujourd’hui : une part de WPEA ou d’EWLD dans ton PEA. La date de ton PEA court déjà depuis la leçon précédente ; ceci met quelque chose dedans.',
+                  en: 'Today: one unit of WPEA or EWLD in your PEA. Your PEA clock has been running since last lesson; this puts something inside it.',
+                },
+              },
+              us: {
+                grail: {
+                  fr: 'Dans ton Roth IRA chez Vanguard, Fidelity ou Schwab, deux façons de faire la leçon i1.3 en une ligne : VT (Vanguard Total World Stock), le monde entier en actions ; ou un fonds à date cible (Target Retirement 2060, 2065) qui fait le mélange actions-obligations et le rééquilibre tout seul en vieillissant avec toi.',
+                  en: 'In your Roth IRA at Vanguard, Fidelity or Schwab, two ways to do lesson i1.3 in one line: VT (Vanguard Total World Stock), the whole world in shares; or a target-date fund (Target Retirement 2060, 2065) that does the share-bond mix and rebalances itself as it ages with you.',
+                },
+                points: [
+                  {
+                    lead: { fr: 'L’écran, dans l’ordre.', en: 'The screen, in order.' },
+                    body: {
+                      fr: 'Trade, tape VT, Buy. Montant en dollars : Fidelity et Schwab vendent des fractions, donc 50 $ suffit. Ordre au marché. Vérifie que le compte sélectionné est bien le Roth IRA. Preview, puis Place order. Pour un fonds à date cible, c’est un fonds commun et pas un FNB : il s’achète en dollars, s’exécute à la clôture, et le minimum d’entrée varie selon la maison.',
+                      en: 'Trade, type VT, Buy. Amount in dollars: Fidelity and Schwab sell fractions, so $50 is enough. Market order. Check the selected account is the Roth IRA. Preview, then Place order. For a target-date fund, it is a mutual fund rather than an ETF: it buys in dollars, fills at the close, and the entry minimum varies by house.',
+                    },
+                  },
+                  {
+                    lead: { fr: 'Dans le 401(k), tu choisis parmi ce qu’on te donne.', en: 'In the 401(k), you pick from what you are given.' },
+                    body: {
+                      fr: 'La liste est fermée et souvent courte. Cherche le fonds à date cible correspondant à ton année de retraite, ou un fonds indiciel S&P 500 ou Total Market ; ignore tout ce qui a « managed » ou « growth » dans le nom et un expense ratio au-dessus de 0,5 %. La ligne des frais est là aussi, et elle se lit pareil.',
+                      en: 'The list is closed and often short. Look for the target-date fund matching your retirement year, or an S&P 500 or Total Market index fund; ignore anything with "managed" or "growth" in the name and an expense ratio above 0.5 %. The fee line is there too, and it reads the same way.',
+                    },
+                  },
+                  {
+                    lead: { fr: 'Le mot à lire sur la fiche : expense ratio.', en: 'The word to read on the page: expense ratio.' },
+                    body: {
+                      fr: 'VT et les fonds à date cible de ces trois maisons sont sous 0,1 % à 0,2 % par an. Un fonds vendu par un conseiller peut être à 1 % et plus, avec des frais d’entrée en prime. La leçon i1.3, une fois de plus : c’est la ligne qui décide de ce que tu gardes.',
+                      en: 'VT and the target-date funds at these three houses sit under 0.1 % to 0.2 % a year. A fund sold by an adviser can be 1 % and above, with entry loads on top. Lesson i1.3 once more: it is the line that decides what you keep.',
+                    },
+                  },
+                ],
+                todo: {
+                  fr: 'Aujourd’hui : 50 $ de VT ou du fonds à date cible dans ton Roth IRA. Puis ouvre ton 401(k) et vérifie dans quoi ton abondement est investi : si c’est un « money market » ou du comptant, tu es la personne de la leçon i1.4.',
+                  en: 'Today: $50 of VT or the target-date fund in your Roth IRA. Then open your 401(k) and check what your match is invested in: if it is a "money market" or cash, you are the person from lesson i1.4.',
+                },
+              },
+              af: {
+                grail: {
+                  fr: 'Il n’y a pas de FNB tout-en-un à la BRVM ni à la BVMAC, et le dire est la première honnêteté de la leçon. Le premier achat raisonnable est un emprunt obligataire de l’État, souscrit par ta SGI : montant connu, coupon connu, échéance connue, et le risque le plus bas de la place. C’est la leçon i1.2, côté « prêter », et c’est par là qu’on commence ici.',
+                  en: 'There is no all-in-one ETF on the BRVM or the BVMAC, and saying so is the lesson’s first honesty. The sensible first purchase is a government bond issue, subscribed through your broker: known amount, known coupon, known maturity, and the lowest risk on the exchange. That is lesson i1.2’s "lending" side, and it is where you start here.',
+                },
+                points: [
+                  {
+                    lead: { fr: 'Il n’y a pas d’écran d’achat : il y a une SGI.', en: 'There is no buy screen: there is a broker.' },
+                    body: {
+                      fr: 'L’ordre passe par un formulaire de souscription, un courriel ou un appel à ta SGI agréée, avec une copie de pièce d’identité et le virement du montant. Les émissions d’État sont annoncées à l’avance avec un minimum de souscription ; ta SGI connaît la prochaine. Demande-la.',
+                      en: 'The order goes through a subscription form, an email or a call to your licensed broker, with a copy of your ID and a transfer of the amount. Government issues are announced ahead with a minimum subscription; your broker knows the next one. Ask for it.',
+                    },
+                  },
+                  {
+                    lead: { fr: 'Le panier le plus proche est un FCP ou une SICAV de la SGI.', en: 'The closest thing to a basket is a broker’s FCP or SICAV.' },
+                    body: {
+                      fr: 'Faute de FNB, certaines SGI gèrent des fonds communs qui détiennent plusieurs titres de la cote. Les frais y sont plus élevés qu’un FNB nord-américain, et il faut les demander noir sur blanc : frais d’entrée, frais de gestion annuels, frais de sortie. Trois chiffres, avant de signer.',
+                      en: 'With no ETF, some brokers run collective funds holding several listed names. Fees are higher than a North American ETF, and you ask for them in writing: entry fee, annual management fee, exit fee. Three numbers, before signing.',
+                    },
+                  },
+                  {
+                    lead: { fr: 'Une action, plus tard, petite, et cotée.', en: 'A share, later, small, and listed.' },
+                    body: {
+                      fr: 'Quand l’obligation est en place, une position modeste sur un titre large de la cote, une banque ou un opérateur télécom, apprend le reste du geste. Jamais une « opportunité » hors cote : si personne n’est agréé et que rien n’est écrit, ce n’est pas un placement, c’est le point diaspora de la leçon précédente.',
+                      en: 'Once the bond is in place, a modest position in a broad listed name, a bank or a telecom operator, teaches the rest of the move. Never an off-exchange "opportunity": if nobody is licensed and nothing is written down, it is not an investment, it is last lesson’s diaspora point.',
+                    },
+                  },
+                ],
+                todo: {
+                  fr: 'Aujourd’hui : écris à ta SGI pour demander la date de la prochaine émission d’emprunt obligataire de l’État, le minimum de souscription, et les frais. Trois questions, un courriel. La réponse est ton premier achat.',
+                  en: 'Today: write to your broker asking for the date of the next government bond issue, the minimum subscription, and the fees. Three questions, one email. The answer is your first purchase.',
+                },
+              },
+            },
+            reflection: {
+              fr: 'Qu’est-ce qui t’a empêché de faire ce geste jusqu’ici ? Pas la raison que tu donnes aux autres : la vraie. Souvent, c’est de ne pas savoir quoi taper dans la barre de recherche. Maintenant tu le sais.',
+              en: 'What has stopped you making this move until now? Not the reason you give others: the real one. Often it is not knowing what to type in the search bar. Now you know.',
+            },
+            quiz: [
+              {
+                ask: { fr: 'Pour un FNB large et très échangé, en heures d’ouverture, quel type d’ordre convient ?', en: 'For a broad, heavily traded ETF, during market hours, which order type suits?' },
+                options: [
+                  { fr: 'À cours limité, pour ne pas surpayer', en: 'Limit, to avoid overpaying' },
+                  { fr: 'Au marché : l’écart se compte en centimes et l’ordre s’exécute à coup sûr', en: 'Market: the gap is cents and the order fills for certain' },
+                  { fr: 'Aucun des deux, il faut appeler le courtier', en: 'Neither, you have to call the broker' },
+                ],
+                answer: 1,
+                why: {
+                  fr: 'La limite protège sur des titres minces ou hors heures, où le prix peut sauter. Sur VEQT, WPEA ou VT à 11 h du matin, elle risque surtout de ne jamais s’exécuter et de laisser l’argent dormir, ce qui est l’erreur de la leçon i1.4 par un autre chemin.',
+                  en: 'A limit protects on thin names or after hours, where the price can jump. On VEQT, WPEA or VT at 11 in the morning, it mostly risks never filling and leaving the money asleep, which is lesson i1.4’s mistake by another road.',
+                },
+              },
+              {
+                ask: { fr: 'Quelle est la seule ligne à lire sur la fiche d’un fonds avant d’acheter ?', en: 'What is the one line to read on a fund’s page before buying?' },
+                options: [
+                  { fr: 'Le rendement de l’an dernier', en: 'Last year’s return' },
+                  { fr: 'Les frais annuels : RFG, TER ou expense ratio selon le pays', en: 'The annual fee: MER, TER or expense ratio depending on the country' },
+                  { fr: 'Le nombre d’étoiles', en: 'The star rating' },
+                ],
+                answer: 1,
+                why: {
+                  fr: 'Le rendement passé ne prédit rien et les étoiles le résument. Les frais, eux, sont certains, se composent contre toi pendant trente ans, et sont la seule variable que tu contrôles. 0,2 % contre 2 % est la différence entre les deux fins de la leçon i1.3.',
+                  en: 'Past return predicts nothing and stars summarise it. Fees are certain, compound against you for thirty years, and are the one variable you control. 0.2 % against 2 % is the difference between the two endings of lesson i1.3.',
+                },
+              },
+              {
+                ask: { fr: 'Les noms de fonds donnés dans cette leçon sont…', en: 'The fund names given in this lesson are…' },
+                options: [
+                  { fr: 'Les meilleurs placements disponibles', en: 'The best investments available' },
+                  { fr: 'Des exemples de paniers larges et bon marché, à vérifier soi-même sur la ligne des frais', en: 'Examples of broad, cheap baskets, to be checked yourself on the fee line' },
+                  { fr: 'Une garantie de rendement', en: 'A guarantee of return' },
+                ],
+                answer: 1,
+                why: {
+                  fr: 'Ils sont nommés parce que ne pas savoir quoi taper est ce qui bloque le plus de débutants. Ils ne sont ni les seuls ni garantis : ce sont des façons de faire la leçon i1.3 en un achat, et la vérification des frais reste ton travail, une minute, sur la première page.',
+                  en: 'They are named because not knowing what to type is what stops the most beginners. They are neither the only ones nor guaranteed: they are ways to do lesson i1.3 in one purchase, and checking the fee stays your job, one minute, on the first page.',
+                },
+              },
+            ],
+          },
+          {
+            id: 'i2.3',
+            state: 'written',
+            title: { fr: 'Ce qu’il faut retenir', en: 'What to take away' },
+            sub: { fr: 'Neuf leçons, cinq phrases, une check-list.', en: 'Nine lessons, five sentences, one checklist.' },
+            objective: {
+              fr: 'Repartir avec ce qui tient en deux minutes de relecture dans six mois, et savoir exactement ce qui est fait et ce qui ne l’est pas.',
+              en: 'Leave with what fits in a two-minute reread six months from now, and know exactly what is done and what is not.',
+            },
+            points: [
+              {
+                lead: { fr: 'Cinq phrases.', en: 'Five sentences.' },
+                body: {
+                  fr: 'L’argent qui dort perd de la valeur sans bruit. Le nombre d’années avant d’en avoir besoin décide de tout. Un panier bon marché bat le choix des bonnes entreprises. Le compte est un contenant : il faut acheter quelque chose dedans. Et le jour où ça tombe, la seule action est celle décidée avant.',
+                  en: 'Sleeping money loses value silently. The years until you need it decide everything. A cheap basket beats picking the right companies. The account is a container: you have to buy something inside it. And on the day it falls, the only action is the one decided beforehand.',
+                },
+              },
+              {
+                lead: { fr: 'Les deux chiffres à connaître par cœur.', en: 'The two numbers to know by heart.' },
+                body: {
+                  fr: 'Ton horizon en années, écrit à la leçon i1.2. Et les frais annuels de ce que tu détiens, lus sur la fiche. Tout le reste, plafonds, taux, rendements, se regarde au moment voulu à la bonne adresse, et se périme.',
+                  en: 'Your horizon in years, written in lesson i1.2. And the annual fee of what you hold, read on its page. Everything else, limits, rates, returns, is looked up when needed at the right address, and goes stale.',
+                },
+              },
+              {
+                lead: { fr: 'Ce que ce cours ne fait pas.', en: 'What this course does not do.' },
+                body: {
+                  fr: 'Il ne choisit pas à ta place, il ne connaît pas ta situation fiscale, il ne remplace pas un conseil quand une somme importante ou un cas particulier est en jeu. Il fait une chose : te rendre capable de faire le premier achat seul, sans peur, et de ne pas le défaire au premier orage.',
+                  en: 'It does not choose for you, it does not know your tax situation, it does not replace advice when a large sum or a special case is involved. It does one thing: make you able to make the first purchase alone, without fear, and not undo it at the first storm.',
+                },
+              },
+            ],
+            metaphor: {
+              fr: 'Le vélo. Personne n’a appris à en faire en lisant sur l’équilibre. On a appris en montant dessus, petit, sur du plat, avec quelqu’un à côté. Ce cours était le quelqu’un à côté. Le vélo, c’est toi qui le tiens maintenant.',
+              en: 'The bicycle. Nobody learned to ride by reading about balance. You learned by getting on, small, on the flat, with somebody alongside. This course was the somebody alongside. The bicycle is yours to hold now.',
+            },
+            reflection: {
+              fr: 'Reviens à la question du début : est-ce que tu te sens capable de faire le premier achat, aujourd’hui, seul ? Si la réponse est encore non, qu’est-ce qui manque précisément ? Écris-le. C’est soit une leçon à relire, soit une chose que ce cours devrait dire et ne dit pas.',
+              en: 'Back to the opening question: do you feel able to make the first purchase, today, alone? If the answer is still no, what exactly is missing? Write it down. It is either a lesson to reread, or something this course should say and does not.',
+            },
+            todo: {
+              fr: 'La check-list, à cocher pour de vrai : 1) j’ai écrit mon horizon en années. 2) le bon compte est ouvert chez un courtier à escompte. 3) mes droits de cotisation sont vérifiés à la source. 4) j’ai fait un premier achat, même de 25 $. 5) un virement automatique est programmé. 6) je connais les frais annuels de ce que je détiens. 7) la phrase pour le jour de la baisse est écrite dans mes notes.',
+              en: 'The checklist, to tick for real: 1) I have written my horizon in years. 2) the right account is open at a discount broker. 3) my contribution room is verified at the source. 4) I have made a first purchase, even $25. 5) an automatic transfer is scheduled. 6) I know the annual fee of what I hold. 7) the sentence for the day it falls is written in my notes.',
+            },
+            quiz: [
+              {
+                ask: { fr: 'Quel est le seul chiffre qui commande le mélange actions-obligations ?', en: 'What is the one number that governs the share-bond mix?' },
+                options: [
+                  { fr: 'Le rendement attendu', en: 'The expected return' },
+                  { fr: 'Le nombre d’années avant d’avoir besoin de l’argent', en: 'The number of years until you need the money' },
+                  { fr: 'Le montant investi', en: 'The amount invested' },
+                ],
+                answer: 1,
+                why: {
+                  fr: 'C’est la phrase de la leçon i1.2 et elle n’a pas bougé depuis : à trois ans la bourse est un pari, à quinze ans une baisse de 30 % est un prix d’entrée. Tout le reste du cours se déduit de ce nombre.',
+                  en: 'It is lesson i1.2’s sentence and it has not moved since: at three years the market is a bet, at fifteen a 30 % fall is an entry price. The rest of the course follows from that number.',
+                },
+              },
+              {
+                ask: { fr: 'Le compte est ouvert et l’argent est viré. Qu’est-ce qui manque encore ?', en: 'The account is open and the money is transferred. What is still missing?' },
+                options: [
+                  { fr: 'Rien, c’est investi', en: 'Nothing, it is invested' },
+                  { fr: 'L’achat lui-même : sans lui, le compte est un sac isotherme vide', en: 'The purchase itself: without it, the account is an empty cool bag' },
+                  { fr: 'L’autorisation de l’administration fiscale', en: 'The tax authority’s authorisation' },
+                ],
+                answer: 1,
+                why: {
+                  fr: 'L’erreur numéro un des débutants du monde entier, dite trois fois dans ce cours parce qu’elle ne fait aucun bruit. La leçon i2.2 existe pour que cette étape ait un nom à taper et un bouton sur lequel appuyer.',
+                  en: 'The number one beginner mistake worldwide, said three times in this course because it makes no noise. Lesson i2.2 exists so that this step has a name to type and a button to press.',
+                },
+              },
+              {
+                ask: { fr: 'Ce cours peut-il te dire quoi faire d’un héritage de 80 000 $ ?', en: 'Can this course tell you what to do with an $80,000 inheritance?' },
+                options: [
+                  { fr: 'Oui, tout mettre dans le FNB de la leçon i2.2', en: 'Yes, put it all in the ETF from lesson i2.2' },
+                  { fr: 'Non : les principes tiennent, mais une somme importante et une situation fiscale précise méritent un vrai conseil', en: 'No: the principles hold, but a large sum and a specific tax situation deserve real advice' },
+                  { fr: 'Oui, si tu as fait tous les quiz', en: 'Yes, if you have done all the quizzes' },
+                ],
+                answer: 1,
+                why: {
+                  fr: 'Le cours rend capable du premier achat et de la routine ; il ne connaît ni tes impôts, ni tes dettes, ni ton pays précis, ni ce que tu veux faire de ta vie. Savoir où s’arrête ce qu’on a appris fait partie de ce qu’on a appris.',
+                  en: 'The course makes you capable of the first purchase and the routine; it knows neither your taxes, nor your debts, nor your exact country, nor what you want from your life. Knowing where what you learned stops is part of what you learned.',
+                },
+              },
+            ],
+          },
         ],
+        action: {
+          fr: 'Reprends la check-list de la dernière leçon. Ce qui n’est pas coché est ta liste de la semaine, et la ligne 4, le premier achat, est celle qui rend toutes les autres réelles.',
+          en: 'Take the checklist from the last lesson. What is unticked is your week’s list, and line 4, the first purchase, is the one that makes all the others real.',
+        },
       },
     ],
   },
