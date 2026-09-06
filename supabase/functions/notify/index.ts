@@ -131,11 +131,26 @@ const PUSH_READY = Boolean(VAPID.publicKey && VAPID.privateKey)
  * browser is gone or permission was revoked, and a row that will never work
  * again would otherwise be posted to every hour forever.
  */
+/**
+ * @param opts.force  ignorer la preference de canal.
+ *
+ * Un seul appelant s'en sert: l'auto-test des reglages. Quelqu'un qui appuie
+ * sur "envoie-moi une notification de test" demande explicitement ce push, et
+ * le refuser parce qu'une case est decochee repondrait "ca ne marche pas" a
+ * une question sur le fonctionnement de la chaine. Tous les autres envois
+ * passent par la preference.
+ */
 async function pushTo(
   userId: string,
   note: { title: string; body: string; url: string; tag: string },
+  opts: { force?: boolean } = {},
 ): Promise<{ devices: number; delivered: number }> {
   if (!PUSH_READY) return { devices: 0, delivered: 0 }
+
+  /* La regle du canal vit ICI et nulle part ailleurs. La mettre dans deliver()
+     aurait laisse les rappels d'eau et d'agenda, qui n'y passent pas, envoyer
+     du push a quelqu'un qui a decoche la case. */
+  if (!opts.force && !(await channelsFor(userId)).push) return { devices: 0, delivered: 0 }
 
   const { data: subs } = await supabase
     .from('push_subscription')
@@ -644,21 +659,131 @@ const tally = {
   /* Le travail des cinq minutes, compte a part parce qu'il tourne a une autre
      cadence: melanger les deux rendrait un chiffre horaire illisible. */
   remindWater: 0, remindEvent: 0,
+  /* Personne a joindre: les deux canaux decoches, ou aucun appareil
+     enregistre. Compte a part pour que ca ne se lise pas comme un echec. */
+  muted: 0,
   /* Vrai quand due_event_reminders n'existe pas encore, donc quand
      57_reminders.sql n'a pas ete passe. Une migration en attente n'est pas une
      panne et ne doit pas se lire comme une trace d'erreur. */
   remindersPending: false,
 }
 
+/**
+ * PAR OU JOINDRE CETTE PERSONNE.
+ *
+ * Demande mot pour mot: "ajouter une option dans les parametres que chaque
+ * personne peut set pour demander est-ce que c'est un app notification
+ * seulement ou email ou les deux, bref la personne pourra cocher".
+ *
+ * Lu une fois par personne et par execution. Sans le cache, le digest ferait
+ * une requete de plus par membre de chaque groupe, sur une preference qui ne
+ * change pas pendant les trois secondes que dure un tour.
+ *
+ * Le repli est les deux allumes, pour deux raisons qui pointent dans le meme
+ * sens: c'est ce que le produit faisait avant que ce reglage existe, et une
+ * ligne notify_pref n'existe que pour les gens qui sont alles dans les
+ * reglages, c'est-a-dire presque personne. Un repli a "rien" ferait taire
+ * l'application pour tout le monde le jour de la migration, en silence.
+ */
+const channelCache = new Map<string, { push: boolean; email: boolean }>()
+
+async function channelsFor(userId: string): Promise<{ push: boolean; email: boolean }> {
+  const hit = channelCache.get(userId)
+  if (hit) return hit
+
+  const { data, error } = await supabase
+    .from('notify_pref')
+    .select('push_on, email_on')
+    .eq('user_id', userId)
+    .maybeSingle()
+
+  /* 42P01 veut dire que 57_reminders.sql n'a pas ete passe. Ce n'est pas une
+     raison de ne joindre personne: on retombe sur le comportement d'avant. */
+  if (error && error.code !== '42P01' && error.code !== 'PGRST116') {
+    console.error('channelsFor failed', error.code, error.message)
+  }
+  const out = {
+    push: data?.push_on ?? true,
+    email: data?.email_on ?? true,
+  }
+  channelCache.set(userId, out)
+  return out
+}
+
+/**
+ * Un message, envoye par les canaux que la personne a coches.
+ *
+ * POURQUOI LES DEUX PASSENT PAR ICI PLUTOT QUE PAR CINQ APPELS SEPARES.
+ *
+ * Avant, chaque endroit faisait `send()` puis, SI le courriel etait parti,
+ * `pushTo()`. Ce "si" etait un bogue a lui seul et il precede ce changement:
+ * sur un deploiement sans RESEND_API_KEY, ou send() rend 'dry-run', personne
+ * ne recevait de push non plus. Le push dependait du courriel alors que ce
+ * sont deux canaux independants.
+ *
+ * Ici les deux sont tentes selon la preference, et le resultat est "quelque
+ * chose est parti" si l'un des deux a abouti.
+ *
+ * `muted` est rendu quand la personne a decoche les deux. La reclamation est
+ * GARDEE dans ce cas, pas rendue: la rendre voudrait dire reessayer a chaque
+ * execution, pour toujours, pour quelqu'un qui a demande qu'on le laisse
+ * tranquille.
+ */
+async function deliver(
+  userId: string,
+  to: string | null,
+  subject: string,
+  mail: Parameters<typeof send>[2],
+  note: { title: string; body: string; url: string; tag: string },
+): Promise<'sent' | 'failed' | 'dry-run' | 'muted'> {
+  const ch = await channelsFor(userId)
+
+  let mailed: 'sent' | 'failed' | 'dry-run' | 'skipped' = 'skipped'
+  if (ch.email && to) mailed = await send(to, subject, mail)
+
+  /* Pas de `if (ch.push)` ici: pushTo() porte cette regle, pour que les
+     rappels d'eau et d'agenda, qui ne passent pas par deliver(), l'aient
+     aussi. Deux endroits qui encodent la meme regle finissent par ne plus
+     etre d'accord. */
+  const { delivered } = await pushTo(userId, note)
+
+  if (mailed === 'sent' || delivered > 0) return 'sent'
+  if (!ch.email && !ch.push) return 'muted'
+  /* Le courriel etait le seul canal demande et il n'est pas parti: c'est un
+     echec, ou un deploiement sans cle. Les deux rendent la reclamation. */
+  if (mailed === 'failed') return 'failed'
+  if (mailed === 'dry-run') return 'dry-run'
+  /**
+   * Push demande, aucun appareil joint. Ce n'est pas un echec: quelqu'un qui
+   * a coche "notification" sans jamais avoir autorise son navigateur n'a
+   * aucun appareil enregistre, et reessayer chaque heure ne fera pas
+   * apparaitre un telephone. Compte a part pour que ce cas se voie.
+   */
+  return 'muted'
+}
+
 /** Record the outcome, and hand the claim back if nothing was sent. */
 async function settle(
-  result: 'sent' | 'failed' | 'dry-run',
+  result: 'sent' | 'failed' | 'dry-run' | 'muted',
   kind: Kind,
   userId: string,
   cycleId: string,
 ) {
   if (result === 'sent') {
     tally[kind] += 1
+    return
+  }
+  /**
+   * `muted` garde la reclamation, contrairement aux deux autres.
+   *
+   * La personne a decoche les deux canaux, ou n'a aucun appareil enregistre.
+   * Rendre la reclamation voudrait dire reessayer a chaque execution, pour
+   * toujours, ce qui est du travail pour rien et remplirait les journaux de
+   * faux echecs. Le compteur separe existe pour que ce cas ne se lise pas
+   * comme une panne d'envoi.
+   */
+  if (result === 'muted') {
+    tally.muted += 1
     return
   }
   tally[result === 'failed' ? 'failed' : 'dryRun'] += 1
@@ -715,28 +840,35 @@ async function sendDigests() {
 
       const name = (cycle as any).groups?.name ?? (who.loc === 'fr' ? 'ton groupe' : 'your group')
 
-      const outcome = await send(who.to, c.digestSubject(name), {
-        title: c.digestTitle,
-        // Shown next to the subject in the inbox. Without one, clients scrape
-        // the first text in the message, which would be the logo's alt text.
-        preheader: c.digestPre(name, items.length),
-        blocks: [
-          { kind: 'lead', text: c.digestLead },
-          { kind: 'list', items },
-          { kind: 'button', label: c.digestCta, href: `${SITE}/g/${cycle.group_id}/checkin` },
-          { kind: 'text', text: c.digestTail },
-        ],
-        loc: who.loc,
-      })
-      await settle(outcome, 'digest', m.user_id, cycle.id)
-      if (outcome === 'sent') {
-        await pushTo(m.user_id, {
+      /* Les deux canaux, selon ce que la personne a coche. Le push ne depend
+         plus de la reussite du courriel: c'etait un bogue, un deploiement
+         sans cle Resend privait de push quelqu'un qui n'avait rien demande
+         d'autre. */
+      const outcome = await deliver(
+        m.user_id,
+        who.to,
+        c.digestSubject(name),
+        {
+          title: c.digestTitle,
+          // Shown next to the subject in the inbox. Without one, clients scrape
+          // the first text in the message, which would be the logo's alt text.
+          preheader: c.digestPre(name, items.length),
+          blocks: [
+            { kind: 'lead', text: c.digestLead },
+            { kind: 'list', items },
+            { kind: 'button', label: c.digestCta, href: `${SITE}/g/${cycle.group_id}/checkin` },
+            { kind: 'text', text: c.digestTail },
+          ],
+          loc: who.loc,
+        },
+        {
           title: c.digestTitle,
           body: c.digestPre(name, items.length),
           url: `${SITE}/g/${cycle.group_id}/checkin`,
           tag: 'digest',
-        })
-      }
+        },
+      )
+      await settle(outcome, 'digest', m.user_id, cycle.id)
     }
   }
 }
@@ -806,29 +938,32 @@ async function sendNudges() {
     /* Deliberately the quiet one: no button colour shouting, no count of what
        was missed, no streak language. The whole design of this message is
        that it must not read as a debt collector. */
-    const outcome = await send(who.to, from ? c.nudgeFromSubject(from, who.fem) : c.nudgeSubject(name), {
-      title: from ? c.nudgeFromTitle(from, who.fem) : c.nudgeTitle,
-      preheader: c.nudgePre(name),
-      blocks: [
-        { kind: 'lead', text: from ? c.nudgeFromLead(from, name) : c.nudgeLead(name) },
-        { kind: 'text', text: c.nudgeBody },
-        /* /profile, not /me. Both still serve the page, but /profile is the
-           canonical address now and a link in an email outlives the deploy
-           that renamed it. */
-        { kind: 'button', label: c.nudgeCta, href: `${SITE}/profile` },
-      ],
-      footnote: c.nudgeFoot(name),
-      loc: who.loc,
-    })
-    await settle(outcome, 'nudge', n.subject_id, n.cycle_id)
-    if (outcome === 'sent') {
-      await pushTo(n.subject_id, {
+    const outcome = await deliver(
+      n.subject_id,
+      who.to,
+      from ? c.nudgeFromSubject(from, who.fem) : c.nudgeSubject(name),
+      {
+        title: from ? c.nudgeFromTitle(from, who.fem) : c.nudgeTitle,
+        preheader: c.nudgePre(name),
+        blocks: [
+          { kind: 'lead', text: from ? c.nudgeFromLead(from, name) : c.nudgeLead(name) },
+          { kind: 'text', text: c.nudgeBody },
+          /* /profile, not /me. Both still serve the page, but /profile is the
+             canonical address now and a link in an email outlives the deploy
+             that renamed it. */
+          { kind: 'button', label: c.nudgeCta, href: `${SITE}/profile` },
+        ],
+        footnote: c.nudgeFoot(name),
+        loc: who.loc,
+      },
+      {
         title: from ? c.nudgeFromTitle(from, who.fem) : c.nudgeTitle,
         body: from ? c.nudgeFromLead(from, name) : c.nudgeLead(name),
         url: `${SITE}/profile`,
         tag: 'nudge',
-      })
-    }
+      },
+    )
+    await settle(outcome, 'nudge', n.subject_id, n.cycle_id)
   }
 }
 
@@ -944,27 +1079,30 @@ async function sendBirthdays() {
       )
       const group = (g as any).name ?? (who.loc === 'fr' ? 'ton groupe' : 'your group')
 
-      const outcome = await send(who.to, c.birthdaySubject(names.length, names[0]), {
-        title: c.birthdayTitle(names.length),
-        preheader: c.birthdayPre(names.length),
-        blocks: [
-          { kind: 'lead', text: c.birthdayLead },
-          { kind: 'list', items: names.map((n: string) => ({ title: n })) },
-          { kind: 'text', text: c.birthdayNote },
-          { kind: 'button', label: c.birthdayCta, href: `${SITE}/g/${g.id}` },
-        ],
-        footnote: c.birthdayFoot(group),
-        loc: who.loc,
-      })
-      await settle(outcome, 'birthday', m.user_id, cyc.id)
-      if (outcome === 'sent') {
-        await pushTo(m.user_id, {
+      const outcome = await deliver(
+        m.user_id,
+        who.to,
+        c.birthdaySubject(names.length, names[0]),
+        {
+          title: c.birthdayTitle(names.length),
+          preheader: c.birthdayPre(names.length),
+          blocks: [
+            { kind: 'lead', text: c.birthdayLead },
+            { kind: 'list', items: names.map((n: string) => ({ title: n })) },
+            { kind: 'text', text: c.birthdayNote },
+            { kind: 'button', label: c.birthdayCta, href: `${SITE}/g/${g.id}` },
+          ],
+          footnote: c.birthdayFoot(group),
+          loc: who.loc,
+        },
+        {
           title: c.birthdayTitle(names.length),
           body: c.birthdaySubject(names.length, names[0]),
           url: `${SITE}/g/${g.id}`,
           tag: 'birthday',
-        })
-      }
+        },
+      )
+      await settle(outcome, 'birthday', m.user_id, cyc.id)
     }
   }
 }
@@ -1072,7 +1210,8 @@ async function sendGroupGoals() {
     const names = live.map((r: any) => r.profiles?.display_name?.trim() || null)
     const only = live.length === 1
 
-    const outcome = await send(
+    const outcome = await deliver(
+      userId,
       who.to,
       only ? c.goalSubject(names[0], group) : c.goalSubjectMany(live.length, group),
       {
@@ -1098,19 +1237,20 @@ async function sendGroupGoals() {
         footnote: c.goalFoot(group),
         loc: who.loc,
       },
-    )
-
-    await settle(outcome, 'group_goal', userId, cyc.id)
-
-    if (outcome === 'sent') {
-      await stamp()
-      await pushTo(userId, {
+      {
         title: c.goalTitle(live.length),
         body: only ? c.goalLead(names[0], group) : c.goalLeadMany(group),
         url: `${SITE}/g/${rows[0].group_id}`,
         tag: 'group_goal',
-      })
-    }
+      },
+    )
+
+    await settle(outcome, 'group_goal', userId, cyc.id)
+
+    /* Tamponne aussi quand la personne a tout coupe: le message est traite,
+       il n'y avait juste personne a joindre, et le reessayer chaque heure ne
+       ferait apparaitre ni boite aux lettres ni telephone. */
+    if (outcome === 'sent' || outcome === 'muted') await stamp()
     /* Not stamped when the send failed. settle() has already given the claim
        back, so the next run retries both halves together rather than marking
        something as emailed that was not. */
@@ -1434,37 +1574,40 @@ async function sendCycleReminders() {
       .update({ cycle_reminded_for: forDate })
       .eq('user_id', person.user_id)
 
-    const outcome = await send(who.to, c.cycleSubject, {
-      title: c.cycleTitle,
-      preheader: c.cyclePre(ahead),
-      blocks: [
-        { kind: 'lead', text: c.cycleLead(ahead) },
-        { kind: 'text', text: c.cycleNote },
-        {
-          kind: 'list',
-          items: [
-            { title: c.prepWater },
-            { title: c.prepWarmth },
-            { title: c.prepGentle },
-          ],
-        },
-        { kind: 'button', label: c.cycleCta, href: `${SITE}/calendar` },
-      ],
-      footnote: c.cycleFoot,
-      loc: who.loc,
-    })
-
-    if (outcome === 'sent') {
-      tally.cycle += 1
-      await pushTo(person.user_id, {
+    const outcome = await deliver(
+      person.user_id,
+      who.to,
+      c.cycleSubject,
+      {
+        title: c.cycleTitle,
+        preheader: c.cyclePre(ahead),
+        blocks: [
+          { kind: 'lead', text: c.cycleLead(ahead) },
+          { kind: 'text', text: c.cycleNote },
+          {
+            kind: 'list',
+            items: [
+              { title: c.prepWater },
+              { title: c.prepWarmth },
+              { title: c.prepGentle },
+            ],
+          },
+          { kind: 'button', label: c.cycleCta, href: `${SITE}/calendar` },
+        ],
+        footnote: c.cycleFoot,
+        loc: who.loc,
+      },
+      {
         title: c.cycleTitle,
         body: c.cycleLead(ahead),
         url: `${SITE}/calendar`,
         tag: 'cycle',
-      })
-    } else {
-      tally[outcome === 'failed' ? 'failed' : 'dryRun'] += 1
-    }
+      },
+    )
+
+    if (outcome === 'sent') tally.cycle += 1
+    else if (outcome === 'muted') tally.muted += 1
+    else tally[outcome === 'failed' ? 'failed' : 'dryRun'] += 1
   }
 }
 
@@ -1599,12 +1742,19 @@ async function deliverNudge(
   if (body.self_test === true) {
     const me = await recipient(caller.id)
     const c = COPY[me?.loc ?? 'fr']
-    const reach = await pushTo(caller.id, {
-      title: c.selfTestTitle,
-      body: c.selfTestBody,
-      url: `${SITE}/settings`,
-      tag: 'rf-self-test',
-    })
+    /* force: quelqu'un qui demande un test veut le test. Le refuser parce
+       qu'une case est decochee repondrait "ca ne marche pas" a une question
+       sur le fonctionnement de la chaine. */
+    const reach = await pushTo(
+      caller.id,
+      {
+        title: c.selfTestTitle,
+        body: c.selfTestBody,
+        url: `${SITE}/settings`,
+        tag: 'rf-self-test',
+      },
+      { force: true },
+    )
     return json({
       ok: true,
       self_test: true,
@@ -1779,7 +1929,11 @@ async function deliverNudge(
       const { data: g } = await supabase
         .from('groups').select('name').eq('id', nudge.group_id).maybeSingle()
       const name = g?.name ?? (to?.loc === 'fr' ? 'ton groupe' : 'your group')
-      const outcome = to?.to
+      /* Le repli courriel respecte la preference, lui aussi. Quelqu'un qui a
+         decoche "e-mail" ne doit pas en recevoir un parce que son telephone
+         n'etait pas joignable: c'est precisement le cas ou il a dit non. */
+      const mayMail = to?.to ? (await channelsFor(nudge.subject_id)).email : false
+      const outcome = mayMail && to?.to
         ? await send(to.to, from ? c.nudgeFromSubject(from, to.fem) : c.nudgeSubject(name), {
             title: from ? c.nudgeFromTitle(from, to.fem) : c.nudgeTitle,
             preheader: c.nudgePre(name),

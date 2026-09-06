@@ -406,6 +406,39 @@ const code = (rel) => src(rel).replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\
     /error\.code === '42883'/.test(nt) && /migrationPending/.test(nt),
     '42883 means 57_reminders.sql has not been run yet, which is not a bug to chase in the code',
   )
+  /**
+   * LE CANAL EST DECIDE A UN SEUL ENDROIT.
+   *
+   * Demande: "est-ce que c'est un app notification seulement ou email ou les
+   * deux". Un reglage qui ne change pas ce qui part serait la meme faute que
+   * le bouton Reset qui avait l'air d'effacer une date sans l'effacer.
+   */
+  ok(
+    'every scheduled message goes out through the channel gate',
+    (nt.match(/await deliver\(/g) ?? []).length === 5 &&
+      !/const outcome = await send\(/.test(nt),
+    'digest, nudge, birthday, group goal and cycle; a send() left behind is a message that ignores the preference',
+  )
+  ok(
+    'and the push gate lives inside pushTo, not in its callers',
+    /if \(!opts\.force && !\(await channelsFor\(userId\)\)\.push\)/.test(nt),
+    'the water and event reminders do not go through deliver(), so a gate there would miss them',
+  )
+  ok(
+    'the self test is the one push that ignores the preference',
+    /\{ force: true \}/.test(nt) && (nt.match(/force: true/g) ?? []).length === 1,
+    'refusing a test somebody explicitly asked for answers "it is broken" to a question about whether it works',
+  )
+  ok(
+    'nobody to reach keeps its claim instead of retrying forever',
+    /if \(result === 'muted'\)[\s\S]{0,200}tally\.muted \+= 1[\s\S]{0,40}return/.test(nt),
+    'releasing it would retry every run, forever, for somebody who asked to be left alone',
+  )
+  ok(
+    'and a missing notify_pref reaches everyone rather than nobody',
+    /push: data\?\.push_on \?\? true/.test(nt) && /email: data\?\.email_on \?\? true/.test(nt),
+    'the row only exists for people who opened settings; defaulting to silence would mute the whole product',
+  )
   ok(
     'the reminder copy exists in both locales',
     (nt.match(/remindWaterTitle:/g) ?? []).length === 2 &&

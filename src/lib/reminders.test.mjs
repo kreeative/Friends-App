@@ -12,13 +12,17 @@
  * pas recues.
  */
 import {
+  CHANNELS,
   DAY,
   DEFAULTS,
   DEFAULT_SLEEP,
   DEFAULT_WAKE,
   LEAD_CHOICES,
   awakeMinutes,
+  channelKey,
+  channelsOf,
   fromHm,
+  isMuted,
   isAwake,
   prefOf,
   remindMinFor,
@@ -179,6 +183,51 @@ eq('undefined non plus', remindMinFor(undefined, 30), null)
   const p = prefOf({ wake_min: h(22), sleep_min: h(6) })
   eq('la fenetre de nuit fait bien huit heures', awakeMinutes(p.wake_min, p.sleep_min), 480)
 }
+
+// ---- par ou joindre la personne -----------------------------------------------
+
+/**
+ * "Est-ce que c'est un app notification seulement ou email ou les deux, bref
+ * la personne pourra cocher."
+ *
+ * Deux booleens donnent les trois cas nommes, et le quatrieme, les deux
+ * eteints, apparait gratuitement. Il n'a pas ete nomme et il doit exister:
+ * refuser de decocher la derniere case obligerait a couper les notifications
+ * au niveau du telephone, ce qui couperait aussi celles qu'on voulait garder.
+ */
+eq('deux canaux, pas trois etats', CHANNELS, ['push', 'email'])
+
+eq('les deux par defaut', channelsOf(null), { push: true, email: true })
+eq('push seulement', channelsOf({ push_on: true, email_on: false }), { push: true, email: false })
+eq('courriel seulement', channelsOf({ push_on: false, email_on: true }), { push: false, email: true })
+eq('rien du tout', channelsOf({ push_on: false, email_on: false }), { push: false, email: false })
+
+/**
+ * LE REPLI EST "LES DEUX", ET C'EST LOAD-BEARING.
+ *
+ * Une ligne notify_pref n'existe que pour les gens qui sont alles dans les
+ * reglages, c'est-a-dire presque personne le jour de la migration. Un repli a
+ * "rien" ferait taire l'application pour tout le monde, en silence, et un
+ * silence ne se signale jamais.
+ */
+eq('une ligne absente ne coupe rien', channelsOf(undefined), { push: true, email: true })
+eq('une colonne nulle non plus', channelsOf({ push_on: null, email_on: null }), { push: true, email: true })
+
+/* `?? true` et pas `|| true`: un false enregistre doit rester false, sinon
+   decocher une case ne survit pas au rechargement de la page. */
+eq('mais un false enregistre reste false', channelsOf({ push_on: false, email_on: true }).push, false)
+
+ok('les deux decoches, personne n est joint', isMuted({ push_on: false, email_on: false }))
+ok('un seul suffit a ne pas etre muet', !isMuted({ push_on: false, email_on: true }))
+ok('et une ligne absente n est pas muette', !isMuted(null))
+
+eq('la phrase des deux', channelKey({ push_on: true, email_on: true }), 'remind.by_both')
+eq('celle du push seul', channelKey({ push_on: true, email_on: false }), 'remind.by_push')
+eq('celle du courriel seul', channelKey({ push_on: false, email_on: true }), 'remind.by_email')
+eq('et celle de personne', channelKey({ push_on: false, email_on: false }), 'remind.by_none')
+/* Le formulaire d'objectif lit ca avant que la requete soit revenue. Pendant
+   ce temps il doit dire "les deux", pas "nulle part". */
+eq('pendant le chargement, les deux', channelKey(null), 'remind.by_both')
 
 console.log(`\n${pass} passed, ${fail} failed`)
 process.exit(fail ? 1 : 0)
