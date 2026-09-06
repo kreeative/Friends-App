@@ -1745,6 +1745,15 @@ ok(
 {
   const form = read('src/components/GoalForm.jsx')
   /**
+   * Sans les commentaires, pour l'assertion "il n'y a plus de ligne construite
+   * ici". Elle lisait le fichier entier et a echoue sur une NOTE qui cite
+   * `starts_on: "2027-01-01"` en racontant un bogue. Une assertion de la forme
+   * "ce texte ne doit pas apparaitre dans le code" doit lire le code; sinon
+   * elle interdit d'ecrire sur le sujet qu'elle surveille, ce qui pousse a
+   * retirer l'explication plutot que le probleme.
+   */
+  const formCode = code('src/components/GoalForm.jsx')
+  /**
    * L'ASSERTION QUI ETAIT ICI VERIFIAIT LA PRESENCE DU BOGUE.
    *
    * Elle lisait /starts_on: startsOn \|\| null/ dans le source et passait,
@@ -1761,7 +1770,7 @@ ok(
    * envoie bien la ligne construite ailleurs.
    */
   ok('the form builds its row with the tested helper',
-     /goalRow\(\{/.test(form) && !/starts_on:/.test(form),
+     /goalRow\(\{/.test(formCode) && !/starts_on:/.test(formCode),
      'a copy of the row inside the component is a second place for it to be wrong')
   ok('and offers it for a habit and for a one-off',
      (form.match(/t\('form\.starts'\)/g) ?? []).length === 2,
@@ -1771,6 +1780,35 @@ ok(
      'two probe runs timed out guessing at its text and then at its type')
   ok('isDueOn still honours it',
      /if \(starts && today < starts\) return false/.test(read('src/lib/schedule.js')))
+
+  /**
+   * LE BOUTON RESET DU SELECTEUR NATIF, QUI MENTAIT.
+   *
+   * Rapporte avec une capture: "le bouton RESET ca reset jamais rien". Ce
+   * panneau gris est le selecteur de date de Safari, pas un ecran de cette
+   * application, et son Reset ecrit '' directement dans l'input.
+   *
+   * Sur un champ controle sans garde, ca donnait le pire des trois resultats:
+   * le DOM affichait une case vide, l'etat React gardait 2027-01-01, et comme
+   * l'etat n'avait pas change il n'y avait pas de nouveau rendu pour remettre
+   * l'ancienne valeur a l'ecran. Le champ avait l'air efface ET l'objectif
+   * s'enregistrait avec la vieille date.
+   *
+   * CE QUE CETTE ASSERTION VAUT, ET CE QU'ELLE NE VAUT PAS.
+   *
+   * Elle verifie la presence de la garde, ce qui est exactement le genre
+   * d'assertion qui a deja laisse passer un bogue dans ce depot. Ce qui prouve
+   * que ca marche est la sonde probe/datereset.mjs, qui vide le champ des
+   * trois facons qu'un navigateur utilise et lit la ligne postee: sans la
+   * garde, deux de ses assertions tombent. Celle-ci est un fil-piege, pour
+   * qu'un retrait de la garde ne passe pas en silence entre deux sondes.
+   */
+  ok('a native picker clearing the field cannot leave a stale value behind',
+     /onBlur=\{\(e\) => \{\s*if \(e\.target\.value !== value\) onChange\(e\.target\.value\)/.test(form),
+     'without it the box looks empty and the old date is what gets saved')
+  ok('and the calendar form has the same guard',
+     (read('src/pages/Calendar.jsx').match(/onBlur=\{\(e\) => \{ if \(e\.target\.value !==/g) ?? []).length === 2,
+     'same class of fault, same two-line fix, on both of its date fields')
 }
 
 /**

@@ -1318,12 +1318,24 @@ function EventForm({ initial, onClose, onSaved }) {
         <div className="grid grid-cols-2 gap-3">
           <label className="block">
             <span className="text-label font-semibold uppercase tracking-[0.06em] text-muted">{t('cal.f_from')}</span>
-            <input type="date" value={f.starts_on} onChange={(e) => setF({ ...f, starts_on: e.target.value })} className="field mt-1 w-full" />
+            {/* onBlur en plus de onChange: le selecteur de date natif peut
+                vider le champ sans qu'aucun evenement n'atteigne React, ce qui
+                laisse une case vide a l'ecran et l'ancienne valeur dans
+                l'etat. Voir la note complete sur DateField dans GoalForm.jsx;
+                c'est la meme faute et elle a coute un objectif enregistre avec
+                une date que la personne croyait avoir effacee. */}
+            <input type="date" data-hook="cal-f-from" value={f.starts_on}
+                   onChange={(e) => setF({ ...f, starts_on: e.target.value })}
+                   onBlur={(e) => { if (e.target.value !== f.starts_on) setF({ ...f, starts_on: e.target.value }) }}
+                   className="field mt-1 w-full" />
           </label>
           {f.weekdays.length > 0 && (
             <label className="block">
               <span className="text-label font-semibold uppercase tracking-[0.06em] text-muted">{t('cal.f_until')}</span>
-              <input type="date" value={f.until_on} min={f.starts_on} onChange={(e) => setF({ ...f, until_on: e.target.value })} className="field mt-1 w-full" />
+              <input type="date" data-hook="cal-f-until" value={f.until_on} min={f.starts_on}
+                     onChange={(e) => setF({ ...f, until_on: e.target.value })}
+                     onBlur={(e) => { if (e.target.value !== f.until_on) setF({ ...f, until_on: e.target.value }) }}
+                     className="field mt-1 w-full" />
             </label>
           )}
         </div>

@@ -191,16 +191,45 @@ function DayPicker({ value, onChange }) {
  * sibling button in a flex row is the same gesture, one tap, immediately to
  * the right of the value, and it is in the same place in every browser.
  */
-function DateField({ value, onChange }) {
+function DateField({ value, onChange, hook }) {
   const { t } = useT()
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2" data-hook={hook} data-empty={value ? 'no' : 'yes'}>
       <input
         type="date"
         className="field min-w-0 flex-1"
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        /**
+         * LE SELECTEUR NATIF PEUT VIDER LE CHAMP SANS QUE REACT L'APPRENNE.
+         *
+         * Rapporte avec une capture du selecteur de date d'iOS: "le bouton
+         * RESET ca reset jamais rien". Ce panneau gris est celui de Safari,
+         * pas un ecran de cette application, et son bouton Reset ecrit ''
+         * dans l'input.
+         *
+         * Sur un champ controle, ca donne le pire des trois resultats
+         * possibles. Le DOM affiche une case vide, l'etat React contient
+         * toujours 2027-01-01, et comme rien n'a change dans l'etat il n'y a
+         * pas de nouveau rendu pour remettre l'ancienne valeur a l'ecran. Le
+         * champ a donc l'air efface ET l'objectif s'enregistre avec la vieille
+         * date. Ce n'est pas "le bouton ne fait rien", c'est le bouton qui
+         * ment, ce qui est pire parce que rien ne le montre.
+         *
+         * Mesure dans Chromium en vidant le champ des trois facons qu'un
+         * navigateur utilise. Avec un evenement 'input' ou 'change', React
+         * suit et tout va bien. Sans evenement du tout, la ligne postee
+         * portait encore starts_on: "2027-01-01" au-dessus d'un champ vide.
+         *
+         * Le blur rattrape ce cas: au moment ou le champ perd le focus, on
+         * compare ce que le DOM a vraiment a ce que React croit avoir, et on
+         * propage si les deux ne sont pas d'accord. Un blur arrive toujours,
+         * lui, parce que fermer le selecteur rend le focus a la page.
+         */
+        onBlur={(e) => {
+          if (e.target.value !== value) onChange(e.target.value)
+        }}
       />
       {value && (
         <button
@@ -465,23 +494,23 @@ export default function GoalForm({ onDone, onCancel, initial = null, groupId = n
               />
             </Field>
             <Field label={t('form.until')} hint={t('form.until_hint')}>
-              <DateField value={endsOn} onChange={setEndsOn} />
+              <DateField hook="ends-on" value={endsOn} onChange={setEndsOn} />
             </Field>
             </div>
             <Field label={t('form.starts')} hint={t('form.starts_hint')}>
-              <DateField value={startsOn} onChange={setStartsOn} />
+              <DateField hook="starts-on" value={startsOn} onChange={setStartsOn} />
             </Field>
           </>
         ) : (
           <>
             <Field label={t('form.due_by')} hint={t('form.due_by_hint')}>
-              <DateField value={dueOn} onChange={setDueOn} />
+              <DateField hook="due-on" value={dueOn} onChange={setDueOn} />
             </Field>
             {/* Offered here too. A deadline already buys a week of silence on
                 its own, which is right for something a week away and useless
                 for something sixteen months out. */}
             <Field label={t('form.starts')} hint={t('form.starts_hint')}>
-              <DateField value={startsOn} onChange={setStartsOn} />
+              <DateField hook="starts-on" value={startsOn} onChange={setStartsOn} />
             </Field>
           </>
         )}
