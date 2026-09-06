@@ -130,5 +130,14 @@ eq('et il a un proprietaire', goalRow({ ...fresh, kind: 'group' }, TODAY).owner_
   eq('et porte le groupe', [g.group_id, g.kind], ['g1', 'group'])
 }
 
+// ---- la notification horaire par objectif -------------------------------------
+
+/* Le booleen `remind` est la porte; l'heure est un detail derriere elle. */
+eq('une heure avec la case cochee part en minutes', goalRow({ ...fresh, remind: true, remindAt: '09:30' }, TODAY).remind_at_min, 570)
+eq('sans heure, null et pas une chaine vide', goalRow({ ...fresh, remind: true, remindAt: '' }, TODAY).remind_at_min, null)
+eq('une heure sans la case cochee est ignoree', goalRow({ ...fresh, remind: false, remindAt: '09:30' }, TODAY).remind_at_min, null)
+eq('une saisie illisible ne fait pas un NaN', goalRow({ ...fresh, remind: true, remindAt: 'midi' }, TODAY).remind_at_min, null)
+eq('undefined non plus', goalRow({ ...fresh, remind: true }, TODAY).remind_at_min, null)
+
 console.log(`\n${pass} passed, ${fail} failed`)
 process.exit(fail ? 1 : 0)

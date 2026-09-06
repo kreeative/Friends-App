@@ -398,6 +398,7 @@ const code = (rel) => src(rel).replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\
   ok(
     'a reminder is claimed before it is sent, not after',
     /claimReminder\(row\.user_id, 'event'[\s\S]{0,400}pushTo/.test(nt) &&
+      /claimReminder\(row\.user_id, 'goal'[\s\S]{0,400}pushTo/.test(nt) &&
       /claimReminder\(row\.user_id, 'water'[\s\S]{0,600}pushTo/.test(nt),
     'claiming afterwards makes two concurrent runs send the same reminder twice',
   )

@@ -1,6 +1,7 @@
 /* Extension explicite: charge par node dans goalRow.test.mjs, qui ne resout
    pas les imports sans extension comme le fait Vite. */
 import { dayKey } from './time.js'
+import { fromHm } from './reminders.js'
 
 /**
  * La ligne `goals` que le formulaire envoie, a partir de ce qui est a l'ecran.
@@ -73,5 +74,15 @@ export function goalRow(f, today = dayKey(new Date())) {
     starts_on: startsOnFor(f.startsOn, today),
     stake_text: (f.stake ?? '').trim() || null,
     remind: f.remind,
+    /**
+     * L'heure d'une notification par objectif, en minutes locales, ou null.
+     *
+     * Null et pas '' : la colonne accepte null et c'est "pas de notification
+     * horaire, seulement le recap". Une heure sans la case "me le rappeler"
+     * cochee est ignoree: le booleen reste la porte, l'heure est un detail
+     * derriere elle. fromHm rend le repli null sur une saisie vide ou
+     * illisible plutot qu'un NaN qui violerait la contrainte.
+     */
+    remind_at_min: f.remind && f.remindAt ? fromHm(f.remindAt, null) : null,
   }
 }

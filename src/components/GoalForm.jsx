@@ -7,7 +7,7 @@ import { localeTag, useT } from '../lib/i18n'
 import { PROOF_TYPES, proofTypeOf } from '../lib/proofKinds'
 import { errorText, isMissingColumn, isNetworkError } from '../lib/dberr'
 import { goalRow } from '../lib/goalRow'
-import { channelKey } from '../lib/reminders'
+import { channelKey, toHm } from '../lib/reminders'
 import { Field } from './ui'
 import { Slider, useSlider } from './Segmented'
 
@@ -297,6 +297,11 @@ export default function GoalForm({ onDone, onCancel, initial = null, groupId = n
   const [proofType, setProofType] = useState(() => proofTypeOf(initial))
   const [stake, setStake] = useState(initial?.stake_text ?? '')
   const [remind, setRemind] = useState(initial?.remind ?? true)
+  /* "HH:MM" pour l'input, converti en minutes dans goalRow. Vide veut dire
+     pas de notification horaire, seulement le recap. */
+  const [remindAt, setRemindAt] = useState(
+    initial?.remind_at_min != null ? toHm(initial.remind_at_min) : '',
+  )
   const [goalType, setGoalType] = useState(initial?.goal_type ?? 'process')
   const [dismissedHint, setDismissedHint] = useState(false)
   /**
@@ -380,6 +385,7 @@ export default function GoalForm({ onDone, onCancel, initial = null, groupId = n
       startsOn,
       stake,
       remind,
+      remindAt,
     })
 
     const write = (row) =>
@@ -603,6 +609,33 @@ export default function GoalForm({ onDone, onCancel, initial = null, groupId = n
             </span>
           </span>
         </label>
+
+        {/**
+         * L'HEURE, DERRIERE LA CASE, ET PAS UNE FREQUENCE.
+         *
+         * Demande: par objectif, une frequence et une heure. L'objectif a deja
+         * sa frequence: sa cadence, ses jours, sa cible. Un rappel qui aurait
+         * un calendrier a lui contredirait celui de l'objectif ("rappelle-moi
+         * le lundi" sur un objectif du mardi). Donc la seule question neuve
+         * est l'heure, et le rappel part les jours ou l'objectif est du.
+         *
+         * onBlur en plus de onChange: meme garde que les champs de date, le
+         * selecteur natif peut vider le champ sans prevenir React.
+         */}
+        {remind && (
+          <Field label={t('form.remind_at')} hint={t('form.remind_at_hint')}>
+            <input
+              type="time"
+              data-hook="goal-remind-at"
+              className="field"
+              value={remindAt}
+              onChange={(e) => setRemindAt(e.target.value)}
+              onBlur={(e) => {
+                if (e.target.value !== remindAt) setRemindAt(e.target.value)
+              }}
+            />
+          </Field>
+        )}
       </Step>
 
       <Step n={4} title={t('form.step_proof')} hint={t('form.optional_step')}>

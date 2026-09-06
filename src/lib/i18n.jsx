@@ -1207,6 +1207,14 @@ const STRINGS = {
     'courses.script': 'What to actually say',
     'courses.action': 'Do this',
     'courses.quiz': 'Check yourself',
+    /* Une question a la fois, puis le score, puis "refaire". */
+    'courses.quiz_progress': '{n} of {total}',
+    'courses.quiz_next': 'Next question',
+    'courses.quiz_finish': 'See my result',
+    'courses.quiz_score': '{right} out of {total}',
+    'courses.quiz_perfect': 'All of it landed.',
+    'courses.quiz_review': 'Reread the explanations you missed, then take it again.',
+    'courses.quiz_retake': 'Retake the quiz',
     'courses.answer_is': 'Answer {letter}.',
 
     'welcome.hi': 'Welcome to Rich & Friends',
@@ -1483,6 +1491,16 @@ const STRINGS = {
     'form.remind_hint':
       'Your commitment and the when-and-where, in the recap that already goes out before the window opens. {by} Never more than one per cycle.',
     'form.remind_where': 'Change where these land in Settings.',
+    /**
+     * A timed push per goal, on top of the evening recap.
+     *
+     * The frequency is not a second setting: the goal already has one, its
+     * cadence and its days. A reminder that fired on a schedule of its own
+     * would contradict the goal's. So the only new question is the time.
+     */
+    'form.remind_at': 'And a notification at',
+    'form.remind_at_hint':
+      'Optional. On the days this goal is due, at this time, on your phone. Leave empty to get the recap only.',
     'form.outcome_1':
       'That reads like a result rather than an action. Results depend on things you don’t control, so a bad day looks like failure even when you did the work.',
     'form.outcome_2': 'What would you do each day to get there? Track that instead.',
@@ -2760,6 +2778,13 @@ const STRINGS = {
     'courses.script': 'Ce qu’on dit vraiment',
     'courses.action': 'L’action',
     'courses.quiz': 'Vérifie que c’est passé',
+    'courses.quiz_progress': '{n} sur {total}',
+    'courses.quiz_next': 'Question suivante',
+    'courses.quiz_finish': 'Voir mon résultat',
+    'courses.quiz_score': '{right} sur {total}',
+    'courses.quiz_perfect': 'Tout est passé.',
+    'courses.quiz_review': 'Relis les explications des réponses manquées, puis refais-le.',
+    'courses.quiz_retake': 'Refaire le quiz',
     'courses.answer_is': 'Réponse {letter}.',
 
     'welcome.hi': 'Bienvenue sur Rich & Friends',
@@ -3023,6 +3048,9 @@ const STRINGS = {
     'form.remind_hint':
       'Ton engagement et le quand-et-où, dans le récap qui part déjà avant l’ouverture. {by} Jamais plus d’un par cycle.',
     'form.remind_where': 'Tu choisis où ils arrivent dans les Réglages.',
+    'form.remind_at': 'Et une notification à',
+    'form.remind_at_hint':
+      'Facultatif. Les jours où cet objectif est dû, à cette heure, sur ton téléphone. Laisse vide pour n’avoir que le récap.',
     'form.outcome_1':
       'Ça ressemble à un résultat plutôt qu’à une action. Un résultat dépend de choses hors de ton contrôle : une mauvaise journée ressemble à un échec même quand tu as fait le travail.',
     'form.outcome_2': 'Que ferais-tu chaque jour pour y arriver ? Suis plutôt ça.',

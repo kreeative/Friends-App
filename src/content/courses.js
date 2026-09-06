@@ -2308,6 +2308,24 @@ export const COURSES = [
                     },
                   },
                 ],
+                /**
+                 * LE LIEN DE PARRAINAGE, DEMANDE DANS LE BRIEF D'ORIGINE ET OUBLIE.
+                 *
+                 * "[IMPORTANT] Integre exactement cette phrase a la fin", avec le
+                 * lien. Il n'etait nulle part dans le cours; rappele deux fois.
+                 * La phrase est celle demandee, mot pour mot, et elle dit
+                 * elle-meme que c'est un parrainage: le lecteur sait ce qu'il
+                 * clique. Le montant est celui de la demande; les conditions
+                 * sont celles de Wealthsimple et peuvent changer.
+                 */
+                cta: {
+                  href: 'https://www.wealthsimple.com/invite/62AKJM',
+                  text: {
+                    fr: 'Prêt(e) à ouvrir ton compte ? Utilise notre lien de parrainage exclusif pour recevoir un bonus de 25 $ à l’ouverture.',
+                    en: 'Ready to open your account? Use our exclusive referral link to get a $25 bonus when you open it.',
+                  },
+                  label: { fr: 'Ouvrir un compte Wealthsimple', en: 'Open a Wealthsimple account' },
+                },
                 todo: {
                   fr: 'Ouvrir un compte chez un courtier à escompte plutôt qu’au comptoir de sa banque : Wealthsimple, Questrade ou Disnat. Pièce d’identité, NAS, une vingtaine de minutes. Puis relever ses droits de cotisation dans Mon dossier de l’ARC avant de verser quoi que ce soit.',
                   en: 'Open an account with a discount broker rather than at your bank counter: Wealthsimple, Questrade or Disnat. Photo ID, SIN, about twenty minutes. Then check your contribution room in CRA My Account before transferring anything.',
@@ -2497,6 +2515,14 @@ export const COURSES = [
                     },
                   },
                 ],
+                cta: {
+                  href: 'https://www.wealthsimple.com/invite/62AKJM',
+                  text: {
+                    fr: 'Pas encore de compte ? Notre lien de parrainage donne un bonus de 25 $ à l’ouverture chez Wealthsimple.',
+                    en: 'No account yet? Our referral link gives a $25 bonus when you open one at Wealthsimple.',
+                  },
+                  label: { fr: 'Ouvrir un compte Wealthsimple', en: 'Open a Wealthsimple account' },
+                },
                 todo: {
                   fr: 'Aujourd’hui : une part, ou 25 $, du FNB qui correspond à ton horizon, dans ton CELI. Puis fais une capture de l’écran de confirmation. Le premier achat est fait, et il n’était pas plus compliqué qu’un achat en ligne.',
                   en: 'Today: one unit, or $25, of the ETF matching your horizon, in your TFSA. Then screenshot the confirmation. The first purchase is done, and it was no harder than buying something online.',
