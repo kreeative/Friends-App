@@ -74,6 +74,26 @@ export const COUNTRY_ANSWERS = {
  * honnete de publier un cours en cours d'ecriture: masquer les modules non
  * rediges donnerait un produit qui a l'air fini et qui s'arrete sans prevenir.
  */
+/**
+ * L'ORDRE DU TABLEAU EST L'ORDRE DE LECTURE, ET IL EST VOULU.
+ *
+ * La liste des cours rend COURSES dans l'ordre du tableau. Cet ordre-la n'est
+ * pas alphabetique et pas chronologique, c'est une progression:
+ *
+ *   1. Riche, lentement   les fondations, avant tout le reste
+ *   2. Carte de credit    la dette chere, qui doit mourir AVANT d'investir
+ *   3. Investir 101       dont la promesse dit elle-meme "commence la ou
+ *                         Riche lentement s'arrete: le coussin est en place,
+ *                         les dettes cheres sont mortes"
+ *
+ * Carte de credit est donc insere entre les deux et pas ajoute a la fin: mettre
+ * l'investissement avant le remboursement d'un solde a 20 % est un mauvais
+ * conseil, et l'etagere le dirait par son ordre meme.
+ *
+ * Une sonde qui visait le deuxieme cours par sa position a attrape celui-ci le
+ * jour de l'insertion. C'est le prix d'un ordre qui a un sens, et la reponse
+ * est de se reperer par slug: chaque carte porte data-slug.
+ */
 export const COURSES = [
   {
     slug: 'riche-lentement',
@@ -735,6 +755,888 @@ export const COURSES = [
             },
           },
         ],
+      },
+    ],
+  },
+
+  /**
+   * CARTE DE CREDIT 101.
+   *
+   * Demande, en pointant l'etagere: "pourquoi Learn et toujours Learn, ca
+   * doit etre comment utiliser une carte de credit ou Carte de credit 101".
+   *
+   * IL Y AVAIT DEJA UN MODULE APPELE "LA CARTE DE CREDIT", ET CE N'EST PAS CA.
+   *
+   * Celui de Budget 101 explique comment NOTER un achat par carte dans le
+   * grand livre sans le compter deux fois. C'est de la comptabilite, utile, et
+   * ca ne dit rien sur la carte elle-meme: ni le taux, ni le delai de grace,
+   * ni pourquoi le paiement minimum est concu comme il est. Quelqu'un qui
+   * cherche "comment utiliser une carte de credit" ne trouvait rien.
+   *
+   * CE COURS EST ECRIT CONTRE LA CRITIQUE FAITE A INVESTIR 101.
+   *
+   * Ce cours-la a ete relu comme un debutant complet et il ratait quatre
+   * choses: il s'arretait avant le geste, il ne verifiait jamais ce qui avait
+   * ete retenu (zero quiz sur cinq lecons), il n'avait aucune reflexion, et il
+   * ne recapitulait rien. Les huit lecons ci-dessous ont donc toutes un quiz
+   * et une reflexion, une lecon montre le geste, et la derniere est une
+   * check-list.
+   *
+   * LES CHIFFRES SONT CALCULES, PAS CHOISIS.
+   *
+   * Ceux de la lecon c1.3 sortent d'une simulation mois par mois d'un solde de
+   * 3 000 $ a 20 % annuel, minimum de 3 % du solde: 207 mois et 3 370 $
+   * d'interets, contre 42 mois et 1 193 $ a 100 $ fixes. Un cours qui invente
+   * ses chiffres pour faire peur perd le droit d'etre cru sur le reste.
+   */
+  {
+    slug: 'carte-de-credit',
+    title: { fr: 'Carte de crédit 101', en: 'Credit card 101' },
+    tagline: {
+      fr: 'L’outil le plus utile et le plus cher de ton portefeuille, selon une seule chose : est-ce que tu paies le solde en entier. Le reste du cours explique pourquoi.',
+      en: 'The most useful and the most expensive tool in your wallet, depending on one thing: whether you pay the balance in full. The rest of the course explains why.',
+    },
+    modules: [
+      {
+        n: 1,
+        title: { fr: 'Comment ça marche vraiment', en: 'How it actually works' },
+        intro: {
+          fr: 'Quatre leçons sur la mécanique. Pas de morale : une carte de crédit n’est ni bien ni mal, c’est un prêt à taux élevé assorti d’un mois de gratuité, et tout dépend de savoir lequel des deux tu utilises.',
+          en: 'Four lessons on the mechanics. No morals: a credit card is neither good nor bad, it is a high-rate loan with a free month attached, and everything depends on knowing which of the two you are using.',
+        },
+        lessons: [
+          {
+            id: 'c1.1',
+            state: 'written',
+            title: { fr: 'Ce n’est pas ton argent', en: 'It is not your money' },
+            sub: { fr: 'Ce qui se passe vraiment quand tu tapes la carte.', en: 'What actually happens when you tap the card.' },
+            objective: {
+              fr: 'Comprendre qu’une carte de crédit n’est pas un moyen de paiement mais un emprunt, refait à chaque achat, et savoir lire les deux soldes que la banque affiche.',
+              en: 'Understand that a credit card is not a payment method but a loan, taken again at every purchase, and be able to read the two balances the bank shows you.',
+            },
+            points: [
+              {
+                lead: { fr: 'Chaque achat est un prêt.', en: 'Every purchase is a loan.' },
+                body: {
+                  fr: 'La banque paie le commerçant à ta place, tout de suite, et tu lui dois la somme. Un café à 4 $ payé par carte de crédit est un emprunt de 4 $. Ça n’a aucune importance tant que tu rembourses le mois même, et ça en a énormément le jour où tu ne le fais pas.',
+                  en: 'The bank pays the merchant for you, immediately, and you owe it the money. A $4 coffee on a credit card is a $4 loan. That matters not at all as long as you repay within the month, and enormously the day you do not.',
+                },
+              },
+              {
+                lead: { fr: 'Il y a deux soldes, et un seul compte.', en: 'There are two balances, and only one matters.' },
+                body: {
+                  fr: 'Le solde courant bouge à chaque achat. Le solde du relevé est figé le jour où le relevé est émis, et c’est celui-là qu’il faut payer en entier pour ne pas payer d’intérêts. Confondre les deux est l’erreur la plus fréquente des gens qui croient pourtant bien faire.',
+                  en: 'The current balance moves with every purchase. The statement balance is frozen on the day the statement is issued, and that is the one to pay in full to owe no interest. Confusing the two is the most common mistake among people who think they are doing it right.',
+                },
+              },
+              {
+                lead: { fr: 'La limite n’est pas un budget.', en: 'The limit is not a budget.' },
+                body: {
+                  fr: 'C’est le montant que la banque accepte de te prêter, calculé sur ce qu’elle gagne si tu ne rembourses pas tout. Elle ne l’a pas fixé en regardant ce que tu peux te permettre. Une limite qui monte n’est pas une promotion.',
+                  en: 'It is the amount the bank agrees to lend you, worked out from what it earns if you do not repay in full. It was not set by looking at what you can afford. A limit going up is not a promotion.',
+                },
+              },
+            ],
+            metaphor: {
+              fr: 'Une porte, pas un portefeuille. Un portefeuille contient ce que tu as. Une porte s’ouvre sur ce que quelqu’un d’autre a, et elle se referme sur une dette.',
+              en: 'A door, not a wallet. A wallet holds what you have. A door opens onto what somebody else has, and it closes on a debt.',
+            },
+            reflection: {
+              fr: 'Regarde ta limite de crédit. Ça représente combien de mois de ton loyer ? Est-ce que tu prêterais cette somme à quelqu’un qui gagne ce que tu gagnes ?',
+              en: 'Look at your credit limit. How many months of your rent is that? Would you lend that much to somebody earning what you earn?',
+            },
+            todo: {
+              fr: 'Trouve le taux d’intérêt annuel sur ton relevé, sur les achats et sur les avances de fonds. Écris les deux chiffres. La plupart des gens qui ont une carte ne les connaissent pas.',
+              en: 'Find the annual interest rate on your statement, for purchases and for cash advances. Write both numbers down. Most people with a card do not know them.',
+            },
+            quiz: [
+              {
+                ask: { fr: 'Tu paies un café 4 $ avec ta carte de crédit. Que s’est-il passé ?', en: 'You pay $4 for a coffee with your credit card. What just happened?' },
+                options: [
+                  { fr: 'Tu as dépensé 4 $ de ton compte', en: 'You spent $4 from your account' },
+                  { fr: 'Tu as emprunté 4 $ à la banque, qui a payé le café à ta place', en: 'You borrowed $4 from the bank, which paid for the coffee on your behalf' },
+                  { fr: 'Rien, tant que le relevé n’est pas émis', en: 'Nothing, until the statement is issued' },
+                ],
+                answer: 1,
+                why: {
+                  fr: 'La banque avance l’argent au commerçant immédiatement. C’est un prêt, même minuscule, même remboursé trois semaines plus tard sans un centime d’intérêt. Le voir comme un prêt est ce qui change le comportement.',
+                  en: 'The bank advances the money to the merchant immediately. It is a loan, however tiny, even repaid three weeks later without a cent of interest. Seeing it as a loan is what changes behaviour.',
+                },
+              },
+              {
+                ask: { fr: 'Lequel des deux soldes faut-il payer en entier pour ne pas payer d’intérêts ?', en: 'Which of the two balances must you pay in full to owe no interest?' },
+                options: [
+                  { fr: 'Le solde courant, celui qui bouge à chaque achat', en: 'The current balance, the one that moves with every purchase' },
+                  { fr: 'Le solde du relevé, figé le jour de son émission', en: 'The statement balance, frozen on the day it was issued' },
+                  { fr: 'Le paiement minimum indiqué en bas', en: 'The minimum payment shown at the bottom' },
+                ],
+                answer: 1,
+                why: {
+                  fr: 'Le solde du relevé. Payer le solde courant est possible et coûte plus cher en trésorerie sans rien apporter ; payer le minimum déclenche les intérêts sur tout. C’est une distinction que la plupart des relevés expliquent mal.',
+                  en: 'The statement balance. Paying the current balance is possible and ties up more cash for no gain; paying the minimum triggers interest on everything. Most statements explain this badly.',
+                },
+              },
+              {
+                ask: { fr: 'Ta banque relève ta limite de 2 000 $ à 5 000 $ sans que tu aies rien demandé. Qu’est-ce que ça dit ?', en: 'Your bank raises your limit from $2,000 to $5,000 without you asking. What does that tell you?' },
+                options: [
+                  { fr: 'Que tu peux te permettre de dépenser 5 000 $', en: 'That you can afford to spend $5,000' },
+                  { fr: 'Que la banque estime gagner davantage en te prêtant plus', en: 'That the bank expects to earn more by lending you more' },
+                  { fr: 'Que ton dossier de crédit est excellent et qu’il n’y a rien à surveiller', en: 'That your credit file is excellent and there is nothing to watch' },
+                ],
+                answer: 1,
+                why: {
+                  fr: 'Une hausse de limite est une décision commerciale, pas une évaluation de ce que tu peux te permettre. Elle est souvent proposée à des gens qui portent un solde, parce que ce sont eux qui rapportent.',
+                  en: 'A limit increase is a commercial decision, not an assessment of what you can afford. It is often offered to people carrying a balance, because they are the profitable ones.',
+                },
+              },
+            ],
+          },
+          {
+            id: 'c1.2',
+            state: 'written',
+            title: { fr: 'Le seul mois gratuit', en: 'The one free month' },
+            sub: { fr: 'Le délai de grâce, et comment on le perd.', en: 'The grace period, and how you lose it.' },
+            objective: {
+              fr: 'Comprendre qu’une carte de crédit prête gratuitement pendant environ trois semaines, à une seule condition, et savoir exactement ce qui fait disparaître cette gratuité.',
+              en: 'Understand that a credit card lends free for about three weeks, on one condition, and know exactly what makes that free period disappear.',
+            },
+            points: [
+              {
+                lead: { fr: 'La gratuité existe, et elle est écrite dans le contrat.', en: 'The free period is real, and it is written in the contract.' },
+                body: {
+                  fr: 'Entre l’achat et l’échéance du relevé, il s’écoule souvent de trois à sept semaines pendant lesquelles l’argent emprunté ne coûte rien. C’est la seule chose vraiment gratuite dans tout ce cours, et beaucoup de gens paient des intérêts sans savoir qu’elle existe.',
+                  en: 'Between the purchase and the statement due date there are often three to seven weeks in which the borrowed money costs nothing. It is the only genuinely free thing in this whole course, and plenty of people pay interest without knowing it exists.',
+                },
+              },
+              {
+                lead: { fr: 'La condition est « en entier », pas « à temps ».', en: 'The condition is "in full", not "on time".' },
+                body: {
+                  fr: 'Payer 95 % du relevé à la date d’échéance ne donne pas 95 % du délai de grâce : il disparaît en entier. Les intérêts partent alors de la date de chaque achat, rétroactivement, et pas du jour où tu as manqué.',
+                  en: 'Paying 95 % of the statement on the due date does not buy you 95 % of the grace period: it goes entirely. Interest then runs from the date of each purchase, retroactively, not from the day you fell short.',
+                },
+              },
+              {
+                lead: { fr: 'Une fois perdu, il ne revient pas tout de suite.', en: 'Once lost, it does not come straight back.' },
+                body: {
+                  fr: 'Tant qu’un solde reste, les achats NEUFS commencent souvent à porter intérêt dès le premier jour, sans aucun délai. C’est pour ça qu’un petit solde qui traîne coûte beaucoup plus cher qu’il n’en a l’air : il taxe aussi tout ce que tu achètes après.',
+                  en: 'While a balance remains, NEW purchases often start accruing interest from day one, with no grace at all. That is why a small lingering balance costs far more than it looks: it taxes everything you buy afterwards too.',
+                },
+              },
+            ],
+            metaphor: {
+              fr: 'La bibliothèque. Rendre le livre à temps ne coûte rien du tout. Un jour de retard, et l’amende ne porte pas sur ce jour-là : elle porte sur toutes les semaines où tu l’avais, gratuitement, sans le savoir.',
+              en: 'The library. Returning the book on time costs nothing at all. One day late, and the fine is not for that day: it is for all the weeks you had it, free, without realising.',
+            },
+            reflection: {
+              fr: 'Est-ce que tu connais, sans regarder, la date d’échéance de ta carte ? Si la réponse est non, ce n’est pas de la négligence : rien dans l’application de ta banque n’est conçu pour te la faire retenir.',
+              en: 'Do you know, without looking, your card’s due date? If not, that is not carelessness: nothing in your bank’s app is designed to make you remember it.',
+            },
+            todo: {
+              fr: 'Trouve la date d’échéance sur ton relevé et mets-la dans le calendrier de Rich & Friends, en répétition mensuelle, avec un rappel trois jours avant. C’est la seule tâche de ce cours qui empêche à elle seule presque tous les intérêts.',
+              en: 'Find the due date on your statement and put it in the Rich & Friends calendar, repeating monthly, with a reminder three days before. It is the one task in this course that on its own prevents almost all the interest.',
+            },
+            quiz: [
+              {
+                ask: { fr: 'Ton relevé indique 800 $. Tu paies 780 $ à la date d’échéance. Que se passe-t-il ?', en: 'Your statement says $800. You pay $780 by the due date. What happens?' },
+                options: [
+                  { fr: 'Tu paies des intérêts sur les 20 $ restants seulement', en: 'You pay interest on the remaining $20 only' },
+                  { fr: 'Tu perds le délai de grâce et les intérêts courent sur chaque achat depuis sa date', en: 'You lose the grace period and interest runs on each purchase from its date' },
+                  { fr: 'Rien, tant que tu paies plus que le minimum', en: 'Nothing, as long as you pay more than the minimum' },
+                ],
+                answer: 1,
+                why: {
+                  fr: 'C’est la surprise la plus coûteuse de tout le cours. Le délai de grâce est tout ou rien : 20 $ manquants sur 800 $ font courir les intérêts sur les 800 $, rétroactivement. C’est écrit dans le contrat et presque jamais expliqué.',
+                  en: 'This is the most expensive surprise in the course. The grace period is all or nothing: $20 short on $800 makes interest run on the $800, retroactively. It is in the contract and almost never explained.',
+                },
+              },
+              {
+                ask: { fr: 'Tu portes un solde depuis deux mois. Tu achètes un manteau aujourd’hui. À partir de quand cet achat porte-t-il intérêt ?', en: 'You have carried a balance for two months. You buy a coat today. From when does that purchase accrue interest?' },
+                options: [
+                  { fr: 'À partir de la prochaine échéance, comme d’habitude', en: 'From the next due date, as usual' },
+                  { fr: 'Dès aujourd’hui, sans aucun délai', en: 'From today, with no grace at all' },
+                  { fr: 'Seulement si tu ne paies pas le relevé suivant en entier', en: 'Only if you do not pay the next statement in full' },
+                ],
+                answer: 1,
+                why: {
+                  fr: 'Tant qu’un solde reste, le délai de grâce ne s’applique plus aux achats neufs. C’est ce qui rend un petit solde beaucoup plus cher qu’il n’en a l’air : il taxe aussi tout ce qui vient après lui.',
+                  en: 'While a balance remains, the grace period no longer applies to new purchases. That is what makes a small balance far more expensive than it looks: it taxes everything that comes after it, too.',
+                },
+              },
+              {
+                ask: { fr: 'Quelle est la seule action qui garantit de ne jamais payer d’intérêts sur les achats ?', en: 'What is the only action that guarantees you never pay interest on purchases?' },
+                options: [
+                  { fr: 'Payer le minimum à chaque fois, sans jamais le manquer', en: 'Paying the minimum every time, never missing it' },
+                  { fr: 'Payer le solde du relevé en entier, avant chaque échéance', en: 'Paying the statement balance in full, before every due date' },
+                  { fr: 'Rester bien en dessous de sa limite de crédit', en: 'Staying well below your credit limit' },
+                ],
+                answer: 1,
+                why: {
+                  fr: 'Le minimum ne protège de rien sauf des frais de retard, et rester sous sa limite ne change pas un centime d’intérêt. Une seule règle compte, et elle tient en cinq mots : le relevé, en entier, à temps.',
+                  en: 'The minimum protects you from nothing but late fees, and staying under your limit changes not one cent of interest. Only one rule matters, and it is five words long: the statement, in full, on time.',
+                },
+              },
+            ],
+          },
+          {
+            id: 'c1.3',
+            state: 'written',
+            title: { fr: 'Le paiement minimum', en: 'The minimum payment' },
+            sub: { fr: 'Le chiffre le plus cher de ton relevé.', en: 'The most expensive number on your statement.' },
+            objective: {
+              fr: 'Voir en chiffres ce que coûte le paiement minimum, et comprendre qu’il n’est pas une suggestion prudente mais le montant qui maximise ce que la banque encaisse.',
+              en: 'See in numbers what the minimum payment costs, and understand that it is not a cautious suggestion but the amount that maximises what the bank collects.',
+            },
+            points: [
+              {
+                lead: { fr: '3 000 $ au minimum : dix-sept ans.', en: '$3,000 at the minimum: seventeen years.' },
+                body: {
+                  fr: 'Un solde de 3 000 $ à 20 % par an, remboursé au minimum de 3 % du solde, prend 207 mois, soit 17,3 ans, et coûte 3 370 $ d’intérêts. Tu rembourses plus d’intérêts que le montant emprunté, et tu passes presque deux décennies dessus.',
+                  en: 'A $3,000 balance at 20 % a year, repaid at the 3 % minimum, takes 207 months, which is 17.3 years, and costs $3,370 in interest. You repay more in interest than you borrowed, and you spend nearly two decades on it.',
+                },
+              },
+              {
+                lead: { fr: '100 $ fixes : trois ans et demi.', en: '$100 fixed: three and a half years.' },
+                body: {
+                  fr: 'Le même solde, remboursé 100 $ par mois sans jamais baisser, est éteint en 42 mois pour 1 193 $ d’intérêts. Le montant de départ est presque le même que le premier minimum ; c’est le fait de ne pas le laisser diminuer qui fait toute la différence.',
+                  en: 'The same balance, repaid at a flat $100 a month, is cleared in 42 months for $1,193 in interest. The starting amount is close to the first minimum; it is refusing to let it shrink that makes the whole difference.',
+                },
+              },
+              {
+                lead: { fr: 'Le minimum baisse avec le solde, et c’est le piège.', en: 'The minimum falls with the balance, and that is the trap.' },
+                body: {
+                  fr: 'Un pourcentage du solde diminue à mesure que le solde diminue, donc le remboursement ralentit exactement quand il devrait accélérer. Un montant fixe, même modeste, casse cette mécanique.',
+                  en: 'A percentage of the balance shrinks as the balance shrinks, so repayment slows down exactly when it should speed up. A fixed amount, however modest, breaks that mechanism.',
+                },
+              },
+            ],
+            metaphor: {
+              fr: 'L’escalator qui descend. Payer le minimum, c’est monter à peu près à la vitesse à laquelle les marches descendent. Tu bouges, tu transpires, et le paysage ne change pas.',
+              en: 'The down escalator. Paying the minimum is climbing at roughly the speed the steps are descending. You are moving, you are working, and the view does not change.',
+            },
+            reflection: {
+              fr: 'Si un vendeur te proposait un prêt sur dix-sept ans pour un solde de 3 000 $, tu le signerais ? C’est exactement le contrat que le paiement minimum propose, sans jamais le formuler ainsi.',
+              en: 'If a salesperson offered you a seventeen-year loan for a $3,000 balance, would you sign? That is exactly the deal the minimum payment offers, without ever putting it that way.',
+            },
+            todo: {
+              fr: 'Si tu portes un solde, décide d’un montant fixe que tu paieras chaque mois, quoi qu’affiche le relevé, et fais-en un objectif récurrent dans Rich & Friends. Même 20 $ de plus que le minimum change le nombre d’années.',
+              en: 'If you carry a balance, decide on a fixed amount you will pay every month whatever the statement says, and make it a recurring goal in Rich & Friends. Even $20 above the minimum changes the number of years.',
+            },
+            quiz: [
+              {
+                ask: { fr: 'Solde de 3 000 $ à 20 %, payé au minimum de 3 %. Combien de temps pour l’éteindre ?', en: '$3,000 at 20 %, paid at the 3 % minimum. How long to clear it?' },
+                options: [
+                  { fr: 'Environ 3 ans', en: 'About 3 years' },
+                  { fr: 'Environ 8 ans', en: 'About 8 years' },
+                  { fr: 'Plus de 17 ans', en: 'More than 17 years' },
+                ],
+                answer: 2,
+                why: {
+                  fr: '207 mois, et 3 370 $ d’intérêts, soit plus que le solde emprunté. Presque personne ne devine ce chiffre, y compris des gens qui portent un solde depuis des années : l’intuition dit trois ou quatre ans.',
+                  en: '207 months, and $3,370 in interest, which is more than the amount borrowed. Almost nobody guesses this, including people who have carried a balance for years: intuition says three or four.',
+                },
+              },
+              {
+                ask: { fr: 'Sur ce même solde, payer 100 $ fixes par mois au lieu du minimum, ça donne quoi ?', en: 'On that same balance, paying a flat $100 a month instead of the minimum gives what?' },
+                options: [
+                  { fr: '42 mois et 1 193 $ d’intérêts', en: '42 months and $1,193 in interest' },
+                  { fr: '90 mois et 2 400 $ d’intérêts', en: '90 months and $2,400 in interest' },
+                  { fr: 'À peu près la même chose, le taux est identique', en: 'Roughly the same, the rate is identical' },
+                ],
+                answer: 0,
+                why: {
+                  fr: 'Dix-sept ans deviennent trois ans et demi, et les intérêts passent de 3 370 $ à 1 193 $. Le taux n’a pas bougé d’un point : c’est uniquement le refus de laisser le paiement diminuer avec le solde.',
+                  en: 'Seventeen years become three and a half, and interest drops from $3,370 to $1,193. The rate did not move a single point: it is purely the refusal to let the payment shrink with the balance.',
+                },
+              },
+              {
+                ask: { fr: 'Pourquoi le paiement minimum ralentit-il le remboursement au fil du temps ?', en: 'Why does the minimum payment slow repayment down over time?' },
+                options: [
+                  { fr: 'Parce que le taux d’intérêt augmente à mesure que tu rembourses', en: 'Because the interest rate rises as you repay' },
+                  { fr: 'Parce qu’il est un pourcentage du solde, donc il rétrécit quand le solde rétrécit', en: 'Because it is a percentage of the balance, so it shrinks as the balance shrinks' },
+                  { fr: 'Parce que la banque ajoute des frais mensuels au solde', en: 'Because the bank adds monthly fees to the balance' },
+                ],
+                answer: 1,
+                why: {
+                  fr: 'Le taux ne bouge pas. C’est la forme du minimum qui est en cause : un pourcentage du solde freine exactement au moment où il faudrait accélérer, et c’est précisément ce qu’un montant fixe corrige.',
+                  en: 'The rate does not move. It is the shape of the minimum: a percentage of the balance brakes exactly when it should accelerate, and that is precisely what a fixed amount fixes.',
+                },
+              },
+            ],
+          },
+          {
+            id: 'c1.4',
+            state: 'written',
+            title: { fr: 'Les frais qu’on ne voit pas', en: 'The fees you do not see' },
+            sub: { fr: 'Avance de fonds, change, cotisation annuelle.', en: 'Cash advances, currency, annual fee.' },
+            objective: {
+              fr: 'Reconnaître les trois façons dont une carte coûte de l’argent en dehors du taux d’intérêt affiché, et savoir laquelle des trois est la plus chère de très loin.',
+              en: 'Recognise the three ways a card costs money outside the advertised interest rate, and know which of the three is by far the most expensive.',
+            },
+            points: [
+              {
+                lead: { fr: 'L’avance de fonds n’a pas de délai de grâce. Aucun.', en: 'A cash advance has no grace period. None.' },
+                body: {
+                  fr: 'Retirer du comptant avec une carte de crédit fait courir les intérêts à la seconde, à un taux souvent plus élevé que celui des achats, plus un frais fixe prélevé tout de suite. Il n’existe aucune façon d’éviter ces intérêts, même en payant le relevé en entier le lendemain.',
+                  en: 'Taking cash out with a credit card starts interest the same second, usually at a higher rate than purchases, plus a flat fee charged immediately. There is no way to avoid that interest, not even by paying the statement in full the next day.',
+                },
+              },
+              {
+                lead: { fr: 'Ce qui compte comme une avance de fonds est plus large qu’on croit.', en: 'What counts as a cash advance is wider than you think.' },
+                body: {
+                  fr: 'Selon les émetteurs : un virement vers un compte, l’achat de devises, certains paris et jeux, et parfois un rechargement de portefeuille électronique. La ligne se lit dans le contrat, pas sur l’écran du guichet.',
+                  en: 'Depending on the issuer: a transfer to an account, buying foreign currency, some gambling, and sometimes topping up an e-wallet. That line is in the contract, not on the terminal screen.',
+                },
+              },
+              {
+                lead: { fr: 'La cotisation annuelle est un calcul, pas une opinion.', en: 'The annual fee is arithmetic, not an opinion.' },
+                body: {
+                  fr: 'Une carte à 120 $ par an qui rend 2 % sur tes dépenses devient rentable à partir de 6 000 $ dépensés dans l’année sur cette carte. En dessous, tu paies pour des récompenses qui te coûtent plus qu’elles ne rapportent. Le calcul se fait une fois, avec tes vrais chiffres.',
+                  en: 'A card costing $120 a year that returns 2 % on your spending breaks even at $6,000 spent on it in the year. Below that, you are paying for rewards that cost more than they return. The sum is done once, with your real numbers.',
+                },
+              },
+            ],
+            metaphor: {
+              fr: 'Le guichet automatique de l’aéroport. Le taux affiché en grand est le seul chiffre que tu regardes, et ce n’est jamais celui qui te coûte le plus.',
+              en: 'The airport cash machine. The rate in big letters is the only number you look at, and it is never the one costing you most.',
+            },
+            reflection: {
+              fr: 'Est-ce que tu as déjà retiré du comptant avec une carte de crédit en pensant que c’était un service neutre ? Ce n’est pas une faute : rien sur l’écran du guichet ne dit que les intérêts viennent de commencer.',
+              en: 'Have you ever taken cash out on a credit card, thinking it was a neutral service? That is not a failing: nothing on the cash machine screen says the interest has just started.',
+            },
+            todo: {
+              fr: 'Ouvre les douze derniers relevés et additionne tout ce qui n’est pas un achat : frais d’avance, frais de change, cotisation, frais de retard. Un seul total. C’est ce que la carte t’a coûté sans rien t’avoir vendu.',
+              en: 'Open the last twelve statements and add up everything that is not a purchase: advance fees, currency fees, the annual fee, late fees. One total. That is what the card cost you without selling you anything.',
+            },
+            quiz: [
+              {
+                ask: { fr: 'Tu retires 200 $ au guichet avec ta carte de crédit et tu paies le relevé en entier le lendemain. Combien d’intérêts ?', en: 'You take out $200 on your credit card and pay the statement in full the next day. How much interest?' },
+                options: [
+                  { fr: 'Zéro, puisque tu as payé en entier et à temps', en: 'Zero, since you paid in full and on time' },
+                  { fr: 'Des intérêts depuis la seconde du retrait, plus un frais fixe', en: 'Interest from the second of the withdrawal, plus a flat fee' },
+                  { fr: 'Zéro, mais avec un frais fixe seulement', en: 'Zero, but with a flat fee only' },
+                ],
+                answer: 1,
+                why: {
+                  fr: 'Le délai de grâce ne couvre que les achats. Une avance de fonds porte intérêt immédiatement, souvent à un taux supérieur, et payer en entier le lendemain n’efface pas la journée écoulée ni le frais.',
+                  en: 'The grace period covers purchases only. A cash advance accrues interest immediately, often at a higher rate, and paying in full the next day erases neither the day that passed nor the fee.',
+                },
+              },
+              {
+                ask: { fr: 'Une carte coûte 120 $ par an et rend 2 % sur tes achats. À partir de combien devient-elle rentable ?', en: 'A card costs $120 a year and returns 2 % on purchases. Above what spending is it worth it?' },
+                options: [
+                  { fr: '2 400 $ dépensés dans l’année', en: '$2,400 spent in the year' },
+                  { fr: '6 000 $ dépensés dans l’année', en: '$6,000 spent in the year' },
+                  { fr: '12 000 $ dépensés dans l’année', en: '$12,000 spent in the year' },
+                ],
+                answer: 1,
+                why: {
+                  fr: '120 divisé par 2 %, soit 6 000 $. En dessous, la cotisation coûte plus que les récompenses ne rapportent. C’est un calcul d’une ligne que personne ne fait avant de signer, et il se refait chaque année.',
+                  en: '$120 divided by 2 %, which is $6,000. Below that, the fee costs more than the rewards return. It is a one-line sum nobody does before signing, and it is worth redoing every year.',
+                },
+              },
+              {
+                ask: { fr: 'Laquelle de ces opérations est le plus souvent traitée comme une avance de fonds ?', en: 'Which of these is most often treated as a cash advance?' },
+                options: [
+                  { fr: 'Un achat en ligne à l’étranger', en: 'An online purchase from abroad' },
+                  { fr: 'Un virement depuis la carte vers ton compte bancaire', en: 'A transfer from the card to your bank account' },
+                  { fr: 'Un abonnement mensuel prélevé automatiquement', en: 'A monthly subscription charged automatically' },
+                ],
+                answer: 1,
+                why: {
+                  fr: 'Un virement sortant est du comptant aux yeux de l’émetteur, donc sans délai de grâce. L’achat à l’étranger est un achat, avec des frais de change en plus mais le délai de grâce intact.',
+                  en: 'An outgoing transfer is cash in the issuer’s eyes, so no grace period. A purchase from abroad is a purchase, with a currency fee on top but the grace period intact.',
+                },
+              },
+            ],
+          },
+        ],
+        action: {
+          fr: 'Une seule chose à faire après ce module : mettre la date d’échéance de ta carte dans le calendrier, en répétition mensuelle, avec un rappel. Tout le reste du cours devient facultatif si celle-là est faite.',
+          en: 'One thing to do after this module: put your card’s due date in the calendar, repeating monthly, with a reminder. Everything else in this course becomes optional once that one is done.',
+        },
+      },
+      {
+        n: 2,
+        title: { fr: 'S’en servir, ou s’en sortir', en: 'Using it, or getting out' },
+        intro: {
+          fr: 'Le module précédent explique la mécanique. Celui-ci sert à deux personnes différentes : celle qui n’a pas encore de solde et veut que la carte travaille pour elle, et celle qui en a un et veut savoir par où commencer. Les deux lisent les mêmes leçons.',
+          en: 'The previous module explains the mechanics. This one serves two different people: the one with no balance yet who wants the card working for them, and the one who has a balance and wants to know where to start. Both read the same lessons.',
+        },
+        lessons: [
+          {
+            id: 'c2.1',
+            state: 'written',
+            title: { fr: 'Ce qui construit vraiment ton dossier', en: 'What actually builds your file' },
+            sub: { fr: 'Le score de crédit, sans les mythes.', en: 'The credit score, without the myths.' },
+            objective: {
+              fr: 'Savoir quels comportements pèsent réellement sur un dossier de crédit, et pourquoi deux gestes qui semblent responsables peuvent le faire baisser.',
+              en: 'Know which behaviours actually weigh on a credit file, and why two moves that feel responsible can lower it.',
+            },
+            points: [
+              {
+                lead: { fr: 'Payer à temps pèse plus que tout le reste réuni.', en: 'Paying on time weighs more than everything else combined.' },
+                body: {
+                  fr: 'L’historique de paiement est le facteur le plus lourd chez tous les bureaux de crédit. Un paiement en retard laisse une trace pendant des années, et un paiement minimum fait à temps compte comme un paiement à temps : pour le dossier, pas pour ton portefeuille.',
+                  en: 'Payment history is the heaviest factor at every credit bureau. One late payment leaves a mark for years, and a minimum payment made on time counts as on time: for the file, not for your wallet.',
+                },
+              },
+              {
+                lead: { fr: 'Le taux d’utilisation compte, et il se mesure au relevé.', en: 'Utilisation counts, and it is measured at the statement.' },
+                body: {
+                  fr: 'C’est la part de ta limite que tu utilises. La règle courante est de rester sous 30 % : 600 $ sur une limite de 2 000 $. Le chiffre transmis est souvent celui du jour du relevé, donc payer avant cette date, et pas seulement avant l’échéance, change ce qui est rapporté.',
+                  en: 'It is the share of your limit you are using. The common rule is to stay under 30 %: $600 on a $2,000 limit. The figure reported is usually the one on statement day, so paying before that date, not just before the due date, changes what gets reported.',
+                },
+              },
+              {
+                lead: { fr: 'Fermer une vieille carte peut faire baisser ton score.', en: 'Closing an old card can lower your score.' },
+                body: {
+                  fr: 'Elle emporte son ancienneté et sa limite, donc l’âge moyen de tes comptes baisse et ton taux d’utilisation monte d’un coup, sans que tu aies dépensé un centime de plus. Fermer une carte sans frais dont on ne se sert plus est rarement le bon geste.',
+                  en: 'It takes its age and its limit with it, so the average age of your accounts falls and your utilisation jumps, without you spending a cent more. Closing a no-fee card you no longer use is rarely the right move.',
+                },
+              },
+            ],
+            metaphor: {
+              fr: 'Le CV. Ce qui compte n’est pas d’avoir eu un seul emploi parfait, c’est de n’avoir aucun trou et de l’avoir tenu longtemps. Effacer une vieille ligne rend le CV plus court, pas plus propre.',
+              en: 'A CV. What counts is not one perfect job, it is having no gaps and having held things a long time. Deleting an old line makes the CV shorter, not cleaner.',
+            },
+            reflection: {
+              fr: 'Ton dossier de crédit décide un jour de ton loyer, de ton assurance et de ton prêt auto. Est-ce que tu sais ce qu’il contient aujourd’hui, ou est-ce que tu le découvriras au moment où quelqu’un te dira non ?',
+              en: 'Your credit file will one day decide your rent, your insurance and your car loan. Do you know what is in it today, or will you find out the moment somebody says no?',
+            },
+            todo: {
+              fr: 'Calcule ton taux d’utilisation : solde divisé par limite, en pourcentage. Si c’est au-dessus de 30 %, essaie un paiement supplémentaire avant la date du relevé plutôt qu’avant l’échéance, et regarde ce qui est rapporté le mois suivant.',
+              en: 'Work out your utilisation: balance divided by limit, as a percentage. If it is above 30 %, try an extra payment before statement day rather than before the due date, and watch what gets reported next month.',
+            },
+            quiz: [
+              {
+                ask: { fr: 'Tu as une limite de 2 000 $. Quel solde te garde sous la barre des 30 % ?', en: 'You have a $2,000 limit. What balance keeps you under 30 %?' },
+                options: [
+                  { fr: 'Moins de 200 $', en: 'Under $200' },
+                  { fr: 'Moins de 600 $', en: 'Under $600' },
+                  { fr: 'Moins de 1 000 $', en: 'Under $1,000' },
+                ],
+                answer: 1,
+                why: {
+                  fr: '30 % de 2 000 $ font 600 $. Et le chiffre qui compte est celui du jour du relevé, pas celui de l’échéance : quelqu’un qui paie toujours en entier peut quand même faire rapporter un taux élevé.',
+                  en: '30 % of $2,000 is $600. And the number that counts is the one on statement day, not the due date: somebody who always pays in full can still have a high figure reported.',
+                },
+              },
+              {
+                ask: { fr: 'Tu as une vieille carte sans frais que tu n’utilises plus. Que se passe-t-il si tu la fermes ?', en: 'You have an old no-fee card you no longer use. What happens if you close it?' },
+                options: [
+                  { fr: 'Ton score monte, tu as un compte de moins à gérer', en: 'Your score rises, one less account to manage' },
+                  { fr: 'Ton score peut baisser : tu perds son ancienneté et sa limite', en: 'Your score can fall: you lose its age and its limit' },
+                  { fr: 'Rien ne change tant que le solde était à zéro', en: 'Nothing changes, since the balance was zero' },
+                ],
+                answer: 1,
+                why: {
+                  fr: 'C’est le geste contre-intuitif du cours. Fermer un compte réduit l’âge moyen de ton dossier et retire sa limite du total, donc ton taux d’utilisation monte alors que tu n’as rien dépensé de plus.',
+                  en: 'This is the counter-intuitive move in the course. Closing an account lowers your file’s average age and removes its limit from the total, so your utilisation rises although you spent nothing more.',
+                },
+              },
+              {
+                ask: { fr: 'Quel facteur pèse le plus lourd dans un dossier de crédit ?', en: 'Which factor weighs heaviest in a credit file?' },
+                options: [
+                  { fr: 'Le nombre de cartes que tu possèdes', en: 'How many cards you hold' },
+                  { fr: 'L’historique de paiement, donc payer à temps', en: 'Payment history, meaning paying on time' },
+                  { fr: 'Ton revenu annuel', en: 'Your annual income' },
+                ],
+                answer: 1,
+                why: {
+                  fr: 'Le revenu ne figure même pas dans le calcul du score chez la plupart des bureaux. C’est le comportement de remboursement qui domine, très loin devant le reste, et c’est aussi le seul facteur entièrement sous ton contrôle chaque mois.',
+                  en: 'Income does not even enter the score calculation at most bureaus. Repayment behaviour dominates, far ahead of everything else, and it is also the only factor entirely under your control every month.',
+                },
+              },
+            ],
+          },
+          {
+            id: 'c2.2',
+            state: 'written',
+            title: { fr: 'Déjà dedans', en: 'Already in it' },
+            sub: { fr: 'Sortir d’un solde qui ne bouge plus.', en: 'Getting out of a balance that will not move.' },
+            objective: {
+              fr: 'Savoir dans quel ordre attaquer des dettes, et découvrir que la banque a des options qu’elle n’offre jamais spontanément.',
+              en: 'Know what order to attack debts in, and discover that the bank has options it never offers unprompted.',
+            },
+            points: [
+              {
+                lead: { fr: 'Arrêter l’hémorragie passe avant tout le reste.', en: 'Stopping the bleed comes before everything else.' },
+                body: {
+                  fr: 'Tant que la carte sert encore aux achats du quotidien, le solde se reconstitue aussi vite qu’il descend. Sortir la carte du portefeuille, la retirer des paiements enregistrés en ligne, et payer en débit le temps de la vider.',
+                  en: 'While the card is still paying for daily life, the balance rebuilds as fast as it falls. Take the card out of your wallet, remove it from saved online payments, and pay by debit until it is empty.',
+                },
+              },
+              {
+                lead: { fr: 'Deux ordres possibles, et ils ne visent pas la même chose.', en: 'Two possible orders, aiming at different things.' },
+                body: {
+                  fr: 'Le taux le plus élevé d’abord coûte le moins cher en arithmétique. Le plus petit solde d’abord donne une dette éteinte plus vite, donc une preuve que ça marche. Si tu as déjà abandonné deux fois, la preuve vaut plus que les quelques dollars d’écart.',
+                  en: 'Highest rate first is cheapest arithmetically. Smallest balance first clears one debt sooner, which is proof that it works. If you have already given up twice, the proof is worth more than the few dollars of difference.',
+                },
+              },
+              {
+                lead: { fr: 'La banque a des options qu’elle n’offre jamais d’elle-même.', en: 'The bank has options it never offers on its own.' },
+                body: {
+                  fr: 'Un taux réduit sur demande, le passage à une carte à taux bas, un prêt personnel à taux plus faible qui rachète le solde, un plan de remboursement. Rien de tout ça n’apparaît dans l’application : ça se demande au téléphone, et un non n’est pas définitif.',
+                  en: 'A lower rate on request, a switch to a low-rate card, a personal loan at a lower rate that buys out the balance, a repayment plan. None of it appears in the app: you ask on the phone, and a no is not final.',
+                },
+              },
+            ],
+            metaphor: {
+              fr: 'Le seau percé. Écoper plus vite est épuisant et ne règle rien tant que le trou est ouvert. On bouche d’abord, on écope ensuite.',
+              en: 'The leaking bucket. Bailing faster is exhausting and settles nothing while the hole is open. Plug first, bail second.',
+            },
+            reflection: {
+              fr: 'Un solde de carte n’est pas un jugement moral sur toi. C’est un produit conçu, vendu, et rentable précisément quand il est mal compris. Est-ce que tu te parles comme tu parlerais à un ami dans la même situation ?',
+              en: 'A card balance is not a moral judgement on you. It is a product, designed and sold, and profitable precisely when it is misunderstood. Do you talk to yourself the way you would talk to a friend in the same spot?',
+            },
+            todo: {
+              fr: 'Écris toutes tes dettes en une colonne : le solde, le taux, le paiement minimum. Rien d’autre. La plupart des gens ne les ont jamais vues côte à côte, et c’est la vue qui rend la décision évidente.',
+              en: 'Write every debt in one column: balance, rate, minimum payment. Nothing else. Most people have never seen them side by side, and it is that view that makes the decision obvious.',
+            },
+            script: [
+              {
+                fr: 'Bonjour, je porte un solde sur ma carte depuis quelques mois et le taux est à [X] %. Je veux le rembourser. Est-ce que vous pouvez baisser mon taux, ou est-ce que j’ai droit à une carte à taux réduit chez vous ?',
+                en: 'Hello, I have been carrying a balance for a few months and the rate is [X] %. I want to clear it. Can you lower my rate, or do I qualify for a low-rate card with you?',
+              },
+              {
+                fr: 'Si c’est non : est-ce que vous proposez un prêt personnel qui rachèterait ce solde à un taux plus bas ? Quel serait le taux et sur combien de mois ?',
+                en: 'If that is no: do you offer a personal loan that would buy out this balance at a lower rate? What rate, and over how many months?',
+              },
+              {
+                fr: 'Merci. Je note votre nom et la date. Je rappellerai le mois prochain si la situation n’a pas changé.',
+                en: 'Thank you. I am noting your name and the date. I will call back next month if nothing has changed.',
+              },
+            ],
+            quiz: [
+              {
+                ask: { fr: 'Tu commences à rembourser un solde mais tu continues à payer tes courses avec la carte. Que se passe-t-il ?', en: 'You start clearing a balance but keep paying for groceries with the card. What happens?' },
+                options: [
+                  { fr: 'Ça va, tant que tu paies plus que ce que tu dépenses', en: 'Fine, as long as you pay more than you spend' },
+                  { fr: 'Le solde se reconstitue, et les achats neufs portent intérêt dès le premier jour', en: 'The balance rebuilds, and new purchases accrue interest from day one' },
+                  { fr: 'Rien, les nouveaux achats gardent leur délai de grâce', en: 'Nothing, new purchases keep their grace period' },
+                ],
+                answer: 1,
+                why: {
+                  fr: 'C’est la leçon c1.2 qui revient : tant qu’un solde reste, le délai de grâce ne protège plus les achats neufs. Continuer à utiliser la carte pendant un remboursement rend chaque course plus chère qu’en débit.',
+                  en: 'Lesson c1.2 comes back: while a balance remains, the grace period no longer protects new purchases. Using the card during a repayment makes every shop more expensive than debit would be.',
+                },
+              },
+              {
+                ask: { fr: 'Tu as trois dettes. Laquelle attaquer en premier si tu as déjà abandonné deux fois ?', en: 'You have three debts. Which first, if you have already given up twice?' },
+                options: [
+                  { fr: 'Le taux le plus élevé, c’est mathématiquement le moins cher', en: 'The highest rate, mathematically the cheapest' },
+                  { fr: 'Le plus petit solde, pour en éteindre une vite et avoir la preuve que ça marche', en: 'The smallest balance, to clear one fast and have proof it works' },
+                  { fr: 'Toutes en même temps, à parts égales', en: 'All at once, in equal parts' },
+                ],
+                answer: 1,
+                why: {
+                  fr: 'L’arithmétique dit le taux le plus élevé, et elle a raison de quelques dollars. Mais un plan qu’on abandonne coûte cent pour cent. Quand la tenue est le vrai risque, la victoire rapide vaut plus que l’optimum théorique.',
+                  en: 'Arithmetic says highest rate, and it is right by a few dollars. But a plan you abandon costs a hundred per cent. When sticking to it is the real risk, the quick win beats the theoretical optimum.',
+                },
+              },
+              {
+                ask: { fr: 'Que peux-tu obtenir en appelant ta banque, que l’application ne propose jamais ?', en: 'What can a phone call to your bank get you that the app never offers?' },
+                options: [
+                  { fr: 'Rien, les taux sont fixes et identiques pour tout le monde', en: 'Nothing, rates are fixed and the same for everyone' },
+                  { fr: 'Un taux réduit, une carte à taux bas, ou un prêt qui rachète le solde', en: 'A lower rate, a low-rate card, or a loan that buys out the balance' },
+                  { fr: 'L’effacement d’une partie du solde', en: 'Part of the balance written off' },
+                ],
+                answer: 1,
+                why: {
+                  fr: 'Rien n’est effacé, mais un taux se négocie plus souvent qu’on ne le croit, surtout auprès de quelqu’un qui paie à temps. Ça ne s’affiche nulle part parce que ça ne se propose pas : ça se demande.',
+                  en: 'Nothing gets written off, but a rate is negotiable more often than people think, especially for somebody who pays on time. It appears nowhere because it is not offered: it is asked for.',
+                },
+              },
+            ],
+          },
+          {
+            id: 'c2.3',
+            state: 'written',
+            title: { fr: 'La carte dans ton pays', en: 'The card where you live' },
+            sub: { fr: 'Le même objet ne veut pas dire la même chose partout.', en: 'The same object does not mean the same thing everywhere.' },
+            objective: {
+              fr: 'Savoir si la carte qu’on te propose est du crédit ou du débit déguisé, et reconnaître le produit piège de sa propre région.',
+              en: 'Know whether the card you are offered is credit or disguised debit, and recognise your own region’s trap product.',
+            },
+            universal: {
+              fr: 'Partout, la même première question, et elle n’est pas « quelles récompenses » : est-ce que ce bout de plastique dépense mon argent ou celui de la banque ? Une carte de débit prend ce que tu as. Une carte de crédit emprunte. Entre les deux existent des produits qui portent le mot carte et ne se comportent comme aucun des deux, et c’est là que les gens se font avoir.',
+              en: 'Everywhere, the same first question, and it is not "which rewards": does this piece of plastic spend my money or the bank’s? A debit card takes what you have. A credit card borrows. Between the two sit products that carry the word card and behave like neither, and that is where people get caught.',
+            },
+            byCountry: {
+              ca: {
+                grail: {
+                  fr: 'Le réflexe qui règle presque tout : le paiement automatique du SOLDE COMPLET, pas du minimum, programmé chez ta banque le jour de l’échéance. Il transforme la carte en carte de débit avec un mois de décalage, et supprime d’un coup le délai de grâce perdu, les frais de retard et la marque au dossier.',
+                  en: 'The one habit that settles almost everything: an automatic payment of the FULL statement balance, not the minimum, set up at your bank for the due date. It turns the card into a debit card with a month’s delay, and removes at a stroke the lost grace period, the late fees and the mark on your file.',
+                },
+                points: [
+                  {
+                    lead: { fr: 'Deux bureaux, deux dossiers.', en: 'Two bureaus, two files.' },
+                    body: {
+                      fr: 'Equifax et TransUnion tiennent chacun le leur, et ils ne contiennent pas toujours la même chose. Les deux sont consultables gratuitement, et une erreur sur l’un ne se corrige pas toute seule sur l’autre.',
+                      en: 'Equifax and TransUnion each hold their own, and they do not always contain the same thing. Both can be checked free, and an error on one does not fix itself on the other.',
+                    },
+                  },
+                  {
+                    lead: { fr: 'Au Québec, le paiement minimum légal a été relevé par étapes.', en: 'In Quebec, the legal minimum payment has been raised in stages.' },
+                    body: {
+                      fr: 'C’est une protection, pas une contrainte : un minimum plus élevé raccourcit énormément la durée de remboursement, exactement dans le sens de la leçon c1.3. Ailleurs au pays le minimum reste bas, donc le montant fixe que tu décides toi-même compte encore plus.',
+                      en: 'That is a protection, not a constraint: a higher minimum shortens repayment enormously, exactly along the lines of lesson c1.3. Elsewhere in the country the minimum stays low, so the fixed amount you set yourself matters even more.',
+                    },
+                  },
+                  {
+                    lead: { fr: 'Les cartes de magasin sont les plus chères du marché.', en: 'Store cards are the most expensive on the market.' },
+                    body: {
+                      fr: 'Offertes à la caisse contre un rabais immédiat, à des taux souvent bien supérieurs à ceux d’une carte bancaire ordinaire. Le rabais est payé une fois, le taux court tant qu’il reste un solde.',
+                      en: 'Offered at the till against an instant discount, at rates often well above an ordinary bank card. The discount is paid once, the rate runs as long as a balance remains.',
+                    },
+                  },
+                ],
+                todo: {
+                  fr: 'Ouvre l’application de ta banque et programme le paiement automatique du solde complet à l’échéance. Puis demande ton dossier de crédit gratuit chez Equifax et chez TransUnion, et lis-les.',
+                  en: 'Open your bank app and set up the automatic full-balance payment on the due date. Then request your free credit file from both Equifax and TransUnion, and read them.',
+                },
+              },
+              fr: {
+                grail: {
+                  fr: 'En France, la question numéro un est : est-ce du débit différé ou du crédit renouvelable ? La carte à débit différé prélève TON argent en fin de mois, ne coûte aucun intérêt, et n’est pas un crédit. Le crédit renouvelable est un vrai prêt à taux élevé, souvent adossé à une carte de magasin, et c’est le produit qui fait le plus de dégâts dans le pays.',
+                  en: 'In France the first question is: deferred debit or revolving credit? A deferred-debit card takes YOUR money at month end, costs no interest, and is not credit. Revolving credit is a real high-rate loan, often attached to a store card, and it is the product that does the most damage in the country.',
+                },
+                points: [
+                  {
+                    lead: { fr: 'Le débit différé n’est pas gratuit pour autant.', en: 'Deferred debit is not free for all that.' },
+                    body: {
+                      fr: 'Il ne coûte pas d’intérêts, mais il décale la lecture de ton compte : le solde affiché ne dit plus ce que tu as, il dit ce que tu as moins ce qui n’est pas encore prélevé. C’est un piège de trésorerie, pas un piège de taux.',
+                      en: 'It costs no interest, but it distorts how you read your account: the balance shown no longer says what you have, it says what you have minus what has not been taken yet. That is a cash-flow trap, not a rate trap.',
+                    },
+                  },
+                  {
+                    lead: { fr: 'Le crédit renouvelable se vend là où on ne l’attend pas.', en: 'Revolving credit is sold where you least expect it.' },
+                    body: {
+                      fr: 'À la caisse d’un magasin, dans une offre de fidélité, dans un financement en plusieurs fois. La loi impose depuis des années un remboursement minimum du capital à chaque échéance, précisément parce que sans ça le solde ne descendait jamais.',
+                      en: 'At a shop till, inside a loyalty offer, inside a pay-in-instalments deal. The law has for years required a minimum repayment of capital at each instalment, precisely because without it the balance never came down.',
+                    },
+                  },
+                  {
+                    lead: { fr: 'Il n’y a pas de score de crédit à la française.', en: 'There is no French credit score.' },
+                    body: {
+                      fr: 'Pas d’équivalent d’Equifax : ce qui existe est le FICP, un fichier d’incidents tenu par la Banque de France. On n’y construit rien de positif, on peut seulement y entrer. C’est l’inverse exact de la logique nord-américaine.',
+                      en: 'No Equifax equivalent: what exists is the FICP, an incident file held by the Banque de France. You build nothing positive in it, you can only end up in it. That is the exact inverse of the North American logic.',
+                    },
+                  },
+                ],
+                todo: {
+                  fr: 'Sors ta carte et cherche la mention « débit immédiat » ou « débit différé » sur ton contrat. Puis vérifie qu’aucune carte de magasin dans ton portefeuille n’est adossée à un crédit renouvelable ouvert.',
+                  en: 'Take out your card and look for "débit immédiat" or "débit différé" on your contract. Then check that no store card in your wallet has an open revolving credit attached.',
+                },
+              },
+              us: {
+                grail: {
+                  fr: 'Le paiement automatique du solde complet, comme partout, et une deuxième règle propre au pays : ne jamais accepter une offre « 0 % » sans avoir lu ce qui se passe à la fin. Certaines, surtout chez les enseignes, sont à intérêts différés : si le solde n’est pas à zéro à la date butoir, tous les intérêts de la période sont facturés rétroactivement, d’un coup.',
+                  en: 'Automatic full-balance payment, as everywhere, and a second rule specific to the country: never take a "0 %" offer without reading what happens at the end. Some, especially store ones, are deferred interest: if the balance is not zero on the deadline, all the interest for the period is charged retroactively, at once.',
+                },
+                points: [
+                  {
+                    lead: { fr: 'Le FICO est un produit, pas une vérité.', en: 'FICO is a product, not a truth.' },
+                    body: {
+                      fr: 'Plusieurs versions coexistent et la banque ne regarde pas forcément celle que ton application te montre gratuitement. L’ordre de grandeur est utile, le chiffre exact l’est beaucoup moins.',
+                      en: 'Several versions coexist and the lender does not necessarily look at the one your app shows you free. The ballpark is useful, the exact number much less so.',
+                    },
+                  },
+                  {
+                    lead: { fr: 'Intérêts différés et 0 % réel ne sont pas la même offre.', en: 'Deferred interest and a real 0 % are not the same offer.' },
+                    body: {
+                      fr: 'Un vrai 0 % introductif ne facture rien pour la période écoulée quand elle se termine. Un intérêt différé facture tout, rétroactivement, s’il reste un dollar. Le mot à chercher dans le contrat est « deferred ».',
+                      en: 'A genuine intro 0 % charges nothing for the elapsed period when it ends. Deferred interest charges everything, retroactively, if one dollar remains. The word to look for in the contract is "deferred".',
+                    },
+                  },
+                  {
+                    lead: { fr: 'Le CARD Act a rendu une chose visible sur ton relevé.', en: 'The CARD Act made one thing visible on your statement.' },
+                    body: {
+                      fr: 'Il oblige l’émetteur à imprimer combien d’années tu mettrais en payant le minimum, et ce que coûterait un remboursement en trois ans. C’est la leçon c1.3, imprimée sur ton propre relevé, et presque personne ne la lit.',
+                      en: 'It requires the issuer to print how many years you would take paying the minimum, and what a three-year payoff would cost. That is lesson c1.3, printed on your own statement, and almost nobody reads it.',
+                    },
+                  },
+                ],
+                todo: {
+                  fr: 'Trouve sur ton relevé l’encadré du paiement minimum imposé par le CARD Act et lis le nombre d’années. Puis programme le paiement automatique du solde complet.',
+                  en: 'Find the CARD Act minimum payment box on your statement and read the number of years. Then set up automatic full-balance payment.',
+                },
+              },
+              af: {
+                grail: {
+                  fr: 'La première honnêteté de la leçon : dans la zone UEMOA et la zone CEMAC, la très grande majorité des cartes en circulation sont des cartes de DÉBIT, pas de crédit. Le vrai sujet du crédit court ailleurs : avances sur mobile money, microcrédit, tontines et prêts entre proches. Les règles des leçons précédentes s’appliquent quand même, parce qu’un taux reste un taux.',
+                  en: 'The lesson’s first honesty: in the UEMOA and CEMAC zones, the vast majority of cards in circulation are DEBIT cards, not credit. The real credit story runs elsewhere: mobile money advances, microcredit, tontines and loans between relatives. The earlier lessons still apply, because a rate is still a rate.',
+                },
+                points: [
+                  {
+                    lead: { fr: 'Le crédit mobile se compte en jours, pas en années.', en: 'Mobile credit is counted in days, not years.' },
+                    body: {
+                      fr: 'Une avance affichée à « 5 % » sur trente jours n’est pas 5 % par an : c’est de l’ordre de 60 % en rythme annuel. La façon dont un coût est présenté est un choix de vente, et ramener chaque offre à un taux annuel est la seule façon de les comparer.',
+                      en: 'An advance advertised at "5 %" over thirty days is not 5 % a year: it is on the order of 60 % annualised. How a cost is presented is a sales choice, and converting every offer to an annual rate is the only way to compare them.',
+                    },
+                  },
+                  {
+                    lead: { fr: 'La tontine n’est pas du crédit, et elle en fait le travail.', en: 'A tontine is not credit, and it does credit’s job.' },
+                    body: {
+                      fr: 'Elle ne coûte pas d’intérêt et elle marche sur la confiance, ce qui est sa force et son seul risque. Elle ne construit aucun dossier auprès d’une banque, donc elle ne remplace pas un historique le jour où un vrai prêt devient nécessaire.',
+                      en: 'It costs no interest and it runs on trust, which is its strength and its only risk. It builds no file with any bank, so it does not replace a history the day a real loan becomes necessary.',
+                    },
+                  },
+                  {
+                    lead: { fr: 'Le vrai piège local est le crédit sans écrit.', en: 'The real local trap is credit with nothing written down.' },
+                    body: {
+                      fr: 'Un prêt entre proches sans montant, sans échéance et sans papier ne se termine jamais proprement : il finit en dispute familiale plutôt qu’en défaut de paiement. Écrire trois lignes et les signer coûte cinq minutes et sauve une relation.',
+                      en: 'A loan between relatives with no amount, no deadline and no paper never ends cleanly: it ends in a family argument rather than a default. Writing three lines and signing them costs five minutes and saves a relationship.',
+                    },
+                  },
+                ],
+                note: {
+                  fr: 'Si une carte de crédit t’est proposée par une banque de la place, la question reste la même que partout : quel est le taux annuel, y a-t-il un délai de grâce, et quels frais s’appliquent à un retrait de comptant. Trois questions, au téléphone, avant de signer.',
+                  en: 'If a local bank offers you a credit card, the question is the same as anywhere: what is the annual rate, is there a grace period, and what fees apply to a cash withdrawal. Three questions, on the phone, before signing.',
+                },
+                todo: {
+                  fr: 'Prends la dernière avance ou le dernier crédit court que tu as pris, et ramène son coût à un taux annuel : coût divisé par montant, divisé par le nombre de jours, multiplié par 365. Écris le chiffre.',
+                  en: 'Take the last advance or short credit you used, and convert its cost to an annual rate: cost divided by amount, divided by the number of days, times 365. Write the number down.',
+                },
+              },
+            },
+            reflection: {
+              fr: 'Est-ce que tu sais, pour la carte que tu as dans la poche, si elle dépense ton argent ou celui de la banque ? Beaucoup de gens vivent des années avec la mauvaise réponse en tête.',
+              en: 'For the card in your pocket, do you know whether it spends your money or the bank’s? Plenty of people live for years with the wrong answer in their head.',
+            },
+            quiz: [
+              {
+                ask: { fr: 'Quelle est la première question à poser devant n’importe quelle carte, n’importe où ?', en: 'What is the first question to ask about any card, anywhere?' },
+                options: [
+                  { fr: 'Quelles récompenses est-ce qu’elle donne ?', en: 'What rewards does it give?' },
+                  { fr: 'Est-ce qu’elle dépense mon argent ou celui de la banque ?', en: 'Does it spend my money or the bank’s?' },
+                  { fr: 'Quelle est sa limite ?', en: 'What is its limit?' },
+                ],
+                answer: 1,
+                why: {
+                  fr: 'Tout le reste découle de là. Les récompenses ne comptent que sur une carte payée en entier, et la limite ne dit rien de ce que tu peux te permettre. Débit ou crédit est la seule question qui change la nature de l’objet.',
+                  en: 'Everything else follows from it. Rewards only count on a card paid in full, and the limit says nothing about what you can afford. Debit or credit is the only question that changes what the object is.',
+                },
+              },
+              {
+                ask: { fr: 'Une avance mobile annoncée à « 5 % sur 30 jours », ça fait quoi en rythme annuel ?', en: 'A mobile advance advertised at "5 % over 30 days" is roughly what annualised?' },
+                options: [
+                  { fr: 'Environ 5 % par an', en: 'About 5 % a year' },
+                  { fr: 'Environ 20 % par an', en: 'About 20 % a year' },
+                  { fr: 'De l’ordre de 60 % par an', en: 'On the order of 60 % a year' },
+                ],
+                answer: 2,
+                why: {
+                  fr: 'Douze périodes de trente jours dans une année. La façon dont un coût est présenté est un choix de vente : ramener chaque offre à un taux annuel est la seule façon de comparer une avance mobile, une carte et un microcrédit.',
+                  en: 'Twelve thirty-day periods in a year. How a cost is presented is a sales choice: converting every offer to an annual rate is the only way to compare a mobile advance, a card and a microloan.',
+                },
+              },
+              {
+                ask: { fr: 'Une offre à « 0 % » se termine et il reste 40 $. Que peut-il arriver de pire ?', en: 'A "0 %" offer ends and $40 remains. What is the worst that can happen?' },
+                options: [
+                  { fr: 'Tu paies des intérêts sur les 40 $ à partir de maintenant', en: 'You pay interest on the $40 from now on' },
+                  { fr: 'Tous les intérêts de toute la période sont facturés rétroactivement', en: 'All the interest for the whole period is charged retroactively' },
+                  { fr: 'L’offre se prolonge automatiquement', en: 'The offer extends automatically' },
+                ],
+                answer: 1,
+                why: {
+                  fr: 'C’est l’intérêt différé, courant sur les cartes de magasin. Le mot à chercher dans le contrat est « deferred » : un vrai 0 % ne facture rien pour la période écoulée, un intérêt différé facture tout si un dollar reste.',
+                  en: 'That is deferred interest, common on store cards. The word to look for is "deferred": a genuine 0 % charges nothing for the elapsed period, deferred interest charges everything if one dollar remains.',
+                },
+              },
+            ],
+          },
+          {
+            id: 'c2.4',
+            state: 'written',
+            title: { fr: 'Ce qu’il faut retenir', en: 'What to take away' },
+            sub: { fr: 'Sept lignes, et une check-list.', en: 'Seven lines, and a checklist.' },
+            objective: {
+              fr: 'Repartir avec une liste courte qu’on peut relire en deux minutes dans six mois, et avec les gestes concrets déjà cochés ou pas.',
+              en: 'Leave with a short list you can reread in two minutes six months from now, and with the concrete steps either ticked or not.',
+            },
+            points: [
+              {
+                lead: { fr: 'Une seule règle vaut toutes les autres.', en: 'One rule is worth all the others.' },
+                body: {
+                  fr: 'Payer le solde du RELEVÉ, en ENTIER, AVANT l’échéance. Fais ça et le taux d’intérêt de ta carte ne te concerne plus jamais. Rate-le une fois et tout le reste du cours devient d’actualité.',
+                  en: 'Pay the STATEMENT balance, in FULL, BEFORE the due date. Do that and your card’s interest rate never concerns you again. Miss it once and the rest of this course becomes relevant.',
+                },
+              },
+              {
+                lead: { fr: 'Les trois choses qui coûtent le plus.', en: 'The three most expensive things.' },
+                body: {
+                  fr: 'Le paiement minimum, qui transforme trois ans en dix-sept. L’avance de fonds, qui n’a aucun délai de grâce. Et un solde qui traîne, qui fait payer intérêt sur les achats neufs dès le premier jour.',
+                  en: 'The minimum payment, which turns three years into seventeen. The cash advance, which has no grace period at all. And a lingering balance, which makes new purchases accrue interest from day one.',
+                },
+              },
+              {
+                lead: { fr: 'Les deux gestes qui règlent presque tout.', en: 'The two moves that settle almost everything.' },
+                body: {
+                  fr: 'Le paiement automatique du solde complet, programmé une fois. Et la date d’échéance dans le calendrier, avec un rappel. Ensemble, ils rendent la plupart de ce cours théorique.',
+                  en: 'Automatic full-balance payment, set up once. And the due date in the calendar, with a reminder. Together they make most of this course theoretical.',
+                },
+              },
+            ],
+            metaphor: {
+              fr: 'Le couteau de cuisine. Bien tenu, c’est l’outil le plus utile du tiroir et personne ne s’en méfie. Mal tenu, il ne devient pas un mauvais couteau : il reste exactement le même objet.',
+              en: 'The kitchen knife. Held well, it is the most useful tool in the drawer and nobody fears it. Held badly, it does not become a bad knife: it stays exactly the same object.',
+            },
+            reflection: {
+              fr: 'Sur les huit leçons, laquelle t’a appris quelque chose que tu ne savais pas ? Écris-la. C’est celle-là que tu répéteras à quelqu’un, et répéter est la seule façon de retenir.',
+              en: 'Of the eight lessons, which taught you something you did not know? Write it down. That is the one you will repeat to somebody, and repeating is the only way to remember.',
+            },
+            todo: {
+              fr: 'La check-list, à cocher pour de vrai : 1) je connais mon taux annuel. 2) la date d’échéance est dans mon calendrier avec un rappel. 3) le paiement automatique du solde complet est programmé. 4) je sais ce que compte mon émetteur comme avance de fonds. 5) mon taux d’utilisation est sous 30 %. 6) si j’ai un solde, j’ai décidé d’un montant fixe. 7) j’ai appelé ma banque au moins une fois.',
+              en: 'The checklist, to tick for real: 1) I know my annual rate. 2) the due date is in my calendar with a reminder. 3) automatic full-balance payment is set up. 4) I know what my issuer counts as a cash advance. 5) my utilisation is under 30 %. 6) if I carry a balance, I have decided on a fixed amount. 7) I have called my bank at least once.',
+            },
+            quiz: [
+              {
+                ask: { fr: 'S’il ne fallait retenir qu’une phrase de tout ce cours, laquelle ?', en: 'If you kept one sentence from this whole course, which?' },
+                options: [
+                  { fr: 'Ne jamais posséder de carte de crédit', en: 'Never own a credit card' },
+                  { fr: 'Payer le solde du relevé, en entier, avant l’échéance', en: 'Pay the statement balance, in full, before the due date' },
+                  { fr: 'Toujours rester bien en dessous de sa limite', en: 'Always stay well below your limit' },
+                ],
+                answer: 1,
+                why: {
+                  fr: 'Ni interdiction, ni prudence vague. Une carte payée en entier chaque mois est un outil gratuit qui construit un dossier ; la même carte payée au minimum est un des prêts les plus chers auxquels un particulier ait accès. Le même objet, deux comportements.',
+                  en: 'Neither a ban nor vague caution. A card paid in full each month is a free tool that builds a file; the same card paid at the minimum is one of the most expensive loans a private person can get. Same object, two behaviours.',
+                },
+              },
+              {
+                ask: { fr: 'Quel geste unique empêche le plus d’intérêts, une fois pour toutes ?', en: 'Which single move prevents the most interest, once and for all?' },
+                options: [
+                  { fr: 'Baisser sa limite de crédit', en: 'Lowering your credit limit' },
+                  { fr: 'Programmer le paiement automatique du solde complet', en: 'Setting up automatic full-balance payment' },
+                  { fr: 'Fermer les cartes qu’on n’utilise plus', en: 'Closing the cards you no longer use' },
+                ],
+                answer: 1,
+                why: {
+                  fr: 'Il se programme une fois et il travaille tous les mois, y compris les mois où tu oublies. Baisser sa limite ne change pas un centime d’intérêt, et fermer une vieille carte peut faire baisser ton dossier.',
+                  en: 'It is set up once and works every month, including the months you forget. Lowering your limit changes not a cent of interest, and closing an old card can lower your file.',
+                },
+              },
+              {
+                ask: { fr: 'Tu portes un solde et tu continues à payer tes courses avec la carte. Quel est le vrai coût ?', en: 'You carry a balance and keep paying for groceries with the card. What is the real cost?' },
+                options: [
+                  { fr: 'Rien de plus, les courses sont des achats normaux', en: 'Nothing extra, groceries are ordinary purchases' },
+                  { fr: 'Chaque course porte intérêt dès le premier jour, sans délai de grâce', en: 'Every shop accrues interest from day one, with no grace period' },
+                  { fr: 'Seulement les frais de retard si tu manques une échéance', en: 'Only late fees if you miss a due date' },
+                ],
+                answer: 1,
+                why: {
+                  fr: 'C’est la conséquence la moins connue de tout le cours, et elle revient trois fois : tant qu’un solde reste, le délai de grâce ne protège plus rien. Un petit solde rend plus cher tout ce que tu achètes après lui.',
+                  en: 'It is the least known consequence in the course, and it comes back three times: while a balance remains, the grace period protects nothing. A small balance makes everything you buy after it more expensive.',
+                },
+              },
+            ],
+          },
+        ],
+        action: {
+          fr: 'Reprends la check-list de la dernière leçon et coche ce qui est vraiment fait. Ce qui reste non coché est ta liste de la semaine, et elle tient en moins d’une heure au total.',
+          en: 'Take the checklist from the last lesson and tick what is genuinely done. What is left unticked is your week’s list, and the whole thing takes under an hour.',
+        },
       },
     ],
   },
