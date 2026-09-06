@@ -338,7 +338,12 @@ function LessonView({ course, lesson, country, t, locale, navigate }) {
 
             {variant?.grail && (
               <Panel className="mt-7 max-w-[48ch]" hook="lesson-grail" tone="strong">
-                <p className="eyebrow text-accent">{t('courses.grail')}</p>
+                {/* Le libelle par defaut, "le compte a ouvrir en premier", a
+                    ete ecrit pour i2.1 ou c'est exactement ca. Il coiffait
+                    ensuite la lecon d'achat ("ce que tu tapes") et celle de
+                    la carte de credit ("le reflexe de ta region"), vu sur la
+                    capture. Une lecon peut donc nommer son propre grail. */}
+                <p className="eyebrow text-accent">{say(lesson.grailLabel, locale) || t('courses.grail')}</p>
                 <p className="mt-1.5 text-body text-ink">{say(variant.grail, locale)}</p>
               </Panel>
             )}
