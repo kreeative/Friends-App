@@ -511,20 +511,26 @@ function Block({ hook, label, children, className = '', strong = false }) {
 }
 
 /**
- * Le seul conteneur de la lecon: un contour neutre, pas un lavis.
+ * Le seul conteneur de la lecon: la feuille de l'application, pas un filet.
  *
- * Il ne sert plus qu'a deux choses, la liste de lecons d'un module (un groupe
- * de cibles tactiles) et le quiz (un autre mode). Un filet suffit a dire "ceci
- * est un ensemble"; le rose en plus disait "ceci est important" a chaque bloc,
- * donc a aucun.
+ * Il ne sert qu'a deux choses, la liste de lecons d'un module (un groupe de
+ * cibles tactiles) et le quiz (un autre mode). Il a ete un contour gris sans
+ * fond pendant une version, pour ne pas remettre de couleur; a l'ecran c'etait
+ * un formulaire imprime pose sur la page: "perhaps on peut ajouter des
+ * shadows". Donc .lg, la meme feuille que les cartes de Lectures, avec son
+ * bord blanc et son ombre: un objet pose sur la page, ce que le quiz est.
+ *
+ * Pas de couleur en plus. Une ombre n'est pas un lavis, et la regle de la
+ * quatrieme passe tient: la prose reste du texte, un seul rectangle par lecon,
+ * et c'est celui-la.
  */
 function Panel({ children, className = '', hook, ...rest }) {
   return (
     <div
       {...rest}
       data-hook={hook}
-      data-panel="neutral"
-      className={`rounded-card border border-hairline p-5 ${className}`}
+      data-panel="sheet"
+      className={`lg p-5 ${className}`}
     >
       {children}
     </div>
@@ -612,6 +618,11 @@ function Quiz({ items, t, locale }) {
             {i + 1}. {say(q.ask, locale)}
           </p>
 
+          {/* Des tuiles posees, pas des cases dessinees: un fond de surface et
+              l'ombre basse de l'application, comme les cartes ailleurs. Le
+              bord est transparent au repos, pour que rien ne saute quand il
+              se colore, et il ne se colore que pour dire juste ou faux, avec
+              la coche et la croix a cote (1.4.1). */}
           <div className="mt-3 space-y-2">
             {q.options.map((opt, oi) => {
               const isRight = oi === q.answer
@@ -625,12 +636,12 @@ function Quiz({ items, t, locale }) {
                   disabled={answered}
                   data-hook="quiz-option"
                   data-right={isRight ? 'yes' : 'no'}
-                  className={`press flex w-full items-start gap-3 rounded-inner border px-4 py-3 text-left text-small ${
+                  className={`press flex w-full items-start gap-3 rounded-inner border px-4 py-3 text-left text-small text-ink shadow-raised ${
                     show && isRight
-                      ? 'border-green bg-green/[0.10] text-ink'
+                      ? 'border-green bg-green/[0.10]'
                       : show
-                        ? 'border-negative bg-negative/[0.08] text-ink'
-                        : 'border-hairline text-ink'
+                        ? 'border-negative bg-negative/[0.08]'
+                        : 'border-transparent bg-surface'
                   } disabled:cursor-default`}
                 >
                   <span aria-hidden="true" className="shrink-0 font-mono">
