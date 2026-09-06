@@ -1645,6 +1645,11 @@ export const COURSES = [
   {
     slug: 'investir-101',
     title: { fr: 'Investir 101', en: 'Investing 101' },
+    /* La phrase de bienvenue par region, affichee sous les onglets en tete du
+       cours. Sur le cours et pas dans la page, parce qu'elle parle de CELI et
+       de PEA: elle n'a de sens que pour celui-ci. Carte de credit 101 a les
+       memes onglets et pas cette phrase. */
+    regionAnswers: COUNTRY_ANSWERS,
     tagline: {
       fr: 'Faire travailler l’argent pour soi. Commence là où « Riche, lentement » s’arrête : le coussin est en place, les dettes chères sont mortes, et la question devient où va cet argent.',
       en: 'Putting money to work. Starts where "Rich, slowly" stops: the cushion is there, the expensive debt is dead, and the question becomes where this money goes.',

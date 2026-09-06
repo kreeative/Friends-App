@@ -7,20 +7,7 @@
  * affiche du vide.
  */
 import { COUNTRIES, COUNTRY_ANSWERS, COURSES } from '../content/courses.js'
-import {
-  DEFAULT_COUNTRY,
-  SOURCE_LOCALE,
-  countryLabel,
-  modulesOf,
-  say,
-  courseBySlug,
-  lessonById,
-  lessonsOf,
-  neighbours,
-  progressOf,
-  safeCountry,
-  variantFor,
-} from './courses.js'
+import { DEFAULT_COUNTRY, SOURCE_LOCALE, countryLabel, courseBySlug, hasRegions, lessonById, lessonsOf, modulesOf, neighbours, progressOf, safeCountry, say, variantFor } from './courses.js'
 
 let pass = 0
 let fail = 0
@@ -371,6 +358,29 @@ eq('un cours absent n’a pas de module', modulesOf(null).length, 0)
     }
   }
   ok('chaque bonne reponse pointe une option qui existe, et s explique', bad.length === 0, bad.join(' | '))
+}
+
+/**
+ * LA QUESTION DE REGION EST POSEE AU DEBUT DES COURS QUI EN DEPENDENT.
+ *
+ * "J'avais demande qu'au debut du cours on te demande ta region pour adapter
+ * ton learning." Elle etait sur la page de liste, avant tout choix de cours.
+ * hasRegions() est ce qui decide de la poser: vrai pour un cours qui a au
+ * moins une lecon par pays, faux sinon, parce qu'une question qui n'adapte
+ * rien est une question de trop.
+ */
+{
+  ok('investir-101 depend de la region', hasRegions(COURSES.find((c) => c.slug === 'investir-101')))
+  ok('carte-de-credit aussi', hasRegions(COURSES.find((c) => c.slug === 'carte-de-credit')))
+  ok('un cours sans lecon par pays, non',
+     !hasRegions({ modules: [{ n: 1, lessons: [{ id: 'x.1', state: 'written', points: [] }] }] }))
+  ok('un cours absent, non plus', !hasRegions(null))
+  /* La phrase de bienvenue est un champ du cours et pas une table globale,
+     parce qu'elle parle de CELI et de PEA: elle n'a de sens que pour Investir
+     101. Un cours regional sans elle est normal. */
+  const inv = COURSES.find((c) => c.slug === 'investir-101')
+  ok('investir-101 porte ses reponses par region', ['ca', 'fr', 'us', 'af'].every((r) => inv.regionAnswers?.[r]?.fr))
+  ok('carte-de-credit n en a pas, et c est voulu', !COURSES.find((c) => c.slug === 'carte-de-credit').regionAnswers)
 }
 
 console.log(`\n  ${pass} passed, ${fail} failed\n`)

@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { COUNTRY_ANSWERS, COURSES } from '../content/courses'
+import { COURSES } from '../content/courses'
 import {
   COUNTRY_KEY,
   DEFAULT_COUNTRY,
   countryLabel,
   courseBySlug,
   firstLessonOf,
+  hasRegions,
   lessonById,
   modulesOf,
   neighbours,
@@ -104,9 +105,20 @@ export default function Courses() {
     )
   }
 
-  if (course) return <CourseView course={course} t={t} locale={locale} navigate={navigate} />
+  if (course) {
+    return (
+      <CourseView
+        course={course}
+        country={country}
+        onPick={pickCountry}
+        t={t}
+        locale={locale}
+        navigate={navigate}
+      />
+    )
+  }
 
-  return <CourseList country={country} onPick={pickCountry} t={t} locale={locale} />
+  return <CourseList t={t} locale={locale} />
 }
 
 function Redirect({ to, navigate }) {
@@ -118,25 +130,20 @@ function Redirect({ to, navigate }) {
 
 /* --- la liste des cours --------------------------------------------------- */
 
-function CourseList({ country, onPick, t, locale }) {
+function CourseList({ t, locale }) {
   return (
     <Screen>
       <TopBar title={t('courses.title')} sub={t('courses.sub')} />
 
       {/**
-       * L'onboarding, reduit a ce qu'il est vraiment: une question.
+       * PLUS DE QUESTION DE REGION ICI.
        *
-       * Elle est ici plutot que sur un ecran a elle, parce qu'un ecran de plus
-       * avant le premier cours est un ecran de plus a franchir, et parce que la
-       * reponse se voit tout de suite en dessous.
+       * "J'avais demande qu'au debut du cours on te demande ta region pour
+       * adapter ton learning." Elle etait posee sur cette liste, avant meme
+       * d'avoir choisi un cours, a quelqu'un qui allait peut-etre ouvrir Riche
+       * lentement, qui n'en a pas besoin. Elle est posee maintenant en tete du
+       * cours qui en depend, et seulement de ceux-la.
        */}
-      <Section title={t('courses.where')}>
-        <CountryTabs value={country} onPick={onPick} />
-        <p className="mt-4 max-w-[46ch] text-body text-muted" data-hook="country-answer">
-          {say(COUNTRY_ANSWERS[country], locale)}
-        </p>
-        <p className="mt-2 text-small text-muted">{t('courses.change_anytime')}</p>
-      </Section>
 
       <Section title={t('courses.available')}>
         <div className="space-y-3">
@@ -173,8 +180,9 @@ function CourseList({ country, onPick, t, locale }) {
 
 /* --- le sommaire d'un cours ----------------------------------------------- */
 
-function CourseView({ course, t, locale, navigate }) {
+function CourseView({ course, country, onPick, t, locale, navigate }) {
   const first = firstLessonOf(course)
+  const regional = hasRegions(course)
 
   return (
     <Screen>
@@ -184,6 +192,31 @@ function CourseView({ course, t, locale, navigate }) {
         back={() => navigate('/cours')}
         backLabel={t('common.back')}
       />
+
+      {/**
+       * LA REGION, AU DEBUT DU COURS, ET SEULEMENT DES COURS QUI EN DEPENDENT.
+       *
+       * Demande telle quelle: "qu'au debut du cours on te demande ta region
+       * pour adapter ton learning". C'est ici que la reponse change quelque
+       * chose: les lecons par pays sont dans ce cours-ci. Sur Riche lentement,
+       * qui est universel, la question n'a rien a adapter et n'est pas posee.
+       *
+       * Le choix reste par appareil (localStorage), comme avant: le changer
+       * ici le change pour tous les cours, ce qui est ce qu'on attend d'une
+       * reponse a "ou vis-tu".
+       */}
+      {regional && (
+        <div className="pt-2" data-hook="course-region">
+          <p className="eyebrow">{t('courses.where')}</p>
+          <CountryTabs value={country} onPick={onPick} className="mt-3" />
+          {course.regionAnswers?.[country] && (
+            <p className="mt-4 max-w-[46ch] text-body text-muted" data-hook="country-answer">
+              {say(course.regionAnswers[country], locale)}
+            </p>
+          )}
+          <p className="mt-2 text-small text-muted">{t('courses.change_anytime')}</p>
+        </div>
+      )}
 
       {/**
        * COMMENCER, AVANT LE SOMMAIRE ET PAS APRES.
@@ -199,7 +232,7 @@ function CourseView({ course, t, locale, navigate }) {
        * suivantes, et une liste est ce qui sert a ca.
        */}
       {first && (
-        <div className="pt-2">
+        <div className={regional ? 'pt-8' : 'pt-2'}>
           <Link
             to={`/cours/${course.slug}/${first.id}`}
             data-hook="course-start"
@@ -260,8 +293,8 @@ function CourseView({ course, t, locale, navigate }) {
           </Panel>
 
           {m.action && (
-            <p className="mt-5 max-w-[52ch] rounded-inner bg-accent/[0.07] px-4 py-3 text-small text-ink">
-              <span className="eyebrow block text-accent">{t('courses.action')}</span>
+            <p className="mt-5 max-w-[52ch] text-small text-ink">
+              <span className="eyebrow block">{t('courses.action')}</span>
               <span className="mt-1 block">{say(m.action, locale)}</span>
             </p>
           )}
@@ -273,6 +306,32 @@ function CourseView({ course, t, locale, navigate }) {
 
 /* --- une lecon ------------------------------------------------------------ */
 
+/**
+ * QUATRIEME PASSE SUR CETTE PAGE, ET LA REGLE QUI EN SORT.
+ *
+ * Les trois premieres, dans l'ordre: "pas de rectangles partout" (page a
+ * plat), "rajoute un peu de rectangle quand meme" (verre blanc sur les blocs),
+ * "fais une rectangle rose" (tout en panneaux roses). Puis, capture a l'appui
+ * sur les blocs jaune et rose de la metaphore et de l'action: "je t'ai dit je
+ * veux pas voir cette UI la, trop de rectangles, trop de couleur, surcharge".
+ *
+ * Chaque passe corrigeait la precedente en ajoutant quelque chose. Celle-ci
+ * enleve, et pose une regle plutot qu'un reglage:
+ *
+ *   LA PROSE EST DU TEXTE. Objectif, points, image, reflexion, action, script:
+ *   des paragraphes avec un sur-titre, separes par du blanc. Aucun fond, aucun
+ *   filet, aucune couleur. La hierarchie est typographique.
+ *
+ *   UN RECTANGLE, ET IL EST INTERACTIF. Le quiz est un autre mode, on y
+ *   repond, il repond. Il a un contour neutre, et ses options sont des
+ *   boutons, donc des cibles, donc des bords.
+ *
+ *   LA COULEUR DIT UN ETAT, PAS UN GENRE DE BLOC. Vert juste, rouge faux,
+ *   rose sur un lien. Une metaphore n'est pas un etat.
+ *
+ * Ce qui reste des passes precedentes: le corps n'est toujours pas enveloppe
+ * dans une seule grande carte, et la region est rappelee sans etre redemandee.
+ */
 function LessonView({ course, lesson, country, t, locale, navigate }) {
   const { prev, next } = neighbours(course, lesson.id)
   const variant = variantFor(lesson, country)
@@ -300,62 +359,49 @@ function LessonView({ course, lesson, country, t, locale, navigate }) {
         ) : (
           <>
             {lesson.objective && (
-              <Panel className="mt-6 max-w-[48ch]" hook="lesson-objective">
-                <p className="eyebrow">{t('courses.objective')}</p>
-                <p className="mt-1.5 text-body text-ink">{say(lesson.objective, locale)}</p>
-              </Panel>
+              <Block hook="lesson-objective" label={t('courses.objective')} className="mt-7">
+                {say(lesson.objective, locale)}
+              </Block>
             )}
 
             {lesson.universal && (
-              <Panel className="mt-7 max-w-[48ch]" hook="lesson-universal">
-                <p className="text-body text-ink">{say(lesson.universal, locale)}</p>
-              </Panel>
+              <p className="mt-7 max-w-[48ch] text-body text-ink" data-hook="lesson-universal">
+                {say(lesson.universal, locale)}
+              </p>
             )}
 
-            {/**
-             * LA REGION EST RAPPELEE, PAS REDEMANDEE.
-             *
-             * Il y avait ici un second jeu d'onglets, identique a celui de la
-             * page des cours. Poser deux fois la meme question a la meme
-             * personne dans le meme parcours est une faute: elle a deja
-             * repondu, et le deuxieme jeu d'onglets suggere que la premiere
-             * reponse n'a pas ete prise.
-             *
-             * Ce qui reste est une ligne, pas un choix. Elle est necessaire:
-             * sans elle, quelqu'un qui arrive sur cette lecon par un lien
-             * direct lit trois paragraphes sur les SGI d'Abidjan sans savoir
-             * pourquoi. Elle dit quelle region est affichee et ou se change ce
-             * reglage, et elle ne le change pas elle-meme.
-             */}
+            {/* La region est rappelee, pas redemandee. Une ligne, et le lien
+                mene au debut du cours, ou la question est posee. */}
             {lesson.byCountry && (
-              <p className="mt-6 text-small text-muted" data-hook="lesson-region">
+              <p className="mt-5 text-small text-muted" data-hook="lesson-region">
                 {t('courses.showing_region', { region: countryLabel(country, locale) })}{' '}
-                <Link to="/cours" className="underline underline-offset-4 hover:text-ink">
+                <Link
+                  to={`/cours/${course.slug}`}
+                  className="underline underline-offset-4 hover:text-ink"
+                >
                   {t('courses.change_region')}
                 </Link>
               </p>
             )}
 
+            {/* Le grail est mis en avant par la graisse, pas par une boite:
+                c'est la seule phrase de la lecon qui est en semi-gras sur
+                toute sa longueur. */}
             {variant?.grail && (
-              <Panel className="mt-7 max-w-[48ch]" hook="lesson-grail" tone="strong">
-                {/* Le libelle par defaut, "le compte a ouvrir en premier", a
-                    ete ecrit pour i2.1 ou c'est exactement ca. Il coiffait
-                    ensuite la lecon d'achat ("ce que tu tapes") et celle de
-                    la carte de credit ("le reflexe de ta region"), vu sur la
-                    capture. Une lecon peut donc nommer son propre grail. */}
-                <p className="eyebrow text-accent">{say(lesson.grailLabel, locale) || t('courses.grail')}</p>
-                <p className="mt-1.5 text-body text-ink">{say(variant.grail, locale)}</p>
-              </Panel>
+              <Block
+                hook="lesson-grail"
+                label={say(lesson.grailLabel, locale) || t('courses.grail')}
+                className="mt-8"
+                strong
+              >
+                {say(variant.grail, locale)}
+              </Block>
             )}
 
-            {/* Les points cles dans un panneau, pas une carte chacun: un seul
-                rectangle pour les trois, separes a l'interieur par des filets.
-                Trois cartes a la suite refont le mur qui a ete refuse. */}
-            <Panel className="mt-8 max-w-[48ch] py-1" hook="lesson-points-panel">
-            <ol className="divide-y divide-accent/20" data-hook="lesson-points">
+            <ol className="mt-8 max-w-[48ch] divide-y divide-hairline" data-hook="lesson-points">
               {points.map((p, i) => (
-                <li key={say(p.lead)} className="flex gap-4 py-5">
-                  <span className="shrink-0 font-mono text-small text-accent">{i + 1}</span>
+                <li key={say(p.lead)} className="flex gap-4 py-5 first:pt-0">
+                  <span className="shrink-0 font-mono text-small text-muted">{i + 1}</span>
                   <span className="max-w-[46ch]">
                     <b className="font-semibold text-ink">{say(p.lead, locale)}</b>{' '}
                     <span className="text-muted">{say(p.body, locale)}</span>
@@ -363,40 +409,45 @@ function LessonView({ course, lesson, country, t, locale, navigate }) {
                 </li>
               ))}
             </ol>
-            </Panel>
 
             {variant?.note && (
-              <Panel className="mt-6 max-w-[48ch]" hook="lesson-note">
-                <p className="text-body text-ink">{say(variant.note, locale)}</p>
-              </Panel>
+              <p className="mt-6 max-w-[48ch] text-body text-ink" data-hook="lesson-note">
+                {say(variant.note, locale)}
+              </p>
             )}
 
             {lesson.metaphor && (
-              <Marked kind="field" label={t('courses.metaphor')} text={say(lesson.metaphor, locale)} hook="lesson-metaphor" />
+              <Block hook="lesson-metaphor" label={t('courses.metaphor')} className="mt-8">
+                {say(lesson.metaphor, locale)}
+              </Block>
             )}
 
             {lesson.reflection && (
-              <Marked kind="field" label={t('courses.reflection')} text={say(lesson.reflection, locale)} hook="lesson-reflection" />
+              <Block hook="lesson-reflection" label={t('courses.reflection')} className="mt-8">
+                {say(lesson.reflection, locale)}
+              </Block>
             )}
 
             {lesson.script && (
-              <div className="mt-7" data-hook="lesson-script">
-                <p className="eyebrow text-accent">{t('courses.script')}</p>
-                {/* Chacune dans son panneau: ce sont des phrases a recopier et
-                    a dire, pas du texte a lire. Le bord les detache de la
-                    prose qui les entoure. */}
-                <div className="mt-3 space-y-3">
-                  {lesson.script.map((s) => (
-                    <Panel key={say(s)} className="max-w-[48ch]">
-                      <p className="text-body text-ink">{say(s, locale)}</p>
-                    </Panel>
+              <div className="mt-8 max-w-[48ch]" data-hook="lesson-script">
+                <p className="eyebrow">{t('courses.script')}</p>
+                {/* Des phrases a dire: en italique, ouvertes par un guillemet,
+                    et rien d'autre. Un bord ou un fond en ferait des cartes,
+                    et c'est precisement ce qui a ete refuse. */}
+                <div className="mt-3 space-y-4">
+                  {lesson.script.map((line) => (
+                    <p key={say(line)} className="text-body italic text-ink">
+                      « {say(line, locale)} »
+                    </p>
                   ))}
                 </div>
               </div>
             )}
 
             {todo && (
-              <Marked kind="accent" label={t('courses.action')} text={say(todo, locale)} hook="lesson-todo" />
+              <Block hook="lesson-todo" label={t('courses.action')} className="mt-8">
+                {say(todo, locale)}
+              </Block>
             )}
 
             {lesson.quiz && <Quiz items={lesson.quiz} t={t} locale={locale} />}
@@ -423,61 +474,38 @@ function LessonView({ course, lesson, country, t, locale, navigate }) {
 }
 
 /**
- * Le panneau, defini une fois, et rose.
+ * Un bloc de prose avec son sur-titre. Du texte, rien autour.
  *
- * TROIS PASSES, ET LA TROISIEME EST LA BONNE.
- *
- * D'abord "pas des rectangles partout surtout pas un rectangle qui rassemble
- * tout a l'interieur", d'ou une page a plat. Puis "rajoute un peu de rectangle
- * quand meme", d'ou des panneaux de verre blanc sur les blocs qui ne sont pas
- * de la prose. Puis, capture a l'appui: "en rose c'est joli mais ce type de UI
- * je veux plus jamais voir ca, fais une rectangle rose".
- *
- * Ce qui restait a plat, c'etait justement le texte de la lecon, qui flottait
- * sur la page sans rien autour et passait sous la barre du haut au defilement.
- * Le seul bloc qui avait l'air fini etait le rose. Donc tout le contenu est
- * dans un rectangle rose maintenant, et le verre blanc a disparu: il ne se
- * voyait pas sur un fond deja tres pale, ce qui est exactement le gotcha du
- * depot sur le verre pose sur un fond plat.
- *
- * Ce qui n'a pas bouge, parce que c'etait l'autre moitie de la consigne: il n'y
- * a toujours PAS un rectangle qui enveloppe la lecon entiere. Il y en a
- * plusieurs, un par bloc, separes par du vide.
+ * C'est ce qui remplace Panel et Marked pour tout ce qui se lit. Le sur-titre
+ * est le meme gris que partout ailleurs dans l'application (.eyebrow), pas
+ * l'accent: la couleur est reservee aux etats et aux liens, et une image ou
+ * une reflexion n'est pas un etat.
  */
-function Panel({ children, className = '', hook, tone = 'soft' }) {
+function Block({ hook, label, children, className = '', strong = false }) {
   return (
-    <div
-      data-hook={hook}
-      data-panel={tone}
-      className={`rounded-card border p-5 ${
-        tone === 'strong'
-          ? 'border-accent/30 bg-accent/[0.10]'
-          : 'border-accent/[0.18] bg-accent/[0.055]'
-      } ${className}`}
-    >
-      {children}
+    <div data-hook={hook} className={`max-w-[48ch] ${className}`}>
+      <p className="eyebrow">{label}</p>
+      <p className={`mt-1.5 text-body text-ink ${strong ? 'font-semibold' : ''}`}>{children}</p>
     </div>
   )
 }
 
 /**
- * Les deux seuls blocs marques de la lecon, et ils ne disent pas la meme chose.
+ * Le seul conteneur de la lecon: un contour neutre, pas un lavis.
  *
- * Jaune: une image ou une question, quelque chose qui se passe dans ta tete.
- * Rose: quelque chose a faire dehors. Deux couleurs, deux jobs, et rien
- * d'autre sur la page n'est colore, sinon le marquage ne marque plus rien.
+ * Il ne sert plus qu'a deux choses, la liste de lecons d'un module (un groupe
+ * de cibles tactiles) et le quiz (un autre mode). Un filet suffit a dire "ceci
+ * est un ensemble"; le rose en plus disait "ceci est important" a chaque bloc,
+ * donc a aucun.
  */
-function Marked({ kind, label, text, hook }) {
-  const field = kind === 'field'
+function Panel({ children, className = '', hook }) {
   return (
     <div
       data-hook={hook}
-      className={`mt-7 max-w-[46ch] rounded-inner border-l-[3px] px-4 py-3.5 ${
-        field ? 'border-field bg-field/[0.28]' : 'border-accent bg-accent/[0.13]'
-      }`}
+      data-panel="neutral"
+      className={`rounded-card border border-hairline p-5 ${className}`}
     >
-      <p className={`eyebrow ${field ? 'text-ink/70' : 'text-accent'}`}>{label}</p>
-      <p className="mt-1.5 text-body text-ink">{text}</p>
+      {children}
     </div>
   )
 }
@@ -530,7 +558,7 @@ function Quiz({ items, t, locale }) {
                           ? 'border-green bg-green/[0.10] text-ink'
                           : show
                             ? 'border-negative bg-negative/[0.08] text-ink'
-                            : 'border-hairline bg-[rgb(var(--glass-tint)/0.55)] text-muted'
+                            : 'border-hairline text-ink'
                       } disabled:cursor-default`}
                     >
                       <span aria-hidden="true" className="shrink-0 font-mono">
