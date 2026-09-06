@@ -6,6 +6,7 @@ import {
   DEFAULT_COUNTRY,
   countryLabel,
   courseBySlug,
+  firstLessonOf,
   lessonById,
   modulesOf,
   neighbours,
@@ -167,6 +168,8 @@ function CourseList({ country, onPick, t, locale }) {
 /* --- le sommaire d'un cours ----------------------------------------------- */
 
 function CourseView({ course, t, locale, navigate }) {
+  const first = firstLessonOf(course)
+
   return (
     <Screen>
       <TopBar
@@ -175,6 +178,36 @@ function CourseView({ course, t, locale, navigate }) {
         back={() => navigate('/cours')}
         backLabel={t('common.back')}
       />
+
+      {/**
+       * COMMENCER, AVANT LE SOMMAIRE ET PAS APRES.
+       *
+       * Demande mot pour mot: "un bouton commencer le cours qui t'envoie
+       * directement au commencement". Il est en haut parce que c'est la seule
+       * position ou il evite le travail qu'il remplace: sous les six modules,
+       * il faudrait avoir defile devant toutes les lecons pour le trouver,
+       * c'est-a-dire avoir deja fait a la main ce qu'il fait.
+       *
+       * Le sommaire reste dessous en entier. Le bouton est pour la premiere
+       * visite; revenir a la lecon quatre est ce qu'on fait toutes les fois
+       * suivantes, et une liste est ce qui sert a ca.
+       */}
+      {first && (
+        <div className="pt-2">
+          <Link
+            to={`/cours/${course.slug}/${first.id}`}
+            data-hook="course-start"
+            data-lesson={first.id}
+            className="btn-primary press"
+          >
+            {t('courses.start')}
+            <span aria-hidden="true">→</span>
+          </Link>
+          <p className="mt-2.5 text-small text-muted" data-hook="course-start-note">
+            {t('courses.start_note', { title: say(first.title, locale) })}
+          </p>
+        </div>
+      )}
 
       {modulesOf(course).map((m) => (
         <Section key={String(m.n)} title={<span data-hook="module-n">{t('courses.module_n', { n: m.n })}</span>}>
