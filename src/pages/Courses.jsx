@@ -450,6 +450,26 @@ function LessonView({ course, lesson, country, t, locale, navigate }) {
               </Block>
             )}
 
+            {/* Un lien sortant porte par la variante regionale: pour le Canada,
+                le parrainage Wealthsimple demande dans le brief d'origine. La
+                phrase dit elle-meme que c'est un parrainage. Le bouton est le
+                seul element de la lecon qui quitte l'application, donc il
+                s'ouvre a cote et le dit avec une fleche. */}
+            {variant?.cta && (
+              <div className="mt-6 max-w-[48ch]" data-hook="lesson-cta">
+                <p className="text-body text-ink">{say(variant.cta.text, locale)}</p>
+                <a
+                  href={variant.cta.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="goal-action press mt-3 inline-flex"
+                  data-hook="lesson-cta-link"
+                >
+                  {say(variant.cta.label, locale)} ↗
+                </a>
+              </div>
+            )}
+
             {lesson.quiz && <Quiz items={lesson.quiz} t={t} locale={locale} />}
           </>
         )}
@@ -498,9 +518,10 @@ function Block({ hook, label, children, className = '', strong = false }) {
  * est un ensemble"; le rose en plus disait "ceci est important" a chaque bloc,
  * donc a aucun.
  */
-function Panel({ children, className = '', hook }) {
+function Panel({ children, className = '', hook, ...rest }) {
   return (
     <div
+      {...rest}
       data-hook={hook}
       data-panel="neutral"
       className={`rounded-card border border-hairline p-5 ${className}`}
@@ -511,77 +532,138 @@ function Panel({ children, className = '', hook }) {
 }
 
 /**
- * Le quiz, qui repond avant d'etre note.
+ * Le quiz, une question a la fois, et on peut le refaire.
  *
- * L'explication est le vrai contenu: un quiz dont on sort en sachant seulement
- * qu'on a eu faux n'apprend rien a personne. Elle apparait donc des le clic,
- * juste et faux confondus, et la bonne reponse est toujours marquee.
+ * "Le quiz doit etre interactif, les questions doivent apparaitre une par une,
+ * et donner l'option de refaire le quiz."
  *
- * L'etat n'est pas porte par la couleur seule (1.4.1): la bonne reponse gagne
- * une coche, la mauvaise une croix, et le texte de l'explication dit laquelle
- * etait la bonne.
+ * Les trois questions etaient affichees d'un coup, les unes sous les autres.
+ * Ca se lit comme un formulaire d'examen: on voit la longueur avant de
+ * commencer, et l'oeil file vers la question deux pendant qu'on repond a la
+ * une. Une question a l'ecran, c'est une conversation: on repond, il repond,
+ * on passe a la suivante.
+ *
+ * L'explication reste le vrai contenu et apparait des le clic, juste ou faux.
+ * A la fin, le score et la liste de ce qui est passe ou pas, puis "Refaire le
+ * quiz", qui remet tout a zero. Refaire n'est pas tricher: c'est la seule
+ * facon de relire une explication qu'on n'a pas retenue.
+ *
+ * L'etat n'est pas porte par la couleur seule (1.4.1): coche et croix, et le
+ * texte dit quelle lettre etait la bonne.
  */
 function Quiz({ items, t, locale }) {
+  const [i, setI] = useState(0)
   const [picked, setPicked] = useState({})
+  const [done, setDone] = useState(false)
 
-  /* Le quiz est un autre mode: on repond, il repond. Un panneau le dit avant
-     qu'on ait lu la premiere question. */
+  const total = items.length
+  const q = items[i]
+  const chosen = picked[i]
+  const answered = chosen !== undefined
+  const right = Object.entries(picked).filter(([qi, oi]) => items[qi].answer === oi).length
+
+  const retake = () => {
+    setPicked({})
+    setI(0)
+    setDone(false)
+  }
+
   return (
-    <Panel className="mt-12 max-w-[48ch]" hook="quiz">
-      <p className="eyebrow">{t('courses.quiz')}</p>
-
-      <div className="mt-6 space-y-9">
-        {items.map((q, qi) => {
-          const chosen = picked[qi]
-          const answered = chosen !== undefined
-          return (
-            <div key={say(q.ask)} data-hook="quiz-q">
-              <p className="max-w-[46ch] text-body font-semibold text-ink">
-                {qi + 1}. {say(q.ask, locale)}
-              </p>
-
-              <div className="mt-3 space-y-2">
-                {q.options.map((opt, oi) => {
-                  const right = oi === q.answer
-                  const mine = chosen === oi
-                  const show = answered && (right || mine)
-                  return (
-                    <button
-                      key={say(opt)}
-                      type="button"
-                      onClick={() => setPicked((p) => ({ ...p, [qi]: oi }))}
-                      disabled={answered}
-                      data-hook="quiz-option"
-                      data-right={right ? 'yes' : 'no'}
-                      className={`press flex w-full items-start gap-3 rounded-inner border px-4 py-3 text-left text-small ${
-                        show && right
-                          ? 'border-green bg-green/[0.10] text-ink'
-                          : show
-                            ? 'border-negative bg-negative/[0.08] text-ink'
-                            : 'border-hairline text-ink'
-                      } disabled:cursor-default`}
-                    >
-                      <span aria-hidden="true" className="shrink-0 font-mono">
-                        {show ? (right ? '✓' : '✕') : String.fromCharCode(65 + oi)}
-                      </span>
-                      <span className="min-w-0 flex-1">{say(opt, locale)}</span>
-                    </button>
-                  )
-                })}
-              </div>
-
-              {answered && (
-                <p className="mt-3 max-w-[46ch] text-small text-muted" data-hook="quiz-why">
-                  <b className="font-semibold text-ink">
-                    {t('courses.answer_is', { letter: String.fromCharCode(65 + q.answer) })}
-                  </b>{' '}
-                  {say(q.why, locale)}
-                </p>
-              )}
-            </div>
-          )
-        })}
+    <Panel className="mt-12 max-w-[48ch]" hook="quiz" data-total={total}>
+      <div className="flex items-baseline justify-between gap-4">
+        <p className="eyebrow">{t('courses.quiz')}</p>
+        {!done && (
+          <p className="font-mono text-small text-muted" data-hook="quiz-progress">
+            {t('courses.quiz_progress', { n: i + 1, total })}
+          </p>
+        )}
       </div>
+
+      {done ? (
+        <div className="mt-5" data-hook="quiz-done" data-right={right} data-total={total}>
+          <p className="text-h2 font-semibold text-ink">
+            {t('courses.quiz_score', { right, total })}
+          </p>
+          <p className="mt-2 max-w-[46ch] text-small text-muted">
+            {right === total ? t('courses.quiz_perfect') : t('courses.quiz_review')}
+          </p>
+          {/* Ce qui est passe et ce qui ne l'est pas, question par question:
+              c'est ce qui dit quoi relire avant de refaire. */}
+          <ol className="mt-5 divide-y divide-hairline">
+            {items.map((it, qi) => {
+              const ok = picked[qi] === it.answer
+              return (
+                <li key={say(it.ask)} className="flex gap-3 py-3 text-small" data-hook="quiz-recap" data-ok={ok ? 'yes' : 'no'}>
+                  <span aria-hidden="true" className={`shrink-0 font-mono ${ok ? 'text-green' : 'text-negative'}`}>
+                    {ok ? '✓' : '✕'}
+                  </span>
+                  <span className="min-w-0 flex-1 text-ink">{say(it.ask, locale)}</span>
+                </li>
+              )
+            })}
+          </ol>
+          <button type="button" onClick={retake} className="goal-action press mt-6" data-hook="quiz-retake">
+            {t('courses.quiz_retake')}
+          </button>
+        </div>
+      ) : (
+        <div className="mt-5" data-hook="quiz-q" data-index={i}>
+          <p className="max-w-[46ch] text-body font-semibold text-ink">
+            {i + 1}. {say(q.ask, locale)}
+          </p>
+
+          <div className="mt-3 space-y-2">
+            {q.options.map((opt, oi) => {
+              const isRight = oi === q.answer
+              const mine = chosen === oi
+              const show = answered && (isRight || mine)
+              return (
+                <button
+                  key={say(opt)}
+                  type="button"
+                  onClick={() => setPicked((p) => ({ ...p, [i]: oi }))}
+                  disabled={answered}
+                  data-hook="quiz-option"
+                  data-right={isRight ? 'yes' : 'no'}
+                  className={`press flex w-full items-start gap-3 rounded-inner border px-4 py-3 text-left text-small ${
+                    show && isRight
+                      ? 'border-green bg-green/[0.10] text-ink'
+                      : show
+                        ? 'border-negative bg-negative/[0.08] text-ink'
+                        : 'border-hairline text-ink'
+                  } disabled:cursor-default`}
+                >
+                  <span aria-hidden="true" className="shrink-0 font-mono">
+                    {show ? (isRight ? '✓' : '✕') : String.fromCharCode(65 + oi)}
+                  </span>
+                  <span className="min-w-0 flex-1">{say(opt, locale)}</span>
+                </button>
+              )
+            })}
+          </div>
+
+          {answered && (
+            <>
+              <p className="mt-3 max-w-[46ch] text-small text-muted" data-hook="quiz-why">
+                <b className="font-semibold text-ink">
+                  {t('courses.answer_is', { letter: String.fromCharCode(65 + q.answer) })}
+                </b>{' '}
+                {say(q.why, locale)}
+              </p>
+              {/* Le bouton n'existe qu'une fois la question repondue: on ne
+                  saute pas une question, on la traverse. */}
+              <button
+                type="button"
+                onClick={() => (i + 1 < total ? setI(i + 1) : setDone(true))}
+                className="goal-action press mt-4"
+                data-hook="quiz-next"
+              >
+                {i + 1 < total ? t('courses.quiz_next') : t('courses.quiz_finish')} →
+              </button>
+            </>
+          )}
+        </div>
+      )}
     </Panel>
   )
 }

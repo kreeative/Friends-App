@@ -893,6 +893,11 @@ const COPY = {
      */
     remindEvent: (hhmm: string) => `\u00c0 ${hhmm}.`,
     remindEventAt: (hhmm: string, where: string) => `\u00c0 ${hhmm}, ${where}.`,
+    /* Le titre est l'engagement lui-meme, ecrit par la personne: rien ne
+       parle mieux a quelqu'un que sa propre phrase. Le corps est le
+       quand-et-ou s'il existe, sinon un mot. */
+    remindGoalBody: (when: string | null, where: string | null) =>
+      [when, where].filter(Boolean).join(' \u00b7 ') || 'C\u2019est le moment.',
     remindWaterTitle: 'Un verre d\u2019eau',
     remindWaterBody: (n: number) =>
       n === 1 ? 'Le dernier de la journ\u00e9e.' : `Encore ${n} d\u2019ici ce soir.`,
@@ -975,6 +980,8 @@ const COPY = {
 
     remindEvent: (hhmm: string) => `At ${hhmm}.`,
     remindEventAt: (hhmm: string, where: string) => `At ${hhmm}, ${where}.`,
+    remindGoalBody: (when: string | null, where: string | null) =>
+      [when, where].filter(Boolean).join(' \u00b7 ') || 'Now is the time.',
     remindWaterTitle: 'A glass of water',
     remindWaterBody: (n: number) =>
       n === 1 ? 'The last one today.' : `${n} more before tonight.`,
@@ -1168,7 +1175,7 @@ const tally = {
   pushed: 0, pushFailed: 0, pushDropped: 0,
   /* Le travail des cinq minutes, compte a part parce qu'il tourne a une autre
      cadence: melanger les deux rendrait un chiffre horaire illisible. */
-  remindWater: 0, remindEvent: 0,
+  remindWater: 0, remindEvent: 0, remindGoal: 0,
   /* Personne a joindre: les deux canaux decoches, ou aucun appareil
      enregistre. Compte a part pour que ca ne se lise pas comme un echec. */
   muted: 0,
@@ -1839,7 +1846,48 @@ async function sendReminders() {
   const to = new Date(now.getTime() + 60 * 1000).toISOString()
 
   await sendEventReminders(from, to)
+  await sendGoalReminders(from, to)
   await sendWaterReminders(from, to)
+}
+
+/**
+ * Une notification a l'heure choisie, par objectif.
+ *
+ * L'objectif a deja sa frequence (cadence, jours, dates); le rappel part les
+ * jours ou il est du, a l'heure de remind_at_min, et due_goal_reminders() fait
+ * ce calcul en SQL avec le fuseau de la personne. Ici: reclamer, envoyer,
+ * compter. Le titre est la phrase que la personne a ecrite elle-meme.
+ */
+async function sendGoalReminders(from: string, to: string) {
+  const { data, error } = await supabase.rpc('due_goal_reminders', { win_start: from, win_end: to })
+  if (error) {
+    /* 42883: 58_goal_reminders.sql n'a pas ete passe. Migration en attente,
+       pas une panne. */
+    if (error.code === '42883') tally.remindersPending = true
+    else console.error('due_goal_reminders failed', error.message)
+    return
+  }
+
+  for (const row of data ?? []) {
+    const { data: prof } = await supabase
+      .from('profiles')
+      .select('locale')
+      .eq('id', row.user_id)
+      .maybeSingle()
+    const c = COPY[localeOf(prof?.locale)]
+
+    if (!(await claimReminder(row.user_id, 'goal', row.ref))) continue
+
+    const out = await pushTo(row.user_id, {
+      title: String(row.commitment).slice(0, 80),
+      body: c.remindGoalBody(row.trigger_when, row.trigger_where),
+      url: '/goals',
+      /* Un tag par objectif et par jour: deux objectifs a la meme heure sont
+         deux notifications, le meme objectif deux fois se remplace. */
+      tag: `goal-${row.ref}`,
+    })
+    if (out.delivered > 0) tally.remindGoal += 1
+  }
 }
 
 /**
@@ -2534,7 +2582,7 @@ Deno.serve(async (req) => {
           /* Vrai quand 57_reminders.sql n'a pas encore ete passe. C'est la
              premiere chose a regarder si rien n'arrive. */
           migrationPending: tally.remindersPending,
-          sent: { water: tally.remindWater, event: tally.remindEvent },
+          sent: { water: tally.remindWater, event: tally.remindEvent, goal: tally.remindGoal },
         })
       } catch (err) {
         console.error('reminders failed', err)

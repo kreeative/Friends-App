@@ -383,5 +383,28 @@ eq('un cours absent n’a pas de module', modulesOf(null).length, 0)
   ok('carte-de-credit n en a pas, et c est voulu', !COURSES.find((c) => c.slug === 'carte-de-credit').regionAnswers)
 }
 
+/**
+ * LE LIEN WEALTHSIMPLE, DEMANDE DANS LE BRIEF D'ORIGINE ET OUBLIE DEUX FOIS.
+ *
+ * "[IMPORTANT] Integre exactement cette phrase a la fin", avec le lien de
+ * parrainage. Il n'etait nulle part dans le cours. Ce test le cherche dans
+ * les variantes canadiennes des lecons qui parlent d'ouvrir un compte, et
+ * NULLE PART AILLEURS: un lien Wealthsimple sur la variante France ou Afrique
+ * serait une erreur, ce courtier n'y opere pas.
+ */
+{
+  const inv = COURSES.find((c) => c.slug === 'investir-101')
+  const withCta = lessonsOf(inv).filter((l) => l.byCountry?.ca?.cta)
+  ok('le lien est sur au moins une lecon canadienne', withCta.length >= 1)
+  ok('et il pointe sur le bon parrainage',
+     withCta.every((l) => l.byCountry.ca.cta.href === 'https://www.wealthsimple.com/invite/62AKJM'),
+     withCta.map((l) => l.byCountry.ca.cta.href).join(' '))
+  ok('la phrase dit que c est un parrainage',
+     withCta.every((l) => /parrainage/i.test(say(l.byCountry.ca.cta.text, 'fr')) && /referral/i.test(say(l.byCountry.ca.cta.text, 'en'))),
+     'le lecteur doit savoir ce qu il clique')
+  const elsewhere = lessonsOf(inv).flatMap((l) => ['fr', 'us', 'af'].filter((r) => l.byCountry?.[r]?.cta))
+  ok('et aucune autre region ne le porte', elsewhere.length === 0, elsewhere.join(','))
+}
+
 console.log(`\n  ${pass} passed, ${fail} failed\n`)
 process.exit(fail ? 1 : 0)
