@@ -11,6 +11,7 @@ import {
   DEFAULT_COUNTRY,
   SOURCE_LOCALE,
   countryLabel,
+  modulesOf,
   say,
   courseBySlug,
   lessonById,
@@ -46,6 +47,15 @@ eq('null aussi', safeCountry(null), DEFAULT_COUNTRY)
 eq('rien aussi', safeCountry(), DEFAULT_COUNTRY)
 eq('une region connue est gardee', safeCountry('af'), 'af')
 ok('le libelle porte le drapeau', countryLabel('af').includes('🌍'), countryLabel('af'))
+/* Et le NOM, pas l'objet qui le contient. Les deux assertions precedentes
+   passaient sur "[object Object]": l'une cherchait le drapeau, qui etait bien
+   la, l'autre cherchait le mot "undefined". Une assertion peut etre vraie et
+   ne rien prouver. */
+ok('et le nom de la region, pas son objet',
+   countryLabel('us').includes('États-Unis'), countryLabel('us'))
+ok('dans la langue demandee',
+   countryLabel('us', 'en').includes('United States'), countryLabel('us', 'en'))
+ok('et jamais un objet imprime', !/\[object/.test(countryLabel('af')), countryLabel('af'))
 ok('et une region inconnue ne rend pas undefined',
    !countryLabel('xx').includes('undefined'), countryLabel('xx'))
 
@@ -172,6 +182,35 @@ eq('une chaine nue passe telle quelle', say('brut', 'en'), 'brut')
 eq('rien du tout rend une chaine vide, pas undefined', say(null, 'en'), '')
 eq('ni pour un champ absent', say(undefined, 'en'), '')
 
+/* --- l'ordre des modules ------------------------------------------------- */
+
+/**
+ * Un cours qui commence au module 3, c'est ce qui a ete rapporte.
+ *
+ * La cause n'etait pas un tri manquant mais un numero venu d'ailleurs: le
+ * module s'appelait 3 parce que la demande disait "Module 3 : Investir 101",
+ * alors qu'il ouvre son propre cours. Le tri est la ceinture: il rend
+ * impossible qu'un module ajoute au mauvais endroit du fichier apparaisse au
+ * milieu du cours.
+ */
+for (const course of COURSES) {
+  const ns = modulesOf(course).map((m) => Number(m.n))
+  ok(`${course.slug}: les modules montent`,
+     ns.every((n, i) => i === 0 || ns[i - 1] <= n), ns.join(', '))
+  ok(`${course.slug}: aucun numero de module n'est illisible`,
+     ns.every((n) => Number.isFinite(n)), modulesOf(course).map((m) => m.n).join(', '))
+  ok(`${course.slug}: le cours commence a 0 ou a 1`, ns[0] <= 1, String(ns[0]))
+}
+eq('un cours absent n’a pas de module', modulesOf(null).length, 0)
+
+/* Le tri doit aussi commander l'ordre de lecture, sinon "suivant" saute d'un
+   module a l'autre selon l'ordre du fichier. */
+{
+  const ids = lessonsOf(courseBySlug('investir-101')).map((l) => l.module.n)
+  ok('l’ordre de lecture suit l’ordre des modules',
+     ids.every((n, i) => i === 0 || ids[i - 1] <= n), ids.join(', '))
+}
+
 /* --- la navigation ------------------------------------------------------- */
 {
   const course = courseBySlug('riche-lentement')
@@ -198,7 +237,7 @@ eq('ni pour un champ absent', say(undefined, 'en'), '')
 /* --- les variantes par pays ---------------------------------------------- */
 {
   const course = courseBySlug('investir-101')
-  const lesson = lessonById(course, 'i.pays')
+  const lesson = lessonById(course, 'i2.1')
   ok('la lecon a geometrie variable existe', Boolean(lesson?.byCountry))
   ok('elle couvre les quatre regions',
      COUNTRIES.every((c) => Boolean(lesson.byCountry[c.id])),
