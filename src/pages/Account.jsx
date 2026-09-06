@@ -6,6 +6,7 @@ import { usePageMeta } from '../lib/pageMeta'
 import { CONTACT_EMAIL, DOC_ORDER, LEGAL } from '../legal/content'
 import DeleteAccount from '../components/DeleteAccount'
 import PushToggle from '../components/PushToggle'
+import ReminderSettings from '../components/ReminderSettings'
 import PurchaseCheck from '../components/PurchaseCheck'
 import { Screen, Section, TopBar } from '../components/ui'
 
@@ -114,6 +115,22 @@ export default function Account() {
       <Section title={t('push.section')}>
         <div className="lg px-5">
           <PushToggle />
+        </div>
+      </Section>
+
+      {/**
+       * QUAND, ET PAS SEULEMENT SI.
+       *
+       * L'interrupteur au-dessus decide si le navigateur a le droit d'afficher
+       * quoi que ce soit. Celui-ci decide de ce qui arrive et a quelle heure,
+       * ce qui est la question suivante et pas la meme. Les deux se suivent
+       * parce que le premier sans le second ne fait rien de visible: accorder
+       * la permission puis ne recevoir que le digest du soir se lit comme une
+       * fonctionnalite cassee.
+       */}
+      <Section title={t('remind.section')}>
+        <div className="lg px-5 py-5">
+          <ReminderSettings />
         </div>
       </Section>
 

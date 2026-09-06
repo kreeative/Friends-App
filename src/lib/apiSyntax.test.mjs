@@ -346,5 +346,73 @@ const code = (rel) => src(rel).replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\
   )
 }
 
+/**
+ * LA FONCTION PLANIFIEE DOIT PARSER, ELLE AUSSI.
+ *
+ * Meme raison que pour api/ et un cran plus grave. supabase/functions/notify
+ * est du TypeScript que Vite ne touche pas, que ce depot ne type-checke nulle
+ * part, et qui n'est jamais construit avant d'etre colle dans l'editeur
+ * Supabase depuis un iPad. Une erreur dedans ne se voit qu'au deploiement, et
+ * ce qu'elle casse est tout ce que le produit envoie tout seul: le digest, le
+ * rappel de cycle, le rappel d'agenda, l'eau. Un silence complet, et un
+ * silence ne se signale pas.
+ *
+ * Ce parse a attrape sa premiere vraie faute le jour ou il a ete ecrit: une
+ * deuxieme fonction `claim` au premier niveau, refusee dans un module ES,
+ * ajoutee a cote de celle du plafond des courriels sans que rien d'autre le
+ * remarque.
+ *
+ * esbuild parse le TypeScript et ne le type-checke pas. C'est la moitie la
+ * moins chere et c'est celle qui manquait; --external:https://* parce que les
+ * imports d'une fonction Deno sont des URL et qu'on verifie la syntaxe, pas
+ * les dependances.
+ */
+{
+  const fn = 'supabase/functions/notify/index.ts'
+  const root = fileURLToPath(new URL('../../', import.meta.url))
+  let out = ''
+  let parsed = true
+  try {
+    execFileSync(
+      'npx',
+      ['esbuild', fn, '--bundle', '--format=esm', '--target=es2022', '--external:https://*', '--outfile=/dev/null'],
+      { cwd: root, stdio: ['ignore', 'pipe', 'pipe'] },
+    )
+  } catch (e) {
+    parsed = false
+    out = String(e.stderr ?? e.stdout ?? e).slice(0, 600)
+  }
+  ok('the scheduled function parses', parsed, out)
+
+  const nt = src(fn)
+  ok(
+    'the five-minute job is told apart by what it asks for, never by the method',
+    /body\.job === 'reminders'/.test(nt),
+    'telling callers apart by req.method once killed every scheduled message in the product',
+  )
+  ok(
+    'and it does not do the hourly work twelve times an hour',
+    !/job === 'reminders'[\s\S]{0,900}sendDigests\(\)/.test(nt),
+    'tick(), the digests and every group walked, twelve times an hour, for the same result',
+  )
+  ok(
+    'a reminder is claimed before it is sent, not after',
+    /claimReminder\(row\.user_id, 'event'[\s\S]{0,400}pushTo/.test(nt) &&
+      /claimReminder\(row\.user_id, 'water'[\s\S]{0,600}pushTo/.test(nt),
+    'claiming afterwards makes two concurrent runs send the same reminder twice',
+  )
+  ok(
+    'a missing migration reads as a missing migration, not as a crash',
+    /error\.code === '42883'/.test(nt) && /migrationPending/.test(nt),
+    '42883 means 57_reminders.sql has not been run yet, which is not a bug to chase in the code',
+  )
+  ok(
+    'the reminder copy exists in both locales',
+    (nt.match(/remindWaterTitle:/g) ?? []).length === 2 &&
+      (nt.match(/remindEventAt:/g) ?? []).length === 2,
+    'a string added to one locale only sends the other locale English',
+  )
+}
+
 console.log(`\n  ${pass} passed, ${fail} failed\n`)
 process.exit(fail ? 1 : 0)
