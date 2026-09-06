@@ -130,6 +130,18 @@ export function neighbours(course, id) {
   }
 }
 
+/**
+ * Est-ce que ce cours a des lecons qui changent selon le pays?
+ *
+ * C'est ce qui decide si la question "ou vis-tu" est posee en tete du cours.
+ * Sur un cours universel elle n'adapterait rien, et une question qui ne
+ * change rien est une question de trop: c'est pourquoi elle a quitte la page
+ * de liste, ou elle etait posee avant meme d'avoir choisi un cours.
+ */
+export function hasRegions(course) {
+  return lessonsOf(course).some((l) => Boolean(l.byCountry))
+}
+
 /** Est-ce que cette region existe? Sinon, celle par defaut. */
 export function safeCountry(id) {
   return COUNTRIES.some((c) => c.id === id) ? id : DEFAULT_COUNTRY
