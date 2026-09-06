@@ -270,5 +270,72 @@ eq('un cours absent n’a pas de module', modulesOf(null).length, 0)
   eq('un cours absent compte zero', progressOf(null).total, 0)
 }
 
+/**
+ * UNE LECON QUI N'INTERROGE JAMAIS NE SAIT PAS CE QU'ELLE A TRANSMIS.
+ *
+ * Ecrit apres avoir relu Investir 101 comme un debutant complet, a la demande:
+ * "est-ce qu'a la fin du module tu es confident pour commencer, est-ce que ce
+ * que tu as lu tu as retenu quelque chose". La reponse etait non, et une des
+ * quatre raisons etait mesurable: cinq lecons redigees, zero quiz, zero
+ * reflexion. La question "as-tu retenu quelque chose" n'avait pas de reponse
+ * parce que le cours ne la posait jamais.
+ *
+ * Ce test compte, par cours, les lecons redigees qui n'ont ni quiz ni
+ * reflexion. Il ne bloque pas: un cours peut legitimement en manquer pendant
+ * qu'on l'ecrit, et Riche lentement a seize lecons encore a l'etat de plan.
+ * Il IMPRIME l'ecart, pour qu'il soit visible a chaque execution au lieu de se
+ * decouvrir en relisant le cours six mois plus tard.
+ *
+ * Carte de credit 101, lui, est tenu au complet: il a ete ecrit apres cette
+ * critique et il n'a aucune excuse.
+ */
+{
+  for (const c of COURSES) {
+    const written = lessonsOf(c).filter((l) => l.state === 'written')
+    const noQuiz = written.filter((l) => !l.quiz?.length)
+    const noThink = written.filter((l) => !l.reflection)
+    console.log(
+      `     ${c.slug}: ${written.length} redigees, ${written.length - noQuiz.length} avec quiz, ` +
+        `${written.length - noThink.length} avec reflexion`,
+    )
+    if (noQuiz.length) console.log(`       sans quiz: ${noQuiz.map((l) => l.id).join(', ')}`)
+  }
+
+  const cc = COURSES.find((c) => c.slug === 'carte-de-credit')
+  ok('le cours carte de credit existe', Boolean(cc))
+  const written = lessonsOf(cc).filter((l) => l.state === 'written')
+  ok('il a huit lecons redigees', written.length === 8, String(written.length))
+  ok(
+    'et chacune verifie ce qu elle a transmis',
+    written.every((l) => l.quiz?.length >= 3),
+    `sans quiz: ${written.filter((l) => !l.quiz?.length).map((l) => l.id).join(', ')}`,
+  )
+  ok(
+    'et chacune pose une reflexion',
+    written.every((l) => l.reflection),
+    `sans reflexion: ${written.filter((l) => !l.reflection).map((l) => l.id).join(', ')}`,
+  )
+  /* La lecon qui manquait a Investir 101: une derniere qui recapitule. Un
+     cours qui s'arrete sur sa lecon la plus technique laisse le lecteur sans
+     rien a emporter. */
+  ok(
+    'et le cours finit par un recapitulatif',
+    /retenir|take away/i.test(say(written.at(-1).title, 'fr') + say(written.at(-1).title, 'en')),
+    say(written.at(-1).title, 'fr'),
+  )
+  /* Chaque bonne reponse doit exister dans les options, sinon le quiz marque
+     faux une reponse juste et personne ne le remarque avant de le passer. */
+  const bad = []
+  for (const l of lessonsOf(cc)) {
+    for (const q of l.quiz ?? []) {
+      if (!Number.isInteger(q.answer) || q.answer < 0 || q.answer >= q.options.length) {
+        bad.push(`${l.id}: answer ${q.answer} sur ${q.options.length} options`)
+      }
+      if (!q.why) bad.push(`${l.id}: une question sans explication`)
+    }
+  }
+  ok('chaque bonne reponse pointe une option qui existe, et s explique', bad.length === 0, bad.join(' | '))
+}
+
 console.log(`\n  ${pass} passed, ${fail} failed\n`)
 process.exit(fail ? 1 : 0)

@@ -147,6 +147,12 @@ function CourseList({ country, onPick, t, locale }) {
                 key={c.slug}
                 to={`/cours/${c.slug}`}
                 data-hook="course-card"
+                /* Le slug sur la carte, comme dans Lectures. Une sonde qui
+                   visait nth(1) a attrape le mauvais cours des qu'un
+                   troisieme a ete insere avant celui qu'elle cherchait: se
+                   reperer par position est exactement ce que CLAUDE.md
+                   interdit pour les selecteurs. */
+                data-slug={c.slug}
                 className="press block rounded-card border border-hairline bg-[rgb(var(--glass-tint)/0.55)] p-5 backdrop-blur-md"
               >
                 <span className="block text-h2 font-semibold text-ink">{say(c.title, locale)}</span>

@@ -1066,7 +1066,20 @@ const STRINGS = {
     'rank.standing_near': 'You are about at the published rate.',
     'rank.standing_below': 'You keep less than the published rate.',
 
-    'form.title': 'Learn',
+    /**
+     * "Budget 101", NOT "Learn".
+     *
+     * Reported by pointing at the shelf: "pourquoi Learn et toujours Learn".
+     * The card sat between "Rich, slowly" and "Investing 101", which are
+     * names, wearing a category label that says nothing. Somebody scanning
+     * three cards learns the subject of two of them.
+     *
+     * It is the same fault as the "Open the courses" card that was removed
+     * from this page: a generic word standing where the specific one belongs.
+     * "101" because the shelf already uses it and it reads as "the beginning
+     * of this subject" without needing a subtitle to explain the title.
+     */
+    'form.title': 'Budget 101',
     'form.sub': '{n} two-minute modules on running a zero-based budget.',
     'form.back_library': 'Back to the library',
     'form.lessons': 'The {n} lessons',
@@ -2630,7 +2643,7 @@ const STRINGS = {
     'rank.standing_near': 'Tu es à peu près au taux publié.',
     'rank.standing_below': 'Tu gardes moins que le taux publié.',
 
-    'form.title': 'Formation',
+    'form.title': 'Budget 101',
     'form.sub': '{n} modules de deux minutes pour tenir un budget à base zéro.',
     'form.back_library': 'Retour aux lectures',
     'form.lessons': 'Les {n} leçons',
