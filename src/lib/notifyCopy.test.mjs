@@ -536,5 +536,64 @@ const keysOf = (lang) => [...block(lang).matchAll(/^ {4}(\w+):/gm)].map((m) => m
      !/MAIL_FROM="Friends <hi@/.test(CODE))
 }
 
+/**
+ * DU FRANCAIS AVEC SES ACCENTS, DANS LES CHAINES DE L'APPLICATION.
+ *
+ * La regle ASCII de CLAUDE.md vise le SQL colle dans l'editeur Supabase, ou un
+ * octet abime donne "invalid byte sequence" et designe la mauvaise ligne. Elle
+ * ne vise pas i18n.jsx, qui est un bundle UTF-8 et qui porte deja des accents
+ * partout.
+ *
+ * Les chaines des rappels sont parties sans accents: "Tes heures eveillees",
+ * "Reveil", "les evenements", "Par defaut previens-moi". Rien n'a casse, le
+ * build est passe, les tests etaient verts. Ca s'est vu sur la capture d'ecran
+ * et nulle part ailleurs, ce qui est exactement pourquoi CLAUDE.md demande de
+ * regarder la capture au lieu de raisonner sur le code.
+ *
+ * Ce test regarde les mots francais qui, ecrits sans accent, sont soit un
+ * autre mot soit rien du tout. Il ne verifie pas tout le fichier: une liste de
+ * pieges connus attrape la faute reelle sans refuser un mot legitime.
+ */
+{
+  const i18n = readFileSync(new URL('./i18n.jsx', import.meta.url), 'utf8')
+  /**
+   * LE BLOC FRANCAIS, TROUVE PAR SON CONTENU ET PAS PAR UN VOISIN.
+   *
+   * Premiere version: slice depuis le dernier "'push.section'", en supposant
+   * que le bloc francais suit. Il le PRECEDE, donc la tranche ne contenait
+   * aucune des chaines a verifier et le test passait sur un fichier fautif.
+   * Verifie en remettant la faute: 119 passed, 0 failed. Une assertion qui ne
+   * regarde rien est verte pour la meme raison qu'une assertion juste.
+   *
+   * Ancre sur une valeur francaise connue, donc, et bornee par la cle qui suit
+   * le bloc. Si le bloc bouge, l'ancre bouge avec lui; s'il disparait, la
+   * garde ci-dessous le dit.
+   */
+  const from = i18n.indexOf("'remind.section': 'Quand")
+  const to = i18n.indexOf("'push.section'", from)
+  const fr = from >= 0 && to > from ? i18n.slice(from, to) : ''
+  ok(
+    'the French reminder block was actually found',
+    fr.length > 800,
+    `sliced ${fr.length} chars; an empty slice makes every check below vacuous`,
+  )
+
+  const traps = [
+    'eveillee', 'eveillees', 'Reveil',
+    'evenement', 'evenements',
+    'journee', 'duree', 'defaut',
+    'previens', 'prevenir',
+    'regler', 'editeur', 'execute',
+    'envoye', 'demande un rappel',
+    'repartissent', 'meme ;',
+  ]
+  const found = traps.filter((w) => new RegExp(`\\b${w}\\b`).test(fr))
+  ok(
+    'the French strings keep their accents',
+    found.length === 0,
+    `unaccented: ${found.join(', ')}`,
+  )
+}
+
 console.log(`\nnotifyCopy\n\n  ${pass} passed, ${fail} failed\n`)
 process.exit(fail === 0 ? 0 : 1)

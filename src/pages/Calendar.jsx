@@ -1104,6 +1104,25 @@ function EventForm({ initial, onClose, onSaved }) {
     start: clockOf(initial.start_min) ?? '',
     end: clockOf(initial.end_min) ?? '',
     weekdays: initial.weekdays ?? [],
+    /**
+     * LE RAPPEL DE CET EVENEMENT-LA, EN MINUTES AVANT.
+     *
+     * "Mon frere il oublie tout le temps qu'il a soccer. Une option comme ca
+     * l'app peut lui renvoyer des notifications tous les jours pour le
+     * prevenir que a telle heure il a ca dans le calendrier."
+     *
+     * Par evenement et pas global, parce que c'est ce qui a ete demande: il
+     * oublie le soccer, pas tout son agenda. Un rappel sur chaque cours de la
+     * semaine ferait une notification toutes les deux heures et la fonction
+     * serait coupee dans la journee.
+     *
+     * Chaine vide plutot que null dans l'etat du formulaire, parce que c'est
+     * ce qu'un <select> rend, et '' devient null au moment d'ecrire. Une
+     * colonne qui accepte null ne doit pas recevoir '', et une colonne qui le
+     * refuse ne doit pas recevoir null: ce depot a deja perdu la creation
+     * d'objectif sur exactement cette confusion.
+     */
+    remind_min: initial.remind_min ?? '',
   })
 
   const toggleDay = (n) =>
@@ -1138,6 +1157,11 @@ function EventForm({ initial, onClose, onSaved }) {
       end_min: end,
       weekdays: f.weekdays,
       colour: CATEGORY_COLOUR[f.category] ?? 'accent',
+      /* Null veut dire aucun rappel, et remind_min accepte null. Un rappel sur
+         un evenement sans heure n'a pas de sens non plus: "trente minutes
+         avant" un truc qui dure toute la journee se calculerait depuis minuit
+         et partirait a 23h30 la veille. */
+      remind_min: start != null && f.remind_min !== '' ? Number(f.remind_min) : null,
     }
 
     const { error: err } = initial.id
@@ -1195,7 +1219,11 @@ function EventForm({ initial, onClose, onSaved }) {
       <form onSubmit={save} className="flex min-h-0 flex-1 flex-col overflow-y-auto px-5 py-4 space-y-3">
         <label className="block">
           <span className="text-label font-semibold uppercase tracking-[0.06em] text-muted">{t('cal.f_title')}</span>
-          <input value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} maxLength={120} className="field mt-1 w-full" />
+          {/* Un data-hook plutot qu'un selecteur sur le type: cet input n'en
+              declare pas, donc input[type="text"] ne le trouve pas, et le
+              chercher par sa classe est ce que CLAUDE.md interdit parce que ca
+              a casse a chaque restylage. */}
+          <input data-hook="cal-f-title" value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} maxLength={120} className="field mt-1 w-full" />
         </label>
 
         {/**
@@ -1299,6 +1327,45 @@ function EventForm({ initial, onClose, onSaved }) {
             </label>
           )}
         </div>
+
+        {/**
+         * PREVIENS-MOI, SUR CET EVENEMENT-LA.
+         *
+         * Demande avec le cas: "mon frere il oublie tout le temps qu'il a
+         * soccer". Un rappel par evenement plutot qu'un reglage global, parce
+         * que ce n'est pas tout l'agenda qu'on oublie, c'est une chose.
+         *
+         * Offert seulement quand l'evenement a une heure. "Trente minutes
+         * avant" un truc qui dure toute la journee se calculerait depuis
+         * minuit et partirait a 23h30 la veille, donc le champ disparait
+         * plutot que de proposer un reglage qui ment.
+         */}
+        {minutesOf(f.start) != null && (
+          <label className="block" data-hook="event-remind">
+            <span className="text-label font-semibold uppercase tracking-[0.06em] text-muted">
+              {t('cal.f_remind')}
+            </span>
+            <select
+              value={f.remind_min}
+              onChange={(e) => setF({ ...f, remind_min: e.target.value })}
+              className="field mt-1 w-full"
+            >
+              <option value="">{t('cal.remind_none')}</option>
+              <option value="0">{t('remind.lead_0')}</option>
+              <option value="10">{t('water.every_m', { m: 10 })}</option>
+              <option value="15">{t('water.every_m', { m: 15 })}</option>
+              <option value="30">{t('water.every_m', { m: 30 })}</option>
+              <option value="60">{t('water.every_h', { h: 1 })}</option>
+              <option value="120">{t('water.every_h', { h: 2 })}</option>
+              <option value="1440">{t('remind.lead_day')}</option>
+            </select>
+            <span className="mt-1.5 block text-small text-muted">
+              {f.remind_min === '' ? t('cal.remind_hint') : t('cal.remind_on', {
+                n: f.weekdays.length ? t('cal.remind_each') : t('cal.remind_once'),
+              })}
+            </span>
+          </label>
+        )}
 
         {error && (
           <p className="text-safe text-small text-negative" role="alert">

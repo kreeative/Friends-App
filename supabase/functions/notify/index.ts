@@ -353,6 +353,25 @@ const COPY = {
      * Le mot « regles » n'est pas dans l'objet. Un objet s'affiche sur un
      * ecran verrouille, dans une salle de cours, a cote de quelqu'un.
      */
+    /**
+     * LES RAPPELS DE LA JOURNEE.
+     *
+     * Courts, parce qu'ils s'affichent sur un ecran de verrouillage a cote de
+     * l'heure. Le titre est ce qui est arrive, le corps est ce qu'il faut en
+     * faire, et rien d'autre: personne ne lit un paragraphe sur une
+     * notification.
+     *
+     * L'heure est dans le corps du rappel d'agenda et pas seulement dans le
+     * titre. Un rappel qui dit seulement "Soccer" oblige a ouvrir
+     * l'application pour savoir a quelle heure, ce qui est exactement le
+     * travail que le rappel devait eviter.
+     */
+    remindEvent: (hhmm: string) => `\u00c0 ${hhmm}.`,
+    remindEventAt: (hhmm: string, where: string) => `\u00c0 ${hhmm}, ${where}.`,
+    remindWaterTitle: 'Un verre d\u2019eau',
+    remindWaterBody: (n: number) =>
+      n === 1 ? 'Le dernier de la journ\u00e9e.' : `Encore ${n} d\u2019ici ce soir.`,
+
     cycleSubject: 'Un petit rappel',
     cycleTitle: 'Un petit rappel',
     cyclePre: (n: number) =>
@@ -428,6 +447,12 @@ const COPY = {
     goalCta: 'Open the group',
     goalFoot: (g: string) =>
       `Sent at most once per cycle, because you are in ${g}. Goals added after this arrive in the same message.`,
+
+    remindEvent: (hhmm: string) => `At ${hhmm}.`,
+    remindEventAt: (hhmm: string, where: string) => `At ${hhmm}, ${where}.`,
+    remindWaterTitle: 'A glass of water',
+    remindWaterBody: (n: number) =>
+      n === 1 ? 'The last one today.' : `${n} more before tonight.`,
 
     cycleSubject: 'A small heads-up',
     cycleTitle: 'A small heads-up',
@@ -616,6 +641,13 @@ const tally = {
   /* The other channel, counted separately: a run can send every email and no
      push, which is the normal state until somebody turns push on. */
   pushed: 0, pushFailed: 0, pushDropped: 0,
+  /* Le travail des cinq minutes, compte a part parce qu'il tourne a une autre
+     cadence: melanger les deux rendrait un chiffre horaire illisible. */
+  remindWater: 0, remindEvent: 0,
+  /* Vrai quand due_event_reminders n'existe pas encore, donc quand
+     57_reminders.sql n'a pas ete passe. Une migration en attente n'est pas une
+     panne et ne doit pas se lire comme une trace d'erreur. */
+  remindersPending: false,
 }
 
 /** Record the outcome, and hand the claim back if nothing was sent. */
@@ -1118,6 +1150,194 @@ const asDay = (iso: string) => {
 }
 const dayString = (ms: number) => new Date(ms).toISOString().slice(0, 10)
 
+/**
+ * LES RAPPELS DE LA JOURNEE: L'EAU ET L'AGENDA.
+ *
+ * Demande: "chaque personne peut choisir a quelle heure ou a quelle frequence
+ * dans la journee il veut recevoir une notification", "je veux que les
+ * notifications de boire de l'eau soient automatiques", et "mon frere il
+ * oublie tout le temps qu'il a soccer, une option comme ca l'app peut lui
+ * renvoyer des notifications".
+ *
+ * POURQUOI C'EST UN DEUXIEME TRAVAIL ET PAS UNE LIGNE DE PLUS DANS LE PREMIER.
+ *
+ * Le reste de cette fonction tourne a l'heure pile, ce qui convient a un
+ * digest du soir et ne convient a rien de ce qui est ici: un rappel trente
+ * minutes avant un entrainement de 18h30 doit partir a 18h00, et un rappel
+ * d'eau tombe ou le calcul le met, pas au debut d'une heure. Ce travail-la
+ * tourne toutes les cinq minutes (voir 04_schedule.sql) et ne fait QUE des
+ * push: pas de tick(), pas de courriel, pas de parcours de tous les groupes,
+ * parce que faire ca douze fois par heure serait douze fois le travail pour la
+ * meme chose.
+ *
+ * LE PLAFOND EST DANS LA BASE, PAS ICI.
+ *
+ * reminder_log a une cle primaire (user_id, kind, ref) et l'insertion se fait
+ * AVANT l'envoi. Deux executions concurrentes, ce qui arrive apres un timeout
+ * reseau, ne peuvent pas envoyer deux fois: la deuxieme insertion echoue et la
+ * boucle passe. C'est la meme forme que notifications_log pour les courriels,
+ * et pour la meme raison: une garantie portee par une contrainte vaut mieux
+ * qu'une garantie portee par du code qui s'en souvient.
+ */
+async function sendReminders() {
+  const now = new Date()
+  /* Une fenetre qui remonte un peu en arriere, pas seulement en avant. Le cron
+     vise cinq minutes mais peut deraper, et un rappel manque de trente
+     secondes ne doit pas etre saute pour toujours: il part au tour suivant,
+     legerement en retard, ce qui est ce que tout le monde prefere. */
+  const from = new Date(now.getTime() - 15 * 60 * 1000).toISOString()
+  const to = new Date(now.getTime() + 60 * 1000).toISOString()
+
+  await sendEventReminders(from, to)
+  await sendWaterReminders(from, to)
+}
+
+/**
+ * Un rappel part, ou ne part pas parce qu'il etait deja parti.
+ *
+ * `claimReminder` et pas `claim`: ce fichier a deja un claim(), celui du
+ * plafond des courriels, et deux declarations du meme nom au premier niveau
+ * d'un module ES sont refusees a la construction. Attrape par esbuild avant
+ * le deploiement, ce qui est exactement ce pour quoi ce parse existe.
+ */
+async function claimReminder(userId: string, kind: 'water' | 'event', ref: string): Promise<boolean> {
+  const { error } = await supabase.from('reminder_log').insert({ user_id: userId, kind, ref })
+  /* 23505 est le doublon, donc "quelqu'un l'a deja envoye": ce n'est pas une
+     panne, c'est le plafond qui fait son travail. Toute autre erreur en est
+     une et doit se voir dans les logs. */
+  if (error) {
+    if (error.code !== '23505') console.error('reminder claim failed', error.code, error.message)
+    return false
+  }
+  return true
+}
+
+/**
+ * "Il oublie tout le temps qu'il a soccer."
+ *
+ * L'expansion des recurrences est faite par due_event_reminders() en SQL, et
+ * pas ici. Le fuseau de chaque personne, la date locale, les exceptions et la
+ * date de fin sont tous des colonnes; les rapatrier toutes les cinq minutes
+ * pour en garder trois serait le mauvais cote de la frontiere.
+ */
+async function sendEventReminders(from: string, to: string) {
+  const { data, error } = await supabase.rpc('due_event_reminders', { win_start: from, win_end: to })
+  if (error) {
+    /* 42883 veut dire que la fonction n'existe pas, donc que 57_reminders.sql
+       n'a pas encore ete passe. Ce n'est pas une panne a corriger dans le
+       code: c'est une migration en attente, et le dire est plus utile qu'une
+       trace d'erreur qui ressemble a un bogue. */
+    if (error.code === '42883') tally.remindersPending = true
+    else console.error('due_event_reminders failed', error.message)
+    return
+  }
+
+  for (const row of data ?? []) {
+    const { data: prof } = await supabase
+      .from('profiles')
+      .select('locale')
+      .eq('id', row.user_id)
+      .maybeSingle()
+    const c = COPY[localeOf(prof?.locale)]
+
+    if (!(await claimReminder(row.user_id, 'event', row.ref))) continue
+
+    const hhmm = `${String(Math.floor(row.start_min / 60)).padStart(2, '0')}:${String(
+      row.start_min % 60,
+    ).padStart(2, '0')}`
+
+    const out = await pushTo(row.user_id, {
+      title: row.title,
+      /* L'heure est dans le corps et pas seulement dans le titre. Un rappel qui
+         dit seulement "Soccer" oblige a ouvrir l'application pour savoir a
+         quelle heure, ce qui est exactement le travail que le rappel devait
+         eviter. */
+      body: row.location
+        ? c.remindEventAt(hhmm, row.location)
+        : c.remindEvent(hhmm),
+      url: '/calendrier',
+      /* Un tag par occurrence: deux rappels differents ne doivent pas se
+         remplacer sur l'ecran de verrouillage, mais le meme rappel arrive deux
+         fois, si ca arrivait, doit se remplacer lui-meme. */
+      tag: `event-${row.ref}`,
+    })
+    if (out.delivered > 0) tally.remindEvent += 1
+  }
+}
+
+/**
+ * L'eau, dont tout le calcul a deja ete fait ailleurs.
+ *
+ * water_next_at porte le resultat de src/lib/water.js, qui est teste sous
+ * node. Ici on ne recalcule pas l'intervalle: on envoie, puis on avance
+ * water_next_at de l'ecart qui correspond a ce qu'il reste a boire sur ce
+ * qu'il reste de journee. C'est la meme regle, appliquee avec la seule
+ * information dont le serveur dispose, et elle redevient exacte des que
+ * quelqu'un rouvre l'application.
+ */
+async function sendWaterReminders(from: string, to: string) {
+  const { data, error } = await supabase.rpc('due_water_reminders', { win_start: from, win_end: to })
+  if (error) {
+    if (error.code === '42883') tally.remindersPending = true
+    else console.error('due_water_reminders failed', error.message)
+    return
+  }
+
+  for (const row of data ?? []) {
+    const remaining = Math.max(0, row.target_ml - row.drunk_ml)
+    /* La cible est atteinte: on eteint le prochain rappel au lieu d'en envoyer
+       un qui feliciterait quelqu'un toutes les heures jusqu'a minuit. */
+    if (remaining <= 0) {
+      await supabase
+        .from('notify_pref')
+        .update({ water_next_at: null })
+        .eq('user_id', row.user_id)
+      continue
+    }
+
+    if (!(await claimReminder(row.user_id, 'water', row.ref))) continue
+
+    const { data: prof } = await supabase
+      .from('profiles')
+      .select('locale')
+      .eq('id', row.user_id)
+      .maybeSingle()
+    const c = COPY[localeOf(prof?.locale)]
+
+    const glasses = Math.ceil(remaining / (row.glass_ml || 250))
+    const out = await pushTo(row.user_id, {
+      title: c.remindWaterTitle,
+      body: c.remindWaterBody(glasses),
+      url: '/',
+      /* UN SEUL TAG POUR TOUS LES RAPPELS D'EAU, ET C'EST VOULU.
+         Huit notifications d'eau empilees sur un ecran de verrouillage
+         noieraient tout le reste. Un tag partage fait que la derniere remplace
+         la precedente: il y en a toujours au plus une qui attend. */
+      tag: 'water',
+    })
+    if (out.delivered > 0) tally.remindWater += 1
+
+    /**
+     * Avancer le prochain rappel.
+     *
+     * Le meme calcul que planFor(): ce qu'il reste a boire, reparti sur ce
+     * qu'il reste de journee, borne entre 30 et 120 minutes. Les deux bornes
+     * et la formule sont celles de src/lib/water.js et un test les compare;
+     * voir reminders.test.mjs. Quand personne ne rouvre l'application, c'est
+     * cette version-la qui tient la journee, et elle doit donner le meme
+     * resultat que celle du client sur les memes entrees.
+     */
+    const minutesLeft = row.sleep_min > row.local_min ? row.sleep_min - row.local_min : 0
+    if (minutesLeft <= 0) {
+      await supabase.from('notify_pref').update({ water_next_at: null }).eq('user_id', row.user_id)
+      continue
+    }
+    const gap = Math.min(120, Math.max(30, Math.round(minutesLeft / glasses)))
+    const next = new Date(Date.now() + gap * 60 * 1000).toISOString()
+    await supabase.from('notify_pref').update({ water_next_at: next }).eq('user_id', row.user_id)
+  }
+}
+
 async function sendCycleReminders() {
   const { data: people } = await supabase
     .from('notification_preference')
@@ -1618,12 +1838,44 @@ Deno.serve(async (req) => {
      * The body is parsed HERE and passed down, because a request body can only
      * be read once and deliverNudge used to read it itself.
      */
-    let body: { nudge_id?: string; self_test?: boolean; reply_to?: string } = {}
+    let body: { nudge_id?: string; self_test?: boolean; reply_to?: string; job?: string } = {}
     try {
       body = await req.json()
     } catch {
       /* No body, or not JSON. That is cron, and it falls through below. */
       body = {}
+    }
+
+    /**
+     * LE TROISIEME APPELANT, RECONNU COMME LES DEUX AUTRES: PAR CE QU'IL
+     * DEMANDE.
+     *
+     * La note ci-dessus raconte ce qu'a coute de distinguer les appelants par
+     * la methode HTTP: chaque envoi programme du produit est mort en silence
+     * pendant des semaines. Donc ce travail-la se nomme, lui aussi.
+     *
+     * Il tourne toutes les cinq minutes et ne fait QUE les push de la journee.
+     * Pas de tick(), pas de courriel, pas de parcours de tous les groupes:
+     * faire le travail horaire douze fois par heure serait douze fois le meme
+     * travail pour le meme resultat, et le plafond de notifications_log le
+     * rendrait de toute facon sans effet.
+     */
+    if (body.job === 'reminders') {
+      try {
+        await sendReminders()
+        return json({
+          ok: true,
+          job: 'reminders',
+          push: PUSH_READY,
+          /* Vrai quand 57_reminders.sql n'a pas encore ete passe. C'est la
+             premiere chose a regarder si rien n'arrive. */
+          migrationPending: tally.remindersPending,
+          sent: { water: tally.remindWater, event: tally.remindEvent },
+        })
+      } catch (err) {
+        console.error('reminders failed', err)
+        return json({ ok: false, job: 'reminders', error: String(err) }, 500)
+      }
     }
 
     if (wantsInstant(body)) {

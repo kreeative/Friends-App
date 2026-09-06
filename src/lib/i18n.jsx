@@ -323,6 +323,56 @@ const STRINGS = {
     'birthday.note': 'Worth a message on the day, wherever you actually talk. This is the reminder, not the gesture.',
     'birthday.note_early':
       'There is still time to book something, order something, write something worth reading. On the day there is only the message left.',
+    /**
+     * LES RAPPELS DE LA JOURNEE.
+     *
+     * "Notifications" au-dessus decide si le navigateur a le droit d'afficher
+     * quelque chose. Celui-ci decide de ce qui arrive et a quelle heure, ce
+     * qui est la question suivante et pas la meme.
+     */
+    'remind.section': 'When to remind you',
+    'remind.window': 'Your waking hours',
+    'remind.window_hint':
+      'Nothing is sent outside these. It is also the stretch your water reminders are spread across. Working nights is fine: 22:00 to 06:00 reads the way you would expect.',
+    'remind.wake': 'Awake from',
+    'remind.sleep': 'Until',
+
+    'remind.water': 'Drink water',
+    'remind.water_hint':
+      'No times to set. Pick a target and the app works out the rhythm, then adjusts it as the day goes: fall behind and the reminders close up, drink a lot at once and they space out.',
+    'remind.target': 'Daily target',
+    /* Le calcul, montre pendant qu'on bouge le curseur. Sans cette phrase, "2
+       litres" est un nombre abstrait et le rythme est une surprise. */
+    'remind.plan': '{litres} L is {glasses} glasses. About one every {every}.',
+    'remind.late':
+      'Not enough of the day left to finish at a drinkable pace. Reminders keep coming every 30 minutes, which is the floor.',
+    'remind.drink': 'I drank a glass',
+    'remind.undo': 'Undo',
+    'remind.today': '{done} of {total} today',
+
+    'remind.events': 'Calendar reminders',
+    'remind.events_hint':
+      'For events you have asked to be reminded about. Turn a reminder on inside the event itself; this switch turns all of them off at once.',
+    'remind.lead': 'By default, remind me',
+    'remind.lead_hint': 'Each event can override this with its own.',
+    'remind.lead_0': 'At the time',
+    'remind.lead_day': 'A day before',
+    'remind.migration':
+      'Reminders need one more migration. In Supabase, open the SQL Editor and run supabase/57_reminders.sql.',
+
+    /* Utilise par les rappels et par le champ de l'agenda: une seule facon
+       d'ecrire une duree dans toute l'application. */
+    'water.every_m': '{m} min',
+    'water.every_h': '{h} h',
+    'water.every_hm': '{h} h {m}',
+
+    'cal.f_remind': 'Remind me',
+    'cal.remind_none': 'No reminder',
+    'cal.remind_hint': 'Nothing is sent for this one.',
+    'cal.remind_on': 'You will get a notification {n}.',
+    'cal.remind_each': 'before every time it happens',
+    'cal.remind_once': 'before it happens',
+
     'push.section': 'Notifications',
     'push.title': 'Notify me on this device',
     'push.on_here': 'On for this browser. Tap to turn it off.',
@@ -1878,6 +1928,45 @@ const STRINGS = {
     'birthday.note': 'Un message le jour même, là où vous vous parlez vraiment. Ceci est le rappel, pas le geste.',
     'birthday.note_early':
       'Il reste le temps de réserver, de commander, d’écrire quelque chose qui se lit. Le jour même, il ne reste que le message.',
+    'remind.section': 'Quand te prévenir',
+    'remind.window': 'Tes heures éveillées',
+    'remind.window_hint':
+      'Rien ne part en dehors. C’est aussi la durée sur laquelle tes rappels d’eau se répartissent. Travailler de nuit marche : 22:00 à 06:00 se lit comme tu l’attends.',
+    'remind.wake': 'Réveil',
+    'remind.sleep': 'Coucher',
+
+    'remind.water': 'Boire de l’eau',
+    'remind.water_hint':
+      'Aucune heure à régler. Tu choisis une cible, l’app calcule le rythme, puis l’ajuste au fil de la journée : en retard, les rappels se resserrent ; si tu bois beaucoup d’un coup, ils s’espacent.',
+    'remind.target': 'Cible du jour',
+    'remind.plan': '{litres} L, c’est {glasses} verres. Environ un toutes les {every}.',
+    'remind.late':
+      'Il ne reste plus assez de journée pour finir à un rythme buvable. Les rappels continuent toutes les 30 minutes, qui est le plancher.',
+    'remind.drink': 'J’ai bu un verre',
+    'remind.undo': 'Annuler',
+    'remind.today': '{done} sur {total} aujourd’hui',
+
+    'remind.events': 'Rappels d’agenda',
+    'remind.events_hint':
+      'Pour les événements sur lesquels tu as demandé un rappel. Le rappel se coche dans l’événement lui-même ; cet interrupteur les coupe tous d’un coup.',
+    'remind.lead': 'Par défaut, préviens-moi',
+    'remind.lead_hint': 'Chaque événement peut avoir le sien.',
+    'remind.lead_0': 'À l’heure pile',
+    'remind.lead_day': 'Un jour avant',
+    'remind.migration':
+      'Les rappels demandent une migration de plus. Dans Supabase, ouvre l’éditeur SQL et exécute supabase/57_reminders.sql.',
+
+    'water.every_m': '{m} min',
+    'water.every_h': '{h} h',
+    'water.every_hm': '{h} h {m}',
+
+    'cal.f_remind': 'Préviens-moi',
+    'cal.remind_none': 'Pas de rappel',
+    'cal.remind_hint': 'Rien n’est envoyé pour celui-ci.',
+    'cal.remind_on': 'Tu recevras une notification {n}.',
+    'cal.remind_each': 'avant chaque fois',
+    'cal.remind_once': 'avant',
+
     'push.section': 'Notifications',
     'push.title': 'Me notifier sur cet appareil',
     'push.on_here': 'Activé pour ce navigateur. Touche pour désactiver.',
