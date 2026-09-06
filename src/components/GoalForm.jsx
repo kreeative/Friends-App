@@ -302,6 +302,11 @@ export default function GoalForm({ onDone, onCancel, initial = null, groupId = n
   const [remindAt, setRemindAt] = useState(
     initial?.remind_at_min != null ? toHm(initial.remind_at_min) : '',
   )
+  /* "An option for the frequency of the notification?" En minutes, en
+     chaine pour le select; vide veut dire une seule fois. */
+  const [remindEvery, setRemindEvery] = useState(
+    initial?.remind_every_min != null ? String(initial.remind_every_min) : '',
+  )
   const [goalType, setGoalType] = useState(initial?.goal_type ?? 'process')
   const [dismissedHint, setDismissedHint] = useState(false)
   /**
@@ -386,6 +391,7 @@ export default function GoalForm({ onDone, onCancel, initial = null, groupId = n
       stake,
       remind,
       remindAt,
+      remindEvery,
     })
 
     const write = (row) =>
@@ -443,7 +449,10 @@ export default function GoalForm({ onDone, onCancel, initial = null, groupId = n
   }
 
   return (
-    <form onSubmit={save} className="space-y-8">
+    /* measure-form: sur un iPad en paysage ce formulaire faisait 1720 px de
+       large, chaque champ un horizon. La limite va sur le bloc, pas sur la
+       page (voir .shell dans index.css). */
+    <form onSubmit={save} className="measure-form space-y-8">
       <Step n={1} title={t('form.step_what')} hint={t('form.commitment_hint')}>
         {/* Only meaningful inside a group. On a solo goal there is no "whole
             group" to pick, and offering the choice invited a save that the
@@ -634,6 +643,33 @@ export default function GoalForm({ onDone, onCancel, initial = null, groupId = n
                 if (e.target.value !== remindAt) setRemindAt(e.target.value)
               }}
             />
+          </Field>
+        )}
+        {/**
+         * La frequence, derriere l'heure et seulement derriere elle.
+         *
+         * "An option for the frequency of the notification?" C'est la
+         * deuxieme moitie de la toute premiere demande: "a quelle heure OU a
+         * quelle frequence dans la journee". Pas un calendrier a part (les
+         * jours restent ceux de l'objectif), une repetition de l'heure
+         * choisie jusqu'a ce que l'objectif soit coche, et jamais apres le
+         * coucher des reglages. Sans heure il n'y a rien a repeter, donc le
+         * champ n'existe pas.
+         */}
+        {remind && remindAt && (
+          <Field label={t('form.remind_every')} hint={t('form.remind_every_hint')}>
+            <select
+              data-hook="goal-remind-every"
+              className="field"
+              value={remindEvery}
+              onChange={(e) => setRemindEvery(e.target.value)}
+            >
+              <option value="">{t('form.remind_once')}</option>
+              <option value="30">{t('form.remind_every_30')}</option>
+              <option value="60">{t('form.remind_every_60')}</option>
+              <option value="120">{t('form.remind_every_120')}</option>
+              <option value="180">{t('form.remind_every_180')}</option>
+            </select>
           </Field>
         )}
       </Step>

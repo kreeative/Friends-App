@@ -46,7 +46,7 @@ const OUT = process.env.SWEEP_OUT ?? '.sweep'
 const WIDTHS = (process.env.SWEEP_WIDTHS ?? '390,820,1180,1440').split(',').map(Number)
 const ROUTES = (
   process.env.SWEEP_ROUTES ??
-  '/,/goals,/money,/library,/library?shelf=articles,/calendar,/settings,/profile,/notifications,/cours,/cours/investir-101,/cours/carte-de-credit/c2.2'
+  '/,/goals,/goals/new,/money,/library,/library?shelf=articles,/calendar,/settings,/profile,/notifications,/cours,/cours/investir-101,/cours/carte-de-credit/c2.2'
 ).split(',')
 const PORT = 4187
 

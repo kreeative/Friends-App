@@ -84,5 +84,11 @@ export function goalRow(f, today = dayKey(new Date())) {
      * illisible plutot qu'un NaN qui violerait la contrainte.
      */
     remind_at_min: f.remind && f.remindAt ? fromHm(f.remindAt, null) : null,
+    /* La frequence n'a de sens qu'avec une heure: "toutes les heures" a
+       partir de rien n'est pas un horaire. Null = une seule fois. */
+    remind_every_min:
+      f.remind && f.remindAt && fromHm(f.remindAt, null) != null && Number(f.remindEvery) > 0
+        ? Number(f.remindEvery)
+        : null,
   }
 }

@@ -386,8 +386,9 @@ const COPY = {
     /* Le titre est l'engagement lui-meme, ecrit par la personne: rien ne
        parle mieux a quelqu'un que sa propre phrase. Le corps est le
        quand-et-ou s'il existe, sinon un mot. */
-    remindGoalBody: (when: string | null, where: string | null) =>
-      [when, where].filter(Boolean).join(' \u00b7 ') || 'C\u2019est le moment.',
+    remindGoalBody: (when: string | null, where: string | null, again = false) =>
+      (again ? 'Toujours pas coch\u00e9. ' : '') +
+      ([when, where].filter(Boolean).join(' \u00b7 ') || 'C\u2019est le moment.'),
     remindWaterTitle: 'Un verre d\u2019eau',
     remindWaterBody: (n: number) =>
       n === 1 ? 'Le dernier de la journ\u00e9e.' : `Encore ${n} d\u2019ici ce soir.`,
@@ -470,8 +471,9 @@ const COPY = {
 
     remindEvent: (hhmm: string) => `At ${hhmm}.`,
     remindEventAt: (hhmm: string, where: string) => `At ${hhmm}, ${where}.`,
-    remindGoalBody: (when: string | null, where: string | null) =>
-      [when, where].filter(Boolean).join(' \u00b7 ') || 'Now is the time.',
+    remindGoalBody: (when: string | null, where: string | null, again = false) =>
+      (again ? 'Still not ticked. ' : '') +
+      ([when, where].filter(Boolean).join(' \u00b7 ') || 'Now is the time.'),
     remindWaterTitle: 'A glass of water',
     remindWaterBody: (n: number) =>
       n === 1 ? 'The last one today.' : `${n} more before tonight.`,
@@ -1370,11 +1372,15 @@ async function sendGoalReminders(from: string, to: string) {
 
     const out = await pushTo(row.user_id, {
       title: String(row.commitment).slice(0, 80),
-      body: c.remindGoalBody(row.trigger_when, row.trigger_where),
+      /* slot_n > 0: une repetition, pas le premier rappel. La phrase le dit,
+         parce que le meme texte trois fois dans la soiree se lit comme une
+         panne. */
+      body: c.remindGoalBody(row.trigger_when, row.trigger_where, Number(row.slot_n) > 0),
       url: '/goals',
-      /* Un tag par objectif et par jour: deux objectifs a la meme heure sont
-         deux notifications, le meme objectif deux fois se remplace. */
-      tag: `goal-${row.ref}`,
+      /* Un tag par objectif et par jour, et PAS par creneau: une repetition
+         remplace le rappel precedent dans le tiroir au lieu de s'empiler
+         dessous. Deux objectifs a la meme heure restent deux notifications. */
+      tag: `goal-${row.goal_id}-${row.on_day}`,
     })
     if (out.delivered > 0) tally.remindGoal += 1
   }
@@ -1388,7 +1394,7 @@ async function sendGoalReminders(from: string, to: string) {
  * d'un module ES sont refusees a la construction. Attrape par esbuild avant
  * le deploiement, ce qui est exactement ce pour quoi ce parse existe.
  */
-async function claimReminder(userId: string, kind: 'water' | 'event', ref: string): Promise<boolean> {
+async function claimReminder(userId: string, kind: 'water' | 'event' | 'goal', ref: string): Promise<boolean> {
   const { error } = await supabase.from('reminder_log').insert({ user_id: userId, kind, ref })
   /* 23505 est le doublon, donc "quelqu'un l'a deja envoye": ce n'est pas une
      panne, c'est le plafond qui fait son travail. Toute autre erreur en est
