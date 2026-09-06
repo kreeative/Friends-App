@@ -7,3 +7,6 @@ env.
 .DS_Store
 *.log
 .netlify
+
+# Screenshots written by npm run sweep
+.sweep/
