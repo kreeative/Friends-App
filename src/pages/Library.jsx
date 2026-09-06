@@ -397,13 +397,16 @@ export default function Library() {
                      * s'imbrique pas, et la carte entiere mene deja au bon
                      * endroit. Elle dit par ou ca commence.
                      *
-                     * accent-pressed et pas accent, pour la meme raison que
-                     * les onglets: .chip-accent est du blanc sur #FF007A a
-                     * 14 px, mesure a 3,80:1, sous les 4,5:1 d'un texte
-                     * normal. Le meme rose d'un cran plus fonce donne 5,16:1.
+                     * .chip-accent, la puce de l'application: blanc sur le
+                     * rose pop, la meme paire que .btn-primary et que les
+                     * onglets au-dessus. Elle a ete accent-pressed une
+                     * version, pour passer 4,5:1 a 14 px, et c'est le rose
+                     * vin qui a ete vu: "plus jamais ce rose". Le ratio de
+                     * la paire est 3,80:1 et il est ecrit avec sa decision a
+                     * cote de --c-accent dans index.css.
                      */}
                     {first && (
-                      <span className="chip bg-accent-pressed text-on-accent">
+                      <span className="chip-accent" data-hook="course-start-chip">
                         {t('courses.start')}
                       </span>
                     )}

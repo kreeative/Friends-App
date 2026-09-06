@@ -26,20 +26,23 @@ import { useT } from '../lib/i18n'
  * aria-selected. Quelqu'un qui ne distingue pas le rose du gris voit quand
  * meme lequel est choisi, et un lecteur d'ecran l'annonce.
  *
- * LE FOND ACTIF EST accent-pressed, PAS accent, ET C'EST UNE MESURE.
+ * LE FOND ACTIF EST accent, LE ROSE POP, ET LE RATIO EST ECRIT ICI.
  *
- * Ecrit d'abord avec bg-accent, comme CountryTabs. La sonde, qui lit les
- * pixels peints et pas getComputedStyle, a rendu 3,80:1: blanc sur #FF007A.
- * C'est la valeur documentee du rose de l'application et elle est correcte
- * pour .btn-primary, qui est un gros bouton; ici le libelle fait 14 px, donc
- * c'est du texte normal et le seuil est 4,5:1 (WCAG 1.4.3). L'onglet actif
- * echouait, en rose comme en bleu.
+ * Il a ete accent-pressed (#D6006B) pendant une version, parce que la sonde,
+ * qui lit les pixels peints, avait mesure blanc sur #FF007A a 3,80:1 sur un
+ * libelle de 14 px, sous les 4,5:1 d'un texte normal (WCAG 1.4.3). Le cran
+ * plus fonce passait a 5,16:1 et a ete vu tout de suite: "on a dit qu'on
+ * prenait le rose pop et plus jamais ce rose". C'est le rose vin que la
+ * palette avait deja banni, revenu par la porte du contraste.
  *
- * --c-accent-pressed existe deja et porte deja sa mesure dans index.css:
- * #D6006B, 5,16:1 avec le blanc sur sun. Ce n'est donc pas une couleur
- * inventee pour passer un test, c'est le meme rose d'un cran plus fonce, celui
- * que l'application montre deja quand on appuie. Mesure a nouveau ici:
- * 5,16:1 sur sun, 7,42:1 sur sea.
+ * Donc le meme rose que tout le reste. .btn-primary, .chip-accent et
+ * CountryTabs sont du blanc sur #FF007A, et la decision de ce rose, avec son
+ * cout, est ecrite une fois dans index.css a cote de --c-accent. Un onglet
+ * d'une autre teinte n'etait pas plus accessible, il etait incoherent.
+ * Mesure a nouveau ici: 3,80:1 sur sun, 5,40:1 sur sea, ou le bleu du theme
+ * tient le blanc. Si le plancher de 4,5 doit un jour etre tenu sur ce
+ * libelle, le changement est --c-on-accent et pas la teinte: l'encre sur ce
+ * rose mesure 4,6:1.
  *
  * DES LIENS, PAS DES BOUTONS.
  *
@@ -76,7 +79,7 @@ export default function ShelfTabs({ value, onPick, counts = {} }) {
             onClick={() => onPick(id)}
             className={`press shrink-0 snap-start rounded-pill border px-4 py-2 text-small transition-colors ${
               on
-                ? 'border-accent-pressed bg-accent-pressed font-bold text-on-accent'
+                ? 'border-accent bg-accent font-bold text-on-accent'
                 : 'border-hairline bg-[rgb(var(--glass-tint)/0.55)] font-semibold text-muted hover:text-ink'
             }`}
           >

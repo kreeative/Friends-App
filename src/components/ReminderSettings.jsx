@@ -438,8 +438,11 @@ function Switch({ label, hint, on, onChange, hook }) {
         data-hook={hook}
         data-on={on ? 'yes' : 'no'}
         onClick={() => onChange(!on)}
+        /* Le rose pop, pas le cran plus fonce: "plus jamais ce rose". La
+           piste est un graphique, donc le plancher est 3:1 (1.4.11), et
+           #FF007A sur le fond de carte mesure 3,80:1. */
         className={`press mt-0.5 flex h-7 w-12 shrink-0 items-center rounded-pill p-1 transition-colors ${
-          on ? 'bg-accent-pressed' : 'bg-ink/[0.18]'
+          on ? 'bg-accent' : 'bg-ink/[0.18]'
         }`}
       >
         <span
@@ -478,7 +481,7 @@ function Check({ label, on, onChange, hook }) {
       <span
         aria-hidden="true"
         className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-[0.5rem] border-2 transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-accent peer-focus-visible:ring-offset-2 ${
-          on ? 'border-accent-pressed bg-accent-pressed text-on-accent' : 'border-ink/30 bg-transparent'
+          on ? 'border-accent bg-accent text-on-accent' : 'border-ink/30 bg-transparent'
         }`}
       >
         {on && (
