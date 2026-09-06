@@ -139,5 +139,14 @@ eq('une heure sans la case cochee est ignoree', goalRow({ ...fresh, remind: fals
 eq('une saisie illisible ne fait pas un NaN', goalRow({ ...fresh, remind: true, remindAt: 'midi' }, TODAY).remind_at_min, null)
 eq('undefined non plus', goalRow({ ...fresh, remind: true }, TODAY).remind_at_min, null)
 
+/* La frequence: "an option for the frequency of the notification?" Elle
+   repete l'heure choisie jusqu'au coucher; sans heure elle n'a rien a
+   repeter, et sans la case elle n'existe pas. */
+eq('une frequence avec une heure part en minutes', goalRow({ ...fresh, remind: true, remindAt: '20:00', remindEvery: '60' }, TODAY).remind_every_min, 60)
+eq('une frequence sans heure est ignoree', goalRow({ ...fresh, remind: true, remindAt: '', remindEvery: '60' }, TODAY).remind_every_min, null)
+eq('une frequence sans la case est ignoree', goalRow({ ...fresh, remind: false, remindAt: '20:00', remindEvery: '60' }, TODAY).remind_every_min, null)
+eq('"une seule fois" est null, pas zero', goalRow({ ...fresh, remind: true, remindAt: '20:00', remindEvery: '' }, TODAY).remind_every_min, null)
+eq('une heure illisible ne laisse pas passer la frequence', goalRow({ ...fresh, remind: true, remindAt: 'midi', remindEvery: '60' }, TODAY).remind_every_min, null)
+
 console.log(`\n${pass} passed, ${fail} failed`)
 process.exit(fail ? 1 : 0)

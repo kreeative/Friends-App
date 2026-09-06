@@ -1501,6 +1501,13 @@ const STRINGS = {
     'form.remind_at': 'And a notification at',
     'form.remind_at_hint':
       'Optional. On the days this goal is due, at this time, on your phone. Leave empty to get the recap only.',
+    'form.remind_every': 'Repeat',
+    'form.remind_every_hint': 'Until you tick the goal off, and never after your bedtime.',
+    'form.remind_once': 'Once',
+    'form.remind_every_30': 'Every 30 minutes',
+    'form.remind_every_60': 'Every hour',
+    'form.remind_every_120': 'Every 2 hours',
+    'form.remind_every_180': 'Every 3 hours',
     'form.outcome_1':
       'That reads like a result rather than an action. Results depend on things you don’t control, so a bad day looks like failure even when you did the work.',
     'form.outcome_2': 'What would you do each day to get there? Track that instead.',
@@ -3051,6 +3058,13 @@ const STRINGS = {
     'form.remind_at': 'Et une notification à',
     'form.remind_at_hint':
       'Facultatif. Les jours où cet objectif est dû, à cette heure, sur ton téléphone. Laisse vide pour n’avoir que le récap.',
+    'form.remind_every': 'Répéter',
+    'form.remind_every_hint': 'Jusqu’à ce que tu coches l’objectif, et jamais après ton coucher.',
+    'form.remind_once': 'Une seule fois',
+    'form.remind_every_30': 'Toutes les 30 minutes',
+    'form.remind_every_60': 'Toutes les heures',
+    'form.remind_every_120': 'Toutes les 2 heures',
+    'form.remind_every_180': 'Toutes les 3 heures',
     'form.outcome_1':
       'Ça ressemble à un résultat plutôt qu’à une action. Un résultat dépend de choses hors de ton contrôle : une mauvaise journée ressemble à un échec même quand tu as fait le travail.',
     'form.outcome_2': 'Que ferais-tu chaque jour pour y arriver ? Suis plutôt ça.',
