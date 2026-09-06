@@ -1099,7 +1099,11 @@ const STRINGS = {
     'courses.where': 'Where are you investing from?',
     'courses.change_anytime': 'You can change this at any time.',
     'courses.available': 'Available',
-    'courses.enter': 'Open the courses →',
+    /* The summary used to make you find lesson one yourself, which means
+       knowing that 0.1 comes before 1.1. That is reading an index, not making
+       a decision. */
+    'courses.start': 'Start the course',
+    'courses.start_note': 'Starts at: {title}',
     'courses.progress': '{written} of {total} lessons written',
     'courses.module_n': 'Module {n}',
     'courses.state_plan': 'Outline',
@@ -1473,11 +1477,26 @@ const STRINGS = {
     'library.buy_slow_title': 'Paid, but the book has not appeared yet.',
     'library.buy_slow_body': 'Your payment went through. Unlocking is handled separately and is running late. Check again in a minute, and if it is still missing, write to us and nothing needs paying twice.',
     'library.buy_recheck': 'Check again',
-    'library.sub': 'Three books, read here',
-    /* The course sits under its own heading rather than floating above the
-       shelf unlabelled. It is not one of the books and the page should say so
-       before somebody has to work it out from the icon. */
-    'library.sec_course': 'Course',
+    /* Plus "trois livres": la page a quatre etageres maintenant et les
+       livres en sont une. Un sous-titre qui nomme une seule etagere fait
+       passer les trois autres pour un hors-sujet. */
+    'library.sub': 'Everything there is to read here',
+    /**
+     * The four shelves, as a scrolling tab rail under the title.
+     *
+     * Short on purpose. These are read sideways at a glance and the rail has
+     * to fit four of them on a 320px screen; a label that needs two words is
+     * a label that pushes the fourth tab off the edge.
+     *
+     * "Articles" and "Studies" are two shelves because they are two things,
+     * and the banners have said so from the start: an article is built on
+     * work other people published, with its sources cited, and a study is a
+     * survey we ran, published with its method and its limits.
+     */
+    'library.tab_courses': 'Courses',
+    'library.tab_articles': 'Articles',
+    'library.tab_books': 'Books',
+    'library.tab_studies': 'Studies',
     'library.empty':
       'The catalogue is empty. In Supabase, open the SQL Editor and run supabase/07_books_all_in_one.sql. It adds the three books.',
     'library.owned': 'Yours',
@@ -2569,7 +2588,8 @@ const STRINGS = {
     'courses.where': 'Où es-tu basé(e) pour investir ?',
     'courses.change_anytime': 'Tu pourras en changer à tout moment.',
     'courses.available': 'Disponibles',
-    'courses.enter': 'Ouvrir les cours →',
+    'courses.start': 'Commencer le cours',
+    'courses.start_note': 'On commence par : {title}',
     'courses.progress': '{written} leçons rédigées sur {total}',
     'courses.module_n': 'Module {n}',
     'courses.state_plan': 'Plan',
@@ -2943,8 +2963,11 @@ const STRINGS = {
     'library.buy_slow_title': "Paye, mais le livre n'est pas encore la.",
     'library.buy_slow_body': "Ton paiement est passé. Le déblocage se fait à part et il tarde. Revérifie dans une minute, et s'il manque toujours, écris-nous : il n'y a rien à repayer.",
     'library.buy_recheck': 'Revérifier',
-    'library.sub': 'Trois livres, à lire ici',
-    'library.sec_course': 'Cours',
+    'library.sub': 'Tout ce qu’il y a à lire ici',
+    'library.tab_courses': 'Cours',
+    'library.tab_articles': 'Articles',
+    'library.tab_books': 'Livres',
+    'library.tab_studies': 'Études',
     'library.empty':
       'Le catalogue est vide. Dans Supabase, ouvre l’éditeur SQL et exécute supabase/07_books_all_in_one.sql. Il ajoute les trois livres.',
     'library.owned': 'À toi',

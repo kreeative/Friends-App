@@ -10,8 +10,11 @@ import ErrorNote from '../components/ErrorNote'
 import Formation from '../components/Formation'
 import { BookIcon } from '../components/ActionBar'
 import { localBooks } from '../content/previews'
-import { STUDY_SLUGS } from '../lib/seo'
 import { LESSONS } from '../lib/lessons'
+import { COURSES } from '../content/courses'
+import { firstLessonOf, progressOf, say } from '../lib/courses'
+import { SHELVES, safeShelf, shelfCount, studiesOfKind } from '../lib/shelves'
+import ShelfTabs from '../components/ShelfTabs'
 
 /**
  * How long to wait before looking again, in milliseconds.
@@ -54,6 +57,46 @@ export default function Library() {
      the player and inside a module the course has its own back button, and two
      stacked back buttons is a reader wondering which one undoes what. */
   const [stage, setStage] = useState('intro')
+
+  /**
+   * L'etagere ouverte, dans l'URL et pas dans un useState.
+   *
+   * Trois choses en dependent, et les trois ont deja coute quelque chose
+   * ailleurs dans ce depot: le bouton retour du telephone revient a l'onglet
+   * precedent au lieu de quitter la page, /library?shelf=books est un lien
+   * qu'on peut envoyer, et revenir d'un livre ouvert ne rejette pas sur
+   * l'onglet des cours.
+   *
+   * safeShelf() parce que la valeur vient de l'URL, donc de n'importe ou. Un
+   * ?shelf=nimportequoi ouvre les cours au lieu de rendre une page vide.
+   *
+   * LE RETOUR DE STRIPE OUVRE LES LIVRES, PAS LES COURS.
+   *
+   * Sans ca, quelqu'un qui vient de payer revient sur l'onglet par defaut et
+   * la confirmation de son achat s'affiche au-dessus d'une liste de cours
+   * gratuits, avec le livre paye sur une autre etagere. `??` et pas un
+   * forcage: c'est le defaut de cette arrivee-la, et un onglet touche ensuite
+   * gagne.
+   */
+  const shelf = safeShelf(
+    params.get('shelf') ?? (params.get('purchase') === 'success' ? 'books' : null),
+  )
+
+  const pickShelf = (id) => {
+    const next = new URLSearchParams(params)
+    next.set('shelf', id)
+    /* replace: l'historique doit garder une entree par etagere visitee, pas
+       une par pression, sinon quatre allers-retours entre deux onglets
+       demandent huit retours pour sortir de la page. */
+    setParams(next, { replace: shelf === id })
+  }
+
+  const counts = Object.fromEntries(
+    SHELVES.map((id) => [id, shelfCount(id, { books, formation: 1 })]),
+  )
+
+  const articles = studiesOfKind('article')
+  const studies = studiesOfKind('study')
 
   async function load() {
     setLoading(true)
@@ -132,7 +175,7 @@ export default function Library() {
         if (bought?.owned) {
           setPurchase(null)
           setSharePrompt(bought)
-          return setParams({}, { replace: true })
+          return setParams({ shelf: 'books' }, { replace: true })
         }
       }
 
@@ -174,7 +217,7 @@ export default function Library() {
         /* The query string is cleared either way, so a refresh does not start
            the poll again, but the notice stays until it is dismissed. */
         setPurchase({ state: 'slow', slug })
-        setParams({}, { replace: true })
+        setParams({ shelf: 'books' }, { replace: true })
       }
     }
     tick()
@@ -235,24 +278,18 @@ export default function Library() {
       <TopBar title={t('nav.library')} sub={t('library.sub')} />
 
       {/**
-       * La porte des cours, ici plutot que dans la barre d'onglets.
+       * LES QUATRE ETAGERES, JUSTE SOUS LE TITRE.
        *
-       * La barre est plafonnee a quatre: la note au-dessus de MINE dans
-       * AppShell raconte ce qui est arrive a cinq, les libelles ont tronque a
-       * "Faire le p..." sur un ecran de 390 px. Les lectures et les cours sont
-       * la meme etagere du point de vue de quelqu'un qui cherche a apprendre
-       * quelque chose, donc l'un mene a l'autre.
+       * La page empilait quatre sortes de contenu dans une seule colonne: une
+       * carte vers les cours, la formation, deux bannieres d'etudes, puis le
+       * catalogue. Rien ne separait les quatre, et le catalogue, qui est ce
+       * qu'on vient chercher le plus souvent, etait a quatre ecrans du titre.
+       *
+       * Les onglets les mettent au meme niveau et remontent chacune en haut.
        */}
-      <Section title={t('courses.title')}>
-        <Link
-          to="/cours"
-          data-hook="to-courses"
-          className="press block rounded-card border border-hairline bg-[rgb(var(--glass-tint)/0.55)] p-5 backdrop-blur-md"
-        >
-          <span className="block text-body font-semibold text-ink">{t('courses.sub')}</span>
-          <span className="mt-1.5 block text-small text-muted">{t('courses.enter')}</span>
-        </Link>
-      </Section>
+      <div className="pt-6">
+        <ShelfTabs value={shelf} onPick={pickShelf} counts={counts} />
+      </div>
 
       {/**
        * Back from Stripe, at the top of the page, before anything else.
@@ -316,103 +353,96 @@ export default function Library() {
       )}
 
       {/**
-       * THE COURSE, UNDER ITS OWN HEADING AND ON A TINTED CARD.
+       * LES COURS, LISTES ICI ET PLUS DERRIERE UNE PORTE.
        *
-       * It is above the catalogue because it is free, it is short, and it is
-       * the only thing on this page that does not cost anything to start. It
-       * was a white card with no heading over it, which put it in the same
-       * visual class as the shelf below and left it to the reader to work out
-       * that this one is not a book. A heading says which of the two it is,
-       * and the tint says it before the heading is read.
+       * "Supprimer la carte intermediaire / le bouton d'atterrissage (Open the
+       * courses); la page doit directement lister toutes les cartes de cours."
        *
-       * WHY THE THEME TOKEN AND NOT A PINK.
+       * La carte d'avant ne menait pas a un cours, elle menait a une page qui
+       * listait les cours. Une porte devant une porte, et un clic pour arriver
+       * a une liste qui pouvait etre la.
        *
-       * `cat-1-soft` is pink on sun and pale blue on sea, so this follows the
-       * theme instead of stamping one hue on both. The alternative is a fixed
-       * #FF007A wash, which would be a pink card in the middle of a blue app
-       * for anybody on sea.
-       *
-       * The icon tile and the arrow chip invert with it: they were the tinted
-       * things on a white card, and on a tinted card they would be the same
-       * colour as their ground. White on pink, rather than pink on pink.
+       * Chaque carte va au sommaire du cours, ou le bouton "commencer" ouvre
+       * la premiere lecon. Deux etapes, pas trois, et celle qui reste est un
+       * choix reel: quel cours.
        */}
-      <Section title={t('library.sec_course')}>
-        <button
-          type="button"
-          data-hook="formation-entry"
-          className="press flex w-full items-center gap-4 rounded-3xl border border-hairline bg-cat-1-soft p-5 text-left shadow-raised"
-          onClick={() => setCourse(true)}
-        >
-          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-surface text-ink [&>svg]:h-7 [&>svg]:w-7">
-            <BookIcon />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-body font-bold leading-tight text-ink">{t('form.title')}</span>
-            <span className="mt-1.5 block text-small leading-snug text-muted">{t('form.sub', { n: LESSONS.length })}</span>
-          </span>
-          <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-pill bg-surface text-ink">
-            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M5 12h13M13 6l6 6-6 6" />
-            </svg>
-          </span>
-        </button>
-      </Section>
+      {shelf === 'courses' && (
+        <Section>
+          <div className="space-y-3">
+            {COURSES.map((c) => {
+              const p = progressOf(c)
+              const first = firstLessonOf(c)
+              return (
+                <Link
+                  key={c.slug}
+                  to={`/cours/${c.slug}`}
+                  data-hook="course-card"
+                  data-slug={c.slug}
+                  className="lg press block overflow-hidden px-5 py-4"
+                >
+                  {/* Pas de sur-titre "COURS" ici. Trois cartes qui le
+                      repetent sous un onglet deja intitule Cours ne disent
+                      rien que l'onglet n'ait dit. Les vignettes d'articles et
+                      d'etudes en gardent un, parce que la leur distingue deux
+                      choses qui se ressemblent. */}
+                  <span className="text-safe block text-body font-semibold leading-tight text-ink">
+                    {say(c.title, locale)}
+                  </span>
+                  <span className="text-safe mt-1 block text-small leading-snug text-muted">
+                    {say(c.tagline, locale)}
+                  </span>
+                  <span className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+                    {/**
+                     * Une puce, pas un bouton: un lien dans un lien ne
+                     * s'imbrique pas, et la carte entiere mene deja au bon
+                     * endroit. Elle dit par ou ca commence.
+                     *
+                     * accent-pressed et pas accent, pour la meme raison que
+                     * les onglets: .chip-accent est du blanc sur #FF007A a
+                     * 14 px, mesure a 3,80:1, sous les 4,5:1 d'un texte
+                     * normal. Le meme rose d'un cran plus fonce donne 5,16:1.
+                     */}
+                    {first && (
+                      <span className="chip bg-accent-pressed text-on-accent">
+                        {t('courses.start')}
+                      </span>
+                    )}
+                    <span className="text-small text-muted">
+                      {t('courses.progress', { written: p.written, total: p.total })}
+                    </span>
+                  </span>
+                </Link>
+              )
+            })}
 
-      {/**
-       * LES ETUDES, EN BANNIERE PLUTOT QU'EN ONGLET.
-       *
-       * "Une section newsletter qui va peut-etre siter a l'interieur de
-       * Lectures comme un banner."
-       *
-       * Elle vit ici parce que c'est la meme envie que le reste de la page :
-       * lire quelque chose. Un cinquieme onglet en bas pour un texte par mois
-       * serait une destination vide onze mois sur douze, alors qu'une banniere
-       * sous la formation est trouvee par les gens deja venus lire.
-       *
-       * Plus discrete que la formation au-dessus : bord seul, pas de carte
-       * pleine. Les deux se ressembleraient trop et la page dirait deux fois
-       * "commence par ici".
-       */}
-      {/* A list rather than one hand-written banner, because there are two
-          now and a third should not need more JSX. The keys are the i18n
-          prefix so the copy for each lives with the rest of the strings. */}
-      <Section>
-        <div className="space-y-3">
-          {[
-            { slug: STUDY_SLUGS[0], k: 'studies.banner' },
-            { slug: STUDY_SLUGS[1], k: 'studies.cycle' },
-          ].map(({ slug, k }) => (
-            <Link
-              key={slug}
-              to={`/etudes/${slug}`}
-              data-hook="studies-banner"
-              /**
-               * A RAISED CARD, NOT AN OUTLINED RECTANGLE.
-               *
-               * These were `border border-hairline` with no ground and no
-               * shadow: a thin box drawn on the page. Every other surface in
-               * this app is a sheet that sits ON the page, and the two do not
-               * belong in one column. Next to a `lg` card an outlined one
-               * reads as a placeholder, or as something disabled.
-               *
-               * The note that put them here said "more discreet than the
-               * course above: an edge, not a full card, or the two would look
-               * alike and the page would say start here twice". The distinction
-               * was worth keeping and an outline was the wrong way to make it.
-               * These are the same sheet with less inside them, which separates
-               * them by weight rather than by being a different kind of thing.
-               */
+            {/**
+             * LA FORMATION, DANS LES COURS PLUTOT QU'A COTE.
+             *
+             * C'en est un. Elle est simplement plus ancienne que les autres et
+             * elle vit dans un autre fichier, ce qui est une raison de
+             * structure interne et pas une raison de la ranger ailleurs. Elle
+             * avait sa propre section, son propre titre et sa propre couleur,
+             * et la page disait donc deux fois "voici un cours" a deux
+             * endroits differents.
+             *
+             * Elle reste un bouton et pas un lien, parce qu'elle s'ouvre dans
+             * cette page: c'est le seul cours qui n'a pas d'adresse a lui.
+             */}
+            <button
+              type="button"
+              data-hook="formation-entry"
               className="lg press flex w-full items-center gap-4 overflow-hidden px-5 py-4 text-left"
+              onClick={() => setCourse(true)}
             >
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-accent/[0.10] text-ink [&>svg]:h-6 [&>svg]:w-6">
+                <BookIcon />
+              </span>
               <span className="min-w-0 flex-1">
-                <span className="block text-label font-semibold uppercase tracking-wider text-muted">
-                  {t(`${k}_eyebrow`)}
-                </span>
-                <span className="text-safe mt-1 block text-body font-semibold leading-tight text-ink">
-                  {t(`${k}_title`)}
+                <span className="text-safe block text-body font-semibold leading-tight text-ink">
+                  {t('form.title')}
                 </span>
                 <span className="text-safe mt-1 block text-small leading-snug text-muted">
-                  {t(`${k}_sub`)}
+                  {t('form.sub', { n: LESSONS.length })}
                 </span>
               </span>
               <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-pill bg-ink/[0.06] text-ink">
@@ -420,17 +450,76 @@ export default function Library() {
                   <path d="M5 12h13M13 6l6 6-6 6" />
                 </svg>
               </span>
-            </Link>
-          ))}
-        </div>
-      </Section>
+            </button>
+          </div>
+        </Section>
+      )}
 
-      {error && (
+      {/**
+       * LES ARTICLES ET LES ETUDES, SUR DEUX ETAGERES.
+       *
+       * Ce sont deux choses et l'application le disait deja: "Nos etudes" d'un
+       * cote, "Article" de l'autre, dans les bandeaux, depuis le debut. Une
+       * etude est un sondage qu'on a mene, publie avec sa methode et ses
+       * limites. Un article est un texte informatif bati sur les travaux
+       * d'autres gens, avec ses sources. Le champ `kind` sort cette difference
+       * des chaines de traduction pour que le tri soit du code.
+       *
+       * Un seul bloc pour les deux onglets, parce que c'est la meme vignette:
+       * deux copies du meme JSX diverge le jour ou l'une est retouchee.
+       */}
+      {(shelf === 'articles' || shelf === 'studies') && (
+        <Section>
+          <div className="space-y-3">
+            {(shelf === 'articles' ? articles : studies).map((s) => (
+              <Link
+                key={s.slug}
+                to={`/etudes/${s.slug}`}
+                data-hook="studies-banner"
+                data-kind={s.kind ?? 'study'}
+                /**
+                 * A RAISED CARD, NOT AN OUTLINED RECTANGLE.
+                 *
+                 * These were `border border-hairline` with no ground and no
+                 * shadow: a thin box drawn on the page. Every other surface in
+                 * this app is a sheet that sits ON the page, and the two do not
+                 * belong in one column. Next to a `lg` card an outlined one
+                 * reads as a placeholder, or as something disabled.
+                 */
+                className="lg press flex w-full items-center gap-4 overflow-hidden px-5 py-4 text-left"
+              >
+                <span className="min-w-0 flex-1">
+                  <span className="block text-label font-semibold uppercase tracking-wider text-muted">
+                    {t(`${s.banner}_eyebrow`)}
+                  </span>
+                  <span className="text-safe mt-1 block text-body font-semibold leading-tight text-ink">
+                    {t(`${s.banner}_title`)}
+                  </span>
+                  <span className="text-safe mt-1 block text-small leading-snug text-muted">
+                    {t(`${s.banner}_sub`)}
+                  </span>
+                </span>
+                <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-pill bg-ink/[0.06] text-ink">
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M5 12h13M13 6l6 6-6 6" />
+                  </svg>
+                </span>
+              </Link>
+            ))}
+          </div>
+        </Section>
+      )}
+
+      {/* L'erreur de chargement appartient au catalogue: c'est lui qui vient du
+          reseau. La montrer sur l'onglet des cours, qui est dans le bundle,
+          annoncerait une panne a quelqu'un qui ne regarde rien de casse. */}
+      {shelf === 'books' && error && (
         <div className="pt-8">
           <ErrorNote error={error} onRetry={load} />
         </div>
       )}
 
+      {shelf === 'books' && (
       <Section>
         {loading ? (
           <Empty>{t('err.loading')}</Empty>
@@ -514,6 +603,7 @@ export default function Library() {
           </div>
         )}
       </Section>
+      )}
 
       <Sheet
         open={Boolean(sharePrompt)}

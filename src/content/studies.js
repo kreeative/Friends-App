@@ -115,6 +115,34 @@ export const STUDIES = [
        L'ancienne adresse reste servie plutot que de casser un lien deja
        partage. Voir studyBySlug. */
     aliases: ['epargner-a-19-ans'],
+    /**
+     * `kind`, PARCE QUE LECTURES A DEUX ETAGERES POUR CES DEUX-LA.
+     *
+     * Celle-ci est notre propre sondage, publie avec sa methode et ses
+     * limites: une etude. Celle d'en dessous est un texte informatif bati sur
+     * les travaux d'autres gens, avec ses sources citees: un article.
+     *
+     * Ce n'est pas une distinction inventee pour l'occasion, les bandeaux la
+     * font depuis le debut, "Nos etudes" contre "Article". Le champ la sort
+     * des chaines de traduction pour que le code puisse trier dessus, au lieu
+     * de coder en dur une liste de slugs dans la page.
+     */
+    kind: 'study',
+    /**
+     * Le prefixe i18n de sa vignette dans Lectures.
+     *
+     * La vignette ne reutilise pas le `dek`, et c'est voulu deux fois. Le dek
+     * porte des {marqueurs} que seul Study.jsx sait remplir, avec deux
+     * chemins differents selon qu'une entree a des `stats` ou des `figures`,
+     * et le recopier ici ferait une troisieme copie de cette logique. Et il
+     * est ecrit pour une page qu'on vient de choisir d'ouvrir, alors que la
+     * vignette doit faire choisir: ce sont deux textes, pas un seul a deux
+     * endroits.
+     *
+     * Le prefixe est ici plutot que dans la page pour qu'une troisieme etude
+     * apparaisse en ajoutant un objet a ce tableau, sans toucher au JSX.
+     */
+    banner: 'studies.banner',
     date: '2026-08-27',
     /* Le sondage a ete pose en francais a un public francophone, et le corps
        de l'etude est en francais dans les deux langues. La page anglaise le
@@ -266,6 +294,10 @@ export const STUDIES = [
    */
   {
     slug: 'les-regles-ne-sont-pas-un-detail',
+    /* Un article, pas une etude: rien ici n'a ete sonde par nous, tout vient
+       de travaux publies et cites. Voir la note sur `kind` plus haut. */
+    kind: 'article',
+    banner: 'studies.cycle',
     date: '2026-09-03',
     lang: 'fr',
 

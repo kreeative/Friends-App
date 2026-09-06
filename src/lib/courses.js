@@ -86,6 +86,33 @@ export function lessonById(course, id) {
 }
 
 /**
+ * Par ou commence un cours.
+ *
+ * "Sur les cours il devrait y avoir un bouton commencer le cours qui t'envoie
+ * directement au commencement."
+ *
+ * Le sommaire posait la question a la place de la personne. Il liste les
+ * modules, chaque module liste ses lecons, et la seule facon de commencer
+ * etait de reperer soi-meme laquelle est la premiere, ce qui suppose de savoir
+ * que "0.1" precede "1.1" et que le module 0 vient avant le module 1. Ce n'est
+ * pas une decision, c'est une lecture d'index.
+ *
+ * La premiere lecon dans l'ordre de lecture, donc, et pas la premiere du
+ * tableau: lessonsOf trie par module, ce qui est exactement ce qui a ete
+ * repare quand le cours s'ouvrait au module 3.
+ *
+ * La premiere ecrite plutot que la premiere tout court. Un cours dont le
+ * premier module est encore une esquisse ouvrirait sinon sur "cette lecon
+ * n'est pas encore redigee", ce qui est la pire premiere page possible. Repli
+ * sur la toute premiere s'il n'y en a aucune d'ecrite, parce qu'un bouton qui
+ * ne mene nulle part est pire qu'un bouton qui mene a un plan.
+ */
+export function firstLessonOf(course) {
+  const all = lessonsOf(course)
+  return all.find((l) => l.state === 'written') ?? all[0] ?? null
+}
+
+/**
  * La lecon d'avant et celle d'apres, a travers les modules.
  *
  * A travers, et pas dans: la derniere lecon du module 0 est suivie de la

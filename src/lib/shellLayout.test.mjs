@@ -337,44 +337,71 @@ ok(
 )
 
 /**
- * THE COURSE CARD, WHICH IS THE ONE TINTED SURFACE ON THE LIBRARY PAGE.
+ * LES QUATRE ETAGERES DE LECTURES.
  *
- * It was a white `glass-card` sitting above the shelf with no heading over it,
- * which put it in the same visual class as the three books and left the reader
- * to work out from an icon that this one is free and is not a book. It is now
- * a tinted card under a heading of its own.
+ * La page empilait quatre sortes de contenu dans une seule colonne: une carte
+ * "ouvrir les cours", la formation sous son propre titre, deux bannieres
+ * d'etudes, puis le catalogue. Rien ne les separait, et le catalogue etait a
+ * quatre ecrans de defilement du titre.
  *
- * Measured at 1440 and 430 on both themes, off the screenshots rather than off
- * the computed styles:
+ * Ce qui a ete demande: "barre d'onglets defilante, tout en haut de l'ecran,
+ * juste en dessous du titre principal Library" avec [ Courses ] [ Articles ]
+ * [ Books ] [ Studies ], et "supprimer la carte intermediaire / le bouton
+ * d'atterrissage (Open the courses)".
  *
- *   sun   card ground 255,224,236 on a 255,245,247 page   title 14.25:1  sub 6.20:1
- *   sea   card ground 224,237,245 on a 240,249,255 page   title 14.44:1  sub 5.97:1
- *
- * Both pass 4.5:1 for normal text with room to spare, which is why the tint is
- * safe: cat-1-soft is the palest step of the ramp in both themes.
+ * Mesure dans Chromium, sur les captures et pas sur les styles calcules, aux
+ * quatre largeurs de la sonde. Les contrastes sont dans probe/shelf.mjs.
  */
 const lib = read('src/pages/Library.jsx')
+{
+  /* Par position et pas par une regex bornee: la distance entre les deux
+     balises est faite de commentaires, donc un `{0,400}` mesure la longueur
+     d'une note plutot que l'ordre des elements, et se casse a la prochaine
+     phrase ajoutee. Le dernier TopBar est celui de la page; le premier est
+     dans le retour anticipe de la formation. */
+  const bar = lib.lastIndexOf('<TopBar')
+  const rail = lib.indexOf('<ShelfTabs')
+  const firstShelf = lib.indexOf('<Section', bar)
+  ok(
+    'the tab rail sits under the title, before anything else',
+    bar > 0 && rail > bar && firstShelf > rail,
+    'a rail below the first shelf is a rail nobody scrolls back up to find',
+  )
+}
 ok(
-  'the course sits under a heading of its own',
-  /<Section title=\{t\('library\.sec_course'\)\}>/.test(lib),
-  'without one it reads as a fourth book',
+  'and the landing card that stood in front of the courses is gone',
+  !/data-hook="to-courses"/.test(lib) && !/courses\.enter/.test(read('src/lib/i18n.jsx')),
+  'it did not lead to a course, it led to a page that listed the courses',
 )
 ok(
-  'and its ground is the theme token, not a fixed pink',
-  /data-hook="formation-entry"[\s\S]{0,240}bg-cat-1-soft/.test(lib) &&
-    !/data-hook="formation-entry"[\s\S]{0,240}glass-card/.test(lib),
-  'a hardcoded #FF007A wash would be a pink card in the middle of a blue app on sea',
+  'the courses are listed on the page itself',
+  /data-hook="course-card"/.test(lib) && /COURSES\.map/.test(lib),
+  'the whole point of removing the door is that what was behind it is here',
 )
 ok(
-  'the tile and the chip invert so they are not their own ground',
-  (lib.match(/bg-surface text-ink/g) ?? []).length >= 2,
-  'they were the tinted things on a white card; on a tinted card that is pink on pink',
+  'the shelf lives in the query string, not in a useState',
+  /params\.get\('shelf'\)/.test(lib) && !/useState\([^)]*shelf/i.test(lib),
+  'the phone back button would otherwise leave the page instead of the tab',
 )
+{
+  const i18n = read('src/lib/i18n.jsx')
+  for (const [k, en, fr] of [
+    ['courses', 'Courses', 'Cours'],
+    ['articles', 'Articles', 'Articles'],
+    ['books', 'Books', 'Livres'],
+    ['studies', 'Studies', 'Études'],
+  ]) {
+    ok(
+      `the ${k} tab is written in both locales`,
+      i18n.includes(`'library.tab_${k}': '${en}'`) && i18n.includes(`'library.tab_${k}': '${fr}'`),
+      'a key added to one locale only shows the other locale an English word',
+    )
+  }
+}
 ok(
-  'the heading is written in both locales',
-  /'library\.sec_course': 'Course'/.test(read('src/lib/i18n.jsx')) &&
-    /'library\.sec_course': 'Cours'/.test(read('src/lib/i18n.jsx')),
-  'a key added to one locale only shows the other locale an English word',
+  'the start button is written in both locales',
+  /'courses\.start': 'Start the course'/.test(read('src/lib/i18n.jsx')) &&
+    /'courses\.start': 'Commencer le cours'/.test(read('src/lib/i18n.jsx')),
 )
 ok(
   'no page opts out with a prop any more',
