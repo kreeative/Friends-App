@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useGroup } from '../context/GroupContext'
@@ -6,6 +7,7 @@ import { localeTag, useT } from '../lib/i18n'
 import { PROOF_TYPES, proofTypeOf } from '../lib/proofKinds'
 import { errorText, isMissingColumn, isNetworkError } from '../lib/dberr'
 import { goalRow } from '../lib/goalRow'
+import { channelKey } from '../lib/reminders'
 import { Field } from './ui'
 import { Slider, useSlider } from './Segmented'
 
@@ -297,8 +299,36 @@ export default function GoalForm({ onDone, onCancel, initial = null, groupId = n
   const [remind, setRemind] = useState(initial?.remind ?? true)
   const [goalType, setGoalType] = useState(initial?.goal_type ?? 'process')
   const [dismissedHint, setDismissedHint] = useState(false)
+  /**
+   * Les canaux de cette personne, pour que la phrase sous la case dise la
+   * verite plutot qu'une promesse.
+   *
+   * Null tant que la lecture n'est pas revenue, et channelKey() traite null
+   * comme "les deux", qui est le defaut et ce que faisait le produit avant
+   * que ce reglage existe. Un chargement en cours ne doit pas afficher
+   * "nulle part" pendant une demi-seconde.
+   */
+  const [channels, setChannels] = useState(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
+
+  useEffect(() => {
+    if (!user?.id) return
+    let live = true
+    supabase
+      .from('notify_pref')
+      .select('push_on, email_on')
+      .eq('user_id', user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        /* Une table absente ou une ligne absente laissent `data` a null, et
+           c'est le bon repli: personne n'a rien coupe. */
+        if (live && data) setChannels(data)
+      })
+    return () => {
+      live = false
+    }
+  }, [user?.id])
 
   const showOutcomeHint = useMemo(
     () => !dismissedHint && goalType === 'process' && looksLikeOutcome(commitment),
@@ -539,7 +569,24 @@ export default function GoalForm({ onDone, onCancel, initial = null, groupId = n
           />
         </Field>
 
-        <label className="flex cursor-pointer items-start gap-3 rounded-inner bg-ink/[0.035] p-4">
+        {/**
+         * "Me le rappeler", et plus "me l'envoyer par e-mail".
+         *
+         * Le canal n'est pas l'affaire de cette case. Elle dit si on veut
+         * etre rappele; ou le rappel atterrit est UN reglage, a UN endroit,
+         * pour tous les messages de l'application. Nommer le canal ici
+         * obligeait quelqu'un qui ne veut que des notifications a laisser
+         * cochee une case intitulee "e-mail", c'est-a-dire a repondre a une
+         * question que l'application n'avait aucun moyen d'honorer.
+         *
+         * La phrase en dessous nomme le canal REELLEMENT choisi, lu depuis
+         * notify_pref. Elle reste donc vraie quand il change, au lieu de
+         * promettre un courriel a quelqu'un qui les a coupes.
+         */}
+        <label
+          className="flex cursor-pointer items-start gap-3 rounded-inner bg-ink/[0.035] p-4"
+          data-hook="goal-remind"
+        >
           <input
             type="checkbox"
             checked={remind}
@@ -548,7 +595,12 @@ export default function GoalForm({ onDone, onCancel, initial = null, groupId = n
           />
           <span>
             <span className="block text-body text-ink">{t('form.remind')}</span>
-            <span className="mt-1 block text-small text-muted">{t('form.remind_hint')}</span>
+            <span className="mt-1 block text-small text-muted" data-hook="goal-remind-hint">
+              {t('form.remind_hint', { by: t(channelKey(channels)) })}{' '}
+              <Link to="/settings" className="underline underline-offset-4 hover:text-ink">
+                {t('form.remind_where')}
+              </Link>
+            </span>
           </span>
         </label>
       </Step>

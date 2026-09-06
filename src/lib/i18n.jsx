@@ -330,7 +330,33 @@ const STRINGS = {
      * quelque chose. Celui-ci decide de ce qui arrive et a quelle heure, ce
      * qui est la question suivante et pas la meme.
      */
-    'remind.section': 'When to remind you',
+    'remind.section': 'When and how to reach you',
+
+    /**
+     * OU ARRIVENT LES MESSAGES. Demande mot pour mot: "est-ce que c'est un app
+     * notification seulement ou email ou les deux, bref la personne pourra
+     * cocher".
+     *
+     * Deux cases plutot qu'un choix a trois, parce que les deux cases donnent
+     * les trois cas nommes sans qu'aucun ecran ait a traduire une enumeration.
+     */
+    'remind.how': 'Where messages land',
+    'remind.how_hint':
+      'Applies to everything the app sends you: the recap, a friend checking in, birthdays, shared goals. Untick both and nothing is sent at all.',
+    'remind.push': 'Notification on my phone',
+    'remind.email': 'Email',
+    'remind.none':
+      'Both are off, so nothing will reach you. Your reminders still exist; the app just has no way to tell you about them.',
+    'remind.water_push_only':
+      'Water reminders are push only. Eight emails a day is not a reminder.',
+
+    /* Les quatre etats de livraison, pour la phrase sous une case a cocher.
+       Rendus depuis channelKey() dans src/lib/reminders.js, pour que le
+       formulaire d'objectif et les reglages disent la meme chose. */
+    'remind.by_both': 'By notification and email.',
+    'remind.by_push': 'By notification.',
+    'remind.by_email': 'By email.',
+    'remind.by_none': 'Nowhere: you have turned both channels off.',
     'remind.window': 'Your waking hours',
     'remind.window_hint':
       'Nothing is sent outside these. It is also the stretch your water reminders are spread across. Working nights is fine: 22:00 to 06:00 reads the way you would expect.',
@@ -1428,9 +1454,22 @@ const STRINGS = {
     'form.clear_date': 'Clear the date',
     'form.where_hint':
       'A note to yourself, nothing more. The app has no idea where you are and never asks. Writing the place down is what makes the plan specific enough to act on.',
-    'form.remind': 'Email me this before check-in',
+    /**
+     * "Notify me", not "email me".
+     *
+     * The channel is not this checkbox's business. It says whether you want
+     * reminding; where the reminder lands is one setting, in one place, for
+     * every message the app sends. Naming the channel here meant a person who
+     * only wanted push had to leave a box called "email me" ticked, which is
+     * the app asking a question it has no way of honouring.
+     *
+     * The hint names the channel the person actually chose. It is filled in
+     * at render from notify_pref, so it stays true when they change it.
+     */
+    'form.remind': 'Remind me before check-in',
     'form.remind_hint':
-      'Your commitment and the when-and-where, in the digest that already goes out before the window opens. Never more than one email per cycle.',
+      'Your commitment and the when-and-where, in the recap that already goes out before the window opens. {by} Never more than one per cycle.',
+    'form.remind_where': 'Change where these land in Settings.',
     'form.outcome_1':
       'That reads like a result rather than an action. Results depend on things you don’t control, so a bad day looks like failure even when you did the work.',
     'form.outcome_2': 'What would you do each day to get there? Track that instead.',
@@ -1928,7 +1967,22 @@ const STRINGS = {
     'birthday.note': 'Un message le jour même, là où vous vous parlez vraiment. Ceci est le rappel, pas le geste.',
     'birthday.note_early':
       'Il reste le temps de réserver, de commander, d’écrire quelque chose qui se lit. Le jour même, il ne reste que le message.',
-    'remind.section': 'Quand te prévenir',
+    'remind.section': 'Quand et comment te joindre',
+
+    'remind.how': 'Où arrivent les messages',
+    'remind.how_hint':
+      'Vaut pour tout ce que l’app t’envoie : le récap, un ami qui prend de tes nouvelles, les anniversaires, les objectifs partagés. Décoche les deux et plus rien ne part.',
+    'remind.push': 'Notification sur mon téléphone',
+    'remind.email': 'E-mail',
+    'remind.none':
+      'Les deux sont décochés, donc rien ne te parviendra. Tes rappels existent toujours ; l’app n’a simplement plus par où te le dire.',
+    'remind.water_push_only':
+      'Les rappels d’eau passent seulement par notification. Huit e-mails par jour, ce n’est pas un rappel.',
+
+    'remind.by_both': 'Par notification et par e-mail.',
+    'remind.by_push': 'Par notification.',
+    'remind.by_email': 'Par e-mail.',
+    'remind.by_none': 'Nulle part : tu as coupé les deux canaux.',
     'remind.window': 'Tes heures éveillées',
     'remind.window_hint':
       'Rien ne part en dehors. C’est aussi la durée sur laquelle tes rappels d’eau se répartissent. Travailler de nuit marche : 22:00 à 06:00 se lit comme tu l’attends.',
@@ -2952,9 +3006,10 @@ const STRINGS = {
     'form.clear_date': 'Effacer la date',
     'form.where_hint':
       'Une note pour toi, rien de plus. L’app ne sait pas où tu es et ne le demande jamais. Écrire le lieu, c’est ce qui rend le plan assez précis pour être suivi.',
-    'form.remind': 'Me l’envoyer par e-mail avant le point',
+    'form.remind': 'Me le rappeler avant le point',
     'form.remind_hint':
-      'Ton engagement et le quand-et-où, dans le récap qui part déjà avant l’ouverture. Jamais plus d’un e-mail par cycle.',
+      'Ton engagement et le quand-et-où, dans le récap qui part déjà avant l’ouverture. {by} Jamais plus d’un par cycle.',
+    'form.remind_where': 'Tu choisis où ils arrivent dans les Réglages.',
     'form.outcome_1':
       'Ça ressemble à un résultat plutôt qu’à une action. Un résultat dépend de choses hors de ton contrôle : une mauvaise journée ressemble à un échec même quand tu as fait le travail.',
     'form.outcome_2': 'Que ferais-tu chaque jour pour y arriver ? Suis plutôt ça.',

@@ -417,8 +417,15 @@ const keysOf = (lang) => [...block(lang).matchAll(/^ {4}(\w+):/gm)].map((m) => m
    * left unmailable. One missing secret, silently, forever.
    */
   ok('a claim can be given back', /async function release\(/.test(src))
+  /* La fenetre s'est allongee quand `muted` est arrive entre les deux: une
+     personne qui a decoche les deux canaux garde sa reclamation au lieu de la
+     rendre, sinon on reessaie a chaque execution pour toujours. Ce qui doit
+     rester vrai est l'ordre: 'sent' sort, 'muted' sort, tout le reste rend. */
   ok('and releasing is what happens when nothing was sent',
-     /if \(result === 'sent'\)[\s\S]{0,120}return[\s\S]{0,200}await release\(/.test(src))
+     /if \(result === 'sent'\)[\s\S]{0,900}await release\(/.test(src))
+  ok('while nobody-to-reach keeps it',
+     /if \(result === 'muted'\)[\s\S]{0,200}return[\s\S]{0,120}\}[\s\S]{0,120}await release\(/.test(src),
+     'releasing it would retry every run, forever, for somebody who asked to be left alone')
 
   /* All three senders have to settle, or the one that does not is the one that
      silently keeps its claim. Counted rather than named so a fourth kind
@@ -436,13 +443,33 @@ const keysOf = (lang) => [...block(lang).matchAll(/^ {4}(\w+):/gm)].map((m) => m
    */
   const settles = (src.match(/await settle\(/g) ?? []).length
   ok('every sender that claims also settles', settles === 4, String(settles))
+  /* Et chacun passe par la porte du canal. Un `send()` direct qui resterait
+     serait un message qui ignore la preference de la personne. */
+  ok('and every one of them goes through the channel gate',
+     (src.match(/await deliver\(/g) ?? []).length === 5,
+     String((src.match(/await deliver\(/g) ?? []).length))
 
   ok('the cycle reminder has a ceiling of its own instead',
      /cycle_reminded_for/.test(src),
      'without it the reminder repeats every hour on the day it is due')
-  ok('and it is stamped before the send, not after',
-     src.indexOf('cycle_reminded_for: forDate') < src.indexOf('const outcome = await send(who.to, c.cycleSubject'),
-     'stamping afterwards lets two overlapping runs both send it')
+  /**
+   * Les deux reperes doivent EXISTER avant d'etre compares.
+   *
+   * Ecrit d'abord comme `indexOf(a) < indexOf(b)` sur une chaine qui a change
+   * de forme au refactor: indexOf a rendu -1, et `x < -1` est faux, donc
+   * l'assertion a echoue. Elle aurait tout aussi bien pu PASSER si les deux
+   * avaient disparu, puisque -1 < -1 est faux mais -1 < 5 est vrai. Une
+   * comparaison de positions sur des reperes qu'on n'a pas verifies ne mesure
+   * rien de fiable.
+   */
+  {
+    const stamp = src.indexOf('cycle_reminded_for: forDate')
+    const sendIt = src.indexOf('const outcome = await deliver(\n      person.user_id,')
+    ok('both landmarks are still in the file', stamp >= 0 && sendIt >= 0,
+       `stamp ${stamp}, send ${sendIt}; a -1 here makes the comparison below meaningless`)
+    ok('and it is stamped before the send, not after', stamp >= 0 && sendIt > stamp,
+       'stamping afterwards lets two overlapping runs both send it')
+  }
 
   ok('a missing key is no longer reported as a send',
      /return 'dry-run' as const/.test(src) && !/console\.log\('\[dry-run\]'[\s\S]{0,80}return true/.test(src))

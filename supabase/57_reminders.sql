@@ -82,8 +82,39 @@ create table if not exists notify_pref (
   events_on        boolean not null default true,
   events_lead_min  int  not null default 30 check (events_lead_min between 0 and 1440),
 
+  /**
+   * PAR OU TE JOINDRE. DEMANDE MOT POUR MOT.
+   *
+   *   "Ajouter une option dans les parametres que chaque personne peut set
+   *    pour demander est-ce que c'est un app notification seulement ou email
+   *    ou les deux, bref la personne pourra cocher."
+   *
+   * Deux booleens et pas un champ a trois valeurs. Les trois cas nommes sont
+   * push seul, courriel seul, les deux, et deux cases a cocher les donnent
+   * tous les trois sans qu'aucun ecran ait a traduire une enumeration.
+   *
+   * Le quatrieme cas, les deux eteints, n'a pas ete nomme et existe quand
+   * meme: c'est "laisse-moi tranquille". Il est permis, parce que refuser de
+   * decocher la derniere case oblige quelqu'un a couper les notifications au
+   * niveau du telephone, ce qui coupe aussi celles qu'il voulait garder. Mais
+   * il est DIT a l'ecran, plutot que de laisser croire que quelque chose
+   * arrivera encore.
+   *
+   * Les deux a vrai par defaut: c'est ce que le produit faisait deja avant
+   * que ce reglage existe, et un defaut qui change le comportement de tout le
+   * monde le jour d'une migration est un defaut mal choisi.
+   */
+  push_on          boolean not null default true,
+  email_on         boolean not null default true,
+
   updated_at       timestamptz not null default now()
 );
+
+/* Ajoutees apres coup: `create table if not exists` ne touche pas une table
+   qui existe deja, donc ces deux lignes sont ce qui rend ce fichier correct
+   pour quelqu'un qui l'a deja execute une fois. */
+alter table notify_pref add column if not exists push_on  boolean not null default true;
+alter table notify_pref add column if not exists email_on boolean not null default true;
 
 
 -- ---------------------------------------------------------------------------

@@ -7,6 +7,7 @@ import {
   DEFAULTS,
   LEAD_CHOICES,
   fromHm,
+  isMuted,
   prefOf,
   toHm,
   waterPlan,
@@ -204,7 +205,53 @@ export default function ReminderSettings() {
       )}
 
       {/**
-       * LA FENETRE, EN PREMIER, PARCE QUE TOUT LE RESTE EN DEPEND.
+       * OU ARRIVENT LES MESSAGES, AVANT LE RESTE.
+       *
+       * Demande mot pour mot: "est-ce que c'est un app notification seulement
+       * ou email ou les deux, bref la personne pourra cocher".
+       *
+       * En premier parce que c'est la question qui conditionne toutes les
+       * autres: regler l'heure des rappels avant d'avoir dit par ou ils
+       * arrivent, c'est meubler une piece dont on n'a pas encore de cle.
+       *
+       * Deux cases plutot qu'un choix a trois. Les trois cas nommes en
+       * sortent, et le quatrieme, les deux decochees, existe alors
+       * gratuitement. Il est permis: refuser de decocher la derniere
+       * obligerait a couper les notifications au niveau du telephone, ce qui
+       * couperait aussi celles qu'on voulait garder. Mais il est DIT, juste
+       * en dessous, plutot que de laisser croire que quelque chose arrivera
+       * encore.
+       */}
+      <div>
+        <p className="text-body font-semibold text-ink">{t('remind.how')}</p>
+        <p className="mt-1 max-w-[46ch] text-small text-muted">{t('remind.how_hint')}</p>
+        <div className="mt-4 space-y-3">
+          <Check
+            hook="channel-push"
+            label={t('remind.push')}
+            on={pref.push_on}
+            onChange={(v) => save({ push_on: v })}
+          />
+          <Check
+            hook="channel-email"
+            label={t('remind.email')}
+            on={pref.email_on}
+            onChange={(v) => save({ email_on: v })}
+          />
+        </div>
+        {isMuted(pref) && (
+          <p
+            className="mt-4 max-w-[46ch] rounded-inner border-l-[3px] border-accent bg-accent/[0.13] px-4 py-3 text-small text-ink"
+            role="status"
+            data-hook="channel-none"
+          >
+            {t('remind.none')}
+          </p>
+        )}
+      </div>
+
+      {/**
+       * LA FENETRE, PARCE QUE TOUT CE QUI SUIT EN DEPEND.
        *
        * Elle traverse minuit sans rien de special a faire: 22:00 - 06:00 est
        * la journee de quelqu'un qui travaille de nuit, et isAwake() sait la
@@ -269,6 +316,14 @@ export default function ReminderSettings() {
              * racontee. Sans cette ligne, "2 litres" est un nombre abstrait et
              * le rythme des rappels est une surprise au premier rappel.
              */}
+            {/* L'eau ne passe pas par courriel, et le dire ici evite de le
+                decouvrir en ne recevant rien. Huit courriels par jour n'est
+                pas un rappel, c'est une raison de se desabonner. */}
+            {!pref.push_on && (
+              <p className="mt-3 text-small text-muted" data-hook="water-push-only">
+                {t('remind.water_push_only')}
+              </p>
+            )}
             <p className="mt-3 text-body text-ink" data-hook="water-plan">
               {t('remind.plan', {
                 litres: (pref.water_target_ml / 1000).toFixed(1),
@@ -398,6 +453,42 @@ function Switch({ label, hint, on, onChange, hook }) {
         <span className="block text-body font-semibold text-ink">{label}</span>
         {hint && <span className="mt-1 block max-w-[46ch] text-small text-muted">{hint}</span>}
       </span>
+    </label>
+  )
+}
+
+/**
+ * Une case a cocher, dont l'etat n'est pas porte par la couleur seule (1.4.1).
+ *
+ * Une vraie coche dessinee dans la case, pas seulement un fond qui change: la
+ * forme est le signal, la couleur l'accompagne. aria-checked et role dits par
+ * l'element natif, parce qu'un input[type=checkbox] visuellement masque et un
+ * carre dessine a cote font ce travail mieux qu'un div avec des attributs.
+ */
+function Check({ label, on, onChange, hook }) {
+  return (
+    <label className="flex cursor-pointer items-center gap-3">
+      <input
+        type="checkbox"
+        checked={on}
+        onChange={(e) => onChange(e.target.checked)}
+        data-hook={hook}
+        className="peer sr-only"
+      />
+      <span
+        aria-hidden="true"
+        className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-[0.5rem] border-2 transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-accent peer-focus-visible:ring-offset-2 ${
+          on ? 'border-accent-pressed bg-accent-pressed text-on-accent' : 'border-ink/30 bg-transparent'
+        }`}
+      >
+        {on && (
+          <svg viewBox="0 0 24 24" className="h-4 w-4">
+            <path d="M5 13l4 4L19 7" fill="none" stroke="currentColor" strokeWidth="3"
+                  strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        )}
+      </span>
+      <span className="text-body text-ink">{label}</span>
     </label>
   )
 }

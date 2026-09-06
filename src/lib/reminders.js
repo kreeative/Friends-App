@@ -54,9 +54,27 @@ export const DEFAULT_SLEEP = 23 * 60
  * serait une porte devant une porte.
  */
 export const KINDS = ['water', 'events']
+
+/**
+ * Les deux canaux par lesquels l'application peut joindre quelqu'un.
+ *
+ * DEMANDE MOT POUR MOT: "est-ce que c'est un app notification seulement ou
+ * email ou les deux, bref la personne pourra cocher".
+ *
+ * Deux booleens et pas une enumeration a trois valeurs. Les trois cas nommes
+ * sortent des deux cases sans qu'aucun ecran ait a traduire quoi que ce soit,
+ * et le quatrieme, les deux eteints, existe alors gratuitement.
+ */
+export const CHANNELS = ['push', 'email']
+
 export const DEFAULTS = {
   wake_min: DEFAULT_WAKE,
   sleep_min: DEFAULT_SLEEP,
+  /* Les deux a vrai: c'est ce que le produit faisait avant que ce reglage
+     existe, et un defaut qui change le comportement de tout le monde le jour
+     d'une migration est un defaut mal choisi. */
+  push_on: true,
+  email_on: true,
   water_on: false,
   water_target_ml: DEFAULT_TARGET,
   water_glass_ml: GLASS_ML,
@@ -166,6 +184,8 @@ export function prefOf(row) {
        rallumerait les rappels d'agenda de quelqu'un qui vient de les couper,
        ce qui est le pire bogue possible sur un ecran de reglages. */
     events_on: Boolean(r.events_on ?? DEFAULTS.events_on),
+    push_on: Boolean(r.push_on ?? DEFAULTS.push_on),
+    email_on: Boolean(r.email_on ?? DEFAULTS.email_on),
     events_lead_min: safeLead(r.events_lead_min ?? DEFAULTS.events_lead_min),
   }
 }
@@ -212,4 +232,45 @@ export function remindMinFor(startMin, leadMin) {
   const s = Number(startMin)
   if (!Number.isFinite(s)) return null
   return s - safeLead(leadMin)
+}
+
+/**
+ * Par quels canaux joindre cette personne.
+ *
+ * Un seul endroit qui lit ces deux colonnes, pour que l'ecran des reglages, le
+ * texte sous la case du formulaire d'objectif et la fonction planifiee soient
+ * d'accord. Trois lectures de `row.email_on` a trois endroits, c'est trois
+ * occasions qu'une d'elles oublie le repli.
+ */
+export function channelsOf(row) {
+  const p = prefOf(row)
+  return { push: p.push_on, email: p.email_on }
+}
+
+/**
+ * Les deux canaux coupes: personne ne sera joint.
+ *
+ * Cas permis et pas nomme dans la demande, donc il doit se DIRE. Refuser de
+ * decocher la derniere case obligerait a couper les notifications au niveau du
+ * telephone, ce qui coupe aussi celles qu'on voulait garder; mais laisser
+ * croire qu'un rappel arrivera encore serait la meme faute que le bouton qui
+ * a l'air d'effacer une date et ne l'efface pas.
+ */
+export function isMuted(row) {
+  const c = channelsOf(row)
+  return !c.push && !c.email
+}
+
+/**
+ * La cle i18n qui decrit la livraison, pour la phrase sous une case a cocher.
+ *
+ * Rendue comme une cle plutot que comme une phrase: ce fichier est pur et
+ * testable sous node, et il n'a pas a savoir dans quelle langue la page est.
+ */
+export function channelKey(row) {
+  const c = channelsOf(row)
+  if (c.push && c.email) return 'remind.by_both'
+  if (c.push) return 'remind.by_push'
+  if (c.email) return 'remind.by_email'
+  return 'remind.by_none'
 }
