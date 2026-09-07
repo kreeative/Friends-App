@@ -2012,7 +2012,11 @@ async function sendWaterReminders(from: string, to: string) {
     const out = await pushTo(row.user_id, {
       title: c.remindWaterTitle,
       body: c.remindWaterBody(glasses),
-      url: '/',
+      /* Sur la carte de l'accueil, pas sur l'accueil. Demande: "quand tu
+         recois la notification drink water ca te renvoie sur ce truc-la dans
+         la page d'accueil". Le parametre amene la carte a l'ecran et
+         l'allume, puis il s'efface de l'URL. */
+      url: '/?boire=1',
       /* UN SEUL TAG POUR TOUS LES RAPPELS D'EAU, ET C'EST VOULU.
          Huit notifications d'eau empilees sur un ecran de verrouillage
          noieraient tout le reste. Un tag partage fait que la derniere remplace

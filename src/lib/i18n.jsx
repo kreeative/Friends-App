@@ -389,6 +389,11 @@ const STRINGS = {
     /* Utilise par les rappels et par le champ de l'agenda: une seule facon
        d'ecrire une duree dans toute l'application. */
     'water.every_m': '{m} min',
+    'water.card': 'Water today',
+    'water.next_at': 'Next glass around {time}.',
+    'water.full': 'Target reached for today.',
+    'water.none_left': 'Nothing else planned today.',
+    'water.settings': 'Settings',
     'water.every_h': '{h} h',
     'water.every_hm': '{h} h {m}',
 
@@ -1473,6 +1478,7 @@ const STRINGS = {
     'form.times_hint': '',
     'form.until_hint': 'Leave empty to keep going.',
     'form.clear_date': 'Clear the date',
+    'form.clear_time': 'Clear the time',
     'form.where_hint':
       'A note to yourself, nothing more. The app has no idea where you are and never asks. Writing the place down is what makes the plan specific enough to act on.',
     /**
@@ -2049,6 +2055,11 @@ const STRINGS = {
       'Les rappels demandent une migration de plus. Dans Supabase, ouvre l’éditeur SQL et exécute supabase/57_reminders.sql.',
 
     'water.every_m': '{m} min',
+    'water.card': 'Ton eau aujourd’hui',
+    'water.next_at': 'Prochain verre vers {time}.',
+    'water.full': 'Cible atteinte pour aujourd’hui.',
+    'water.none_left': 'Rien d’autre de prévu aujourd’hui.',
+    'water.settings': 'Réglages',
     'water.every_h': '{h} h',
     'water.every_hm': '{h} h {m}',
 
@@ -3049,6 +3060,7 @@ const STRINGS = {
     'form.times_hint': '',
     'form.until_hint': 'Laisse vide pour continuer indéfiniment.',
     'form.clear_date': 'Effacer la date',
+    'form.clear_time': 'Effacer l’heure',
     'form.where_hint':
       'Une note pour toi, rien de plus. L’app ne sait pas où tu es et ne le demande jamais. Écrire le lieu, c’est ce qui rend le plan assez précis pour être suivi.',
     'form.remind': 'Me le rappeler avant le point',

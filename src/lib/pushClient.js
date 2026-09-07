@@ -305,6 +305,50 @@ export async function syncSubscription(userId) {
 export async function saveSubscription(row) {
   const { supabase } = await import('./supabase')
 
+  /**
+   * THE ENDPOINT CAN BELONG TO AN ACCOUNT THIS READER CANNOT SEE.
+   *
+   * Reported with a screenshot of the settings switch, in red under it:
+   *
+   *   23505: duplicate key value violates unique constraint
+   *          "push_subscription_pkey"
+   *
+   * followed by "I still did not receive any drink water notification". Those
+   * are one bug. endpoint is the primary key: one row per BROWSER. A browser
+   * keeps its endpoint across a sign-out and a sign-in as somebody else, so a
+   * device that was ever subscribed under another account owns the row
+   * forever. The delete below is filtered by RLS, does not see that row,
+   * removes nothing and reports no error, and the insert then hits the primary
+   * key. Correct, and with no way out: there is no request this client can
+   * send that frees the endpoint.
+   *
+   * So the claim goes through a SECURITY DEFINER function (migration 60),
+   * which drops the row for this endpoint whatever its owner and writes a new
+   * one for the caller. Possession of the endpoint AND both browser secrets is
+   * the proof; the reasoning and what it costs are written out in the
+   * migration.
+   *
+   * The old path stays as the fallback for a database where 60 has not been
+   * run: PGRST202 is PostgREST saying the function is not in its schema cache,
+   * 42883 is Postgres saying it does not exist.
+   */
+  const claimed = await supabase.rpc('claim_push_subscription', {
+    p_endpoint: row.endpoint,
+    p_p256dh: row.p256dh,
+    p_auth: row.auth,
+  })
+  if (!claimed.error) {
+    return claimed.data === row.endpoint
+      ? { ok: true, detail: null }
+      : { ok: false, detail: 'the claim returned nothing' }
+  }
+  if (claimed.error.code !== 'PGRST202' && claimed.error.code !== '42883') {
+    return {
+      ok: false,
+      detail: `${claimed.error.code ?? 'error'}: ${claimed.error.message ?? String(claimed.error)}`,
+    }
+  }
+
   /* Scoped to this reader by RLS, so it clears only a row they own. */
   await supabase.from('push_subscription').delete().eq('endpoint', row.endpoint)
 
@@ -315,6 +359,11 @@ export async function saveSubscription(row) {
     .maybeSingle()
 
   if (error) {
+    /* 23505 here means exactly the case above, on a database without 60. Say
+       which migration frees it instead of printing a constraint name. */
+    if (error.code === '23505') {
+      return { ok: false, detail: '23505: this browser is registered to another account (run 60_claim_push.sql)' }
+    }
     return { ok: false, detail: `${error.code ?? 'error'}: ${error.message ?? String(error)}` }
   }
   if (data?.endpoint !== row.endpoint) {
