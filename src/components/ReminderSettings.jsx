@@ -100,42 +100,20 @@ export default function ReminderSettings() {
         )}
       </div>
 
+      {/* --- l'eau, dans son propre rectangle -------------------------------- */}
+
       {/**
-       * LA FENETRE, PARCE QUE TOUT CE QUI SUIT EN DEPEND.
+       * L'EAU EST UNE SECTION A ELLE, SOUS LES NOTIFICATIONS.
        *
-       * Elle traverse minuit sans rien de special a faire: 22:00 - 06:00 est
-       * la journee de quelqu'un qui travaille de nuit, et isAwake() sait la
-       * lire. Ecrit naivement, ce reglage-la produit le silence complet, et un
-       * silence ne se signale pas.
+       * "On va faire une section pour boire de l'eau en bas du groupe
+       *  notifications, mais dans un autre rectangle."
+       *
+       * Elle etait separee par un simple filet, au milieu d'une colonne de
+       * reglages qui se lisaient tous pareil. Un rectangle dit que c'est un
+       * sujet, pas une case de plus: l'eau a son interrupteur, sa cible, son
+       * rythme et ses heures, et rien de tout ca ne concerne le reste.
        */}
-      <div>
-        <p className="text-body font-semibold text-ink">{t('remind.window')}</p>
-        <p className="mt-1 max-w-[46ch] text-small text-muted">{t('remind.window_hint')}</p>
-        <div className="mt-4 flex flex-wrap gap-4">
-          <Field label={t('remind.wake')}>
-            <input
-              type="time"
-              data-hook="wake"
-              className="field"
-              value={toHm(pref.wake_min)}
-              onChange={(e) => save({ wake_min: fromHm(e.target.value, DEFAULTS.wake_min) })}
-            />
-          </Field>
-          <Field label={t('remind.sleep')}>
-            <input
-              type="time"
-              data-hook="sleep"
-              className="field"
-              value={toHm(pref.sleep_min)}
-              onChange={(e) => save({ sleep_min: fromHm(e.target.value, DEFAULTS.sleep_min) })}
-            />
-          </Field>
-        </div>
-      </div>
-
-      {/* --- l'eau ---------------------------------------------------------- */}
-
-      <div className="border-t border-hairline pt-8">
+      <div className="lg p-5">
         <Switch
           hook="water-on"
           label={t('remind.water')}
@@ -189,6 +167,59 @@ export default function ReminderSettings() {
                 {t('remind.late')}
               </p>
             )}
+
+            {/**
+             * LES HEURES, ICI, ET SEULEMENT POUR L'EAU.
+             *
+             * "Cette option choisir les heures auxquelles tu es reveille pour
+             *  recevoir des notifications, on va changer ca parce que ca
+             *  bloque toutes les notifications. [...] mais qui impacte
+             *  uniquement comment le systeme va repartir le nombre de verres
+             *  d'eau que tu dois boire, ca n'impacte aucune autre
+             *  notification."
+             *
+             * Elle etait en tete des reglages, sous le titre "Tes heures
+             * eveillees", avec une phrase qui promettait "rien ne part en
+             * dehors". Cette phrase etait fausse: aucun courriel, aucun
+             * message de groupe, aucun anniversaire n'a jamais consulte cette
+             * fenetre. Elle ne servait qu'a deux choses, le rythme de l'eau et
+             * la borne de la repetition d'un objectif, et la seconde vient de
+             * lui etre retiree (migration 61).
+             *
+             * Une promesse plus large que ce qu'un reglage fait est pire qu'un
+             * reglage manquant: on croit avoir coupe quelque chose, on
+             * n'ose plus rien allumer, et on se demande pourquoi le telephone
+             * sonne quand meme. Donc elle descend ici, dans la section qui
+             * l'utilise vraiment, et la phrase dit exactement ce qu'elle fait.
+             *
+             * Elle traverse minuit sans rien de special: 22:00 - 06:00 est la
+             * journee de quelqu'un qui travaille de nuit, et le calcul sait la
+             * lire.
+             */}
+            <div className="mt-6 rounded-inner border border-hairline p-4" data-hook="water-window">
+              <p className="text-small font-semibold text-ink">{t('remind.window')}</p>
+              <p className="mt-1 max-w-[42ch] text-small text-muted">{t('remind.window_hint')}</p>
+              <div className="mt-3 flex flex-wrap gap-4">
+                <Field label={t('remind.wake')}>
+                  <input
+                    type="time"
+                    data-hook="wake"
+                    className="field"
+                    value={toHm(pref.wake_min)}
+                    onChange={(e) => save({ wake_min: fromHm(e.target.value, DEFAULTS.wake_min) })}
+                  />
+                </Field>
+                <Field label={t('remind.sleep')}>
+                  <input
+                    type="time"
+                    data-hook="sleep"
+                    className="field"
+                    value={toHm(pref.sleep_min)}
+                    onChange={(e) => save({ sleep_min: fromHm(e.target.value, DEFAULTS.sleep_min) })}
+                  />
+                </Field>
+              </div>
+            </div>
 
             <div className="mt-5 flex flex-wrap items-center gap-3">
               <button type="button" onClick={drink} data-hook="water-drink" className="goal-action press">

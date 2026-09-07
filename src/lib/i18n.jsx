@@ -357,9 +357,9 @@ const STRINGS = {
     'remind.by_push': 'By notification.',
     'remind.by_email': 'By email.',
     'remind.by_none': 'Nowhere: you have turned both channels off.',
-    'remind.window': 'Your waking hours',
+    'remind.window': 'Your waking hours, for water',
     'remind.window_hint':
-      'Nothing is sent outside these. It is also the stretch your water reminders are spread across. Working nights is fine: 22:00 to 06:00 reads the way you would expect.',
+      'Only for water: your glasses are spread across these hours. Nothing else is affected, and no other notification is held back. Working nights is fine: 22:00 to 06:00 reads the way you would expect.',
     'remind.wake': 'Awake from',
     'remind.sleep': 'Until',
 
@@ -2011,9 +2011,9 @@ const STRINGS = {
     'remind.by_push': 'Par notification.',
     'remind.by_email': 'Par e-mail.',
     'remind.by_none': 'Nulle part : tu as coupé les deux canaux.',
-    'remind.window': 'Tes heures éveillées',
+    'remind.window': 'Tes heures éveillées, pour l’eau',
     'remind.window_hint':
-      'Rien ne part en dehors. C’est aussi la durée sur laquelle tes rappels d’eau se répartissent. Travailler de nuit marche : 22:00 à 06:00 se lit comme tu l’attends.',
+      'Uniquement pour l’eau : tes verres se répartissent sur ces heures. Rien d’autre n’en dépend, aucune autre notification n’est retenue. Travailler de nuit marche : 22:00 à 06:00 se lit comme tu l’attends.',
     'remind.wake': 'Réveil',
     'remind.sleep': 'Coucher',
 
