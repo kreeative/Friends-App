@@ -26,7 +26,7 @@ import { stickerFor } from '../lib/art'
  * policy either way, so hiding it is courtesy rather than the actual
  * enforcement: a crafted update from a console gets the same answer.
  */
-export default function GroupHeader({ group, canEdit, sub }) {
+export default function GroupHeader({ group, canEdit, sub, note = null }) {
   const { reload } = useGroup()
   const { t } = useT()
 
@@ -110,7 +110,24 @@ export default function GroupHeader({ group, canEdit, sub }) {
         </button>
       )}
 
-      <p className="mt-2 text-small text-muted">{busy ? t('settings.saving') : sub}</p>
+      <p className="mt-2 text-small text-muted" data-hook="group-when">
+        {busy ? t('settings.saving') : sub}
+      </p>
+      {/**
+       * LA DEUXIEME PHRASE N'APPARAIT QUE POUR CEUX QUI EN ONT BESOIN.
+       *
+       * Elle dit deux choses a quelqu'un qui n'est pas dans le fuseau du
+       * groupe: que l'heure au-dessus est bien la sienne, et que tout le monde
+       * y arrive en meme temps. Chez la personne qui a cree le groupe, les
+       * deux fuseaux coincident, il n'y a rien a preciser, et une ligne de
+       * plus serait du bruit sur la seule page ou l'on vient changer quelque
+       * chose.
+       */}
+      {!busy && note && (
+        <p className="mt-1 max-w-[42ch] text-small text-muted/80" data-hook="group-when-note">
+          {note}
+        </p>
+      )}
       {error && <p className="mt-2 text-small text-negative">{error}</p>}
     </div>
   )
