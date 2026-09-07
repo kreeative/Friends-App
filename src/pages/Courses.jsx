@@ -17,6 +17,7 @@ import {
   variantFor,
 } from '../lib/courses'
 import { useT } from '../lib/i18n'
+import { termsFor } from '../lib/glossary'
 import { usePageMeta } from '../lib/pageMeta'
 import { Screen, Section, TopBar } from '../components/ui'
 import CountryTabs from '../components/CountryTabs'
@@ -341,6 +342,9 @@ function LessonView({ course, lesson, country, t, locale, navigate }) {
   const variant = variantFor(lesson, country)
   const points = variant?.points ?? lesson.points ?? []
   const todo = variant?.todo ?? lesson.todo
+  /* Les mots de cette lecon, filtres par la region: le CELI n'a rien a faire
+     dans le lexique de quelqu'un en France. Voir src/lib/glossary.js. */
+  const terms = termsFor(lesson, course, country)
 
   return (
     <Screen>
@@ -475,6 +479,40 @@ function LessonView({ course, lesson, country, t, locale, navigate }) {
                 >
                   {say(variant.cta.label, locale)} ↗
                 </a>
+              </div>
+            )}
+
+            {/**
+             * LES MOTS, A LA FIN DE LA LECON.
+             *
+             * "Can you add in the module some part where words are explained
+             * like inflation etc."
+             *
+             * A LA FIN ET PAS AU DEBUT. Une liste de definitions en tete
+             * demande d'apprendre du vocabulaire avant de savoir a quoi il
+             * sert, ce qui est la facon la plus sure de ne pas le retenir. Ici
+             * le mot a deja ete rencontre dans une phrase; la definition
+             * confirme, elle n'introduit pas.
+             *
+             * DE LA PROSE, PAS UN RECTANGLE DE PLUS. La regle de la quatrieme
+             * passe tient: un seul conteneur par lecon, le quiz. Une liste de
+             * definitions est du texte avec un sur-titre, separee par les
+             * memes filets que les points de la lecon.
+             *
+             * Sur la derniere lecon d'un cours, `terms: 'course'` rend tous
+             * les mots croises dans le cours: le recap devient le lexique.
+             */}
+            {terms.length > 0 && (
+              <div className="mt-10" data-hook="lesson-terms" data-count={terms.length}>
+                <p className="eyebrow">{t('courses.words')}</p>
+                <dl className="mt-3 divide-y divide-hairline">
+                  {terms.map((w) => (
+                    <div key={w.id} className="py-4 first:pt-2" data-hook="term" data-term={w.id}>
+                      <dt className="text-body font-semibold text-ink">{say(w.term, locale)}</dt>
+                      <dd className="mt-1 max-w-[46ch] text-body text-muted">{say(w.short, locale)}</dd>
+                    </div>
+                  ))}
+                </dl>
               </div>
             )}
 

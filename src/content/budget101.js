@@ -64,6 +64,7 @@ export const BUDGET_101 = {
       lessons: [
         {
           id: 'b1.1',
+          terms: ['revenu-brut', 'revenu-net'],
           state: 'written',
           title: { fr: 'Ce qui rentre vraiment', en: 'What actually comes in' },
           sub: {
@@ -126,6 +127,7 @@ export const BUDGET_101 = {
         },
         {
           id: 'b1.2',
+          terms: ['depense-fixe', 'depense-variable'],
           state: 'written',
           title: { fr: 'Où va ton argent', en: 'Where your money goes' },
           sub: {
@@ -276,6 +278,7 @@ export const BUDGET_101 = {
       lessons: [
         {
           id: 'b2.1',
+          terms: ['budget-base-zero'],
           state: 'written',
           title: { fr: 'Chaque dollar a un rôle', en: 'Every dollar has a job' },
           sub: {
@@ -338,6 +341,7 @@ export const BUDGET_101 = {
         },
         {
           id: 'b2.2',
+          terms: ['taux-epargne'],
           state: 'written',
           title: { fr: 'Le squelette : 50 / 30 / 20', en: 'The skeleton: 50 / 30 / 20' },
           sub: {
@@ -396,6 +400,7 @@ export const BUDGET_101 = {
         },
         {
           id: 'b2.3',
+          terms: ['enveloppe'],
           state: 'written',
           title: { fr: 'Les enveloppes', en: 'The envelopes' },
           sub: {
@@ -458,6 +463,7 @@ export const BUDGET_101 = {
         },
         {
           id: 'b2.4',
+          terms: ['fonds-urgence'],
           state: 'written',
           title: { fr: 'Se payer en premier', en: 'Paying yourself first' },
           sub: {
@@ -712,6 +718,7 @@ export const BUDGET_101 = {
         },
         {
           id: 'b3.4',
+          terms: 'course',
           state: 'written',
           title: { fr: 'Ce qu’il faut retenir', en: 'What to take away' },
           sub: {
