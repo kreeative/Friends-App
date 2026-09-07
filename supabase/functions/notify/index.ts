@@ -389,7 +389,15 @@ const COPY = {
     remindGoalBody: (when: string | null, where: string | null, again = false) =>
       (again ? 'Toujours pas coch\u00e9. ' : '') +
       ([when, where].filter(Boolean).join(' \u00b7 ') || 'C\u2019est le moment.'),
-    remindWaterTitle: 'Un verre d\u2019eau',
+    /**
+     * UN TITRE QUI DIT QUOI FAIRE.
+     *
+     * C'etait "Un verre d'eau", et sur l'ecran verrouille ca donnait "Un verre
+     * d'eau / de Rich & Friends / Encore 12 d'ici ce soir". Rapporte avec la
+     * capture: "it should say drink a glass of water". Un rappel est un ordre
+     * doux; un groupe nominal ressemble a un titre d'article et se balaye.
+     */
+    remindWaterTitle: 'Bois un verre d\u2019eau',
     remindWaterBody: (n: number) =>
       n === 1 ? 'Le dernier de la journ\u00e9e.' : `Encore ${n} d\u2019ici ce soir.`,
 
@@ -474,7 +482,7 @@ const COPY = {
     remindGoalBody: (when: string | null, where: string | null, again = false) =>
       (again ? 'Still not ticked. ' : '') +
       ([when, where].filter(Boolean).join(' \u00b7 ') || 'Now is the time.'),
-    remindWaterTitle: 'A glass of water',
+    remindWaterTitle: 'Drink a glass of water',
     remindWaterBody: (n: number) =>
       n === 1 ? 'The last one today.' : `${n} more before tonight.`,
 

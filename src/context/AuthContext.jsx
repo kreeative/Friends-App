@@ -123,18 +123,38 @@ export function AuthProvider({ children }) {
          * the next sign-in tries again.
          */
         /**
-         * The currency and the language, together, and only while unset.
+         * The currency once, the language kept in step.
          *
-         * The language is here for one reason: supabase/functions/notify sends
-         * the reminder emails on a schedule with nobody's browser involved, so
-         * it cannot read localStorage and had no way to choose words. It wrote
-         * to everybody in English, on a product whose own survey is 91 %
-         * Ivorian.
+         * The language is stored for one reason: supabase/functions/notify
+         * sends on a schedule with nobody's browser involved, so it cannot
+         * read localStorage and had no way to choose words. It wrote to
+         * everybody in English, on a product whose own survey is 91 % Ivorian.
          *
-         * Written once for the same reason the currency is: re-detecting on
-         * every sign-in would overwrite the choice of anybody who picked the
-         * other language on a device whose browser disagrees. The picker keeps
-         * it fresh from then on; see LanguagePicker.
+         * IT WAS WRITTEN ONCE, AND THAT WAS THE BUG.
+         *
+         * The old note here said: written once, because re-detecting on every
+         * sign-in would overwrite the choice of anybody who picked the other
+         * language on a device whose browser disagrees, and the picker keeps it
+         * fresh from then on. Both halves are true. The hole is somebody who
+         * never opens the picker.
+         *
+         * Reported with a screenshot of the lock screen: an app in French
+         * throughout, and the water reminder arriving in English. The profile
+         * had been seeded 'en' at sign-up, the device has said 'fr' ever since,
+         * and nothing reconciles the two. Nothing ever would: the picker is a
+         * row in Settings you have no reason to open when the app is already in
+         * your language, so the notifications stay in the wrong one forever,
+         * with nothing on screen to explain why.
+         *
+         * So the screen wins. What the app is DISPLAYING right now is the best
+         * evidence of what this person reads, better than what was detected
+         * once at sign-up. And the case the old note protected is still
+         * protected: picking a language writes localStorage, detectLocale
+         * prefers what is saved over what the browser claims, so a deliberate
+         * choice is exactly what gets sent up.
+         *
+         * The currency keeps the old rule: it is money, changing it silently
+         * relabels every amount in the app.
          */
         const seed = {}
         if (data && !data.currency) {
@@ -142,7 +162,7 @@ export function AuthProvider({ children }) {
             navigator.languages ?? [navigator.language].filter(Boolean),
           )
         }
-        if (data && !data.locale) seed.locale = detectLocale()
+        if (data && data.locale !== detectLocale()) seed.locale = detectLocale()
 
         if (Object.keys(seed).length > 0) {
           const { data: updated } = await supabase

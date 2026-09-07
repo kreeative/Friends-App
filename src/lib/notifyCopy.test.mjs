@@ -622,5 +622,59 @@ const keysOf = (lang) => [...block(lang).matchAll(/^ {4}(\w+):/gm)].map((m) => m
   )
 }
 
+/**
+ * UN RAPPEL DIT QUOI FAIRE.
+ *
+ * Capture de l'ecran verrouille: "A glass of water / from Rich & Friends /
+ * 12 more before tonight", et le mot de la personne qui l'a recue: "it should
+ * say drink a glass of water". Un groupe nominal ressemble a un titre
+ * d'article et se balaye; un rappel est un ordre doux.
+ *
+ * Verifie dans les deux langues, parce qu'une seule corrigee est le genre de
+ * moitie de correction que personne ne remarque avant de recevoir l'autre.
+ */
+{
+  const titre = (loc) => {
+    const at = src.indexOf(loc === 'fr' ? '  fr: {' : '  en: {')
+    const i = src.indexOf('remindWaterTitle', at)
+    return i < 0 ? '' : src.slice(i, src.indexOf('\n', i))
+  }
+  ok('le titre francais existe', titre('fr').length > 20, titre('fr'))
+  ok('le titre anglais aussi', titre('en').length > 20, titre('en'))
+  ok(
+    'le rappel d eau francais dit quoi faire',
+    /Bois/.test(titre('fr')),
+    `"${titre('fr')}" : un titre sans verbe se lit comme un article`,
+  )
+  ok(
+    'et l anglais aussi',
+    /Drink/.test(titre('en')),
+    `"${titre('en')}"`,
+  )
+}
+
+/**
+ * LA LANGUE ENVOYEE SUIT LA LANGUE AFFICHEE.
+ *
+ * Meme capture: l'application en francais partout, et la notification en
+ * anglais. Le profil avait ete seme 'en' a l'inscription, l'appareil dit 'fr'
+ * depuis, et rien ne les reconciliait. Personne n'ouvre le selecteur de langue
+ * quand l'application est deja dans sa langue, donc rien ne l'aurait jamais
+ * reconcilie.
+ */
+{
+  const auth = readFileSync(new URL('../context/AuthContext.jsx', import.meta.url), 'utf8')
+  ok(
+    'the profile locale is kept in step with the device, not written once',
+    /data\.locale !== detectLocale\(\)/.test(auth),
+    'written once leaves an app in French sending notifications in English forever',
+  )
+  ok(
+    'and the currency is still written only when unset',
+    /!data\.currency/.test(auth),
+    'money is not language: relabelling every amount silently is a different thing',
+  )
+}
+
 console.log(`\nnotifyCopy\n\n  ${pass} passed, ${fail} failed\n`)
 process.exit(fail === 0 ? 0 : 1)
