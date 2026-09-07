@@ -2010,5 +2010,43 @@ ok(
      '.lg > * pins every child at z-[2], so the panel rendered under the period bar')
 }
 
+/**
+ * BUDGET 101 EST UN COURS, PAS UNE "FORMATION" A COTE.
+ *
+ * "Budget 101 doit etre le meme format que les autres cours, mais ca doit
+ * plus parler de comment faire un budget."
+ *
+ * Il avait son propre lecteur (Formation.jsx), son propre stockage de
+ * progression (lessons.js, localStorage) et sa propre carte avec une fleche
+ * au lieu d'un bouton "Commencer le cours": sur l'etagere Cours, c'etait le
+ * seul element qui ne ressemblait pas aux autres. Ce qui est epingle ici est
+ * que les deux implementations n'existent pas en meme temps, parce que la
+ * moitie morte est ce qui revient dans six mois.
+ */
+{
+  ok('the old formation player is gone',
+     !existsSync(join(root, 'src/components/Formation.jsx')) &&
+       !existsSync(join(root, 'src/lib/lessons.js')),
+     'two Budget 101s is exactly the confusion this change is about')
+  const lib = code('src/pages/Library.jsx')
+  ok('and the shelf has no separate entry for it',
+     !/formation-entry/.test(lib) && !/Formation/.test(lib))
+  ok('the count no longer adds one for it',
+     !/formation/.test(code('src/lib/shelves.js')),
+     'a +1 next to four cards announced five courses')
+
+  const courses = read('src/content/courses.js')
+  ok('it is the first course, before the ones that spend money',
+     /export const COURSES = \[[\s\S]{0,400}BUDGET_101,/.test(courses),
+     '"invest what is left" assumes you know what is left')
+  const budget = read('src/content/budget101.js')
+  ok('and it is written, not a plan',
+     !/state: 'plan'/.test(budget) && (budget.match(/state: 'written'/g) ?? []).length >= 10)
+  ok('every lesson ends on something to go and do',
+     (budget.match(/\n          todo: \{/g) ?? []).length ===
+       (budget.match(/state: 'written'/g) ?? []).length,
+     'a lesson that ends in agreement changes nothing')
+}
+
 console.log(`\n  ${pass} passed, ${fail} failed\n`)
 process.exit(fail ? 1 : 0)

@@ -7,10 +7,7 @@ import { useT } from '../lib/i18n'
 import { money } from '../lib/money'
 import { Empty, Screen, Section, Sheet, TopBar } from '../components/ui'
 import ErrorNote from '../components/ErrorNote'
-import Formation from '../components/Formation'
-import { BookIcon } from '../components/ActionBar'
 import { localBooks } from '../content/previews'
-import { LESSONS } from '../lib/lessons'
 import { COURSES } from '../content/courses'
 import { firstLessonOf, progressOf, say } from '../lib/courses'
 import { SHELVES, safeShelf, shelfCount, studiesOfKind } from '../lib/shelves'
@@ -50,13 +47,6 @@ export default function Library() {
   /* Coming back from Stripe: null, {state:'waiting'} or {state:'slow'}. See
      the effect below for why this exists at all. */
   const [purchase, setPurchase] = useState(null)
-  /* The course took over the page, the way the transaction history takes over
-     the budget: reading six modules under a shop is reading in a corridor. */
-  const [course, setCourse] = useState(false)
-  /* Which stage the course is at, so this page can get out of its way. Inside
-     the player and inside a module the course has its own back button, and two
-     stacked back buttons is a reader wondering which one undoes what. */
-  const [stage, setStage] = useState('intro')
 
   /**
    * L'etagere ouverte, dans l'URL et pas dans un useState.
@@ -92,7 +82,7 @@ export default function Library() {
   }
 
   const counts = Object.fromEntries(
-    SHELVES.map((id) => [id, shelfCount(id, { books, formation: 1 })]),
+    SHELVES.map((id) => [id, shelfCount(id, { books })]),
   )
 
   const articles = studiesOfKind('article')
@@ -249,30 +239,6 @@ export default function Library() {
     setSharePrompt(null)
   }
 
-  /**
-   * The formation, which used to be a tab inside the budget.
-   *
-   * It is reading, and this is where the reading lives. A course sitting in a
-   * budget's tab strip is competing with the four things a budget is for, and
-   * losing: nobody opens a lesson while working out whether they can afford
-   * groceries.
-   */
-  if (course) {
-    return (
-      <Screen>
-        <TopBar title={t('form.title')} sub={t('form.sub', { n: LESSONS.length })} />
-        {stage === 'intro' && (
-          <div className="pt-2">
-            <button type="button" className="goal-action press" onClick={() => setCourse(false)}>
-              {t('form.back_library')}
-            </button>
-          </div>
-        )}
-        <Formation userId={user?.id} locale={locale} onStageChange={setStage} />
-      </Screen>
-    )
-  }
-
   return (
     <Screen>
       <TopBar title={t('nav.library')} sub={t('library.sub')} />
@@ -421,42 +387,6 @@ export default function Library() {
               )
             })}
 
-            {/**
-             * LA FORMATION, DANS LES COURS PLUTOT QU'A COTE.
-             *
-             * C'en est un. Elle est simplement plus ancienne que les autres et
-             * elle vit dans un autre fichier, ce qui est une raison de
-             * structure interne et pas une raison de la ranger ailleurs. Elle
-             * avait sa propre section, son propre titre et sa propre couleur,
-             * et la page disait donc deux fois "voici un cours" a deux
-             * endroits differents.
-             *
-             * Elle reste un bouton et pas un lien, parce qu'elle s'ouvre dans
-             * cette page: c'est le seul cours qui n'a pas d'adresse a lui.
-             */}
-            <button
-              type="button"
-              data-hook="formation-entry"
-              className="lg press flex w-full items-center gap-4 overflow-hidden px-5 py-4 text-left"
-              onClick={() => setCourse(true)}
-            >
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-accent/[0.10] text-ink [&>svg]:h-6 [&>svg]:w-6">
-                <BookIcon />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="text-safe block text-body font-semibold leading-tight text-ink">
-                  {t('form.title')}
-                </span>
-                <span className="text-safe mt-1 block text-small leading-snug text-muted">
-                  {t('form.sub', { n: LESSONS.length })}
-                </span>
-              </span>
-              <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-pill bg-ink/[0.06] text-ink">
-                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M5 12h13M13 6l6 6-6 6" />
-                </svg>
-              </span>
-            </button>
           </div>
         </Section>
       )}

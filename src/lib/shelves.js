@@ -78,12 +78,14 @@ export function studiesOfKind(kind) {
  * catalogue est une requete, pas un fichier du bundle, et cette fonction reste
  * pure.
  */
-export function shelfCount(id, { books = [], formation = 1 } = {}) {
+export function shelfCount(id, { books = [] } = {}) {
   switch (safeShelf(id)) {
-    /* La formation compte pour un cours: c'en est un, il est juste plus vieux
-       que les autres et il vit dans un autre fichier. */
+    /* Plus de `+ formation`: Budget 101 etait compte a part parce qu'il vivait
+       dans un autre fichier avec son propre lecteur. C'est un cours de COURSES
+       comme les trois autres, donc il est deja dans le compte, et l'ajouter
+       une deuxieme fois annoncait cinq cours pour quatre cartes. */
     case 'courses':
-      return COURSES.length + formation
+      return COURSES.length
     case 'articles':
       return studiesOfKind('article').length
     case 'books':
