@@ -288,6 +288,7 @@ export const COURSES = [
           },
           {
             id: '0.3',
+            terms: ['cout-d-opportunite'],
             state: 'written',
             title: { fr: 'Tu ne paies jamais en dollars', en: 'You never pay in dollars' },
             sub: {
@@ -627,6 +628,7 @@ export const COURSES = [
           },
           {
             id: '3.4',
+            terms: ['valeur-nette'],
             state: 'written',
             title: { fr: 'Personne ne regarde ta voiture', en: 'Nobody is looking at your car' },
             sub: {
@@ -816,6 +818,7 @@ export const COURSES = [
         lessons: [
           {
             id: 'c1.1',
+            terms: ['limite-de-credit', 'solde'],
             state: 'written',
             title: { fr: 'Ce n’est pas ton argent', en: 'It is not your money' },
             sub: { fr: 'Ce qui se passe vraiment quand tu tapes la carte.', en: 'What actually happens when you tap the card.' },
@@ -902,6 +905,7 @@ export const COURSES = [
           },
           {
             id: 'c1.2',
+            terms: ['releve', 'delai-de-grace'],
             state: 'written',
             title: { fr: 'Le seul mois gratuit', en: 'The one free month' },
             sub: { fr: 'Le délai de grâce, et comment on le perd.', en: 'The grace period, and how you lose it.' },
@@ -988,6 +992,7 @@ export const COURSES = [
           },
           {
             id: 'c1.3',
+            terms: ['paiement-minimum', 'taux-annuel', 'interet-quotidien'],
             state: 'written',
             title: { fr: 'Le paiement minimum', en: 'The minimum payment' },
             sub: { fr: 'Le chiffre le plus cher de ton relevé.', en: 'The most expensive number on your statement.' },
@@ -1074,6 +1079,7 @@ export const COURSES = [
           },
           {
             id: 'c1.4',
+            terms: ['avance-de-fonds', 'frais-de-conversion', 'frais-annuels'],
             state: 'written',
             title: { fr: 'Les frais qu’on ne voit pas', en: 'The fees you do not see' },
             sub: { fr: 'Avance de fonds, change, cotisation annuelle.', en: 'Cash advances, currency, annual fee.' },
@@ -1174,6 +1180,12 @@ export const COURSES = [
         lessons: [
           {
             id: 'c2.1',
+            terms: [
+              'cote-de-credit',
+              'historique-de-credit',
+              'taux-utilisation',
+              'enquete-de-credit',
+            ],
             state: 'written',
             title: { fr: 'Ce qui construit vraiment ton dossier', en: 'What actually builds your file' },
             sub: { fr: 'Le score de crédit, sans les mythes.', en: 'The credit score, without the myths.' },
@@ -1260,6 +1272,7 @@ export const COURSES = [
           },
           {
             id: 'c2.2',
+            terms: ['transfert-de-solde', 'methode-avalanche', 'methode-boule-de-neige'],
             state: 'written',
             title: { fr: 'Déjà dedans', en: 'Already in it' },
             sub: { fr: 'Sortir d’un solde qui ne bouge plus.', en: 'Getting out of a balance that will not move.' },
@@ -1558,6 +1571,7 @@ export const COURSES = [
           },
           {
             id: 'c2.4',
+            terms: 'course',
             state: 'written',
             title: { fr: 'Ce qu’il faut retenir', en: 'What to take away' },
             sub: { fr: 'Sept lignes, et une check-list.', en: 'Seven lines, and a checklist.' },
@@ -1678,6 +1692,7 @@ export const COURSES = [
         lessons: [
           {
             id: 'i1.1',
+            terms: ['inflation', 'interets-composes'],
             state: 'written',
             title: { fr: 'Ton argent fond pendant que tu dors', en: 'Your money melts while you sleep' },
             sub: {
@@ -1770,6 +1785,7 @@ export const COURSES = [
           },
           {
             id: 'i1.2',
+            terms: ['action', 'obligation', 'dividende'],
             state: 'written',
             title: { fr: 'Prêter ou posséder', en: 'Lend or own' },
             sub: {
@@ -1859,6 +1875,7 @@ export const COURSES = [
           },
           {
             id: 'i1.3',
+            terms: ['fnb', 'indice', 'diversification', 'frais-de-gestion'],
             state: 'written',
             title: { fr: 'Tout acheter d’un coup', en: 'Buy the whole thing at once' },
             sub: {
@@ -1951,6 +1968,16 @@ export const COURSES = [
           },
           {
             id: 'i1.4',
+            terms: [
+              'compte-non-enregistre',
+              'plafond-de-cotisation',
+              'celi',
+              'reer',
+              'pea',
+              'assurance-vie',
+              '401k',
+              'roth-ira',
+            ],
             state: 'written',
             title: { fr: 'L’enveloppe n’est pas le placement', en: 'The account is not the investment' },
             sub: {
@@ -2040,6 +2067,7 @@ export const COURSES = [
           },
           {
             id: 'i1.5',
+            terms: ['achat-periodique', 'taux-epargne'],
             state: 'written',
             title: { fr: 'Combien, et à quel rythme', en: 'How much, and how often' },
             sub: { fr: 'La deuxième question après « j’achète quoi ».', en: 'The second question after "what do I buy".' },
@@ -2126,6 +2154,7 @@ export const COURSES = [
           },
           {
             id: 'i1.6',
+            terms: ['volatilite', 'marche-baissier', 'rendement'],
             state: 'written',
             title: { fr: 'Le jour où ça tombe de 30 %', en: 'The day it drops 30 %' },
             sub: { fr: 'Ce que tu vas ressentir, et pourquoi ne rien faire est l’action.', en: 'What you will feel, and why doing nothing is the action.' },
@@ -2225,6 +2254,7 @@ export const COURSES = [
         lessons: [
           {
             id: 'i2.1',
+            terms: ['courtier'],
             state: 'written',
             title: { fr: 'Le plan de match de ta région', en: 'Your region’s game plan' },
             sub: {
@@ -2465,6 +2495,7 @@ export const COURSES = [
           },
           {
             id: 'i2.2',
+            terms: ['symbole', 'ordre-au-marche', 'ordre-a-cours-limite'],
             state: 'written',
             title: { fr: 'Le jour où tu appuies sur acheter', en: 'The day you press buy' },
             grailLabel: { fr: 'Ce que tu tapes dans la recherche', en: 'What you type in the search' },
@@ -2685,6 +2716,7 @@ export const COURSES = [
           },
           {
             id: 'i2.3',
+            terms: 'course',
             state: 'written',
             title: { fr: 'Ce qu’il faut retenir', en: 'What to take away' },
             sub: { fr: 'Neuf leçons, cinq phrases, une check-list.', en: 'Nine lessons, five sentences, one checklist.' },

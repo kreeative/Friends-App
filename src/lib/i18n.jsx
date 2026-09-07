@@ -1194,6 +1194,7 @@ const STRINGS = {
     'courses.reflection': 'Today’s question',
     'courses.script': 'What to actually say',
     'courses.action': 'Do this',
+    'courses.words': 'The words',
     'courses.quiz': 'Check yourself',
     /* Une question a la fois, puis le score, puis "refaire". */
     'courses.quiz_progress': '{n} of {total}',
@@ -2761,6 +2762,7 @@ const STRINGS = {
     'courses.reflection': 'La réflexion du jour',
     'courses.script': 'Ce qu’on dit vraiment',
     'courses.action': 'L’action',
+    'courses.words': 'Les mots',
     'courses.quiz': 'Vérifie que c’est passé',
     'courses.quiz_progress': '{n} sur {total}',
     'courses.quiz_next': 'Question suivante',
