@@ -1803,12 +1803,76 @@ ok(
    * garde, deux de ses assertions tombent. Celle-ci est un fil-piege, pour
    * qu'un retrait de la garde ne passe pas en silence entre deux sondes.
    */
+  /* La garde vit maintenant dans PickerField (src/components/ui.jsx), un seul
+     composant pour la date et pour l'heure: le meme defaut a ete rapporte deux
+     fois, la deuxieme avec le selecteur d'HEURE d'iOS ouvert. Une copie par
+     type de champ aurait garanti que la prochaine correction n'en couvre
+     qu'une des deux. */
+  const ui = read('src/components/ui.jsx')
   ok('a native picker clearing the field cannot leave a stale value behind',
-     /onBlur=\{\(e\) => \{\s*if \(e\.target\.value !== value\) onChange\(e\.target\.value\)/.test(form),
+     /onBlur=\{\(e\) => \{\s*if \(e\.target\.value !== value\) onChange\(e\.target\.value\)/.test(ui),
      'without it the box looks empty and the old date is what gets saved')
+  ok('and the goal form uses that one component for both its dates and its time',
+     /PickerField/.test(form) && !/type="time"[\s\S]{0,80}onBlur/.test(form),
+     'a second copy of the guard is a second place to forget it')
   ok('and the calendar form has the same guard',
      (read('src/pages/Calendar.jsx').match(/onBlur=\{\(e\) => \{ if \(e\.target\.value !==/g) ?? []).length === 2,
      'same class of fault, same two-line fix, on both of its date fields')
+
+  /**
+   * ET IL FAUT POUVOIR REVENIR A VIDE, SANS PASSER PAR LE SELECTEUR.
+   *
+   * "Being able to reset, I also mean being able to go blank on the space
+   * where the time is, because when you click a time but you didn't mean to,
+   * it doesn't leave at all, causing you to restart the whole thing."
+   *
+   * Le Reset du panneau gris appartient a Safari. La croix appartient a
+   * l'application: elle vide l'etat React directement et n'apparait que quand
+   * il y a quelque chose a effacer. La sonde remind.mjs clique dessus et lit
+   * la ligne postee; ceci est le fil-piege.
+   */
+  ok('the field can be emptied by a control of ours',
+     /onClick=\{\(\) => onChange\(''\)\}/.test(ui) && /data-hook=\{hook \? `\$\{hook\}-clear`/.test(ui))
+  for (const key of ['form.clear_date', 'form.clear_time']) {
+    const hits = read('src/lib/i18n.jsx').split(`'${key}'`).length - 1
+    ok(`${key} exists in both languages (${hits})`, hits === 2)
+  }
+}
+
+/**
+ * L'EAU EST NOTEE OU ELLE EST BUE, PAS AU FOND DES REGLAGES.
+ *
+ * "Ajouter une petite option sur l'ecran home pour rentrer rapidement les
+ * verres d'eau qu'on a bu [...] c'est accessible seulement dans les reglages
+ * et c'est trop long d'aller jusque la pour acceder a ca."
+ *
+ * Regler est rare, noter arrive huit fois par jour, et les deux n'ont donc pas
+ * a etre au meme endroit. Ce qui est epingle ici est qu'il n'y a QU'UNE
+ * implementation derriere les deux ecrans: deux copies de "insere une ligne,
+ * recalcule le prochain rappel, reecris water_next_at" derivent en silence,
+ * parce que les deux ecrans continuent d'avoir l'air de marcher.
+ */
+{
+  const hook = read('src/lib/useWater.js')
+  const card = read('src/components/WaterToday.jsx')
+  const settings = read('src/components/ReminderSettings.jsx')
+
+  ok('the water logic lives in one hook', /export function useWaterToday/.test(hook))
+  ok('and both screens use it',
+     /useWaterToday\(\)/.test(card) && /useWaterToday\(\)/.test(settings))
+  ok('so neither screen writes water_log on its own',
+     !/from\('water_log'\)/.test(card) && !/from\('water_log'\)/.test(settings),
+     'a second insert path is a second place for the next reminder to be wrong')
+  ok('the card is on the dashboard', /<WaterToday \/>/.test(read('src/pages/Dashboard.jsx')))
+  ok('and stays away when water is off', /!pref\.water_on\) return null/.test(card))
+  ok('the water push lands on the card rather than on the page',
+     /url: '\/\?boire=1'/.test(read('supabase/functions/notify/index.ts')),
+     '"it is at the top" is not an answer to somebody who was just interrupted')
+  ok('and the card knows to look for that parameter',
+     /params\.get\('boire'\)/.test(card))
+  ok('the count is written as well as drawn',
+     /water-card-count/.test(card) && /remind\.today/.test(card),
+     'colour is never the only signal (1.4.1)')
 }
 
 /**

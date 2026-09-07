@@ -876,6 +876,78 @@
     text-align: left;
   }
 
+  /**
+   * THE SLIDER, PAINTED HERE, BECAUSE THE RESET ABOVE ERASES IT.
+   *
+   * `-webkit-appearance: none` is applied to every input that is not a
+   * checkbox or a radio. For a text field that removes iOS chrome, which is
+   * the point. For a RANGE it removes the control: no track, no fill, and in
+   * Safari not even a thumb. The water target slider was a blank gap with a
+   * pale pill floating in the middle of it, which is exactly what was
+   * reported with a screenshot: "le curseur pour selectionner la quantite
+   * d'eau, pourquoi c'est invisible".
+   *
+   * So the track and the thumb are drawn. The two vendors need separate
+   * pseudo-elements and neither tolerates the other in the same selector list:
+   * one unknown pseudo-element drops the whole rule, so they are written
+   * twice on purpose rather than by oversight.
+   *
+   * A slider is a GRAPHIC: the floor is 3:1 (WCAG 1.4.11), not 4.5. The track
+   * is ink at 16 per cent and the thumb is the accent with a white ring around
+   * it, so the thumb is legible against the track AND against the card behind
+   * it. Measured on the painted page rather than assumed.
+   *
+   * 44px of height on the input, with the track only 6px of it, because the
+   * touch target is the whole control and 6px of ribbon is not a touch target.
+   */
+  input[type='range'] {
+    width: 100%;
+    height: 2.75rem;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  input[type='range']::-webkit-slider-runnable-track {
+    height: 0.375rem;
+    border-radius: 999px;
+    background: rgb(var(--c-ink) / 0.16);
+  }
+  input[type='range']::-moz-range-track {
+    height: 0.375rem;
+    border-radius: 999px;
+    background: rgb(var(--c-ink) / 0.16);
+  }
+
+  input[type='range']::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 1.5rem;
+    width: 1.5rem;
+    border-radius: 999px;
+    background: rgb(var(--c-accent));
+    border: 3px solid rgb(var(--c-surface));
+    box-shadow: var(--e-raised);
+    /* (track height - thumb height) / 2, so the thumb rides the centre of the
+       track instead of hanging off its top edge, which is where webkit puts
+       it when the track is shorter than the thumb. */
+    margin-top: -0.5625rem;
+  }
+  input[type='range']::-moz-range-thumb {
+    height: 1.5rem;
+    width: 1.5rem;
+    border-radius: 999px;
+    background: rgb(var(--c-accent));
+    border: 3px solid rgb(var(--c-surface));
+    box-shadow: var(--e-raised);
+  }
+
+  input[type='range']:focus-visible::-webkit-slider-thumb {
+    box-shadow: 0 0 0 4px rgb(var(--c-accent) / 0.22);
+  }
+  input[type='range']:focus-visible::-moz-range-thumb {
+    box-shadow: 0 0 0 4px rgb(var(--c-accent) / 0.22);
+  }
+
   input:focus,
   textarea:focus,
   select:focus {

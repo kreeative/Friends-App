@@ -289,6 +289,88 @@ export function Avatar({ profile, size = 40, onDark = false }) {
 }
 
 /**
+ * A native picker field (date or time) that can go blank again.
+ *
+ * One component for both, because the problem is the same and was reported
+ * twice. The second time, with the iOS time picker open: "being able to reset,
+ * I also mean being able to go blank on the space where the time is, because
+ * when you click a time but you didn't mean to, it doesn't leave at all,
+ * causing you to restart the whole thing".
+ *
+ * THE NATIVE PICKER CAN EMPTY THE FIELD WITHOUT REACT HEARING ABOUT IT.
+ *
+ * The grey iOS panel is Safari's, not ours, and its Reset writes '' into the
+ * input. On a controlled input that is the worst of the three outcomes: the
+ * DOM shows an empty box, React still holds the old value, and since nothing
+ * changed in state there is no re-render to put the old value back on screen.
+ * The field looks cleared AND the row saves with the old value. Measured in
+ * Chromium by emptying the field the three ways a browser does it: with an
+ * 'input' or 'change' event React follows; with no event at all the posted
+ * row still carried the old date under an empty field. The blur catches that
+ * case: when focus leaves, what the DOM really holds is compared with what
+ * React believes, and propagated if they disagree.
+ *
+ * AND THE CROSS IS OURS.
+ *
+ * The blur only fixes what the picker did. What the person asked for is to
+ * undo a tap they did not mean, without the picker: the cross empties the
+ * React state directly and only appears when there is something to erase.
+ * Restarting a whole form for one wrong tap is the kind of thing that makes
+ * people close the app.
+ *
+ * `hook` goes on the wrapper (with data-empty), `inputHook` on the input, so
+ * a probe can fill the input by its old hook and read the wrapper's state.
+ */
+export function PickerField({
+  type = 'date',
+  value,
+  onChange,
+  hook,
+  inputHook,
+  clearLabel = type === 'time' ? 'form.clear_time' : 'form.clear_date',
+  className = '',
+  ...rest
+}) {
+  const { t } = useT()
+
+  return (
+    <div className={`flex items-center gap-2 ${className}`} data-hook={hook} data-empty={value ? 'no' : 'yes'}>
+      <input
+        {...rest}
+        type={type}
+        data-hook={inputHook}
+        className="field min-w-0 flex-1"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onBlur={(e) => {
+          if (e.target.value !== value) onChange(e.target.value)
+        }}
+      />
+      {value && (
+        <button
+          type="button"
+          onClick={() => onChange('')}
+          data-hook={hook ? `${hook}-clear` : undefined}
+          aria-label={t(clearLabel)}
+          title={t(clearLabel)}
+          className="press flex h-9 w-9 shrink-0 items-center justify-center rounded-pill bg-ink/[0.06] text-muted transition-colors hover:bg-ink/[0.12] hover:text-ink"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4">
+            <path
+              d="M6 6l12 12M18 6L6 18"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+            />
+          </svg>
+        </button>
+      )}
+    </div>
+  )
+}
+
+/**
  * A bottom sheet, and the reason it is a portal.
  *
  * WHY IT WAS RENDERING OFF SCREEN.

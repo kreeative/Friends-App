@@ -8,7 +8,7 @@ import { PROOF_TYPES, proofTypeOf } from '../lib/proofKinds'
 import { errorText, isMissingColumn, isNetworkError } from '../lib/dberr'
 import { goalRow } from '../lib/goalRow'
 import { channelKey, toHm } from '../lib/reminders'
-import { Field } from './ui'
+import { Field, PickerField } from './ui'
 import { Slider, useSlider } from './Segmented'
 
 /**
@@ -193,67 +193,8 @@ function DayPicker({ value, onChange }) {
  * sibling button in a flex row is the same gesture, one tap, immediately to
  * the right of the value, and it is in the same place in every browser.
  */
-function DateField({ value, onChange, hook }) {
-  const { t } = useT()
-
-  return (
-    <div className="flex items-center gap-2" data-hook={hook} data-empty={value ? 'no' : 'yes'}>
-      <input
-        type="date"
-        className="field min-w-0 flex-1"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        /**
-         * LE SELECTEUR NATIF PEUT VIDER LE CHAMP SANS QUE REACT L'APPRENNE.
-         *
-         * Rapporte avec une capture du selecteur de date d'iOS: "le bouton
-         * RESET ca reset jamais rien". Ce panneau gris est celui de Safari,
-         * pas un ecran de cette application, et son bouton Reset ecrit ''
-         * dans l'input.
-         *
-         * Sur un champ controle, ca donne le pire des trois resultats
-         * possibles. Le DOM affiche une case vide, l'etat React contient
-         * toujours 2027-01-01, et comme rien n'a change dans l'etat il n'y a
-         * pas de nouveau rendu pour remettre l'ancienne valeur a l'ecran. Le
-         * champ a donc l'air efface ET l'objectif s'enregistre avec la vieille
-         * date. Ce n'est pas "le bouton ne fait rien", c'est le bouton qui
-         * ment, ce qui est pire parce que rien ne le montre.
-         *
-         * Mesure dans Chromium en vidant le champ des trois facons qu'un
-         * navigateur utilise. Avec un evenement 'input' ou 'change', React
-         * suit et tout va bien. Sans evenement du tout, la ligne postee
-         * portait encore starts_on: "2027-01-01" au-dessus d'un champ vide.
-         *
-         * Le blur rattrape ce cas: au moment ou le champ perd le focus, on
-         * compare ce que le DOM a vraiment a ce que React croit avoir, et on
-         * propage si les deux ne sont pas d'accord. Un blur arrive toujours,
-         * lui, parce que fermer le selecteur rend le focus a la page.
-         */
-        onBlur={(e) => {
-          if (e.target.value !== value) onChange(e.target.value)
-        }}
-      />
-      {value && (
-        <button
-          type="button"
-          onClick={() => onChange('')}
-          aria-label={t('form.clear_date')}
-          title={t('form.clear_date')}
-          className="press flex h-9 w-9 shrink-0 items-center justify-center rounded-pill bg-ink/[0.06] text-muted transition-colors hover:bg-ink/[0.12] hover:text-ink"
-        >
-          <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4">
-            <path
-              d="M6 6l12 12M18 6L6 18"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-            />
-          </svg>
-        </button>
-      )}
-    </div>
-  )
+function DateField(props) {
+  return <PickerField type="date" {...props} />
 }
 
 export default function GoalForm({ onDone, onCancel, initial = null, groupId = null }) {
@@ -633,15 +574,16 @@ export default function GoalForm({ onDone, onCancel, initial = null, groupId = n
          */}
         {remind && (
           <Field label={t('form.remind_at')} hint={t('form.remind_at_hint')}>
-            <input
+            {/* Le meme champ que les dates, avec sa croix: une heure tapee par
+                erreur s'efface ici, sans repasser par le selecteur du
+                telephone et sans recommencer le formulaire. */}
+            <PickerField
               type="time"
-              data-hook="goal-remind-at"
-              className="field"
               value={remindAt}
-              onChange={(e) => setRemindAt(e.target.value)}
-              onBlur={(e) => {
-                if (e.target.value !== remindAt) setRemindAt(e.target.value)
-              }}
+              onChange={setRemindAt}
+              hook="goal-remind-at-field"
+              inputHook="goal-remind-at"
+              clearLabel="form.clear_time"
             />
           </Field>
         )}

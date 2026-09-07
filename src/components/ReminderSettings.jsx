@@ -1,24 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
-import { supabase } from '../lib/supabase'
-import { useAuth } from '../context/AuthContext'
 import { useT } from '../lib/i18n'
-import { dayKey } from '../lib/time'
-import {
-  DEFAULTS,
-  LEAD_CHOICES,
-  fromHm,
-  isMuted,
-  prefOf,
-  toHm,
-  waterPlan,
-} from '../lib/reminders'
-import {
-  MAX_TARGET,
-  MIN_TARGET,
-  defaultTarget,
-  everyLabel,
-  glassesFor,
-} from '../lib/water'
+import { DEFAULTS, LEAD_CHOICES, fromHm, isMuted, toHm } from '../lib/reminders'
+import { MAX_TARGET, MIN_TARGET, everyLabel } from '../lib/water'
+import { useWaterToday } from '../lib/useWater'
 import { Field } from './ui'
 
 /**
@@ -44,145 +27,13 @@ import { Field } from './ui'
  * surprise.
  */
 export default function ReminderSettings() {
-  const { user } = useAuth()
   const { t } = useT()
 
-  const [row, setRow] = useState(null)
-  const [drunk, setDrunk] = useState(0)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  /* Vrai quand 57_reminders.sql n'a pas encore ete passe. Un ecran qui rend
-     une trace d'erreur Postgres a quelqu'un qui voulait regler ses
-     notifications ne l'aide pas; celui-ci dit ce qu'il manque. */
-  const [pending, setPending] = useState(false)
-
-  const today = dayKey(new Date())
-
-  async function load() {
-    setLoading(true)
-    const [{ data: pref, error: e1 }, { data: logs }] = await Promise.all([
-      supabase.from('notify_pref').select('*').eq('user_id', user.id).maybeSingle(),
-      supabase.from('water_log').select('ml').eq('user_id', user.id).eq('on_day', today),
-    ])
-    /* 42P01: la table n'existe pas. C'est la migration, pas une panne. */
-    if (e1?.code === '42P01') setPending(true)
-    else if (e1) setError(e1.message)
-    setRow(pref ?? null)
-    setDrunk((logs ?? []).reduce((n, l) => n + (l.ml ?? 0), 0))
-    setLoading(false)
-  }
-
-  useEffect(() => {
-    if (user?.id) load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id])
-
-  const pref = useMemo(() => prefOf(row), [row])
-
-  const nowMin = new Date().getHours() * 60 + new Date().getMinutes()
-
-  /**
-   * L'ETAT REEL D'AUJOURD'HUI, ET LE RYTHME D'UNE JOURNEE ORDINAIRE. DEUX
-   * CHOSES.
-   *
-   * Ecrit d'abord avec un seul plan, celui de maintenant, pour les deux
-   * usages. Mesure dans Chromium a 20h29: la phrase sous le curseur annoncait
-   * "environ un toutes les 30 min" pour une cible de 2 litres. Le calcul etait
-   * juste, c'est la phrase qui mentait: il restait 151 minutes de journee et
-   * huit verres a boire, donc le plancher. Mais lue sous un curseur de
-   * reglage, elle dit "ton reglage est toutes les 30 minutes", ce qui est
-   * exactement le chiffre que ce calcul existe pour ne pas produire.
-   *
-   * Donc deux plans. `typical` part du reveil avec rien de bu: c'est le rythme
-   * d'une journee ordinaire, il ne bouge pas selon l'heure a laquelle on ouvre
-   * les reglages, et c'est lui qui explique le reglage. `today` est l'etat
-   * reel et sert au reste: le compteur, et le fait de dire qu'il est trop tard.
-   */
-  const typical = useMemo(
-    () => waterPlan(row, { drunkMl: 0, nowMin: prefOf(row).wake_min }),
-    [row],
-  )
-  const plan = useMemo(
-    () => waterPlan(row, { drunkMl: drunk, nowMin }),
-    [row, drunk, nowMin],
-  )
-
-  /**
-   * Ecrire, et recalculer le prochain rappel dans le meme mouvement.
-   *
-   * water_next_at est ecrit ICI, par le client, parce que le calcul de
-   * l'intervalle vit dans src/lib/water.js et qu'une deuxieme implementation
-   * en SQL finirait par ne plus etre d'accord avec celle-la. La fonction
-   * planifiee ne fait que comparer un timestamp.
-   */
-  async function save(patch) {
-    const next = { ...pref, ...patch }
-    const p = waterPlan(next, { drunkMl: drunk, nowMin })
-
-    /* Quand l'eau est eteinte, ou la cible atteinte, il n'y a rien de prevu:
-       null plutot qu'une date passee, pour que la fonction planifiee n'ait
-       meme pas la ligne a regarder. */
-    const water_next_at =
-      next.water_on && p.nextMin !== null ? atLocalMinute(p.nextMin).toISOString() : null
-
-    setRow({ ...next, water_next_at })
-    const { error: err } = await supabase
-      .from('notify_pref')
-      .upsert({ user_id: user.id, ...next, water_next_at }, { onConflict: 'user_id' })
-    if (err) {
-      setError(err.message)
-      /* Remettre ce que la base a vraiment, plutot que de laisser l'ecran
-         montrer un reglage qui n'a pas ete enregistre. */
-      load()
-    }
-  }
-
-  async function drink() {
-    const ml = pref.water_glass_ml
-    setDrunk((n) => n + ml)
-    const { error: err } = await supabase
-      .from('water_log')
-      .insert({ user_id: user.id, on_day: today, ml })
-    if (err) return setError(err.message)
-    /* Le verre change le plan: on reecrit le prochain rappel tout de suite.
-       C'est la partie qui rattrape, et elle ne marche que si elle part du
-       nouveau total. */
-    const p = waterPlan(pref, { drunkMl: drunk + ml, nowMin })
-    await supabase
-      .from('notify_pref')
-      .upsert(
-        {
-          user_id: user.id,
-          ...pref,
-          water_next_at:
-            pref.water_on && p.nextMin !== null ? atLocalMinute(p.nextMin).toISOString() : null,
-        },
-        { onConflict: 'user_id' },
-      )
-  }
-
-  async function undo() {
-    /* Le dernier verre, pas n'importe lequel. Une ligne par verre existe
-       precisement pour ca: un compteur ne se defait pas, et appuyer deux fois
-       par accident laisserait la journee fausse sans rien a faire. */
-    const { data } = await supabase
-      .from('water_log')
-      .select('id, ml')
-      .eq('user_id', user.id)
-      .eq('on_day', today)
-      .order('at', { ascending: false })
-      .limit(1)
-    const last = data?.[0]
-    if (!last) return
-    /* count: 'exact'. RLS refuse un DELETE en silence, zero ligne et pas
-       d'erreur, et sans le compte l'ecran afficherait un retrait qui n'a pas
-       eu lieu. */
-    const { count } = await supabase
-      .from('water_log')
-      .delete({ count: 'exact' })
-      .eq('id', last.id)
-    if (count) setDrunk((n) => Math.max(0, n - last.ml))
-  }
+  /* Toute la logique de l'eau vit dans useWaterToday: l'ecran d'accueil a
+     maintenant le meme bouton, et deux copies de "insere une ligne, recalcule
+     le prochain rappel" auraient derive. */
+  const { loading, pending, error, pref, drunk, glasses, done, plan, typical, save, drink, undo } =
+    useWaterToday()
 
   if (loading) return <p className="text-small text-muted">{t('err.loading')}</p>
 
@@ -194,7 +45,6 @@ export default function ReminderSettings() {
     )
   }
 
-  const glasses = glassesFor(pref.water_target_ml, pref.water_glass_ml)
 
   return (
     <div className="space-y-8" data-hook="reminder-settings">
@@ -355,10 +205,7 @@ export default function ReminderSettings() {
                 </button>
               )}
               <span className="text-small text-muted" data-hook="water-today">
-                {t('remind.today', {
-                  done: Math.round(drunk / pref.water_glass_ml),
-                  total: glasses,
-                })}
+                {t('remind.today', { done, total: glasses })}
               </span>
             </div>
           </div>
@@ -398,19 +245,6 @@ export default function ReminderSettings() {
       </div>
     </div>
   )
-}
-
-/**
- * Une minute du jour, aujourd'hui, dans le fuseau du navigateur.
- *
- * new Date(y, m, d, 0, min) et pas une arithmetique sur un timestamp: le
- * constructeur local traverse un changement d'heure correctement, alors
- * qu'ajouter des millisecondes a minuit rend 09:00 ou 11:00 selon le sens du
- * changement, deux dimanches par an.
- */
-function atLocalMinute(min) {
-  const d = new Date()
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, min, 0, 0)
 }
 
 function leadLabel(n, t) {

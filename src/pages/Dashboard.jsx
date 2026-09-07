@@ -12,6 +12,7 @@ import PushBanner from '../components/PushBanner'
 import CelebrationBanner from '../components/CelebrationBanner'
 import MyCompletion from '../components/MyCompletion'
 import WeekStrip from '../components/WeekStrip'
+import WaterToday from '../components/WaterToday'
 import MoodToday from '../components/MoodToday'
 import BudgetToday from '../components/BudgetToday'
 import BudgetBanner from '../components/BudgetBanner'
@@ -252,6 +253,11 @@ export default function Dashboard() {
        * against. Chrome for the page, so it sits above the first thing the
        * page has to say rather than competing with it for the top slot.
        */}
+      {/* L'eau, juste sous la semaine: le geste arrive huit fois par jour et
+          il etait au fond des reglages. Ne s'affiche que si l'eau est
+          allumee, et c'est ou la notification atterrit. */}
+      <WaterToday />
+
       <div className="pt-6">
         <WeekStrip goals={goals} statuses={mine} />
       </div>

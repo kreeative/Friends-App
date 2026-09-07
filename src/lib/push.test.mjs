@@ -1274,5 +1274,48 @@ const b64 = (b) => Buffer.from(b).toString('base64url')
   )
 }
 
+/**
+ * THE ENDPOINT CAN BE STUCK ON AN ACCOUNT NOBODY CAN SEE.
+ *
+ * Reported with a screenshot of the settings switch and, in red under it,
+ * `23505: duplicate key value violates unique constraint
+ * "push_subscription_pkey"`, followed by "I still did not receive any drink
+ * water notification". One bug: endpoint is the primary key, a browser keeps
+ * its endpoint across a sign-out and a sign-in as somebody else, RLS hides the
+ * other account's row from the delete, and the insert then hits the key. With
+ * no row, the scheduled function has no address and sends to nobody, in
+ * silence, however correct the rest of the reminder system is.
+ *
+ * What is pinned here is that the client goes through the SECURITY DEFINER
+ * claim first, that it still works on a database where 60 has not been run,
+ * and that the migration itself keeps its two guards. A source scan, because
+ * the failure is a missing call rather than a wrong value.
+ */
+{
+  const client = readFileSync(join(here, 'pushClient.js'), 'utf8')
+  ok('the client claims the endpoint through the function',
+     /rpc\('claim_push_subscription'/.test(client),
+     'without it a browser registered to another account can never be reclaimed')
+  ok('and passes both browser secrets as the proof',
+     /p_p256dh: row\.p256dh/.test(client) && /p_auth: row\.auth/.test(client))
+  ok('a database without migration 60 still works',
+     /PGRST202/.test(client) && /42883/.test(client),
+     'PostgREST says PGRST202 for an unknown function, Postgres says 42883')
+  ok('and 23505 on the old path names the way out',
+     /60_claim_push\.sql/.test(client),
+     'printing a constraint name tells nobody what to do')
+
+  const mig = readFileSync(join(here, '..', '..', 'supabase', '60_claim_push.sql'), 'utf8')
+  ok('the function refuses a caller with no account',
+     /if me is null then/.test(mig))
+  ok('and refuses a claim with no keys',
+     /p_p256dh is null or p_auth is null/.test(mig),
+     'the keys are the proof of possession; without them the endpoint alone would do')
+  ok('anon cannot execute it',
+     /revoke all on function claim_push_subscription\(text, text, text\) from public, anon/.test(mig))
+  ok('and it is ASCII, because it travels through a clipboard',
+     [...mig].every((c) => c.charCodeAt(0) < 128))
+}
+
 console.log(`\npush\n\n  ${pass} passed, ${fail} failed\n`)
 process.exit(fail === 0 ? 0 : 1)
