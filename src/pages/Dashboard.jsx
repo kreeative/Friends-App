@@ -352,8 +352,10 @@ export default function Dashboard() {
       </div>
 
       <div className="page-side min-w-0">
-      {/* One card where two saturated panels were. See MyCompletion. */}
-      <Section title={t('home.you_overall')}>
+      {/* Sans titre de section: la carte porte le sien, "CE QUI A ETE FAIT",
+          et deux etiquettes empilees pour une seule carte etaient une de
+          trop. Le "tous groupes confondus" est passe dans l'infobulle. */}
+      <Section>
         <MyCompletion />
       </Section>
 

@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { DEFAULT_PERIOD, memberRates } from '../lib/completion'
 import { useT } from '../lib/i18n'
 import PeriodBar from './PeriodBar'
+import { Hint } from './ui'
 
 /**
  * The same question the group table answers, asked about one person.
@@ -123,8 +124,78 @@ export default function MyCompletion() {
   const has = me?.pct !== null && me?.pct !== undefined
 
   return (
-    <div className="lg p-5 sm:p-6">
-      <span className="eyebrow">{t('analytics.title')}</span>
+    /**
+     * `relative`, et c'est l'ancre du panneau de l'infobulle.
+     *
+     * Hint est volontairement non positionne: son panneau se cale sur la boite
+     * de contenu qui le contient, ici la carte. left-0 right-0 contre la carte
+     * veut dire qu'il ne peut sortir de l'ecran ni d'un cote ni de l'autre,
+     * dans les deux langues, a toutes les largeurs. La note sur Hint raconte
+     * ce que l'ancrage sur le point d'interrogation lui-meme avait coute:
+     * "Nobody else can see the", coupe en plein mot sur un telephone.
+     */
+    <div className="lg relative p-5 sm:p-6">
+      {/**
+       * LE TITRE DE SECTION EST ENTRE DANS LA CARTE, ET LA PHRASE EST PASSEE
+       * DERRIERE UN POINT D'INTERROGATION.
+       *
+       * Demande telle quelle: "move the section title to sit inline next to
+       * CE QUI A ETE FAIT or replace it with a small info icon; remove the
+       * long paragraph block at the bottom; keep the card compact, focusing
+       * strictly on the percentage, the progress bar and the count".
+       *
+       * Il y avait deux etiquettes empilees pour une seule carte, "TOI, TOUS
+       * GROUPES CONFONDUS" au-dessus et "CE QUI A ETE FAIT" dedans, puis trois
+       * lignes de methodologie sous le chiffre. Sur un tableau de bord, la
+       * methodologie est ce qu'on lit une fois et qu'on relit jamais: elle
+       * n'est pas supprimee, elle est rangee. Le "tous groupes confondus" est
+       * entre dans la phrase de l'infobulle, ou il est une precision utile
+       * plutot qu'un titre de plus.
+       *
+       * Le panneau s'ouvre au clic et pas au survol: c'est un <details>, donc
+       * ca marche au doigt, au clavier et au lecteur d'ecran sans une ligne de
+       * JavaScript, et un survol ne veut rien dire sur l'appareil ou cette
+       * application est utilisee.
+       */}
+      {/**
+       * LE POINT D'INTERROGATION EST A COTE DU SUR-TITRE, PAS DEDANS.
+       *
+       * Ecrit d'abord dans le <span className="eyebrow">. La sonde passait:
+       * le panneau s'ouvrait, tenait 17:1, ne sortait pas de l'ecran. La
+       * capture, elle, montrait une colonne de texte EN MAJUSCULES, large de
+       * six mots, posee en travers de la barre de periodes. Deux raisons, et
+       * les deux viennent du parent: .eyebrow met text-transform: uppercase
+       * et letter-spacing, dont le panneau heritait; et Hint s'ancre sur la
+       * boite qui le contient, donc sur un span aussi large que trois mots.
+       *
+       * C'est la regle du depot en entier: regarder la capture, ne pas
+       * raisonner sur ce que le CSS devrait produire.
+       *
+       * Une ligne flex a la largeur de la carte: le sur-titre garde son style
+       * et ne le prete a personne, et le panneau s'ancre sur la carte.
+       */}
+      {/**
+       * `!z-30`, ET C'EST LE SEUL ENDROIT OU CE `!` EST LE BON OUTIL.
+       *
+       * Deuxieme capture: le panneau ouvert, avec la pastille "1S" de la barre
+       * de periodes et le "14 %" peints PAR-DESSUS la phrase. Ce n'est pas une
+       * question de transparence, c'est l'ordre d'empilement.
+       *
+       * `.lg > *` pose `relative z-[2]` sur chaque enfant direct de la carte:
+       * cette ligne d'en-tete et la barre de periodes ont donc le meme
+       * z-index, et entre egaux c'est l'ordre du DOM qui gagne, donc la barre.
+       * Le `z-30` du panneau ne sert a rien: il ne le classe qu'a l'interieur
+       * du contexte d'empilement cree par son propre parent.
+       *
+       * Une utilitaire `z-30` nue ne suffit pas non plus: `.lg > *` vaut 0,1,1
+       * et la battrait. Le `!` est la pour depasser une regle de composant, ce
+       * qui est exactement le cas que la note de .lg-modal decrit deja
+       * ailleurs dans index.css.
+       */}
+      <div className="relative !z-30 flex items-center gap-1" data-hook="analytics-title">
+        <span className="eyebrow">{t('analytics.title')}</span>
+        <Hint text={t('analytics.note_mine')} />
+      </div>
 
       <div className="mt-4">
         <PeriodBar value={period} onChange={setPeriod} />
@@ -152,11 +223,6 @@ export default function MyCompletion() {
           ? t('analytics.of_scheduled', { done: me.done, total: me.target })
           : t('analytics.nothing_yet')}
       </p>
-
-      {/* .measure: on the profile page this card is two thirds of a laptop and
-          the note wrapped at 800px, which the width sweep flags as a line too
-          long to read. */}
-      <p className="measure mt-4 text-small text-muted">{t('analytics.note_mine')}</p>
     </div>
   )
 }

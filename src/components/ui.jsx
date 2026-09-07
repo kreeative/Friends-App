@@ -139,9 +139,32 @@ export function Hint({ text }) {
           thing somebody was about to tap. left-0 right-0 against the header,
           so it spans the content column and cannot overflow; max-w-sm so it
           does not become a full-bleed paragraph on a desktop. */}
+      {/**
+       * OPAQUE, PARCE QU'IL FLOTTE AU-DESSUS DE TEXTE.
+       *
+       * C'etait `.lg`, la feuille des cartes, a 75 pour cent de blanc. Sur une
+       * carte posee sur le fond de page ca se lit; ouvert au milieu du tableau
+       * de bord, la capture montrait la barre de periodes et le "14 %" en
+       * transparence a travers la phrase, les deux illisibles. Le
+       * backdrop-filter n'y change rien: il floute ce qu'il y a derriere, il
+       * ne le cache pas.
+       *
+       * .glass-strong existe pour exactement ce cas et le dit deja: "for
+       * glass that floats over content rather than over the page background".
+       * Le texte passe en `text-ink` pour la meme raison, comme sa note le
+       * demande.
+       *
+       * rounded-card, parce que .glass-strong ne pose que le fond, le bord et
+       * l'ombre; sans lui le panneau etait un rectangle a angles vifs au
+       * milieu d'un ecran de coins arrondis.
+       */}
       <span
         role="note"
-        className="lg absolute left-0 right-0 top-full z-30 mt-2 block max-w-sm p-4 text-left text-small font-normal leading-snug text-muted"
+        /* bg-surface par-dessus .glass-strong: 98 pour cent de blanc laisse un
+           fantome de ce qu'il y a dessous, visible sur la capture derriere le
+           mot "pause". Un panneau d'explication n'a pas de raison d'etre
+           translucide; il garde le bord et l'ombre de la feuille. */
+        className="glass-strong absolute left-0 right-0 top-full z-30 mt-2 block max-w-sm rounded-card bg-surface p-4 text-left text-small font-normal leading-snug text-ink"
       >
         {text}
       </span>

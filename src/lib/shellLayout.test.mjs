@@ -1968,5 +1968,47 @@ ok(
   ok('and the working agreements ask for it', /npm run sweep/.test(read('CLAUDE.md')))
 }
 
+/**
+ * LA CARTE DU TABLEAU DE BORD, RANGEE PLUTOT QU'AMPUTEE.
+ *
+ * Demande: "move the section title inline or replace it with a small info
+ * icon, remove the long paragraph block at the bottom, keep the card compact,
+ * focusing strictly on the percentage stat, progress bar and count".
+ *
+ * La methodologie n'est pas supprimee, elle passe derriere un point
+ * d'interrogation: c'est une phrase qu'on lit une fois et qu'on ne relit
+ * jamais, et elle faisait un tiers de la hauteur de la carte.
+ *
+ * DEUX DE CES ASSERTIONS VIENNENT D'UNE CAPTURE, PAS D'UNE IDEE.
+ *
+ * Premiere version: le Hint dans le <span className="eyebrow">. Le panneau
+ * heritait de text-transform: uppercase et s'ancrait sur un span large de
+ * trois mots. Deuxieme version: le panneau passait SOUS la barre de periodes,
+ * parce que `.lg > *` pose z-[2] sur chaque enfant de la carte et qu'entre
+ * egaux c'est l'ordre du DOM qui gagne. Les deux fois, la sonde d'origine
+ * passait. Ce qui suit epingle les deux corrections.
+ */
+{
+  const card = read('src/components/MyCompletion.jsx')
+  const dash = code('src/pages/Dashboard.jsx')
+
+  ok('the long note is gone from the card body',
+     !/text-small text-muted">\{t\('analytics\.note_mine'\)\}/.test(card))
+  ok('and lives behind a question mark instead',
+     /<Hint text=\{t\('analytics\.note_mine'\)\} \/>/.test(card))
+  ok('the dashboard no longer stacks a second label over it',
+     !/you_overall/.test(dash) && !/you_overall/.test(read('src/lib/i18n.jsx')),
+     'two eyebrows for one card is one too many')
+  ok('the scope moved into the sentence rather than being dropped',
+     (read('src/lib/i18n.jsx').match(/analytics\.note_mine': '(You, across every group|Toi, tous groupes confondus)/g) ?? []).length === 2,
+     '"tous groupes confondus" is what the section title was for')
+  ok('the marker sits beside the eyebrow, not inside it',
+     /<span className="eyebrow">\{t\('analytics\.title'\)\}<\/span>/.test(card),
+     'inside, the panel inherits uppercase and anchors to a three-word box')
+  ok('and the header outranks the rest of the card',
+     /relative !z-30 flex/.test(card),
+     '.lg > * pins every child at z-[2], so the panel rendered under the period bar')
+}
+
 console.log(`\n  ${pass} passed, ${fail} failed\n`)
 process.exit(fail ? 1 : 0)
