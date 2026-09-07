@@ -2081,5 +2081,34 @@ ok(
      'daylight saving does not line up on both sides of the Atlantic')
 }
 
+/**
+ * LE POINT D'INTERROGATION, A LA HAUTEUR DU TEXTE.
+ *
+ * "Can we adjust the ? at the same level as the text."
+ *
+ * Il etait en `align-middle`, et le centre de son disque tombait 9,3 px sous
+ * celui des capitales du titre, mesure sur les pixels peints a cote
+ * d'"Objectifs" en 32 px. La correction est une longueur sur `vertical-align`,
+ * en em, donc juste a toutes les tailles.
+ *
+ * Deux details sont epingles parce que les deux ont deja coute une mesure:
+ * la longueur est sur le <details> et pas sur le sommaire, sinon l'em se
+ * resout sur la police du marqueur (11 px) au lieu de celle du titre; et rien
+ * ici n'est `relative`, sinon le panneau s'ancre a nouveau sur le marqueur et
+ * sort de l'ecran.
+ */
+{
+  const ui = read('src/components/ui.jsx')
+  ok('the marker is raised by a length, not centred on the x-height',
+     /align-\[calc\(0\.383em-0\.28rem\)\]/.test(ui),
+     'align-middle put its centre 9.3px below the title cap band')
+  ok('and the length sits on the element that inherits the title’s size',
+     /<details\s+className="group ml-2 inline-block align-\[/.test(ui),
+     'on the summary, em resolves against text-label and the correction is 0.28px')
+  ok('nothing in the hint is positioned',
+     !/(details|summary)[^>]*className="[^"]*\brelative\b/.test(ui),
+     'a positioned ancestor recaptures the panel, which is how it left the screen')
+}
+
 console.log(`\n  ${pass} passed, ${fail} failed\n`)
 process.exit(fail ? 1 : 0)

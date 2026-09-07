@@ -226,9 +226,16 @@ ok(
     /absolute left-0 right-0 top-full/.test(ui),
     'left-0 alone on the marker is what ran off the screen',
   )
+  /* Cette assertion epinglait la balise entiere, y compris `align-middle`, et
+     elle est tombee le jour ou le marqueur a ete remonte a la hauteur du
+     texte. Elle verifiait une chose et en gelait une autre. Elle ne regarde
+     plus que ce qu'elle voulait dire: pas de positionnement sur le marqueur
+     ni sur son enveloppe. L'alignement, lui, a sa propre mesure dans
+     shellLayout.test.mjs et sa sonde en pixels. */
   ok(
     'and the marker is not a positioned ancestor that would recapture it',
-    /<details className="group ml-2 inline-block align-middle" data-hook="hint">/.test(ui),
+    /<details\s+className="group ml-2 inline-block align-/.test(ui) &&
+      !/(details|summary)[^>]*className="[^"]*\brelative\b/.test(ui),
     '`relative` here would anchor the panel back to the marker',
   )
   ok(
