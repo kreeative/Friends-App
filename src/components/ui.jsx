@@ -126,7 +126,56 @@ export function Hint({ text }) {
   return (
     /* Not `relative`. The panel deliberately anchors to the header above,
        and a positioned ancestor here would capture it again. */
-    <details className="group ml-2 inline-block align-middle" data-hook="hint">
+    /**
+     * ALIGNE SUR LA LIGNE DE BASE, PAS SUR LE MILIEU.
+     *
+     * "Can we adjust the ? at the same level as the text."
+     *
+     * C'etait `align-middle`, qui cale le MILIEU DE LA BOITE sur la ligne de
+     * base plus la moitie de la hauteur d'x du parent. Mesure sur les pixels
+     * peints a cote du titre "Objectifs" (32 px): le centre de la bande
+     * capitale du "?" tombait 9,3 px sous celui du titre, soit 0,29 em. Assez
+     * pour que ca se lise comme un point d'interrogation qui glisse.
+     *
+     * `align-baseline` cale la ligne de base de cette boite sur celle du
+     * texte, et la ligne de base de cette boite-ci est celle du "?" lui-meme,
+     * parce que le sommaire est un conteneur flex dont le premier element est
+     * ce glyphe. Ca a rapproche de 2 px et pas plus: pose sur la meme ligne,
+     * le "?" reste bas, parce que son glyphe fait 9 px la ou les capitales du
+     * titre en font 24,5. Deux textes sur la meme ligne de base ne sont "a la
+     * meme hauteur" que s'ils ont la meme taille.
+     *
+     * Ce qui se lit, c'est le DISQUE, et il doit etre centre sur la bande
+     * capitale du titre. Le decalage est donc pose sur le sommaire:
+     *
+     *   0.28rem  la moitie de la hauteur du "?" du marqueur, qui a sa propre
+     *            taille fixe, donc une constante en rem
+     *   0.383em  la moitie de la hauteur de capitale du texte a cote, mesuree
+     *            sur la page: 24,5 px pour 32 px de police
+     *
+     * La difference des deux est ce qu'il faut remonter, et `vertical-align`
+     * accepte justement une longueur: elle souleve la boite de cette hauteur
+     * au-dessus de la ligne de base du texte.
+     *
+     * ELLE EST POSEE SUR LE <details> ET PAS SUR LE SOMMAIRE, ET C'EST LA
+     * DEUXIEME FOIS QUE CETTE MESURE A SERVI.
+     *
+     * Ecrit d'abord comme un `top` sur le sommaire, pour ne pas positionner le
+     * details. Aucun effet: mesure a nouveau, le centre etait toujours a 7,3
+     * px. Un `em` se resout sur la police de L'ELEMENT, et le sommaire porte
+     * text-label, donc 11 px: la correction valait 0,28 px au lieu de 7,8. Le
+     * details, lui, n'a pas de taille a lui et herite des 32 px du titre, ce
+     * qui est exactement la police contre laquelle il faut s'aligner.
+     *
+     * TOUJOURS PAS `relative`. La note ci-dessus dit pourquoi: le panneau
+     * s'ancre sur la boite qui contient ce marqueur, et un ancetre positionne
+     * ici le rattraperait, ce qui l'a deja fait sortir de l'ecran en coupant
+     * sa phrase en plein mot.
+     */
+    <details
+      className="group ml-2 inline-block align-[calc(0.383em-0.28rem)]"
+      data-hook="hint"
+    >
       <summary
         className="press inline-flex h-6 w-6 cursor-pointer list-none items-center justify-center rounded-pill
                    bg-ink/[0.07] text-label font-bold text-muted marker:hidden hover:bg-ink/[0.12] hover:text-ink
