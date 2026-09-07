@@ -360,7 +360,32 @@ function LessonView({ course, lesson, country, t, locale, navigate }) {
       />
 
       <div className="pt-2" data-hook="lesson" data-lesson={lesson.id}>
-        <p className="font-mono text-small text-muted">
+        {/**
+         * LE REPERE DE LA LECON, DANS UN RECTANGLE ARRONDI.
+         *
+         * "Module X xxx, put it in a rectangle with rounded corners."
+         *
+         * C'etait une ligne de texte nue, en chasse fixe, entre le
+         * sous-titre et le premier paragraphe. Elle se lisait comme le debut
+         * du contenu alors qu'elle n'en est pas: c'est une etiquette, elle dit
+         * ou on se trouve. Un contour la sort du flux de lecture sans lui
+         * donner plus de poids qu'elle n'en merite.
+         *
+         * `rounded-inner` et pas `rounded-pill`: un rectangle arrondi, ce qui
+         * est ce qui a ete demande, et le meme rayon que les autres petits
+         * elements imbriques de l'application.
+         *
+         * Ca ne rouvre pas la porte aux rectangles refuses a la quatrieme
+         * passe. La regle disait: la PROSE est du texte, un seul conteneur par
+         * lecon pour ce qui est interactif. Une etiquette de trois mots n'est
+         * ni l'un ni l'autre, et la sonde continue de compter un seul
+         * conteneur dans la lecon.
+         */}
+        <p
+          data-hook="lesson-crumb"
+          className="inline-flex items-center rounded-inner border border-hairline
+                     bg-[rgb(var(--glass-tint)/0.55)] px-3 py-1 font-mono text-small text-muted"
+        >
           {t('courses.module_n', { n: lesson.module?.n })} · {lesson.id}
         </p>
 
