@@ -80,11 +80,17 @@ eq('un catalogue vide compte zero', shelfCount('books'), 0)
 eq('les articles', shelfCount('articles'), articles.length)
 eq('les etudes', shelfCount('studies'), studies.length)
 
-/* La formation est un cours. Elle vit dans un autre fichier parce qu'elle est
+/* Budget 101 etait compte a part, `COURSES.length + 1`, parce qu'il vivait
+   dans un autre fichier avec son propre lecteur. Il est maintenant un cours de
+   COURSES comme les autres, donc il est deja dans le compte: l'ajouter une
+   deuxieme fois annoncait cinq cours au-dessus de quatre cartes.
+
+   Ancien commentaire, garde parce qu'il dit pourquoi le +1 existait:
+   La formation est un cours. Elle vit dans un autre fichier parce qu'elle est
    plus ancienne, ce qui est une raison de structure interne et pas une raison
    de la compter ailleurs. */
-eq('les cours comptent la formation avec eux', shelfCount('courses'), COURSES.length + 1)
-eq('une etagere inconnue ne casse pas le compteur', shelfCount('pouet', { books: catalogue }), COURSES.length + 1)
+eq('le compte des cours est celui de COURSES', shelfCount('courses'), COURSES.length)
+eq('une etagere inconnue ne casse pas le compteur', shelfCount('pouet', { books: catalogue }), COURSES.length)
 
 // ---- par ou commence un cours ------------------------------------------------
 

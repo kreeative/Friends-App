@@ -1030,11 +1030,6 @@ const STRINGS = {
     'bm.c_EA': 'Euro area',
 
     /* --- formation ----------------------------------------------------- */
-    'form.module_n': 'Module {n} · {m} min',
-    'form.exercise': 'Try this',
-    'form.back_list': 'Back to the modules',
-    'form.exit': 'Leave the course',
-    'form.review': 'Go back through it',
 
     /* --- wealth rank ---------------------------------------------------- */
     'rank.same_age': 'People your age ({band})',
@@ -1083,20 +1078,8 @@ const STRINGS = {
      * "101" because the shelf already uses it and it reads as "the beginning
      * of this subject" without needing a subtitle to explain the title.
      */
-    'form.title': 'Budget 101',
-    'form.sub': '{n} two-minute modules on running a zero-based budget.',
-    'form.back_library': 'Back to the library',
     'form.lessons': 'The {n} lessons',
-    'form.of': '{done} of {total}',
-    'form.minutes': '{n} min',
-    'form.done': 'Read',
-    'form.start': 'Start',
-    'form.continue': 'Carry on',
     'form.back': 'Back',
-    'form.mark_read': 'Mark as read',
-    'form.read_again': 'Close',
-    'form.finished': 'You have read them all.',
-    'form.finished_note': 'Go back to any of them whenever a decision comes up.',
     'form.go_log': 'Open the log',
     'form.go_plan': 'Open the plan',
     'form.go_envelopes': 'Open the envelopes',
@@ -2637,11 +2620,6 @@ const STRINGS = {
     'bm.c_EA': 'Zone euro',
 
     /* --- formation ----------------------------------------------------- */
-    'form.module_n': 'Module {n} · {m} min',
-    'form.exercise': 'Exercice pratique',
-    'form.back_list': 'Retour aux modules',
-    'form.exit': 'Quitter la formation',
-    'form.review': 'La reprendre',
 
     /* --- wealth rank ---------------------------------------------------- */
     'rank.same_age': 'Les gens de ton âge ({band})',
@@ -2677,20 +2655,8 @@ const STRINGS = {
     'rank.standing_near': 'Tu es à peu près au taux publié.',
     'rank.standing_below': 'Tu gardes moins que le taux publié.',
 
-    'form.title': 'Budget 101',
-    'form.sub': '{n} modules de deux minutes pour tenir un budget à base zéro.',
-    'form.back_library': 'Retour aux lectures',
     'form.lessons': 'Les {n} leçons',
-    'form.of': '{done} sur {total}',
-    'form.minutes': '{n} min',
-    'form.done': 'Lue',
-    'form.start': 'Commencer',
-    'form.continue': 'Continuer',
     'form.back': 'Retour',
-    'form.mark_read': 'Marquer comme lue',
-    'form.read_again': 'Fermer',
-    'form.finished': 'Tu as tout lu.',
-    'form.finished_note': 'Reviens-y dès qu’une décision se présente.',
     'form.go_log': 'Ouvrir le journal',
     'form.go_plan': 'Ouvrir le plan',
     'form.go_envelopes': 'Ouvrir les enveloppes',

@@ -2,6 +2,8 @@
    qui ne resout pas les imports sans extension comme le fait Vite. Meme
    convention que studies.js, schedule.js et les autres modules testes. */
 
+import { BUDGET_101 } from './budget101.js'
+
 /**
  * Les cours, dans le bundle et pas dans la base.
  *
@@ -80,21 +82,28 @@ export const COUNTRY_ANSWERS = {
  * La liste des cours rend COURSES dans l'ordre du tableau. Cet ordre-la n'est
  * pas alphabetique et pas chronologique, c'est une progression:
  *
- *   1. Riche, lentement   les fondations, avant tout le reste
- *   2. Carte de credit    la dette chere, qui doit mourir AVANT d'investir
- *   3. Investir 101       dont la promesse dit elle-meme "commence la ou
+ *   1. Budget 101         savoir ce qui rentre et ce qui part; sans ca, les
+ *                         trois suivants n'ont pas de chiffres a manipuler
+ *   2. Riche, lentement   les fondations
+ *   3. Carte de credit    la dette chere, qui doit mourir AVANT d'investir
+ *   4. Investir 101       dont la promesse dit elle-meme "commence la ou
  *                         Riche lentement s'arrete: le coussin est en place,
  *                         les dettes cheres sont mortes"
  *
- * Carte de credit est donc insere entre les deux et pas ajoute a la fin: mettre
- * l'investissement avant le remboursement d'un solde a 20 % est un mauvais
- * conseil, et l'etagere le dirait par son ordre meme.
+ * Carte de credit est insere entre Riche lentement et Investir et pas ajoute a
+ * la fin: mettre l'investissement avant le remboursement d'un solde a 20 % est
+ * un mauvais conseil, et l'etagere le dirait par son ordre meme. Budget 101
+ * passe en tete pour la meme raison: "investir ce qui reste" suppose de savoir
+ * ce qui reste.
  *
  * Une sonde qui visait le deuxieme cours par sa position a attrape celui-ci le
  * jour de l'insertion. C'est le prix d'un ordre qui a un sens, et la reponse
  * est de se reperer par slug: chaque carte porte data-slug.
  */
 export const COURSES = [
+  /* Ecrit dans son propre fichier: ce fichier-ci fait deja 170 ko, et la forme
+     du tableau ne change pas, seule la provenance d'un element change. */
+  BUDGET_101,
   {
     slug: 'riche-lentement',
     title: { fr: 'Riche, lentement', en: 'Rich, slowly' },
