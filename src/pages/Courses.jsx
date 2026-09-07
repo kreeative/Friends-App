@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { COURSES } from '../content/courses'
 import {
@@ -18,6 +18,7 @@ import {
 } from '../lib/courses'
 import { useT } from '../lib/i18n'
 import { termsFor } from '../lib/glossary'
+import { splitTerms } from '../lib/inlineTerms'
 import { usePageMeta } from '../lib/pageMeta'
 import { Screen, Section, TopBar } from '../components/ui'
 import CountryTabs from '../components/CountryTabs'
@@ -346,6 +347,33 @@ function LessonView({ course, lesson, country, t, locale, navigate }) {
      dans le lexique de quelqu'un en France. Voir src/lib/glossary.js. */
   const terms = termsFor(lesson, course, country)
 
+  /**
+   * LA SEGMENTATION EST CALCULEE UNE FOIS POUR TOUTE LA LECON.
+   *
+   * `splitTerms` MUTE le Set `used`, et c'est ce qui fait la regle "un mot
+   * n'est explique qu'a sa premiere apparition". Si chaque paragraphe la
+   * rappelait a son propre rendu, ouvrir une definition re-rendrait ce
+   * paragraphe avec un `used` deja plein, et ses mots disparaitraient sous les
+   * doigts de la personne qui vient de les toucher.
+   *
+   * Donc tout est decoupe ici, en une passe, et memoise sur ce qui peut
+   * changer le decoupage: la lecon, la langue, la region.
+   */
+  const marked = useMemo(() => {
+    const used = new Set()
+    const seg = (field) => splitTerms(say(field, locale), { locale, country, used })
+    return {
+      objective: seg(lesson.objective),
+      universal: seg(lesson.universal),
+      grail: seg(variant?.grail),
+      points: points.map((pt) => ({ lead: seg(pt.lead), body: seg(pt.body) })),
+      note: seg(variant?.note),
+      metaphor: seg(lesson.metaphor),
+      reflection: seg(lesson.reflection),
+      todo: seg(todo),
+    }
+  }, [lesson, locale, country, variant, points, todo])
+
   return (
     <Screen>
       {/* Une colonne de lecture, centree des que la fenetre est plus large
@@ -396,14 +424,18 @@ function LessonView({ course, lesson, country, t, locale, navigate }) {
         ) : (
           <>
             {lesson.objective && (
-              <Block hook="lesson-objective" label={t('courses.objective')} className="mt-7">
-                {say(lesson.objective, locale)}
-              </Block>
+              <Block
+                hook="lesson-objective"
+                label={t('courses.objective')}
+                className="mt-7"
+                segs={marked.objective}
+                locale={locale}
+              />
             )}
 
             {lesson.universal && (
               <p className="mt-7 text-body text-ink" data-hook="lesson-universal">
-                {say(lesson.universal, locale)}
+                <Explained segs={marked.universal} locale={locale} />
               </p>
             )}
 
@@ -429,10 +461,10 @@ function LessonView({ course, lesson, country, t, locale, navigate }) {
                 hook="lesson-grail"
                 label={say(lesson.grailLabel, locale) || t('courses.grail')}
                 className="mt-8"
+                segs={marked.grail}
+                locale={locale}
                 strong
-              >
-                {say(variant.grail, locale)}
-              </Block>
+              />
             )}
 
             <ol className="mt-8 divide-y divide-hairline" data-hook="lesson-points">
@@ -440,8 +472,12 @@ function LessonView({ course, lesson, country, t, locale, navigate }) {
                 <li key={say(p.lead)} className="flex gap-4 py-5 first:pt-0">
                   <span className="shrink-0 font-mono text-small text-muted">{i + 1}</span>
                   <span className="max-w-[46ch]">
-                    <b className="font-semibold text-ink">{say(p.lead, locale)}</b>{' '}
-                    <span className="text-muted">{say(p.body, locale)}</span>
+                    <b className="font-semibold text-ink">
+                      <Explained segs={marked.points[i].lead} locale={locale} />
+                    </b>{' '}
+                    <span className="text-muted">
+                      <Explained segs={marked.points[i].body} locale={locale} />
+                    </span>
                   </span>
                 </li>
               ))}
@@ -449,20 +485,28 @@ function LessonView({ course, lesson, country, t, locale, navigate }) {
 
             {variant?.note && (
               <p className="mt-6 text-body text-ink" data-hook="lesson-note">
-                {say(variant.note, locale)}
+                <Explained segs={marked.note} locale={locale} />
               </p>
             )}
 
             {lesson.metaphor && (
-              <Block hook="lesson-metaphor" label={t('courses.metaphor')} className="mt-8">
-                {say(lesson.metaphor, locale)}
-              </Block>
+              <Block
+                hook="lesson-metaphor"
+                label={t('courses.metaphor')}
+                className="mt-8"
+                segs={marked.metaphor}
+                locale={locale}
+              />
             )}
 
             {lesson.reflection && (
-              <Block hook="lesson-reflection" label={t('courses.reflection')} className="mt-8">
-                {say(lesson.reflection, locale)}
-              </Block>
+              <Block
+                hook="lesson-reflection"
+                label={t('courses.reflection')}
+                className="mt-8"
+                segs={marked.reflection}
+                locale={locale}
+              />
             )}
 
             {lesson.script && (
@@ -482,9 +526,13 @@ function LessonView({ course, lesson, country, t, locale, navigate }) {
             )}
 
             {todo && (
-              <Block hook="lesson-todo" label={t('courses.action')} className="mt-8">
-                {say(todo, locale)}
-              </Block>
+              <Block
+                hook="lesson-todo"
+                label={t('courses.action')}
+                className="mt-8"
+                segs={marked.todo}
+                locale={locale}
+              />
             )}
 
             {/* Un lien sortant porte par la variante regionale: pour le Canada,
@@ -566,6 +614,69 @@ function LessonView({ course, lesson, country, t, locale, navigate }) {
 }
 
 /**
+ * UN MOT EXPLIQUE LA OU IL EST ECRIT.
+ *
+ * "Chaque nouveau terme financier, meme le mot taxes, doit etre defini dans la
+ * lecon au niveau du paragraphe ou il est mentionne."
+ *
+ * Le bloc "LES MOTS" au bas de la lecon repond a "qu'ai-je appris". Il ne
+ * repond pas a "je bloque sur celui-la, maintenant": il faut savoir qu'il
+ * existe, descendre, chercher, remonter, retrouver sa ligne. Personne ne le
+ * fait; on continue de lire sans comprendre, puis on ferme.
+ *
+ * Donc le mot est touchable dans la phrase, et sa definition s'ouvre juste
+ * sous le paragraphe. Les deux existent: l'un pendant la lecture, l'autre pour
+ * reviser.
+ *
+ * L'ETAT N'EST PAS PORTE PAR LA COULEUR (1.4.1). Un souligne pointille, un
+ * vrai bouton, et aria-expanded. Le mot reste de l'encre: le colorer ferait
+ * une page de liens et la couleur, dans cette application, dit un etat.
+ *
+ * UN <span className="block"> ET PAS UN <div>. La definition est un bloc, et
+ * elle vit a l'interieur du <p> ou du <li> qui porte la phrase: un div y
+ * serait invalide, et sortir le texte du <p> ferait echouer la mesure du
+ * balayage, qui compte les paragraphes trop larges.
+ */
+function Explained({ segs, locale }) {
+  const [open, setOpen] = useState(null)
+  const shown = open ? segs.find((s) => s.id === open) : null
+
+  return (
+    <>
+      {segs.map((s, i) =>
+        s.id ? (
+          <button
+            key={`${s.id}-${i}`}
+            type="button"
+            data-hook="term-inline"
+            data-term={s.id}
+            aria-expanded={open === s.id}
+            onClick={() => setOpen(open === s.id ? null : s.id)}
+            className="press cursor-pointer underline decoration-dotted decoration-from-font underline-offset-4
+                       hover:decoration-solid"
+          >
+            {s.text}
+          </button>
+        ) : (
+          <span key={`t-${i}`}>{s.text}</span>
+        ),
+      )}
+      {shown && (
+        <span
+          data-hook="term-def"
+          data-term={shown.id}
+          className="mt-3 block rounded-inner border border-hairline bg-[rgb(var(--glass-tint)/0.55)]
+                     px-4 py-3 text-small text-muted"
+        >
+          <b className="font-semibold text-ink">{say(shown.entry.term, locale)}</b>{' '}
+          {say(shown.entry.short, locale)}
+        </span>
+      )}
+    </>
+  )
+}
+
+/**
  * Un bloc de prose avec son sur-titre. Du texte, rien autour.
  *
  * C'est ce qui remplace Panel et Marked pour tout ce qui se lit. Le sur-titre
@@ -573,11 +684,13 @@ function LessonView({ course, lesson, country, t, locale, navigate }) {
  * l'accent: la couleur est reservee aux etats et aux liens, et une image ou
  * une reflexion n'est pas un etat.
  */
-function Block({ hook, label, children, className = '', strong = false }) {
+function Block({ hook, label, children, segs, locale, className = '', strong = false }) {
   return (
     <div data-hook={hook} className={className}>
       <p className="eyebrow">{label}</p>
-      <p className={`mt-1.5 text-body text-ink ${strong ? 'font-semibold' : ''}`}>{children}</p>
+      <p className={`mt-1.5 text-body text-ink ${strong ? 'font-semibold' : ''}`}>
+        {segs ? <Explained segs={segs} locale={locale} /> : children}
+      </p>
     </div>
   )
 }

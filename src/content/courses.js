@@ -1969,6 +1969,8 @@ export const COURSES = [
           {
             id: 'i1.4',
             terms: [
+              'taxes',
+              'gain-en-capital',
               'compte-non-enregistre',
               'plafond-de-cotisation',
               'celi',
@@ -2067,7 +2069,7 @@ export const COURSES = [
           },
           {
             id: 'i1.5',
-            terms: ['achat-periodique', 'taux-epargne'],
+            terms: ['achat-periodique', 'lump-sum', 'taux-epargne'],
             state: 'written',
             title: { fr: 'Combien, et à quel rythme', en: 'How much, and how often' },
             sub: { fr: 'La deuxième question après « j’achète quoi ».', en: 'The second question after "what do I buy".' },
