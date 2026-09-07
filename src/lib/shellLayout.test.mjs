@@ -2048,5 +2048,38 @@ ok(
      'a lesson that ends in agreement changes nothing')
 }
 
+/**
+ * LE GROUPE N'EST PAS SUR LE FUSEAU DE CELUI QUI L'A CREE.
+ *
+ * Capture de l'ecran d'un groupe: "Sunday 00:00 · America/Toronto", et la
+ * question "instead of all the group being on the Toronto timeline, can it
+ * just be adjusted in real time for everyone?".
+ *
+ * La planification l'etait deja: cycles.opens_at est un timestamptz, donc un
+ * instant, et il s'ouvre au meme moment partout. Ce qui ne l'etait pas, c'est
+ * la phrase, qui affichait la regle dans le fuseau du groupe. Ce qui suit
+ * epingle que l'ecran passe par la conversion testee et n'imprime plus un nom
+ * de fuseau a la place d'une heure.
+ */
+{
+  const settings = code('src/pages/Settings.jsx')
+  ok('the group screen converts the opening to the reader’s zone',
+     /openingLabel\(\{/.test(settings) && /viewerTz: deviceZone\(\)/.test(settings))
+  ok('and no longer prints the group’s zone as the answer',
+     !/group\.timezone\].filter/.test(settings) && !/DAYS_FR/.test(settings),
+     '"Sunday 00:00 · America/Toronto" is a rule, not a time somebody can use')
+  ok('the second line only exists when the zones differ',
+     /!opening\.sameZone/.test(settings),
+     'telling somebody in Toronto that it is also midnight in Toronto is noise')
+  for (const key of ['settings.when_everywhere']) {
+    const hits = read('src/lib/i18n.jsx').split(`'${key}'`).length - 1
+    ok(`${key} exists in both languages (${hits})`, hits === 2)
+  }
+  ok('and the conversion is tested on its own',
+     existsSync(join(root, 'src/lib/groupTime.test.mjs')) &&
+       /groupTime\.test\.mjs/.test(read('package.json')),
+     'daylight saving does not line up on both sides of the Atlantic')
+}
+
 console.log(`\n  ${pass} passed, ${fail} failed\n`)
 process.exit(fail ? 1 : 0)

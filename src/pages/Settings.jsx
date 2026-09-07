@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useGroup } from '../context/GroupContext'
-import { DAYS } from '../lib/time'
+import { deviceZone, openingLabel } from '../lib/groupTime'
 import { useT } from '../lib/i18n'
 import { Avatar, Screen, Section } from '../components/ui'
 import GroupHeader from '../components/GroupHeader'
@@ -13,8 +13,6 @@ import ThemePicker from '../components/ThemePicker'
 import LanguagePicker from '../components/LanguagePicker'
 import DangerZone from '../components/DangerZone'
 import { LegalLinks } from './Legal'
-
-const DAYS_FR = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi']
 
 /** A row in the quick actions card. One line, one icon, one job. */
 function ActionRow({ icon, label, onClick }) {
@@ -95,10 +93,41 @@ export default function Settings() {
    * undefined" under the group's name. A missing schedule is a state; a line
    * of the word "undefined" is a bug wearing a sentence.
    */
-  const dayName = (locale === 'fr' ? DAYS_FR : DAYS)[group.checkin_dow]
-  const hour = Number.isFinite(group.opens_hour) ? String(group.opens_hour).padStart(2, '0') : null
-  const when = dayName && hour ? `${dayName} ${hour}:00` : null
-  const sub = [when, group.timezone].filter(Boolean).join(' · ') || null
+  /**
+   * LE MEME MOMENT, DIT DANS L'HEURE DE CELUI QUI LIT.
+   *
+   * Cette ligne affichait "Sunday 00:00 · America/Toronto", ce qui a produit
+   * la question: "instead of all the group being on the Toronto timeline, can
+   * it just be adjusted in real time for everyone?".
+   *
+   * La planification l'etait deja. cycles.opens_at est un timestamptz, donc un
+   * INSTANT: la periode s'ouvre au meme moment pour tout le monde, et la
+   * fonction planifiee compare des instants. Ce qui etait affiche, c'etait la
+   * REGLE qui a servi a fabriquer cet instant, exprimee dans le fuseau du
+   * groupe. Pour quelqu'un a Paris, ca ne dit pas quand sa porte s'ouvre: il
+   * faut faire le calcul de tete, et une ligne qu'il faut convertir se lit
+   * comme un produit qui ignore ou tu vis.
+   *
+   * Donc le meme instant, formate dans le fuseau du lecteur. La conversion, y
+   * compris les changements d'heure qui ne tombent pas le meme jour des deux
+   * cotes de l'Atlantique, vit dans src/lib/groupTime.js avec ses tests.
+   *
+   * Le fuseau de l'appareil plutot que celui du profil: c'est ou la personne
+   * est MAINTENANT, ce qui est la seule chose que cette phrase promet. Le
+   * profil sert au serveur pour les rappels, et il peut etre en retard d'un
+   * voyage.
+   */
+  const opening = openingLabel({
+    dow: group.checkin_dow,
+    hour: group.opens_hour,
+    tz: group.timezone,
+    viewerTz: deviceZone(),
+    locale,
+  })
+  const sub = opening.when || null
+  const note = opening.when && !opening.sameZone
+    ? t('settings.when_everywhere', { when: opening.groupWhen, tz: group.timezone })
+    : null
 
   const isAdmin = myRole === 'creator' || myRole === 'admin'
 
@@ -131,6 +160,7 @@ export default function Settings() {
         group={group}
         canEdit={isAdmin}
         sub={sub}
+        note={note}
       />
 
       <Section>
