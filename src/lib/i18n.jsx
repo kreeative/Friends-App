@@ -185,7 +185,6 @@ const STRINGS = {
     'home.groups': 'Groups',
     'home.waiting_on_you': '{group} is waiting on you',
     'home.n_of_total': '{n} of {total} in',
-    'home.you_overall': 'You, across every group',
     'home.your_books': 'Your books',
     'home.no_books': 'Nothing bought yet. The first chapter of each is free to read.',
 
@@ -506,7 +505,7 @@ const STRINGS = {
     'analytics.nothing_yet': 'Nothing planned in this window yet',
     'analytics.someone': 'Someone',
     'analytics.note': 'Everything each person planned over the window, against what they actually recorded. Paused and finished goals are left out of both sides.',
-    'analytics.note_mine': 'Everything you planned over the window, against what you actually recorded. Paused and finished goals are left out of both sides.',
+    'analytics.note_mine': 'You, across every group: everything you planned over the window, against what you actually recorded. Paused and finished goals are left out of both sides.',
     'checkin.banner_q': 'Did you reach your goals today?',
     'checkin.banner_sub': '{n} of {total} left to answer.',
     'checkin.banner_cta': 'Do my check-in',
@@ -1867,7 +1866,6 @@ const STRINGS = {
     'home.groups': 'Groupes',
     'home.waiting_on_you': '{group} t’attend',
     'home.n_of_total': '{n} sur {total}',
-    'home.you_overall': 'Toi, tous groupes confondus',
     'home.your_books': 'Tes livres',
     'home.no_books': 'Rien d’acheté pour l’instant. Le premier chapitre de chacun est en accès libre.',
 
@@ -2165,7 +2163,7 @@ const STRINGS = {
     'analytics.nothing_yet': 'Rien de prévu sur cette période',
     'analytics.someone': 'Quelqu’un',
     'analytics.note': 'Tout ce que chacun avait prévu sur la période, comparé à ce qui a vraiment été noté. Les objectifs en pause et terminés ne comptent ni d’un côté ni de l’autre.',
-    'analytics.note_mine': 'Tout ce que tu avais prévu sur la période, comparé à ce que tu as vraiment noté. Les objectifs en pause et terminés ne comptent ni d’un côté ni de l’autre.',
+    'analytics.note_mine': 'Toi, tous groupes confondus : tout ce que tu avais prévu sur la période, comparé à ce que tu as vraiment noté. Les objectifs en pause et terminés ne comptent ni d’un côté ni de l’autre.',
     'checkin.banner_q': "As-tu atteint tes objectifs aujourd'hui ?",
     'checkin.banner_sub': 'Il en reste {n} sur {total}.',
     'checkin.banner_cta': 'Faire mon check-in',
