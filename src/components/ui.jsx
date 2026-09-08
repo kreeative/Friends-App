@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useT } from '../lib/i18n'
 
@@ -392,6 +392,30 @@ export function Avatar({ profile, size = 40, onDark = false }) {
  *
  * `hook` goes on the wrapper (with data-empty), `inputHook` on the input, so
  * a probe can fill the input by its old hook and read the wrapper's state.
+ *
+ * WHY THE CROSS APPEARED TO DO NOTHING, WHICH IS THE THIRD REPORT.
+ *
+ * "Tu as mis la croix mais ca supprime rien."
+ *
+ * It cleared the value. It then handed it straight back, and the two halves
+ * are both needed to see it.
+ *
+ * The first half is the <label>. Every field on these forms is wrapped in one
+ * by Field, and a label forwards a tap to the control it labels, which here is
+ * the date input. Measured: focus sits on <body>, the cross is tapped, and
+ * focus is then INSIDE the date input. On a phone that is the native picker
+ * opening, immediately, on top of the field that was just emptied.
+ *
+ * The second half is the blur above. It exists for a real case, Safari's Reset
+ * writing '' into the DOM with no event, and it cannot tell that case from the
+ * picker this label just opened putting a date back. So the date returns.
+ * Measured end to end: cleared to '', a picker writes '2026-09-07' into the DOM
+ * and closes, and the field reads 2026-09-07 again with the cross back.
+ *
+ * So: the click's default action is cancelled, which is what stops a label
+ * forwarding it, and a one-shot flag makes the very next blur decline to adopt
+ * anything. The flag clears itself on any real change, so the picker somebody
+ * opens on purpose still works exactly as before.
  */
 export function PickerField({
   type = 'date',
@@ -404,24 +428,59 @@ export function PickerField({
   ...rest
 }) {
   const { t } = useT()
+  const input = useRef(null)
+  /* Set by the cross, spent by the next blur or the next real change. It is a
+     ref and not state on purpose: nothing renders from it, and a re-render
+     between the clear and the blur would be one more thing that could go
+     wrong at exactly the wrong moment. */
+  const justCleared = useRef(false)
 
   return (
     <div className={`flex items-center gap-2 ${className}`} data-hook={hook} data-empty={value ? 'no' : 'yes'}>
       <input
         {...rest}
+        ref={input}
         type={type}
         data-hook={inputHook}
         className="field min-w-0 flex-1"
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => {
+          justCleared.current = false
+          onChange(e.target.value)
+        }}
         onBlur={(e) => {
+          /* One shot. A blur that lands right after the cross is the picker
+             the label opened, closing again, and whatever it holds is not an
+             answer anybody gave. */
+          if (justCleared.current) {
+            justCleared.current = false
+            /* Declining is not enough on its own. A picker that wrote into the
+               box without firing an event leaves the DOM holding a date while
+               React holds nothing, and a controlled input only repaints when
+               state changes, so the old date would sit there under a field
+               that believes it is empty. Measured, and it is the same
+               desynchronisation Safari's Reset causes from the other side. */
+            if (e.target.value !== value) e.target.value = value
+            return
+          }
           if (e.target.value !== value) onChange(e.target.value)
         }}
       />
       {value && (
         <button
           type="button"
-          onClick={() => onChange('')}
+          onClick={(e) => {
+            /* The default action of a click inside a label is to activate the
+               labelled control, which here means opening the picker over the
+               field we are emptying. Cancelling it is the whole reason this is
+               not a bare onClick. */
+            e.preventDefault()
+            e.stopPropagation()
+            justCleared.current = true
+            onChange('')
+            /* And nothing already open can commit into a field nobody is in. */
+            input.current?.blur()
+          }}
           data-hook={hook ? `${hook}-clear` : undefined}
           aria-label={t(clearLabel)}
           title={t(clearLabel)}

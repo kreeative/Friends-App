@@ -1809,8 +1809,13 @@ ok(
      type de champ aurait garanti que la prochaine correction n'en couvre
      qu'une des deux. */
   const ui = read('src/components/ui.jsx')
+  /* Le motif exact a change: la garde du flou porte maintenant devant elle un
+     refus d'une seule fois, pose par la croix. Voir pickerField.test.mjs et
+     PickerField dans ui.jsx. Ce qui est epingle ici reste la meme phrase, dans
+     sa forme actuelle: ce que le DOM contient vraiment est compare a ce que
+     React croit, et propage s'ils different. */
   ok('a native picker clearing the field cannot leave a stale value behind',
-     /onBlur=\{\(e\) => \{\s*if \(e\.target\.value !== value\) onChange\(e\.target\.value\)/.test(ui),
+     /if \(e\.target\.value !== value\) onChange\(e\.target\.value\)/.test(ui),
      'without it the box looks empty and the old date is what gets saved')
   ok('and the goal form uses that one component for both its dates and its time',
      /PickerField/.test(form) && !/type="time"[\s\S]{0,80}onBlur/.test(form),
@@ -1831,8 +1836,13 @@ ok(
    * il y a quelque chose a effacer. La sonde remind.mjs clique dessus et lit
    * la ligne postee; ceci est le fil-piege.
    */
+  /* Le gestionnaire n'est plus une fleche d'une ligne: la croix doit annuler
+     l'action par defaut de son clic, sinon le <label> de Field la transmet au
+     champ et le selecteur natif s'ouvre sur le champ qu'on vient de vider,
+     puis le flou remet la date. Mesure dans Chromium: apres le tap, le focus
+     etait DANS le champ date. pickerField.test.mjs epingle les trois lignes. */
   ok('the field can be emptied by a control of ours',
-     /onClick=\{\(\) => onChange\(''\)\}/.test(ui) && /data-hook=\{hook \? `\$\{hook\}-clear`/.test(ui))
+     /justCleared\.current = true\s*onChange\(''\)/.test(ui) && /data-hook=\{hook \? `\$\{hook\}-clear`/.test(ui))
   for (const key of ['form.clear_date', 'form.clear_time']) {
     const hits = read('src/lib/i18n.jsx').split(`'${key}'`).length - 1
     ok(`${key} exists in both languages (${hits})`, hits === 2)
