@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { useT } from '../lib/i18n'
 import { toHm } from '../lib/reminders'
 import { useWaterToday } from '../lib/useWater'
-import { formatAmount, parseAmount, unitLabel } from '../lib/units'
+import { formatAmount, parseAmount, toUnit, unitLabel } from '../lib/units'
 
 /**
  * L'eau du jour, sur l'accueil, avec le bouton a portee de pouce.
@@ -196,7 +196,19 @@ export default function WaterToday() {
          */}
         {other && (
           <form onSubmit={addOther} className="mt-3 flex flex-wrap items-end gap-2">
-            <label className="flex-1">
+            {/**
+             * UNE RANGEE EQUILIBREE, ET UNE SEULE FOIS L'UNITE.
+             *
+             * Ce bloc portait "ml" DEUX fois: en texte de substitution dans le
+             * champ et en suffixe a cote. Et le champ etait `flex-1`, donc il
+             * prenait toute la largeur pour accueillir deux chiffres pendant
+             * que le bouton Ajouter se serrait au bout. C'est le desequilibre
+             * qui a ete montre.
+             *
+             * Le champ fait maintenant la largeur d'un nombre, l'unite est dite
+             * une fois, apres le champ, et le bouton a la place qui reste.
+             */}
+            <label className="min-w-0">
               <span className="field-label">{t('remind.other_hint')}</span>
               <span className="mt-1 flex items-center gap-2">
                 <input
@@ -206,8 +218,11 @@ export default function WaterToday() {
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   data-hook="water-card-amount"
-                  className="field min-w-0 flex-1"
-                  placeholder={unitLabel(unit)}
+                  className="field w-24 shrink-0"
+                  /* Un exemple, pas le nom de l'unite: celui-ci est deja dit
+                     juste a cote, et un champ dont le texte de substitution
+                     repete son propre suffixe n'aide personne. */
+                  placeholder={String(toUnit(serving, unit))}
                 />
                 <span className="shrink-0 text-small text-muted">{unitLabel(unit)}</span>
               </span>
@@ -216,7 +231,7 @@ export default function WaterToday() {
               type="submit"
               disabled={!parseAmount(amount, unit)}
               data-hook="water-card-add"
-              className="goal-action press disabled:opacity-40"
+              className="goal-action press shrink-0 disabled:opacity-40"
             >
               {t('remind.add')}
             </button>

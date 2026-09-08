@@ -15,6 +15,7 @@ import Seo from './components/Seo'
 import Wordmark from './components/Wordmark'
 import Welcome from './pages/Welcome'
 import Setup from './pages/Setup'
+import Terms from './pages/Terms'
 import Board from './pages/Board'
 import Proofs from './pages/Proofs'
 import Goals from './pages/Goals'
@@ -296,6 +297,25 @@ function Gate() {
    * nothing needs to; answering finishes it, and landing() stops returning
    * 'setup' the moment the row is written.
    */
+  /**
+   * Les conditions, avant les cinq questions et avant tout le reste.
+   *
+   * Hors de l'AppShell pour la meme raison que Setup: une barre d'onglets
+   * offrant Objectifs, Budget et la bibliotheque sous un ecran dont le travail
+   * est de faire accepter quelque chose, c'est quatre facons de l'esquiver.
+   * Une acceptation qu'on peut contourner ne vaut rien.
+   */
+  if (where === 'terms') {
+    return (
+      <Routes>
+        {/* Les documents restent atteignables: on accepte apres avoir lu, donc
+            le chemin vers la lecture ne peut pas etre coupe. */}
+        <Route path="/legal/:doc" element={<Legal />} />
+        <Route path="*" element={<Terms />} />
+      </Routes>
+    )
+  }
+
   if (where === 'setup') {
     return (
       <Routes>

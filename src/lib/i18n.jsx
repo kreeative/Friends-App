@@ -387,6 +387,22 @@ const STRINGS = {
     'remind.other': 'Another amount',
     'remind.other_hint': 'For a few sips rather than the whole thing.',
     'remind.add': 'Add',
+    'terms.eyebrow': 'Before we start',
+    'terms.title': 'A few things to agree to.',
+    'terms.title_named': '{name}, a few things to agree to.',
+    'terms.body':
+      'Short version: your budget is private and nobody in your group can read it, we send you two emails a month at most, and you can delete your account and everything in it whenever you like. The full documents are below and they are what you are agreeing to, not this paragraph.',
+    'terms.doc_terms': 'Terms of use',
+    'terms.doc_privacy': 'Privacy policy',
+    'terms.doc_notice': 'Legal notice',
+    'terms.version': 'Version of {date}. Opens in a new tab, so you keep your place here.',
+    'terms.accept': 'I have read and I accept',
+    'terms.accepting': 'Saving…',
+    'terms.decline':
+      'There is no way around this one: the app cannot hold your data without it. Closing the app is how you decline.',
+
+    'remind.save': 'Save',
+    'remind.saved': 'Saved',
 
     'remind.events': 'Calendar reminders',
     'remind.events_hint':
@@ -2050,6 +2066,22 @@ const STRINGS = {
     'remind.other': 'Une autre quantité',
     'remind.other_hint': 'Pour quelques gorgées plutôt que le tout.',
     'remind.add': 'Ajouter',
+    'terms.eyebrow': 'Avant de commencer',
+    'terms.title': 'Deux ou trois choses à accepter.',
+    'terms.title_named': '{name}, deux ou trois choses à accepter.',
+    'terms.body':
+      'En résumé : ton budget est privé et personne dans ton groupe ne peut le lire, on t’écrit deux fois par mois au maximum, et tu peux supprimer ton compte et tout ce qu’il contient quand tu veux. Les documents complets sont en dessous, et c’est eux que tu acceptes, pas ce paragraphe.',
+    'terms.doc_terms': 'Conditions générales d’utilisation',
+    'terms.doc_privacy': 'Politique de confidentialité',
+    'terms.doc_notice': 'Mentions légales',
+    'terms.version': 'Version du {date}. S’ouvre dans un onglet à côté, tu ne perds pas ta place.',
+    'terms.accept': 'J’ai lu et j’accepte',
+    'terms.accepting': 'Enregistrement…',
+    'terms.decline':
+      'Celle-là ne se contourne pas : sans elle l’application ne peut pas garder tes données. Refuser, c’est fermer l’application.',
+
+    'remind.save': 'Enregistrer',
+    'remind.saved': 'Enregistré',
 
     'remind.events': 'Rappels d’agenda',
     'remind.events_hint':

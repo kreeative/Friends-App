@@ -1,7 +1,8 @@
+import { useRef, useState } from 'react'
 import { useT } from '../lib/i18n'
 import { DEFAULTS, LEAD_CHOICES, fromHm, isMuted, toHm } from '../lib/reminders'
 import { MAX_TARGET, MIN_TARGET, everyLabel } from '../lib/water'
-import { MAX_SERVING_ML, MIN_SERVING_ML, UNITS, formatAmount, parseAmount, toUnit, unitLabel } from '../lib/units'
+import { MAX_SERVING_ML, MIN_SERVING_ML, UNITS, formatAmount, parseAmount, safeServing, toUnit, unitLabel } from '../lib/units'
 import { useWaterToday } from '../lib/useWater'
 import { Field } from './ui'
 
@@ -33,8 +34,43 @@ export default function ReminderSettings() {
   /* Toute la logique de l'eau vit dans useWaterToday: l'ecran d'accueil a
      maintenant le meme bouton, et deux copies de "insere une ligne, recalcule
      le prochain rappel" auraient derive. */
-  const { loading, pending, error, pref, drunk, glasses, done, plan, typical, save, drink, undo } =
+  const { loading, pending, error, pref, drunk, glasses, done, plan, typical, save } =
     useWaterToday()
+
+  const servingRef = useRef(null)
+  const [savedServing, setSavedServing] = useState(false)
+
+  /**
+   * Enregistrer la contenance, bornee.
+   *
+   * L'ECRAN N'ENVOYAIT PAS CE QU'IL AFFICHAIT COMME LIMITES.
+   *
+   * Il montrait "50 ml - 2 L" sous le champ et envoyait tel quel ce qui etait
+   * tape. Taper 40 pendant que l'unite etait encore en millilitres envoyait
+   * donc 40 ml, sous le plancher, et la base repondait:
+   *
+   *   new row for relation "notify_pref" violates check constraint
+   *   "notify_pref_water_glass_ml_check"
+   *
+   * Une contrainte de base de donnees affichee en rouge a quelqu'un qui
+   * reglait sa bouteille. safeServing ramene la valeur dans les bornes avant
+   * l'envoi, et la migration 64 remonte le plafond de la base a 2000 pour
+   * qu'une bouteille de 40 oz (1183 ml) y entre.
+   */
+  function commitServing(raw) {
+    const parsed = parseAmount(raw, pref.water_unit)
+    /* Une saisie illisible ne change rien plutot que de remettre un defaut:
+       effacer la contenance de quelqu'un parce qu'il a tape une lettre serait
+       pire que de ne rien faire. */
+    if (!parsed) return
+    const ml = safeServing(parsed, pref.water_glass_ml)
+    if (ml !== pref.water_glass_ml) save({ water_glass_ml: ml })
+    /* Ramene ce qui est affiche sur ce qui a ete garde: quelqu'un qui tape
+       9999 doit voir la valeur retenue, pas la sienne. */
+    if (servingRef.current) servingRef.current.value = toUnit(ml, pref.water_unit)
+    setSavedServing(true)
+    window.setTimeout(() => setSavedServing(false), 1600)
+  }
 
   if (loading) return <p className="text-small text-muted">{t('err.loading')}</p>
 
@@ -193,19 +229,38 @@ export default function ReminderSettings() {
                     type="text"
                     inputMode="decimal"
                     data-hook="water-serving"
-                    className="field min-w-0 flex-1"
+                    ref={servingRef}
+                    /* Un nombre a deux ou trois chiffres. Une boite large comme
+                       l'ecran pour ecrire "40" est ce qui deséquilibrait la
+                       rangee: le champ prenait tout et le bouton se serrait au
+                       bout. */
+                    className="field w-28 shrink-0"
                     defaultValue={toUnit(pref.water_glass_ml, pref.water_unit)}
                     key={`${pref.water_unit}-${pref.water_glass_ml}`}
-                    onBlur={(e) => {
-                      const ml = parseAmount(e.target.value, pref.water_unit)
-                      /* Une saisie illisible ne change rien plutot que de
-                         remettre un defaut: effacer la contenance de quelqu'un
-                         parce qu'il a tape une lettre serait pire que de ne
-                         rien faire. */
-                      if (ml && ml !== pref.water_glass_ml) save({ water_glass_ml: ml })
+                    onBlur={(e) => commitServing(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        e.currentTarget.blur()
+                      }
                     }}
                   />
                   <span className="shrink-0 text-small text-muted">{unitLabel(pref.water_unit)}</span>
+                  {/* CE QUI MANQUAIT: DE QUOI VOIR QUE C'EST ENREGISTRE.
+                      "There is no save button." Le reste de cet ecran
+                      s'enregistre au geste, un interrupteur ou un curseur, et
+                      on VOIT le resultat bouger. Un champ de texte ne bouge
+                      pas: on tape, on quitte, et rien ne dit si c'est parti.
+                      Donc un bouton, qui confirme quand il n'y a plus rien a
+                      enregistrer. */}
+                  <button
+                    type="button"
+                    onClick={() => commitServing(servingRef.current?.value)}
+                    data-hook="water-serving-save"
+                    className="press shrink-0 rounded-pill bg-ink/[0.06] px-4 py-2 text-small font-semibold text-ink hover:bg-ink/[0.12]"
+                  >
+                    {savedServing ? t('remind.saved') : t('remind.save')}
+                  </button>
                 </span>
               </Field>
               <p className="mt-1 text-small text-muted" data-hook="water-serving-bounds">
@@ -298,32 +353,29 @@ export default function ReminderSettings() {
               </div>
             </div>
 
-            <div className="mt-5 flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                onClick={() => drink(pref.water_glass_ml)}
-                data-hook="water-drink"
-                className="goal-action press"
-              >
-                {t('remind.drink', { amount: formatAmount(pref.water_glass_ml, pref.water_unit, locale) })}
-              </button>
-              {drunk > 0 && (
-                <button
-                  type="button"
-                  onClick={undo}
-                  data-hook="water-undo"
-                  className="press rounded-pill px-4 py-2 text-small font-semibold text-muted hover:bg-ink/[0.06]"
-                >
-                  {t('remind.undo')}
-                </button>
-              )}
-              <span className="text-small text-muted" data-hook="water-today">
-                {t('remind.today', {
-                  done: formatAmount(drunk, pref.water_unit, locale),
-                  total: formatAmount(pref.water_target_ml, pref.water_unit, locale),
-                })}
-              </span>
-            </div>
+            {/**
+             * NOTER L'EAU N'EST PLUS ICI.
+             *
+             * "Why is the button to add water even there? It should not be on
+             * the settings."
+             *
+             * C'est juste, et c'est l'argument que cet ecran-ci utilisait deja
+             * contre lui-meme: regler est rare, noter arrive huit fois par
+             * jour, et les deux ne vont pas sur le meme ecran. Le bouton avait
+             * ete ajoute ici avant que la carte d'accueil existe, et il y est
+             * reste apres. Deux endroits pour le meme geste, dont un que
+             * personne n'atteint sans traverser ses reglages.
+             *
+             * Ce qui reste ici, c'est ce que cet ecran est: l'unite, la cible,
+             * la contenance, la fenetre eveillee. Le compte du jour se lit sur
+             * l'accueil, ou il se note.
+             */}
+            <p className="mt-5 text-small text-muted" data-hook="water-today">
+              {t('remind.today', {
+                done: formatAmount(drunk, pref.water_unit, locale),
+                total: formatAmount(pref.water_target_ml, pref.water_unit, locale),
+              })}
+            </p>
           </div>
         )}
       </div>

@@ -19,7 +19,7 @@
  * between a blank moment, which people read as loading, and a wrong screen,
  * which people read as broken.
  */
-import { needsSetup } from './setup.js'
+import { needsSetup, needsTerms } from './setup.js'
 
 /**
  * The three slides.
@@ -75,6 +75,18 @@ export function landing({ loading = false, memberships = null, profile = null, l
    * @ forever. See needsSetup, which answers false for a database where
    * migration 56 has not been run, so this line cannot trap anybody.
    */
+  /**
+   * Les conditions, AVANT les cinq questions.
+   *
+   * Accepter precede donner son nom: demander la langue, le genre et la date
+   * de naissance avant d'avoir dit a quoi la personne consent, c'est collecter
+   * d'abord et demander apres.
+   *
+   * La meme porte sert aux comptes existants, dont la colonne vaut null: ils
+   * la rencontrent au prochain lancement. Voir needsTerms.
+   */
+  if (profile && needsTerms(profile)) return 'terms'
+
   if (profile && needsSetup(profile)) return 'setup'
 
   /* A group outranks everything else. Somebody who joined one has answered the
