@@ -71,7 +71,7 @@ const SETS = {
   /** The public site. */
   page: {
     column: '64rem',
-    items: rail(pickStickers(['cloudguy', 'burger', 'skullfire', 'popsicle', 'homie', 'daisy']), {
+    items: rail(pickStickers(['cloudguy', 'burger', 'skullfire', 'popsicle', 'homie', 'daisy'], 6), {
       from: 7,
       to: 91,
       size: 76,
@@ -81,7 +81,7 @@ const SETS = {
   /** The signed-in screens: same rule, quieter, a tool, not a poster. */
   app: {
     column: '40rem',
-    items: rail(pickStickers(['coin', 'turntable', 'bass', 'eyelips']), {
+    items: rail(pickStickers(['coin', 'turntable', 'bass', 'eyelips'], 4), {
       from: 12,
       to: 86,
       size: 60,
@@ -100,7 +100,7 @@ const SETS = {
    */
   welcome: {
     column: '34rem',
-    items: rail(pickStickers(['fire', 'coin', 'unicorn', 'cloudguy', 'doitnow', 'daisy']), {
+    items: rail(pickStickers(['fire', 'coin', 'unicorn', 'cloudguy', 'doitnow', 'daisy'], 6), {
       from: 6,
       to: 92,
       size: 72,

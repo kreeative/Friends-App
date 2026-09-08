@@ -1,3 +1,5 @@
+import { pickFrom } from './stickerPick'
+
 /**
  * The sticker artwork.
  *
@@ -41,8 +43,17 @@ const BY_NAME = Object.fromEntries(STICKERS.map((s) => [s.name, s.src]))
  */
 export const stickerSrc = (name) => BY_NAME[name]
 
-/** The names that exist, from a wish list. Order preserved, gaps dropped. */
-export const pickStickers = (wanted) => wanted.filter((n) => n in BY_NAME)
+/**
+ * The names that exist, from a wish list. Order preserved, gaps dropped.
+ *
+ * `atLeast` tops the list up from whatever art is present, because dropping
+ * gaps is right for one missing name and wrong for all of them: replacing the
+ * whole folder used to empty every curated list at once and leave four
+ * surfaces bare, with no error and nothing in the console to notice. The rule
+ * itself is in stickerPick.js, where node can test it; this file cannot be
+ * imported outside a bundler because of the glob above.
+ */
+export const pickStickers = (wanted, atLeast = 0) => pickFrom(wanted, STICKER_NAMES, atLeast)
 
 /**
  * A stable sticker for a given id.
