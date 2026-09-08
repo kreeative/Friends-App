@@ -37,6 +37,35 @@ export function needsSetup(profile) {
 }
 
 /**
+ * Should this person be asked to accept the terms?
+ *
+ * "When the user installs the app for the first time they should accept the
+ * terms and conditions. Every existing user should also have a pop up so they
+ * could go and accept."
+ *
+ * Exactement la forme de needsSetup au-dessus, et pour la meme raison: trois
+ * etats arrivent ici et un seul est un oui.
+ *
+ *   undefined  la colonne n'existe pas, migration 65 pas passee. NON: un
+ *              bundle deploye avant son SQL ne doit pas mettre un mur devant
+ *              tout le monde, et l'ecriture echouerait de toute facon.
+ *   null       la colonne existe et ce compte n'a jamais accepte. OUI.
+ *              C'est le cas de CHAQUE compte existant, ce qui est ce qui a
+ *              ete demande: la migration ne remplit rien retroactivement,
+ *              parce qu'inventer un consentement est la seule chose a ne
+ *              surtout pas faire.
+ *   une date   accepte. NON.
+ *
+ * UNE SEULE PORTE POUR LES DEUX POPULATIONS. Un nouveau compte la rencontre a
+ * sa premiere seconde, un ancien au prochain lancement. Ecrire deux chemins,
+ * un ecran d'inscription et une fenetre pour les anciens, aurait donne deux
+ * textes a garder d'accord et un des deux aurait fini par diverger.
+ */
+export function needsTerms(profile) {
+  return profile?.terms_accepted_at === null
+}
+
+/**
  * Does answering the gender question this way turn the cycle tracker on?
  *
  * Only 'woman'. A man does not get a period tracker, which is the point of
