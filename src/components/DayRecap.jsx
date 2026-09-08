@@ -538,8 +538,15 @@ export default function DayRecap({
                             {/* The evidence. Only for a day that was actually
                                 recorded: "no proof attached" under a goal
                                 nobody has checked in on yet is a complaint
-                                about something that was never due. */}
-                            {item && <Proof item={item} t={t} />}
+                                about something that was never due.
+
+                                And only for an answer that CAME from a
+                                check-in. A solo goal is ticked with a count
+                                and never collects proof, so the same sentence
+                                under one of those complains about something
+                                that was never asked for. See dayOutcomes.js
+                                for where `source` is set. */}
+                            {item && item.source !== 'goal_day' && <Proof item={item} t={t} />}
                           </li>
                         )
                       })}
