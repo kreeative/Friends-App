@@ -4,6 +4,7 @@ import { useT } from '../lib/i18n'
 import { CATEGORIES } from '../lib/budget'
 import { currencySymbol, minorDigits } from '../lib/currency'
 import { KINDS, NOTE_MAX, blankTxn, localISO, toCents, txnFromRow, txnValid } from '../lib/txn'
+import { lockScroll } from '../lib/scrollLock'
 
 /**
  * One transaction, as a sheet you pull up.
@@ -162,15 +163,15 @@ export default function TransactionSheet({
      runs past its end scrolls the money screen instead, which on a phone looks
      like the sheet came loose. */
   useEffect(() => {
-    if (!open) return
+    if (!open) return undefined
+    return lockScroll()
+  }, [open])
+
+  useEffect(() => {
+    if (!open) return undefined
     const onKey = (e) => e.key === 'Escape' && onClose?.()
-    const previous = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
     window.addEventListener('keydown', onKey)
-    return () => {
-      document.body.style.overflow = previous
-      window.removeEventListener('keydown', onKey)
-    }
+    return () => window.removeEventListener('keydown', onKey)
   }, [open, onClose])
 
   const sym = useMemo(

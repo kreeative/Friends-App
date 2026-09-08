@@ -6,6 +6,7 @@ import { money } from '../lib/money'
 import { dragOffset, flipTransform, rectOf, shouldDismiss } from '../lib/gesture'
 import { clockOf } from '../lib/agenda'
 import { MoodBadges } from './MoodBoard'
+import { lockScroll } from '../lib/scrollLock'
 
 /**
  * One day, in full, grown out of the square you held.
@@ -253,16 +254,20 @@ export default function DayRecap({
 
   const close = useCallback(() => onClose?.(), [onClose])
 
+  /* Split in two, and counted rather than saved and restored. See
+     lib/scrollLock.js: the saved-value version leaves the page frozen the
+     moment two panels overlap, and `close` changes identity on every render of
+     the caller, so this ran constantly. */
   useEffect(() => {
-    if (phase === 'closed') return
+    if (phase === 'closed') return undefined
+    return lockScroll()
+  }, [phase])
+
+  useEffect(() => {
+    if (phase === 'closed') return undefined
     const onKey = (e) => e.key === 'Escape' && close()
-    const previous = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
     window.addEventListener('keydown', onKey)
-    return () => {
-      document.body.style.overflow = previous
-      window.removeEventListener('keydown', onKey)
-    }
+    return () => window.removeEventListener('keydown', onKey)
   }, [phase, close])
 
   if (phase === 'closed' || !date) return null
