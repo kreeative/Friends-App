@@ -369,12 +369,24 @@ const STRINGS = {
     'remind.target': 'Daily target',
     /* Le calcul, montre pendant qu'on bouge le curseur. Sans cette phrase, "2
        litres" est un nombre abstrait et le rythme est une surprise. */
-    'remind.plan': '{litres} L is {glasses} glasses. About one every {every}.',
+    /* Plus le mot "verre" nulle part: la contenance est celle de la personne,
+       et c'est une bouteille de 40 oz aussi souvent qu'un verre. */
+    'remind.plan': '{total} a day. About one reminder every {every}.',
     'remind.late':
       'Not enough of the day left to finish at a drinkable pace. Reminders keep coming every 30 minutes, which is the floor.',
-    'remind.drink': 'I drank a glass',
+    'remind.drink': '+{amount}',
     'remind.undo': 'Undo',
     'remind.today': '{done} of {total} today',
+
+    'remind.unit': 'Millilitres or ounces',
+    'remind.unit_hint':
+      'Only changes what is written and what you type. Everything already recorded is converted, never reinterpreted.',
+    'remind.serving': 'What you drink from',
+    'remind.serving_hint':
+      'Your bottle or your glass. The button adds this much in one tap, and it sets the pace of the reminders.',
+    'remind.other': 'Another amount',
+    'remind.other_hint': 'For a few sips rather than the whole thing.',
+    'remind.add': 'Add',
 
     'remind.events': 'Calendar reminders',
     'remind.events_hint':
@@ -390,7 +402,8 @@ const STRINGS = {
        d'ecrire une duree dans toute l'application. */
     'water.every_m': '{m} min',
     'water.card': 'Water today',
-    'water.next_at': 'Next glass around {time}.',
+    'water.next_at': 'Next reminder around {time}.',
+    'water.left': '{amount} to go.',
     'water.full': 'Target reached for today.',
     'water.none_left': 'Nothing else planned today.',
     'water.settings': 'Settings',
@@ -2021,12 +2034,22 @@ const STRINGS = {
     'remind.water_hint':
       'Aucune heure à régler. Tu choisis une cible, l’app calcule le rythme, puis l’ajuste au fil de la journée : en retard, les rappels se resserrent ; si tu bois beaucoup d’un coup, ils s’espacent.',
     'remind.target': 'Cible du jour',
-    'remind.plan': '{litres} L, c’est {glasses} verres. Environ un toutes les {every}.',
+    'remind.plan': '{total} par jour. Environ un rappel toutes les {every}.',
     'remind.late':
       'Il ne reste plus assez de journée pour finir à un rythme buvable. Les rappels continuent toutes les 30 minutes, qui est le plancher.',
-    'remind.drink': 'J’ai bu un verre',
+    'remind.drink': '+{amount}',
     'remind.undo': 'Annuler',
     'remind.today': '{done} sur {total} aujourd’hui',
+
+    'remind.unit': 'Millilitres ou onces',
+    'remind.unit_hint':
+      'Ne change que ce qui est écrit et ce que tu tapes. Tout ce qui est déjà noté est converti, jamais réinterprété.',
+    'remind.serving': 'Ce dans quoi tu bois',
+    'remind.serving_hint':
+      'Ta bouteille ou ton verre. Le bouton ajoute cette quantité d’un coup, et c’est elle qui donne le rythme des rappels.',
+    'remind.other': 'Une autre quantité',
+    'remind.other_hint': 'Pour quelques gorgées plutôt que le tout.',
+    'remind.add': 'Ajouter',
 
     'remind.events': 'Rappels d’agenda',
     'remind.events_hint':
@@ -2040,7 +2063,8 @@ const STRINGS = {
 
     'water.every_m': '{m} min',
     'water.card': 'Ton eau aujourd’hui',
-    'water.next_at': 'Prochain verre vers {time}.',
+    'water.next_at': 'Prochain rappel vers {time}.',
+    'water.left': 'Il reste {amount}.',
     'water.full': 'Cible atteinte pour aujourd’hui.',
     'water.none_left': 'Rien d’autre de prévu aujourd’hui.',
     'water.settings': 'Réglages',

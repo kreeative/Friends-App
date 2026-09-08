@@ -397,9 +397,15 @@ const COPY = {
      * capture: "it should say drink a glass of water". Un rappel est un ordre
      * doux; un groupe nominal ressemble a un titre d'article et se balaye.
      */
-    remindWaterTitle: 'Bois un verre d\u2019eau',
-    remindWaterBody: (n: number) =>
-      n === 1 ? 'Le dernier de la journ\u00e9e.' : `Encore ${n} d\u2019ici ce soir.`,
+    /* Le titre ne nomme plus de contenant. "Bois un verre d'eau" est faux pour
+       quelqu'un qui boit dans une bouteille de 40 oz, et c'est exactement ce
+       qui a ete rapporte: "je ne bois pas de verre d'eau". Ce qui reste vrai
+       dans les deux cas, c'est le geste. */
+    remindWaterTitle: 'Bois de l\u2019eau',
+    /* Et le corps dit la QUANTITE qui reste, dans l'unite de la personne. Une
+       notification qui dit "encore 3" oblige a se rappeler ce que vaut un 3
+       ici; "il reste 27 oz" ne demande rien. */
+    remindWaterBody: (left: string) => `Il reste ${left} aujourd\u2019hui.`,
 
     cycleSubject: 'Un petit rappel',
     cycleTitle: 'Un petit rappel',
@@ -482,9 +488,8 @@ const COPY = {
     remindGoalBody: (when: string | null, where: string | null, again = false) =>
       (again ? 'Still not ticked. ' : '') +
       ([when, where].filter(Boolean).join(' \u00b7 ') || 'Now is the time.'),
-    remindWaterTitle: 'Drink a glass of water',
-    remindWaterBody: (n: number) =>
-      n === 1 ? 'The last one today.' : `${n} more before tonight.`,
+    remindWaterTitle: 'Drink some water',
+    remindWaterBody: (left: string) => `${left} to go today.`,
 
     cycleSubject: 'A small heads-up',
     cycleTitle: 'A small heads-up',
@@ -1477,6 +1482,30 @@ async function sendEventReminders(from: string, to: string) {
  * information dont le serveur dispose, et elle redevient exacte des que
  * quelqu'un rouvre l'application.
  */
+/**
+ * Une quantite d'eau, ecrite dans l'unite de la personne.
+ *
+ * Le jumeau de formatAmount() dans src/lib/units.js, reecrit ici parce que
+ * cette fonction tourne sur Deno et ne partage pas le bundle du navigateur.
+ * Les deux doivent rester d'accord: meme once liquide americaine (29,5735 ml),
+ * meme arrondi a l'entier, meme passage au litre a partir de 1000. Un ecart
+ * entre les deux se verrait comme une notification qui annonce 27 oz sur une
+ * carte qui en affiche 28.
+ *
+ * Nomme plutot qu'ecrit sur place: le calcul se glissait entre claimReminder()
+ * et pushTo(), et le test qui verifie que le rappel est RESERVE avant d'etre
+ * ENVOYE mesure la distance entre les deux. Il est tombe, et il avait raison de
+ * tomber: eloigner les deux est exactement ce qui laisse deux executions
+ * simultanees envoyer le meme rappel deux fois.
+ */
+function amountLabel(ml: number, unit: string | null, locale: string): string {
+  const n = Math.max(0, ml)
+  if (unit === 'oz') return `${Math.round(n / 29.5735)} oz`
+  if (n < 1000) return `${Math.round(n)} ml`
+  const litres = (Math.round(n / 100) / 10).toString()
+  return `${locale === 'fr' ? litres.replace('.', ',') : litres} L`
+}
+
 async function sendWaterReminders(from: string, to: string) {
   const { data, error } = await supabase.rpc('due_water_reminders', { win_start: from, win_end: to })
   if (error) {
@@ -1506,10 +1535,10 @@ async function sendWaterReminders(from: string, to: string) {
       .maybeSingle()
     const c = COPY[localeOf(prof?.locale)]
 
-    const glasses = Math.ceil(remaining / (row.glass_ml || 250))
+    const left = amountLabel(remaining, row.water_unit, localeOf(prof?.locale))
     const out = await pushTo(row.user_id, {
       title: c.remindWaterTitle,
-      body: c.remindWaterBody(glasses),
+      body: c.remindWaterBody(left),
       /* Sur la carte de l'accueil, pas sur l'accueil. Demande: "quand tu
          recois la notification drink water ca te renvoie sur ce truc-la dans
          la page d'accueil". Le parametre amene la carte a l'ecran et

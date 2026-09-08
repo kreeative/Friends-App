@@ -1,6 +1,7 @@
 /* Extensions explicites: charge par node dans reminders.test.mjs, qui ne
    resout pas les imports sans extension comme le fait Vite. */
 import { DEFAULT_TARGET, GLASS_ML, planFor, safeTarget } from './water.js'
+import { safeServing, safeUnit } from './units.js'
 
 /**
  * Quand l'application a le droit de faire vibrer un telephone.
@@ -78,6 +79,9 @@ export const DEFAULTS = {
   water_on: false,
   water_target_ml: DEFAULT_TARGET,
   water_glass_ml: GLASS_ML,
+  /* L'unite d'affichage et de saisie. Le stockage reste en millilitres
+     partout: voir src/lib/units.js et la migration 63. */
+  water_unit: 'ml',
   events_on: true,
   events_lead_min: 30,
 }
@@ -179,7 +183,10 @@ export function prefOf(row) {
     sleep_min: safeMin(r.sleep_min, DEFAULTS.sleep_min),
     water_on: Boolean(r.water_on ?? DEFAULTS.water_on),
     water_target_ml: safeTarget(r.water_target_ml ?? DEFAULTS.water_target_ml),
-    water_glass_ml: Number(r.water_glass_ml) > 0 ? Number(r.water_glass_ml) : GLASS_ML,
+    /* La contenance de ce dans quoi on boit, bornee: la colonne s'appelle
+       encore water_glass_ml, elle contient un verre OU une bouteille. */
+    water_glass_ml: safeServing(r.water_glass_ml, GLASS_ML),
+    water_unit: safeUnit(r.water_unit),
     /* `?? true` et pas `|| true`: false doit rester false. Un `||` ici
        rallumerait les rappels d'agenda de quelqu'un qui vient de les couper,
        ce qui est le pire bogue possible sur un ecran de reglages. */

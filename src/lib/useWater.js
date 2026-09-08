@@ -114,17 +114,39 @@ export function useWaterToday() {
     }
   }
 
-  async function drink() {
-    const ml = pref.water_glass_ml
-    setDrunk((n) => n + ml)
+  /**
+   * Noter ce qu'on vient de boire.
+   *
+   * PREND UNE QUANTITE, PARCE QUE PERSONNE NE BOIT PAR PORTIONS EGALES.
+   *
+   * "J'ai une bouteille d'eau qui fait 40 oz [...] j'ai ouvert ma calculatrice
+   * et j'ai fait le calcul de ma cible moins l'eau que je bois dans ma
+   * bouteille."
+   *
+   * Le bouton envoyait toujours exactement une contenance. C'est juste pour
+   * quelqu'un qui vide un verre d'un coup, et faux pour quelqu'un qui boit AU
+   * FIL de la journee dans une bouteille de 40 oz: pour noter trois gorgees il
+   * fallait soit mentir, soit faire la soustraction ailleurs. D'ou la
+   * calculatrice.
+   *
+   * Sans argument, c'est une contenance, donc le geste d'avant n'a pas change
+   * pour qui buvait deja par verres.
+   */
+  async function drink(ml = pref.water_glass_ml) {
+    /* Les parametres par defaut ne se declenchent que sur undefined: un appel
+       venu d'un onClick recoit l'evenement en argument, et `null` passerait
+       tout droit. Les deux sont ramenes ici plutot que chez l'appelant. */
+    const amount = Math.round(Number(ml) > 0 ? Number(ml) : pref.water_glass_ml)
+
+    setDrunk((n) => n + amount)
     const { error: err } = await supabase
       .from('water_log')
-      .insert({ user_id: user.id, on_day: today, ml })
+      .insert({ user_id: user.id, on_day: today, ml: amount })
     if (err) return setError(err.message)
-    /* Le verre change le plan: on reecrit le prochain rappel tout de suite.
-       C'est la partie qui rattrape, et elle ne marche que si elle part du
-       nouveau total. */
-    const p = waterPlan(pref, { drunkMl: drunk + ml, nowMin })
+    /* Ce qui vient d'etre bu change le plan: on reecrit le prochain rappel
+       tout de suite. C'est la partie qui rattrape, et elle ne marche que si
+       elle part du nouveau total. */
+    const p = waterPlan(pref, { drunkMl: drunk + amount, nowMin })
     await supabase
       .from('notify_pref')
       .upsert({ user_id: user.id, ...pref, water_next_at: nextAtFor(p, pref) }, { onConflict: 'user_id' })
@@ -132,9 +154,10 @@ export function useWaterToday() {
   }
 
   async function undo() {
-    /* Le dernier verre, pas n'importe lequel. Une ligne par verre existe
-       precisement pour ca: un compteur ne se defait pas, et appuyer deux fois
-       par accident laisserait la journee fausse sans rien a faire. */
+    /* La derniere quantite notee, pas n'importe laquelle. Une ligne par geste
+       existe precisement pour ca: un compteur ne se defait pas, et appuyer
+       deux fois par accident laisserait la journee fausse sans rien a faire.
+       Defaire une gorgee de 200 ml doit retirer 200 ml, pas une contenance. */
     const { data } = await supabase
       .from('water_log')
       .select('id, ml')
@@ -162,7 +185,10 @@ export function useWaterToday() {
     pref,
     drunk,
     glasses,
-    /* Combien de verres sont bus, arrondi comme l'ecran l'affiche. */
+    /* Combien de contenances, arrondi comme les pastilles l'affichent. Ce
+       n'est plus le chiffre principal: l'ecran dit une QUANTITE, parce qu'une
+       personne qui boit dans une bouteille de 40 oz ne compte pas en
+       bouteilles. Garde pour les pastilles et pour l'ancien libelle. */
     done: Math.round(drunk / pref.water_glass_ml),
     plan,
     typical,
