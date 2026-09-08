@@ -1,0 +1,57 @@
+[
+  {
+    "slide_number": 1,
+    "headline": "Keep Promises, Together",
+    "subheadline": "Set a goal, check in daily, and let your friends see it land.",
+    "featured_ui_screen": "Goals Dashboard",
+    "bullet_points": [
+      "A daily check-in rail you swipe, not a form you fill",
+      "Prove it with a photo, a link, or a note, whichever fits the goal",
+      "Per-goal reminders at the hour you choose, repeating until it is done"
+    ]
+  },
+  {
+    "slide_number": 2,
+    "headline": "Give Every Dollar A Job",
+    "subheadline": "Envelopes, projects and savings, so the plan and the month agree.",
+    "featured_ui_screen": "Budget Plan",
+    "bullet_points": [
+      "Envelopes that show planned against actually spent",
+      "Projects, savings pots and fixed charges in one place",
+      "Connect your bank or type it in, your call"
+    ]
+  },
+  {
+    "slide_number": 3,
+    "headline": "Learn Money, Slowly",
+    "subheadline": "Four courses that start at zero and end with you investing on your own.",
+    "featured_ui_screen": "Course Reader",
+    "bullet_points": [
+      "52 lessons across 13 modules, each ending on one thing to do",
+      "Every financial word explained where you meet it, not in a footnote",
+      "Written for Canada, France, the US and the franc zone"
+    ]
+  },
+  {
+    "slide_number": 4,
+    "headline": "Your Day, One Screen",
+    "subheadline": "Water, mood, classes and deadlines, without opening four apps.",
+    "featured_ui_screen": "Home Dashboard",
+    "bullet_points": [
+      "Log water in ml or oz, from your bottle, not in glasses",
+      "Your week, your classes and what is due, on one strip",
+      "Reminders that tighten when you fall behind and space out when you catch up"
+    ]
+  },
+  {
+    "slide_number": 5,
+    "headline": "Nobody Drops Off Quietly",
+    "subheadline": "A group that notices when someone goes silent, and says so kindly.",
+    "featured_ui_screen": "Group Board",
+    "bullet_points": [
+      "A standing that moves the day somebody finishes what they said",
+      "One tap to answer a friend asking after you",
+      "Say something out loud when a friend does something worth it"
+    ]
+  }
+]
