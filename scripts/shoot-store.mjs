@@ -1,7 +1,8 @@
 /**
  * node scripts/shoot-store.mjs
  *
- * Les cinq ecrans de l'App Store, en 390x844 a 2x, avec des donnees propres.
+ * Les cinq ecrans de l'App Store, en francais puis en anglais, en 390x844 a 2x,
+ * avec des donnees propres. Les images sortent dans .shots/fr/ et .shots/en/.
  *
  * CE QUE CE SCRIPT AJOUTE A `npm run sweep`
  *
@@ -85,23 +86,73 @@ const goal = (id, owner, commitment, extra = {}) => ({
   ...extra,
 })
 
-const GOALS = [
-  goal('g1', ME, 'Me laver 2 fois par jour', { trigger_when: 'Matin et soir' }),
-  goal('g2', ME, 'Manger 3x par jour', { target_per_cycle: 3, trigger_when: 'Aux repas' }),
-  goal('g3', ME, 'Reviser la biochimie', { trigger_when: 'Avant de dormir', evidence_def: 'Une photo des notes', proof_type: 'photo' }),
-  goal('g4', 'u2', 'Courir trois fois par semaine'),
-  goal('g5', 'u3', 'Lire vingt pages'),
-  goal('g6', 'u4', 'Appeler ma mere le dimanche'),
-  goal('g7', 'u5', 'Ranger ma chambre'),
-  /* Un deuxieme objectif pour chacun, pour que les denominateurs se
-     comparent. Avec un seul, la premiere serie affichait "16 sur 35" a cote
-     de "5 sur 7": les pourcentages etaient justes et la colonne avait l'air
-     casse. */
-  goal('g8', 'u2', 'Preparer mes repas le dimanche'),
-  goal('g9', 'u3', 'Marcher 30 minutes'),
-  goal('g10', 'u4', 'Ecrire trois lignes de journal'),
-  goal('g11', 'u5', 'Boire deux litres d eau'),
-]
+/**
+ * CE QUE LA PERSONNE A ECRIT, DANS SA LANGUE.
+ *
+ * L'interface se traduit toute seule, mais un objectif, une note de depense ou
+ * un cours sont du texte TAPE: ils restent tels quels quelle que soit la
+ * langue de l'ecran. Une capture pour une fiche anglophone qui montre "Me
+ * laver 2 fois par jour" est une capture a moitie traduite, et c'est celle
+ * qu'un examinateur remarque.
+ *
+ * Donc chaque chaine ecrite par une personne existe deux fois, et le reste
+ * (les chiffres, les dates, les identifiants) ne bouge pas: les deux series
+ * racontent la meme journee, dans deux langues.
+ */
+const TEXT = {
+  fr: {
+    goals: [
+      ['Me laver 2 fois par jour', 'Matin et soir'],
+      ['Manger 3x par jour', 'Aux repas'],
+      ['Reviser la biochimie', 'Avant de dormir', 'Une photo des notes'],
+      ['Courir trois fois par semaine'], ['Lire vingt pages'],
+      ['Appeler ma mere le dimanche'], ['Ranger ma chambre'],
+      ['Preparer mes repas le dimanche'], ['Marcher 30 minutes'],
+      ['Ecrire trois lignes de journal'], ['Boire deux litres d eau'],
+    ],
+    events: ['Biochimie', 'Statistiques', 'Sport'],
+    spend: ['Epicerie', 'Transport', 'Cafe', 'Livres', 'Telephone', 'Sorties'],
+    fixed: ['Loyer', 'Telephone', 'Transport'],
+    pay: 'Paie',
+  },
+  en: {
+    goals: [
+      ['Shower twice a day', 'Morning and night'],
+      /* "3 meals", pas "three meals": le francais ecrit "3x", et la version
+         longue faisait tomber les points de suspension sur la carte
+         Aujourd'hui, ou le libelle partage la rangee avec une pastille
+         d'etat. Vu sur l'image anglaise, la francaise tenait. */
+      ['Eat 3 meals a day', 'At mealtimes'],
+      ['Revise biochemistry', 'Before bed', 'A photo of my notes'],
+      ['Run three times a week'], ['Read twenty pages'],
+      ['Call my mum on Sunday'], ['Tidy my room'],
+      ['Prep my meals on Sunday'], ['Walk for 30 minutes'],
+      ['Write three lines of journal'], ['Drink two litres of water'],
+    ],
+    events: ['Biochemistry', 'Statistics', 'Workout'],
+    spend: ['Groceries', 'Transport', 'Coffee', 'Books', 'Phone', 'Going out'],
+    fixed: ['Rent', 'Phone', 'Transport'],
+    pay: 'Payday',
+  },
+}
+
+const OWNERS = [ME, ME, ME, 'u2', 'u3', 'u4', 'u5', 'u2', 'u3', 'u4', 'u5']
+const EXTRA = [{}, { target_per_cycle: 3 }, { proof_type: 'photo' }]
+
+const goalsFor = (loc) =>
+  TEXT[loc].goals.map(([commitment, when, proof], i) =>
+    goal(`g${i + 1}`, OWNERS[i], commitment, {
+      ...(EXTRA[i] ?? {}),
+      ...(when ? { trigger_when: when } : {}),
+      ...(proof ? { evidence_def: proof } : {}),
+    }),
+  )
+
+/* Qui possede quoi. Les identifiants ne dependent pas de la langue, donc les
+   check-ins, les cycles et le classement se construisent UNE fois: les deux
+   series racontent la meme journee et un ecart entre elles serait un ecart de
+   fixture, pas de traduction. */
+const goalIdsOf = (id) => OWNERS.map((o, i) => (o === id ? `g${i + 1}` : null)).filter(Boolean)
 
 /* Combien de jours chacun a coches sur les sept: une seule en tete, deux a
    egalite, personne a zero et personne au maximum. */
@@ -118,11 +169,11 @@ const TODAY_DONE = { u1: ['g1'], u2: ['g4', 'g8'], u3: ['g5'] }
 const CHECKINS = []
 const ITEMS = []
 for (const [id] of PEOPLE) {
-  const mine = GOALS.filter((g) => g.owner_id === id)
+  const mine = goalIdsOf(id)
   for (let n = 0; n < DONE[id]; n += 1) {
     const cid = `ck-${id}-${n}`
     CHECKINS.push({ id: cid, user_id: id, group_id: GID, cycle_id: `cy${n}`, submitted_at: `${DAYS[n]}T10:00:00Z` })
-    for (const g of mine) ITEMS.push({ id: `it-${cid}-${g.id}`, checkin_id: cid, goal_id: g.id, outcome: 'done', count_done: 1 })
+    for (const g of mine) ITEMS.push({ id: `it-${cid}-${g}`, checkin_id: cid, goal_id: g, outcome: 'done', count_done: 1 })
   }
   const today = TODAY_DONE[id]
   if (!today) continue
@@ -174,11 +225,16 @@ const PREF = {
 const WATER = [{ id: 'w1', user_id: ME, on_day: TODAY, ml: 250 }, { id: 'w2', user_id: ME, on_day: TODAY, ml: 250 }]
 
 /* Le calendrier: des cours, pour que la bande ne soit pas vide. */
-const EVENTS = [
-  { id: 'e1', user_id: ME, title: 'Biochimie', category: 'cours', location: 'B-204', starts_on: '2026-09-01', start_min: 600, end_min: 720, weekdays: [1, 3], until_on: null, colour: null, excluded_on: [], remind_min: 30 },
-  { id: 'e2', user_id: ME, title: 'Statistiques', category: 'cours', location: 'A-110', starts_on: '2026-09-01', start_min: 840, end_min: 960, weekdays: [2, 4], until_on: null, colour: null, excluded_on: [], remind_min: null },
-  { id: 'e3', user_id: ME, title: 'Workout', category: 'sport', location: null, starts_on: '2026-09-01', start_min: 1080, end_min: 1200, weekdays: [1, 2, 4, 5], until_on: null, colour: null, excluded_on: [], remind_min: null },
+const EVENT_SHAPE = [
+  { id: 'e1', category: 'cours', location: 'B-204', start_min: 600, end_min: 720, weekdays: [1, 3], remind_min: 30 },
+  { id: 'e2', category: 'cours', location: 'A-110', start_min: 840, end_min: 960, weekdays: [2, 4], remind_min: null },
+  { id: 'e3', category: 'sport', location: null, start_min: 1080, end_min: 1200, weekdays: [1, 2, 4, 5], remind_min: null },
 ]
+const eventsFor = (loc) =>
+  EVENT_SHAPE.map((e, i) => ({
+    ...e, user_id: ME, title: TEXT[loc].events[i],
+    starts_on: '2026-09-01', until_on: null, colour: null, excluded_on: [],
+  }))
 
 const MOODS = [{ id: 'm1', user_id: ME, on_day: TODAY, moods: ['energized', 'neutral'] }]
 
@@ -192,25 +248,26 @@ const PLAN = {
   monthly_income_cents: 240000, savings_target_cents: 30000, period_start_day: 1,
   created_at: '2026-06-01T00:00:00Z', updated_at: '2026-06-01T00:00:00Z',
 }
-const ENTRIES = [
-  ['Epicerie', 'groceries', 8450], ['Transport', 'transport', 3200], ['Cafe', 'eating_out', 1875],
-  ['Livres', 'other', 4200], ['Telephone', 'bills', 4500], ['Sorties', 'fun', 6300],
-].map(([note, category, cents], i) => ({
-  id: `en${i}`, user_id: ME, kind: 'expense', amount_cents: cents, category, note,
-  happened_on: DAYS[i % DAYS.length], created_at: `${DAYS[i % DAYS.length]}T12:00:00Z`, excluded: false,
-}))
-/* Une paie au debut de la periode. Le plan porte deja le revenu mensuel, mais
-   l'historique lit les entrees, et une page d'historique sans une seule rentree
-   raconte un mois ou personne n'a ete paye. */
-ENTRIES.push({
-  id: 'en-pay', user_id: ME, kind: 'income', amount_cents: 240000, category: 'other',
-  note: 'Paie', happened_on: '2026-09-01', created_at: '2026-09-01T09:00:00Z', excluded: false,
-})
-const FIXED = [
-  { id: 'f1', user_id: ME, label: 'Loyer', amount_cents: 95000, due_day: 1, paid_on: null },
-  { id: 'f2', user_id: ME, label: 'Telephone', amount_cents: 4500, due_day: 5, paid_on: null },
-  { id: 'f3', user_id: ME, label: 'Transport', amount_cents: 9700, due_day: 5, paid_on: null },
-]
+const SPEND = [['groceries', 8450], ['transport', 3200], ['eating_out', 1875], ['other', 4200], ['bills', 4500], ['fun', 6300]]
+const entriesFor = (loc) => {
+  const out = SPEND.map(([category, cents], i) => ({
+    id: `en${i}`, user_id: ME, kind: 'expense', amount_cents: cents, category, note: TEXT[loc].spend[i],
+    happened_on: DAYS[i % DAYS.length], created_at: `${DAYS[i % DAYS.length]}T12:00:00Z`, excluded: false,
+  }))
+  /* Une paie au debut de la periode. Le plan porte deja le revenu mensuel, mais
+     l'historique lit les entrees, et une page d'historique sans une seule
+     rentree raconte un mois ou personne n'a ete paye. */
+  out.push({
+    id: 'en-pay', user_id: ME, kind: 'income', amount_cents: 240000, category: 'other',
+    note: TEXT[loc].pay, happened_on: '2026-09-01', created_at: '2026-09-01T09:00:00Z', excluded: false,
+  })
+  return out
+}
+const CHARGES = [[95000, 1], [4500, 5], [9700, 5]]
+const fixedFor = (loc) =>
+  CHARGES.map(([amount_cents, due_day], i) => ({
+    id: `f${i + 1}`, user_id: ME, label: TEXT[loc].fixed[i], amount_cents, due_day, paid_on: null,
+  }))
 
 /* --- ce qu'on tire ---------------------------------------------------------- */
 
@@ -222,12 +279,26 @@ const FIXED = [
  * flottaison. Mesure sur la premiere serie: on voyait "0/5 ont fait le point"
  * et rien du classement.
  */
+/**
+ * Des mots d'INTERFACE, jamais des mots tapes par la personne.
+ *
+ * Un objectif ou une note de depense est traduit a la main dans TEXT, donc s'en
+ * servir de temoin ne prouverait que la fixture. Ceux-ci viennent de i18n.jsx:
+ * les voir sur un ecran veut dire que l'application a bien change de langue.
+ * Ils sont compares en minuscules parce que innerText rend le texte deja mis en
+ * capitales par la CSS.
+ */
+const WITNESS = {
+  fr: ['aujourd', 'semaine', 'objectif', 'enregistr'],
+  en: ['today', 'week', 'goal', 'recorded'],
+}
+
 const SHOTS = [
   { n: 1, name: 'goals', url: `/g/${GID}/goals`, title: 'Goals Dashboard' },
   { n: 2, name: 'budget', url: '/money', title: 'Budget Plan' },
   { n: 3, name: 'course', url: '/cours/riche-lentement/0.1', title: 'Course Reader' },
   { n: 4, name: 'home', url: '/', title: 'Home Dashboard', into: '[data-hook="week-strip"]' },
-  { n: 5, name: 'board', url: `/g/${GID}`, title: 'Group Board', into: '[data-rank-row]' },
+  { n: 5, name: 'board', url: `/g/${GID}`, title: 'Group Board', into: '[data-hook="analytics"]' },
 ]
 
 /* --- le serveur ------------------------------------------------------------- */
@@ -252,8 +323,6 @@ if (!base) {
   }
 }
 
-if (!existsSync(OUT)) mkdirSync(OUT, { recursive: true })
-
 const browser = await chromium.launch({
   executablePath: process.env.CHROME ?? '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
   args: ['--no-sandbox'],
@@ -261,108 +330,157 @@ const browser = await chromium.launch({
 
 const problems = []
 
-for (const shot of SHOTS) {
-  const page = await browser.newPage({
-    viewport: { width: WIDTH, height: HEIGHT },
-    deviceScaleFactor: 2,
-    hasTouch: true,
-    isMobile: true,
-  })
-  await page.clock.install({ time: new Date(NOW) })
-  await page.addInitScript((me) => {
-    const s = { access_token: 'stub', token_type: 'bearer', expires_in: 3600, expires_at: Math.floor(Date.now() / 1000) + 3600, refresh_token: 'stub', user: { id: me, aud: 'authenticated', role: 'authenticated', email: 'hello@richandfriends.xyz', app_metadata: {}, user_metadata: {}, created_at: '2026-06-01T00:00:00Z' } }
-    for (const k of ['sb-localhost-auth-token', 'sb-localhost-auth-token-code-verifier']) {
-      try { localStorage.setItem(k, JSON.stringify(s)) } catch { /* ignore */ }
-    }
-    try { localStorage.setItem('friends.locale', 'fr') } catch { /* ignore */ }
-  }, ME)
+/**
+ * LE FRANCAIS D'ABORD.
+ *
+ * C'est la langue du produit et celle de la personne qui le construit; l'anglais
+ * est la traduction. L'ordre des dossiers dit laquelle des deux series fait
+ * autorite quand elles ne racontent pas la meme chose.
+ */
+const LOCALES = ['fr', 'en']
 
-  await page.route('**/auth/v1/**', (r) =>
-    r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ access_token: 'x', user: { id: ME, email: 'hello@richandfriends.xyz' } }) }))
-  await page.route('**/functions/v1/**', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: '{}' }))
+for (const loc of LOCALES) {
+  const dir = join(OUT, loc)
+  if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
 
-  await page.route('**/rest/v1/**', (route) => {
-    const req = route.request()
-    const url = req.url()
-    const table = url.split('/rest/v1/')[1]?.split('?')[0]
-    if (req.method() !== 'GET') {
-      return route.fulfill({ status: 200, contentType: 'application/json', body: '[]' })
+  const GOALS = goalsFor(loc)
+  const EVENTS = eventsFor(loc)
+  const ENTRIES = entriesFor(loc)
+  const FIXED = fixedFor(loc)
+  const ME_PROFILE = { ...PROFILE, locale: loc }
+
+  console.log(`\n${loc}`)
+
+  for (const shot of SHOTS) {
+    const page = await browser.newPage({
+      viewport: { width: WIDTH, height: HEIGHT },
+      deviceScaleFactor: 2,
+      hasTouch: true,
+      isMobile: true,
+    })
+    await page.clock.install({ time: new Date(NOW) })
+    await page.addInitScript(([me, lang]) => {
+      const s = { access_token: 'stub', token_type: 'bearer', expires_in: 3600, expires_at: Math.floor(Date.now() / 1000) + 3600, refresh_token: 'stub', user: { id: me, aud: 'authenticated', role: 'authenticated', email: 'hello@richandfriends.xyz', app_metadata: {}, user_metadata: {}, created_at: '2026-06-01T00:00:00Z' } }
+      for (const k of ['sb-localhost-auth-token', 'sb-localhost-auth-token-code-verifier']) {
+        try { localStorage.setItem(k, JSON.stringify(s)) } catch { /* ignore */ }
+      }
+      /* detectLocale() lit cette cle avant de regarder navigator.language. Sans
+         elle, la serie anglaise sortirait dans la langue du conteneur. */
+      try { localStorage.setItem('friends.locale', lang) } catch { /* ignore */ }
+    }, [ME, loc])
+
+    await page.route('**/auth/v1/**', (r) =>
+      r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ access_token: 'x', user: { id: ME, email: 'hello@richandfriends.xyz' } }) }))
+    await page.route('**/functions/v1/**', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: '{}' }))
+
+    await page.route('**/rest/v1/**', (route) => {
+      const req = route.request()
+      const url = req.url()
+      const table = url.split('/rest/v1/')[1]?.split('?')[0]
+      if (req.method() !== 'GET') {
+        return route.fulfill({ status: 200, contentType: 'application/json', body: '[]' })
+      }
+      /**
+       * LES TABLES LUES A UNE SEULE LIGNE RENDENT UN OBJET, TOUJOURS.
+       *
+       * La premiere version regardait l'en-tete Accept pour savoir s'il fallait
+       * un objet ou un tableau. Mesure: `maybeSingle()` envoie `accept: * / *`,
+       * pas l'en-tete objet de PostgREST. Le bouchon rendait donc `[PLAN]` la ou
+       * le code attend une ligne, `plan.monthly_income_cents` valait undefined,
+       * et l'ecran du budget annoncait "aucun revenu enregistre cette periode"
+       * avec un reste a depenser NEGATIF, en rouge. Une capture d'App Store qui
+       * dit a la personne qu'elle est dans le rouge.
+       *
+       * Trouve en regardant la capture, pas en lisant le code.
+       */
+      const SINGLE = { groups: GROUP, profiles: ME_PROFILE, notify_pref: PREF, budget_plan: PLAN }
+      if (table in SINGLE) {
+        return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(SINGLE[table]) })
+      }
+      /* Le filtre owner_id=eq. est applique ici parce que la vraie requete
+         l'applique cote serveur. Sans lui, la carte Aujourd'hui de l'accueil
+         listait les objectifs des cinq personnes du groupe, ce qui n'arrive
+         jamais dans l'application. Trouve en regardant la capture. */
+      const owner = url.match(/owner_id=eq\.([^&]+)/)?.[1]
+      const body = table === 'goals' ? (owner ? GOALS.filter((g) => g.owner_id === owner) : GOALS)
+        : table === 'goal_days' ? GOAL_DAYS
+        : table === 'cycles' ? CYCLES
+        : table === 'checkins' ? CHECKINS
+        : table === 'checkin_items' ? ITEMS
+        : table === 'member_cycle_status' ? STATUS
+        : table === 'group_members' ? (url.includes('user_id=eq.') ? ROSTER.filter((r) => r.user_id === ME) : ROSTER)
+        : table === 'water_log' ? WATER
+        : table === 'calendar_event' ? EVENTS
+        : table === 'daily_mood' ? MOODS
+        : table === 'budget_entry' ? ENTRIES
+        : table === 'budget_fixed' ? FIXED
+        : []
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) })
+    })
+
+    const errors = []
+    page.on('pageerror', (e) => errors.push(String(e)))
+
+    await page.goto(`${base}${shot.url}`, { waitUntil: 'networkidle' })
+    /* Le temps que les animations d'entree finissent: une capture prise a
+       mi-transition montre une carte a 99 % d'opacite et decalee de dix pixels. */
+    await page.waitForTimeout(1800)
+
+    if (shot.into) {
+      const found = await page.evaluate((sel) => {
+        const el = document.querySelector(sel)
+        if (!el) return false
+        /**
+         * La carte se pose JUSTE SOUS l'en-tete, et l'en-tete est mesure.
+         *
+         * Le recul etait un 132 ecrit a la main. Il laissait 60 px de trop, et
+         * ces 60 px etaient occupes par le titre de la page, coupe en deux par
+         * le verre de l'en-tete: "Bonjour, Anne-Kelly." tranche a l'horizontale
+         * sur l'accueil, "CE QUI A ETE FAIT" illisible sur le tableau. Vu sur
+         * les images, pas dans le code.
+         *
+         * `center` ne marche pas ici: centrer une carte courte la met sous
+         * l'en-tete, et la barre d'onglets flottante mange le bas.
+         */
+        const head = document.querySelector('header')
+        const under = (head ? head.getBoundingClientRect().bottom : 70) + 12
+        const y = el.getBoundingClientRect().top + window.scrollY - under
+        window.scrollTo({ top: Math.max(0, y), behavior: 'instant' })
+        return true
+      }, shot.into)
+      if (!found) problems.push(`${loc}/${shot.name}: ${shot.into} introuvable, la capture montre le haut de la page`)
+      await page.waitForTimeout(500)
     }
+
+    const path = join(dir, `${shot.n}-${shot.name}.png`)
+    await page.screenshot({ path })
+
+    /* Une capture vide est pire qu'une capture manquante: elle passe inapercue
+       jusqu'a ce qu'elle soit dans une fiche de store. */
+    const text = (await page.evaluate(() => document.body.innerText)).replace(/\s+/g, ' ').trim()
+    const empty = text.length < 120
+    if (empty) problems.push(`${loc}/${shot.name}: l ecran est presque vide (${text.length} caracteres)`)
+    if (errors.length) problems.push(`${loc}/${shot.name}: ${errors[0].slice(0, 120)}`)
+
     /**
-     * LES TABLES LUES A UNE SEULE LIGNE RENDENT UN OBJET, TOUJOURS.
+     * ET LA LANGUE EST VERIFIEE, PAS SUPPOSEE.
      *
-     * La premiere version regardait l'en-tete Accept pour savoir s'il fallait
-     * un objet ou un tableau. Mesure: `maybeSingle()` envoie `accept: * / *`,
-     * pas l'en-tete objet de PostgREST. Le bouchon rendait donc `[PLAN]` la ou
-     * le code attend une ligne, `plan.monthly_income_cents` valait undefined,
-     * et l'ecran du budget annoncait "aucun revenu enregistre cette periode"
-     * avec un reste a depenser NEGATIF, en rouge. Une capture d'App Store qui
-     * dit a la personne qu'elle est dans le rouge.
-     *
-     * Trouve en regardant la capture, pas en lisant le code.
+     * Une serie anglaise qui sort en francais est une serie qu'on ne remarque
+     * qu'au moment de la deposer, parce que les cinq images sont belles. Le
+     * temoin est un mot d'interface, pas un mot tape par la personne.
      */
-    const SINGLE = { groups: GROUP, profiles: PROFILE, notify_pref: PREF, budget_plan: PLAN }
-    if (table in SINGLE) {
-      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(SINGLE[table]) })
-    }
-    /* Le filtre owner_id=eq. est applique ici parce que la vraie requete
-       l'applique cote serveur. Sans lui, la carte Aujourd'hui de l'accueil
-       listait les objectifs des cinq personnes du groupe, ce qui n'arrive
-       jamais dans l'application. Trouve en regardant la capture. */
-    const owner = url.match(/owner_id=eq\.([^&]+)/)?.[1]
-    const body = table === 'goals' ? (owner ? GOALS.filter((g) => g.owner_id === owner) : GOALS)
-      : table === 'goal_days' ? GOAL_DAYS
-      : table === 'cycles' ? CYCLES
-      : table === 'checkins' ? CHECKINS
-      : table === 'checkin_items' ? ITEMS
-      : table === 'member_cycle_status' ? STATUS
-      : table === 'group_members' ? (url.includes('user_id=eq.') ? ROSTER.filter((r) => r.user_id === ME) : ROSTER)
-      : table === 'water_log' ? WATER
-      : table === 'calendar_event' ? EVENTS
-      : table === 'daily_mood' ? MOODS
-      : table === 'budget_entry' ? ENTRIES
-      : table === 'budget_fixed' ? FIXED
-      : []
-    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) })
-  })
+    const hay = text.toLowerCase()
+    const wrong = WITNESS[loc === 'fr' ? 'en' : 'fr'].filter((w) => hay.includes(w))
+    if (wrong.length) problems.push(`${loc}/${shot.name}: du texte de l autre langue a l ecran (${wrong.join(', ')})`)
+    /* I18nProvider ecrit la langue sur <html>. C'est la reponse de
+       l'application elle-meme, la ou les temoins ne sont qu'un echantillon. */
+    const lang = await page.evaluate(() => document.documentElement.lang)
+    if (lang !== loc) problems.push(`${loc}/${shot.name}: <html lang="${lang}">, l application n a pas change de langue`)
 
-  const errors = []
-  page.on('pageerror', (e) => errors.push(String(e)))
-
-  await page.goto(`${base}${shot.url}`, { waitUntil: 'networkidle' })
-  /* Le temps que les animations d'entree finissent: une capture prise a
-     mi-transition montre une carte a 99 % d'opacite et decalee de dix pixels. */
-  await page.waitForTimeout(1800)
-
-  if (shot.into) {
-    const found = await page.evaluate((sel) => {
-      const el = document.querySelector(sel)
-      if (!el) return false
-      /* `start` et un recul, pas `center`: centrer un element court le place
-         sous l'en-tete de verre, et la barre d'onglets flottante mange le bas.
-         Les deux ont deja gache une mesure dans ce depot. */
-      const y = el.getBoundingClientRect().top + window.scrollY - 132
-      window.scrollTo({ top: Math.max(0, y), behavior: 'instant' })
-      return true
-    }, shot.into)
-    if (!found) problems.push(`${shot.name}: ${shot.into} introuvable, la capture montre le haut de la page`)
-    await page.waitForTimeout(500)
+    const bad = empty || errors.length || wrong.length || lang !== loc
+    console.log(`  ${bad ? 'FAIL' : 'ok  '} ${String(shot.n)}. ${shot.title.padEnd(17)} ${path}`)
+    await page.close()
   }
-
-  const path = join(OUT, `${shot.n}-${shot.name}.png`)
-  await page.screenshot({ path })
-
-  /* Une capture vide est pire qu'une capture manquante: elle passe inapercue
-     jusqu'a ce qu'elle soit dans une fiche de store. */
-  const text = (await page.evaluate(() => document.body.innerText)).replace(/\s+/g, ' ').trim()
-  const empty = text.length < 120
-  if (empty) problems.push(`${shot.name}: l ecran est presque vide (${text.length} caracteres)`)
-  if (errors.length) problems.push(`${shot.name}: ${errors[0].slice(0, 120)}`)
-
-  console.log(
-    `  ${empty || errors.length ? 'FAIL' : 'ok  '} ${String(shot.n)}. ${shot.title.padEnd(17)} ${path}`,
-  )
-  await page.close()
 }
 
 await browser.close()
@@ -374,4 +492,7 @@ if (problems.length) {
   console.log(`\n${problems.length} probleme(s). Les images sont dans ${OUT}/, regarde-les.`)
   process.exit(1)
 }
-console.log(`5 captures dans ${OUT}/, en ${WIDTH}x${HEIGHT} a 2x. Regarde-les avant de les utiliser.`)
+console.log(
+  `${LOCALES.length * SHOTS.length} captures en ${WIDTH}x${HEIGHT} a 2x, ` +
+  `${LOCALES.map((l) => `${OUT}/${l}/`).join(' puis ')}. Regarde-les avant de les utiliser.`,
+)

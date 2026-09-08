@@ -154,6 +154,13 @@ function DayCell({
      applied and is nothing of the sort. */
   const { holding, handlers, consumedClick } = useLongPress((el) => onOpen?.(el))
 
+  /* The letter above the number is formatted here rather than by the caller so
+     no call site can forget to pass the language. It used to format with
+     `undefined`, which is the BROWSER's locale, not the app's: a French screen
+     rendered S M T W T F S over a month that said SEPTEMBRE. Seen on a store
+     screenshot, not in the code. */
+  const { locale } = useT()
+
   const circle = isToday
     ? 'bg-accent text-on-accent font-semibold'
     : isSelected
@@ -183,7 +190,7 @@ function DayCell({
     >
       {weekday && (
         <span className="text-label font-semibold uppercase tracking-[0.08em] text-muted">
-          {date.toLocaleDateString(undefined, { weekday: 'narrow' })}
+          {date.toLocaleDateString(localeTag(locale), { weekday: 'narrow' })}
         </span>
       )}
 
