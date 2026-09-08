@@ -339,17 +339,40 @@ const problems = []
  */
 const LOCALES = ['fr', 'en']
 
-for (const loc of LOCALES) {
-  const dir = join(OUT, loc)
-  if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
+/**
+ * LES DEUX THEMES.
+ *
+ * `sun` est rose, `sea` est bleu, et ce n'est pas un reglage de confort: c'est
+ * un choix fait au premier lancement, garde par appareil, et la moitie des gens
+ * qui ouvriront l'application ne verront jamais le rose. Une fiche App Store
+ * qui ne montre qu'un des deux vend un produit d'une seule couleur.
+ *
+ * `sun` d'abord, c'est le defaut, celui qu'on voit sans rien choisir.
+ */
+const THEMES = ['sun', 'sea']
 
+/* Le fond que chaque theme peint, tel que le navigateur le rend. Ce sont les
+   deux --c-bg d'index.css, et src/lib/theme.jsx porte les memes en hexa pour
+   la barre d'etat. Trois endroits, et c'est deja arrive qu'ils divergent. */
+const GROUND_RGB = { sun: 'rgb(255, 245, 247)', sea: 'rgb(240, 249, 255)' }
+
+for (const loc of LOCALES) {
   const GOALS = goalsFor(loc)
   const EVENTS = eventsFor(loc)
   const ENTRIES = entriesFor(loc)
   const FIXED = fixedFor(loc)
-  const ME_PROFILE = { ...PROFILE, locale: loc }
 
-  console.log(`\n${loc}`)
+  for (const theme of THEMES) {
+  const dir = join(OUT, loc, theme)
+  if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
+
+  /* Le compte porte le meme choix que l'appareil. `adopt` ne s'en sert que sur
+     un appareil qui n'a jamais choisi, donc ca ne change pas ce qui est peint;
+     une fixture ou le compte dit bleu et l'ecran est rose serait juste une
+     fixture qui se contredit. */
+  const ME_PROFILE = { ...PROFILE, locale: loc, theme }
+
+  console.log(`\n${loc} / ${theme}`)
 
   for (const shot of SHOTS) {
     const page = await browser.newPage({
@@ -359,7 +382,7 @@ for (const loc of LOCALES) {
       isMobile: true,
     })
     await page.clock.install({ time: new Date(NOW) })
-    await page.addInitScript(([me, lang]) => {
+    await page.addInitScript(([me, lang, skin]) => {
       const s = { access_token: 'stub', token_type: 'bearer', expires_in: 3600, expires_at: Math.floor(Date.now() / 1000) + 3600, refresh_token: 'stub', user: { id: me, aud: 'authenticated', role: 'authenticated', email: 'hello@richandfriends.xyz', app_metadata: {}, user_metadata: {}, created_at: '2026-06-01T00:00:00Z' } }
       for (const k of ['sb-localhost-auth-token', 'sb-localhost-auth-token-code-verifier']) {
         try { localStorage.setItem(k, JSON.stringify(s)) } catch { /* ignore */ }
@@ -367,7 +390,12 @@ for (const loc of LOCALES) {
       /* detectLocale() lit cette cle avant de regarder navigator.language. Sans
          elle, la serie anglaise sortirait dans la langue du conteneur. */
       try { localStorage.setItem('friends.locale', lang) } catch { /* ignore */ }
-    }, [ME, loc])
+      /* Et 'rf.theme' est lue par le script en ligne d'index.html AVANT le
+         premier paint. L'ecrire ici plutot que de cliquer dans les reglages
+         evite la trame d'une couleur suivie de l'autre, que la capture
+         attraperait un jour sur deux. */
+      try { localStorage.setItem('rf.theme', skin) } catch { /* ignore */ }
+    }, [ME, loc, theme])
 
     await page.route('**/auth/v1/**', (r) =>
       r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ access_token: 'x', user: { id: ME, email: 'hello@richandfriends.xyz' } }) }))
@@ -448,7 +476,7 @@ for (const loc of LOCALES) {
         window.scrollTo({ top: Math.max(0, y), behavior: 'instant' })
         return true
       }, shot.into)
-      if (!found) problems.push(`${loc}/${shot.name}: ${shot.into} introuvable, la capture montre le haut de la page`)
+      if (!found) problems.push(`${loc}/${theme}/${shot.name}: ${shot.into} introuvable, la capture montre le haut de la page`)
       await page.waitForTimeout(500)
     }
 
@@ -459,8 +487,8 @@ for (const loc of LOCALES) {
        jusqu'a ce qu'elle soit dans une fiche de store. */
     const text = (await page.evaluate(() => document.body.innerText)).replace(/\s+/g, ' ').trim()
     const empty = text.length < 120
-    if (empty) problems.push(`${loc}/${shot.name}: l ecran est presque vide (${text.length} caracteres)`)
-    if (errors.length) problems.push(`${loc}/${shot.name}: ${errors[0].slice(0, 120)}`)
+    if (empty) problems.push(`${loc}/${theme}/${shot.name}: l ecran est presque vide (${text.length} caracteres)`)
+    if (errors.length) problems.push(`${loc}/${theme}/${shot.name}: ${errors[0].slice(0, 120)}`)
 
     /**
      * ET LA LANGUE EST VERIFIEE, PAS SUPPOSEE.
@@ -471,15 +499,33 @@ for (const loc of LOCALES) {
      */
     const hay = text.toLowerCase()
     const wrong = WITNESS[loc === 'fr' ? 'en' : 'fr'].filter((w) => hay.includes(w))
-    if (wrong.length) problems.push(`${loc}/${shot.name}: du texte de l autre langue a l ecran (${wrong.join(', ')})`)
+    if (wrong.length) problems.push(`${loc}/${theme}/${shot.name}: du texte de l autre langue a l ecran (${wrong.join(', ')})`)
     /* I18nProvider ecrit la langue sur <html>. C'est la reponse de
        l'application elle-meme, la ou les temoins ne sont qu'un echantillon. */
     const lang = await page.evaluate(() => document.documentElement.lang)
-    if (lang !== loc) problems.push(`${loc}/${shot.name}: <html lang="${lang}">, l application n a pas change de langue`)
+    if (lang !== loc) problems.push(`${loc}/${theme}/${shot.name}: <html lang="${lang}">, l application n a pas change de langue`)
 
-    const bad = empty || errors.length || wrong.length || lang !== loc
+    /**
+     * ET LE THEME EST MESURE SUR LE FOND, PAS SUR L'ATTRIBUT.
+     *
+     * `data-theme="sea"` ne prouve que l'intention: une variable mal declaree
+     * poserait l'attribut bleu sur une page rose, et la serie entiere sortirait
+     * dans la mauvaise couleur en repondant "sea" a qui le demande. La couleur
+     * qui compte est celle que le fond porte vraiment.
+     */
+    const skin = await page.evaluate(() => ({
+      attr: document.documentElement.dataset.theme,
+      bg: getComputedStyle(document.body).backgroundColor,
+    }))
+    const offColour = skin.attr !== theme || skin.bg !== GROUND_RGB[theme]
+    if (offColour) {
+      problems.push(`${loc}/${theme}/${shot.name}: theme peint ${skin.bg} avec data-theme="${skin.attr}", attendu ${GROUND_RGB[theme]}`)
+    }
+
+    const bad = empty || errors.length || wrong.length || lang !== loc || offColour
     console.log(`  ${bad ? 'FAIL' : 'ok  '} ${String(shot.n)}. ${shot.title.padEnd(17)} ${path}`)
     await page.close()
+  }
   }
 }
 
@@ -493,6 +539,7 @@ if (problems.length) {
   process.exit(1)
 }
 console.log(
-  `${LOCALES.length * SHOTS.length} captures en ${WIDTH}x${HEIGHT} a 2x, ` +
-  `${LOCALES.map((l) => `${OUT}/${l}/`).join(' puis ')}. Regarde-les avant de les utiliser.`,
+  `${LOCALES.length * THEMES.length * SHOTS.length} captures en ${WIDTH}x${HEIGHT} a 2x, dans ` +
+  `${LOCALES.flatMap((l) => THEMES.map((t) => `${OUT}/${l}/${t}/`)).join(', ')}. ` +
+  'Regarde-les avant de les utiliser.',
 )
