@@ -396,6 +396,11 @@ export default function GoalCard({
         <div
           id={`goal-actions-${goal.id}`}
           data-hook="goal-menu-items"
+          /* Which goal's menu this is. A probe has to ask "does THIS goal offer
+             Supprimer", and the alternative is counting cards in document
+             order, which is the kind of selector this repo has been burned by
+             on every restyle. */
+          data-goal={goal.id}
           /* animate-rise is the same entrance the rest of the app uses, so the
              card grows rather than the rows appearing already in place. */
           className="animate-rise mt-4 flex flex-col border-t border-hairline pt-3"
@@ -426,6 +431,7 @@ export default function GoalCard({
             <button
               type="button"
               onClick={() => { setMenu(false); setAsking(true) }}
+              data-hook="goal-delete"
               /* Separated by a rule and set in the negative colour. The one
                  action here that cannot be undone should not be adjacent to
                  the three that can. */
@@ -503,6 +509,7 @@ function DeleteButton({ onClick, label }) {
     <button
       type="button"
       onClick={onClick}
+      data-hook="goal-delete"
       className="press ml-auto inline-flex items-center rounded-pill px-4 py-2 text-small font-semibold text-negative transition-colors duration-200 ease-settle hover:bg-negative/[0.09]"
     >
       {label}

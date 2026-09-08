@@ -9,6 +9,7 @@ import { cyclePhase } from '../lib/time'
 import { useT } from '../lib/i18n'
 import { dueOn, outcomeFor, targetFor } from '../lib/schedule'
 import { countOn, progressFor } from '../lib/streak'
+import { canDeleteGoal } from '../lib/goalPerms'
 import { proofFields, proofTypeOf } from '../lib/proofKinds'
 import { errorText } from '../lib/dberr'
 import { Empty, Screen, Section, TopBar } from '../components/ui'
@@ -36,7 +37,7 @@ export default function Goals() {
   const { user } = useAuth()
   const { groupId } = useParams()
   const {
-    goals, soloGoals, members, myRole, cycles, cadence, currentCycle, reloadGroup,
+    goals, soloGoals, members, myRole, group, cycles, cadence, currentCycle, reloadGroup,
     dayIndex, setGoalDay,
   } = useGroup()
   const { t } = useT()
@@ -63,21 +64,22 @@ export default function Goals() {
   const ownerOf = (id) => members.find((m) => m.user_id === id)?.profile
 
   /**
-   * Who may delete what, matching goals_delete in supabase/09 exactly:
+   * Who may delete what.
    *
-   *   owner_id = auth.uid() or (group_id is not null and is_group_admin(...))
+   * THE RULE IS NOT WRITTEN HERE ANY MORE. It was, in one line, next to a
+   * comment claiming it matched goals_delete exactly, and it did not: it asked
+   * for `myRole === 'admin'`, and the person who starts a group holds the role
+   * 'creator'. So she never saw Supprimer on a shared goal, on any screen,
+   * while the database would have taken the delete from her without a murmur.
+   * "There are goals you cannot delete, I do not understand" is what that
+   * looked like from outside, and there was nothing to understand.
    *
-   * A goal you own is yours to remove wherever it lives. A group goal has no
-   * owner, so it belongs to the group and only an admin may take it away from
-   * four other people.
-   *
-   * Mirrored here rather than shown to everybody and left to fail, because a
-   * delete that RLS refuses does not raise: Postgres deletes nothing and
-   * reports success. A button that silently does nothing is worse than no
-   * button. removeGoal checks the returned rows as well, so the two have to
-   * both be wrong for anything to go unnoticed.
+   * canDeleteGoal lives in lib with a test that transcribes the policy, and the
+   * same fifteen cases were run against a real Postgres 16. A rule copied into
+   * a page drifts from the policy it copies and nothing fails when it does.
    */
-  const canDelete = (g) => g.owner_id === user?.id || (Boolean(groupId) && myRole === 'admin')
+  const canDelete = (g) =>
+    canDeleteGoal(g, { userId: user?.id ?? null, role: myRole, groupCreatedBy: group?.created_by ?? null })
 
   /**
    * THE CHECK-IN, ON THIS PAGE, IN BOTH MODES, AND NOWHERE ELSE ON IT.
