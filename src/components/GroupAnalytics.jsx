@@ -59,17 +59,38 @@ function Row({ row }) {
        * list of five people reads as a rendering fault rather than as a
        * standing.
        *
-       * `tied` gets an equals sign, the way a league table does: =2 says two
-       * people share second, which is a different claim from 2 and is the
-       * whole reason rank() shares places rather than inventing an order.
+       * A TIE IS THE NUMBER, IN GREY. NO EQUALS SIGN.
+       *
+       * "Au lieu de mettre =4, rends juste le nombre gris quand c'est ex
+       * aequo, juste le nombre."
+       *
+       * It was `=4`, the way a league table writes it. On a board of six
+       * friends who have all done nothing yet, that put a punctuation mark in
+       * front of every single row, and the column read as an error before it
+       * read as a standing.
+       *
+       * WHERE THE GREY ACTUALLY DOES SOMETHING. Every place below first was
+       * already grey, so on her board nothing changes but the missing sign.
+       * The case it earns is a SHARED FIRST: two people on the same figure are
+       * both first, and gold on both would say each of them holds the top of
+       * the board alone. Sharing it is a different claim. So `text-mark` now
+       * means exactly one thing, first and alone, and a tie is grey wherever
+       * it lands.
+       *
+       * AND COLOUR IS NOT THE ONLY SIGNAL (1.4.1). The tie is said by the
+       * REPEATED NUMBER: three rows reading 4 is what a tie looks like, and
+       * that reading survives with no colour at all, in greyscale, and read
+       * aloud. The grey is a second voice saying the same thing, which is what
+       * 1.4.1 asks for. `data-tied` carries it for a probe.
        */}
       <span
         data-rank={row.position ?? ''}
+        data-tied={row.tied ? 'yes' : 'no'}
         className={`w-6 shrink-0 text-right text-small font-bold [font-variant-numeric:tabular-nums] ${
-          row.position === 1 ? 'text-mark' : 'text-muted'
+          row.position === 1 && !row.tied ? 'text-mark' : 'text-muted'
         }`}
       >
-        {row.position === null ? '-' : `${row.tied ? '=' : ''}${row.position}`}
+        {row.position === null ? '-' : row.position}
       </span>
 
       <Avatar profile={row.profile} size={34} />

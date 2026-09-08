@@ -2159,5 +2159,37 @@ ok(
      '41px morts sur 94px, mesures: viser une carte et tomber dans sa marge')
 }
 
+/**
+ * UN EX AEQUO EST LE NOMBRE, EN GRIS. PAS DE SIGNE EGAL.
+ *
+ * "Au lieu de mettre =4, rends juste le nombre gris quand c'est ex aequo,
+ * juste le nombre."
+ *
+ * Le signe se remet en une ligne, et il se remettra: `=2` est la facon dont
+ * une vraie table de championnat s'ecrit, donc quelqu'un qui relit ce
+ * composant le trouvera manquant. Sur un tableau de six amies qui n'ont encore
+ * rien fait, il mettait une ponctuation devant chaque ligne et la colonne se
+ * lisait comme une panne avant de se lire comme un classement.
+ *
+ * Et text-mark ne vaut plus que pour une premiere place TENUE SEULE: l'or sur
+ * deux personnes a egalite dirait que chacune tient le haut du tableau toute
+ * seule. Mesure dans Chromium sur les deux cas.
+ */
+{
+  const ga = code('src/components/GroupAnalytics.jsx')
+
+  ok('plus de signe egal devant un rang',
+     !/tied \? '=' : ''/.test(ga),
+     'la colonne se lisait comme une panne avant de se lire comme un classement')
+  ok('la couleur du premier ne va qu a un premier seul',
+     /row\.position === 1 && !row\.tied \? 'text-mark'/.test(ga),
+     'l or sur deux ex aequo dirait que chacune tient le haut toute seule')
+  ok('un ex aequo reste lisible sans couleur, par le nombre repete',
+     /\{row\.position === null \? '-' : row\.position\}/.test(ga),
+     'trois lignes qui disent 4 est ce a quoi ressemble une egalite, en gris comme en noir et blanc')
+  ok('et l egalite est lisible par une sonde',
+     /data-tied=\{row\.tied \? 'yes' : 'no'\}/.test(ga))
+}
+
 console.log(`\n  ${pass} passed, ${fail} failed\n`)
 process.exit(fail ? 1 : 0)
