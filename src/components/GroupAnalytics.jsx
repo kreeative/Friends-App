@@ -136,7 +136,7 @@ export default function GroupAnalytics({ members = [], goals = [], cycles = [], 
   const whole = useMemo(() => groupRate(rows), [rows])
 
   return (
-    <div className="lg p-5 sm:p-6">
+    <div className="lg p-5 sm:p-6" data-hook="analytics">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <span className="eyebrow">{t('analytics.title')}</span>
         {/* The group's own figure, from the same two totals the rows are built
