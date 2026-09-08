@@ -10,6 +10,8 @@ import { phaseOn, predict } from '../lib/cycle'
 import { cycleOn } from '../lib/setup'
 import { MARK_KINDS, countsFor, itemsFor, marksFor } from '../lib/dayMarks'
 import { isDueOn } from '../lib/schedule'
+import { indexDays } from '../lib/streak'
+import { outcomesForDay } from '../lib/dayOutcomes'
 import { isMissingColumn } from '../lib/dberr'
 import { cleanMoods } from '../lib/moods'
 import { rectOf } from '../lib/gesture'
@@ -377,6 +379,17 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
      they were typed. A check-in submitted at ten past midnight belongs to the
      day it was for, not to the one the clock had just rolled into. */
   const [itemsByCycle, setItemsByCycle] = useState({})
+  /**
+   * The OTHER place an answer lives, and the one this panel never read.
+   *
+   * A goal in a group is answered by submit_checkin, which writes a checkins
+   * row and its items; a goal on your own is answered by setGoalDay, which
+   * writes one goal_days row per goal per day. Two tables, chosen by the goal
+   * and not by the screen. This card read the first and only the first, so
+   * every solo goal on it said "non enregistre" for ever, however many times
+   * it had been ticked. See lib/dayOutcomes.js.
+   */
+  const [dayRows, setDayRows] = useState([])
   const [budget, setBudget] = useState(null)
   const [moodByDay, setMoodByDay] = useState({})
 
@@ -463,6 +476,29 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
         }
       } catch {
         /* Offline. The strip still draws; the day panel just has less in it. */
+      }
+
+      /**
+       * The solo ticks, over the same span.
+       *
+       * Its own try, like every other read here: migration 32 may not have
+       * been run, and a select naming a missing table must cost this panel its
+       * solo answers and nothing else.
+       *
+       * Bounded by the window rather than fetched whole. This table gets one
+       * row per goal per day for ever, and the panel can only ever draw the
+       * days it is showing. RLS already limits it to the reader's own rows, so
+       * no user filter is needed and none would add anything.
+       */
+      try {
+        const { data, error } = await supabase
+          .from('goal_days')
+          .select('goal_id, on_date, count_done')
+          .gte('on_date', dayKey(from))
+          .lte('on_date', dayKey(to))
+        if (!dead && !error) setDayRows(data ?? [])
+      } catch {
+        /* No goal_days yet. Solo goals simply stay unrecorded, as before. */
       }
 
       const b = await loadBudget(user.id).catch(() => null)
@@ -606,6 +642,21 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
     return map
   }, [statuses])
 
+  /* Built once for the whole span rather than scanned per day. A month of
+     five goals is a few hundred rows and this panel reads it on every render
+     of every slide. */
+  const dayIndex = useMemo(() => indexDays(dayRows), [dayRows])
+
+  /* Which days carry at least one solo tick, for the green dot. A Set rather
+     than a scan per square: the month view asks this forty-two times. */
+  const tickedDays = useMemo(() => {
+    const out = new Set()
+    for (const r of dayRows) {
+      if ((Number(r?.count_done) || 0) > 0 && r?.on_date) out.add(String(r.on_date).slice(0, 10))
+    }
+    return out
+  }, [dayRows])
+
   const entriesByDay = useMemo(() => {
     const map = {}
     for (const e of budget?.entries ?? []) {
@@ -621,10 +672,6 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
 
   /* What the selected day actually holds. */
   const rows = cyclesByDay[selected] ?? []
-  const outcomes = new Map()
-  for (const s of rows) {
-    for (const item of itemsByCycle[s.cycle_id] ?? []) outcomes.set(item.goal_id, item)
-  }
 
   const selectedDate = new Date(`${selected}T00:00:00`)
 
@@ -632,6 +679,17 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
      the check-in uses. A Thursday should not list a Monday-and-Wednesday goal
      and then show it as unrecorded. */
   const live = goals.filter((g) => isDueOn(g, selectedDate))
+
+  /**
+   * BOTH tables, not one.
+   *
+   * The group answers are keyed to the cycle they were filed against; the solo
+   * ticks are keyed straight to the date. Reading only the first is what put
+   * "non enregistre" under a goal that had just been ticked. dayOutcomes.js
+   * carries the merge and its test.
+   */
+  const items = rows.flatMap((s) => itemsByCycle[s.cycle_id] ?? [])
+  const outcomes = outcomesForDay(live, items, dayIndex, selected)
 
   const entries = entriesByDay[selected] ?? []
   const total = (kind) =>
@@ -690,6 +748,10 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
      performance, and it must not become a score. */
   const isLogged = (k) =>
     (cyclesByDay[k] ?? []).some((s) => s.status === 'submitted') ||
+    /* A solo tick is a log too, and it was not counted. Same blind spot as the
+       panel below: only the group table was read, so a day spent ticking off
+       four of your own goals and nothing else came out blank. */
+    tickedDays.has(k) ||
     (entriesByDay[k] ?? []).length > 0 ||
     Boolean(moodByDay[k]?.length)
 
@@ -706,7 +768,7 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
       logged: isLogged,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [agenda, goalsByDay, cycleStarts, prediction, cyclesByDay, entriesByDay, moodByDay],
+    [agenda, goalsByDay, cycleStarts, prediction, cyclesByDay, entriesByDay, moodByDay, tickedDays],
   )
 
   /**
@@ -1098,7 +1160,18 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
                 {live.map((g) => {
                   const item = outcomes.get(g.id)
                   return (
-                    <div key={g.id} className="flex items-center gap-3">
+                    <div
+                      key={g.id}
+                      className="flex items-center gap-3"
+                      data-hook="week-goal"
+                      data-goal={g.id}
+                      /* The verdict as an attribute, so a probe reads the state
+                         rather than a translated word. "Non enregistre" is the
+                         string that was wrong here, and matching on it would
+                         have been matching on the symptom. */
+                      data-outcome={item?.outcome ?? 'none'}
+                      data-source={item?.source ?? (item ? 'checkin' : 'none')}
+                    >
                       <span className="min-w-0 flex-1 truncate text-small text-ink">
                         {g.commitment}
                       </span>

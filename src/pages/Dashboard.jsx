@@ -142,10 +142,27 @@ export default function Dashboard() {
           .limit(400),
         supabase
           .from('goals')
-          /* commitment and the two dates are for the week strip: it names the
-             goals a given day actually had, and a goal that had not started
-             yet on Tuesday was not one of Tuesday's. */
-          .select('id, group_id, status, kind, owner_id, commitment, starts_on, ends_on')
+          /**
+           * commitment and the dates are for the week strip: it names the
+           * goals a given day actually had, and a goal that had not started
+           * yet on Tuesday was not one of Tuesday's.
+           *
+           * FOUR COLUMNS WERE MISSING AND EVERY ONE OF THEM IS READ.
+           *
+           * isDueOn() asks for cadence, due_on and active_days, and got
+           * undefined for all three, so it fell through to "recurring, no
+           * chosen days, always due". A Monday-and-Wednesday goal was listed
+           * on a Thursday, and a one-off due in December was listed today,
+           * both of them labelled not recorded: a failure to do something
+           * that was never asked for today.
+           *
+           * outcomeFor() asks for target_per_cycle, and without it a goal
+           * wanting three would have read as done on the first tick.
+           */
+          .select(
+            'id, group_id, status, kind, owner_id, commitment, starts_on, ends_on,' +
+              ' cadence, due_on, active_days, target_per_cycle',
+          )
           .eq('owner_id', user.id)
           .eq('status', 'active'),
         listBooks().catch(() => []),
