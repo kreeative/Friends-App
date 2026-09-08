@@ -864,7 +864,12 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
      * than its own thing to read.
      */
     <>
-    <div className="lg overflow-hidden p-4 sm:p-5">
+    {/* The calendar card itself. The hook goes on the box rather than on any
+        row inside it, because what a probe asks of it is where it ends:
+        "l'eau en bas du calendrier" is a question about this box's bottom
+        edge, and answering it by finding some row within would break the
+        first time the card has nothing in it. */}
+    <div className="lg overflow-hidden p-4 sm:p-5" data-hook="week-strip">
       {/**
        * Which week you are looking at, and two ways to leave it.
        *
