@@ -10,3 +10,7 @@ env.
 
 # Screenshots written by npm run sweep
 .sweep/
+
+# Les captures d'App Store: generees par `npm run shots`, refaites a la
+# demande, et lourdes. Le script est dans le depot, les images non.
+.shots

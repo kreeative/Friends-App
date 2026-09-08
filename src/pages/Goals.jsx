@@ -116,9 +116,32 @@ export default function Goals() {
   /* Which goals today actually has an answer for. A twice-a-week goal on a
      Thursday and a one-off due in October are not questions today can answer,
      and a card that asks anyway is one people learn to scroll past. */
+  /**
+   * CE QUI EST DU AUJOURD'HUI, ET SEULEMENT CE QU'ON PEUT REPONDRE.
+   *
+   * C'etait `live`, soit TOUS les objectifs du groupe, y compris les objectifs
+   * personnels des autres. Sur un groupe de cinq, le rail demandait donc a
+   * chacun de repondre pour tout le monde: "il en reste 11 sur 11" sur une
+   * personne qui en a trois. Et une reponse donnee la n'aurait aucun sens,
+   * puisqu'on ne peut pas savoir si quelqu'un d'autre a couru ce matin.
+   *
+   * Les siens et ceux du GROUPE. Un objectif commun se repond par chacun,
+   * c'est ce qui le rend commun. Un objectif personnel d'une autre personne
+   * s'affiche plus bas, dans "les autres", en lecture seule et sans controles,
+   * ce qui etait deja la regle partout ailleurs sur cette page.
+   *
+   * Trouve en fabriquant une fixture de groupe realiste pour les captures
+   * d'App Store: avec une seule personne dans les donnees de test, les deux
+   * listes sont identiques et le defaut est invisible.
+   */
+  const answerable = useMemo(
+    () => live.filter((g) => g.kind === 'group' || g.owner_id === user?.id),
+    [live, user?.id],
+  )
+
   const dueToday = useMemo(
-    () => new Set(dueOn(live.filter((g) => g.status === 'active')).map((g) => g.id)),
-    [live],
+    () => new Set(dueOn(answerable.filter((g) => g.status === 'active')).map((g) => g.id)),
+    [answerable],
   )
 
   const [answers, setAnswers] = useState({})
@@ -433,8 +456,8 @@ export default function Goals() {
   /* The goals the banner is about, in a stable order so the carousel does not
      reshuffle under somebody halfway through it. */
   const todays = useMemo(
-    () => (open ? live.filter((g) => dueToday.has(g.id)) : []),
-    [open, live, dueToday],
+    () => (open ? answerable.filter((g) => dueToday.has(g.id)) : []),
+    [open, answerable, dueToday],
   )
 
   /* Answered means recorded, not touched: a card somebody opened and left
