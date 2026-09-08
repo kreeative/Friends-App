@@ -61,6 +61,13 @@ export function useWaterToday() {
     /* 42P01: la table n'existe pas. C'est la migration, pas une panne. */
     if (e1?.code === '42P01') setPending(true)
     else if (e1) setError(e1.message)
+    /* Et une lecture qui reussit efface le refus d'avant. Sans cette ligne le
+       bandeau rouge est ETERNEL: il n'etait pose que sur une erreur et retire
+       nulle part, donc une contrainte corrigee dans la base laissait quand
+       meme le message a l'ecran, et la seule facon de le faire partir etait de
+       quitter la page. Signale ainsi: "But it still not working", avec en
+       photo un message qui datait de l'essai precedent. */
+    else setError(null)
     setRow(pref ?? null)
     setDrunk((logs ?? []).reduce((n, l) => n + (l.ml ?? 0), 0))
     setLoading(false)
@@ -97,6 +104,15 @@ export function useWaterToday() {
   const nextAtFor = (p, next) =>
     next.water_on && p.nextMin !== null ? atLocalMinute(p.nextMin).toISOString() : null
 
+  /**
+   * Enregistrer, et DIRE si c'est passe.
+   *
+   * Rendait undefined, donc l'appelant ne pouvait pas savoir. L'ecran des
+   * reglages allumait "Enregistre" sans attendre, et sur la capture envoyee le
+   * bouton disait "Enregistre" pendant qu'un refus de contrainte etait affiche
+   * en rouge juste au-dessus et que le champ retombait a l'ancienne valeur.
+   * Trois choses a l'ecran, dont une fausse, et c'est la seule qui rassure.
+   */
   async function save(patch) {
     const next = { ...pref, ...patch }
     const p = waterPlan(next, { drunkMl: drunk, nowMin })
@@ -107,11 +123,19 @@ export function useWaterToday() {
       .from('notify_pref')
       .upsert({ user_id: user.id, ...next, water_next_at }, { onConflict: 'user_id' })
     if (err) {
-      setError(err.message)
       /* Remettre ce que la base a vraiment, plutot que de laisser l'ecran
-         montrer un reglage qui n'a pas ete enregistre. */
-      load()
+         montrer un reglage qui n'a pas ete enregistre.
+         AWAIT, ET LE MESSAGE APRES. load() efface l'erreur quand il reussit,
+         et il reussit ici: la lecture marche, c'est l'ecriture qui a ete
+         refusee. Sans l'ordre, le bandeau serait pose puis retire dans la
+         foulee et le refus n'apparaitrait jamais. */
+      await load()
+      setError(err.message)
+      return false
     }
+    /* Et une ecriture qui passe efface le refus d'avant. */
+    setError(null)
+    return true
   }
 
   /**
