@@ -1,6 +1,7 @@
 import { useT } from '../lib/i18n'
 import { DEFAULTS, LEAD_CHOICES, fromHm, isMuted, toHm } from '../lib/reminders'
 import { MAX_TARGET, MIN_TARGET, everyLabel } from '../lib/water'
+import { MAX_SERVING_ML, MIN_SERVING_ML, UNITS, formatAmount, parseAmount, toUnit, unitLabel } from '../lib/units'
 import { useWaterToday } from '../lib/useWater'
 import { Field } from './ui'
 
@@ -27,7 +28,7 @@ import { Field } from './ui'
  * surprise.
  */
 export default function ReminderSettings() {
-  const { t } = useT()
+  const { t, locale } = useT()
 
   /* Toute la logique de l'eau vit dans useWaterToday: l'ecran d'accueil a
      maintenant le meme bouton, et deux copies de "insere une ligne, recalcule
@@ -124,6 +125,39 @@ export default function ReminderSettings() {
 
         {pref.water_on && (
           <div className="mt-6">
+            {/**
+             * L'UNITE, AVANT TOUT LE RESTE.
+             *
+             * "Je ne bois pas de verre d'eau, j'ai une bouteille qui fait
+             * 40 oz." Elle est en tete parce qu'elle decide comment se lisent
+             * les deux reglages en dessous: regler une cible en millilitres
+             * quand on pense en onces, c'est deja la calculatrice.
+             *
+             * Rien n'est reecrit en base: water_log reste en millilitres et
+             * l'historique est CONVERTI, pas reinterprete. Voir units.js.
+             */}
+            <Field label={t('remind.unit')} hint={t('remind.unit_hint')}>
+              <div className="flex gap-2" data-hook="water-unit">
+                {UNITS.map((u) => (
+                  <button
+                    key={u}
+                    type="button"
+                    onClick={() => save({ water_unit: u })}
+                    data-hook={`water-unit-${u}`}
+                    aria-pressed={pref.water_unit === u}
+                    className={`press rounded-pill px-4 py-2 text-small font-semibold transition-colors ${
+                      pref.water_unit === u
+                        ? 'bg-accent text-on-accent'
+                        : 'bg-ink/[0.06] text-muted hover:bg-ink/[0.12] hover:text-ink'
+                    }`}
+                  >
+                    {u === 'oz' ? 'oz' : 'ml'}
+                  </button>
+                ))}
+              </div>
+            </Field>
+
+            <div className="mt-6">
             <Field label={t('remind.target')}>
               <input
                 type="range"
@@ -136,6 +170,50 @@ export default function ReminderSettings() {
                 className="w-full accent-accent"
               />
             </Field>
+            {/* La cible en toutes lettres sous le curseur: un curseur sans son
+                chiffre est un reglage qu'on regle au hasard. */}
+            <p className="mt-1 text-small text-muted" data-hook="water-target-value">
+              {formatAmount(pref.water_target_ml, pref.water_unit, locale)}
+            </p>
+            </div>
+
+            {/**
+             * CE DANS QUOI ON BOIT.
+             *
+             * La colonne s'appelle encore water_glass_ml et contient une
+             * bouteille aussi souvent qu'un verre. Le champ est en unite
+             * affichee, la valeur part en millilitres: 40 oz s'enregistre en
+             * 1183 ml et se relit 40 oz, verifie sur toute la plage dans
+             * units.test.mjs.
+             */}
+            <div className="mt-6">
+              <Field label={t('remind.serving')} hint={t('remind.serving_hint')}>
+                <span className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    data-hook="water-serving"
+                    className="field min-w-0 flex-1"
+                    defaultValue={toUnit(pref.water_glass_ml, pref.water_unit)}
+                    key={`${pref.water_unit}-${pref.water_glass_ml}`}
+                    onBlur={(e) => {
+                      const ml = parseAmount(e.target.value, pref.water_unit)
+                      /* Une saisie illisible ne change rien plutot que de
+                         remettre un defaut: effacer la contenance de quelqu'un
+                         parce qu'il a tape une lettre serait pire que de ne
+                         rien faire. */
+                      if (ml && ml !== pref.water_glass_ml) save({ water_glass_ml: ml })
+                    }}
+                  />
+                  <span className="shrink-0 text-small text-muted">{unitLabel(pref.water_unit)}</span>
+                </span>
+              </Field>
+              <p className="mt-1 text-small text-muted" data-hook="water-serving-bounds">
+                {formatAmount(MIN_SERVING_ML, pref.water_unit, locale)}
+                {' – '}
+                {formatAmount(MAX_SERVING_ML, pref.water_unit, locale)}
+              </p>
+            </div>
 
             {/**
              * LE CALCUL, MONTRE PENDANT QU'ON BOUGE LE CURSEUR.
@@ -154,8 +232,7 @@ export default function ReminderSettings() {
             )}
             <p className="mt-3 text-body text-ink" data-hook="water-plan">
               {t('remind.plan', {
-                litres: (pref.water_target_ml / 1000).toFixed(1),
-                glasses,
+                total: formatAmount(pref.water_target_ml, pref.water_unit, locale),
                 every: everyLabel(typical.gapMin, t),
               })}
             </p>
@@ -222,8 +299,13 @@ export default function ReminderSettings() {
             </div>
 
             <div className="mt-5 flex flex-wrap items-center gap-3">
-              <button type="button" onClick={drink} data-hook="water-drink" className="goal-action press">
-                {t('remind.drink')}
+              <button
+                type="button"
+                onClick={() => drink(pref.water_glass_ml)}
+                data-hook="water-drink"
+                className="goal-action press"
+              >
+                {t('remind.drink', { amount: formatAmount(pref.water_glass_ml, pref.water_unit, locale) })}
               </button>
               {drunk > 0 && (
                 <button
@@ -236,7 +318,10 @@ export default function ReminderSettings() {
                 </button>
               )}
               <span className="text-small text-muted" data-hook="water-today">
-                {t('remind.today', { done, total: glasses })}
+                {t('remind.today', {
+                  done: formatAmount(drunk, pref.water_unit, locale),
+                  total: formatAmount(pref.water_target_ml, pref.water_unit, locale),
+                })}
               </span>
             </div>
           </div>
