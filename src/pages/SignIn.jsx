@@ -19,7 +19,10 @@ import { useT } from '../lib/i18n'
  */
 // Filtered against what is actually in src/assets/stickers, so renaming
 // or removing art degrades to a shorter row instead of broken images.
-const HERO_ART = pickStickers(['cloudguy', 'skullfire', 'bass', 'burger', 'bird', 'popsicle'])
+/* Le 6 n'est pas decoratif: il garantit six stickers meme apres un
+   remplacement complet du dossier, ou aucun de ces noms n'existerait plus et
+   ou la rangee disparaitrait sans un mot. */
+const HERO_ART = pickStickers(['cloudguy', 'skullfire', 'bass', 'burger', 'bird', 'popsicle'], 6)
 
 function ArtRow() {
   return (

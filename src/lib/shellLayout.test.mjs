@@ -2245,5 +2245,38 @@ ok(
      /data-tied=\{row\.tied \? 'yes' : 'no'\}/.test(ga))
 }
 
+/**
+ * REMPLACER TOUT LE PACK DE STICKERS NE DOIT PAS VIDER LES PAGES.
+ *
+ * Demande: "remplace tout les sticker par ceux ci".
+ *
+ * Quatre surfaces nomment des stickers precis, douze noms ecrits a la main.
+ * Ces listes sont filtrees contre ce qui existe, ce qui est juste pour UN nom
+ * disparu et faux pour tous a la fois: le filtre rend alors une liste vide, et
+ * la rangee de la connexion comme le decor de chaque page disparaissent sans
+ * erreur, sans image cassee, sans rien dans la console.
+ *
+ * Mesure: dossier entierement renomme, puis Chromium a 390. Avant, zero
+ * sticker place sur les deux surfaces. Apres, six et six.
+ */
+{
+  const art = code('src/lib/art.js')
+  const signin = code('src/pages/SignIn.jsx')
+  const stk = code('src/components/Stickers.jsx')
+
+  ok('la regle de choix vit dans un fichier que node peut executer',
+     /from '\.\/stickerPick'/.test(art),
+     'art.js utilise import.meta.glob et ne se teste que par son texte')
+  ok('et pickStickers accepte un minimum', /pickStickers = \(wanted, atLeast = 0\)/.test(art))
+
+  ok('la rangee de la connexion en demande six',
+     /'popsicle'\], 6\)/.test(signin),
+     'sans le compte, un pack remplace laisse la page de connexion nue')
+  const comptes = [...stk.matchAll(/pickStickers\(\[[^\]]*\], (\d+)\)/g)].map((m) => Number(m[1]))
+  ok('et les trois jeux de Stickers.jsx aussi', comptes.length === 3, JSON.stringify(comptes))
+  ok('chacun avec autant de stickers que de noms voulus',
+     comptes.join(',') === '6,4,6', JSON.stringify(comptes))
+}
+
 console.log(`\n  ${pass} passed, ${fail} failed\n`)
 process.exit(fail ? 1 : 0)
