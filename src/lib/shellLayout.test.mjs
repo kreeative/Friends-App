@@ -1902,6 +1902,41 @@ ok(
   ok('the count is written as well as drawn',
      /water-card-count/.test(card) && /remind\.today/.test(card),
      'colour is never the only signal (1.4.1)')
+
+  /**
+   * WHAT THE SCREEN SAYS AFTER A REFUSAL.
+   *
+   * Reported as "but it still not working", with a photo of a settings screen
+   * carrying three things at once: a check-constraint refusal in red, a field
+   * that had snapped back to the old value, and a Save button reading
+   * "Enregistre". Only the last one was false, and it is the one that gets
+   * believed.
+   *
+   * Three shapes hold it together, and each was wrong on its own:
+   *
+   *   setError was set on failure and cleared NOWHERE, so the red banner
+   *   outlived the problem. Fixing the database left the message on screen.
+   *
+   *   save() returned undefined, so the caller could not tell a refusal from a
+   *   success and lit the confirmation either way.
+   *
+   *   touching the button blurred the field first, so one tap committed TWICE:
+   *   onBlur with what was typed, then onClick with the value load() had just
+   *   restored. The second one succeeded, which is why a refusal could end on
+   *   a confirmation.
+   */
+  ok('a successful read clears a stale refusal', /else setError\(null\)/.test(hook),
+     'set on error and cleared nowhere is a banner that outlives its cause')
+  ok('and a successful write clears it too', /setError\(null\)\s*\n\s*return true/.test(hook))
+  ok('save says whether it went through',
+     /return false/.test(hook) && /return true/.test(hook),
+     'undefined cannot tell a refusal from a success')
+  ok('so the settings screen waits for the answer before confirming',
+     /const saved = await save\(\{ water_glass_ml: ml \}\)/.test(settings)
+     && /if \(!saved\) return/.test(settings))
+  ok('and one tap is one write',
+     /onPointerDown=\{\(e\) => e\.preventDefault\(\)\}/.test(settings),
+     'without it the blur commits what was typed and the click commits what was restored')
 }
 
 /**

@@ -57,14 +57,29 @@ export default function ReminderSettings() {
    * l'envoi, et la migration 64 remonte le plafond de la base a 2000 pour
    * qu'une bouteille de 40 oz (1183 ml) y entre.
    */
-  function commitServing(raw) {
+  async function commitServing(raw) {
     const parsed = parseAmount(raw, pref.water_unit)
     /* Une saisie illisible ne change rien plutot que de remettre un defaut:
        effacer la contenance de quelqu'un parce qu'il a tape une lettre serait
        pire que de ne rien faire. */
     if (!parsed) return
     const ml = safeServing(parsed, pref.water_glass_ml)
-    if (ml !== pref.water_glass_ml) save({ water_glass_ml: ml })
+    /**
+     * ET ON ATTEND LA REPONSE DE LA BASE AVANT DE DIRE "ENREGISTRE".
+     *
+     * Le bouton s'allumait tout de suite. Sur la capture envoyee il disait
+     * "Enregistre" au-dessus d'un refus de contrainte en rouge, pendant que le
+     * champ retombait a l'ancienne valeur. Un refus, un retour en arriere et
+     * une confirmation, en meme temps: la seule des trois qu'on croit est
+     * celle qui ment.
+     */
+    if (ml !== pref.water_glass_ml) {
+      const saved = await save({ water_glass_ml: ml })
+      /* Le refus est deja a l'ecran, et load() a remis dans le champ ce que la
+         base contient vraiment. Ne rien reecrire par-dessus, ne rien
+         confirmer. */
+      if (!saved) return
+    }
     /* Ramene ce qui est affiche sur ce qui a ete garde: quelqu'un qui tape
        9999 doit voir la valeur retenue, pas la sienne. */
     if (servingRef.current) servingRef.current.value = toUnit(ml, pref.water_unit)
@@ -255,6 +270,22 @@ export default function ReminderSettings() {
                       enregistrer. */}
                   <button
                     type="button"
+                    /**
+                     * UN SEUL ENREGISTREMENT PAR GESTE.
+                     *
+                     * Toucher le bouton fait d'abord perdre le focus au champ,
+                     * donc onBlur enregistrait, PUIS onClick enregistrait une
+                     * deuxieme fois. Quand la base refusait le premier, load()
+                     * avait deja remis l'ancienne valeur dans le champ, et le
+                     * second envoi portait sur cette valeur-la: il passait, et
+                     * le bouton annoncait "Enregistre" juste sous le refus.
+                     *
+                     * preventDefault sur le pointeur empeche le changement de
+                     * focus, donc pas de blur, donc un seul envoi, celui qui
+                     * porte ce qui a ete tape. Meme correction que sur la croix
+                     * de PickerField, pour la meme raison.
+                     */
+                    onPointerDown={(e) => e.preventDefault()}
                     onClick={() => commitServing(servingRef.current?.value)}
                     data-hook="water-serving-save"
                     className="press shrink-0 rounded-pill bg-ink/[0.06] px-4 py-2 text-small font-semibold text-ink hover:bg-ink/[0.12]"
