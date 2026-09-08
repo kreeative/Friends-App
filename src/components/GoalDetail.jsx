@@ -593,6 +593,7 @@ export default function GoalDetail({
               <button
                 type="button"
                 onClick={() => setAsking(true)}
+                data-hook="goal-delete"
                 className="press ml-auto inline-flex items-center rounded-pill px-4 py-2 text-small font-semibold text-negative transition-colors duration-200 ease-settle hover:bg-negative/[0.09]"
               >
                 {t('goal.delete')}
