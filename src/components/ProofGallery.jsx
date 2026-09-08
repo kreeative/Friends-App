@@ -6,6 +6,7 @@ import { REACTIONS, REACTION_GLYPH, byMonth, loadProofs, toggleReaction } from '
 import { linkHost, proofOf } from '../lib/proofKinds'
 import { Avatar, Empty, Section } from './ui'
 import ProofEditSheet from './ProofEditSheet'
+import { lockScroll } from '../lib/scrollLock'
 
 /**
  * What the group actually did, in photographs.
@@ -209,15 +210,15 @@ function LinkGlyph() {
 function Viewer({ proof, onClose, onReact, onEdit, locale, mine }) {
   const { t } = useT()
 
+  /* The lock is held for as long as this viewer is mounted, and for nothing
+     else: it used to hang off onClose, an inline arrow from the caller, so it
+     was retaken on every render. See lib/scrollLock.js. */
+  useEffect(() => lockScroll(), [])
+
   useEffect(() => {
     const onKey = (e) => e.key === 'Escape' && onClose()
     window.addEventListener('keydown', onKey)
-    const prev = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => {
-      window.removeEventListener('keydown', onKey)
-      document.body.style.overflow = prev
-    }
+    return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
 
   if (!proof) return null

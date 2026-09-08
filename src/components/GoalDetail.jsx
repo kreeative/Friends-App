@@ -21,6 +21,7 @@ import {
   totalDone,
 } from '../lib/streak'
 import ConfirmDialog from './ConfirmDialog'
+import { lockScroll } from '../lib/scrollLock'
 
 /**
  * One goal, in full, grown out of the card you tapped.
@@ -180,16 +181,32 @@ export default function GoalDetail({
 
   const close = useCallback(() => onClose?.(), [onClose])
 
+  /**
+   * The page behind stops scrolling, and starts again when this closes.
+   *
+   * TWO EFFECTS, NOT ONE, and the split is the fix rather than tidiness.
+   *
+   * They were together, with `close` in the dependency list. `close` follows
+   * `onClose`, which every caller writes as an inline arrow, so the pair
+   * re-ran on every render of the card: taking the lock, giving it back,
+   * taking it again. That churn is what let two open panels interleave, and
+   * lockScroll's own note has the four lines that end with the page frozen and
+   * nothing on screen to explain it. Measured: open a goal, close it, open
+   * another before the first has finished closing, and a thumb then moves the
+   * page 0px until it is reloaded.
+   *
+   * The lock now depends on one thing, which is whether this panel is open.
+   */
   useEffect(() => {
-    if (phase === 'closed') return
+    if (phase === 'closed') return undefined
+    return lockScroll()
+  }, [phase])
+
+  useEffect(() => {
+    if (phase === 'closed') return undefined
     const onKey = (e) => e.key === 'Escape' && close()
-    const previous = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
     window.addEventListener('keydown', onKey)
-    return () => {
-      document.body.style.overflow = previous
-      window.removeEventListener('keydown', onKey)
-    }
+    return () => window.removeEventListener('keydown', onKey)
   }, [phase, close])
 
   /**
