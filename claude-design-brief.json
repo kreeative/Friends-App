@@ -1,0 +1,152 @@
+{
+  "meta": {
+    "what": "Brief for designing the five App Store slides for Rich & Friends. Combines the brand as it exists in the codebase with the slide copy from app-store-features.json.",
+    "why_the_brand_is_here": "Without it a design tool invents a pink, a typeface and a corner radius, and the screenshots stop looking like the app they are selling. Every value below is read from src/index.css, tailwind.config.js and public/manifest.webmanifest, not chosen for this file.",
+    "generated_by": "hand, from the codebase",
+    "generated_at": "2026-09-08",
+    "companion_files": {
+      "app-store-features.json": "The same five slides, in the exact schema that was asked for. That file is the source of truth for the copy; this one adds how it should look.",
+      "content.json": "All course text, if a slide needs a real sentence from a real lesson."
+    }
+  },
+
+  "brand": {
+    "name": "Rich & Friends",
+    "tagline_fr": "Change de vie. Batis ta liberte financiere.",
+    "tagline_en": "Change your life. Build your financial freedom.",
+    "voice": "Direct, warm, second person, no hype. The product argues that slow beats fast, so the copy never promises speed.",
+    "logo": {
+      "mark": "public/brand/mark-pink.png",
+      "wordmark": "public/brand/wordmark-pink.png",
+      "note": "Blue variants exist for the sea theme. Use pink for the App Store: sun is the default theme."
+    },
+    "typeface": {
+      "family": "Poppins",
+      "fallback": "system-ui, -apple-system, sans-serif",
+      "note": "One typeface everywhere, no second voice on any screen. Poppins is geometric and wide, so display sizes are tracked IN, not out.",
+      "scale": {
+        "hero": { "size": "3.5rem", "line_height": "1.05", "letter_spacing": "-0.03em" },
+        "h1": { "size": "2rem", "line_height": "1.2", "letter_spacing": "-0.024em" },
+        "h2": { "size": "1.375rem", "line_height": "1.34", "letter_spacing": "-0.016em" },
+        "body": { "size": "1rem", "line_height": "1.65", "letter_spacing": "-0.006em" },
+        "label": { "size": "0.8125rem", "line_height": "1.35", "letter_spacing": "0.02em", "note": "uppercase, tracked OUT" }
+      }
+    },
+    "colors": {
+      "accent": {
+        "hex": "#FF007A",
+        "name": "the pink",
+        "rule": "This is THE pink and the only one. A wine pink (#D6006B) crept in once through a contrast fix and was removed on sight. Do not darken it to pass a contrast check."
+      },
+      "on_accent": { "hex": "#FFFFFF", "note": "3.80:1 on the pink: large text only, 24px and up. Never set body copy in white on pink." },
+      "loud": { "hex": "#DE3578", "note": "4.30:1. The pink for display sizes when white on pink will not do." },
+      "ink": { "hex": "#1E181B", "note": "16.7:1 on white. Headings and body." },
+      "muted": { "hex": "#5E5057", "note": "Secondary text. Still passes 4.5:1." },
+      "background": { "hex": "#FFF5F7", "name": "blush", "note": "The page ground. Also the manifest theme colour." },
+      "surface": { "hex": "#FFFFFF", "note": "Cards." },
+      "raised": { "hex": "#FFECEF", "name": "warm rose", "note": "The soft well inside a card." },
+      "hairline": { "hex": "#F0E2E7" },
+      "field": { "hex": "#FFD60A", "name": "golden yellow", "on_field": "#111111" },
+      "green": { "hex": "#0F6932", "note": "Done." },
+      "negative": { "hex": "#BE1E2D", "note": "Destructive only." }
+    },
+    "radii": {
+      "card": "1.375rem",
+      "inner": "0.8125rem",
+      "pill": "999px",
+      "rule": "Layered: the outer container is rounder than what nests inside it. Matching radii read as flat."
+    },
+    "themes": {
+      "default": "sun",
+      "other": "sea",
+      "note": "Sea is a blue palette with its own tokens. Every App Store slide should use sun."
+    }
+  },
+
+  "art_direction": {
+    "device_frame": "iPhone, 390x844 logical pixels, rendered at 2x. That is the width every screen in this app is designed and swept at.",
+    "background": "The blush ground (#FFF5F7), or a soft gradient from blush into white. No photography behind the phone.",
+    "headline_placement": "Above the phone, ink on blush, hero or h1 size. Never white on pink at body size.",
+    "accent_use": "The pink is a spot colour: one button, one bar, one badge per slide. A slide flooded with #FF007A loses the thing it is meant to point at.",
+    "do_not": [
+      "Do not invent a second typeface",
+      "Do not darken or tint the pink",
+      "Do not put body-size text in white on the pink",
+      "Do not show the cycle tracker: it is optional and off by default",
+      "Do not claim a number that is not in app-store-features.json"
+    ]
+  },
+
+  "slides": [
+    {
+      "slide_number": 1,
+      "headline": "Keep Promises, Together",
+      "subheadline": "Set a goal, check in daily, and let your friends see it land.",
+      "featured_ui_screen": "Goals Dashboard",
+      "source_route": "/g/:groupId/goals",
+      "source_component": "src/pages/Goals.jsx",
+      "what_to_show": "The check-in rail at the top with two or three pink cards still to answer, and two goal cards below it.",
+      "bullet_points": [
+        "A daily check-in rail you swipe, not a form you fill",
+        "Prove it with a photo, a link, or a note, whichever fits the goal",
+        "Per-goal reminders at the hour you choose, repeating until it is done"
+      ]
+    },
+    {
+      "slide_number": 2,
+      "headline": "Give Every Dollar A Job",
+      "subheadline": "Envelopes, projects and savings, so the plan and the month agree.",
+      "featured_ui_screen": "Budget Plan",
+      "source_route": "/money",
+      "source_component": "src/pages/Money.jsx",
+      "what_to_show": "The envelope rings, planned against spent, with one envelope visibly close to its limit.",
+      "bullet_points": [
+        "Envelopes that show planned against actually spent",
+        "Projects, savings pots and fixed charges in one place",
+        "Connect your bank or type it in, your call"
+      ]
+    },
+    {
+      "slide_number": 3,
+      "headline": "Learn Money, Slowly",
+      "subheadline": "Four courses that start at zero and end with you investing on your own.",
+      "featured_ui_screen": "Course Reader",
+      "source_route": "/cours/riche-lentement/0.1",
+      "source_component": "src/pages/Courses.jsx",
+      "what_to_show": "A lesson open, with one financial term underlined inline and its definition showing. That inline explanation is the thing no competitor has.",
+      "bullet_points": [
+        "52 lessons across 13 modules, each ending on one thing to do",
+        "Every financial word explained where you meet it, not in a footnote",
+        "Written for Canada, France, the US and the franc zone"
+      ]
+    },
+    {
+      "slide_number": 4,
+      "headline": "Your Day, One Screen",
+      "subheadline": "Water, mood, classes and deadlines, without opening four apps.",
+      "featured_ui_screen": "Home Dashboard",
+      "source_route": "/",
+      "source_component": "src/pages/Dashboard.jsx",
+      "what_to_show": "The week strip with the day marks, and the water card under it reading a real amount, for example 17 oz sur 68 oz with the bar a quarter full.",
+      "bullet_points": [
+        "Log water in ml or oz, from your bottle, not in glasses",
+        "Your week, your classes and what is due, on one strip",
+        "Reminders that tighten when you fall behind and space out when you catch up"
+      ]
+    },
+    {
+      "slide_number": 5,
+      "headline": "Nobody Drops Off Quietly",
+      "subheadline": "A group that notices when someone goes silent, and says so kindly.",
+      "featured_ui_screen": "Group Board",
+      "source_route": "/g/:groupId",
+      "source_component": "src/pages/Board.jsx",
+      "what_to_show": "The standing, with one person clearly ahead in pink and the rest in grey. Ties show the number in grey with no equals sign.",
+      "bullet_points": [
+        "A standing that moves the day somebody finishes what they said",
+        "One tap to answer a friend asking after you",
+        "Say something out loud when a friend does something worth it"
+      ]
+    }
+  ]
+}
