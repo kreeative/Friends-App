@@ -93,10 +93,41 @@ export default function Notifications() {
     if (!res.ok || res.changed === 0) await load()
   }
 
-  const openOne = async (r) => {
+  /**
+   * Open what a row is about.
+   *
+   * NOTHING WAITS ON THE NETWORK HERE, AND THAT IS THE FIX.
+   *
+   * "Cette notification quand on clique ca fait rien." It awaited markRead
+   * before navigating, so the tap was worth exactly as much as the connection
+   * was. Measured with the PATCH left unanswered: the row vanished from the
+   * list, the app stayed on /notifications, and nothing else ever happened. A
+   * phone on two bars is that measurement with a longer timeout.
+   *
+   * Marking read is bookkeeping. It has no business standing in front of the
+   * thing the person asked for, so it is started and not waited for.
+   *
+   * A ROW WITH NO DESTINATION GOES NOWHERE, RATHER THAN HOME.
+   *
+   * It used to fall back to '/'. Tapping "somebody shared a book" and landing
+   * on the dashboard is not a destination, it is the app losing the thread.
+   * Rows written before their kind had an href are the only ones that hit it;
+   * they mark themselves read, leave the list, and that is the whole answer.
+   * The arrow is drawn only when there is somewhere to go, so nothing promises
+   * a journey it cannot make.
+   */
+  const openOne = (r) => {
     setRows((cur) => cur.filter((x) => x.id !== r.id))
-    await markRead([r.id])
-    navigate(r.href ?? '/')
+    const going = Boolean(r.href)
+
+    markRead([r.id]).then((res) => {
+      /* Only worth putting the list back if we are still here to look at it.
+         RLS refuses an update silently, with zero rows and no error, so the
+         count is what says whether anything changed. */
+      if (!going && (!res.ok || res.changed === 0)) load()
+    })
+
+    if (going) navigate(r.href)
   }
 
   /**
@@ -174,12 +205,25 @@ export default function Notifications() {
         ) : (
           <div className="lg px-5" data-hook="notif-list">
             <div className="list">
+              {/**
+               * THE PADDING BELONGS TO THE BUTTON, NOT TO THE ROW.
+               *
+               * It was `py-5` on the row below, with the button inside it, so
+               * the twenty pixels above and below the text were part of the
+               * card and dead to the touch. Measured: 41px of a 94px row, and
+               * on the nudge card only 42% of its height opened anything.
+               * Aiming at a card on a phone and landing in its own padding is
+               * ordinary, and what it looked like from outside is a card that
+               * does nothing when you tap it.
+               */}
               {rows.map((r) => (
-                <div key={r.id} className="py-5" data-hook="notif-row" data-kind={r.kind}>
+                <div key={r.id} data-hook="notif-row" data-kind={r.kind}>
                 <button
                   type="button"
                   onClick={() => openOne(r)}
-                  className="press flex w-full items-start gap-4 text-left"
+                  className={`press flex w-full items-start gap-4 pt-5 text-left ${
+                    r.kind === 'nudge' ? 'pb-3' : 'pb-5'
+                  }`}
                 >
                   <span className="min-w-0 flex-1">
                     <span className="text-safe block text-body font-semibold text-ink">
@@ -196,9 +240,13 @@ export default function Notifications() {
                       </span>
                     )}
                   </span>
-                  <span aria-hidden="true" className="pt-0.5 text-small text-muted">
-                    →
-                  </span>
+                  {/* Only when there is somewhere to go. An arrow on a row
+                      that cannot travel is the row lying about itself. */}
+                  {r.href && (
+                    <span aria-hidden="true" className="pt-0.5 text-small text-muted">
+                      →
+                    </span>
+                  )}
                 </button>
 
                 {/**
@@ -215,7 +263,7 @@ export default function Notifications() {
                  * reason, and a text box is a task.
                  */}
                 {r.kind === 'nudge' && (
-                  <div className="mt-3">
+                  <div className="pb-5">
                     <button
                       type="button"
                       onClick={() => answer(r)}

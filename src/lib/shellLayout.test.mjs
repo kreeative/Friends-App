@@ -2120,5 +2120,44 @@ ok(
      'a positioned ancestor recaptures the panel, which is how it left the screen')
 }
 
+/**
+ * UNE NOTIFICATION QU'ON TOUCHE DOIT OUVRIR QUELQUE CHOSE.
+ *
+ * "Cette notification quand on clique ca fait rien, pareil pour les autres."
+ *
+ * Mesure dans Chromium, avec la mise a jour "lu" laissee sans reponse: la
+ * ligne quittait la liste, l'app restait sur /notifications, et plus rien
+ * n'arrivait jamais. openOne attendait cette ecriture AVANT de naviguer, donc
+ * le tap valait exactement ce que valait le reseau. Un telephone a deux barres
+ * est cette mesure avec un delai plus long.
+ *
+ * Et la zone qui repondait au doigt: 41px morts sur une ligne de 94px, 42%
+ * seulement de la carte nudge. Le `py-5` etait sur la ligne, pas sur le
+ * bouton.
+ *
+ * Les deux sont epingles ici parce que les deux se defont en une ligne, sans
+ * que rien n'echoue: remettre un `await` devant la navigation, ou remonter la
+ * marge interieure sur l'enveloppe.
+ */
+{
+  const notif = code('src/pages/Notifications.jsx')
+
+  ok('rien n’attend le reseau avant de naviguer',
+     !/await markRead\(\[r\.id\]\)/.test(notif),
+     'un tap ne doit pas valoir ce que vaut la connexion')
+  ok('la mise a jour "lu" part quand meme',
+     /markRead\(\[r\.id\]\)\.then\(/.test(notif),
+     'elle reste, elle ne passe simplement plus devant')
+  ok('une ligne sans adresse ne renvoie plus a l’accueil',
+     !/navigate\(r\.href \?\? '\/'\)/.test(notif),
+     'atterrir sur le tableau de bord n’est pas une destination')
+  ok('et ne dessine pas de fleche',
+     /\{r\.href && \(/.test(notif),
+     'une fleche sur une ligne qui ne voyage pas est une ligne qui ment')
+  ok('la marge interieure est sur le bouton, pas sur la ligne',
+     /pt-5 text-left/.test(notif) && !/data-hook="notif-row" className="py-5"/.test(notif),
+     '41px morts sur 94px, mesures: viser une carte et tomber dans sa marge')
+}
+
 console.log(`\n  ${pass} passed, ${fail} failed\n`)
 process.exit(fail ? 1 : 0)
