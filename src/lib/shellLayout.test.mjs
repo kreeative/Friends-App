@@ -1539,8 +1539,27 @@ ok(
 )
 ok(
   'only goals due today are asked',
-  /dueOn\(live\.filter/.test(goalsPage),
+  /dueOn\(answerable\.filter/.test(goalsPage),
   'a twice-a-week goal on a Thursday is not a question today can answer',
+)
+/**
+ * ET SEULEMENT CEUX QU'ON PEUT REPONDRE.
+ *
+ * `live` etait TOUS les objectifs du groupe, y compris les objectifs
+ * personnels des autres, donc le rail demandait a chacun de repondre pour tout
+ * le monde: "il en reste 11 sur 11" sur une personne qui en a trois. Et une
+ * reponse donnee la n'aurait aucun sens: on ne peut pas savoir si quelqu'un
+ * d'autre a couru ce matin.
+ *
+ * Invisible avec une seule personne dans les donnees de test, ce qui est le
+ * cas de toutes les sondes de ce depot. Trouve en fabriquant une fixture de
+ * groupe realiste pour les captures d'App Store, et epingle ici parce que le
+ * prochain qui simplifie `answerable` en `live` ne verra rien echouer.
+ */
+ok(
+  'et seulement les siens et ceux du groupe',
+  /kind === 'group' \|\| g\.owner_id === user\?\.id/.test(goalsPage),
+  'le rail demandait de repondre pour les objectifs personnels des autres',
 )
 ok(
   'and only while the period is open',
