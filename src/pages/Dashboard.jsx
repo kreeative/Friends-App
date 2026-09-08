@@ -270,14 +270,32 @@ export default function Dashboard() {
        * against. Chrome for the page, so it sits above the first thing the
        * page has to say rather than competing with it for the top slot.
        */}
-      {/* L'eau, juste sous la semaine: le geste arrive huit fois par jour et
-          il etait au fond des reglages. Ne s'affiche que si l'eau est
-          allumee, et c'est ou la notification atterrit. */}
-      <WaterToday />
-
       <div className="pt-6">
         <WeekStrip goals={goals} statuses={mine} />
       </div>
+
+      {/**
+       * L'eau, SOUS le calendrier.
+       *
+       * "Le UI pop up pour l'eau, mets-le en bas du calendrier."
+       *
+       * Elle etait au-dessus, et le commentaire qui l'accompagnait disait deja
+       * "juste sous la semaine": le texte decrivait ce qu'il fallait faire et
+       * le code faisait le contraire. Au-dessus, la carte etait la premiere
+       * chose de la colonne, donc collee sous l'en-tete, et des qu'on defilait
+       * il n'en restait qu'une rangee de boutons au ras du haut de l'ecran.
+       * C'est ce qui la faisait lire comme une fenetre surgissante, alors
+       * qu'elle n'a jamais rien eu de flottant.
+       *
+       * Le calendrier est le repere de la page: il repond "on est ou". L'eau
+       * est une chose a faire, donc elle vient apres, avec le reste de ce qui
+       * se fait.
+       *
+       * Ne s'affiche que si l'eau est allumee, et c'est ou la notification
+       * atterrit: elle s'amene a l'ecran toute seule, donc sa place dans la
+       * page ne lui coute rien.
+       */}
+      <WaterToday />
 
       {/**
        * First thing in the feed, above even the waiting-on-you card.

@@ -42,9 +42,13 @@ export default function WaterToday() {
    * La notification atterrit ICI, et le dit.
    *
    * La notification d'eau ouvre `/?boire=1`. Sans ce bloc elle ouvrirait
-   * l'accueil et laisserait chercher: la carte est en haut, mais "en haut"
-   * n'est pas une reponse quand on vient d'etre interrompu. On l'amene a
-   * l'ecran et on l'allume deux secondes.
+   * l'accueil et laisserait chercher, ce qui n'est pas une reponse quand on
+   * vient d'etre interrompu. On l'amene a l'ecran et on l'allume deux
+   * secondes.
+   *
+   * C'est ce bloc qui rend la place de la carte dans la page sans importance,
+   * et c'est pourquoi elle a pu descendre sous le calendrier sans rien
+   * couter: on ne la cherche pas, elle vient.
    *
    * Le parametre est retire de l'URL tout de suite apres, avec replace: true,
    * pour que le bouton retour ne rejoue pas l'animation et qu'un
