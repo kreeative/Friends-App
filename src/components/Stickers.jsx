@@ -100,7 +100,7 @@ const SETS = {
    */
   welcome: {
     column: '34rem',
-    items: rail(pickStickers(['fire', 'coin', 'unicorn', 'cloudguy', 'doitnow', 'daisy'], 6), {
+    items: rail(pickStickers(['fire', 'coin', 'unicorn', 'cloudguy', 'chaching', 'daisy'], 6), {
       from: 6,
       to: 92,
       size: 72,
