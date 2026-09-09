@@ -1,4 +1,4 @@
-import { pickFrom } from './stickerPick'
+import { chooseSticker, pickFrom } from './stickerPick'
 
 /**
  * The sticker artwork.
@@ -56,20 +56,25 @@ export const stickerSrc = (name) => BY_NAME[name]
 export const pickStickers = (wanted, atLeast = 0) => pickFrom(wanted, STICKER_NAMES, atLeast)
 
 /**
- * A stable sticker for a given id.
+ * A group's sticker: the one it chose, else the one its id works out to.
  *
- * Derived rather than stored, so a group keeps the same face for its whole
- * life without needing a column for it, and everyone sees the same one.
+ * The derived answer used to be the only one, and the comment here said where
+ * that ran out: "if a group ever needs to *own* its artwork, that is a column,
+ * not a change here". Migration 66 is that column, and `chosen` is it arriving.
  *
- * This is deliberately not a stored assignment: the cost is that adding art
- * can reshuffle which group shows which sticker, and the benefit is that the
- * feature needs no migration, no backfill and no admin screen. For decoration
- * that is the right side of the trade. If a group ever needs to *own* its
- * artwork, that is a column, not a change here.
+ * The derivation stays as the default rather than being replaced. A group that
+ * has never picked anything still needs a face, the same face every time, with
+ * nobody having had to choose it and no backfill writing a random one into
+ * every row.
+ *
+ * The rule lives in stickerPick.js, where node can test it. This file cannot
+ * be imported outside a bundler because of the glob above, so anything that
+ * stays here is only ever checked by reading it.
+ *
+ * @param id      the group id
+ * @param chosen  groups.sticker, a file name without .png, or null
  */
-export function stickerFor(id) {
-  if (!STICKERS.length) return undefined
-  if (!id) return STICKERS[0].src
-  const n = [...String(id).replace(/-/g, '')].reduce((a, c) => a + (parseInt(c, 16) || 0), 0)
-  return STICKERS[n % STICKERS.length].src
+export function stickerFor(id, chosen = null) {
+  const name = chooseSticker(chosen, id, STICKER_NAMES)
+  return name ? BY_NAME[name] : undefined
 }

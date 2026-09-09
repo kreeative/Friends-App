@@ -196,8 +196,12 @@ ok(
  * group.
  */
 ok(
-  'the rail badge draws the group sticker',
-  /data-hook="rail-group"[\s\S]{0,700}stickerFor\(activeId\)/.test(shell) &&
+  /* Etait `stickerFor(activeId)`. Depuis la migration 66 un groupe choisit son
+     image, et le rail doit lire ce choix: sinon il montre la face calculee a
+     cote de la page ou le choix vient d'etre fait, ce qui est exactement le
+     desaccord entre deux surfaces que ce cas existe pour empecher. */
+  'the rail badge draws the group sticker, the chosen one',
+  /data-hook="rail-group"[\s\S]{0,700}stickerFor\(activeId, group\.sticker\)/.test(shell) &&
     /from '\.\.\/lib\/art'/.test(shell),
   'the settings header already uses stickerFor, so this is two surfaces agreeing',
 )
@@ -2276,6 +2280,49 @@ ok(
   ok('et les trois jeux de Stickers.jsx aussi', comptes.length === 3, JSON.stringify(comptes))
   ok('chacun avec autant de stickers que de noms voulus',
      comptes.join(',') === '6,4,6', JSON.stringify(comptes))
+}
+
+/**
+ * UN GROUPE POSSEDE SON IMAGE.
+ *
+ * Demande: "Update the sticker for this group."
+ *
+ * L'image etait CALCULEE a partir de l'identifiant, et le commentaire de
+ * stickerFor disait ou etait la limite: "if a group ever needs to *own* its
+ * artwork, that is a column, not a change here". La migration 66 est cette
+ * colonne.
+ *
+ * Ce qui est epingle: que le calcul reste le defaut, que les TROIS surfaces qui
+ * dessinent le visage d'un groupe lisent le meme choix, et qu'une base sans la
+ * migration reponde une phrase plutot qu'une trace Postgres.
+ */
+{
+  const art = code('src/lib/art.js')
+  const head = code('src/components/GroupHeader.jsx')
+  const shell = code('src/components/AppShell.jsx')
+  const dash = code('src/pages/Dashboard.jsx')
+  const sql = code('supabase/66_group_sticker.sql')
+
+  ok('la colonne existe et ne se remplit pas retroactivement',
+     /add column if not exists sticker text/.test(sql) && !/update groups set sticker/i.test(sql))
+  ok('et aucune politique n est ajoutee pour elle',
+     !/create policy/i.test(sql),
+     'groups_update est deja is_group_admin des deux cotes')
+
+  ok('le choix passe devant le calcul, dans un fichier testable',
+     /chooseSticker\(chosen, id, STICKER_NAMES\)/.test(art))
+  ok('stickerFor accepte un choix', /stickerFor\(id, chosen = null\)/.test(art))
+
+  const appels = [head, shell, dash].filter((f) => /stickerFor\([^)]*,\s*\w+\.sticker\)/.test(f))
+  ok('les trois surfaces lisent le choix', appels.length === 3,
+     `${appels.length} sur 3: une seule qui l oublie et le rail contredit la page`)
+
+  ok('changer l image est reserve aux admins',
+     /disabled=\{!canEdit\}[\s\S]{0,400}data-hook="group-sticker"/.test(head))
+  ok('on peut revenir au calcul', /saveSticker\(null\)/.test(head),
+     'sans ca, une fois l image changee il n y a plus de chemin de retour')
+  ok('une colonne absente donne une phrase, pas du Postgres',
+     /isMissingColumn\(err, 'sticker'\) \? t\('settings\.sticker_pending'\)/.test(head))
 }
 
 console.log(`\n  ${pass} passed, ${fail} failed\n`)

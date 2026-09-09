@@ -1,4 +1,4 @@
-import { pickFrom } from './stickerPick.js'
+import { chooseSticker, pickFrom } from './stickerPick.js'
 
 let bad = 0
 const ok = (name, cond, extra) => {
@@ -65,5 +65,44 @@ console.log(' le minimum n est pas un maximum')
 eq('plus de noms voulus que le minimum, tous sortent',
    pickFrom(['bass', 'bird', 'burger'], OLD, 2), ['bass', 'bird', 'burger'])
 
-console.log(`\n  ${20 - bad} passed, ${bad} failed`)
+/* ------------------------------------------------------------------------ */
+let n_choose = 0
+const okc = (name, cond, extra) => { n_choose += 1; ok(name, cond, extra) }
+
+console.log('\nl image d un groupe')
+{
+  const ART = ['bass', 'bird', 'burger', 'cloudguy', 'daisy', 'skullfire', 'tongue']
+  const ID = '11111111-2222-4333-8444-555555555555'
+
+  console.log(' le choix passe devant le calcul')
+  okc('un nom choisi est rendu tel quel', chooseSticker('daisy', ID, ART) === 'daisy')
+  okc('et il gagne meme si le calcul dit autre chose',
+     chooseSticker('bass', ID, ART) === 'bass' && chooseSticker(null, ID, ART) !== 'bass')
+
+  console.log(' sans choix, le calcul, et il ne bouge pas')
+  const a = chooseSticker(null, ID, ART)
+  okc('un identifiant donne toujours la meme image',
+     a === chooseSticker(null, ID, ART) && a === chooseSticker(undefined, ID, ART), a)
+  okc('et elle vient bien du dossier', ART.includes(a))
+  okc('deux groupes differents ne tombent pas forcement pareil',
+     chooseSticker(null, '99999999-9999-4999-8999-999999999999', ART) !== undefined)
+
+  console.log(' UN NOM QUI N EXISTE PLUS RETOMBE SUR LE CALCUL')
+  okc('le fichier a ete renomme, le groupe garde un visage',
+     chooseSticker('supprime-depuis', ID, ART) === a, 'pas un trou, pas une image cassee')
+  okc('une chaine vide est traitee comme aucun choix',
+     chooseSticker('', ID, ART) === a)
+
+  console.log(' les cas ou il n y a rien')
+  okc('dossier vide: rien a rendre', chooseSticker('bass', ID, []) === undefined)
+  okc('et undefined ne fait pas tomber la page', chooseSticker(null, ID, undefined) === undefined)
+  okc('sans identifiant, la premiere du dossier', chooseSticker(null, null, ART) === 'bass')
+  okc('mais un choix vaut meme sans identifiant', chooseSticker('tongue', null, ART) === 'tongue')
+
+  console.log(' le calcul survit a un dossier plus petit')
+  okc('trois stickers seulement, toujours une reponse valide',
+     ['bass', 'bird', 'burger'].includes(chooseSticker(null, ID, ['bass', 'bird', 'burger'])))
+}
+
+console.log(`\n  ${20 + n_choose - bad} passed, ${bad} failed`)
 process.exit(bad ? 1 : 0)

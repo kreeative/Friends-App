@@ -59,7 +59,11 @@ art, check those two lists so the intended one still appears.
 
 ## One thing to know
 
-Which sticker a group shows is derived from its id, not stored. Adding art can
-therefore reshuffle which group shows which face. That is fine for decoration
-and is why it needs no database column, but it does mean the mapping is not a
-promise.
+A group shows the sticker it picked, and otherwise one derived from its id.
+
+The derived half is why adding art can reshuffle the face of any group that has
+never chosen: the mapping is not a promise. The chosen half is `groups.sticker`
+(migration 66), which holds a file name, so **renaming art breaks a group's
+choice**. It fails softly, back to the derived face rather than to a hole, but
+the group silently loses the picture somebody picked. If you rename, either
+keep the old name or update the rows that point at it.
