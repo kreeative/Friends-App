@@ -121,6 +121,9 @@ export default function GoalDetail({
   const dragFrom = useRef(null)
 
   const [ticking, setTicking] = useState(false)
+  /* Le jour en cours d'ecriture, pas un booleen: deux cellules touchees coup
+     sur coup doivent chacune savoir si c'est ELLE qui attend. */
+  const [marking, setMarking] = useState(null)
   const [asking, setAsking] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState(null)
@@ -289,6 +292,25 @@ export default function GoalDetail({
     setTicking(true)
     await setGoalDay(goal, nextCount(goal, countOn(dayIndex, goal.id, progress.day)))
     setTicking(false)
+  }
+
+  /**
+   * Marquer un jour PASSE.
+   *
+   * Demande: "add the ability to go back on previously day to add if the goal
+   * where done". Le geste manquait, pas la plomberie: setGoalDay prend une
+   * date depuis le debut, et le calendrier connaissait deja l'etat de chaque
+   * jour. Il ne les dessinait simplement pas comme des boutons.
+   *
+   * nextCount, le meme que le gros bouton du haut: une fois par jour est une
+   * bascule, trois fois par jour compte et revient a zero. On ne veut pas deux
+   * regles pour le meme geste selon qu'il vise aujourd'hui ou avant-hier.
+   */
+  async function mark(date, st) {
+    if (marking) return
+    setMarking(st.day)
+    await setGoalDay(goal, nextCount(goal, st.done), date)
+    setMarking(null)
   }
 
   async function setStatus(status) {
@@ -540,17 +562,62 @@ export default function GoalDetail({
                   {grid.map((date) => {
                     const inMonth = sameMonth(date, month)
                     const st = dayStatus(goal, dayIndex, date, today)
+                    /**
+                     * QUELS JOURS SE TOUCHENT.
+                     *
+                     * Pas le futur: on ne coche pas demain. Pas avant que
+                     * l'objectif existe: un objectif cree jeudi ne peut pas
+                     * etre en retard depuis lundi. Pas un jour ou il n'etait
+                     * pas prevu: un objectif du lundi et du mercredi n'a rien
+                     * a se faire pardonner un jeudi, et le laisser marquer la
+                     * ferait mentir le compte de jours tenus.
+                     *
+                     * Ce sont exactement les trois cas que cellClass peignait
+                     * deja differemment, et c'est pour ca qu'il n'y a pas de
+                     * quatrieme regle a inventer ici.
+                     */
+                    const canMark = inMonth && !finished && st.due && !st.future && !st.before
+                    if (!canMark) {
+                      return (
+                        <div
+                          key={dayKey(date)}
+                          title={dayKey(date)}
+                          className={`flex aspect-square items-center justify-center rounded-[0.6rem] text-small font-semibold transition-colors ${cellClass(st, inMonth)}`}
+                        >
+                          {inMonth ? date.getDate() : ''}
+                        </div>
+                      )
+                    }
                     return (
-                      <div
+                      <button
                         key={dayKey(date)}
+                        type="button"
                         title={dayKey(date)}
-                        className={`flex aspect-square items-center justify-center rounded-[0.6rem] text-small font-semibold transition-colors ${cellClass(st, inMonth)}`}
+                        data-day={st.day}
+                        data-done={st.complete ? 'yes' : 'no'}
+                        aria-pressed={st.complete}
+                        aria-label={t('goal.mark_on', {
+                          date: new Intl.DateTimeFormat(tag, { weekday: 'long', day: 'numeric', month: 'long' }).format(date),
+                        })}
+                        disabled={marking === st.day}
+                        onClick={() => mark(date, st)}
+                        className={`press flex aspect-square items-center justify-center rounded-[0.6rem] text-small font-semibold transition-colors disabled:opacity-60 ${cellClass(st, inMonth)} ${
+                          st.complete || st.partial ? '' : 'ring-1 ring-inset ring-ink/10 hover:bg-ink/[0.1]'
+                        }`}
                       >
-                        {inMonth ? date.getDate() : ''}
-                      </div>
+                        {date.getDate()}
+                      </button>
                     )
                   })}
                 </div>
+                {/* Un calendrier devenu touchable et qui n'en dit rien est une
+                    fonction cachee. Une ligne, sous la grille, seulement quand
+                    il y a vraiment quelque chose a toucher. */}
+                {!finished && (
+                  <p className="mt-3 text-small text-muted" data-hook="goal-backfill-hint">
+                    {t('goal.backfill_hint')}
+                  </p>
+                )}
               </section>
             )}
 
