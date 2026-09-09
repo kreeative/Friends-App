@@ -195,6 +195,37 @@ ok(
  * An empty tinted disc looks like a design decision; a letter looks like a
  * group.
  */
+/**
+ * LA BARRE DU BAS N'A AUCUN ANCETRE ENTRE ELLE ET LE VIEWPORT.
+ *
+ * Rapporte: "it shall stick to the bottom not be moving around", avec en photo
+ * la barre au milieu de l'ecran, du contenu en dessous, et la barre de
+ * defilement visible sur le cote: pendant un defilement.
+ *
+ * Son CSS etait deja juste. Ce qui ne l'etait pas, c'est ou elle se trouvait
+ * dans l'arbre: dans `.ground`, qui porte `overflow-x: clip`. Un ancetre qui
+ * coupe est la seule chose de cette page qui puisse s'interposer entre un
+ * enfant `fixed` et le viewport, et selon le moteur il devient son bloc
+ * conteneur, la coupe, ou la laisse decrocher pendant un defilement.
+ *
+ * Chromium la garde a sa place, mesure a 828px quel que soit le defilement, et
+ * WebKit ne peut pas etre installe dans ce conteneur. Ce cas epingle donc la
+ * FORME, pas le symptome: la barre est rendue hors de `.ground`, et rien ne
+ * doit l'y remettre.
+ */
+{
+  const src = code('src/components/AppShell.jsx')
+  ok('AppShell rend un fragment, pas un seul div',
+     /return \(\s*<>/.test(src),
+     'il en faut un pour que la barre puisse sortir de .ground')
+  ok('et la barre du bas en est le dernier enfant, hors de .ground',
+     /<TabBar tabs=\{[^}]*\} \/>\s*<\/>\s*\)\s*\}/.test(src),
+     'un ancetre qui coupe peut devenir le bloc conteneur d un enfant fixed')
+  ok('et .ground garde sa coupe, qui est la pour les stickers',
+     /overflow-x: clip/.test(code('src/index.css')),
+     'sept pixels de defilement horizontal a 320px, le jour ou le budget est passe a 3739px')
+}
+
 ok(
   /* Etait `stickerFor(activeId)`. Depuis la migration 66 un groupe choisit son
      image, et le rail doit lire ce choix: sinon il montre la face calculee a
