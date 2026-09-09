@@ -71,7 +71,7 @@ const okc = (name, cond, extra) => { n_choose += 1; ok(name, cond, extra) }
 
 console.log('\nl image d un groupe')
 {
-  const ART = ['bass', 'bird', 'burger', 'cloudguy', 'daisy', 'skullfire', 'tongue']
+  const ART = ['bass', 'bird', 'burger', 'cloudguy', 'daisy', 'skullfire', 'turntable']
   const ID = '11111111-2222-4333-8444-555555555555'
 
   console.log(' le choix passe devant le calcul')
@@ -97,7 +97,7 @@ console.log('\nl image d un groupe')
   okc('dossier vide: rien a rendre', chooseSticker('bass', ID, []) === undefined)
   okc('et undefined ne fait pas tomber la page', chooseSticker(null, ID, undefined) === undefined)
   okc('sans identifiant, la premiere du dossier', chooseSticker(null, null, ART) === 'bass')
-  okc('mais un choix vaut meme sans identifiant', chooseSticker('tongue', null, ART) === 'tongue')
+  okc('mais un choix vaut meme sans identifiant', chooseSticker('turntable', null, ART) === 'turntable')
 
   console.log(' le calcul survit a un dossier plus petit')
   okc('trois stickers seulement, toujours une reponse valide',

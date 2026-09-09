@@ -184,14 +184,34 @@ export default function GroupHeader({ group, canEdit, sub, note = null }) {
           type="button"
           disabled={!canEdit}
           onClick={() => setEditing(true)}
-          className="press mt-4 inline-flex max-w-full items-center gap-2 rounded-inner px-2 py-1 disabled:cursor-default"
+          className="press mt-4 block max-w-full rounded-inner px-2 py-1 disabled:cursor-default"
         >
-          <span className="truncate font-display text-h1 text-ink">{group.name}</span>
-          {canEdit && (
-            <span aria-hidden="true" className="shrink-0 text-muted">
-              <PencilIcon />
-            </span>
-          )}
+          {/**
+           * LE NOM PASSE A LA LIGNE, IL NE SE COUPE PLUS.
+           *
+           * C'etait `truncate`, donc "YOUNG AND BEAUTIFUL" s'affichait
+           * "YOUNG AND BEA…" sur un telephone, sur LA page qui existe pour
+           * nommer le groupe, et sans aucun moyen de lire la suite. Un nom de
+           * soixante caracteres est permis par la base; la carte doit pouvoir
+           * en montrer soixante.
+           *
+           * `break-words` et pas seulement un retour a la ligne: un nom d'un
+           * seul mot long n'a nulle part ou passer a la ligne, et il ne se
+           * tronque pas, il deborde. C'est le piege note dans le CLAUDE.md.
+           */}
+          <span className="break-words font-display text-h1 text-ink">
+            {group.name}
+            {/* Dans le flux du texte, pas a cote en flex: en flex il tombait
+                sur une ligne a lui des que le nom passait a la ligne, et un
+                crayon seul et centre sous le titre se lit comme une icone
+                egaree. Inline, il suit le dernier mot et passe a la ligne
+                avec lui. */}
+            {canEdit && (
+              <span aria-hidden="true" className="ml-2 inline-block align-middle text-muted">
+                <PencilIcon />
+              </span>
+            )}
+          </span>
         </button>
       )}
 
