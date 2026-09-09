@@ -640,9 +640,10 @@ export default function AppShell() {
   if (bare) return <Outlet />
 
   return (
-    /* The same coloured ground as the public site. A dashboard of white rows
-       on white is a filing cabinet; the theme carries the page and the
-       content sits on it in glass. */
+    <>
+    {/* The same coloured ground as the public site. A dashboard of white rows
+        on white is a filing cabinet; the theme carries the page and the
+        content sits on it in glass. */}
     <div className="ground relative min-h-dvh">
       {/* Sparser than the public set, this is a tool, not a poster. */}
       <Stickers set="app" />
@@ -673,7 +674,41 @@ export default function AppShell() {
         </div>
       </div>
 
+      </div>
+
+      {/**
+       * LA BARRE DU BAS EST HORS DE `.ground`, ET C'EST LA TOUT L'INTERET.
+       *
+       * Rapporte: "it shall stick to the bottom not be moving around", avec en
+       * photo la barre flottant au milieu de l'ecran, du contenu en dessous, et
+       * la barre de defilement visible sur le cote, donc pendant un defilement.
+       *
+       * Son CSS est juste: elle est `fixed` et collee a `bottom-4`. Ce qui ne
+       * l'etait pas, c'est ou elle se trouvait dans l'arbre. `.ground` porte
+       * `overflow-x: clip`, et un ancetre qui coupe est la seule chose de cette
+       * page qui puisse s'interposer entre un enfant `fixed` et le viewport:
+       * selon le moteur, il devient son bloc conteneur, ou il la coupe, ou il
+       * la laisse decrocher pendant un defilement par inertie. Chromium la
+       * garde a sa place, mesure a 828px quel que soit le defilement, donc le
+       * bogue ne s'y voit pas: WebKit ne peut pas etre installe ici pour le
+       * montrer, et un bogue qu'on ne peut pas reproduire ne se corrige pas en
+       * ajoutant une rustine par-dessus.
+       *
+       * Alors on retire la question. Plus aucun ancetre entre elle et le
+       * viewport: pas de coupe, pas de transform, pas de containment, donc plus
+       * rien qui puisse etre son bloc conteneur sur aucun moteur. Le fragment
+       * ci-dessous existe pour ca.
+       *
+       * `.ground` garde son `overflow-x: clip`, qui est la pour une raison
+       * mesuree (sept pixels de defilement horizontal a 320px, le jour ou
+       * l'ecran du budget est passe a 3739px de haut) et qui ne concerne que
+       * les stickers, restes dedans.
+       *
+       * L'ordre de peinture ne change pas: `.ground` est `relative` sans
+       * z-index, donc il n'ouvre pas de contexte d'empilement, et la barre en
+       * z-30 reste au-dessus des stickers en z-20 comme avant.
+       */}
       <TabBar tabs={activeId ? IN_GROUP(activeId) : MINE} />
-    </div>
+    </>
   )
 }
