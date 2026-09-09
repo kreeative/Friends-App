@@ -67,7 +67,7 @@ function GroupRow({ membership, rows, t }) {
   const done = inCycle.filter((r) => r.status === 'submitted').length
   const ends = open ? cycleEnd(open, mine, cadence): null
 
-  const art = stickerFor(g.id)
+  const art = stickerFor(g.id, g.sticker)
 
   return (
     <Link

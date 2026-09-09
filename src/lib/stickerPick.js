@@ -40,6 +40,43 @@
  *                   filtrer et rien de plus.
  * @returns          les noms a afficher, sans doublon
  */
+/**
+ * L'image d'un groupe: celle qu'il a choisie, sinon celle qui se calcule.
+ *
+ * POURQUOI LES DEUX PLUTOT QUE L'UNE OU L'AUTRE
+ *
+ * Le calcul a partir de l'identifiant existait seul, et son commentaire disait
+ * ou etait sa limite: un groupe ne pouvait pas POSSEDER son image, et ajouter
+ * une illustration pouvait rebattre les visages de tout le monde. Le choix
+ * stocke repond a ca.
+ *
+ * Mais il ne remplace pas le calcul, il passe devant. Un groupe qui n'a rien
+ * choisi doit avoir un visage quand meme, stable, sans que personne ait eu a
+ * s'en occuper et sans une migration qui remplirait des milliers de lignes
+ * avec une image tiree au sort.
+ *
+ * UN NOM QUI N'EXISTE PLUS RETOMBE SUR LE CALCUL. Le dossier des stickers
+ * change: on vient d'en remplacer vingt-trois d'un coup. Un groupe dont le
+ * choix pointe sur un fichier disparu doit montrer une image, pas un trou.
+ * C'est la meme regle que pickFrom: ce qui est demande passe d'abord, ce qui
+ * existe decide.
+ *
+ * @param chosen     le nom stocke sur le groupe, ou null
+ * @param id         l'identifiant du groupe, pour le calcul de secours
+ * @param available  les noms qui existent vraiment
+ */
+export function chooseSticker(chosen, id, available) {
+  const noms = available ?? []
+  if (!noms.length) return undefined
+  if (chosen && noms.includes(chosen)) return chosen
+  if (!id) return noms[0]
+  /* Somme des chiffres hexadecimaux de l'uuid. Le meme calcul qu'avant, pour
+     qu'un groupe qui n'a rien choisi ne change pas de visage en passant a
+     cette version. */
+  const n = [...String(id).replace(/-/g, '')].reduce((a, c) => a + (parseInt(c, 16) || 0), 0)
+  return noms[n % noms.length]
+}
+
 export function pickFrom(wanted, available, atLeast = 0) {
   const have = new Set(available ?? [])
   /* Set aussi sur le resultat: un nom ecrit deux fois dans une liste voulue

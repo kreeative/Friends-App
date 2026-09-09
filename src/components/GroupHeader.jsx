@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useGroup } from '../context/GroupContext'
 import { useT } from '../lib/i18n'
-import { stickerFor } from '../lib/art'
+import { STICKERS, stickerFor } from '../lib/art'
+import { isMissingColumn } from '../lib/dberr'
 
 /**
  * The group, as a thing with a name and a face.
@@ -31,6 +32,7 @@ export default function GroupHeader({ group, canEdit, sub, note = null }) {
   const { t } = useT()
 
   const [editing, setEditing] = useState(false)
+  const [picking, setPicking] = useState(false)
   const [name, setName] = useState(group.name)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
@@ -69,14 +71,97 @@ export default function GroupHeader({ group, canEdit, sub, note = null }) {
     await reload()
   }
 
+  /**
+   * Enregistrer l'image choisie. `null` remet le calcul.
+   *
+   * La colonne arrive avec la migration 66. Un bundle deploye avant son SQL
+   * recevrait PGRST204 et afficherait a quelqu'un une trace Postgres sur une
+   * page ou il voulait changer une image; isMissingColumn distingue ce cas
+   * d'une vraie panne, comme ailleurs dans ce depot.
+   */
+  async function saveSticker(name) {
+    setBusy(true)
+    setError(null)
+    const { error: err } = await supabase
+      .from('groups')
+      .update({ sticker: name })
+      .eq('id', group.id)
+    setBusy(false)
+
+    if (err) {
+      setError(isMissingColumn(err, 'sticker') ? t('settings.sticker_pending') : err.message)
+      return
+    }
+    setPicking(false)
+    await reload()
+  }
+
   return (
     <div className="lg p-6 text-center sm:p-7">
-      <img
-        src={stickerFor(group.id)}
-        alt=""
-        aria-hidden="true"
-        className="mx-auto h-24 w-24 object-contain"
-      />
+      {/**
+       * L'IMAGE SE CHANGE EN LA TOUCHANT, COMME LE NOM.
+       *
+       * Meme raison qu'au-dessus pour le nom: elle est deja a l'ecran, elle
+       * est ce qu'on vient regler, et un dialogue avec un voile et deux
+       * boutons autour d'une grille d'images est plus de ceremonie que le
+       * geste n'en demande. La grille s'ouvre sous elle, dans la carte.
+       *
+       * Pour les admins seulement, comme le nom, et pour la meme raison: le
+       * refus vit dans groups_update de toute facon.
+       */}
+      <button
+        type="button"
+        disabled={!canEdit}
+        onClick={() => setPicking((v) => !v)}
+        aria-expanded={picking}
+        data-hook="group-sticker"
+        className="press mx-auto block rounded-card p-1 disabled:cursor-default"
+      >
+        <img
+          src={stickerFor(group.id, group.sticker)}
+          alt=""
+          aria-hidden="true"
+          className="h-24 w-24 object-contain"
+        />
+        {canEdit && (
+          <span className="mt-1 block text-label font-semibold uppercase tracking-[0.08em] text-muted">
+            {picking ? t('settings.sticker_close') : t('settings.sticker_change')}
+          </span>
+        )}
+      </button>
+
+      {picking && canEdit && (
+        <div className="mt-4" data-hook="group-sticker-grid">
+          {/* Revenir au calcul, et pas seulement en choisir un autre: une fois
+              qu'on a touche a l'image il n'y avait plus aucun chemin de retour
+              vers celle que le groupe avait au depart. */}
+          <button
+            type="button"
+            onClick={() => saveSticker(null)}
+            data-hook="group-sticker-auto"
+            className={`chip-quiet mb-3 ${!group.sticker ? 'ring-2 ring-accent' : ''}`}
+          >
+            {t('settings.sticker_auto')}
+          </button>
+          <div className="grid max-h-64 grid-cols-5 gap-1.5 overflow-y-auto sm:grid-cols-7">
+            {STICKERS.map((s) => (
+              <button
+                key={s.name}
+                type="button"
+                onClick={() => saveSticker(s.name)}
+                aria-pressed={group.sticker === s.name}
+                aria-label={t('settings.sticker_pick', { name: s.name })}
+                data-sticker={s.name}
+                className={`press rounded-inner p-1 ${
+                  group.sticker === s.name ? 'bg-accent/10 ring-2 ring-accent' : 'hover:bg-ink/[0.05]'
+                }`}
+              >
+                <img src={s.src} alt="" aria-hidden="true" className="h-11 w-11 object-contain" />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {editing ? (
         <input

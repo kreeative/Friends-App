@@ -397,10 +397,11 @@ function SideRail({ tabs }) {
          * a missing icon rather than as a group.
          *
          * The sticker is the group's face everywhere else already: it is what
-         * GroupHeader draws at the top of the settings screen, derived from
-         * the group id by stickerFor, so it is stable for the life of the
-         * group and everyone in it sees the same one. Using it here is making
-         * two surfaces agree, not inventing a motif.
+         * GroupHeader draws at the top of the settings screen. Using it here is
+         * making two surfaces agree, not inventing a motif, which is also why
+         * `group.sticker` is passed: since migration 66 a group can choose its
+         * own, and a rail that kept showing the derived one would disagree with
+         * the page where the choice was just made.
          *
          * The initial stays as the fallback. stickerFor returns undefined when
          * there is no art at all, and art gets renamed: src/lib/art.js is
@@ -421,9 +422,9 @@ function SideRail({ tabs }) {
             className="press relative mb-4 flex h-8 w-8 shrink-0 items-center justify-center self-center overflow-hidden rounded-pill bg-accent/[0.16] text-small font-bold text-ink"
           >
             <span aria-hidden="true">{[...group.name.trim()][0]?.toUpperCase() ?? '?'}</span>
-            {stickerFor(activeId) && (
+            {stickerFor(activeId, group.sticker) && (
               <img
-                src={stickerFor(activeId)}
+                src={stickerFor(activeId, group.sticker)}
                 alt=""
                 aria-hidden="true"
                 /* Over the letter rather than instead of it, so a src that
