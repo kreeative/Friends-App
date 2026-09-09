@@ -196,6 +196,43 @@ ok(
  * group.
  */
 /**
+ * RATTRAPER UN JOUR OUBLIE.
+ *
+ * Demande: "add the ability to go back on previously day to add if the goal
+ * where done".
+ *
+ * Le calendrier de la fiche montrait l'histoire sans permettre de la corriger:
+ * ses cases etaient des <div>. La plomberie existait deja, setGoalDay prend une
+ * date depuis le debut.
+ *
+ * Ce qui est epingle, c'est QUELS JOURS refusent le geste. Ce sont exactement
+ * les trois que cellClass peignait deja a part, et les confondre est ce qui
+ * ferait mentir le compte de jours tenus:
+ *
+ *   le futur          on ne coche pas demain
+ *   avant la creation un objectif cree jeudi n'est pas en retard depuis lundi
+ *   un jour non prevu un objectif du lundi et du mercredi n'a rien a se faire
+ *                     pardonner un mardi
+ */
+{
+  const gd = code('src/components/GoalDetail.jsx')
+  ok('les jours du calendrier sont touchables',
+     /data-day=\{st\.day\}/.test(gd) && /onClick=\{\(\) => mark\(date, st\)\}/.test(gd))
+  ok('et les trois refus sont dans une seule condition',
+     /const canMark = inMonth && !finished && st\.due && !st\.future && !st\.before/.test(gd),
+     'les separer est comment l un des trois finit par etre oublie')
+  ok('le rattrapage vise LA date touchee, pas aujourd hui',
+     /setGoalDay\(goal, nextCount\(goal, st\.done\), date\)/.test(gd),
+     'setGoalDay sans troisieme argument ecrit le jour courant')
+  ok('avec la meme regle de comptage que le bouton du haut',
+     (gd.match(/nextCount\(goal,/g) ?? []).length === 2,
+     'deux regles pour le meme geste selon le jour vise serait pire que pas de geste')
+  ok('et l ecran dit que c est touchable',
+     /data-hook="goal-backfill-hint"/.test(gd),
+     'un calendrier devenu cliquable qui n en dit rien est une fonction cachee')
+}
+
+/**
  * LA BARRE DU BAS N'A AUCUN ANCETRE ENTRE ELLE ET LE VIEWPORT.
  *
  * Rapporte: "it shall stick to the bottom not be moving around", avec en photo
