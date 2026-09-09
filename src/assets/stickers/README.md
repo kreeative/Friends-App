@@ -20,6 +20,29 @@ Delete one and it disappears just as cleanly.
 A white die-cut outline drawn *as part of the artwork* is the look and is
 welcome, that is different from a white background.
 
+## The outline, if the export has none or a bad one
+
+```
+python3 scripts/diecut.py            # what it would do, writes nothing
+python3 scripts/diecut.py --write
+```
+
+It strips whatever pale ring surrounds the art and draws a new one at a
+constant distance, in one flat white, with a soft outer edge. Run it on any
+art that arrives without a die-cut border, or with a ragged one.
+
+It only touches files whose alpha is hard, meaning no pixel between 1 and 254,
+which is the signature of a cut-out made on an already-compressed image. Art
+with a real anti-aliased edge is left alone, because redrawing an outline that
+is already right can only make it worse.
+
+Why it was needed once already: 23 of the 33 files here carried a white ring
+made of dozens of near-white values rather than one. `bass.png` had 41 shades
+along its outline with the commonest covering 9% of it; `fox.png`, exported
+properly, had one shade covering 100%. At a glance it read as a grey, dirty
+halo, and the outline wandered in width because it had been traced by hand
+over JPEG mush.
+
 ## Naming
 
 Lowercase, no spaces: `skull.png`, `pizza.png`, `blue-cat.png`. The filename is
