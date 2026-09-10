@@ -24,9 +24,10 @@
  * the tab bar's and the phone layout looked broken when it was not. The
  * assertion below pins the class that actually distinguishes them.
  */
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
+import { MOOD_IDS } from './moods.js'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const root = join(here, '..', '..')
@@ -195,6 +196,59 @@ ok(
  * An empty tinted disc looks like a design decision; a letter looks like a
  * group.
  */
+/**
+ * LES HUMEURS QUE L'APPLICATION OFFRE ET CELLES QUE LA BASE ACCEPTE.
+ *
+ * Demande: "add emotion sick".
+ *
+ * daily_mood.moods porte une contrainte qui NOMME les humeurs acceptees et
+ * borne leur nombre. Quand le catalogue avance et que la contrainte reste,
+ * toucher le nouveau visage a l'air parfaitement normal, l'upsert est refuse,
+ * et la personne qui a touche est la derniere a l'apprendre. C'est ecrit mot
+ * pour mot en tete de 48_moods_sad_discouraged.sql, et c'est arrive une fois.
+ *
+ * Ce cas compare les deux listes plutot que de croire l'une ou l'autre. Il lit
+ * la DERNIERE migration qui repose la contrainte, pas un numero fige: en figer
+ * un voudrait dire que ce test cesse de mesurer le jour ou une 68 arrive.
+ *
+ * Le NOMBRE compte autant que la liste: `<= 17` refuserait quelqu'un qui les
+ * prend toutes les dix-huit alors que chacune est dedans, la meme panne une
+ * touche plus tard.
+ */
+{
+  const sql = readdirSync(join(root, 'supabase'))
+    .filter((f) => /^\d+_.*\.sql$/.test(f))
+    .sort((a, b) => Number(a.split('_')[0]) - Number(b.split('_')[0]))
+    .map((f) => ({ f, texte: read(`supabase/${f}`) }))
+    .filter((x) => /add constraint daily_mood_moods_check/.test(x.texte))
+    .pop()
+
+  ok('une migration pose la contrainte des humeurs', Boolean(sql), String(sql?.f))
+
+  const liste = (sql?.texte.match(/moods <@ array\[([\s\S]*?)\]::text\[\]/) ?? [])[1] ?? ''
+  const acceptes = [...liste.matchAll(/'([a-z]+)'/g)].map((m) => m[1])
+  const manquants = MOOD_IDS.filter((id) => !acceptes.includes(id))
+  const inconnus = acceptes.filter((id) => !MOOD_IDS.includes(id))
+
+  ok(`la base accepte les ${MOOD_IDS.length} du catalogue (${sql?.f})`,
+     manquants.length === 0,
+     manquants.length ? `absentes du SQL: ${manquants.join(', ')}` : '')
+  ok('et rien de plus', inconnus.length === 0,
+     inconnus.length ? `dans le SQL mais pas dans le catalogue: ${inconnus.join(', ')}` : '')
+
+  const borne = Number((sql?.texte.match(/array_length\(moods, 1\), 0\) <= (\d+)/) ?? [])[1])
+  ok(`et la borne est ${MOOD_IDS.length}, pas moins`, borne === MOOD_IDS.length,
+     `<= ${borne}`)
+
+  /* Et un visage sans libelle rendrait sa cle brute a l'ecran. */
+  const i18n = read('src/lib/i18n.jsx')
+  const sansLibelle = MOOD_IDS.filter(
+    (id) => (i18n.match(new RegExp(`'mood\\.${id}'`, 'g')) ?? []).length !== 2,
+  )
+  ok('chacune a un libelle dans les deux langues', sansLibelle.length === 0,
+     sansLibelle.join(', '))
+}
+
 /**
  * RATTRAPER UN JOUR OUBLIE.
  *

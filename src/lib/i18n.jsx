@@ -1355,6 +1355,7 @@ const STRINGS = {
     'mood.insecure': 'Insecure',
     'mood.hurt': 'Hurt',
     'mood.guilty': 'Guilty',
+    'mood.sick': 'Sick',
 
     'goals.add': '+ Add',
     'goals.yours': 'Yours',
@@ -2955,6 +2956,7 @@ const STRINGS = {
     'mood.insecure': 'Pas sûr de moi',
     'mood.hurt': 'Blessé',
     'mood.guilty': 'Coupable',
+    'mood.sick': 'Malade',
 
     'goals.add': '+ Ajouter',
     'goals.yours': 'Les tiens',
