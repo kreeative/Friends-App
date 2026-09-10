@@ -132,6 +132,34 @@ export const MOODS = [
     // wide ellipse
     path: 'M10 50a40 38 0 1 1 80 0a40 38 0 1 1-80 0Z',
   },
+  /**
+   * ENTRE "BORED" ET "CONFUSED", ET PAS A LA FIN DU FICHIER.
+   *
+   * La fin du fichier est l'edit facile, et le test de ce module dit mot pour
+   * mot que c'est celui qui casse le degrade. Il a raison: l'ordre court du
+   * plus lumineux au plus dur, et il doit finir dur.
+   *
+   * Etre malade n'est pas une angoisse. C'est une mauvaise journee, pas un bas
+   * emotionnel, donc ca vient apres l'ennui et avant les visages plus vifs
+   * (confus, peu sur, stresse). Consequence lisible: quelqu'un qui touche
+   * "malade" ET "stresse" montre malade a son groupe, ce qui est la nouvelle
+   * la plus utile des deux.
+   *
+   * CE QUE CETTE INSERTION NE CASSE PAS, ET C'EST CONTRE-INTUITIF: aucune
+   * journee deja enregistree ne change de visage. cleanMoods filtre MOOD_IDS,
+   * donc seul l'ORDRE RELATIF des dix-sept existants compte, et inserer entre
+   * eux ne le touche pas. C'est les reordonner entre eux qui aurait un prix.
+   */
+  {
+    id: 'sick',
+    color: '#7EA83C',
+    eyes: 'squint',
+    mouth: 'frown',
+    // Un dome a bord bas ondule: la nausee, pas la tristesse. L'arc est
+    // elliptique (44 x 50) pour que le dome monte jusqu'en haut de la boite
+    // sans que les vagues mangent le visage, meme raison que energized.
+    path: 'M6 56a44 50 0 0 1 88 0v10q-11 16-22 0q-11 16-22 0q-11 16-22 0q-11 16-22 0v-10Z',
+  },
   {
     id: 'confused',
     color: '#1B58D9',

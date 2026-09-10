@@ -176,6 +176,11 @@ export default function MoodBoard({ value, onChange }) {
                 <button
                   key={mood.id}
                   type="button"
+                  /* Un hook a lui, parce que la regle du depot le demande: un
+                     selecteur accroche a une classe a casse a chaque restyle de
+                     cette base, et le libelle ne marche pas non plus ici, il
+                     change avec la langue. */
+                  data-mood={mood.id}
                   aria-pressed={selected}
                   onClick={() => onChange(toggleMood(chosen, mood.id))}
                   className="press group flex flex-col items-center rounded-inner py-1 text-center"
