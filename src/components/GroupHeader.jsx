@@ -117,11 +117,26 @@ export default function GroupHeader({ group, canEdit, sub, note = null }) {
         data-hook="group-sticker"
         className="press mx-auto block rounded-card p-1 disabled:cursor-default"
       >
+        {/**
+         * mx-auto SUR L'IMAGE, ET C'EST ELLE QUI ETAIT DE TRAVERS.
+         *
+         * En cherchant pourquoi le nom n'etait pas centre sous le logo, la
+         * mesure a designe l'autre coupable: image a -19px du centre de la
+         * carte, nom a 0. Et seulement chez un admin.
+         *
+         * Le preflight de Tailwind pose `img { display: block }`. Le bouton
+         * s'ajuste a son plus large enfant, qui est le libelle "CHANGER
+         * L'IMAGE" (133px) et pas l'image (96px), donc `text-center` ne fait
+         * rien: il aligne du texte, et un bloc de 96px dans 133px se range a
+         * gauche. Un simple membre n'a pas ce libelle, son bouton fait la
+         * largeur de l'image, et chez lui l'ecart etait deja nul: c'est ce qui
+         * a montre d'ou venait le decalage.
+         */}
         <img
           src={stickerFor(group.id, group.sticker)}
           alt=""
           aria-hidden="true"
-          className="h-24 w-24 object-contain"
+          className="mx-auto h-24 w-24 object-contain"
         />
         {canEdit && (
           <span className="mt-1 block text-label font-semibold uppercase tracking-[0.08em] text-muted">
@@ -163,10 +178,28 @@ export default function GroupHeader({ group, canEdit, sub, note = null }) {
         </div>
       )}
 
+      {/**
+       * CENTRE SOUS LE LOGO. DEMANDE MOT POUR MOT.
+       *
+       *   "Le nom du groupe doit etre centre en bas du logo."
+       *
+       * La carte porte `text-center`, ce qui centre le TEXTE dans sa boite et
+       * ne dit rien de l'endroit ou cette boite se pose. Les trois elements
+       * ci-dessous ont une largeur inferieure a la carte: le bouton du nom
+       * s'ajuste a son contenu, le champ est plafonne a 38rem par `.field`, et
+       * la note a 42ch. Sans `mx-auto` ils se rangent donc a GAUCHE, et le
+       * texte centre a l'interieur d'une boite collee a gauche reste a gauche.
+       *
+       * Mesure dans Chromium, centre des glyphes peints contre centre du logo:
+       * 43px d'ecart a 390, 202px a 820, 382px a 1180, 512px a 1440. L'ecart
+       * grandit avec l'ecran, ce qui est la signature de ce defaut-la: le logo
+       * suit le centre de la carte, le nom reste ou le bord gauche l'a laisse.
+       */}
       {editing ? (
         <input
           ref={input}
-          className="field mt-4 text-center text-h1"
+          data-hook="group-name-field"
+          className="field mx-auto mt-4 text-center text-h1"
           value={name}
           maxLength={60}
           onChange={(e) => setName(e.target.value)}
@@ -184,7 +217,8 @@ export default function GroupHeader({ group, canEdit, sub, note = null }) {
           type="button"
           disabled={!canEdit}
           onClick={() => setEditing(true)}
-          className="press mt-4 block max-w-full rounded-inner px-2 py-1 disabled:cursor-default"
+          data-hook="group-name"
+          className="press mx-auto mt-4 block max-w-full rounded-inner px-2 py-1 disabled:cursor-default"
         >
           {/**
            * LE NOM PASSE A LA LIGNE, IL NE SE COUPE PLUS.
@@ -227,9 +261,13 @@ export default function GroupHeader({ group, canEdit, sub, note = null }) {
        * deux fuseaux coincident, il n'y a rien a preciser, et une ligne de
        * plus serait du bruit sur la seule page ou l'on vient changer quelque
        * chose.
+       *
+       * mx-auto pour la meme raison que le nom plus haut: plafonnee a 42ch,
+       * elle se rangeait a gauche des que la carte etait plus large que ca,
+       * sous un logo et une heure tous deux centres.
        */}
       {!busy && note && (
-        <p className="mt-1 max-w-[42ch] text-small text-muted/80" data-hook="group-when-note">
+        <p className="mx-auto mt-1 max-w-[42ch] text-small text-muted/80" data-hook="group-when-note">
           {note}
         </p>
       )}
