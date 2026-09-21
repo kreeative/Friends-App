@@ -281,6 +281,17 @@ const STRINGS = {
     'settings.admins_can_delete_off': 'Off. Only you can delete this group.',
     'settings.roles_not_installed':
       'Roles need the database. Run supabase/18_daily_roles_and_feed.sql in Supabase to switch them on.',
+    'gnotif.section': 'Notifications from this group',
+    'gnotif.label': 'Let this group reach me',
+    'gnotif.on_help':
+      'Check-in reminders, birthdays, new shared goals, and a word when someone is asking after you.',
+    /* Nomme ce qui continue d'arriver. Sans cette phrase, la cloche qui se
+       remplit passe pour un reglage qui n'a pas marche. */
+    'gnotif.off_help':
+      'Muted. Nothing from this group on your phone or by email. You will still find it in the bell when you open the app, and your other reminders are untouched.',
+    'gnotif.failed': 'That was not saved. Try again.',
+    'gnotif.absent':
+      'This needs the database. Run supabase/69_group_mute.sql in Supabase to switch it on.',
     'board.today_objective': 'Objective today',
     'board.one_tap_done': 'Mark done',
     'board.add_proof': 'Add a photo',
@@ -1990,6 +2001,15 @@ const STRINGS = {
     'settings.admins_can_delete_off': 'Désactivé. Toi seul peux supprimer ce groupe.',
     'settings.roles_not_installed':
       'Les rôles ont besoin de la base. Exécute supabase/18_daily_roles_and_feed.sql dans Supabase.',
+    'gnotif.section': 'Notifications de ce groupe',
+    'gnotif.label': 'Laisser ce groupe me joindre',
+    'gnotif.on_help':
+      'Les rappels de période, les anniversaires, les nouveaux objectifs communs, et un mot quand quelqu’un prend de tes nouvelles.',
+    'gnotif.off_help':
+      'Coupé. Plus rien de ce groupe sur ton téléphone ni par courriel. Tu le retrouveras quand même dans la cloche en ouvrant l’app, et tes autres rappels ne bougent pas.',
+    'gnotif.failed': 'Ça n’a pas été enregistré. Réessaie.',
+    'gnotif.absent':
+      'Ceci a besoin de la base. Exécute supabase/69_group_mute.sql dans Supabase pour l’activer.',
     'board.today_objective': 'Objectif du jour',
     'board.one_tap_done': 'Marquer fait',
     'board.add_proof': 'Ajouter une photo',

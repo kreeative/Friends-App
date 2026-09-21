@@ -7,6 +7,7 @@ import { deviceZone, openingLabel } from '../lib/groupTime'
 import { useT } from '../lib/i18n'
 import { Avatar, Screen, Section } from '../components/ui'
 import GroupHeader from '../components/GroupHeader'
+import GroupNotifyToggle from '../components/GroupNotifyToggle'
 import InviteSheet from '../components/InviteSheet'
 import MemberSheet from '../components/MemberSheet'
 import ThemePicker from '../components/ThemePicker'
@@ -176,6 +177,28 @@ export default function Settings() {
             onClick={() => setInviting(true)}
           />
         </div>
+      </Section>
+
+      {/**
+       * COUPER CE GROUPE-LA, ET HAUT SUR LA PAGE.
+       *
+       *   "Add an option to desactive notification for specific group."
+       *
+       * Avant, le seul geste possible etait de decocher push et courriel dans
+       * les reglages du compte, ce qui coupe aussi l'eau, l'agenda, les
+       * objectifs et le cycle: tout eteindre pour faire taire un groupe.
+       *
+       * Ici plutot que sous la liste des membres, parce qu'un groupe de dix
+       * personnes met ce commutateur a un ecran et demi de defilement, et que
+       * quelqu'un qui revient sur cette page apres la mise en place y revient
+       * le plus souvent pour ca.
+       *
+       * Tous les membres, pas seulement les administrateurs. C'est un reglage
+       * sur soi, pas sur le groupe: personne d'autre ne le voit, y compris le
+       * createur.
+       */}
+      <Section title={t('gnotif.section')}>
+        <GroupNotifyToggle groupId={activeId} />
       </Section>
 
       {/**

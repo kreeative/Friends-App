@@ -305,6 +305,76 @@ ok(
 }
 
 /**
+ * COUPER LES NOTIFICATIONS D'UN SEUL GROUPE.
+ *
+ *   "Add an option to desactive notification for specific group."
+ *
+ * Avant, le seul geste possible etait de decocher push et courriel dans les
+ * reglages du compte, ce qui coupe aussi l'eau, l'agenda, les objectifs et le
+ * cycle: tout eteindre pour faire taire un groupe.
+ */
+{
+  const set = code('src/pages/Settings.jsx')
+  const tog = code('src/components/GroupNotifyToggle.jsx')
+
+  ok('le commutateur est sur la page du GROUPE', /<GroupNotifyToggle groupId=/.test(set),
+     'un reglage sur ce groupe-la se cherche la ou on est deja')
+  ok('et il est haut, au-dessus de la liste des membres',
+     set.indexOf('GroupNotifyToggle') < set.indexOf('settings.members_count'),
+     'dix membres mettent le commutateur a un ecran et demi de defilement')
+  ok('tous les membres y ont droit, pas seulement les admins',
+     !/myRole === 'creator'[\s\S]{0,200}GroupNotifyToggle/.test(set)
+       && !/isAdmin[\s\S]{0,200}GroupNotifyToggle/.test(set),
+     'c est un reglage sur soi, pas sur le groupe')
+
+  ok('la case dit ce qui ARRIVE, pas ce qui est coupe',
+     /checked=\{on === true\}/.test(tog),
+     'une case "couper" cochee pour dire que tout va bien est une double negation')
+  ok('et elle attend de savoir avant de se dessiner',
+     /useState\(null\)/.test(tog) && /disabled=\{on === null \|\| busy\}/.test(tog),
+     'partir de true ferait clignoter "allume" chez quelqu un qui a coupe')
+
+  /* RLS refuse un DELETE en silence: zero ligne, aucune erreur. Sans le compte,
+     rallumer un groupe aurait l'air d'avoir marche et la case reviendrait
+     decochee au prochain chargement. */
+  ok('le DELETE compte ses lignes', /delete\(\{ count: 'exact' \}\)/.test(tog))
+  ok('et zero ligne est traite comme un echec', /err \|\| count === 0/.test(tog))
+  ok('une deuxieme coupure n est pas une erreur a l ecran',
+     /onConflict: 'user_id,group_id'/.test(tog),
+     'la cle primaire est (user_id, group_id): un insert repete serait une violation')
+  ok('et la migration absente est dite plutot que montree en panne',
+     /isMissingTable/.test(tog) && /data-hook="group-notify-absent"/.test(tog),
+     'un commutateur qui ne commute rien apprend que les reglages ne comptent pas')
+
+  /* La phrase de l'etat coupe doit NOMMER ce qui continue d'arriver, sinon la
+     cloche qui se remplit passe pour un reglage qui n'a pas marche. */
+  const i18n = read('src/lib/i18n.jsx')
+  for (const key of ['gnotif.section', 'gnotif.label', 'gnotif.on_help',
+                     'gnotif.off_help', 'gnotif.failed', 'gnotif.absent']) {
+    const hits = i18n.split(`'${key}'`).length - 1
+    ok(`${key} existe dans les deux langues (${hits})`, hits === 2)
+  }
+  ok('et l etat coupe nomme la cloche', /cloche/.test(i18n) && /in the bell/.test(i18n),
+     'trois lignes non lues apres avoir coupe se lisent comme une panne')
+
+  /* La politique n'a pas de chemin de groupe, et c'est la fonctionnalite. */
+  /* Sans les commentaires: l'explication de cette migration NOMME is_member et
+     is_group_admin pour dire pourquoi elle ne s'en sert pas, et la premiere
+     version de ce test a echoue sur sa propre justification. */
+  const sql = read('supabase/69_group_mute.sql').replace(/^\s*--.*$/gm, '')
+  ok('la table existe', /create table if not exists group_mute/.test(sql))
+  ok('RLS est active', /alter table group_mute enable row level security/.test(sql))
+  ok('et la politique est user_id = auth.uid(), rien d autre',
+     /using \(user_id = auth\.uid\(\)\)/.test(sql)
+       && /with check \(user_id = auth\.uid\(\)\)/.test(sql)
+       && !/is_member\(|is_group_admin\(/.test(sql),
+     'un membre n a pas a savoir qui l a coupe')
+  ok('rien n est a rattraper le jour de la migration',
+     !/^\s*update profiles/m.test(sql) && !/insert into group_mute/.test(sql),
+     'absence de ligne = non coupe, donc le comportement ne change pour personne')
+}
+
+/**
  * LE FRANCAIS PORTE SES ACCENTS.
  *
  * "Regles prevues" etait a l'ecran, en toutes lettres, sur la capture qu'elle a
