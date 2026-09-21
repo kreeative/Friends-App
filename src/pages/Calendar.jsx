@@ -226,6 +226,40 @@ export default function Calendar() {
    */
   const periodTracking = cycleOn(profile)
 
+  /**
+   * Enregistrer des regles depuis le calendrier.
+   *
+   * Demande: que "+ Ajouter" propose "Mes regles" comme il propose un horaire.
+   * Avant, ce bouton ouvrait directement le formulaire d'evenement, et le seul
+   * chemin vers le cycle passait par un autre bouton, un tiroir, puis une liste.
+   *
+   * UPSERT, parce que `unique (user_id, started_on)` fait d'un doublon une
+   * erreur Postgres, et "duplicate key value violates unique constraint" n'est
+   * pas une phrase a montrer a quelqu'un qui note ses regles.
+   *
+   * L'ecriture reste dans cycle_log, dont la politique est
+   * `user_id = auth.uid()`: pas de chemin vers le groupe, comme partout
+   * ailleurs dans le cycle.
+   */
+  const savePeriod = async (key) => {
+    if (!key || !user?.id) return
+    if (key > dayKey(new Date())) return
+    const { error } = await supabase
+      .from('cycle_log')
+      .upsert({ user_id: user.id, started_on: key }, { onConflict: 'user_id,started_on' })
+    if (error) return setNotice(error.message)
+    setPeriodDay(null)
+    setAdding(false)
+    /* Le panneau tient l'etat du cycle et sait le relire; le calendrier n'a
+       qu'a le lui demander, sinon la pastille du jour ne bougerait qu'au
+       prochain chargement. */
+    const { data } = await supabase
+      .from('cycle_log')
+      .select('id, started_on, ended_on')
+      .order('started_on', { ascending: true })
+    setCycle((c) => ({ ...c, starts: data ?? c.starts }))
+  }
+
   const [view, setView] = useState('week')
   const [anchor, setAnchor] = useState(() => {
     const n = new Date()
@@ -239,6 +273,10 @@ export default function Calendar() {
   const [drawer, setDrawer] = useState(false)
   const [wizard, setWizard] = useState(false)
   const [added, setAdded] = useState(0)
+  /* Ce que "+ Ajouter" demande avant d'ouvrir un formulaire, et la date des
+     regles quand c'est ce qu'on ajoute. */
+  const [adding, setAdding] = useState(false)
+  const [periodDay, setPeriodDay] = useState(null)
   /* The occurrence somebody asked to delete, or null. It carries the whole
      entry rather than an id, because the dialog has to know the title to name
      it and the day to skip. */
@@ -533,7 +571,18 @@ export default function Calendar() {
             + is the icon and the word is the label. */}
         <button
           type="button"
-          onClick={() => setEditing({ starts_on: dayKey(anchor), category: 'cours', weekdays: [] })}
+          /**
+           * Il ouvrait le formulaire d'evenement directement. Depuis qu'il y a
+           * deux choses a ajouter, il demande laquelle -- mais SEULEMENT quand
+           * il y en a vraiment deux: sans le suivi du cycle, le choix aurait
+           * une seule reponse, et un ecran qui pose une question dont il connait
+           * la reponse fait perdre une touche a tout le monde.
+           */
+          onClick={() =>
+            periodTracking
+              ? setAdding(true)
+              : setEditing({ starts_on: dayKey(anchor), category: 'cours', weekdays: [] })
+          }
           className="goal-action-done press ml-auto shrink-0"
           data-hook="cal-add"
         >
@@ -543,6 +592,81 @@ export default function Calendar() {
           {t('cal.add')}
         </button>
       </div>
+
+      {/**
+       * LE CHOIX, ET POURQUOI IL Y A UN CHAMP DATE.
+       *
+       * La tentation etait d'enregistrer directement sur le jour affiche, en
+       * une touche. Mesure contre le code: en vue MOIS, `anchor` est le 1er du
+       * mois, pas le jour qu'on regarde. Une touche aurait donc note le 1er
+       * septembre en silence pour quelqu'un qui voulait le 17, et une donnee
+       * fausse posee sans un mot est pire qu'une touche de plus.
+       *
+       * Le champ est donc pre-rempli avec le jour affiche et modifiable.
+       */}
+      {adding && (
+        <div className="lg w-full p-4" data-hook="cal-add-kind">
+          <p className="text-small font-semibold text-ink">{t('cal.add_what')}</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setAdding(false)
+                setEditing({ starts_on: dayKey(anchor), category: 'cours', weekdays: [] })
+              }}
+              className="goal-action press"
+              data-hook="cal-add-event"
+            >
+              {t('cal.add_event')}
+            </button>
+            <button
+              type="button"
+              onClick={() => setPeriodDay(dayKey(anchor))}
+              className="goal-action press"
+              data-hook="cal-add-period"
+              aria-expanded={periodDay !== null}
+            >
+              {t('cal.add_period')}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setAdding(false)
+                setPeriodDay(null)
+              }}
+              className="press rounded-pill px-4 py-2 text-small font-semibold text-muted hover:bg-ink/[0.06]"
+              data-hook="cal-add-cancel"
+            >
+              {t('ui.close')}
+            </button>
+          </div>
+
+          {periodDay !== null && (
+            <div className="mt-3 flex items-center gap-2" data-hook="cal-period-form">
+              <label className="sr-only" htmlFor="cal-period-day">
+                {t('cal.add_period_when')}
+              </label>
+              <input
+                id="cal-period-day"
+                type="date"
+                value={periodDay}
+                max={dayKey(new Date())}
+                onChange={(e) => setPeriodDay(e.target.value)}
+                data-hook="cal-period-day"
+                className="field min-w-0 flex-1"
+              />
+              <button
+                type="button"
+                onClick={() => savePeriod(periodDay)}
+                className="goal-action-done press shrink-0"
+                data-hook="cal-period-save"
+              >
+                {t('cal.add_period_save')}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Eight rows landing at once is a big change to a grid somebody was
           just looking at, and without a word it reads as the page having done
