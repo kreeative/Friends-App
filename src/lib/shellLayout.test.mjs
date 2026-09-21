@@ -2784,5 +2784,46 @@ ok(
      'les selecteurs sur les classes ont casse a chaque restylage de ce depot')
 }
 
+/**
+ * AUCUN TITRE DE PROSE NE MONTE AU-DESSUS DE 600.
+ *
+ *   "Bienvenue sur Rich and Friends est trop gras."
+ *
+ * index.css pose deja la regle et dit pourquoi, mot pour mot: "Poppins is a
+ * geometric face and its bold is genuinely bold: at 700 the bowls close up and
+ * a heading stops being a heading and starts being a block of ink."
+ *
+ * Deux ecrans la contredisaient avec `font-extrabold`, soit 800: l'accueil et
+ * la configuration, qui se suivent. Mesure dans Chromium: 800 sur 32px, contre
+ * un corps a 500, et 21.8% d'encre dans le rectangle du titre contre 17.0%
+ * apres correction.
+ *
+ * LES CHIFFRES NE SONT PAS DE LA PROSE. `font-bold` sur un montant ou un
+ * compteur en taille h1 reste permis: c'est une valeur, pas un titre, et elle
+ * porte `tabular-nums` ou `leading-none` qui la distinguent. La regle porte
+ * sur les <h1> et <h2>, qui sont les balises que index.css regle.
+ */
+{
+  const pages = readdirSync(join(root, 'src/pages'))
+    .filter((f) => f.endsWith('.jsx'))
+    .map((f) => [`src/pages/${f}`, read(`src/pages/${f}`)])
+  const composants = readdirSync(join(root, 'src/components'))
+    .filter((f) => f.endsWith('.jsx'))
+    .map((f) => [`src/components/${f}`, read(`src/components/${f}`)])
+
+  const gras = []
+  for (const [nom, texte] of [...pages, ...composants]) {
+    for (const m of texte.matchAll(/<h[12]\s[^>]*className="([^"]*)"/g)) {
+      if (/font-(bold|extrabold|black)/.test(m[1])) gras.push(`${nom}: ${m[1].slice(0, 60)}`)
+    }
+  }
+  ok('aucun h1 ni h2 ne force une graisse au-dessus de 600',
+     gras.length === 0, gras.join(' | '))
+
+  ok('et la regle est toujours ecrite dans la feuille de style',
+     /h1,\s*\n\s*h2,\s*\n\s*h3 \{[\s\S]{0,80}font-weight: 600;/.test(css),
+     'sans elle, retirer la classe ne donnerait plus 600 mais la valeur du navigateur')
+}
+
 console.log(`\n  ${pass} passed, ${fail} failed\n`)
 process.exit(fail ? 1 : 0)

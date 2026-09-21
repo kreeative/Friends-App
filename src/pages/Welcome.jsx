@@ -294,7 +294,25 @@ export default function Welcome() {
                 <span className="inline-block rounded-pill bg-accent/[0.12] px-3 py-1 text-label font-semibold uppercase tracking-[0.06em] text-ink">
                   {t('welcome.step', { n: n + 1, total: SLIDES.length })}
                 </span>
-                <h1 className="text-safe mt-3 text-h1 font-extrabold leading-tight text-ink">
+                {/**
+                 * PAS DE GRAISSE ICI: LA REGLE DE LA MAISON SUFFIT.
+                 *
+                 *   "Bienvenue sur Rich and Friends est trop gras."
+                 *
+                 * index.css pose h1/h2/h3 a 600 et dit pourquoi, mot pour mot:
+                 * "Poppins is a geometric face and its bold is genuinely bold:
+                 * at 700 the bowls close up and a heading stops being a
+                 * heading and starts being a block of ink."
+                 *
+                 * `font-extrabold` est 800, donc deux crans PLUS LOIN que ce
+                 * que cette note refuse deja, et trois au-dessus du corps qui
+                 * tourne a 500. Mesure dans Chromium: 800 sur 32px, sur le
+                 * premier ecran que voit quelqu'un qui arrive.
+                 *
+                 * Rien ne remplace la classe. Le titre herite de 600, et la
+                 * taille fait le reste du travail.
+                 */}
+                <h1 className="text-safe mt-3 text-h1 leading-tight text-ink">
                   {t(n === 0 ? 'welcome.hi' : `welcome.${key}_title`)}
                 </h1>
                 <p className="text-safe mt-2 max-w-[34ch] text-body leading-relaxed text-muted">
