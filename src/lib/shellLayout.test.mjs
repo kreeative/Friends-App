@@ -2752,6 +2752,36 @@ ok(
      'sans ca, une fois l image changee il n y a plus de chemin de retour')
   ok('une colonne absente donne une phrase, pas du Postgres',
      /isMissingColumn\(err, 'sticker'\) \? t\('settings\.sticker_pending'\)/.test(head))
+
+  /**
+   * TOUT CE QUI EST PLUS ETROIT QUE LA CARTE PORTE mx-auto.
+   *
+   *   "Le nom du groupe doit etre centre en bas du logo."
+   *
+   * `text-center` sur la carte centre le TEXTE dans sa boite et ne dit rien de
+   * l'endroit ou cette boite se pose. Quatre elements ici sont plus etroits
+   * que la carte: le bouton du nom s'ajuste a son contenu, le champ est
+   * plafonne a 38rem par `.field`, la note a 42ch, et l'image fait 96px dans
+   * un bouton elargi par "CHANGER L'IMAGE". Sans mx-auto, chacun se range a
+   * gauche, et du texte centre dans une boite collee a gauche reste a gauche.
+   *
+   * L'image est la plus sournoise: le preflight de Tailwind pose
+   * `img { display: block }`, donc text-center ne l'atteint pas. Elle etait a
+   * -19px du centre, et SEULEMENT chez un admin, parce qu'un simple membre n'a
+   * pas le libelle qui elargit le bouton.
+   */
+  for (const [quoi, re] of [
+    ['l image', /className="mx-auto h-24 w-24 object-contain"/],
+    ['le nom', /data-hook="group-name"\s*\n\s*className="press mx-auto/],
+    ['le champ', /data-hook="group-name-field"[\s\S]{0,80}className="field mx-auto/],
+    ['la note', /className="mx-auto mt-1 max-w-\[42ch\]/],
+  ]) {
+    ok(`${quoi} est centre dans la carte`, re.test(head),
+       'text-center ne pose pas une boite plus etroite que son parent')
+  }
+  ok('et le nom se cherche par un data-hook, pas par sa classe',
+     /data-hook="group-name"/.test(head) && /data-hook="group-name-field"/.test(head),
+     'les selecteurs sur les classes ont casse a chaque restylage de ce depot')
 }
 
 console.log(`\n  ${pass} passed, ${fail} failed\n`)
