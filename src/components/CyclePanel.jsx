@@ -102,6 +102,10 @@ export default function CyclePanel({ onChange, open = false, onClose }) {
      half-entered date is not repeatedly parsed and rejected while somebody is
      still typing it. */
   const [form, setForm] = useState({ d1: '', d2: '', d3: '', avg: '' })
+  /* Le champ d'ajout retroactif, ferme par defaut: il ne sert qu'une fois de
+     temps en temps, et un champ date ouvert en permanence sous l'historique
+     ressemble a une ligne vide de plus dans la liste. */
+  const [adding, setAdding] = useState(false)
 
   /* The average as typed, so an out-of-range number can be shown back with the
      reason it was not saved rather than silently discarded. Seeded from the
@@ -246,6 +250,43 @@ export default function CyclePanel({ onChange, open = false, onClose }) {
   }
 
   const removeEntry = (id) => write(() => supabase.from('cycle_log').delete().eq('id', id))
+
+  /**
+   * Ajouter des regles passees, celles qu'on a oublie de noter sur le moment.
+   *
+   * CE QUI MANQUAIT, ET POURQUOI CA NE SE VOYAIT PAS.
+   *
+   * L'historique laissait deja MODIFIER une date et en SUPPRIMER une. Ce qu'il
+   * ne laissait pas faire, c'est en CREER une dans le passe: le seul chemin
+   * etait "ca a commence aujourd'hui" puis reculer la date a la main. Ca marche
+   * une fois, et ca echoue exactement quand on en a besoin, parce que
+   * `unique (user_id, started_on)` refuse un deuxieme aujourd'hui: quelqu'un
+   * qui a deja note ce matin ne pouvait plus rien rattraper du tout.
+   *
+   * UPSERT ET PAS INSERT. La meme contrainte transforme un doublon en erreur
+   * Postgres, et "duplicate key value violates unique constraint" n'est pas une
+   * phrase a montrer a quelqu'un qui note ses regles. On dit que le jour etait
+   * deja la, et la liste le prouve.
+   *
+   * Rien ici ne sort de la personne: c'est une ecriture de plus dans cycle_log,
+   * dont la politique est `user_id = auth.uid()`, sans chemin vers le groupe.
+   */
+  const addPast = async (value) => {
+    const d = fromKey(value)
+    if (!d) return
+    const key = dayKey(d)
+    /* Le futur n'existe pas encore. Le champ porte deja un max, mais un max sur
+       un champ date se contourne en tapant, et la base ne le sait pas. */
+    if (key > dayKey(new Date())) return
+    const deja = starts.some((row) => row.started_on === key)
+    await write(() =>
+      supabase
+        .from('cycle_log')
+        .upsert({ user_id: user.id, started_on: key }, { onConflict: 'user_id,started_on' }),
+    )
+    setAdding(false)
+    flash(deja ? t('cycle.already') : t('cycle.added'))
+  }
 
   /* Deleting a date is the one action in here with no visible result: the row
      leaves a list somebody may not be looking at. A line that says what just
@@ -590,6 +631,41 @@ export default function CyclePanel({ onChange, open = false, onClose }) {
               </li>
             ))}
           </ul>
+
+          {/* Sous la liste, parce que c'est une correction de la liste. Ferme
+              par defaut: un champ date ouvert en permanence se lit comme une
+              entree vide de plus. */}
+          {adding ? (
+            <div className="mt-3 flex items-center gap-2" data-hook="cycle-add-past-form">
+              <input
+                type="date"
+                max={dayKey(new Date())}
+                autoFocus
+                onChange={(e) => addPast(e.target.value)}
+                aria-label={t('cycle.add_past_label')}
+                data-hook="cycle-add-past-date"
+                className="field min-w-0 flex-1"
+              />
+              <button
+                type="button"
+                onClick={() => setAdding(false)}
+                data-hook="cycle-add-past-cancel"
+                className="press shrink-0 rounded-pill px-3 py-2 text-small font-semibold text-muted hover:bg-ink/[0.06]"
+              >
+                {t('cycle.add_past_cancel')}
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setAdding(true)}
+              disabled={busy}
+              data-hook="cycle-add-past"
+              className="press mt-3 rounded-pill px-3 py-2 text-small font-semibold text-accent hover:bg-accent/[0.08] disabled:opacity-60"
+            >
+              + {t('cycle.add_past')}
+            </button>
+          )}
 
           {/**
            * Adjustable at any time, not only during setup. estimate() stops

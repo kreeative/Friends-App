@@ -197,6 +197,38 @@ ok(
  * group.
  */
 /**
+ * RATTRAPER DES REGLES OUBLIEES.
+ *
+ * Demande: "I want to be able to go back and add my menstruation."
+ *
+ * L'historique laissait deja MODIFIER une date et en SUPPRIMER une. Ce qu'il ne
+ * laissait pas faire, c'est en CREER une dans le passe: le seul chemin etait
+ * "c'est arrive aujourd'hui" puis reculer la date a la main. Ca marche une
+ * fois, et ca echoue exactement quand on en a besoin, parce que
+ * `unique (user_id, started_on)` refuse un deuxieme aujourd'hui.
+ *
+ * Ce qui est epingle ici, en plus du geste: que l'ecriture reste DANS le cycle.
+ * La regle de 51_calendar_and_cycle.sql est `user_id = auth.uid()`, sans chemin
+ * vers le groupe, sans vue partagee, sans agregat. Ce n'est pas un defaut a
+ * relacher plus tard, c'est la fonction.
+ */
+{
+  const cp = code('src/components/CyclePanel.jsx')
+  ok('on peut ajouter une date passee', /data-hook="cycle-add-past"/.test(cp))
+  ok('le champ est borne a aujourd hui', /max=\{dayKey\(new Date\(\)\)\}/.test(cp))
+  ok('et le futur est refuse cote code aussi',
+     /if \(key > dayKey\(new Date\(\)\)\) return/.test(cp),
+     'un max sur un champ date se contourne en tapant, et la base ne le sait pas')
+  ok('un doublon est un upsert, pas une erreur Postgres',
+     /onConflict: 'user_id,started_on'/.test(cp) && /t\('cycle\.already'\)/.test(cp),
+     '"duplicate key value violates unique constraint" n est pas une phrase a montrer ici')
+  ok('et le rattrapage n ecrit que dans cycle_log',
+     /addPast[\s\S]{0,900}from\('cycle_log'\)/.test(cp)
+       && !/addPast[\s\S]{0,900}from\('(checkins|goals|group_members|group_feed)'\)/.test(cp),
+     'la politique du cycle est user_id = auth.uid(), sans chemin vers le groupe')
+}
+
+/**
  * LES HUMEURS QUE L'APPLICATION OFFRE ET CELLES QUE LA BASE ACCEPTE.
  *
  * Demande: "add emotion sick".
