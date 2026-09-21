@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useGroup } from '../context/GroupContext'
-import { deviceZone, openingLabel } from '../lib/groupTime'
 import { useT } from '../lib/i18n'
 import { Avatar, Screen, Section } from '../components/ui'
 import GroupHeader from '../components/GroupHeader'
@@ -77,7 +76,7 @@ function LinkIcon() {
 export default function Settings() {
   const { user } = useAuth()
   const { group, members, groups, activeId, myRole, reload } = useGroup()
-  const { t, locale } = useT()
+  const { t } = useT()
 
   const [inviting, setInviting] = useState(false)
   const [tapped, setTapped] = useState(null)
@@ -86,49 +85,24 @@ export default function Settings() {
   if (!group) return null
 
   /**
-   * When the day turns, said only when it is actually known.
+   * L'HEURE D'OUVERTURE N'EST PLUS CALCULEE ICI.
    *
-   * These three columns arrive with the group row, and a render between the
-   * route resolving and that row landing, or a group written before one of
-   * them existed, produced the literal string "undefined undefined:00 ·
-   * undefined" under the group's name. A missing schedule is a state; a line
-   * of the word "undefined" is a bug wearing a sentence.
+   *   "Dimanche 4h heure Toronto, enleve ca dans le ui et ux."
+   *
+   * Il y avait deux phrases sous le nom du groupe: "dimanche 04:00", et une
+   * deuxieme expliquant que c'etait dimanche 00:00 dans le fuseau du groupe.
+   * Toutes deux disaient une REGLE, sur la page ou l'on vient changer quelque
+   * chose, et une regle n'est pas une heure dont on peut faire quelque chose.
+   *
+   * La question utile est "dans combien de temps", et le tableau y repond
+   * deja: board.opens_in, calcule sur cycles.opens_at, qui est un instant. Ce
+   * qui part ici n'existait nulle part ailleurs et ne manque a rien.
+   *
+   * openingLabel() et tout src/lib/groupTime.js n'avaient que cet appelant. Le
+   * module part avec la phrase plutot que de rester en exports sans lecteur:
+   * la conversion et ses tests d'heure d'ete restent dans l'historique git si
+   * la phrase revient un jour.
    */
-  /**
-   * LE MEME MOMENT, DIT DANS L'HEURE DE CELUI QUI LIT.
-   *
-   * Cette ligne affichait "Sunday 00:00 · America/Toronto", ce qui a produit
-   * la question: "instead of all the group being on the Toronto timeline, can
-   * it just be adjusted in real time for everyone?".
-   *
-   * La planification l'etait deja. cycles.opens_at est un timestamptz, donc un
-   * INSTANT: la periode s'ouvre au meme moment pour tout le monde, et la
-   * fonction planifiee compare des instants. Ce qui etait affiche, c'etait la
-   * REGLE qui a servi a fabriquer cet instant, exprimee dans le fuseau du
-   * groupe. Pour quelqu'un a Paris, ca ne dit pas quand sa porte s'ouvre: il
-   * faut faire le calcul de tete, et une ligne qu'il faut convertir se lit
-   * comme un produit qui ignore ou tu vis.
-   *
-   * Donc le meme instant, formate dans le fuseau du lecteur. La conversion, y
-   * compris les changements d'heure qui ne tombent pas le meme jour des deux
-   * cotes de l'Atlantique, vit dans src/lib/groupTime.js avec ses tests.
-   *
-   * Le fuseau de l'appareil plutot que celui du profil: c'est ou la personne
-   * est MAINTENANT, ce qui est la seule chose que cette phrase promet. Le
-   * profil sert au serveur pour les rappels, et il peut etre en retard d'un
-   * voyage.
-   */
-  const opening = openingLabel({
-    dow: group.checkin_dow,
-    hour: group.opens_hour,
-    tz: group.timezone,
-    viewerTz: deviceZone(),
-    locale,
-  })
-  const sub = opening.when || null
-  const note = opening.when && !opening.sameZone
-    ? t('settings.when_everywhere', { when: opening.groupWhen, tz: group.timezone })
-    : null
 
   const isAdmin = myRole === 'creator' || myRole === 'admin'
 
@@ -157,12 +131,7 @@ export default function Settings() {
        * else gets in, who is in it, and the switches. Every metric has gone
        * back to the board, which is where a metric belongs.
        */}
-      <GroupHeader
-        group={group}
-        canEdit={isAdmin}
-        sub={sub}
-        note={note}
-      />
+      <GroupHeader group={group} canEdit={isAdmin} />
 
       <Section>
         <div className="lg divide-y divide-hairline px-5">

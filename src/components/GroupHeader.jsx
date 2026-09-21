@@ -27,7 +27,7 @@ import { isMissingColumn } from '../lib/dberr'
  * policy either way, so hiding it is courtesy rather than the actual
  * enforcement: a crafted update from a console gets the same answer.
  */
-export default function GroupHeader({ group, canEdit, sub, note = null }) {
+export default function GroupHeader({ group, canEdit }) {
   const { reload } = useGroup()
   const { t } = useT()
 
@@ -249,26 +249,27 @@ export default function GroupHeader({ group, canEdit, sub, note = null }) {
         </button>
       )}
 
-      <p className="mt-2 text-small text-muted" data-hook="group-when">
-        {busy ? t('settings.saving') : sub}
-      </p>
       {/**
-       * LA DEUXIEME PHRASE N'APPARAIT QUE POUR CEUX QUI EN ONT BESOIN.
+       * L'HEURE D'OUVERTURE N'EST PLUS ECRITE ICI.
        *
-       * Elle dit deux choses a quelqu'un qui n'est pas dans le fuseau du
-       * groupe: que l'heure au-dessus est bien la sienne, et que tout le monde
-       * y arrive en meme temps. Chez la personne qui a cree le groupe, les
-       * deux fuseaux coincident, il n'y a rien a preciser, et une ligne de
-       * plus serait du bruit sur la seule page ou l'on vient changer quelque
-       * chose.
+       *   "Dimanche 4h heure Toronto, enleve ca dans le ui et ux."
        *
-       * mx-auto pour la meme raison que le nom plus haut: plafonnee a 42ch,
-       * elle se rangeait a gauche des que la carte etait plus large que ca,
-       * sous un logo et une heure tous deux centres.
+       * Cette ligne disait "dimanche 04:00", et celle du dessous expliquait que
+       * c'etait dimanche 00:00 dans le fuseau du groupe. Deux phrases pour une
+       * REGLE, sur la page ou l'on vient changer quelque chose, et une regle
+       * n'est pas une heure dont on peut faire quelque chose.
+       *
+       * Ce qui reste, et qui est la vraie reponse, vit deja sur le tableau:
+       * "ouvre dans 3 h", calcule sur cycles.opens_at, qui est un instant et
+       * pas une regle. Rien n'est perdu, la phrase utile etait ailleurs.
+       *
+       * Le temoin d'enregistrement, lui, VIVAIT DANS CETTE LIGNE. Le supprimer
+       * avec elle aurait rendu muets le changement de nom et le changement
+       * d'image, qui sont les deux gestes de cette carte.
        */}
-      {!busy && note && (
-        <p className="mx-auto mt-1 max-w-[42ch] text-small text-muted/80" data-hook="group-when-note">
-          {note}
+      {busy && (
+        <p className="mt-2 text-small text-muted" role="status" data-hook="group-saving">
+          {t('settings.saving')}
         </p>
       )}
       {error && <p className="mt-2 text-small text-negative">{error}</p>}
