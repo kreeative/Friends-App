@@ -229,9 +229,8 @@ export default function Calendar() {
   /**
    * Enregistrer des regles depuis le calendrier.
    *
-   * Demande: que "+ Ajouter" propose "Mes regles" comme il propose un horaire.
-   * Avant, ce bouton ouvrait directement le formulaire d'evenement, et le seul
-   * chemin vers le cycle passait par un autre bouton, un tiroir, puis une liste.
+   * Demande: un bouton a cote de "+ Ajouter". Avant, le seul chemin vers le
+   * cycle passait par un autre bouton, un tiroir, puis une liste.
    *
    * UPSERT, parce que `unique (user_id, started_on)` fait d'un doublon une
    * erreur Postgres, et "duplicate key value violates unique constraint" n'est
@@ -249,7 +248,7 @@ export default function Calendar() {
       .upsert({ user_id: user.id, started_on: key }, { onConflict: 'user_id,started_on' })
     if (error) return setNotice(error.message)
     setPeriodDay(null)
-    setAdding(false)
+    setPeriodSaved(key)
     /* Le panneau tient l'etat du cycle et sait le relire; le calendrier n'a
        qu'a le lui demander, sinon la pastille du jour ne bougerait qu'au
        prochain chargement. */
@@ -273,10 +272,18 @@ export default function Calendar() {
   const [drawer, setDrawer] = useState(false)
   const [wizard, setWizard] = useState(false)
   const [added, setAdded] = useState(0)
-  /* Ce que "+ Ajouter" demande avant d'ouvrir un formulaire, et la date des
-     regles quand c'est ce qu'on ajoute. */
-  const [adding, setAdding] = useState(false)
+  /* La date en cours de saisie sous le bouton "Mes regles", ou null quand ce
+     bouton n'a pas ete touche. Null plutot que '' : une chaine vide est une
+     date qu'on vient d'effacer, ce qui est un etat different. */
   const [periodDay, setPeriodDay] = useState(null)
+  /**
+   * La derniere date notee, pour la dire.
+   *
+   * Sans ca l'ecriture est muette quand elle reussit. En vue mois la pastille
+   * apparait dans la grille et c'est la reponse; mais noter le 14 depuis la
+   * vue JOUR du 21 ne change rien a l'ecran, le panneau se referme, et rien ne
+   * distingue "enregistre" de "le bouton n'a pas pris". */
+  const [periodSaved, setPeriodSaved] = useState(null)
   /* The occurrence somebody asked to delete, or null. It carries the whole
      entry rather than an id, because the dialog has to know the title to name
      it and the day to skip. */
@@ -567,105 +574,152 @@ export default function Calendar() {
           })}
         </div>
 
-        {/* Pinned to the far end, and the only filled control in the row. The
-            + is the icon and the word is the label. */}
-        <button
-          type="button"
-          /**
-           * Il ouvrait le formulaire d'evenement directement. Depuis qu'il y a
-           * deux choses a ajouter, il demande laquelle -- mais SEULEMENT quand
-           * il y en a vraiment deux: sans le suivi du cycle, le choix aurait
-           * une seule reponse, et un ecran qui pose une question dont il connait
-           * la reponse fait perdre une touche a tout le monde.
-           */
-          onClick={() =>
-            periodTracking
-              ? setAdding(true)
-              : setEditing({ starts_on: dayKey(anchor), category: 'cours', weekdays: [] })
-          }
-          className="goal-action-done press ml-auto shrink-0"
-          data-hook="cal-add"
-        >
-          <span aria-hidden="true" className="mr-1 text-body leading-none">
-            +
-          </span>
-          {t('cal.add')}
-        </button>
+        {/**
+         * DEUX BOUTONS COTE A COTE, PAS UNE QUESTION.
+         *
+         *   "A cote du bouton ajouter, ajouter une option ajouter
+         *    menstruation."
+         *
+         * La version precedente faisait demander a "+ Ajouter" ce qu'on
+         * ajoutait. Le choix etait juste, mais il coutait une touche DANS LES
+         * DEUX SENS: ajouter un cours passait lui aussi par la question. Une
+         * question dont on connait deja la reponse en arrivant n'est pas un
+         * choix, c'est un peage.
+         *
+         * Les deux gestes sont donc deux boutons, epingles ensemble au bout de
+         * la rangee.
+         *
+         * UN SEUL EST REMPLI. Deux boutons pleins cote a cote se disputent la
+         * meme place dans l'oeil, et personne ne sait lequel est le geste
+         * courant. Le rempli reste l'horaire, qui sert tous les jours; les
+         * regles prennent la meme forme que "Mon cycle" a cote, ce qui est
+         * aussi ce qui les distingue autrement que par la couleur (1.4.1).
+         *
+         * Et celui des regles n'existe que s'il y a un cycle a noter. Absent
+         * plutot que grise, comme "Mon cycle" plus haut: un bouton eteint reste
+         * la publicite d'une fonction a laquelle la personne a dit non.
+         */}
+        <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+          {periodTracking && (
+            <button
+              type="button"
+              onClick={() => {
+                setPeriodSaved(null)
+                setPeriodDay(dayKey(anchor))
+              }}
+              aria-expanded={periodDay !== null}
+              className="goal-action press shrink-0"
+              data-hook="cal-add-period"
+            >
+              <span aria-hidden="true" className="mr-1 text-body leading-none">
+                +
+              </span>
+              {t('cal.add_period')}
+            </button>
+          )}
+
+          {/* The + is the icon and the word is the label. */}
+          <button
+            type="button"
+            onClick={() => setEditing({ starts_on: dayKey(anchor), category: 'cours', weekdays: [] })}
+            className="goal-action-done press shrink-0"
+            data-hook="cal-add"
+          >
+            <span aria-hidden="true" className="mr-1 text-body leading-none">
+              +
+            </span>
+            {t('cal.add')}
+          </button>
+        </div>
       </div>
 
       {/**
-       * LE CHOIX, ET POURQUOI IL Y A UN CHAMP DATE.
+       * POURQUOI IL Y A UN CHAMP DATE PLUTOT QU'UNE SEULE TOUCHE.
        *
-       * La tentation etait d'enregistrer directement sur le jour affiche, en
-       * une touche. Mesure contre le code: en vue MOIS, `anchor` est le 1er du
-       * mois, pas le jour qu'on regarde. Une touche aurait donc note le 1er
-       * septembre en silence pour quelqu'un qui voulait le 17, et une donnee
-       * fausse posee sans un mot est pire qu'une touche de plus.
+       * La tentation etait d'enregistrer directement sur le jour affiche.
+       * Mesure contre le code: en vue MOIS, `anchor` est le 1er du mois, pas
+       * le jour qu'on regarde. Une touche aurait donc note le 1er septembre en
+       * silence pour quelqu'un qui voulait le 17, et une donnee fausse posee
+       * sans un mot est pire qu'une touche de plus.
        *
-       * Le champ est donc pre-rempli avec le jour affiche et modifiable.
+       * Le champ est donc pre-rempli avec le jour affiche, et modifiable. Le
+       * libelle est visible: c'est le jour ou les regles ONT COMMENCE, pas le
+       * jour ou on s'en souvient, et la difference est tout le sujet quand on
+       * rattrape une date oubliee.
        */}
-      {adding && (
-        <div className="lg w-full p-4" data-hook="cal-add-kind">
-          <p className="text-small font-semibold text-ink">{t('cal.add_what')}</p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                setAdding(false)
-                setEditing({ starts_on: dayKey(anchor), category: 'cours', weekdays: [] })
-              }}
-              className="goal-action press"
-              data-hook="cal-add-event"
-            >
-              {t('cal.add_event')}
-            </button>
-            <button
-              type="button"
-              onClick={() => setPeriodDay(dayKey(anchor))}
-              className="goal-action press"
-              data-hook="cal-add-period"
-              aria-expanded={periodDay !== null}
-            >
-              {t('cal.add_period')}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setAdding(false)
-                setPeriodDay(null)
-              }}
-              className="press rounded-pill px-4 py-2 text-small font-semibold text-muted hover:bg-ink/[0.06]"
-              data-hook="cal-add-cancel"
-            >
-              {t('ui.close')}
-            </button>
-          </div>
-
-          {periodDay !== null && (
-            <div className="mt-3 flex items-center gap-2" data-hook="cal-period-form">
-              <label className="sr-only" htmlFor="cal-period-day">
-                {t('cal.add_period_when')}
-              </label>
-              <input
-                id="cal-period-day"
-                type="date"
-                value={periodDay}
-                max={dayKey(new Date())}
-                onChange={(e) => setPeriodDay(e.target.value)}
-                data-hook="cal-period-day"
-                className="field min-w-0 flex-1"
-              />
+      {periodDay !== null && (
+        <div className="lg measure-form w-full p-4" data-hook="cal-period-form">
+          <label className="text-small font-semibold text-ink" htmlFor="cal-period-day">
+            {t('cal.add_period_when')}
+          </label>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <input
+              id="cal-period-day"
+              type="date"
+              value={periodDay}
+              max={dayKey(new Date())}
+              onChange={(e) => setPeriodDay(e.target.value)}
+              data-hook="cal-period-day"
+              /**
+               * min-w-11rem, PAS min-w-0.
+               *
+               * Avec min-w-0 le champ se laissait ecraser par les deux boutons
+               * a cote: mesure a 390px dans Chromium, il faisait 132px et
+               * affichait "09/21/2". L'annee etait coupee, sur le seul champ de
+               * ce panneau, celui dont toute la question est de savoir quel
+               * jour on note.
+               *
+               * Avec un minimum, flex-wrap le renvoie a la ligne plutot que de
+               * le retrecir: seul sur sa ligne au telephone, a cote des boutons
+               * des qu'il y a la place.
+               */
+              className="field min-w-[11rem] flex-1"
+            />
+            {/* Les deux boutons dans leur propre boite, pour qu'ils passent a
+                la ligne ENSEMBLE. Sans elle, "Fermer" partait seul sur une
+                troisieme ligne pendant qu'"Enregistrer" restait en haut. */}
+            <div className="flex shrink-0 items-center gap-2">
               <button
                 type="button"
                 onClick={() => savePeriod(periodDay)}
-                className="goal-action-done press shrink-0"
+                className="goal-action-done press"
                 data-hook="cal-period-save"
               >
                 {t('cal.add_period_save')}
               </button>
+              <button
+                type="button"
+                onClick={() => setPeriodDay(null)}
+                className="press rounded-pill px-4 py-2 text-small font-semibold text-muted hover:bg-ink/[0.06]"
+                data-hook="cal-period-cancel"
+              >
+                {t('ui.close')}
+              </button>
             </div>
-          )}
+          </div>
         </div>
+      )}
+
+      {/* Et la date est NOMMEE. "Enregistre" tout court laisse la question
+          ouverte quand on vient justement de reculer la date a la main: c'est
+          le 14 ou le 21 qui est parti ? */}
+      {periodSaved && (
+        <p className="text-small font-semibold text-ink" role="status" data-hook="cal-period-saved">
+          {t('cal.period_saved', {
+            date: fromKey(periodSaved).toLocaleDateString(localeTag(locale), {
+              weekday: 'long',
+              day: 'numeric',
+              month: 'long',
+            }),
+          })}{' '}
+          <button
+            type="button"
+            onClick={() => setPeriodSaved(null)}
+            className="press font-normal underline decoration-1 underline-offset-2"
+          >
+            {t('wiz.close')}
+          </button>
+        </p>
       )}
 
       {/* Eight rows landing at once is a big change to a grid somebody was
