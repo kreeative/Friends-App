@@ -114,7 +114,11 @@ export default function Setup() {
           <Wordmark size={96} flat />
         </div>
 
-        <h1 className="text-safe mt-6 text-h1 font-extrabold leading-tight text-ink">
+        {/* Meme graisse que l'accueil, et pour la meme raison: 600 vient de
+            index.css, qui explique pourquoi Poppins ne doit pas monter plus
+            haut. Ces deux ecrans se suivent, et laisser celui-ci a 800 aurait
+            fait crier le titre une page apres l'avoir calme. */}
+        <h1 className="text-safe mt-6 text-h1 leading-tight text-ink">
           {t('setup.title')}
         </h1>
         <p className="text-safe mt-2 max-w-[38ch] text-body leading-relaxed text-muted">
