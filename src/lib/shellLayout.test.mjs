@@ -213,6 +213,40 @@ ok(
  * relacher plus tard, c'est la fonction.
  */
 {
+  /**
+   * LE SUIVI DU CYCLE EST ETEINT PAR DEFAUT.
+   *
+   * "Rappelle-toi: seulement chez les femmes."
+   *
+   * Le code client etait deja strict, cycleForGender ne rend true que pour
+   * 'woman'. C'est la BASE qui fuyait: 56_setup.sql a pose la colonne en
+   * `default true`, donc toute ligne creee avant portait true sans que personne
+   * ne l'ait choisi. Mesure dans Chromium: un profil gender='man',
+   * cycle_on=true voyait le bouton, la couche et "Mes regles".
+   */
+  const setup = code('src/lib/setup.js')
+  ok('seule une femme allume le suivi a la configuration',
+     /cycleForGender\(gender\) \{\s*return gender === 'woman'/.test(setup))
+
+  const sql = readdirSync(join(root, 'supabase'))
+    .filter((f) => /^\d+_.*\.sql$/.test(f))
+    .sort((a, b) => Number(a.split('_')[0]) - Number(b.split('_')[0]))
+    .map((f) => read(`supabase/${f}`))
+    .filter((t) => /alter column cycle_on set default/.test(t))
+    .pop()
+  ok('et une migration remet le defaut de la colonne a false',
+     /alter column cycle_on set default false/.test(sql ?? ''),
+     '`default true` fait decider l application a la place de la personne')
+  ok('le rattrapage epargne qui a deja note quelque chose',
+     /not exists \(select 1 from cycle_log/.test(sql ?? '')
+       && /not exists \(select 1 from cycle_day/.test(sql ?? ''),
+     'eteindre le suivi de quelqu un qui s en sert serait remplacer une erreur par une pire')
+  ok('et il epargne les femmes',
+     /gender is distinct from 'woman'/.test(sql ?? ''))
+  ok('rien n est supprime', !/delete from cycle_(log|day)/i.test(sql ?? ''))
+}
+
+{
   const cal = code('src/pages/Calendar.jsx')
   ok('"+ Ajouter" propose les regles', /data-hook="cal-add-period"/.test(cal),
      'le bouton ouvrait le formulaire d evenement sans rien demander')
