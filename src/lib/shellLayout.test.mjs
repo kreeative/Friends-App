@@ -248,17 +248,43 @@ ok(
 
 {
   const cal = code('src/pages/Calendar.jsx')
-  ok('"+ Ajouter" propose les regles', /data-hook="cal-add-period"/.test(cal),
-     'le bouton ouvrait le formulaire d evenement sans rien demander')
-  ok('et sans avoir perdu l evenement', /data-hook="cal-add-event"/.test(cal))
-  ok('il ne pose la question que s il y a deux reponses',
-     /periodTracking\s*\?\s*setAdding\(true\)/.test(cal),
-     'un ecran qui pose une question dont il connait la reponse fait perdre une touche')
+  /**
+   * "A cote du bouton ajouter, ajouter une option ajouter menstruation."
+   *
+   * Un bouton, pas une reponse dans un choix. La version d'avant faisait
+   * demander a "+ Ajouter" ce qu'on ajoutait, et la question se payait DANS LES
+   * DEUX SENS: ajouter un cours passait par elle aussi.
+   */
+  ok('les regles ont leur propre bouton', /data-hook="cal-add-period"/.test(cal))
+  ok('et "+ Ajouter" ne pose plus de question a personne',
+     !/data-hook="cal-add-kind"/.test(cal) && !/setAdding/.test(cal),
+     'un cours passait par "Tu ajoutes quoi ?" pour arriver la ou il allait deja')
+  ok('il ouvre l horaire directement',
+     /data-hook="cal-add"[\s\S]{0,400}/.test(cal)
+       && /onClick=\{\(\) => setEditing\(\{ starts_on: dayKey\(anchor\)/.test(cal))
+  ok('le bouton des regles n existe que s il y a un cycle a noter',
+     /\{periodTracking && \(\s*<button[\s\S]{0,400}data-hook="cal-add-period"/.test(cal),
+     'grise, il resterait la publicite d une fonction a laquelle on a dit non')
   ok('la date est pre-remplie avec le jour AFFICHE',
      /setPeriodDay\(dayKey\(anchor\)\)/.test(cal),
      'en vue mois l anchor est le 1er: enregistrer en une touche noterait le mauvais jour en silence')
   ok('et le futur est refuse dans le code aussi',
      /if \(key > dayKey\(new Date\(\)\)\) return/.test(cal))
+  /* Noter le 14 depuis la vue JOUR du 21 ne change rien a l'ecran: le panneau
+     se referme et rien ne distingue "enregistre" de "le bouton n'a pas pris". */
+  ok('une reussite le dit, et nomme la date',
+     /data-hook="cal-period-saved"/.test(cal) && /setPeriodSaved\(key\)/.test(cal)
+       && /'cal\.period_saved'/.test(cal),
+     'en vue jour, une date passee s ecrivait sans aucun signe a l ecran')
+  ok('et elle le dit en role="status", pas en alerte',
+     /role="status" data-hook="cal-period-saved"/.test(cal))
+  for (const key of ['cal.period_saved', 'cal.add_period', 'cal.add_period_when']) {
+    const hits = read('src/lib/i18n.jsx').split(`'${key}'`).length - 1
+    ok(`${key} existe dans les deux langues (${hits})`, hits === 2)
+  }
+  ok('et les chaines du choix sont parties avec lui',
+     !/cal\.add_what|cal\.add_event/.test(read('src/lib/i18n.jsx')),
+     'une cle que plus personne ne lit est une cle que le prochain doit verifier')
   ok('l ecriture du calendrier ne touche que cycle_log',
      /savePeriod[\s\S]{0,700}from\('cycle_log'\)/.test(cal)
        && !/savePeriod[\s\S]{0,700}from\('(checkins|goals|group_members|group_feed)'\)/.test(cal))
@@ -276,6 +302,53 @@ ok(
      /addPast[\s\S]{0,900}from\('cycle_log'\)/.test(cp)
        && !/addPast[\s\S]{0,900}from\('(checkins|goals|group_members|group_feed)'\)/.test(cp),
      'la politique du cycle est user_id = auth.uid(), sans chemin vers le groupe')
+}
+
+/**
+ * LE FRANCAIS PORTE SES ACCENTS.
+ *
+ * "Regles prevues" etait a l'ecran, en toutes lettres, sur la capture qu'elle a
+ * envoyee. Ce n'etait pas une faute isolee: trente-sept lignes du bloc fr
+ * etaient ecrites sans accents, presque toutes dans le cycle.
+ *
+ * Le bloc fr SEULEMENT. "medical" et "regular" sont des mots anglais justes, et
+ * une recherche sur tout le fichier les refuserait pour une raison qui n'existe
+ * pas.
+ *
+ * La liste ne contient que des formes qui n'ont AUCUNE lecture correcte sans
+ * accent en francais. "cote" en est absent: un cote et un cote existent tous
+ * les deux. "arrive" aussi: "ca arrive tous les mois" est juste.
+ */
+{
+  const i18n = read('src/lib/i18n.jsx')
+  /* Sans les commentaires. Ils sont en ASCII partout dans ce depot, par choix,
+     et "plutot que" dans une explication n'est pas une chaine que quelqu'un
+     lit a l'ecran. Mesure: la premiere version de ce test a echoue dessus. */
+  const fr = i18n
+    .slice(i18n.indexOf('\n  fr: {'))
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/^\s*\/\/.*$/gm, '')
+  ok('le bloc francais a bien ete trouve', fr.length > 1000 && fr.includes("'cycle.title'"))
+
+  const INTERDITS = [
+    'Regles', 'regles enregistrees', 'prevue', 'prevues', 'prevu ', 'Prevu', 'Prevois',
+    'Prepare ', 'prevision', 'prevenir', 'ecart', 'donnees', 'plutot', 'regulier',
+    'Fenetre', 'luteale', 'recompense', 'Duree', 'Utilisee', 'entree', 'entrees',
+    'Demarrees', 'supprimee', 'Appuye ', 'obligee', 'echeances', 'Verification',
+    'deploye', 'repondu', 'precedentes', 'recentes', 'avis medical', 'jours pres',
+  ]
+  const restants = INTERDITS.filter((m) => fr.includes(m))
+  ok('aucune chaine francaise ne se promene sans ses accents',
+     restants.length === 0,
+     restants.join(', '))
+
+  /* Et les accents sont bien arrives, plutot qu'avoir ete enleves avec le mot.
+     Un test qui ne verifie que l'absence passe aussi quand on supprime la
+     phrase. */
+  for (const attendu of ['Règles prévues', 'plutôt régulier', 'Fenêtre fertile',
+                         'à un jour près', 'phase lutéale']) {
+    ok(`et "${attendu}" est ecrit comme ca`, fr.includes(attendu))
+  }
 }
 
 /**
