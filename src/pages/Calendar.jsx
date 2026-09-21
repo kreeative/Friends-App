@@ -3,7 +3,8 @@ import { createPortal } from 'react-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { localeTag, useT } from '../lib/i18n'
-import { addDays, dayKey, daysBetween, fromKey, phaseOn } from '../lib/cycle'
+import { addDays, dayKey, daysBetween, phaseOn } from '../lib/cycle'
+import { reconcile, selectedFrom } from '../lib/periodPick'
 import { cycleOn } from '../lib/setup'
 import {
   CATEGORIES,
@@ -227,28 +228,64 @@ export default function Calendar() {
   const periodTracking = cycleOn(profile)
 
   /**
-   * Enregistrer des regles depuis le calendrier.
+   * Enregistrer ce qui a ete coche sur le mois.
    *
-   * Demande: un bouton a cote de "+ Ajouter". Avant, le seul chemin vers le
-   * cycle passait par un autre bouton, un tiroir, puis une liste.
+   *   "Look the way you can just coche the case number on flo. Our app doesn't
+   *    show the day as little round and I don't want it too, so adapt to the
+   *    full month view only."
    *
-   * UPSERT, parce que `unique (user_id, started_on)` fait d'un doublon une
-   * erreur Postgres, et "duplicate key value violates unique constraint" n'est
-   * pas une phrase a montrer a quelqu'un qui note ses regles.
+   * Avant, ce bouton ouvrait un champ date: une regle de trois jours demandait
+   * donc trois passages, et il n'y avait aucun moyen d'en corriger une.
+   *
+   * Le calcul de ce qu'il faut ecrire et retirer vit dans src/lib/periodPick.js
+   * avec ses tests, parce que c'est le seul endroit de cet ecran ou une erreur
+   * EFFACE des donnees. La regle qui compte y est expliquee: seules les series
+   * touchees peuvent bouger.
    *
    * L'ecriture reste dans cycle_log, dont la politique est
    * `user_id = auth.uid()`: pas de chemin vers le groupe, comme partout
    * ailleurs dans le cycle.
    */
-  const savePeriod = async (key) => {
-    if (!key || !user?.id) return
-    if (key > dayKey(new Date())) return
-    const { error } = await supabase
-      .from('cycle_log')
-      .upsert({ user_id: user.id, started_on: key }, { onConflict: 'user_id,started_on' })
-    if (error) return setNotice(error.message)
-    setPeriodDay(null)
-    setPeriodSaved(key)
+  const savePeriod = async () => {
+    if (!user?.id || !picking) return
+    const { add, remove } = reconcile({
+      rows: cycle.starts,
+      selected: picked,
+      touched: touchedDays,
+    })
+
+    if (!add.length && !remove.length) {
+      setPicking(false)
+      return
+    }
+
+    /* Retirer d'abord. `unique (user_id, started_on)` refuserait sinon une
+       serie qui commence le meme jour que celle qu'on remplace, ce qui est
+       exactement ce qui arrive quand on allonge une regle d'un jour. */
+    if (remove.length) {
+      const { error, count } = await supabase
+        .from('cycle_log')
+        .delete({ count: 'exact' })
+        .in('id', remove)
+      /* RLS refuse un DELETE en silence: zero ligne, aucune erreur. Continuer
+         apres un refus ecrirait la nouvelle serie a cote de l'ancienne. */
+      if (error) return setNotice(error.message)
+      if (count === 0) return setNotice(t('cycle.save_failed'))
+    }
+
+    if (add.length) {
+      const { error } = await supabase
+        .from('cycle_log')
+        .upsert(
+          add.map((r) => ({ user_id: user.id, ...r })),
+          { onConflict: 'user_id,started_on' },
+        )
+      if (error) return setNotice(error.message)
+    }
+
+    setPicking(false)
+    setPeriodSaved({ add: add.length, remove: remove.length })
+
     /* Le panneau tient l'etat du cycle et sait le relire; le calendrier n'a
        qu'a le lui demander, sinon la pastille du jour ne bougerait qu'au
        prochain chargement. */
@@ -257,6 +294,40 @@ export default function Calendar() {
       .select('id, started_on, ended_on')
       .order('started_on', { ascending: true })
     setCycle((c) => ({ ...c, starts: data ?? c.starts }))
+  }
+
+  /**
+   * Entrer dans le mode "coche les jours".
+   *
+   * Bascule en vue MOIS, parce que c'est la seule ou un mois entier est
+   * visible: cocher trois jours de suite dans la vue jour demanderait trois
+   * navigations, et la demande dit "full month view only".
+   *
+   * La selection part de ce qui est DEJA enregistre, comme chez Flo, sinon les
+   * jours deja notes s'afficheraient decoches sur une grille qui les colorie.
+   * `touched` part vide: c'est lui qui garantit qu'enregistrer sans rien taper
+   * ne reecrit rien. Voir periodPick.js.
+   */
+  const startPicking = () => {
+    setPeriodSaved(null)
+    setView('month')
+    setPicked(selectedFrom(cycle.starts))
+    setTouchedDays(new Set())
+    setPicking(true)
+  }
+
+  const togglePeriodDay = (d) => {
+    const k = dayKey(d)
+    /* Le futur est refuse ici comme il l'etait dans le champ date. Une regle
+       qu'on n'a pas encore eue n'est pas une donnee. */
+    if (k > dayKey(new Date())) return
+    setPicked((s) => {
+      const next = new Set(s)
+      if (next.has(k)) next.delete(k)
+      else next.add(k)
+      return next
+    })
+    setTouchedDays((s) => new Set(s).add(k))
   }
 
   const [view, setView] = useState('week')
@@ -272,17 +343,29 @@ export default function Calendar() {
   const [drawer, setDrawer] = useState(false)
   const [wizard, setWizard] = useState(false)
   const [added, setAdded] = useState(0)
-  /* La date en cours de saisie sous le bouton "Mes regles", ou null quand ce
-     bouton n'a pas ete touche. Null plutot que '' : une chaine vide est une
-     date qu'on vient d'effacer, ce qui est un etat different. */
-  const [periodDay, setPeriodDay] = useState(null)
   /**
-   * La derniere date notee, pour la dire.
+   * LE MODE "COCHE LES JOURS", ET SES TROIS ETATS.
    *
-   * Sans ca l'ecriture est muette quand elle reussit. En vue mois la pastille
-   * apparait dans la grille et c'est la reponse; mais noter le 14 depuis la
-   * vue JOUR du 21 ne change rien a l'ecran, le panneau se referme, et rien ne
-   * distingue "enregistre" de "le bouton n'a pas pris". */
+   * `picking`     on est dedans, donc la grille coche au lieu d'ouvrir un jour
+   * `picked`      ce qui est coche a l'ecran, jours en YYYY-MM-DD
+   * `touchedDays` ce qu'elle a REELLEMENT tape pendant cette session
+   *
+   * Le troisieme n'est pas une commodite. Toutes les lignes existantes ont
+   * `ended_on` a null, et le calendrier en dessine cinq jours par defaut; sans
+   * lui, enregistrer apres avoir coche un jour de septembre inventerait une
+   * duree sur chaque regle de l'annee derniere. La demonstration est dans
+   * src/lib/periodPick.test.mjs.
+   */
+  const [picking, setPicking] = useState(false)
+  const [picked, setPicked] = useState(() => new Set())
+  const [touchedDays, setTouchedDays] = useState(() => new Set())
+  /**
+   * Ce que le dernier enregistrement a fait, pour le dire.
+   *
+   * Sans ca l'ecriture est muette quand elle reussit. La grille change de
+   * couleur, ce qui est deja une reponse; mais retirer une regle entiere ne
+   * laisse rien a l'ecran, et rien ne distinguerait "enregistre" de "le bouton
+   * n'a pas pris". */
   const [periodSaved, setPeriodSaved] = useState(null)
   /* The occurrence somebody asked to delete, or null. It carries the whole
      entry rather than an id, because the dialog has to know the title to name
@@ -603,11 +686,8 @@ export default function Calendar() {
           {periodTracking && (
             <button
               type="button"
-              onClick={() => {
-                setPeriodSaved(null)
-                setPeriodDay(dayKey(anchor))
-              }}
-              aria-expanded={periodDay !== null}
+              onClick={startPicking}
+              aria-expanded={picking}
               className="goal-action press shrink-0"
               data-hook="cal-add-period"
             >
@@ -634,54 +714,31 @@ export default function Calendar() {
       </div>
 
       {/**
-       * POURQUOI IL Y A UN CHAMP DATE PLUTOT QU'UNE SEULE TOUCHE.
+       * LA BARRE DU MODE "COCHE LES JOURS".
        *
-       * La tentation etait d'enregistrer directement sur le jour affiche.
-       * Mesure contre le code: en vue MOIS, `anchor` est le 1er du mois, pas
-       * le jour qu'on regarde. Une touche aurait donc note le 1er septembre en
-       * silence pour quelqu'un qui voulait le 17, et une donnee fausse posee
-       * sans un mot est pire qu'une touche de plus.
+       *   "Look the way you can just coche the case number on flo."
        *
-       * Le champ est donc pre-rempli avec le jour affiche, et modifiable. Le
-       * libelle est visible: c'est le jour ou les regles ONT COMMENCE, pas le
-       * jour ou on s'en souvient, et la difference est tout le sujet quand on
-       * rattrape une date oubliee.
+       * Ce panneau etait un champ date. Une regle de trois jours demandait donc
+       * trois passages, et corriger une regle deja notee etait impossible: il
+       * fallait ouvrir le tiroir du cycle, trouver la ligne, la supprimer, et
+       * recommencer.
+       *
+       * Ce qu'il y a ici tient en une phrase et deux boutons, parce que le
+       * geste est sur la grille en dessous et que tout ce qui s'ajoute ici la
+       * repousse hors de l'ecran. Le compte est la pour que "trois jours
+       * coches" soit verifiable sans recompter les tuiles.
        */}
-      {periodDay !== null && (
-        <div className="lg measure-form w-full p-4" data-hook="cal-period-form">
-          <label className="text-small font-semibold text-ink" htmlFor="cal-period-day">
-            {t('cal.add_period_when')}
-          </label>
+      {picking && (
+        <div className="lg w-full p-4" data-hook="cal-pick-bar">
+          <p className="text-small font-semibold text-ink">{t('cal.pick_how')}</p>
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            <input
-              id="cal-period-day"
-              type="date"
-              value={periodDay}
-              max={dayKey(new Date())}
-              onChange={(e) => setPeriodDay(e.target.value)}
-              data-hook="cal-period-day"
-              /**
-               * min-w-11rem, PAS min-w-0.
-               *
-               * Avec min-w-0 le champ se laissait ecraser par les deux boutons
-               * a cote: mesure a 390px dans Chromium, il faisait 132px et
-               * affichait "09/21/2". L'annee etait coupee, sur le seul champ de
-               * ce panneau, celui dont toute la question est de savoir quel
-               * jour on note.
-               *
-               * Avec un minimum, flex-wrap le renvoie a la ligne plutot que de
-               * le retrecir: seul sur sa ligne au telephone, a cote des boutons
-               * des qu'il y a la place.
-               */
-              className="field min-w-[11rem] flex-1"
-            />
-            {/* Les deux boutons dans leur propre boite, pour qu'ils passent a
-                la ligne ENSEMBLE. Sans elle, "Fermer" partait seul sur une
-                troisieme ligne pendant qu'"Enregistrer" restait en haut. */}
-            <div className="flex shrink-0 items-center gap-2">
+            <span className="text-small text-muted" data-hook="cal-pick-count">
+              {t(picked.size === 1 ? 'cal.pick_n_one' : 'cal.pick_n_other', { n: picked.size })}
+            </span>
+            <div className="ml-auto flex shrink-0 items-center gap-2">
               <button
                 type="button"
-                onClick={() => savePeriod(periodDay)}
+                onClick={savePeriod}
                 className="goal-action-done press"
                 data-hook="cal-period-save"
               >
@@ -689,7 +746,7 @@ export default function Calendar() {
               </button>
               <button
                 type="button"
-                onClick={() => setPeriodDay(null)}
+                onClick={() => setPicking(false)}
                 className="press rounded-pill px-4 py-2 text-small font-semibold text-muted hover:bg-ink/[0.06]"
                 data-hook="cal-period-cancel"
               >
@@ -700,18 +757,20 @@ export default function Calendar() {
         </div>
       )}
 
-      {/* Et la date est NOMMEE. "Enregistre" tout court laisse la question
-          ouverte quand on vient justement de reculer la date a la main: c'est
-          le 14 ou le 21 qui est parti ? */}
+      {/**
+       * Ce que l'enregistrement a fait, en toutes lettres.
+       *
+       * Retirer une regle entiere ne laisse RIEN a l'ecran: la grille perd une
+       * couleur qui n'etait peut-etre pas visible depuis le mois affiche, et
+       * sans un mot rien ne distingue "enregistre" de "le bouton n'a pas pris".
+       */}
       {periodSaved && (
         <p className="text-small font-semibold text-ink" role="status" data-hook="cal-period-saved">
-          {t('cal.period_saved', {
-            date: fromKey(periodSaved).toLocaleDateString(localeTag(locale), {
-              weekday: 'long',
-              day: 'numeric',
-              month: 'long',
-            }),
-          })}{' '}
+          {periodSaved.remove > 0 && periodSaved.add === 0
+            ? t(periodSaved.remove === 1 ? 'cal.pick_removed_one' : 'cal.pick_removed_other',
+                { n: periodSaved.remove })
+            : t(periodSaved.add === 1 ? 'cal.pick_saved_one' : 'cal.pick_saved_other',
+                { n: periodSaved.add })}{' '}
           <button
             type="button"
             onClick={() => setPeriodSaved(null)}
@@ -841,7 +900,18 @@ export default function Calendar() {
        */}
       <div className="min-w-0 space-y-4 md:flex md:min-h-0 md:flex-1 md:flex-col md:overflow-y-auto">
         {view === 'month' && (
-          <MonthGrid range={range} anchor={anchor} agenda={agenda} cycle={shownCycle} onPick={(d) => { setAnchor(d); setView('day') }} />
+          <MonthGrid
+            range={range}
+            anchor={anchor}
+            agenda={agenda}
+            cycle={shownCycle}
+            /* En mode coche, la tuile coche. Sinon elle ouvre le jour, comme
+               avant: un seul composant, deux gestes, et pas une deuxieme
+               grille a garder d'accord avec celle-ci. */
+            picking={picking}
+            picked={picked}
+            onPick={picking ? togglePeriodDay : (d) => { setAnchor(d); setView('day') }}
+          />
         )}
         {view === 'week' && <WeekGrid range={range} agenda={agenda} cycle={shownCycle} locale={locale} onEdit={openEditor} />}
         {view === 'day' && <DayList day={anchor} agenda={agenda} cycle={shownCycle} onEdit={openEditor} onRemove={askRemove} t={t} />}
@@ -927,7 +997,7 @@ function useWide(query = '(min-width: 768px)') {
   return wide
 }
 
-function MonthGrid({ range, anchor, agenda, cycle, onPick }) {
+function MonthGrid({ range, anchor, agenda, cycle, onPick, picking = false, picked }) {
   const { t, locale } = useT()
   /* Two chips on a phone tile, three once the tile is 6.5rem tall. */
   const shown = useWide() ? 3 : 2
@@ -971,6 +1041,22 @@ function MonthGrid({ range, anchor, agenda, cycle, onPick }) {
           const list = agenda.get(k) ?? []
           const phase = phaseOn(d, cycle.starts, cycle.prediction)
           const outside = d.getMonth() !== anchor.getMonth()
+          /**
+           * EN MODE COCHE: LA TUILE EST LA CASE A COCHER.
+           *
+           *   "Our app doesn't show the day as little round and I don't want
+           *    it too."
+           *
+           * Donc pas de pastille a cocher sous le chiffre comme chez Flo. La
+           * tuile se remplit, ce qui n'ajoute aucune forme a une grille qui en
+           * a deja quatre par case: le chiffre, la marque de phase, les
+           * pastilles d'evenement et le cadre d'aujourd'hui.
+           *
+           * aria-checked et role="checkbox" pour que ce soit une case a cocher
+           * pour un lecteur d'ecran aussi, ou la tuile remplie ne dit rien.
+           */
+          const on = picking && picked?.has(k)
+          const future = picking && k > today
           return (
             <button
               key={k}
@@ -978,6 +1064,12 @@ function MonthGrid({ range, anchor, agenda, cycle, onPick }) {
               onClick={() => onPick(d)}
               data-hook="cal-day"
               data-phase={phase ?? ''}
+              data-picked={on ? 'yes' : undefined}
+              role={picking ? 'checkbox' : undefined}
+              aria-checked={picking ? Boolean(on) : undefined}
+              /* Le futur est refuse, et il est DIT plutot que simplement inerte:
+                 une tuile qui ne repond pas se lit comme un bogue. */
+              disabled={future}
               /* The phase belongs in the name, not only in the mark. A screen
                  reader gets "12 September, fertile window" rather than a
                  number and a decorative span it is told to ignore. */
@@ -986,15 +1078,23 @@ function MonthGrid({ range, anchor, agenda, cycle, onPick }) {
                  show instead of collapsing into "+2 autres". The count line is
                  information about what is hidden; three visible entries is
                  information about the day. */
-              className={`press relative flex min-h-[3.4rem] flex-col items-stretch overflow-hidden rounded-inner p-1 text-left transition-colors hover:bg-ink/[0.04] md:min-h-[6.5rem] md:p-1.5 ${
-                outside ? 'opacity-40' : ''
+              className={`press relative flex min-h-[3.4rem] flex-col items-stretch overflow-hidden rounded-inner p-1 text-left transition-colors md:min-h-[6.5rem] md:p-1.5 ${
+                on ? 'bg-negative text-on-accent' : 'hover:bg-ink/[0.04]'
+              } ${outside ? 'opacity-40' : ''} ${
+                future ? 'cursor-not-allowed opacity-30' : ''
               } ${k === today ? 'ring-1 ring-inset ring-accent/50' : ''}`}
             >
               <span className="flex items-center justify-between">
-                <span className="text-small font-semibold text-ink">{d.getDate()}</span>
+                <span className={`text-small font-semibold ${on ? 'text-on-accent' : 'text-ink'}`}>
+                  {d.getDate()}
+                </span>
                 {/* The cycle mark. A dot in the corner, never a word, and
                     never a fill that would fight the event chips below. */}
-                {phase && <span className={`h-2 w-2 shrink-0 rounded-pill ${PHASE_DOT[phase]}`} aria-hidden="true" />}
+                {/* Pas sur une tuile cochee: la tuile EST deja la marque, et
+                    une pastille rouge sur un fond rouge ne dit plus rien. */}
+                {phase && !on && (
+                  <span className={`h-2 w-2 shrink-0 rounded-pill ${PHASE_DOT[phase]}`} aria-hidden="true" />
+                )}
               </span>
 
               {/* Two, then a count. Four chips in a 48px tile is a smear. */}
