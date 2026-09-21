@@ -733,6 +733,66 @@ async function channelsFor(userId: string): Promise<{ push: boolean; email: bool
 }
 
 /**
+ * CE GROUPE-LA, LAISSE-LE TRANQUILLE.
+ *
+ * Demande: "add an option to desactive notification for specific group".
+ *
+ * channelsFor ci-dessus repond PAR OU te joindre, pour toute l'application.
+ * Celle-ci repond SI ce groupe a encore le droit de te joindre, et c'est une
+ * autre question: quelqu'un que son groupe du lundi fatigue n'avait jusqu'ici
+ * qu'un seul geste possible, decocher push et courriel, ce qui coupait aussi
+ * l'eau, l'agenda, les objectifs et le cycle.
+ *
+ * UNE REQUETE PAR PERSONNE ET PAR EXECUTION, pas une par message. Les groupes
+ * coupes d'une personne tiennent dans un Set; le digest interroge sinon cette
+ * table une fois par membre et par groupe.
+ *
+ * Le repli est "rien n'est coupe", pour la meme raison que channelsFor se
+ * replie sur les deux canaux allumes: une table absente, c'est 69_group_mute
+ * qui n'a pas ete passe, et ce n'est pas une raison de faire taire
+ * l'application pour tout le monde en silence.
+ */
+const muteCache = new Map<string, Set<string>>()
+
+async function mutedGroups(userId: string): Promise<Set<string>> {
+  const hit = muteCache.get(userId)
+  if (hit) return hit
+
+  const { data, error } = await supabase
+    .from('group_mute')
+    .select('group_id')
+    .eq('user_id', userId)
+
+  if (error && error.code !== '42P01' && error.code !== 'PGRST116' && error.code !== 'PGRST205') {
+    console.error('mutedGroups failed', error.code, error.message)
+  }
+  const out = new Set((data ?? []).map((r: any) => String(r.group_id)))
+  muteCache.set(userId, out)
+  return out
+}
+
+async function mutedIn(userId: string, groupId: string | null | undefined): Promise<boolean> {
+  if (!groupId) return false
+  return (await mutedGroups(userId)).has(String(groupId))
+}
+
+/**
+ * Les deux caches sont par EXECUTION, pas par instance.
+ *
+ * Une instance de fonction edge est reutilisee entre deux appels quand elle est
+ * encore chaude, donc sans ceci un reglage change a 14h02 n'aurait ete lu qu'au
+ * prochain demarrage a froid: quelqu'un qui coupe un groupe continuerait a
+ * recevoir ses messages, sans rien a regarder pour comprendre pourquoi.
+ *
+ * channelCache avait deja ce defaut avant que muteCache existe. Le nettoyer ici
+ * le corrige aussi plutot que d'ajouter un deuxieme cache avec le meme piege.
+ */
+function forgetPreferences() {
+  channelCache.clear()
+  muteCache.clear()
+}
+
+/**
  * Un message, envoye par les canaux que la personne a coches.
  *
  * POURQUOI LES DEUX PASSENT PAR ICI PLUTOT QUE PAR CINQ APPELS SEPARES.
@@ -839,6 +899,12 @@ async function sendDigests() {
       // reason an email goes out at all, so filter before deciding to send.
       const listed = (goals ?? []).filter((g: any) => g.remind !== false)
       if (!listed.length) continue
+
+      /* Ce groupe est coupe pour cette personne. AVANT la reclamation: brulee
+         ici, elle interdirait le message de cette periode meme si le groupe
+         etait rallume une heure plus tard. */
+      if (await mutedIn(m.user_id, cycle.group_id)) continue
+
       if (!(await claim(m.user_id, cycle.id, 'digest'))) continue
 
       const who = await recipient(m.user_id)
@@ -928,6 +994,11 @@ async function sendNudges() {
        the one send on the weakest version of the message. */
     const old = Date.parse((n as any).created_at) < Date.now() - GROUP_HEAD_START_HOURS * 3600_000
     if (!n.claimed_by && !old) continue
+
+    /* Coupe pour cette personne. La carte reste dans le groupe et quelqu'un
+       peut toujours la prendre: ce qui s'arrete est l'interruption, pas le
+       geste des autres. */
+    if (await mutedIn(n.subject_id, n.group_id)) continue
 
     if (!(await claim(n.subject_id, n.cycle_id, 'nudge'))) continue
 
@@ -1090,6 +1161,8 @@ async function sendBirthdays() {
       const others = celebrating.filter((c: any) => c.user_id !== m.user_id)
       if (!others.length) continue
 
+      if (await mutedIn(m.user_id, g.id)) continue
+
       if (!(await claim(m.user_id, cyc.id, 'birthday'))) continue
 
       const who = await recipient(m.user_id)
@@ -1197,6 +1270,20 @@ async function sendGroupGoals() {
     }
 
     if (!live.length) {
+      await stamp()
+      continue
+    }
+
+    /**
+     * Ce groupe est coupe pour cette personne.
+     *
+     * TAMPONNE, et pas seulement saute. Les lignes restent dans la cloche, non
+     * lues, et c'est voulu: couper, c'est ne plus etre interrompue, pas perdre
+     * ce qui s'est passe. Mais sans le tampon elles resteraient "a envoyer"
+     * pour toujours et cette requete les reprendrait a chaque execution, a
+     * l'heure, indefiniment.
+     */
+    if (await mutedIn(userId, rows[0].group_id)) {
       await stamp()
       continue
     }
@@ -1901,6 +1988,15 @@ async function deliverNudge(
       group_id: note.group_id,
     })
 
+    /**
+     * Pas de mutedIn ici, et c'est un choix.
+     *
+     * Ceci est la reponse a un petit mot que l'expediteur a envoye LUI-MEME,
+     * souvent quelques minutes plus tot. Couper les notifications d'un groupe
+     * veut dire "arrete de me solliciter"; ca ne veut pas dire "avale la
+     * reponse a ce que je viens de demander". Repondre au silence par du
+     * silence transformerait un reglage en panne.
+     */
     const reach2 = await pushTo(note.actor_id, {
       title: myName ? c2.replyTitle(myName) : c2.replyTitleAnon,
       body: c2.replyBody,
@@ -1967,6 +2063,27 @@ async function deliverNudge(
     actor_id: caller.id,
     group_id: nudge.group_id,
   })
+
+  /**
+   * ET SI CETTE PERSONNE A COUPE CE GROUPE.
+   *
+   * La ligne ci-dessus est deja ecrite: elle verra le petit mot en ouvrant
+   * l'application, rien n'est perdu. Ce qui s'arrete ici est le telephone qui
+   * sonne et le courriel de repli.
+   *
+   * LA REPONSE RENDUE A L'EXPEDITEUR EST LA MEME QUE POUR UN TELEPHONE
+   * INJOIGNABLE, et c'est deliberement une reponse qui en dit moins que ce que
+   * le serveur sait. Un `reason: 'muted'` apprendrait a n'importe quel membre
+   * du groupe, en appuyant sur un bouton, que telle personne les a coupes.
+   * C'est un reglage prive; la politique de group_mute est `user_id =
+   * auth.uid()` exactement pour ca, et la trahir ici annulerait la table.
+   *
+   * Ce qui est rendu reste vrai: zero appareil joint, zero courriel parti.
+   * L'expediteur demande "est-ce que c'est arrive", et la reponse est non.
+   */
+  if (await mutedIn(nudge.subject_id, nudge.group_id)) {
+    return json({ ok: true, sent: true, push: PUSH_READY, devices: 0, delivered: 0, mailed: false })
+  }
 
   const reach = await pushTo(nudge.subject_id, {
     title: from ? c.nudgeFromTitle(from, to?.fem) : c.nudgeTitle,
@@ -2061,6 +2178,11 @@ Deno.serve(async (req) => {
      real request never happen, with nothing in the function's logs to say so:
      the failure is entirely on the other side. */
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS })
+
+  /* Une instance chaude reutilise ses variables de module. Sans cette ligne,
+     un groupe coupe a 14h02 continuerait a envoyer jusqu'au prochain demarrage
+     a froid, et il n'y aurait rien a regarder pour comprendre pourquoi. */
+  forgetPreferences()
 
   /* A POST is somebody in the app asking for one message now. Anything else is
      cron asking for the scheduled run, which is what this function was before

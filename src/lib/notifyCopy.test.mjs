@@ -676,5 +676,149 @@ const keysOf = (lang) => [...block(lang).matchAll(/^ {4}(\w+):/gm)].map((m) => m
   )
 }
 
+/**
+ * COUPER LES NOTIFICATIONS D'UN SEUL GROUPE.
+ *
+ *   "Add an option to desactive notification for specific group."
+ *
+ * La fonction est executee pour de vrai, comme wantsInstant plus haut, plutot
+ * que cherchee a la forme. Ce qui doit etre juste ici n'est pas qu'une ligne
+ * existe: c'est qu'une table absente ne fasse taire personne, et qu'un groupe
+ * coupe le reste sans qu'on reinterroge la base a chaque message.
+ */
+{
+  const start = src.indexOf('const muteCache')
+  const end = src.indexOf('function forgetPreferences')
+  const body = src.slice(start, end)
+  const js = transformSync(body, { loader: 'ts' }).code
+
+  /** Une base qui repond ce qu'on lui dit, et qui compte les questions. */
+  const fausseBase = (lignes, erreur = null) => {
+    const vues = []
+    return {
+      vues,
+      from() {
+        const q = { _user: null }
+        q.select = () => q
+        q.eq = (col, val) => {
+          if (col === 'user_id') q._user = val
+          return q
+        }
+        q.then = (res) => {
+          vues.push(q._user)
+          return Promise.resolve(
+            erreur ? { data: null, error: erreur } : { data: lignes(q._user), error: null },
+          ).then(res)
+        }
+        return q
+      },
+    }
+  }
+
+  const charger = (base) => {
+    // eslint-disable-next-line no-eval
+    return eval(`(function (supabase, console) { ${js}; return { mutedIn, mutedGroups, muteCache } })`)(
+      base,
+      { error() {} },
+    )
+  }
+
+  {
+    const base = fausseBase((u) => (u === 'u1' ? [{ group_id: 'g1' }] : []))
+    const { mutedIn } = charger(base)
+    ok('un groupe coupe est coupe', (await mutedIn('u1', 'g1')) === true)
+    ok('et un autre groupe de la meme personne ne l est pas',
+       (await mutedIn('u1', 'g2')) === false,
+       'couper un groupe ne doit pas faire taire les autres')
+    ok('ni le meme groupe pour quelqu un d autre',
+       (await mutedIn('u2', 'g1')) === false)
+  }
+
+  {
+    /* Le digest interroge sinon cette table une fois par membre et par groupe:
+       sur un groupe de dix personnes, dix requetes pour dix messages. */
+    const base = fausseBase(() => [{ group_id: 'g1' }])
+    const { mutedIn } = charger(base)
+    await mutedIn('u1', 'g1')
+    await mutedIn('u1', 'g2')
+    await mutedIn('u1', 'g3')
+    ok('une seule requete par personne et par execution',
+       base.vues.length === 1, `${base.vues.length} requetes`)
+  }
+
+  {
+    /* 69_group_mute.sql pas encore passe. Le repli est "rien n'est coupe",
+       pour la meme raison que channelsFor se replie sur les deux canaux
+       allumes: faire taire l'application pour tout le monde le jour d'une
+       migration, en silence, est la pire reponse possible. */
+    for (const code of ['42P01', 'PGRST205']) {
+      const base = fausseBase(() => [], { code, message: 'relation does not exist' })
+      const { mutedIn } = charger(base)
+      ok(`une table absente (${code}) ne coupe personne`,
+         (await mutedIn('u1', 'g1')) === false)
+    }
+  }
+
+  {
+    /* Un message sans groupe: le livre partage, le rappel d'eau, l'agenda. */
+    const base = fausseBase(() => [{ group_id: 'g1' }])
+    const { mutedIn } = charger(base)
+    ok('sans groupe, rien a couper', (await mutedIn('u1', null)) === false)
+    ok('et la base n est meme pas interrogee', base.vues.length === 0,
+       'l eau et l agenda ne passent par aucun groupe')
+  }
+}
+
+/**
+ * ET LES CINQ ENDROITS QUI DOIVENT LE DEMANDER.
+ *
+ * Une fonction juste appelee nulle part ne coupe rien. Le cas qui manquerait
+ * le plus facilement est le petit mot instantane, qui ne passe pas par le tour
+ * planifie du tout.
+ */
+{
+  const bloc = (nom) => {
+    const i = CODE.indexOf(`async function ${nom}(`)
+    return i < 0 ? '' : CODE.slice(i, CODE.indexOf('\nasync function', i + 10))
+  }
+  for (const nom of ['sendDigests', 'sendNudges', 'sendBirthdays', 'sendGroupGoals']) {
+    ok(`${nom} demande si le groupe est coupe`, /await mutedIn\(/.test(bloc(nom)))
+  }
+  ok('et le petit mot instantane aussi',
+     /await mutedIn\(nudge\.subject_id, nudge\.group_id\)/.test(CODE),
+     'il ne passe pas par le tour planifie: sans cette ligne, couper un groupe n arrete pas le telephone')
+
+  /* AVANT la reclamation. Brulee, elle interdirait le message de cette periode
+     meme si le groupe etait rallume une heure plus tard. */
+  const dig = bloc('sendDigests')
+  ok('la question est posee avant de reclamer',
+     dig.indexOf('mutedIn') < dig.indexOf("claim(m.user_id, cycle.id, 'digest')"),
+     'une reclamation brulee couterait le message de la periode entiere')
+
+  /* La ligne de la cloche est ecrite AVANT la coupure: couper, c'est ne plus
+     etre interrompue, pas perdre ce qui s'est passe. */
+  const inst = CODE.slice(CODE.indexOf("kind: 'nudge',"))
+  ok('la ligne dans la cloche est ecrite quand meme',
+     inst.indexOf("from('notification').insert") < inst.indexOf('mutedIn'),
+     'rien ne doit etre perdu, seulement non pousse')
+
+  /* Et la reponse rendue a l'expediteur ne doit pas trahir le reglage. */
+  ok('la reponse a l expediteur ne dit pas pourquoi',
+     !/reason: 'muted'/.test(CODE),
+     'un membre apprendrait en appuyant sur un bouton que telle personne l a coupe')
+
+  /* Les caches sont par execution. Une instance chaude garderait sinon un
+     reglage change il y a deux minutes. */
+  ok('les preferences sont relues a chaque appel',
+     /forgetPreferences\(\)/.test(CODE) && /channelCache\.clear\(\)/.test(CODE)
+       && /muteCache\.clear\(\)/.test(CODE))
+
+  /* La reponse a un petit mot qu'on a envoye soi-meme n'est pas coupee. */
+  const rep = CODE.slice(CODE.indexOf('body.reply_to'), CODE.indexOf('if (!body.nudge_id)'))
+  ok('la reponse a son propre petit mot revient toujours',
+     !/mutedIn/.test(rep),
+     'repondre au silence par du silence transformerait un reglage en panne')
+}
+
 console.log(`\nnotifyCopy\n\n  ${pass} passed, ${fail} failed\n`)
 process.exit(fail === 0 ? 0 : 1)
