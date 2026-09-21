@@ -265,29 +265,91 @@ ok(
   ok('le bouton des regles n existe que s il y a un cycle a noter',
      /\{periodTracking && \(\s*<button[\s\S]{0,400}data-hook="cal-add-period"/.test(cal),
      'grise, il resterait la publicite d une fonction a laquelle on a dit non')
-  ok('la date est pre-remplie avec le jour AFFICHE',
-     /setPeriodDay\(dayKey\(anchor\)\)/.test(cal),
-     'en vue mois l anchor est le 1er: enregistrer en une touche noterait le mauvais jour en silence')
-  ok('et le futur est refuse dans le code aussi',
-     /if \(key > dayKey\(new Date\(\)\)\) return/.test(cal))
-  /* Noter le 14 depuis la vue JOUR du 21 ne change rien a l'ecran: le panneau
-     se referme et rien ne distingue "enregistre" de "le bouton n'a pas pris". */
-  ok('une reussite le dit, et nomme la date',
-     /data-hook="cal-period-saved"/.test(cal) && /setPeriodSaved\(key\)/.test(cal)
-       && /'cal\.period_saved'/.test(cal),
-     'en vue jour, une date passee s ecrivait sans aucun signe a l ecran')
+  /**
+   * ET LE GESTE EST DE COCHER LES JOURS SUR LE MOIS.
+   *
+   *   "Look the way you can just coche the case number on flo. Our app doesn't
+   *    show the day as little round and I don't want it too, so adapt to the
+   *    full month view only."
+   *
+   * Le champ date est parti: une regle de trois jours demandait trois
+   * passages, et corriger une regle deja notee etait impossible sans passer
+   * par le tiroir du cycle pour l'y supprimer.
+   */
+  ok('le champ date est parti', !/data-hook="cal-period-day"/.test(cal))
+  ok('le bouton bascule en vue MOIS', /setView\('month'\)/.test(cal)
+     && /const startPicking/.test(cal),
+     'cocher trois jours de suite dans la vue jour demanderait trois navigations')
+  ok('la grille du mois coche au lieu d ouvrir le jour',
+     /onPick=\{picking \? togglePeriodDay/.test(cal))
+  ok('et la selection part de ce qui est DEJA enregistre',
+     /setPicked\(selectedFrom\(cycle\.starts\)\)/.test(cal),
+     'sinon les jours deja notes s afficheraient decoches sur une grille qui les colorie')
+
+  /* PAS DE PASTILLE A COCHER. Elle a demande le geste de Flo, pas sa
+     decoration: la tuile se remplit, et rien ne s'ajoute a une case qui porte
+     deja un chiffre, une marque de phase et des pastilles d'evenement. */
+  ok('la tuile cochee est remplie, pas surchargee d une pastille',
+     /data-picked=\{on \? 'yes' : undefined\}/.test(cal)
+       && /\{phase && !on &&/.test(cal),
+     'une pastille rouge sur un fond rouge ne dit plus rien')
+  ok('et c est une case a cocher pour un lecteur d ecran aussi',
+     /role=\{picking \? 'checkbox' : undefined\}/.test(cal)
+       && /aria-checked=\{picking \? Boolean\(on\) : undefined\}/.test(cal),
+     'une tuile remplie ne dit rien a qui ne la voit pas')
+
+  ok('le futur est refuse, et desactive plutot qu inerte',
+     /if \(k > dayKey\(new Date\(\)\)\) return/.test(cal) && /disabled=\{future\}/.test(cal),
+     'une tuile qui ne repond pas se lit comme un bogue')
+
+  /**
+   * LA PARTIE QUI EFFACERAIT DES DONNEES.
+   *
+   * Toutes les lignes ont ended_on a null et le calendrier en dessine cinq
+   * jours. Sans `touched`, enregistrer apres avoir coche un jour de septembre
+   * inventerait une duree sur chaque regle de l annee derniere.
+   */
+  ok('le calcul vit dans un module pur, avec ses tests',
+     /from '\.\.\/lib\/periodPick'/.test(cal)
+       && existsSync(join(root, 'src/lib/periodPick.test.mjs'))
+       && /periodPick\.test\.mjs/.test(read('package.json')))
+  ok('et l ecran lui passe ce qui a ete REELLEMENT tape',
+     /touched: touchedDays/.test(cal) && /setTouchedDays\(new Set\(\)\)/.test(cal),
+     'sans ca, enregistrer reecrit une duree inventee sur tout l historique')
+
+  /* RLS refuse un DELETE en silence. Continuer apres un refus ecrirait la
+     nouvelle serie a cote de l ancienne, donc deux lignes pour une regle. */
+  ok('la suppression compte ses lignes', /delete\(\{ count: 'exact' \}\)/.test(cal))
+  ok('et un refus arrete tout', /if \(count === 0\) return setNotice/.test(cal))
+  ok('le retrait passe AVANT l ajout',
+     cal.indexOf("delete({ count: 'exact' })") < cal.indexOf('.upsert('),
+     'unique (user_id, started_on) refuserait une serie qui commence le meme jour')
+
+  ok('une reussite le dit, y compris quand elle a RETIRE',
+     /data-hook="cal-period-saved"/.test(cal) && /cal\.pick_removed_one/.test(cal),
+     'retirer une regle ne laisse rien a l ecran et passerait pour un bouton mort')
   ok('et elle le dit en role="status", pas en alerte',
      /role="status" data-hook="cal-period-saved"/.test(cal))
-  for (const key of ['cal.period_saved', 'cal.add_period', 'cal.add_period_when']) {
-    const hits = read('src/lib/i18n.jsx').split(`'${key}'`).length - 1
+
+  const i18nCal = read('src/lib/i18n.jsx')
+  for (const key of ['cal.add_period', 'cal.pick_how', 'cal.pick_n_one', 'cal.pick_n_other',
+                     'cal.pick_saved_one', 'cal.pick_removed_one']) {
+    const hits = i18nCal.split(`'${key}'`).length - 1
     ok(`${key} existe dans les deux langues (${hits})`, hits === 2)
   }
-  ok('et les chaines du choix sont parties avec lui',
-     !/cal\.add_what|cal\.add_event/.test(read('src/lib/i18n.jsx')),
+  ok('et les chaines du champ date sont parties avec lui',
+     !/cal\.add_what|cal\.add_event|cal\.add_period_when|cal\.period_saved/.test(i18nCal),
      'une cle que plus personne ne lit est une cle que le prochain doit verifier')
   ok('l ecriture du calendrier ne touche que cycle_log',
-     /savePeriod[\s\S]{0,700}from\('cycle_log'\)/.test(cal)
-       && !/savePeriod[\s\S]{0,700}from\('(checkins|goals|group_members|group_feed)'\)/.test(cal))
+     /savePeriod[\s\S]{0,1400}from\('cycle_log'\)/.test(cal)
+       && !/savePeriod[\s\S]{0,1400}from\('(checkins|goals|group_members|group_feed)'\)/.test(cal))
+
+  /* Et le calendrier doit dessiner la duree REELLE, sinon cocher trois jours
+     en colorierait cinq et l application contredirait la saisie. */
+  const cyc = code('src/lib/cycle.js')
+  ok('phaseOn honore ended_on', /fromKey\(row\?\.ended_on\)/.test(cyc)
+     && /daysBetween\(s, end\) \+ 1 : periodDays/.test(cyc),
+     'il dessinait cinq jours a partir de chaque debut, quoi qu il arrive')
 
   const cp = code('src/components/CyclePanel.jsx')
   ok('on peut ajouter une date passee', /data-hook="cycle-add-past"/.test(cp))
@@ -1218,11 +1280,31 @@ ok(
 
 /* --- a write that did not happen says so --------------------------------- */
 
-ok(
-  'both deletes ask for a row count',
-  (cal.match(/count: 'exact'/g) ?? []).length === 2,
-  'RLS refuses by matching zero rows, with no error to catch',
-)
+/**
+ * EVERY delete, not "both of them".
+ *
+ * This counted the occurrences and expected exactly two, so adding a third
+ * delete failed the test for having written one rather than for having written
+ * it wrong. Asking that every `.from(...).delete(` carries a count says the
+ * thing that matters and holds for the next one too.
+ */
+{
+  /* Chained onto a supabase query, so `next.delete(k)` on a Set is not one of
+     these. The row-removing writes are what RLS can refuse in silence. */
+  const chained = cal.match(/^\s*\.delete\([^)]*\)/gm) ?? []
+  const counted = chained.filter((s) => s.includes("count: 'exact'"))
+  ok(
+    `every row delete asks for a count (${counted.length}/${chained.length})`,
+    chained.length >= 2 && counted.length === chained.length,
+    'RLS refuses by matching zero rows, with no error to catch',
+  )
+  /* And the one removal that is an update rather than a delete: taking a day
+     out of a series writes its exception list. */
+  ok(
+    'and so does the one that removes by updating',
+    /\.update\(\{ excluded_on: next \}, \{ count: 'exact' \}\)/.test(cal),
+  )
+}
 ok(
   'and put the list back when nothing was written',
   (cal.match(/setEvents\(before\)/g) ?? []).length === 2,

@@ -232,9 +232,29 @@ export function phaseOn(day, starts, prediction, periodDays = 5) {
   /* Recorded beats predicted, always. A day inside a period somebody actually
      logged is a fact, and it must not be relabelled as a prediction because
      the estimate happens to disagree. */
-  for (const s of cleanStarts(starts)) {
+  /**
+   * `ended_on` QUAND IL EST LA, `periodDays` QUAND IL N'Y EST PAS.
+   *
+   * Ceci lisait cleanStarts, qui jette ended_on, et dessinait donc cinq jours
+   * a partir de chaque debut quoi qu'il arrive. C'etait sans consequence tant
+   * que rien n'ecrivait ended_on: toutes les lignes ont un null et cinq jours
+   * etaient la seule reponse possible.
+   *
+   * Depuis qu'on coche les jours sur le mois, ca ne l'est plus. Cocher le 17,
+   * le 18 et le 19 enregistre une regle de TROIS jours, et le calendrier en
+   * aurait colorie cinq: la personne aurait vu l'application contredire ce
+   * qu'elle venait de saisir.
+   *
+   * Le repli est inchange, donc aucune ligne existante ne bouge.
+   */
+  for (const row of starts ?? []) {
+    const s = row instanceof Date ? row : fromKey(row?.started_on ?? row)
+    if (!s) continue
     const offset = daysBetween(s, target)
-    if (offset >= 0 && offset < periodDays) return 'period'
+    if (offset < 0) continue
+    const end = row instanceof Date ? null : fromKey(row?.ended_on)
+    const length = end && daysBetween(s, end) >= 0 ? daysBetween(s, end) + 1 : periodDays
+    if (offset < length) return 'period'
   }
 
   if (!prediction) return null
