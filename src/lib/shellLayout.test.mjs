@@ -2546,36 +2546,51 @@ ok(
 }
 
 /**
- * LE GROUPE N'EST PAS SUR LE FUSEAU DE CELUI QUI L'A CREE.
+ * L'HEURE D'OUVERTURE N'EST PLUS ECRITE SOUS LE NOM DU GROUPE.
  *
- * Capture de l'ecran d'un groupe: "Sunday 00:00 · America/Toronto", et la
- * question "instead of all the group being on the Toronto timeline, can it
- * just be adjusted in real time for everyone?".
+ *   "Dimanche 4h heure Toronto, enleve ca dans le ui et ux."
  *
- * La planification l'etait deja: cycles.opens_at est un timestamptz, donc un
- * instant, et il s'ouvre au meme moment partout. Ce qui ne l'etait pas, c'est
- * la phrase, qui affichait la regle dans le fuseau du groupe. Ce qui suit
- * epingle que l'ecran passe par la conversion testee et n'imprime plus un nom
- * de fuseau a la place d'une heure.
+ * Cet ecran a porte trois versions de la meme phrase. D'abord "Sunday 00:00 ·
+ * America/Toronto", qui imprimait un nom de fuseau a la place d'une heure.
+ * Puis la conversion dans le fuseau du lecteur, avec une deuxieme ligne quand
+ * les deux differaient. Les deux disaient une REGLE, et une regle n'est pas
+ * une heure dont on peut faire quelque chose.
+ *
+ * La question utile est "dans combien de temps", et le tableau y repond deja
+ * sur cycles.opens_at, qui est un instant. C'est ce qui rend cette suppression
+ * sans perte, et c'est ce que les deux premieres verifications epinglent.
  */
 {
   const settings = code('src/pages/Settings.jsx')
-  ok('the group screen converts the opening to the reader’s zone',
-     /openingLabel\(\{/.test(settings) && /viewerTz: deviceZone\(\)/.test(settings))
-  ok('and no longer prints the group’s zone as the answer',
-     !/group\.timezone\].filter/.test(settings) && !/DAYS_FR/.test(settings),
-     '"Sunday 00:00 · America/Toronto" is a rule, not a time somebody can use')
-  ok('the second line only exists when the zones differ',
-     /!opening\.sameZone/.test(settings),
-     'telling somebody in Toronto that it is also midnight in Toronto is noise')
-  for (const key of ['settings.when_everywhere']) {
-    const hits = read('src/lib/i18n.jsx').split(`'${key}'`).length - 1
-    ok(`${key} exists in both languages (${hits})`, hits === 2)
-  }
-  ok('and the conversion is tested on its own',
-     existsSync(join(root, 'src/lib/groupTime.test.mjs')) &&
-       /groupTime\.test\.mjs/.test(read('package.json')),
-     'daylight saving does not line up on both sides of the Atlantic')
+  const head = code('src/components/GroupHeader.jsx')
+
+  ok('la carte du groupe ne dit plus quand la periode ouvre',
+     !/openingLabel|deviceZone/.test(settings)
+       && !/data-hook="group-when"/.test(head),
+     'une regle exprimee dans un fuseau se convertit de tete avant de servir')
+  ok('et le tableau repond toujours a la vraie question',
+     /board\.opens_in/.test(code('src/pages/Board.jsx')),
+     '"ouvre dans 3 h" est un instant, pas une regle')
+
+  /* LE TEMOIN D'ENREGISTREMENT VIVAIT DANS CETTE LIGNE. Le supprimer avec elle
+     aurait rendu muets le changement de nom et le changement d'image, qui sont
+     les deux gestes de cette carte. */
+  ok('renommer et changer l image disent toujours qu ils enregistrent',
+     /data-hook="group-saving"/.test(head) && /t\('settings\.saving'\)/.test(head))
+  ok('et en role="status", parce que rien d autre ne bouge a l ecran',
+     /role="status" data-hook="group-saving"/.test(head))
+
+  /* Les chaines et le module partent avec la phrase: un export sans appelant
+     est le debut d'une planche de sprites, comme ailleurs dans ce fichier. */
+  ok('la chaine de la deuxieme ligne est partie avec elle',
+     !/when_everywhere/.test(read('src/lib/i18n.jsx')))
+  ok('et groupTime aussi, avec son test',
+     !existsSync(join(root, 'src/lib/groupTime.js'))
+       && !existsSync(join(root, 'src/lib/groupTime.test.mjs'))
+       && !/groupTime/.test(read('package.json')),
+     'openingLabel n avait que cet appelant; la conversion reste dans git')
+  ok('et plus personne ne l importe',
+     !/groupTime/.test(settings) && !/groupTime/.test(head))
 }
 
 /**
@@ -2769,12 +2784,16 @@ ok(
    * `img { display: block }`, donc text-center ne l'atteint pas. Elle etait a
    * -19px du centre, et SEULEMENT chez un admin, parce qu'un simple membre n'a
    * pas le libelle qui elargit le bouton.
+   *
+   * La note du fuseau horaire etait la quatrieme. Elle a ete supprimee depuis,
+   * avec la phrase qu'elle completait, donc il n'y a plus rien a centrer la:
+   * une verification sur un element disparu passe ou echoue pour une raison
+   * qui n'a plus de rapport avec l'alignement.
    */
   for (const [quoi, re] of [
     ['l image', /className="mx-auto h-24 w-24 object-contain"/],
     ['le nom', /data-hook="group-name"\s*\n\s*className="press mx-auto/],
     ['le champ', /data-hook="group-name-field"[\s\S]{0,80}className="field mx-auto/],
-    ['la note', /className="mx-auto mt-1 max-w-\[42ch\]/],
   ]) {
     ok(`${quoi} est centre dans la carte`, re.test(head),
        'text-center ne pose pas une boite plus etroite que son parent')
