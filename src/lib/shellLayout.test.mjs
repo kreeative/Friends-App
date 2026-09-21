@@ -213,6 +213,22 @@ ok(
  * relacher plus tard, c'est la fonction.
  */
 {
+  const cal = code('src/pages/Calendar.jsx')
+  ok('"+ Ajouter" propose les regles', /data-hook="cal-add-period"/.test(cal),
+     'le bouton ouvrait le formulaire d evenement sans rien demander')
+  ok('et sans avoir perdu l evenement', /data-hook="cal-add-event"/.test(cal))
+  ok('il ne pose la question que s il y a deux reponses',
+     /periodTracking\s*\?\s*setAdding\(true\)/.test(cal),
+     'un ecran qui pose une question dont il connait la reponse fait perdre une touche')
+  ok('la date est pre-remplie avec le jour AFFICHE',
+     /setPeriodDay\(dayKey\(anchor\)\)/.test(cal),
+     'en vue mois l anchor est le 1er: enregistrer en une touche noterait le mauvais jour en silence')
+  ok('et le futur est refuse dans le code aussi',
+     /if \(key > dayKey\(new Date\(\)\)\) return/.test(cal))
+  ok('l ecriture du calendrier ne touche que cycle_log',
+     /savePeriod[\s\S]{0,700}from\('cycle_log'\)/.test(cal)
+       && !/savePeriod[\s\S]{0,700}from\('(checkins|goals|group_members|group_feed)'\)/.test(cal))
+
   const cp = code('src/components/CyclePanel.jsx')
   ok('on peut ajouter une date passee', /data-hook="cycle-add-past"/.test(cp))
   ok('le champ est borne a aujourd hui', /max=\{dayKey\(new Date\(\)\)\}/.test(cp))
