@@ -2643,6 +2643,70 @@ ok(
      'colour is never the only signal (1.4.1)')
 
   /**
+   * LES EXPLICATIONS SONT DERRIERE UN POINT D'INTERROGATION.
+   *
+   *   "Every explanation put them next to the bold name with a ?, and in the
+   *    help center article too."
+   *
+   * Sept paragraphes gris sous sept noms en gras. Mesure de la carte avant et
+   * apres, meme bouchon de donnees:
+   *
+   *   390px    1882px  ->  1173px
+   *   1290px   1470px  ->  1030px
+   *
+   * Rien n'est supprime. Chaque phrase est derriere le "?" a cote de son nom,
+   * et la meme chose, developpee, est dans l'aide: le "?" repond a "c'est quoi
+   * ce reglage", la page d'aide repond a "oui mais pourquoi".
+   *
+   * CE QUI RESTE VISIBLE: tout ce qui est un ETAT. "2,2 L", "50 ml - 2 L",
+   * "environ un rappel toutes les 1 h 40", l'avertissement quand les deux
+   * canaux sont decoches. Une phrase qui change avec les reglages est la
+   * reponse de l'ecran a ton geste, pas de la documentation, et la ranger
+   * reviendrait a cacher le resultat de ce qu'on vient de faire.
+   */
+  for (const cle of ['remind.how_hint', 'remind.water_hint', 'remind.unit_hint',
+                     'remind.serving_hint', 'remind.window_hint', 'remind.events_hint',
+                     'remind.lead_hint']) {
+    ok(`${cle} n est plus un paragraphe a l ecran`,
+       !new RegExp(`text-muted[^>]*>\\{t\\('${cle.replace('.', '\\.')}'\\)`).test(settings)
+         && new RegExp(`hint=\\{t\\('${cle.replace('.', '\\.')}'\\)\\}`).test(settings))
+  }
+  ok('et le point d interrogation est le composant qui existe deja',
+     /import \{ Field, Hint \} from '\.\/ui'/.test(settings),
+     'un deuxieme "?" a cote du premier serait deux reglages du meme glyphe')
+
+  /* Un clic dans un <label> active le controle du label. Le <details> pose
+     dedans aurait donc bascule l'interrupteur en meme temps qu'il ouvre sa
+     phrase, et vole le curseur d'un champ. Le label s'arrete au nom. */
+  ok('le details est dehors du label, jamais dedans',
+     /<\/label>\s*\n\s*\{hint && <Hint text=\{hint\} \/>\}/.test(settings),
+     'ouvrir l explication aurait bascule l interrupteur')
+
+  /**
+   * ET LE PANNEAU OUVERT PASSE AU-DESSUS DES AUTRES LIGNES.
+   *
+   * Regarde plutot que raisonne: le panneau de "Boire de l'eau" fait 110px et
+   * le titre "Millilitres ou onces" est 24px plus bas. Chaque ligne de titre
+   * etant positionnee, a z-index egal c'est l'ordre du DOM qui gagne, donc le
+   * titre se peignait PAR-DESSUS la phrase. Un z-index fixe sur toutes les
+   * lignes ne repare pas ca, il le garantit.
+   *
+   * Sonde: les sept panneaux ouverts un par un, a 390 et a 1290, et ce qui est
+   * peint au milieu de chacun doit etre le panneau lui-meme.
+   */
+  ok('l ancre du panneau fait la largeur de la ligne',
+     /const ANCRE = 'relative has-\[\[open\]\]:!z-40'/.test(settings))
+  ok('et elle ne monte qu une ligne a la fois, celle qui est ouverte',
+     (settings.match(/\$\{ANCRE\}/g) ?? []).length === 3,
+     'un z-index fixe sur toutes les lignes garantit le recouvrement au lieu de l empecher')
+
+  /* Les memes explications dans l'aide, qui est le deuxieme endroit demande. */
+  const faq = read('src/content/faq.js')
+  ok('les reglages ont leur section dans l aide',
+     (faq.match(/id: 'reglages'/g) ?? []).length === 2,
+     'une seule des deux langues serait une page a moitie traduite')
+
+  /**
    * WHAT THE SCREEN SAYS AFTER A REFUSAL.
    *
    * Reported as "but it still not working", with a photo of a settings screen

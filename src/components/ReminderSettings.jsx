@@ -4,7 +4,7 @@ import { DEFAULTS, LEAD_CHOICES, fromHm, isMuted, toHm } from '../lib/reminders'
 import { MAX_TARGET, MIN_TARGET, everyLabel } from '../lib/water'
 import { MAX_SERVING_ML, MIN_SERVING_ML, UNITS, formatAmount, parseAmount, safeServing, toUnit, unitLabel } from '../lib/units'
 import { useWaterToday } from '../lib/useWater'
-import { Field } from './ui'
+import { Field, Hint } from './ui'
 
 /**
  * Choisir quand l'application a le droit de faire vibrer un telephone.
@@ -125,8 +125,7 @@ export default function ReminderSettings() {
        * encore.
        */}
       <div>
-        <p className="text-body font-semibold text-ink">{t('remind.how')}</p>
-        <p className="mt-1 max-w-[46ch] text-small text-muted">{t('remind.how_hint')}</p>
+        <Titre hint={t('remind.how_hint')}>{t('remind.how')}</Titre>
         <div className="mt-4 space-y-3">
           <Check
             hook="channel-push"
@@ -187,7 +186,7 @@ export default function ReminderSettings() {
              * Rien n'est reecrit en base: water_log reste en millilitres et
              * l'historique est CONVERTI, pas reinterprete. Voir units.js.
              */}
-            <Field label={t('remind.unit')} hint={t('remind.unit_hint')}>
+            <Reglage label={t('remind.unit')} hint={t('remind.unit_hint')}>
               <div className="flex gap-2" data-hook="water-unit">
                 {UNITS.map((u) => (
                   <button
@@ -206,7 +205,7 @@ export default function ReminderSettings() {
                   </button>
                 ))}
               </div>
-            </Field>
+            </Reglage>
 
             <div className="mt-6">
             <Field label={t('remind.target')}>
@@ -238,11 +237,12 @@ export default function ReminderSettings() {
              * units.test.mjs.
              */}
             <div className="mt-6">
-              <Field label={t('remind.serving')} hint={t('remind.serving_hint')}>
+              <Reglage id="water-serving" label={t('remind.serving')} hint={t('remind.serving_hint')}>
                 <span className="flex items-center gap-2">
                   <input
                     type="text"
                     inputMode="decimal"
+                    id="water-serving"
                     data-hook="water-serving"
                     ref={servingRef}
                     /* Un nombre a deux ou trois chiffres. Une boite large comme
@@ -293,7 +293,7 @@ export default function ReminderSettings() {
                     {savedServing ? t('remind.saved') : t('remind.save')}
                   </button>
                 </span>
-              </Field>
+              </Reglage>
               <p className="mt-1 text-small text-muted" data-hook="water-serving-bounds">
                 {formatAmount(MIN_SERVING_ML, pref.water_unit, locale)}
                 {' – '}
@@ -360,8 +360,7 @@ export default function ReminderSettings() {
              * lire.
              */}
             <div className="mt-6 rounded-inner border border-hairline p-4" data-hook="water-window">
-              <p className="text-small font-semibold text-ink">{t('remind.window')}</p>
-              <p className="mt-1 max-w-[42ch] text-small text-muted">{t('remind.window_hint')}</p>
+              <Titre small hint={t('remind.window_hint')}>{t('remind.window')}</Titre>
               <div className="mt-3 flex flex-wrap gap-4">
                 <Field label={t('remind.wake')}>
                   <input
@@ -424,8 +423,9 @@ export default function ReminderSettings() {
 
         {pref.events_on && (
           <div className="mt-6">
-            <Field label={t('remind.lead')}>
+            <Reglage id="events-lead" label={t('remind.lead')} hint={t('remind.lead_hint')}>
               <select
+                id="events-lead"
                 data-hook="events-lead"
                 className="field"
                 value={pref.events_lead_min}
@@ -437,14 +437,95 @@ export default function ReminderSettings() {
                   </option>
                 ))}
               </select>
-            </Field>
-            <p className="mt-2 max-w-[46ch] text-small text-muted">{t('remind.lead_hint')}</p>
+            </Reglage>
           </div>
         )}
       </div>
     </div>
   )
 }
+
+/**
+ * L'ANCRE DU PANNEAU, ET LE Z-INDEX SEULEMENT QUAND IL EST OUVERT.
+ *
+ * `relative` parce que Hint pose son panneau en `absolute left-0 right-0`: il
+ * se cale donc sur cette ligne-ci, qui fait la largeur de la carte, et ne peut
+ * sortir de l'ecran ni d'un cote ni de l'autre. La note de Hint raconte ce que
+ * l'ancrage sur le "?" lui-meme avait coute: une phrase coupee en plein mot.
+ *
+ * Le z-index est conditionnel, et c'est la partie qui a demande a etre
+ * regardee plutot que raisonnee. Chaque ligne de titre est positionnee, donc
+ * entre deux lignes au meme z-index c'est l'ordre du DOM qui gagne: le
+ * panneau de "Boire de l'eau" s'ouvre sur 110px et le titre "Millilitres ou
+ * onces" est 24px plus bas, donc son texte se peignait PAR-DESSUS la phrase.
+ * Un z-index fixe sur toutes les lignes ne repare pas ca, il le garantit.
+ *
+ * `:has([open])` ne vaut que pour la ligne dont le panneau est ouvert, et il
+ * n'y en a jamais deux: elle passe alors au-dessus de toutes les autres. Le
+ * `!` est la pour depasser `.lg > *`, qui pose `relative z-[2]` sur chaque
+ * enfant direct d'une carte, exactement le cas que la note de MyCompletion
+ * decrit.
+ */
+const ANCRE = 'relative has-[[open]]:!z-40'
+
+/**
+ * LES EXPLICATIONS SONT PASSEES DERRIERE UN POINT D'INTERROGATION.
+ *
+ *   "Every explanation put them next to the bold name with a ?, and in the
+ *    help center article too."
+ *
+ * Cet ecran etait sept paragraphes gris empiles sous sept noms en gras. Chacun
+ * dit une chose vraie et utile, et ensemble ils font un mur: on ne lit pas un
+ * reglage, on scrolle a travers. La capture tenait sur deux ecrans de
+ * telephone et la moitie etait de la prose qu'on lit une fois.
+ *
+ * Rien n'est supprime. La phrase est rangee derriere le "?" a cote du nom, et
+ * la meme phrase est dans l'aide, developpee, ou on va la chercher quand on la
+ * veut vraiment. Ce sont les deux endroits qu'elle a nommes.
+ *
+ * CE QUI RESTE VISIBLE, ET POURQUOI.
+ *
+ * Tout ce qui est un ETAT, pas une explication: "2,2 L", "50 ml - 2 L",
+ * "2,2 L par jour, environ un rappel toutes les 1 h 40", "0 ml sur 2,2 L
+ * aujourd'hui", l'avertissement quand les deux canaux sont decoches. Une
+ * phrase qui change avec les reglages n'est pas de la documentation, c'est la
+ * reponse de l'ecran a ce qu'on vient de faire, et la ranger reviendrait a
+ * cacher le resultat de son propre geste.
+ *
+ * LE <details> EST DEHORS DU <label>, ET C'EST LA RAISON DE CE COMPOSANT.
+ *
+ * Un clic dans un <label> active le controle du label. Le "?" pose dedans
+ * aurait donc bascule l'interrupteur ou vole le curseur du champ en meme temps
+ * qu'il ouvre sa phrase. Le label s'arrete donc au nom, le "?" est son voisin,
+ * et l'association etiquette-controle passe par htmlFor quand il y a un
+ * controle a associer.
+ */
+function Titre({ children, hint, small = false }) {
+  return (
+    <div className={`${ANCRE} flex items-center`}>
+      <span className={`font-semibold text-ink ${small ? 'text-small' : 'text-body'}`}>
+        {children}
+      </span>
+      {hint && <Hint text={hint} />}
+    </div>
+  )
+}
+
+/** Un nom de reglage avec son "?", et dessous ce qu'il commande. */
+function Reglage({ id, label, hint, children }) {
+  return (
+    <div>
+      <div className={`${ANCRE} flex items-center`}>
+        <label htmlFor={id} className="field-label mb-0">
+          {label}
+        </label>
+        {hint && <Hint text={hint} />}
+      </div>
+      <div className="mt-1.5">{children}</div>
+    </div>
+  )
+}
+
 
 function leadLabel(n, t) {
   if (n === 0) return t('remind.lead_0')
@@ -463,33 +544,39 @@ function leadLabel(n, t) {
  */
 function Switch({ label, hint, on, onChange, hook }) {
   return (
-    <label className="flex cursor-pointer items-start gap-4">
-      <button
-        type="button"
-        role="switch"
-        aria-checked={on}
-        data-hook={hook}
-        data-on={on ? 'yes' : 'no'}
-        onClick={() => onChange(!on)}
-        /* Le rose pop, pas le cran plus fonce: "plus jamais ce rose". La
-           piste est un graphique, donc le plancher est 3:1 (1.4.11), et
-           #FF007A sur le fond de carte mesure 3,80:1. */
-        className={`press mt-0.5 flex h-7 w-12 shrink-0 items-center rounded-pill p-1 transition-colors ${
-          on ? 'bg-accent' : 'bg-ink/[0.18]'
-        }`}
-      >
-        <span
-          aria-hidden="true"
-          className={`h-5 w-5 rounded-pill bg-white shadow-sm transition-transform ${
-            on ? 'translate-x-5' : 'translate-x-0'
+    /* Le <label> s'arrete au nom et le "?" est son voisin, jamais son enfant:
+       un clic dans un label active le controle du label, donc ouvrir la phrase
+       aurait aussi bascule l'interrupteur. Voir la note sur Titre. */
+    <div className={`${ANCRE} flex items-center`}>
+      <label className="flex cursor-pointer items-center gap-4">
+        <button
+          type="button"
+          role="switch"
+          aria-checked={on}
+          data-hook={hook}
+          data-on={on ? 'yes' : 'no'}
+          onClick={() => onChange(!on)}
+          /* Le rose pop, pas le cran plus fonce: "plus jamais ce rose". La
+             piste est un graphique, donc le plancher est 3:1 (1.4.11), et
+             #FF007A sur le fond de carte mesure 3,80:1. */
+          className={`press flex h-7 w-12 shrink-0 items-center rounded-pill p-1 transition-colors ${
+            on ? 'bg-accent' : 'bg-ink/[0.18]'
           }`}
-        />
-      </button>
-      <span className="min-w-0 flex-1">
+        >
+          <span
+            aria-hidden="true"
+            className={`h-5 w-5 rounded-pill bg-white shadow-sm transition-transform ${
+              on ? 'translate-x-5' : 'translate-x-0'
+            }`}
+          />
+        </button>
+        {/* mt-0.5 est parti avec le paragraphe. Il calait l'interrupteur sur la
+            premiere ligne d'un bloc de trois; il n'y a plus qu'une ligne, et
+            items-center fait le travail. */}
         <span className="block text-body font-semibold text-ink">{label}</span>
-        {hint && <span className="mt-1 block max-w-[46ch] text-small text-muted">{hint}</span>}
-      </span>
-    </label>
+      </label>
+      {hint && <Hint text={hint} />}
+    </div>
   )
 }
 
