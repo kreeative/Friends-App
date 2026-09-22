@@ -198,6 +198,31 @@
     --quiet-ink: 92 98 108;
 
     /**
+     * LE ROSE DES JOURS COCHES, ET IL NE BOUGE PAS AVEC LE THEME.
+     *
+     *   "No, the black is not prettier, make it pink."
+     *
+     * La tuile cochee a ete noire une version. Le raisonnement tenait: le
+     * rouge des erreurs ne veut pas dire "coche", l'encre ne veut rien dire
+     * d'autre que "plein". Ce que la mesure ne dit pas et que la capture dit,
+     * c'est que cinq dalles noires sur un mois sont lourdes.
+     *
+     * Declare ici, a :root, et pas par theme, pour la raison que `negative`,
+     * `green` et `field` donnent deja: c'est une valeur qui doit dire la meme
+     * chose partout. Et surtout, prendre --c-accent aurait donne du bleu en
+     * mer, ou "fais-le rose" n'aurait plus voulu dire grand-chose.
+     *
+     * L'ENCRE DESSUS, PAS LE BLANC, ET C'EST MESURE.
+     *
+     * Le blanc sur ce rose fait 3,80:1, ce que index.css documente deja comme
+     * une decision: assez pour du grand texte, pas pour du texte normal, et un
+     * chiffre de jour a 14px est du texte normal. L'encre, elle, mesure 4,60:1
+     * en soleil et 4,54:1 en mer sur les pixels peints, donc au-dessus des
+     * 4,5 exiges.
+     */
+    --c-pick: 255 0 122;     /* #FF007A, 4.60:1 avec l'encre en soleil */
+
+    /**
      * Two shadows, both soft, both tinted.
      *
      * These were neutral grey and fairly dense: three stacked layers running
