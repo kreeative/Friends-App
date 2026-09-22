@@ -2699,7 +2699,7 @@ ok(
 {
   const sheet = read('src/index.css')
   ok('there is a reading column', /\.reading\s*\{[^}]*max-w-\[60ch\]/.test(sheet))
-  ok('and a two-column feed', /\.page-grid\s*\{[^}]*lg:grid-cols-/.test(sheet))
+  ok('and a two-column feed', /\.page-grid\s*\{[^}]*lg:columns-2/.test(sheet))
 
   const lib = code('src/pages/Library.jsx')
   ok('the library shelves are grids, not stacks',
@@ -2709,54 +2709,46 @@ ok(
      !/className="space-y-3">\s*\{COURSES\.map/.test(lib) && !/className="space-y-3">\s*\{\(shelf ===/.test(lib))
 
   const home = code('src/pages/Dashboard.jsx')
-  ok('the home feed has a main and a side column',
-     /className="page-grid"/.test(home) && /className="page-main/.test(home) && /className="page-side/.test(home))
 
   /**
-   * ET LA COLONNE DE DROITE VA JUSQU'EN BAS.
+   * LES CARTES SE SUIVENT, ET C'EST LA TROISIEME FORME DE CETTE GRILLE.
    *
    *   "How much got done, book, bring them down and etire les pour qu'ils fit
    *    la page."
+   *   "Genre je veux que les cartes se suivent les unes apres les autres, pas
+   *    qu'elle soit comme un bento."
    *
-   * Mesure dans Chromium a 1024, 1180, 1290, 1440 et 1728: colonne de droite
-   * 562px contre 840px a gauche, donc 278px de vide dessous a TOUTES les
-   * largeurs, un tiers de la hauteur de la page.
+   * Forme 1, deux <div> et items-start: colonne de droite 562px contre 993px a
+   * gauche, 431px de blanc dessous a toutes les largeurs.
    *
-   * items-start etait juste quand cette grille est nee, pour la raison que
-   * .card-grid explique: une carte courte ne doit pas s'etirer pour rattraper
-   * la plus haute de sa rangee. Ca vaut entre cartes interchangeables. Ici il y
-   * a DEUX colonnes qui ne le sont pas, et celle de droite est structurellement
-   * plus courte: son vide est permanent, pas accidentel.
+   * Forme 2, items-stretch et `grow-card`: 301px de contenu dans une carte de
+   * 496 et 261px dans une autre de 496, contenu centre au milieu du vide. Le
+   * trou n'avait pas disparu, il etait passe DANS les cartes. C'est ce que le
+   * mot bento designe.
+   *
+   * Forme 3, une seule suite mise en colonnes. Mesure a 1024, 1180, 1290, 1440
+   * et 1728: les deux colonnes finissent a 33px puis 79px l'une de l'autre, au
+   * lieu de 431px, sans qu'aucune carte soit etiree ni assignee.
    */
-  ok('the side column stretches to the main column',
-     /\.page-grid\s*\{[^}]*lg:items-stretch/.test(sheet)
-       && !/\.page-grid\s*\{[^}]*lg:items-start/.test(sheet),
-     'items-start laissait 278px de vide sous la colonne de droite')
-  ok('and it is a flex column so its sections can grow',
-     /\.page-side\s*\{[^}]*lg:flex-col/.test(sheet))
-
-  /* `flex-1` sur la section SEULE deplacait le trou d'un cran: la section
-     s'etirait et la carte restait collee en haut. Mesure faite. */
-  ok('a grown section passes the height to its card',
-     /\.grow-card > :last-child\s*\{[^}]*lg:flex-1/.test(sheet))
-  ok('and the card centres its content in the height it got',
-     /\.grow-card > :last-child\s*\{[^}]*lg:justify-center/.test(sheet),
-     'colle en haut, la carte a un fond blanc au lieu d avoir de l air')
-
-  /* Les DEUX, pas une seule: tout donner aux livres ferait descendre leur
-     carte jusqu'en bas sous un pourcentage reste petit. */
-  ok('both side sections grow, not just one',
-     (home.match(/className="grow-card"|className="grow-card"\s*\n/g) ?? []).length >= 1
-       && (home.match(/grow-card/g) ?? []).length === 2,
-     `${(home.match(/grow-card/g) ?? []).length} sections`)
-
-  /* En dessous de lg la page est une pile et rien ne doit changer: chaque
-     regle de l'etirement est prefixee lg:. */
-  for (const regle of ['.page-side', '.grow-card']) {
-    const bloc = new RegExp(`\\${regle}[^{]*\\{([^}]*)\\}`).exec(sheet)?.[1] ?? ''
-    const nu = bloc.split(/\s+/).filter((c) => /^(flex|min-h-0|flex-1|flex-col|justify-center)$/.test(c))
-    ok(`${regle} ne touche rien sous lg (${nu.length} classe(s) nue(s))`, nu.length === 0, nu.join(' '))
-  }
+  ok('the home feed is one run of cards, not two assigned columns',
+     /className="page-grid"/.test(home) && !/page-main/.test(home) && !/page-side/.test(home),
+     'une carte assignee a une colonne decide la hauteur de cette colonne par la redaction')
+  ok('and it flows them into columns rather than placing them',
+     /\.page-grid\s*\{[^}]*lg:columns-2/.test(sheet)
+       && !/\.page-grid\s*\{[^}]*lg:grid-cols-/.test(sheet))
+  ok('with nothing left that stretches a card to fill a hole',
+     !/grow-card\s*\{/.test(sheet) && !/\.page-side\s*\{/.test(sheet)
+       && !/className="grow-card"/.test(home),
+     'le vide etait passe dans les cartes au lieu de disparaitre')
+  /* Sans ceci une carte se coupe en deux au passage d'une colonne a l'autre,
+     ce qui est la seule vraie facon de rater une mise en colonnes. */
+  ok('and no card may be split across the break',
+     /\.page-grid > \*\s*\{\s*break-inside: avoid;/.test(sheet))
+  /* Sous lg la page est une pile et rien ne bouge: la regle est prefixee lg:,
+     donc l'ordre du DOM reste l'ordre a l'ecran sur un telephone. */
+  ok('the phone still sees one column in DOM order',
+     /\.page-grid\s*\{[^}]*lg:columns-2[^}]*\}/.test(sheet)
+       && !/\.page-grid\s*\{[^}]*[^-]columns-2/.test(sheet.replace(/lg:columns-2/g, '')))
 
   const courses = code('src/pages/Courses.jsx')
   ok('a lesson and a course summary are reading columns',

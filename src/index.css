@@ -2652,63 +2652,53 @@
    * what goes in it is what already came last.
    */
   /**
-   * items-stretch, ET C'ETAIT items-start.
+   * DES CARTES QUI SE SUIVENT, ET PLUS DEUX COLONNES ASSIGNEES.
    *
    *   "How much got done, book, bring them down and etire les pour qu'ils fit
    *    la page."
+   *   "Genre je veux que les cartes se suivent les unes apres les autres, pas
+   *    qu'elle soit comme un bento."
    *
-   * Mesure dans Chromium, a 1024, 1180, 1290, 1440 et 1728: la colonne de
-   * droite faisait 562px contre 840px a gauche, soit 278px de vide sous elle a
-   * TOUTES les largeurs, un tiers de la hauteur de la page. Deux cartes en haut
-   * a droite et un trou dessous.
+   * Cette grille a eu trois formes, et les deux premieres sont la raison de la
+   * troisieme.
    *
-   * items-start etait le bon reglage quand cette grille est nee, et le
-   * commentaire de .card-grid dit pourquoi: "items-start so a short card stays
-   * short instead of stretching to match the tallest thing in its row". Ca vaut
-   * pour une grille de cartes cote a cote, ou l'une est courte par hasard. Ici
-   * il n'y a que deux colonnes, elles ne sont pas interchangeables, et celle de
-   * droite est structurellement plus courte: son vide est permanent.
+   * items-start: deux colonnes, chaque carte assignee a l'une des deux. Mesure
+   * a 1180 et a 1440, colonne de droite 562px contre 993px a gauche, soit
+   * 431px de vide dessous. Un tiers de la page, blanc, a toutes les largeurs.
+   *
+   * items-stretch plus `grow-card`: les deux cartes de droite se partageaient
+   * le trou. Mesure du resultat, 301px de contenu dans une carte de 496 et
+   * 261px dans une autre de 496, le contenu centre au milieu. Le vide n'avait
+   * pas disparu, il etait passe DANS les cartes, et deux grandes cases a peu
+   * pres vides posees l'une sur l'autre sont ce qu'elle a appele un bento.
+   *
+   * Les deux fautes sont la meme: une carte etait assignee a une colonne, donc
+   * la hauteur de cette colonne etait decidee par un choix de redaction plutot
+   * que par ce qu'il y avait a montrer, et il fallait ensuite la rattraper.
+   *
+   * Mise en colonnes plutot que grille. Les cartes sont une seule suite, dans
+   * l'ordre ou on les lit, et le navigateur remplit la premiere colonne puis
+   * la seconde en equilibrant les deux. Aucune n'est assignee, aucune n'est
+   * etiree, et chacune fait exactement la hauteur de son contenu.
+   *
+   * `break-inside: avoid` sur chaque enfant, sinon une carte se coupe en deux
+   * au passage d'une colonne a l'autre, ce qui est la seule vraie facon de
+   * rater une mise en colonnes.
+   *
+   * En dessous de lg, une seule colonne: l'ordre du DOM est l'ordre a l'ecran,
+   * exactement comme avant, et le telephone ne voit rien de tout ceci.
+   *
+   * La largeur n'est plus 3fr/2fr mais deux colonnes egales. Le partage
+   * inegal existait pour donner de la place a la bande de la semaine pendant
+   * que les resumes tenaient dans le reste; des que les cartes circulent entre
+   * les deux colonnes, aucune des deux n'a de contenu a elle, donc aucune n'a
+   * de raison d'etre plus large que l'autre.
    */
   .page-grid {
-    @apply lg:grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-stretch lg:gap-x-8;
+    @apply lg:columns-2 lg:gap-x-8;
   }
-
-  /**
-   * La colonne de droite se repartit la hauteur.
-   *
-   * Colonne flex, et ce sont ses sections qui portent `lg:flex-1`: la carte du
-   * pourcentage et celle des livres grandissent ensemble plutot qu'une seule
-   * qui avale tout le trou. Voir Dashboard.jsx pour lesquelles.
-   *
-   * En dessous de lg, rien: la page est une pile et chaque carte fait sa
-   * hauteur, comme avant.
-   */
-  .page-side {
-    @apply lg:flex lg:flex-col;
-  }
-
-  /**
-   * Une section qui grandit passe la hauteur a sa carte.
-   *
-   * Sans ceci, la SECTION s'etire et la carte reste en haut, ce qui deplace le
-   * vide d'un cran sans le supprimer: le trou passe de sous la colonne a sous
-   * chaque carte. Mesure faite: c'est exactement ce que la premiere version a
-   * produit.
-   */
-  .grow-card {
-    @apply lg:flex lg:flex-1 lg:flex-col;
-  }
-
-  /**
-   * justify-center, et c'est la deuxieme moitie du correctif.
-   *
-   * Avec `flex-1` seul, la CARTE grandit et son contenu reste colle en haut:
-   * mesure faite, le trou passait de sous la colonne a sous chaque carte, ce
-   * qui est le meme vide deplace d'un cran. Le contenu se centre donc dans la
-   * hauteur qu'il a recue, et la carte respire au lieu d'avoir un fond.
-   */
-  .grow-card > :last-child {
-    @apply lg:flex lg:min-h-0 lg:flex-1 lg:flex-col lg:justify-center;
+  .page-grid > * {
+    break-inside: avoid;
   }
 
   /**
