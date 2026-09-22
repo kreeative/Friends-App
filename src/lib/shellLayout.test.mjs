@@ -351,31 +351,36 @@ ok(
        && /\{!picking && list\.length > shown && \(/.test(cal),
      'c est ce qui faisait le fouillis, pas la couleur seule')
   /**
-   * ET LA MARQUE EST A LA TAILLE DU CHIFFRE, PAS DE LA TUILE.
+   * ET LA TUILE EST REMPLIE EN ENTIER, PAS UN ROND DERRIERE LE CHIFFRE.
    *
-   * Le rose seul n'a pas suffi: mesure apres le premier essai, la tuile
-   * faisait encore 114px de haut parce que la carte du mois s'etire pour
-   * remplir la fenetre, donc sept dalles roses au lieu de sept dalles noires.
+   *   "Je prefere ca." (capture: le mois a sa taille normale, cinq tuiles
+   *    entierement roses, le chiffre a l'encre au milieu)
    *
-   * En pointage la carte ne s'etire plus (56px de tuile, 348px de grille au
-   * lieu de 640) et la marque est un rond de la taille du chiffre. C'est ce
-   * que fait tout selecteur de dates, Flo compris.
+   * Ce qui avait ete fait a la place tenait en trois gestes: tuile ramenee a
+   * 3rem, carte qui ne s'etire plus, marque reduite a un rond de la taille du
+   * chiffre, au motif qu'une tuile pleine large de 250px est une dalle. Sauf
+   * que la plainte d'origine visait le NOIR, "the black is not prettier", et
+   * qu'une fois roses les dalles sont ce qui est voulu. Un raisonnement n'est
+   * pas une demande.
    *
-   * "Our app doesn't show the day as little round and I don't want it too"
-   * avait decide l'inverse, et la raison donnee alors etait juste: ne pas
-   * ajouter une quatrieme forme a une case qui portait deja le chiffre, la
-   * marque de phase, les pastilles d'evenement et le cadre du jour. Cette
-   * raison est partie avec les pastilles.
+   * Donc le mois pendant le pointage est le mois tout court: meme carte
+   * etiree, meme tuile de 6,5rem au-dessus de md. La seule difference qui
+   * reste est la grille videe de ses pastilles, qui elle a bien ete demandee.
+   *
+   * L'encre sur le rose ne bouge pas avec la taille de la tuile: 4,60:1 en
+   * soleil, 4,54:1 en mer, mesure en pixels peints sur la tuile pleine.
    */
-  ok('et la tuile se tasse, donc le mois tient d un coup d oeil',
-     /picking\s*\n\s*\? 'min-h-\[3rem\] items-center justify-center p-0\.5 md:min-h-\[3\.5rem\]'/.test(cal))
-  ok('et la carte du mois ne s etire plus pendant le pointage',
-     /picking \? '' : 'md:flex md:min-h-0 md:flex-1 md:flex-col'/.test(cal)
-       && /picking \? '' : 'month-fill md:min-h-0 md:flex-1'/.test(cal),
-     'une grille de dates n a aucune raison de remplir la fenetre')
-  ok('la marque fait la taille du chiffre',
-     /picking \? 'h-9 w-9 md:h-10 md:w-10' : 'w-full justify-between'/.test(cal),
-     'une tuile pleine large de 250px est une dalle, quelle que soit sa couleur')
+  ok('la tuile garde sa taille pendant le pointage',
+     /picking\s*\n\s*\? 'min-h-\[3\.4rem\] items-center justify-center p-1 md:min-h-\[6\.5rem\] md:p-1\.5'/.test(cal),
+     'elle avait ete ramenee a 3rem, et la capture montre le contraire')
+  ok('et la carte du mois s etire comme d habitude',
+     /className="lg w-full overflow-hidden p-3 md:flex md:min-h-0 md:flex-1 md:flex-col"/.test(cal)
+       && /className="grid grid-cols-7 gap-1 month-fill md:min-h-0 md:flex-1"/.test(cal),
+     'le pointage ne se distingue plus du mois par sa geometrie')
+  ok('le rose est sur la tuile, pas derriere le chiffre',
+     /\} \$\{on \? 'bg-pick' : ''\} \$\{/.test(cal)
+       && !/picking \? 'h-9 w-9 md:h-10 md:w-10'/.test(cal),
+     'le rond etait un selecteur de dates, et ce n est pas ce qui a ete choisi')
   /* La plaque blanche sous une pastille posee sur une tuile pleine n'a plus
      de raison d'etre: il n'y a plus de pastille pendant le pointage. Du code
      mort qui a l'air correct est pire qu'un correctif manquant. */
