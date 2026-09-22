@@ -54,6 +54,9 @@ export default {
         green: c('green'),
         'on-pop': c('on-pop'),
         negative: c('negative'),
+        /* Le rose des jours coches du calendrier. Un seul rose pour les deux
+           themes: voir --c-pick dans index.css. */
+        pick: c('pick'),
 
         /**
          * The six envelope shades and their pale partners, per theme. Declared

@@ -295,51 +295,93 @@ ok(
      'une pastille de plus dans le coin d une case pleine ne repond a rien')
 
   /**
-   * NOIR, ET PAS ROUGE.
+   * ROSE, ET LA GRILLE SE VIDE PENDANT QU'ON COCHE.
    *
    *   "Black not red."
+   *   "No, the black is not prettier, make it pink. Remove the information
+   *    when we are selecting the period day, just so it's not overwhelming,
+   *    and fix the UI."
    *
-   * La tuile cochee etait `bg-negative`, le rouge des erreurs et des
-   * suppressions. Sur un mois entier ca faisait cinq grands blocs rouges,
-   * c'est-a-dire ce que cette couleur veut dire partout ailleurs: quelque
-   * chose ne va pas. Cocher ses jours ne veut pas dire ca.
+   * Trois formes, et les deux premieres sont la raison de la troisieme.
    *
-   * L'encre ne signifie rien d'autre que "plein". Mesure en pixels peints sur
-   * la tuile cochee, le chiffre et la ligne "+N autres":
+   * ROUGE: `bg-negative`, la couleur des erreurs et des suppressions. Sur un
+   * mois entier, cinq grands blocs rouges, c'est-a-dire ce que cette couleur
+   * veut dire partout ailleurs: quelque chose ne va pas.
    *
-   *   soleil  17.48:1     mer  17.23:1
+   * NOIR: le raisonnement tenait et la mesure aussi, 17,48:1 pour le chiffre.
+   * Ce que la mesure ne dit pas et que la capture dit, c'est que cinq dalles
+   * noires couvertes de pastilles jaunes sont lourdes.
    *
-   * Et le "+N autres" etait DEJA illisible avant, sur le rouge: son text-muted
-   * a ete choisi pour reculer sur du papier. Rejoue a la main pour avoir le
-   * chiffre plutot que de le supposer, 1.24:1 en soleil et 1.16:1 en mer,
-   * c'est-a-dire rien du tout.
+   * ROSE, ET LA GRILLE SE VIDE. Le fouillis n'etait pas la couleur seule,
+   * c'etait la couleur PLUS tout ce qui restait dessus. Pendant le pointage,
+   * la seule question posee par cette grille est "ce jour-la ou pas": les
+   * pastilles d'evenement et la ligne "+N autres" ne repondent a rien. Elles
+   * partent, donc la tuile n'a plus besoin de 6,5rem, donc le mois tient d'un
+   * coup d'oeil. Tout revient a la fermeture du pointage.
+   *
+   * --c-pick est declare a :root et pas par theme, comme `negative` et
+   * `green`: prendre --c-accent aurait rendu du bleu en mer, ou "fais-le
+   * rose" ne veut plus dire grand-chose.
+   *
+   * ET C'EST L'ENCRE DESSUS, PAS LE BLANC. Le blanc sur ce rose fait 3,80:1,
+   * ce que index.css documente deja: assez pour du grand texte, pas pour du
+   * texte normal, et un chiffre de jour a 14px est du texte normal. Mesure en
+   * pixels peints sur la tuile: 4,60:1 en soleil, 4,54:1 en mer.
    */
-  ok('et elle est encre, pas rouge',
-     /on \? 'bg-ink text-on-accent'/.test(cal) && !/on \? 'bg-negative/.test(cal),
-     'bg-negative est la couleur des erreurs, pas celle d une case cochee')
-  ok('la ligne "+N autres" suit la tuile plutot que le papier',
-     /\$\{on \? 'text-on-accent' : 'text-muted'\}`}>\s*\n\s*\{t\('cal\.more'/.test(cal),
-     'text-muted a ete choisi pour reculer sur du papier, pas sur une case pleine')
-
+  ok('et elle est rose, ni rouge ni noire',
+     /\$\{on \? 'bg-pick' : ''\}/.test(cal)
+       && !/on \? 'bg-negative/.test(cal) && !/on \? 'bg-ink text-on-accent'/.test(cal),
+     'le rouge est la couleur des erreurs, et cinq dalles noires sont lourdes')
+  {
+    /* `css` est lu plus bas dans ce fichier: ici on relit la feuille plutot
+       que de deplacer sa declaration, qui sert a des dizaines de cas. */
+    const feuille = read('src/index.css')
+    ok('le rose est declare une fois, pas par theme',
+       /--c-pick: 255 0 122;/.test(feuille)
+         && !/\[data-theme='sea'\][\s\S]{0,6000}--c-pick:/.test(feuille),
+       'par theme, il serait bleu en mer')
+  }
+  /* Le chiffre est en encre sur le rose et en encre sur le papier, donc une
+     seule classe: c'est ce qui rend la mesure valable une fois pour toutes. */
+  ok('et le chiffre du jour est toujours en encre',
+     /<span className="text-small font-semibold text-ink">\{d\.getDate\(\)\}<\/span>/.test(cal),
+     'le blanc sur ce rose fait 3,80:1 et un chiffre de 14px est du texte normal')
+  ok('la grille se vide pendant le pointage',
+     /\{!picking && list\.slice\(0, shown\)\.map/.test(cal)
+       && /\{!picking && list\.length > shown && \(/.test(cal),
+     'c est ce qui faisait le fouillis, pas la couleur seule')
   /**
-   * ET LA PASTILLE D'EVENEMENT AUSSI.
+   * ET LA MARQUE EST A LA TAILLE DU CHIFFRE, PAS DE LA TUILE.
    *
-   * Chaque entree de SWATCH est un lavis translucide plus `text-ink`. Sur du
-   * papier c'est une pastille teintee avec du noir dessus; sur l'encre le
-   * lavis composite vers le noir et le texte noir disparait dedans.
+   * Le rose seul n'a pas suffi: mesure apres le premier essai, la tuile
+   * faisait encore 114px de haut parce que la carte du mois s'etire pour
+   * remplir la fenetre, donc sept dalles roses au lieu de sept dalles noires.
    *
-   * Mesure: 1.26:1 dans les deux themes, et il a fallu baisser le seuil de la
-   * sonde pour l'obtenir, parce qu'au seuil normal aucun pixel ne bougeait en
-   * rendant le texte transparent. Zero pixel d'encre n'est pas "pas de texte".
-   * Apres: 17.48:1 et 17.23:1.
+   * En pointage la carte ne s'etire plus (56px de tuile, 348px de grille au
+   * lieu de 640) et la marque est un rond de la taille du chiffre. C'est ce
+   * que fait tout selecteur de dates, Flo compris.
    *
-   * Une classe et pas une deuxieme table de couleurs: la note de SWATCH_BAR
-   * refuse deja les tables paralleles, parce qu'une categorie dont la couleur
-   * change doit changer aux deux endroits ou a aucun.
+   * "Our app doesn't show the day as little round and I don't want it too"
+   * avait decide l'inverse, et la raison donnee alors etait juste: ne pas
+   * ajouter une quatrieme forme a une case qui portait deja le chiffre, la
+   * marque de phase, les pastilles d'evenement et le cadre du jour. Cette
+   * raison est partie avec les pastilles.
    */
-  ok('et la pastille d evenement est sur sa propre plaque',
-     /on \? 'bg-surface text-ink' : SWATCH\[e\.colour\] \?\? SWATCH\.accent/.test(cal),
-     'un lavis translucide et du texte encre, poses sur de l encre, font du noir sur du noir')
+  ok('et la tuile se tasse, donc le mois tient d un coup d oeil',
+     /picking\s*\n\s*\? 'min-h-\[3rem\] items-center justify-center p-0\.5 md:min-h-\[3\.5rem\]'/.test(cal))
+  ok('et la carte du mois ne s etire plus pendant le pointage',
+     /picking \? '' : 'md:flex md:min-h-0 md:flex-1 md:flex-col'/.test(cal)
+       && /picking \? '' : 'month-fill md:min-h-0 md:flex-1'/.test(cal),
+     'une grille de dates n a aucune raison de remplir la fenetre')
+  ok('la marque fait la taille du chiffre',
+     /picking \? 'h-9 w-9 md:h-10 md:w-10' : 'w-full justify-between'/.test(cal),
+     'une tuile pleine large de 250px est une dalle, quelle que soit sa couleur')
+  /* La plaque blanche sous une pastille posee sur une tuile pleine n'a plus
+     de raison d'etre: il n'y a plus de pastille pendant le pointage. Du code
+     mort qui a l'air correct est pire qu'un correctif manquant. */
+  ok('et la plaque blanche des pastilles est partie avec elles',
+     !/on \? 'bg-surface text-ink'/.test(cal),
+     'du code qu aucun etat n atteint plus')
   ok('et c est une case a cocher pour un lecteur d ecran aussi',
      /role=\{picking \? 'checkbox' : undefined\}/.test(cal)
        && /aria-checked=\{picking \? Boolean\(on\) : undefined\}/.test(cal),

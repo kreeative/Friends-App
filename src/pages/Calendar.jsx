@@ -1211,7 +1211,12 @@ function MonthGrid({ range, anchor, agenda, cycle, onPick, picking = false, pick
 
   return (
     <section
-      className="lg w-full overflow-hidden p-3 md:flex md:min-h-0 md:flex-1 md:flex-col"
+      /* En pointage la carte ne s'etire plus: une grille de dates n'a aucune
+         raison de remplir la fenetre, et l'etirement est ce qui transformait
+         sept tuiles vides en sept dalles de 114px. */
+      className={`lg w-full overflow-hidden p-3 ${
+        picking ? '' : 'md:flex md:min-h-0 md:flex-1 md:flex-col'
+      }`}
       data-hook="cal-month"
     >
       {/**
@@ -1229,7 +1234,7 @@ function MonthGrid({ range, anchor, agenda, cycle, onPick, picking = false, pick
        * height and not a seventh of the card.
        */}
       <div
-        className="month-fill grid grid-cols-7 gap-1 md:min-h-0 md:flex-1"
+        className={`grid grid-cols-7 gap-1 ${picking ? '' : 'month-fill md:min-h-0 md:flex-1'}`}
         style={{ '--weeks': Math.max(1, Math.round(days.length / 7)) }}
       >
         {days.slice(0, 7).map((d) => (
@@ -1281,86 +1286,105 @@ function MonthGrid({ range, anchor, agenda, cycle, onPick, picking = false, pick
                  information about what is hidden; three visible entries is
                  information about the day. */
               /**
-               * NOIR, ET PAS ROUGE.
+               * ROSE, ET LA GRILLE SE VIDE PENDANT QU'ON COCHE.
                *
-               *   "Black not red."
+               *   "No, the black is not prettier, make it pink. Remove the
+               *    information when we are selecting the period day, just so
+               *    it's not overwhelming, and fix the UI."
                *
-               * La tuile cochee etait `bg-negative`, le rouge des erreurs et
-               * des suppressions. Sur une grille de septembre entier ca faisait
-               * cinq grands blocs rouges, qui est ce que cette couleur veut
-               * dire partout ailleurs dans l'application: quelque chose ne va
-               * pas. Ce n'est pas ce que cocher ses jours veut dire.
+               * Trois demandes qui n'en font qu'une, et la capture le montre
+               * mieux que la mesure: cinq dalles noires couvertes de pastilles
+               * jaunes. Le raisonnement du noir tenait, la page ne tenait pas.
                *
-               * L'encre. C'est la valeur la plus foncee du theme, elle ne
-               * signifie rien d'autre que "plein", et le blanc dessus mesure
-               * 17.48:1 en soleil et 17.23:1 en mer, en pixels peints.
+               * LE ROSE EST DECLARE UNE FOIS, PAS PAR THEME. `--c-pick`, a
+               * cote de `negative` et `green`, pour la raison qu'elles
+               * donnent deja: prendre --c-accent aurait rendu du bleu en mer,
+               * ou "fais-le rose" ne veut plus dire grand-chose.
                *
-               * La pastille de phase reste rouge, elle: le rouge devient ce qui
-               * est ENREGISTRE, le noir ce qui est coche a l'instant, et les
-               * deux ne sont jamais sur la meme tuile en meme temps.
+               * ET C'EST L'ENCRE DESSUS, PAS LE BLANC. Le blanc sur ce rose
+               * fait 3,80:1, ce que index.css documente deja: assez pour du
+               * grand texte, pas pour du texte normal, et un chiffre de jour a
+               * 14px est du texte normal. L'encre mesure 4,60:1 en soleil et 4,54:1
+               * en mer, sur les pixels peints.
+               *
+               * LA TUILE SE VIDE ET SE TASSE. Pendant le pointage, la seule
+               * question posee par cette grille est "ce jour-la ou pas": les
+               * pastilles d'evenement et la ligne "+N autres" ne repondent a
+               * rien et c'est elles qui faisaient le fouillis. Elles partent,
+               * donc la tuile n'a plus besoin de 6,5rem, donc le mois tient
+               * d'un coup d'oeil et ressemble enfin a un selecteur de dates.
+               * Tout revient a la fermeture du pointage.
+               *
+               * La pastille de phase reste: c'est un point, et pendant qu'on
+               * coche ses jours c'est le seul repere qui dise ce qui est deja
+               * enregistre.
                */
-              className={`press relative flex min-h-[3.4rem] flex-col items-stretch overflow-hidden rounded-inner p-1 text-left transition-colors md:min-h-[6.5rem] md:p-1.5 ${
-                on ? 'bg-ink text-on-accent' : 'hover:bg-ink/[0.04]'
+              className={`press relative flex overflow-hidden rounded-inner text-left transition-colors ${
+                picking
+                  ? 'min-h-[3rem] items-center justify-center p-0.5 md:min-h-[3.5rem]'
+                  : 'min-h-[3.4rem] flex-col items-stretch p-1 md:min-h-[6.5rem] md:p-1.5'
+              } ${
+                on || picking ? '' : 'hover:bg-ink/[0.04]'
               } ${outside ? 'opacity-40' : ''} ${
                 future ? 'cursor-not-allowed opacity-30' : ''
-              } ${k === today ? 'ring-1 ring-inset ring-accent/50' : ''}`}
+              } ${k === today && !picking ? 'ring-1 ring-inset ring-accent/50' : ''}`}
             >
-              <span className="flex items-center justify-between">
-                <span className={`text-small font-semibold ${on ? 'text-on-accent' : 'text-ink'}`}>
-                  {d.getDate()}
-                </span>
+              {/**
+               * EN POINTAGE, LA MARQUE EST DERRIERE LE CHIFFRE, PAS SUR TOUTE
+               * LA TUILE.
+               *
+               * "Our app doesn't show the day as little round and I don't want
+               * it too" avait decide l'inverse, et la raison donnee alors etait
+               * juste: ne pas ajouter une quatrieme forme a une case qui portait
+               * deja le chiffre, la marque de phase, les pastilles d'evenement
+               * et le cadre du jour.
+               *
+               * Cette raison a disparu avec les pastilles. Pendant le pointage
+               * il ne reste que le chiffre et un point, donc la place est libre,
+               * et une tuile pleine large de 250px est une dalle: c'est ce que
+               * "the black is not prettier" designait, et le rose seul ne l'a
+               * pas reglee. Une marque a la taille du chiffre est ce que fait
+               * tout selecteur de dates, Flo compris.
+               */}
+              <span
+                className={`relative flex items-center justify-center rounded-pill transition-colors ${
+                  picking ? 'h-9 w-9 md:h-10 md:w-10' : 'w-full justify-between'
+                } ${on ? 'bg-pick' : ''} ${picking && !on && !future ? 'hover:bg-ink/[0.06]' : ''}`}
+              >
+                <span className="text-small font-semibold text-ink">{d.getDate()}</span>
                 {/* The cycle mark. A dot in the corner, never a word, and
                     never a fill that would fight the event chips below. */}
-                {/* Pas sur une tuile cochee: la tuile EST deja la marque, et
-                    une pastille de plus dans le coin d'une case pleine est une
-                    forme qui ne repond a aucune question. */}
+                {/* Pas sur une tuile cochee: la marque EST deja la, et un point
+                    de plus dessus est une forme qui ne repond a aucune
+                    question. En pointage il passe sous le chiffre, ou il ne
+                    deforme pas le rond. */}
                 {phase && !on && (
-                  <span className={`h-2 w-2 shrink-0 rounded-pill ${PHASE_DOT[phase]}`} aria-hidden="true" />
+                  <span
+                    aria-hidden="true"
+                    className={`h-2 w-2 shrink-0 rounded-pill ${PHASE_DOT[phase]} ${
+                      picking ? 'absolute bottom-0 left-1/2 -translate-x-1/2' : ''
+                    }`}
+                  />
                 )}
               </span>
 
               {/* Two, then a count. Four chips in a 48px tile is a smear. */}
-              {/**
-               * ET SUR UNE TUILE COCHEE, LA PASTILLE EST SUR SA PROPRE PLAQUE.
-               *
-               * Chaque entree de SWATCH est un lavis translucide plus
-               * `text-ink`: pose sur du papier ca donne une pastille teintee
-               * avec du noir dessus. Pose sur l'encre, le lavis composite vers
-               * le noir et le texte noir disparait dedans. Mesure sur la tuile
-               * passee au noir: 1.26:1 dans les deux themes. Et il a fallu
-               * baisser le seuil de la sonde pour l'obtenir, parce qu'au seuil
-               * normal AUCUN pixel ne bougeait en rendant le texte
-               * transparent: zero pixel d'encre n'est pas "pas de texte",
-               * c'est du texte qu'on ne voit pas.
-               *
-               * La couleur de categorie est donc suspendue le temps du
-               * pointage, et la pastille revient blanche a texte encre. Ce
-               * n'est pas une perte: pendant qu'on coche ses jours, la seule
-               * question posee par la grille est noir ou pas noir, et la
-               * couleur revient entiere des que le pointage se ferme.
-               *
-               * Une seule classe plutot qu'une deuxieme table de couleurs: une
-               * table parallele est ce que la note de SWATCH_BAR refuse deja,
-               * parce qu'une categorie dont la couleur change doit changer aux
-               * deux endroits ou a aucun.
-               */}
-              {list.slice(0, shown).map((e) => (
+              {/* Rien de tout ca pendant le pointage: voir la note ci-dessus.
+                  C'est ce qui faisait le fouillis, et c'est aussi ce qui rend
+                  inutile la plaque blanche qu'une pastille posee sur une tuile
+                  pleine avait demandee. */}
+              {!picking && list.slice(0, shown).map((e) => (
                 <span
                   key={e.occurrenceId}
                   className={`mt-0.5 truncate rounded-[0.35rem] px-1 py-px text-[10px] font-semibold md:px-1.5 md:py-0.5 md:text-[11px] ${
-                    on ? 'bg-surface text-ink' : SWATCH[e.colour] ?? SWATCH.accent
+                    SWATCH[e.colour] ?? SWATCH.accent
                   }`}
                 >
                   {e.title}
                 </span>
               ))}
-              {/* Sur une tuile pleine le gris du theme n'est plus lisible: il
-                  a ete choisi pour reculer sur du papier. Trouve en passant la
-                  tuile au noir, et c'etait deja faux sur le rouge: 1.24:1 en
-                  soleil, 1.16:1 en mer, mesure en repeignant l'ancien
-                  habillage a la main. Il suit la tuile maintenant, 17.48:1. */}
-              {list.length > shown && (
-                <span className={`mt-0.5 px-1 text-[10px] font-semibold ${on ? 'text-on-accent' : 'text-muted'}`}>
+              {!picking && list.length > shown && (
+                <span className="mt-0.5 px-1 text-[10px] font-semibold text-muted">
                   {t('cal.more', { n: list.length - shown })}
                 </span>
               )}
