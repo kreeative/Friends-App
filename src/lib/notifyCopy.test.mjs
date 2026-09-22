@@ -820,5 +820,35 @@ const keysOf = (lang) => [...block(lang).matchAll(/^ {4}(\w+):/gm)].map((m) => m
      'repondre au silence par du silence transformerait un reglage en panne')
 }
 
+/**
+ * LE PAS DU PROCHAIN RAPPEL D'EAU SE CALCULE SUR QUELQUE CHOSE QUI EXISTE.
+ *
+ * `Math.round(minutesLeft / glasses)` etait ecrit avec un `glasses` declare
+ * nulle part. Dans un module ESM c'est un ReferenceError, donc: le rappel
+ * partait, la boucle explosait, le travail `reminders` rendait 500, et
+ * water_next_at n'avancait plus. En production depuis le 6 septembre.
+ *
+ * Ce cas-la est une assertion de texte et pas un calcul execute, et il faut le
+ * dire: ce fichier tourne sur Deno, cette suite le lit comme une chaine, donc
+ * elle ne peut pas voir un identifiant libre. Elle peut seulement epingler la
+ * forme du correctif. Ce qui a trouve le defaut est la transpilation avant
+ * deploiement, pas une suite de tests.
+ */
+{
+  /* Sa propre tranche: celle du bloc precedent y est declaree, pas ici. */
+  const i = CODE.indexOf('async function sendWaterReminders(')
+  const eau = i < 0 ? '' : CODE.slice(i, CODE.indexOf('\nasync function', i + 10))
+  ok('le verre vient de la ligne, avec 250 ml a defaut',
+     /const glass = Number\(row\.glass_ml\) > 0 \? Number\(row\.glass_ml\) : 250/.test(eau),
+     'due_water_reminders rend glass_ml; planFor retombe sur GLASS_ML = 250')
+  ok('et le nombre de verres restants est declare avant de servir',
+     /const glasses = Math\.ceil\(remaining \/ glass\)/.test(eau)
+       && eau.indexOf('const glasses =') < eau.indexOf('minutesLeft / glasses'),
+     'glasses n etait declare nulle part: ReferenceError a chaque rappel d eau')
+  ok('les bornes restent celles de water.js',
+     /Math\.min\(120, Math\.max\(30, Math\.round\(minutesLeft \/ glasses\)\)\)/.test(eau),
+     'MIN_GAP 30 et MAX_GAP 120, les memes que le client')
+}
+
 console.log(`\nnotifyCopy\n\n  ${pass} passed, ${fail} failed\n`)
 process.exit(fail === 0 ? 0 : 1)

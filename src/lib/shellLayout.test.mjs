@@ -3002,6 +3002,33 @@ ok(
        /<span className=\{`\$\{HINT_ANCHOR\} mb-1\.5 flex items-center`\}>/.test(ui),
        'ancre sur le label entier, le panneau s ouvrirait SOUS la boite')
 
+    /**
+     * ET LE DISQUE FAIT LA TAILLE DU TEXTE, SANS RETRECIR LA CIBLE.
+     *
+     *   "The ? are too big, reduce the circle so it fits the text."
+     *
+     * 24 px de disque a cote d'un libelle de 16 px, c'etait plus haut que la
+     * ligne annotee. 18 px de disque, 11 px de glyphe: mesure sur les pixels
+     * peints, le disque fait 1,10 fois la bande d'encre du libelle, son centre
+     * tombe a 0,60 px de celui de cette bande, et le "?" y tient 6,61:1.
+     *
+     * Le ::before est ce qui empeche la reduction de devenir une regression:
+     * WCAG 2.5.8 demande une cible de 24 px sur 24, et 18 px la rate d'un
+     * tiers. Il etale la zone de 3 px sur les quatre cotes sans rien peindre.
+     * Verifie par elementFromPoint aux quatre coins d'un carre de 24 px: 4 sur
+     * 4 tombent sur le sommaire.
+     */
+    ok('le disque du "?" fait 18 px, pas 24',
+       /h-\[1\.125rem\] w-\[1\.125rem\]/.test(ui) && /text-\[0\.6875rem\]/.test(ui),
+       'a cote d un libelle de 16 px, 24 px se lit comme un bouton')
+    ok('et la cible tactile reste a 24 px',
+       /before:absolute before:-inset-\[0\.1875rem\] before:content-\[''\]/.test(ui)
+         && /summary\s*\n?\s*className="press relative /.test(ui),
+       '18 + 3 + 3 = 24, et il faut `relative` pour que le ::before se pose')
+    ok('l alignement suit la taille du glyphe',
+       /align-\[calc\(0\.383em-0\.24rem\)\]/.test(ui),
+       'la constante est la moitie de la hauteur de capitale du "?", qui a retreci avec lui')
+
     /* Le compte des `hint=` est la mesure de la portee: si quelqu'un ecrit sa
        propre note grise a cote plutot que de passer par Field, ce chiffre ne
        bouge pas et le test ne dit rien. Donc on verifie aussi qu'il ne reste
@@ -3329,20 +3356,28 @@ ok(
  *
  * Deux details sont epingles parce que les deux ont deja coute une mesure:
  * la longueur est sur le <details> et pas sur le sommaire, sinon l'em se
- * resout sur la police du marqueur (11 px) au lieu de celle du titre; et rien
- * ici n'est `relative`, sinon le panneau s'ancre a nouveau sur le marqueur et
- * sort de l'ecran.
+ * resout sur la police du marqueur (11 px) au lieu de celle du titre; et le
+ * <details> n'est pas `relative`, sinon le panneau s'ancre a nouveau sur le
+ * marqueur et sort de l'ecran.
+ *
+ * LE SOMMAIRE, LUI, L'EST DEVENU, ET CE N'EST PAS LA MEME CHOSE. Le panneau
+ * est son FRERE, pas son descendant: un bloc conteneur pose sur le sommaire ne
+ * peut donc pas le rattraper. Il porte `relative` pour son ::before, qui rend
+ * a la cible les 24 px que le disque a perdus en retrecissant. Le cas
+ * ci-dessous vise donc le <details> nommement, au lieu d'interdire le mot
+ * partout: une interdiction trop large se lit comme une regle et n'en est pas
+ * une.
  */
 {
   const ui = read('src/components/ui.jsx')
   ok('the marker is raised by a length, not centred on the x-height',
-     /align-\[calc\(0\.383em-0\.28rem\)\]/.test(ui),
+     /align-\[calc\(0\.383em-0\.24rem\)\]/.test(ui),
      'align-middle put its centre 9.3px below the title cap band')
   ok('and the length sits on the element that inherits the title’s size',
      /<details\s+className="group ml-2 inline-block align-\[/.test(ui),
      'on the summary, em resolves against text-label and the correction is 0.28px')
-  ok('nothing in the hint is positioned',
-     !/(details|summary)[^>]*className="[^"]*\brelative\b/.test(ui),
+  ok('the details itself is not positioned',
+     !/<details[^>]*className="[^"]*\brelative\b/.test(ui),
      'a positioned ancestor recaptures the panel, which is how it left the screen')
 }
 
