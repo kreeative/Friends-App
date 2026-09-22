@@ -187,16 +187,44 @@ export function visibleEvents(events, hidden) {
  * tailwind.config.js declares AND a value that constraint allows; the test
  * reads the constraint out of the SQL and asserts both directions.
  */
+/**
+ * ET MAINTENANT LES SEPT ONT LEUR PROPRE FAMILLE, EN PASTEL.
+ *
+ *   "I don't like the colors, they should be tones that match the pink, like
+ *    pastel."
+ *
+ * Tout ce qui precede reste vrai et explique comment on en est arrive la: sept
+ * categories qui devaient se distinguer, et un seul endroit ou piocher, les
+ * jetons que l'application avait deja. D'ou un jaune de panneau de
+ * signalisation pour le travail, le noir du texte pour les examens et le rouge
+ * des erreurs pour les evenements.
+ *
+ * Ca tenait la mesure et c'etait la mauvaise reponse. Sur un mois entier,
+ * "WORK" revient cinq fois par semaine: un quart de la grille etait du jaune
+ * sature, et les examens des dalles noires. Trois couleurs empruntees a trois
+ * systemes differents ne font pas une palette, elles font un ecran qui crie.
+ *
+ * Les sept ont donc une famille a elles, --c-ev-*, sept pastels d'une meme
+ * clarte autour du rose du theme, avec leur version foncee pour ce qui doit
+ * tenir 3:1. Les valeurs et le reste du raisonnement sont dans index.css.
+ *
+ * LA CONTRAINTE DE LA BASE ACCEPTE LES ANCIENS NOMS AUSSI, ET C'EST VOULU.
+ *
+ * La migration 70 ajoute les sept nouveaux sans retirer les anciens, et
+ * reecrit les lignes existantes. Retirer les anciens dans la meme migration
+ * ferait echouer l'UPDATE sur sa propre contrainte, et les tables de rendu les
+ * gardent pour qu'une ligne ecrite avant la migration se peigne encore.
+ */
 export const CATEGORY_COLOUR = {
-  cours: 'cat-1',
-  examen: 'ink',
-  etude: 'cat-4',
-  travail: 'field',
-  evenement: 'negative',
-  perso: 'green',
-  /* Grey, and deliberately the quietest of the seven. A health entry sitting
-     on a shared screen should be the one that draws the least attention. */
-  sante: 'quiet',
+  cours: 'ev-cours',
+  examen: 'ev-examen',
+  etude: 'ev-etude',
+  travail: 'ev-travail',
+  evenement: 'ev-evenement',
+  perso: 'ev-perso',
+  /* Le sable, et deliberement la plus discrete des sept: une entree de sante
+     posee sur un ecran partage doit etre celle qui attire le moins l'oeil. */
+  sante: 'ev-sante',
 }
 
 /**

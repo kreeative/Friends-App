@@ -621,6 +621,64 @@
     --c-cat-4-soft: 255 234 219;
     --c-cat-5-soft: 255 241 214;
     --c-cat-6-soft: 255 247 209;
+
+    /**
+     * LES SEPT COULEURS DU CALENDRIER, EN PASTEL.
+     *
+     *   "I don't like the colors, they should be tones that match the pink,
+     *    like pastel."
+     *
+     * Les sept categories empruntaient des jetons faits pour autre chose:
+     * `field` est le jaune panneau-de-signalisation, `ink` est le noir du
+     * texte, `negative` est le rouge des erreurs. Sur une grille de septembre
+     * entier, un quart de la page etait du jaune sature, parce que "WORK"
+     * revient cinq fois par semaine, et les examens etaient des dalles noires.
+     * Ce n'est pas une teinte qui ne plait pas, c'est trois couleurs
+     * empruntees a trois systemes differents posees sur le meme ecran.
+     *
+     * Donc une famille a elles, et une seule: sept pastels d'une meme
+     * luminosite, autour du rose du theme. Le nom porte la categorie et pas la
+     * couleur, parce que la couleur change avec le theme et pas la categorie.
+     *
+     * OPAQUES, ET C'EST CE QUI CHANGE TOUT.
+     *
+     * L'ancienne pastille etait un lavis: `bg-negative/[0.24]`, donc sa
+     * couleur peinte dependait de ce qu'il y avait dessous, et le jaune avait
+     * du monter a 0,62 pour se voir pendant que le noir descendait a 0,30.
+     * Trois alphas differents pour un seul rang de pastilles, chacun regle a
+     * la main. Un pastel est deja clair: pose tel quel il donne la meme
+     * couleur partout, et l'encre dessus se mesure une fois pour toutes.
+     *
+     * LA VERSION FONCEE N'EST PAS UNE DECORATION.
+     *
+     * Le filet de 4px dans la liste du jour et la pastille de couleur dans le
+     * formulaire portent de l'information, donc 3:1 minimum (1.4.11). Un
+     * pastel a 90 de clarte fait 1,3:1 sur blanc et ne peut pas les porter.
+     * Meme raison, meme forme que --c-field-deep a cote.
+     *
+     * Les distances sont mesurees, pas estimees: palette.test.mjs calcule le
+     * CIE76 entre les sept, dans les deux themes, et refuse toute paire sous
+     * 10, qui est le seuil que la note de CATEGORY_COLOUR avait deja etabli.
+     */
+    /* Ces valeurs-ci sont la deuxieme serie. La premiere avait ete choisie a
+       l'oeil et la mesure l'a refusee: prune et pervenche a 8,5 de CIE76 l'une
+       de l'autre, soit sous le seuil de 10 ou deux couleurs se lisent comme
+       une seule. La plus proche paire est maintenant a 13,9. */
+    --c-ev-cours: 255 205 226;       /* rose */
+    --c-ev-examen: 233 205 247;      /* prune */
+    --c-ev-etude: 205 216 250;       /* pervenche */
+    --c-ev-travail: 255 226 186;     /* abricot */
+    --c-ev-evenement: 255 208 192;   /* corail */
+    --c-ev-perso: 198 235 213;       /* menthe */
+    --c-ev-sante: 232 228 220;       /* sable, la plus discrete des sept */
+
+    --c-ev-cours-deep: 232 65 127;
+    --c-ev-examen-deep: 142 81 199;
+    --c-ev-etude-deep: 85 102 214;
+    --c-ev-travail-deep: 201 118 26;
+    --c-ev-evenement-deep: 226 96 63;
+    --c-ev-perso-deep: 46 139 99;
+    --c-ev-sante-deep: 139 127 108;
   }
 
   /**
@@ -698,6 +756,28 @@
     --c-cat-4-soft: 205 226 240;
     --c-cat-5-soft: 199 223 238;
     --c-cat-6-soft: 193 219 236;
+
+    /* Les sept memes categories, en froid. Voir la note du theme soleil: le
+       nom porte la categorie, la valeur porte le theme. */
+    /* Deuxieme serie ici aussi: la premiere mettait bleu poudre et pervenche a
+       7,9 l'un de l'autre, et le bleu poudre a 9,9 de l'ardoise. Trois bleus
+       clairs dans une palette froide est la facon evidente de se tromper. La
+       plus proche paire est maintenant a 12,6. */
+    --c-ev-cours: 190 220 246;       /* bleu poudre */
+    --c-ev-examen: 216 208 245;      /* pervenche */
+    --c-ev-etude: 196 236 234;       /* eau */
+    --c-ev-travail: 255 228 190;     /* abricot */
+    --c-ev-evenement: 248 210 226;   /* rose */
+    --c-ev-perso: 206 238 212;       /* menthe */
+    --c-ev-sante: 226 228 231;       /* ardoise, la plus discrete des sept */
+
+    --c-ev-cours-deep: 30 111 168;
+    --c-ev-examen-deep: 90 95 192;
+    --c-ev-etude-deep: 28 138 136;
+    --c-ev-travail-deep: 192 118 21;
+    --c-ev-evenement-deep: 192 72 124;
+    --c-ev-perso-deep: 46 139 87;
+    --c-ev-sante-deep: 119 128 138;
 
     --c-bg: 240 249 255;     /* ice */
     --c-raised: 224 242 254; /* sky, the soft well inside a card */

@@ -166,6 +166,11 @@ const cfg = readFileSync(new URL('../../tailwind.config.js', import.meta.url), '
 const declared = new Set([
   ...[...cfg.matchAll(/^\s{8}'?([a-z0-9-]+)'?:\s*c\(/gm)].map((m) => m[1]),
   ...[...cfg.matchAll(/(\d)'?:\s*c\('cat-\1'\)/g)].map((m) => `cat-${m[1]}`),
+  /* Les sept du calendrier sont imbriquees sous `ev`, comme la rampe sous
+     `cat`: Tailwind construit `bg-ev-cours`, mais la cle ecrite dans le
+     fichier est `cours`. On lit donc le nom de la variable plutot que la cle,
+     ce qui a l'avantage d'echouer aussi quand les deux ne correspondent pas. */
+  ...[...cfg.matchAll(/c\('(ev-[a-z-]+)'\)/g)].map((m) => m[1]),
 ])
 /**
  * 'quiet' is the one allowed value that is NOT a token, and it is not an
@@ -234,8 +239,10 @@ eq('the seven categories match the check constraint', CATEGORIES,
  * match fails loudly rather than silently allowing everything, which is what
  * the length assertion below is for.
  */
+/* La 70 remplace la 53: elle redeclare la meme contrainte avec les sept
+   pastels en plus, donc c'est elle qui decrit ce que la base accepte. */
 const sql = readFileSync(
-  join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'supabase', '53_event_colour_palette.sql'),
+  join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'supabase', '70_event_pastel_palette.sql'),
   'utf8',
 )
 const clause = sql.match(/add constraint calendar_event_colour_check\s*\n?\s*check \(colour in \(([\s\S]*?)\)\)/)
@@ -250,7 +257,9 @@ ok('every category paints in a colour the constraint allows',
    records: chips that looked plausible in a screenshot and measured 1:1
    against the tile behind them. */
 const TOKENS = new Set(['accent', 'green', 'quiet', 'ink', 'negative', 'field',
-                        'cat-1', 'cat-2', 'cat-3', 'cat-4', 'cat-5', 'cat-6'])
+                        'cat-1', 'cat-2', 'cat-3', 'cat-4', 'cat-5', 'cat-6',
+                        'ev-cours', 'ev-examen', 'ev-etude', 'ev-travail',
+                        'ev-evenement', 'ev-perso', 'ev-sante'])
 ok('and every colour the constraint allows is a token that exists',
    ALLOWED_COLOURS.every((c) => TOKENS.has(c)),
    ALLOWED_COLOURS.filter((c) => !TOKENS.has(c)).join(' '))
@@ -274,10 +283,99 @@ const steps = CATEGORIES
   .filter(Boolean)
   .map((m) => Number(m[1]))
   .sort((a, b) => a - b)
-ok('at most two steps of the ramp are spent', steps.length <= 2, steps.join(','))
-ok('and no two of them are adjacent',
-   steps.every((n, i) => i === 0 || n - steps[i - 1] >= 2),
-   steps.join(','))
+/**
+ * PLUS AUCUNE CATEGORIE N'EST SUR LA RAMPE, ET C'EST LE POINT.
+ *
+ *   "I don't like the colors, they should be tones that match the pink, like
+ *    pastel."
+ *
+ * La regle au-dessus etait la bonne reponse a la mauvaise question. Elle
+ * rationnait une rampe de six pas faite pour les enveloppes du budget, parce
+ * que c'est ce qu'il y avait sous la main. Les sept ont leur propre famille
+ * maintenant, --c-ev-*, donc il n'y a plus rien a rationner: zero pas
+ * depense, et la contrainte devient "aucun".
+ *
+ * Ce qui reste a verifier est la meme chose, mais sur les sept: qu'elles sont
+ * VRAIMENT distinctes. C'est mesure plus bas, en CIE76, dans les deux themes,
+ * avec le meme seuil de 10 que la note de CATEGORY_COLOUR avait etabli.
+ */
+ok('no category borrows a step of the budget ramp any more', steps.length === 0, steps.join(','))
+
+/**
+ * LES SEPT PASTELS SONT DISTINCTS, ET C'EST MESURE PLUTOT QUE SUPPOSE.
+ *
+ * Sept couleurs de la meme clarte dans la meme famille est exactement la
+ * facon de se retrouver avec deux pastilles qu'on ne distingue pas. Le seuil
+ * de 10 en CIE76 vient de la mesure qui a coute la rampe a quatre pas: des
+ * pixels peints a 7,6 l'un de l'autre se lisaient comme une seule couleur.
+ *
+ * Les valeurs sont lues dans index.css, pas recopiees ici: un test qui
+ * compare une copie a elle-meme ne prouve rien sur ce qui est peint. Et elles
+ * sont opaques, donc la couleur declaree EST la couleur peinte, ce qui est la
+ * moitie de la raison d'etre passe du lavis au pastel plein.
+ */
+{
+  const css = readFileSync(
+    join(dirname(fileURLToPath(import.meta.url)), '..', 'index.css'), 'utf8')
+  /* Les deux blocs de theme, decoupes sur leur selecteur: les memes noms de
+     variables existent deux fois, et les melanger comparerait un rose a un
+     bleu. */
+  const blocs = {
+    sun: css.slice(css.indexOf("[data-theme='sun']"), css.indexOf("[data-theme='sea']")),
+    sea: css.slice(css.indexOf("[data-theme='sea']")),
+  }
+  const lab = ([r, g, b]) => {
+    /* sRGB -> XYZ (D65) -> CIE L*a*b*. Ecrit au long parce qu'une dependance
+       pour trois formules est une dependance de plus a mettre a jour. */
+    const f = (v) => { const s = v / 255; return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4 }
+    const [R, G, B] = [f(r), f(g), f(b)]
+    const x = (0.4124 * R + 0.3576 * G + 0.1805 * B) / 0.95047
+    const y = (0.2126 * R + 0.7152 * G + 0.0722 * B) / 1
+    const z = (0.0193 * R + 0.1192 * G + 0.9505 * B) / 1.08883
+    const k = (t) => (t > 0.008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116)
+    const [fx, fy, fz] = [k(x), k(y), k(z)]
+    return [116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz)]
+  }
+  const cie76 = (a, b) => Math.hypot(...lab(a).map((v, i) => v - lab(b)[i]))
+
+  for (const [nom, bloc] of Object.entries(blocs)) {
+    const valeurs = CATEGORIES.map((c) => {
+      const jeton = CATEGORY_COLOUR[c]
+      const m = new RegExp(`--c-${jeton}:\\s*(\\d+) (\\d+) (\\d+);`).exec(bloc)
+      return { c, rgb: m && [Number(m[1]), Number(m[2]), Number(m[3])] }
+    })
+    ok(`${nom}: les sept couleurs sont declarees`,
+       valeurs.every((v) => v.rgb), valeurs.filter((v) => !v.rgb).map((v) => v.c).join(' '))
+    if (!valeurs.every((v) => v.rgb)) continue
+
+    const paires = []
+    for (let i = 0; i < valeurs.length; i += 1) {
+      for (let j = i + 1; j < valeurs.length; j += 1) {
+        paires.push({ a: valeurs[i].c, b: valeurs[j].c, d: cie76(valeurs[i].rgb, valeurs[j].rgb) })
+      }
+    }
+    const trop = paires.filter((p) => p.d < 10)
+    const plus = paires.reduce((m, p) => (p.d < m.d ? p : m))
+    ok(`${nom}: aucune paire des sept ne se confond (la plus proche a ${plus.d.toFixed(1)})`,
+       trop.length === 0, trop.map((p) => `${p.a}/${p.b} ${p.d.toFixed(1)}`).join(', '))
+
+    /* Et l'encre se lit sur chacun des sept. Le pastel est opaque, donc c'est
+       un vrai rapport et pas une estimation sur un lavis. */
+    const ink = /--c-ink:\s*(\d+) (\d+) (\d+);/.exec(bloc)
+    const lum = ([r, g, b]) => {
+      const f = (v) => { const s = v / 255; return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4 }
+      return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b)
+    }
+    const encre = [Number(ink[1]), Number(ink[2]), Number(ink[3])]
+    const pires = valeurs.map((v) => {
+      const [x, y] = [lum(v.rgb), lum(encre)].sort((p, q) => q - p)
+      return { c: v.c, r: (x + 0.05) / (y + 0.05) }
+    })
+    const pire = pires.reduce((m, p) => (p.r < m.r ? p : m))
+    ok(`${nom}: l encre se lit sur les sept (au pire ${pire.r.toFixed(1)}:1 sur ${pire.c})`,
+       pires.every((p) => p.r >= 4.5), pires.filter((p) => p.r < 4.5).map((p) => `${p.c} ${p.r.toFixed(2)}`).join(', '))
+  }
+}
 eq('work, parties and appointments are all on the personal layer',
    ['travail', 'evenement', 'sante'].map((c) => layerOf({ category: c })), ['perso', 'perso', 'perso'])
 ok('and every one has a colour', CATEGORIES.every((c) => CATEGORY_COLOUR[c]))

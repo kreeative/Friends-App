@@ -108,6 +108,36 @@ import TimetableWizard from '../components/TimetableWizard'
  * produces no class at build time.
  */
 const SWATCH = {
+  /**
+   * LES SEPT, OPAQUES, ET PLUS UN LAVIS PAR CATEGORIE.
+   *
+   * Ce qui suit dans l'ancienne table etait trois alphas differents regles a
+   * la main: 0,62 pour le jaune parce qu'un quart de jaune sur blanc est
+   * encore blanc, 0,30 pour le noir parce qu'a 0,12 un examen et une entree de
+   * sante etaient deux gris a 5,0 l'un de l'autre, 0,24 pour le reste. Trois
+   * reglages pour un seul rang de pastilles, et chacun avait sa note.
+   *
+   * Un pastel est deja clair. Pose tel quel il donne la meme couleur partout,
+   * sans dependre de ce qu'il y a dessous, et l'encre par-dessus se mesure une
+   * fois pour toutes au lieu d'une fois par alpha.
+   *
+   * L'anneau est la version foncee de la meme couleur: c'est ce qui donne un
+   * bord a une pastille claire posee sur une case blanche, et il tient 3:1.
+   */
+  'ev-cours': 'bg-ev-cours text-ink ring-ev-cours-deep/40',
+  'ev-examen': 'bg-ev-examen text-ink ring-ev-examen-deep/40',
+  'ev-etude': 'bg-ev-etude text-ink ring-ev-etude-deep/40',
+  'ev-travail': 'bg-ev-travail text-ink ring-ev-travail-deep/40',
+  'ev-evenement': 'bg-ev-evenement text-ink ring-ev-evenement-deep/40',
+  'ev-perso': 'bg-ev-perso text-ink ring-ev-perso-deep/40',
+  'ev-sante': 'bg-ev-sante text-ink ring-ev-sante-deep/40',
+
+  /* LES ANCIENS NOMS RESTENT, ET C'EST LA RAISON POUR LAQUELLE LA MIGRATION
+     N'EST PAS URGENTE. `colour` est une colonne, donc une ligne ecrite avant
+     la migration 70 porte encore 'field' ou 'ink'. Sans ces entrees-la elle
+     se peindrait transparente, ce qui est exactement la faute que la note de
+     CATEGORY_COLOUR dans agenda.js raconte: une pastille plausible sur une
+     capture, mesuree a 1:1 contre la case derriere elle. */
   'cat-1': 'bg-cat-1/[0.24] text-ink ring-cat-1/40',
   'cat-2': 'bg-cat-2/[0.24] text-ink ring-cat-2/40',
   'cat-3': 'bg-cat-3/[0.24] text-ink ring-cat-3/40',
@@ -116,14 +146,7 @@ const SWATCH = {
   'cat-6': 'bg-cat-6/[0.24] text-ink ring-cat-6/40',
   accent: 'bg-accent/[0.24] text-ink ring-accent/30',
   green: 'bg-green/[0.24] text-ink ring-green/30',
-  /* Yellow is the lightest hue in either palette, so a quarter of it over
-     white is still white. The alpha is per token here and always was: the
-     original table ran 0.18, 0.16 and 0.06 for exactly this reason, that a
-     wash has to be tuned to the colour rather than to one number. */
   field: 'bg-field/[0.62] text-ink ring-field-deep/50',
-  /* 0.30, not 0.12. At 0.12 an exam washed to #E4E3E3 and a health entry to
-     #F2F1F2: two greys 5.0 apart in CIE76, which is one grey. Exams are meant
-     to be the darkest thing on the grid and this is what makes that true. */
   ink: 'bg-ink/[0.30] text-ink ring-ink/35',
   negative: 'bg-negative/[0.24] text-ink ring-negative/35',
   quiet: 'bg-ink/[0.06] text-ink ring-ink/15',
@@ -133,6 +156,19 @@ const SWATCH = {
    full strength rather than as a wash. Same reason the palette has
    `field-deep` alongside `field`: a 4px rule cannot be a tint. */
 const SWATCH_BAR = {
+  /* La version foncee des sept, parce qu'un filet de 4px et une pastille de
+     8px portent de l'information et doivent tenir 3:1 (1.4.11). Un pastel a
+     90 de clarte fait 1,3:1 sur blanc; c'est une couleur de fond, pas une
+     couleur de marque. */
+  'ev-cours': 'bg-ev-cours-deep',
+  'ev-examen': 'bg-ev-examen-deep',
+  'ev-etude': 'bg-ev-etude-deep',
+  'ev-travail': 'bg-ev-travail-deep',
+  'ev-evenement': 'bg-ev-evenement-deep',
+  'ev-perso': 'bg-ev-perso-deep',
+  'ev-sante': 'bg-ev-sante-deep',
+
+  /* Les anciens noms, pour les lignes ecrites avant la migration 70. */
   'cat-1': 'bg-cat-1', 'cat-2': 'bg-cat-2', 'cat-3': 'bg-cat-3',
   'cat-4': 'bg-cat-4', 'cat-5': 'bg-cat-5', 'cat-6': 'bg-cat-6',
   accent: 'bg-accent', green: 'bg-green', ink: 'bg-ink',
