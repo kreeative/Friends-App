@@ -161,8 +161,26 @@ function DayCell({
      screenshot, not in the code. */
   const { locale } = useT()
 
+  /**
+   * Le quantieme d'aujourd'hui n'est pas ecrit en blanc.
+   *
+   *   "Quand le rose selectionne les regles, la date qui est dedans est en
+   *    blanc."
+   *
+   * C'etait `text-on-accent`, donc du blanc sur le rose de marque, mesure a
+   * 3,80:1 sur les pixels peints: sous les 4,5 qu'un chiffre de 14px semibold
+   * demande. Le calendrier ecrit deja ce meme chiffre a l'encre sur ce meme
+   * rose, a 4,60:1, donc la bande etait aussi le seul endroit de l'application
+   * ou une date dans une pastille pleine ne se lisait pas comme les autres.
+   *
+   * --c-on-accent, lui, ne bouge pas: "bouton rose, ecriture blanche" a ete
+   * demande pour les boutons et les boutons restent blancs. Le jeton ajoute
+   * est pour le texte de taille normale pose sur l'accent, et il vaut l'encre
+   * en soleil et le blanc en mer, parce que le rose et le bleu ne portent pas
+   * le meme dessus. Les deux mesures sont dans index.css.
+   */
   const circle = isToday
-    ? 'bg-accent text-on-accent font-semibold'
+    ? 'bg-accent text-on-accent-small font-semibold'
     : isSelected
       ? 'bg-ink text-white font-semibold'
       : outside

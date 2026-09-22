@@ -2033,6 +2033,46 @@ ok(
   /3\.80:1/.test(css) && /--c-on-accent. #111111 on/.test(css),
   'the one-line fix has to be findable from the token itself',
 )
+
+/**
+ * ET LE QUANTIEME D'AUJOURD'HUI N'EST PLUS DU BLANC SUR CE ROSE.
+ *
+ *   "Quand le rose selectionne les regles, la date qui est dedans est en
+ *    blanc."
+ *
+ * La pastille d'aujourd'hui dans la bande de l'accueil portait
+ * `text-on-accent`: 3,80:1 mesure sur les pixels peints, pour un chiffre de
+ * 14px semibold qui en demande 4,5. C'etait la ligne "the selected day in the
+ * calendar" de la note du jeton, restee ecrite et jamais regardee.
+ *
+ * Le bouton rose garde son ecriture blanche, qui a ete demandee: ce qui change
+ * est un jeton separe, pour du texte de taille normale pose sur l'accent. Il
+ * vaut l'encre en soleil (4,60:1) et le blanc en mer (5,40:1), parce que le
+ * rose ne porte pas le blanc et que le bleu ne porte pas l'encre. Mesure apres
+ * coup: 4,60:1 en soleil, 5,40:1 en mer.
+ */
+const bande = read('src/components/WeekStrip.jsx')
+ok(
+  "le quantieme d'aujourd'hui prend le jeton du texte, pas celui du bouton",
+  /isToday\s*\n?\s*\? 'bg-accent text-on-accent-small font-semibold'/.test(bande),
+  'text-on-accent sur cette pastille mesurait 3,80:1',
+)
+ok(
+  'et ce jeton existe dans les deux themes',
+  (css.match(/--c-on-accent-small:/g) ?? []).length >= 3,
+  'soleil, mer et la vitrine: un jeton absent rend la couleur nulle, pas noire',
+)
+ok(
+  "il s'inverse d'un theme a l'autre plutot que de valoir l'encre partout",
+  /--c-on-accent-small: var\(--c-ink\);\s*\/\* 4,60:1 sur #FF007A/.test(css)
+    && /--c-on-accent-small: 255 255 255;\s*\/\* 5,40:1 sur #0B6FAD/.test(css),
+  "l'encre sur le bleu de mer ne fait que 3,19:1, donc un text-ink global casse mer",
+)
+ok(
+  'tailwind construit bien la classe',
+  /'on-accent-small': c\('on-accent-small'\)/.test(read('tailwind.config.js')),
+  'une couleur absente de la config sort du HTML sans regle du tout',
+)
 const gen = read('scripts/brand-icons.py')
 ok('the artwork is generated rather than hand-edited', /POP = \(255, 0, 122\)/.test(gen))
 ok(

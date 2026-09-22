@@ -33,6 +33,11 @@ export default {
         over: c('over'),
         'accent-pressed': c('accent-pressed'),
         'on-accent': c('on-accent'),
+        /* Le meme fond, pour du texte de taille normale plutot qu'un libelle
+           de bouton: le quantieme dans la pastille d'aujourd'hui. Sa valeur
+           s'inverse entre soleil et mer; la note dans index.css donne les
+           deux mesures et dit pourquoi text-ink ne suffit pas. */
+        'on-accent-small': c('on-accent-small'),
         /* The public shell's third touch. Undefined inside the app, which is
            deliberate: nothing in the signed-in themes should reach for it. */
         sky: c('sky'),
