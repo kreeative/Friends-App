@@ -390,11 +390,26 @@ export default function Dashboard() {
       {/* Sans titre de section: la carte porte le sien, "CE QUI A ETE FAIT",
           et deux etiquettes empilees pour une seule carte etaient une de
           trop. Le "tous groupes confondus" est passe dans l'infobulle. */}
-      <Section>
+      {/**
+       * LES DEUX SECTIONS SE PARTAGENT LA HAUTEUR DE LA COLONNE.
+       *
+       *   "How much got done, book, bring them down and etire les pour qu'ils
+       *    fit la page."
+       *
+       * Mesure avant: colonne de droite 562px contre 840px a gauche, donc
+       * 278px de vide dessous, a 1024, 1180, 1290, 1440 et 1728. Les deux
+       * cartes etaient en haut et le tiers bas de la page etait blanc.
+       *
+       * `grow-card` sur les DEUX, pas sur une seule: donner tout le trou aux
+       * livres aurait fait une carte qui descend jusqu'en bas sous un
+       * pourcentage reste petit, ce qui est le meme desequilibre a l'envers.
+       */}
+      <Section className="grow-card">
         <MyCompletion />
       </Section>
 
       <Section
+        className="grow-card"
         title={t('home.your_books')}
         action={
           <Link to="/library" className="text-small text-ink underline-offset-4 hover:underline">
