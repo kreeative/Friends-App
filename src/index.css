@@ -512,6 +512,36 @@
      * is white again, at 4.57:1.
      */
     --c-on-accent: 255 255 255;  /* 3.80:1 on #FF007A. See the note above. */
+    /**
+     * ET LE MEME FOND, QUAND CE QUI EST DESSUS N'EST PAS UN LIBELLE DE BOUTON.
+     *
+     *   "Quand le rose selectionne les regles, la date qui est dedans est en
+     *    blanc."
+     *
+     * Elle regardait la pastille d'aujourd'hui dans la bande de l'accueil: un
+     * disque de ce rose avec le quantieme en blanc dedans, mesure a 3,80:1 sur
+     * les pixels peints. C'est la ligne "the selected day in the calendar
+     * 14px w600" de la note ci-dessus, c'est-a-dire un defaut deja ecrit ici
+     * et que personne n'avait encore vu a l'ecran.
+     *
+     * "Ecriture blanche" a ete demande pour LE BOUTON ROSE, et le bouton ne
+     * bouge pas: --c-on-accent reste blanc. Un chiffre de jour n'est pas un
+     * libelle de bouton, c'est une donnee qu'on lit, et le calendrier ecrit
+     * deja ce meme chiffre a l'encre sur ce meme rose (--c-pick, 4,60:1). Donc
+     * ce jeton-ci existe pour cet usage-la: du texte de taille normale pose
+     * sur le fond accent.
+     *
+     * POURQUOI CE N'EST PAS SIMPLEMENT text-ink. L'accent est rose en soleil
+     * et bleu en mer, et les deux ne veulent pas le meme dessus:
+     *
+     *   soleil  #FF007A   encre 4,60:1   blanc 3,80:1
+     *   mer     #0B6FAD   encre 3,19:1   blanc 5,40:1
+     *
+     * Mettre l'encre partout reparerait soleil en cassant mer exactement
+     * autant. C'est la raison d'etre d'un jeton: meme nom de classe, valeur
+     * par theme.
+     */
+    --c-on-accent-small: var(--c-ink);  /* 4,60:1 sur #FF007A */
     /* Was #A3004A, a deep magenta at 5.6:1. Two problems: it is the wine-red
        family the palette brief banned outright, and black on this yellow is
        13.38:1, so the darker pink was buying nothing and costing compliance. */
@@ -754,6 +784,11 @@
     --c-accent: 11 111 173;      /* #0B6FAD, 5.40:1 with white */
     --c-accent-pressed: 8 88 138;
     --c-on-accent: 255 255 255;  /* 5.40:1 on #0B6FAD */
+    /* Le blanc, et pas l'encre. Ce bleu est assez fonce pour porter du blanc a
+       5,40:1 et trop fonce pour porter l'encre, qui n'y fait que 3,19:1: la
+       valeur de ce jeton s'inverse d'un theme a l'autre, ce qui est tout le
+       propos. Voir la note dans le bloc soleil. */
+    --c-on-accent-small: 255 255 255;  /* 5,40:1 sur #0B6FAD */
     --c-on-field: 0 76 90;
 
     --c-progress: 11 111 173;  /* #0B6FAD, 4.34:1 on the track */
@@ -856,6 +891,11 @@
     --c-accent: 255 0 122;     /* #FF007A, the one brand pink */
     --c-accent-pressed: 214 0 107;
     --c-on-accent: 255 255 255; /* 3.80:1, see the app palette note */
+    /* La vitrine ne porte pas la bande de semaine, donc rien ici ne lit ce
+       jeton aujourd'hui. Il est quand meme pose, parce qu'un jeton qui existe
+       dans deux themes sur trois est une surprise pour la premiere personne
+       qui s'en sert ici. L'encre de cette surface est #111111: 4,98:1. */
+    --c-on-accent-small: var(--c-ink);
     /**
      * PASTEL, NOT #FFE600. Asked for, and it costs nothing here.
      *
