@@ -255,11 +255,25 @@ export default function Dashboard() {
        * Two columns from lg, one below. The banners above stay full width:
        * they are short rows and they are temporary. What follows is the feed,
        * and a feed of phone-width cards released to 1030px was a page of
-       * horizons. The side column holds what already came last on a phone,
-       * so the phone order is the DOM order and nothing moves there.
+       * horizons.
+       *
+       * UNE SEULE SUITE DE CARTES, ET PLUS DEUX COLONNES ASSIGNEES.
+       *
+       *   "Genre je veux que les cartes se suivent les unes apres les autres,
+       *    pas qu'elle soit comme un bento."
+       *
+       * Il y avait ici deux <div>, une par colonne, et chaque carte
+       * appartenait a l'une ou a l'autre. C'est ce qui fabriquait le bento:
+       * la colonne de droite etait structurellement plus courte (562px contre
+       * 993px, mesure a 1180 et a 1440), donc soit un trou, soit deux cartes
+       * gonflees pour le boucher.
+       *
+       * Les cartes sont une suite maintenant, dans l'ordre ou on les lit, et
+       * c'est la mise en colonnes qui les repartit. Aucune n'est assignee,
+       * aucune n'est etiree, et sur un telephone il n'y a qu'une colonne, donc
+       * l'ordre du DOM est l'ordre a l'ecran comme avant.
        */}
       <div className="page-grid">
-      <div className="page-main min-w-0">
       {/**
        * The week, directly under the greeting and above everything that is a
        * feed item.
@@ -384,32 +398,33 @@ export default function Dashboard() {
           </div>
         )}
       </Section>
-      </div>
 
-      <div className="page-side min-w-0">
       {/* Sans titre de section: la carte porte le sien, "CE QUI A ETE FAIT",
           et deux etiquettes empilees pour une seule carte etaient une de
           trop. Le "tous groupes confondus" est passe dans l'infobulle. */}
       {/**
-       * LES DEUX SECTIONS SE PARTAGENT LA HAUTEUR DE LA COLONNE.
+       * CES DEUX-LA ETAIENT ETIREES, ET C'EST CE QU'ON APPELAIT UN BENTO.
        *
        *   "How much got done, book, bring them down and etire les pour qu'ils
        *    fit la page."
+       *   "Genre je veux que les cartes se suivent les unes apres les autres,
+       *    pas qu'elle soit comme un bento."
        *
-       * Mesure avant: colonne de droite 562px contre 840px a gauche, donc
-       * 278px de vide dessous, a 1024, 1180, 1290, 1440 et 1728. Les deux
-       * cartes etaient en haut et le tiers bas de la page etait blanc.
+       * La premiere demande a ete prise au mot: `grow-card` donnait a chacune
+       * la moitie du trou de la colonne. Mesure du resultat: 301px de contenu
+       * dans une carte de 496, 261px dans une autre de 496, le contenu centre
+       * au milieu du vide. Deux grandes cases a peu pres vides l'une sur
+       * l'autre, ce qui est exactement le mot qu'elle a employe ensuite.
        *
-       * `grow-card` sur les DEUX, pas sur une seule: donner tout le trou aux
-       * livres aurait fait une carte qui descend jusqu'en bas sous un
-       * pourcentage reste petit, ce qui est le meme desequilibre a l'envers.
+       * Elles n'ont plus de hauteur imposee. Ce qui remplit la page est la
+       * REPARTITION et non l'etirement: voir .page-grid, ou les cartes coulent
+       * d'une colonne dans l'autre au lieu d'etre assignees a l'une des deux.
        */}
-      <Section className="grow-card">
+      <Section>
         <MyCompletion />
       </Section>
 
       <Section
-        className="grow-card"
         title={t('home.your_books')}
         action={
           <Link to="/library" className="text-small text-ink underline-offset-4 hover:underline">
@@ -450,7 +465,6 @@ export default function Dashboard() {
           </div>
         )}
       </Section>
-      </div>
       </div>
     </Screen>
   )
