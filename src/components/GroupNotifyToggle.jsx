@@ -141,13 +141,27 @@ export default function GroupNotifyToggle({ groupId }) {
           <span className="block text-body text-ink" data-hook="group-notify-label">
             {t('gnotif.label')}
           </span>
-          {/* Deux phrases differentes, parce que l'etat allume et l'etat coupe
-              n'ont pas la meme chose a dire. "Coupe" doit nommer ce qui
-              continue d'arriver, sinon la cloche qui se remplit passe pour une
-              panne. */}
-          <span className="mt-1 block text-small text-muted" data-hook="group-notify-help">
-            {on === false ? t('gnotif.off_help') : t('gnotif.on_help')}
-          </span>
+          {/**
+           * UNE PHRASE, ET SEULEMENT QUAND C'EST COUPE.
+           *
+           *   "The button for notification is hella too long and too
+           *    detailed."
+           *
+           * L'etat allume portait l'enumeration des quatre messages du groupe:
+           * mesure a 390px, quatre lignes et 124 caracteres sous une case qui
+           * dit deja ce qu'elle fait. Le libelle est la phrase; la liste etait
+           * un mode d'emploi pour un interrupteur.
+           *
+           * Coupe garde la sienne, parce qu'elle porte le seul fait qui
+           * manquerait: la cloche continue de se remplir. Sans elle, trois
+           * lignes non lues apres avoir coupe se lisent comme un reglage rate.
+           * Mais coupee a l'os: 41 caracteres au lieu de 164.
+           */}
+          {on === false && (
+            <span className="mt-1 block text-small text-muted" data-hook="group-notify-help">
+              {t('gnotif.off_help')}
+            </span>
+          )}
         </span>
       </label>
       {error && (
