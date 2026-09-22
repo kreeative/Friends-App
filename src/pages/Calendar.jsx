@@ -193,7 +193,7 @@ const VIEWS = ['month', 'week', 'day']
 /* A character no event title can contain, used to find where the title went in
    a translated sentence. U+0000 rather than something typeable: a title with a
    "|" or a "@" in it is ordinary and would split the sentence in the wrong
-   place. See DeleteChoice for why this is a split and not three strings. */
+   place. See ScopeChoice for why this is a split and not three strings. */
 const SPLIT = '\u0000'
 
 /* Which layers are switched OFF, remembered per browser. Off rather than on,
@@ -371,6 +371,9 @@ export default function Calendar() {
      entry rather than an id, because the dialog has to know the title to name
      it and the day to skip. */
   const [deleting, setDeleting] = useState(null)
+  /* L'occurrence dont on vient de demander la modification, tant qu'on ne sait
+     pas si c'est celle-la ou toute la serie. Null le reste du temps. */
+  const [editingScope, setEditingScope] = useState(null)
   /* Whatever the last write said when it did not work. Null the rest of the
      time, which is nearly always. */
   const [notice, setNotice] = useState(null)
@@ -474,6 +477,88 @@ export default function Calendar() {
   const openEditor = (entry) => {
     if (entry?.goalId) return
     setEditing(entry)
+  }
+
+  /**
+   * MODIFIER QUOI: CE MERCREDI-LA, OU TOUS LES MERCREDIS.
+   *
+   *   "Quand je fais un programme et que je clique sur edit un jour, je veux
+   *    que ca me demande si je veux editer tous les mercredis de ce programme
+   *    ou juste ce mercredi."
+   *
+   * La suppression posait deja la question, depuis que supprimer un mardi
+   * effacait tout le trimestre. La modification, elle, ne la posait pas: une
+   * ligne est une REGLE, donc changer l'heure parce qu'un cours est deplace
+   * une fois deplacait les quinze suivants, en silence.
+   *
+   * Meme decoupe et meme mots que la suppression, jusqu'a la phrase qui nomme
+   * le jour: deux dialogues qui posent la meme question sur le meme ecran ne
+   * doivent pas la poser differemment.
+   *
+   * Un evenement unique saute le dialogue. "Celui-ci" et "toute la serie" sont
+   * la meme chose quand la serie dure un jour, et une question a deux reponses
+   * identiques est une question qu'on apprend a cliquer sans lire.
+   */
+  const askEdit = (entry) => {
+    if (entry?.goalId) return
+    const recurring = Array.isArray(entry?.weekdays) && entry.weekdays.length > 0
+    if (!recurring) return openEditor(entry)
+    setEditingScope(entry)
+  }
+
+  /**
+   * DETACHER UNE OCCURRENCE, C'EST UNE INSERTION PLUS UNE EXCEPTION.
+   *
+   * Il n'y a pas de "modifier juste ce jour-la" dans le schema, et il ne doit
+   * pas y en avoir: une ligne est une regle, et une regle qui porterait des
+   * exceptions valuees serait un deuxieme calendrier dans une colonne.
+   *
+   * Donc le meme mecanisme que "supprimer juste celui-ci", plus une ligne: le
+   * jour entre dans excluded_on de la regle, et une NOUVELLE ligne d'un seul
+   * jour porte ce que la personne vient de taper.
+   *
+   * `id` est retire de ce qui est passe au formulaire, et c'est ce qui decide:
+   * EventForm insere quand il n'y a pas d'id, et met a jour quand il y en a
+   * un. Le garder aurait modifie la regle, c'est-a-dire exactement ce qu'on
+   * essaie d'eviter.
+   *
+   * L'exception est posee APRES l'enregistrement, pas avant. Avant, annuler le
+   * formulaire aurait supprime l'occurrence sans rien mettre a la place.
+   */
+  const editOnlyThis = (entry) => {
+    const key = dayKey(entry.day)
+    setEditingScope(null)
+    setEditing({
+      ...entry,
+      id: undefined,
+      occurrenceId: undefined,
+      starts_on: key,
+      until_on: key,
+      weekdays: [],
+      detachFrom: { id: entry.id, day: key, excluded_on: entry.excluded_on ?? [] },
+    })
+  }
+
+  const editWholeSeries = (entry) => {
+    setEditingScope(null)
+    openEditor(entry)
+  }
+
+  /**
+   * Le jour retire de la regle, une fois la nouvelle ligne ecrite.
+   *
+   * Meme forme que removeOne, et pour les memes raisons: lecture-modification-
+   * ecriture parce que postgrest n'a pas d'array_append, et `count` demande
+   * parce que RLS refuse un UPDATE en silence. Un refus ici laisserait DEUX
+   * evenements ce jour-la, l'ancien et le nouveau.
+   */
+  const detachDay = async ({ id, day, excluded_on }) => {
+    const next = [...new Set([...(excluded_on ?? []), day])]
+    const { error, count } = await supabase
+      .from('calendar_event')
+      .update({ excluded_on: next }, { count: 'exact' })
+      .eq('id', id)
+    if (error || count === 0) setNotice(error?.message ?? t('cal.err_gone'))
   }
 
   const step = (n) => {
@@ -913,8 +998,8 @@ export default function Calendar() {
             onPick={picking ? togglePeriodDay : (d) => { setAnchor(d); setView('day') }}
           />
         )}
-        {view === 'week' && <WeekGrid range={range} agenda={agenda} cycle={shownCycle} locale={locale} onEdit={openEditor} />}
-        {view === 'day' && <DayList day={anchor} agenda={agenda} cycle={shownCycle} onEdit={openEditor} onRemove={askRemove} t={t} />}
+        {view === 'week' && <WeekGrid range={range} agenda={agenda} cycle={shownCycle} locale={locale} onEdit={askEdit} />}
+        {view === 'day' && <DayList day={anchor} agenda={agenda} cycle={shownCycle} onEdit={askEdit} onRemove={askRemove} t={t} />}
       </div>
 
       {/* Mounted always, so the tracker's own load runs and the overlay is
@@ -934,13 +1019,18 @@ export default function Calendar() {
        * the first button is under the thumb.
        */}
       {deleting && (
-        <DeleteChoice
+        <ScopeChoice
+          danger
+          hook="cal-delete"
           entry={deleting}
           onOne={() => removeOne(deleting)}
           onAll={() => removeSeries(deleting.id)}
           onCancel={() => setDeleting(null)}
           locale={locale}
           t={t}
+          titleKey="cal.del_title"
+          oneKey="cal.del_one"
+          allKey="cal.del_all"
         />
       )}
 
@@ -955,12 +1045,36 @@ export default function Calendar() {
         }}
       />
 
+      {/* Meme dialogue que pour la suppression, et le meme composant: deux
+          boites qui posent la meme question sur le meme ecran ne doivent pas
+          la poser avec deux mises en page. `danger` decide seulement de la
+          couleur du second bouton, parce que modifier une serie n'efface
+          rien. */}
+      {editingScope && (
+        <ScopeChoice
+          entry={editingScope}
+          onOne={() => editOnlyThis(editingScope)}
+          onAll={() => editWholeSeries(editingScope)}
+          onCancel={() => setEditingScope(null)}
+          locale={locale}
+          t={t}
+          titleKey="cal.edit_title"
+          oneKey="cal.edit_one"
+          allKey="cal.edit_all"
+          hook="cal-edit-scope"
+        />
+      )}
+
       {editing && (
         <EventForm
           initial={editing}
           onClose={() => setEditing(null)}
           onSaved={async () => {
+            /* L'exception APRES l'ecriture: la nouvelle ligne existe, donc
+               retirer le jour de la regle ne peut plus laisser un trou. */
+            const detach = editing.detachFrom
             setEditing(null)
+            if (detach) await detachDay(detach)
             await load()
           }}
         />
@@ -1241,7 +1355,23 @@ function WeekGrid({ range, agenda, cycle, locale, onEdit }) {
  * value here: "Supprimer le cours du jeudi 3 septembre" is a different
  * question from "Supprimer Biochimie".
  */
-function DeleteChoice({ entry, onOne, onAll, onCancel, locale, t }) {
+/**
+ * UN SEUL COMPOSANT POUR LES DEUX QUESTIONS.
+ *
+ * Supprimer et modifier posent la MEME question: ce jour-la, ou toute la
+ * serie. Ecrire un deuxieme dialogue aurait donne deux boites a 90 pour cent
+ * identiques sur le meme ecran, et c'est exactement ce que la note d'EventForm
+ * refuse deja pour lui et le wizard.
+ *
+ * Ce qui change tient en trois chaines et une couleur. `danger` teinte le
+ * second bouton en rouge pour la suppression et le laisse neutre pour la
+ * modification, parce que modifier toute une serie se defait et l'effacer ne
+ * se defait pas.
+ */
+function ScopeChoice({
+  entry, onOne, onAll, onCancel, locale, t,
+  titleKey, oneKey, allKey, hook, danger = false,
+}) {
   const when = entry.day.toLocaleDateString(localeTag(locale), {
     weekday: 'long',
     day: 'numeric',
@@ -1273,7 +1403,7 @@ function DeleteChoice({ entry, onOne, onAll, onCancel, locale, t }) {
   const [before, after = ''] = t('cal.del_body', { what: SPLIT, when }).split(SPLIT)
 
   return createPortal(
-    <div className="fixed inset-0 z-[70] flex items-end justify-center sm:items-center" data-hook="cal-delete">
+    <div className="fixed inset-0 z-[70] flex items-end justify-center sm:items-center" data-hook={hook}>
       <button
         type="button"
         aria-label={t('cal.cancel')}
@@ -1284,10 +1414,10 @@ function DeleteChoice({ entry, onOne, onAll, onCancel, locale, t }) {
       <section
         role="dialog"
         aria-modal="true"
-        aria-label={t('cal.del_title')}
+        aria-label={t(titleKey)}
         className="lg lg-modal relative m-2 w-[min(26rem,calc(100vw-1rem))] p-5"
       >
-        <h2 className="text-safe text-h2 font-semibold text-ink">{t('cal.del_title')}</h2>
+        <h2 className="text-safe text-h2 font-semibold text-ink">{t(titleKey)}</h2>
         <p className="text-safe mt-1.5 text-small text-muted" data-hook="del-body">
           {before}
           <strong className="font-semibold text-ink">{entry.title}</strong>
@@ -1298,15 +1428,19 @@ function DeleteChoice({ entry, onOne, onAll, onCancel, locale, t }) {
           {/* The safe answer first, and it is the one under the thumb on a
               phone where this is a sheet rising from the bottom. */}
           <button type="button" onClick={onOne} className="goal-action press justify-center" data-hook="del-one">
-            {t('cal.del_one')}
+            {t(oneKey)}
           </button>
           <button
             type="button"
             onClick={onAll}
             data-hook="del-all"
-            className="press inline-flex items-center justify-center rounded-pill bg-negative/[0.10] px-4 py-2 text-small font-semibold text-negative transition-colors hover:bg-negative/[0.18]"
+            className={`press inline-flex items-center justify-center rounded-pill px-4 py-2 text-small font-semibold transition-colors ${
+              danger
+                ? 'bg-negative/[0.10] text-negative hover:bg-negative/[0.18]'
+                : 'bg-ink/[0.06] text-ink hover:bg-ink/[0.11]'
+            }`}
           >
-            {t('cal.del_all')}
+            {t(allKey)}
           </button>
           <button type="button" onClick={onCancel} className="press rounded-pill px-4 py-2 text-small font-semibold text-muted hover:bg-ink/[0.06]">
             {t('cal.cancel')}
@@ -1575,6 +1709,13 @@ function EventForm({ initial, onClose, onSaved }) {
                 type="button"
                 onClick={() => toggleDay(n)}
                 aria-pressed={f.weekdays.includes(n)}
+                /* Un data-* pour que la repetition se mesure sans compter les
+                   puces de categorie, qui portent aussi aria-pressed. Une
+                   sonde branchee sur aria-pressed seul a rendu "1 jour coche"
+                   sur un formulaire ou aucun ne l'etait: c'etait la categorie,
+                   et le CLAUDE.md dit de viser un data-* plutot qu'une forme
+                   partagee. */
+                data-dow={n}
                 /* The visible text cannot be the accessible name here: mardi
                    and mercredi share an initial, so a screen reader would hear
                    "M" twice with nothing to tell them apart, and a 36px chip

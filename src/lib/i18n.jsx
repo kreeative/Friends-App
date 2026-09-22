@@ -46,6 +46,12 @@ const STRINGS = {
     'cal.del_title': 'Delete which?',
     'cal.del_body': '"{what}" repeats. This is {when}.',
     'cal.del_one': 'Only this one',
+    /* Meme question que la suppression, donc les memes mots. Deux dialogues
+       qui demandent la meme chose sur le meme ecran ne doivent pas la
+       demander differemment. */
+    'cal.edit_title': 'Edit which?',
+    'cal.edit_one': 'Only this one',
+    'cal.edit_all': 'The whole series',
     'cal.del_all': 'The whole series',
     'cal.layer_scolaire': 'Timetable', 'cal.layer_perso': 'Work & life',
     'cal.layer_objectifs': 'Goals', 'cal.layer_cycle': 'Cycle',
@@ -1767,12 +1773,12 @@ const STRINGS = {
     'cal.empty_week': 'Rien cette semaine pour le moment.',
     'cal.edit': 'Modifier', 'cal.delete': 'Supprimer',
     'cal.new_title': 'Nouvelle entrée', 'cal.edit_title': "Modifier l'entrée",
-    'cal.f_title': 'Quoi', 'cal.f_start': 'Debut', 'cal.f_end': 'Fin',
-    'cal.f_where': 'Ou', 'cal.f_repeat': 'Se repete le',
-    'cal.f_from': 'A partir du', 'cal.f_until': "Jusqu'au",
+    'cal.f_title': 'Quoi', 'cal.f_start': 'Début', 'cal.f_end': 'Fin',
+    'cal.f_where': 'Où', 'cal.f_repeat': 'Se répète le',
+    'cal.f_from': 'À partir du', 'cal.f_until': "Jusqu'au",
     'cal.cat_cours': 'Cours', 'cal.cat_examen': 'Examen',
-    'cal.cat_etude': 'Etude', 'cal.cat_perso': 'Perso',
-    'cal.cat_travail': 'Travail / Shift', 'cal.cat_evenement': 'Evenement / Fete',
+    'cal.cat_etude': 'Étude', 'cal.cat_perso': 'Perso',
+    'cal.cat_travail': 'Travail / Shift', 'cal.cat_evenement': 'Événement / Fête',
     /* "Sante" and not "Sante / Cycle", which is what was asked for. The cycle
        is not a calendar category and cannot become one: it lives in its own
        tables behind its own policies, and a pill that invites somebody to file
@@ -1780,9 +1786,12 @@ const STRINGS = {
        other people can be shown. The dentist at 14:00 is what this pill is. */
     'cal.cat_sante': 'Sante',
     'cal.del_title': 'Supprimer quoi ?',
-    'cal.del_body': "« {what} » se repete. Il s'agit du {when}.",
-    'cal.del_one': 'Supprimer uniquement cet evenement',
-    'cal.del_all': 'Supprimer toute la serie',
+    'cal.del_body': "« {what} » se répète. Il s'agit du {when}.",
+    'cal.del_one': 'Supprimer uniquement cet événement',
+    'cal.edit_title': 'Modifier quoi ?',
+    'cal.edit_one': 'Modifier uniquement ce jour',
+    'cal.edit_all': 'Modifier toute la série',
+    'cal.del_all': 'Supprimer toute la série',
     /* "Emploi du temps" is the right phrase and it is three words wide in a
        row of four chips. "Cours" is what the layer is on a student's screen
        and it fits at 390px, where the toolbar has to wrap otherwise. */
@@ -1791,7 +1800,7 @@ const STRINGS = {
     'wiz.open': 'Ajouter un programme',
     'wiz.title': 'Ajouter mes cours recurrents',
     'wiz.help': 'Une ligne par cours. Les dates du semestre valent pour tous.',
-    'wiz.term_from': 'Debut du semestre', 'wiz.term_until': 'Fin du semestre (facultatif)',
+    'wiz.term_from': 'Début du semestre', 'wiz.term_until': 'Fin du semestre (facultatif)',
     'wiz.f_title': 'Cours', 'wiz.f_where': 'Salle', 'wiz.f_kind': 'Type',
     'wiz.add_row': 'Un autre cours', 'wiz.remove_row': 'Retirer ce cours',
     'wiz.save': 'Tout ajouter', 'wiz.close': 'Fermer',
@@ -1806,7 +1815,7 @@ const STRINGS = {
     'wiz.err_days': '{what} : choisis au moins un jour de la semaine.',
     'cal.dow_0': 'D', 'cal.dow_1': 'L', 'cal.dow_2': 'M', 'cal.dow_3': 'M',
     'cal.dow_4': 'J', 'cal.dow_5': 'V', 'cal.dow_6': 'S',
-    'cal.repeats': 'Se repete chaque semaine, les jours ci-dessus.',
+    'cal.repeats': 'Se répète chaque semaine, les jours ci-dessus.',
     'cal.once': 'Une seule fois, a la date ci-dessous.',
     'cal.save': 'Enregistrer', 'cal.saving': 'Enregistrement...', 'cal.cancel': 'Annuler',
     'cal.err_times': 'Mets un début et une fin, ou aucun des deux pour toute la journée.',
