@@ -490,6 +490,11 @@ ok(
     'Fenetre', 'luteale', 'recompense', 'Duree', 'Utilisee', 'entree', 'entrees',
     'Demarrees', 'supprimee', 'Appuye ', 'obligee', 'echeances', 'Verification',
     'deploye', 'repondu', 'precedentes', 'recentes', 'avis medical', 'jours pres',
+    /* Ajoutes quand la capture du dialogue "Modifier quoi ?" a montre "se
+       repete" et "toute la serie": la liste ne couvrait que les mots du cycle,
+       donc elle ne pouvait pas trouver ceux du calendrier. */
+    'la serie', 'se repete', 'Se repete', 'Debut du', 'A partir du',
+    "'Etude'", 'Evenement', 'Fete', 'cet evenement',
   ]
   const restants = INTERDITS.filter((m) => fr.includes(m))
   ok('aucune chaine francaise ne se promene sans ses accents',
@@ -500,7 +505,8 @@ ok(
      Un test qui ne verifie que l'absence passe aussi quand on supprime la
      phrase. */
   for (const attendu of ['Règles prévues', 'plutôt régulier', 'Fenêtre fertile',
-                         'à un jour près', 'phase lutéale']) {
+                         'à un jour près', 'phase lutéale',
+                         'se répète', 'toute la série', 'Événement']) {
     ok(`et "${attendu}" est ecrit comme ca`, fr.includes(attendu))
   }
 }
@@ -1369,14 +1375,55 @@ ok(
 
 /* --- deleting one of a series ------------------------------------------- */
 
-ok('there is a delete dialog', /data-hook="cal-delete"/.test(cal))
+/**
+ * UN SEUL DIALOGUE POUR LES DEUX QUESTIONS.
+ *
+ *   "Quand je clique sur edit un jour, je veux que ca me demande si je veux
+ *    editer tous les mercredis de ce programme ou juste ce mercredi."
+ *
+ * Supprimer posait deja la question. Modifier ne la posait pas, donc changer
+ * l'heure parce qu'un cours etait deplace une fois deplacait les quinze
+ * suivants, en silence.
+ *
+ * Les deux passent par ScopeChoice: elles demandent la meme chose, et deux
+ * boites a 90 pour cent identiques sur un meme ecran sont ce que la note
+ * d'EventForm refuse deja pour lui et le wizard. Le hook du conteneur est donc
+ * une prop, et c'est ce qui les distingue dans une sonde.
+ */
+ok('there is one dialog for both questions', /function ScopeChoice\(/.test(cal)
+   && !/function DeleteChoice\(/.test(cal))
+/* Les deux appelants NOMMENT leur hook plutot que d'en heriter un par
+   defaut: un defaut aurait fait que le dialogue de modification s'annonce
+   comme celui de suppression le jour ou on oublie la prop. */
+ok('opened for a delete', /hook="cal-delete"/.test(cal))
+ok('and for an edit', /hook="cal-edit-scope"/.test(cal))
+/* LES TROIS CLES A CHAQUE APPEL, sans valeur par defaut. En retirant les
+   defauts sans les fournir cote suppression, ce dialogue s'est mis a rendre
+   t(undefined) et a disparu: la sonde l'a vu, ce test le retient. */
+ok('both callers name their strings',
+   (cal.match(/titleKey="cal\.(del|edit)_title"/g) ?? []).length === 2
+     && (cal.match(/oneKey="cal\.(del|edit)_one"/g) ?? []).length === 2
+     && (cal.match(/allKey="cal\.(del|edit)_all"/g) ?? []).length === 2)
 ok('offering the one day', /data-hook="del-one"/.test(cal))
 ok('and the whole rule', /data-hook="del-all"/.test(cal))
 ok(
   'it sits above the form it was opened from',
-  /data-hook="cal-delete"[\s\S]{0,80}/.test(cal) && /z-\[70\][\s\S]{0,200}data-hook="cal-delete"/.test(cal),
+  /z-\[70\][\s\S]{0,200}data-hook=\{hook\}/.test(cal),
   'the form is z-60, so a dialog at the same level would have been a coin toss',
 )
+/* Le rouge est reserve a la suppression: modifier toute une serie se defait,
+   l'effacer ne se defait pas. */
+{
+  /* La prop `danger` n'est passee que par l'appel de suppression, et c'est
+     elle seule qui rend le second bouton rouge. */
+  const suppr = cal.slice(cal.indexOf('hook="cal-delete"') - 200, cal.indexOf('hook="cal-delete"') + 200)
+  const modif = cal.slice(cal.indexOf('hook="cal-edit-scope"') - 400, cal.indexOf('hook="cal-edit-scope"') + 200)
+  ok('only the destructive answer is red',
+     /\bdanger\b/.test(suppr) && !/\bdanger\b/.test(modif),
+     'modifier toute une serie se defait, l effacer ne se defait pas')
+  ok('and the flag is what picks the colour',
+     /danger\s*\n?\s*\?\s*'bg-negative[\s\S]{0,80}text-negative/.test(cal))
+}
 ok(
   'and only a repeating entry gets asked',
   /const recurring = Array\.isArray\(entry\?\.weekdays\)[\s\S]{0,120}if \(!recurring\) return removeSeries/.test(cal),
