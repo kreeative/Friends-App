@@ -111,6 +111,7 @@ const RECAP_DOT = {
   'ev-evenement': 'bg-ev-evenement-deep',
   'ev-perso': 'bg-ev-perso-deep',
   'ev-sante': 'bg-ev-sante-deep',
+  'ev-anniv': 'bg-ev-anniv-deep',
 
   /* Les anciens noms, pour une ligne ecrite avant la migration 70. */
   'cat-1': 'bg-cat-1', 'cat-2': 'bg-cat-2', 'cat-3': 'bg-cat-3',

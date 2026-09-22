@@ -12,6 +12,7 @@ import {
   LAYERS,
   LAYER_COLOUR,
   agendaFor,
+  birthdayEntries,
   blockStyle,
   clockOf,
   dayBounds,
@@ -131,6 +132,7 @@ const SWATCH = {
   'ev-evenement': 'bg-ev-evenement text-ink ring-ev-evenement-deep/40',
   'ev-perso': 'bg-ev-perso text-ink ring-ev-perso-deep/40',
   'ev-sante': 'bg-ev-sante text-ink ring-ev-sante-deep/40',
+  'ev-anniv': 'bg-ev-anniv text-ink ring-ev-anniv-deep/40',
 
   /* LES ANCIENS NOMS RESTENT, ET C'EST LA RAISON POUR LAQUELLE LA MIGRATION
      N'EST PAS URGENTE. `colour` est une colonne, donc une ligne ecrite avant
@@ -167,6 +169,7 @@ const SWATCH_BAR = {
   'ev-evenement': 'bg-ev-evenement-deep',
   'ev-perso': 'bg-ev-perso-deep',
   'ev-sante': 'bg-ev-sante-deep',
+  'ev-anniv': 'bg-ev-anniv-deep',
 
   /* Les anciens noms, pour les lignes ecrites avant la migration 70. */
   'cat-1': 'bg-cat-1', 'cat-2': 'bg-cat-2', 'cat-3': 'bg-cat-3',
@@ -215,12 +218,16 @@ const LAYER_DOT = {
   scolaire: 'bg-cat-1',
   perso: 'bg-green',
   objectifs: 'bg-cat-3',
+  /* La version foncee: une pastille de 10px porte de l'information, donc 3:1
+     (1.4.11), et le pastel est une couleur de fond. */
+  anniversaires: 'bg-ev-anniv-deep',
   cycle: 'bg-negative',
 }
 const LAYER_RING = {
   scolaire: 'border-cat-1',
   perso: 'border-green',
   objectifs: 'border-cat-3',
+  anniversaires: 'border-ev-anniv-deep',
   cycle: 'border-negative',
 }
 
@@ -413,11 +420,36 @@ export default function Calendar() {
   /* Whatever the last write said when it did not work. Null the rest of the
      time, which is nearly always. */
   const [notice, setNotice] = useState(null)
+  /* Les gens de tes groupes, pour leurs anniversaires. Rien d'autre n'est lu
+     de ces profils ici: un nom et une date. */
+  const [friends, setFriends] = useState([])
 
   const load = useCallback(async () => {
     if (!user) return
     const { data } = await supabase.from('calendar_event').select('*')
     setEvents(data ?? [])
+
+    /**
+     * LES GENS AVEC QUI TU ES DANS UN GROUPE, POUR LEURS ANNIVERSAIRES.
+     *
+     *   "It should automatically pull up your friends, the people you are in a
+     *    group with, in your calendar, your bday as well."
+     *
+     * Pas de filtre de groupe, et c'est la meme requete que le tableau de bord
+     * pour la banniere: `group_members_select` est `is_member(group_id)`, donc
+     * ceci rend deja exactement les listes dont tu fais partie, et le profil
+     * embarque est filtre une deuxieme fois par `profiles_select`. Nommer les
+     * groupes ici repeterait une regle que la base applique deja, et se
+     * tromperait la premiere fois que quelqu'un en rejoint un en cours de
+     * session.
+     *
+     * L'annee de naissance descend avec le reste et n'est jamais affichee:
+     * seuls le jour et le mois servent, ici comme dans la banniere.
+     */
+    const { data: fr } = await supabase
+      .from('group_members')
+      .select('profiles(id, display_name, birthday)')
+    setFriends((fr ?? []).map((r) => r.profiles).filter(Boolean))
 
     /**
      * Goals with a deadline, as calendar entries.
@@ -495,8 +527,24 @@ export default function Calendar() {
       until_on: null,
       location: null,
     }))
-    return visibleEvents([...events, ...asEvents], hidden)
-  }, [events, goals, hidden])
+    /**
+     * LES ANNIVERSAIRES, FABRIQUES POUR LA PLAGE AFFICHEE.
+     *
+     * Le tien est dedans, annonce comme le tien plutot que par ton nom, et il
+     * arrive par la meme porte que les autres: ton profil est ajoute a la
+     * liste plutot que traite a part. Un deuxieme chemin pour une seule
+     * personne est un deuxieme endroit ou la date peut etre fausse.
+     *
+     * Ils passent ensuite par `visibleEvents` comme tout le reste, ce qui est
+     * ce qui rend la puce "Anniversaires" de la barre capable de les enlever.
+     */
+    const gens = profile?.birthday ? [...friends, { id: user?.id, display_name: profile.display_name, birthday: profile.birthday }] : friends
+    const anniversaires = birthdayEntries(gens, range.from, range.to, {
+      mine: user?.id,
+      mineLabel: t('cal.bday_mine'),
+    })
+    return visibleEvents([...events, ...asEvents, ...anniversaires], hidden)
+  }, [events, goals, hidden, friends, profile, user?.id, range, t])
 
   const agenda = useMemo(() => agendaFor(drawn, range.from, range.to), [drawn, range])
 
@@ -511,7 +559,11 @@ export default function Calendar() {
      the form would open on one and then insert a brand new calendar_event
      carrying the goal's text, which is a duplicate nobody asked for. */
   const openEditor = (entry) => {
-    if (entry?.goalId) return
+    /* Un anniversaire est derive d'un profil, exactement comme un objectif est
+       derive de sa ligne: ouvrir le formulaire dessus insererait un vrai
+       evenement portant le meme texte, donc un doublon que personne n'a
+       demande et que l'annee suivante ne fera pas disparaitre. */
+    if (entry?.goalId || entry?.birthdayOf) return
     setEditing(entry)
   }
 
@@ -536,7 +588,7 @@ export default function Calendar() {
    * identiques est une question qu'on apprend a cliquer sans lire.
    */
   const askEdit = (entry) => {
-    if (entry?.goalId) return
+    if (entry?.goalId || entry?.birthdayOf) return
     const recurring = Array.isArray(entry?.weekdays) && entry.weekdays.length > 0
     if (!recurring) return openEditor(entry)
     setEditingScope(entry)

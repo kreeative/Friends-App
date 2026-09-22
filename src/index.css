@@ -671,6 +671,10 @@
     --c-ev-evenement: 255 208 192;   /* corail */
     --c-ev-perso: 198 235 213;       /* menthe */
     --c-ev-sante: 232 228 220;       /* sable, la plus discrete des sept */
+    /* La huitieme, pour les anniversaires. Ce n'est pas une categorie mais une
+       couche, et elle est mesuree avec les sept: la paire la plus proche
+       devient menthe/eau a 12,7. */
+    --c-ev-anniv: 201 237 239;       /* eau */
 
     --c-ev-cours-deep: 232 65 127;
     --c-ev-examen-deep: 142 81 199;
@@ -679,6 +683,7 @@
     --c-ev-evenement-deep: 226 96 63;
     --c-ev-perso-deep: 46 139 99;
     --c-ev-sante-deep: 139 127 108;
+    --c-ev-anniv-deep: 23 134 140;
   }
 
   /**
@@ -770,6 +775,9 @@
     --c-ev-evenement: 248 210 226;   /* rose */
     --c-ev-perso: 206 238 212;       /* menthe */
     --c-ev-sante: 226 228 231;       /* ardoise, la plus discrete des sept */
+    /* L'eau est prise par les revisions dans ce theme, donc la peche. Mesuree
+       avec les sept: elle ne descend sous aucune paire existante. */
+    --c-ev-anniv: 255 214 199;       /* peche */
 
     --c-ev-cours-deep: 30 111 168;
     --c-ev-examen-deep: 90 95 192;
@@ -778,6 +786,7 @@
     --c-ev-evenement-deep: 192 72 124;
     --c-ev-perso-deep: 46 139 87;
     --c-ev-sante-deep: 119 128 138;
+    --c-ev-anniv-deep: 210 100 63;
 
     --c-bg: 240 249 255;     /* ice */
     --c-raised: 224 242 254; /* sky, the soft well inside a card */

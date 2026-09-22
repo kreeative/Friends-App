@@ -1527,6 +1527,53 @@ ok(
   ok('a category is a word, not its own glossary', longs.length === 0, longs.join(', '))
 }
 
+/* --- les anniversaires sur la grille ------------------------------------ */
+
+/**
+ * "IT SHOULD AUTOMATICALLY PULL UP YOUR FRIENDS [...] YOUR BDAY AS WELL, AND
+ *  OF COURSE YOU CAN REMOVE IT IF YOU WANT."
+ *
+ * Trois choses, et chacune a sa raison d'etre epinglee.
+ *
+ * AUTOMATIQUEMENT: la meme requete que la banniere du tableau de bord, SANS
+ * filtre de groupe. `group_members_select` est `is_member(group_id)` cote base,
+ * donc elle rend deja exactement les listes dont on fait partie et le profil
+ * embarque repasse par `profiles_select`. Nommer les groupes ici repeterait
+ * une regle que la base applique deja et se tromperait la premiere fois que
+ * quelqu'un en rejoint un en cours de session.
+ *
+ * LE TIEN AUSSI, et il arrive par la meme porte: le profil est ajoute a la
+ * liste plutot que traite a part. Un deuxieme chemin pour une seule personne
+ * est un deuxieme endroit ou la date peut etre fausse.
+ *
+ * TU PEUX L'ENLEVER: la couche `anniversaires`, avec sa puce dans la barre.
+ * Sonde: trois gateaux avant, zero apres la puce, zero apres rechargement,
+ * parce que la couche est dans localStorage comme les quatre autres.
+ */
+{
+  ok('le calendrier lit les gens de tes groupes pour leurs dates',
+     /from\('group_members'\)\s*\n\s*\.select\('profiles\(id, display_name, birthday\)'\)/.test(cal),
+     'sans filtre de groupe: la politique RLS rend deja les bonnes listes')
+  ok('et le tien passe par la meme porte que les autres',
+     /profile\?\.birthday \? \[\.\.\.friends, \{ id: user\?\.id/.test(cal),
+     'un deuxieme chemin pour une seule personne est un deuxieme endroit ou la date peut etre fausse')
+  ok('les entrees sont fabriquees pour la plage affichee, pas stockees',
+     /birthdayEntries\(gens, range\.from, range\.to/.test(cal))
+  ok('et elles passent par le meme filtre de couches que le reste',
+     /visibleEvents\(\[\.\.\.events, \.\.\.asEvents, \.\.\.anniversaires\], hidden\)/.test(cal),
+     'c est ce qui rend la puce "Anniversaires" capable de les enlever')
+  /* Un anniversaire est derive d'un profil comme un objectif est derive de sa
+     ligne: ouvrir le formulaire dessus insererait un vrai evenement portant le
+     meme texte, donc un doublon que l'annee suivante ne fera pas disparaitre. */
+  ok('un anniversaire ne s ouvre pas dans le formulaire',
+     (cal.match(/entry\?\.goalId \|\| entry\?\.birthdayOf/g) ?? []).length === 2,
+     'ni pour modifier, ni pour choisir la portee')
+  for (const cle of ['cal.layer_anniversaires', 'cal.bday_mine']) {
+    const n = read('src/lib/i18n.jsx').split(`'${cle}'`).length - 1
+    ok(`${cle} existe dans les deux langues (${n})`, n === 2)
+  }
+}
+
 /* --- deleting one of a series ------------------------------------------- */
 
 /**

@@ -83,11 +83,11 @@ export default {
         ev: {
           cours: c('ev-cours'), examen: c('ev-examen'), etude: c('ev-etude'),
           travail: c('ev-travail'), evenement: c('ev-evenement'),
-          perso: c('ev-perso'), sante: c('ev-sante'),
+          perso: c('ev-perso'), sante: c('ev-sante'), anniv: c('ev-anniv'),
           'cours-deep': c('ev-cours-deep'), 'examen-deep': c('ev-examen-deep'),
           'etude-deep': c('ev-etude-deep'), 'travail-deep': c('ev-travail-deep'),
           'evenement-deep': c('ev-evenement-deep'), 'perso-deep': c('ev-perso-deep'),
-          'sante-deep': c('ev-sante-deep'),
+          'sante-deep': c('ev-sante-deep'), 'anniv-deep': c('ev-anniv-deep'),
         },
       },
       fontFamily: {

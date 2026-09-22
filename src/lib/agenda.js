@@ -70,7 +70,25 @@ export const CATEGORIES = [
  * one reads goals, one switches the cycle overlay. What the toolbar controls
  * is what is DRAWN, which is what somebody toggling it means.
  */
-export const LAYERS = ['scolaire', 'perso', 'objectifs', 'cycle']
+/**
+ * `anniversaires` EST LA CINQUIEME, ET ELLE N'EST PAS UNE CATEGORIE NON PLUS.
+ *
+ *   "You should be able to see bday as little cake on the day it's scheduled,
+ *    it should automatically pull up your friends, the people you are in a
+ *    group with, in your calendar, your bday as well, and of course you can
+ *    remove it if you want."
+ *
+ * Meme raison que `objectifs` juste a cote: un anniversaire n'est pas une
+ * ligne de calendar_event et ne doit pas le devenir. C'est une date sur le
+ * profil de quelqu'un, lue par la meme requete qui charge deja les membres de
+ * tes groupes, et recopiee dans un evenement elle aurait deux endroits ou
+ * vivre dont un se perimerait. Elle est donc DERIVEE a chaque affichage.
+ *
+ * "Et bien sur tu peux l'enlever si tu veux": c'est cette couche-ci. Le
+ * basculement est deja ecrit, deja persiste, et il vaut pour tous les
+ * anniversaires d'un coup, le tien compris.
+ */
+export const LAYERS = ['scolaire', 'perso', 'objectifs', 'anniversaires', 'cycle']
 
 /**
  * Which layer an event's category belongs to.
@@ -94,6 +112,7 @@ const LAYER_OF = {
   perso: 'perso',
   sante: 'perso',
   objectif: 'objectifs',
+  anniversaire: 'anniversaires',
 }
 
 /* Unknown categories fall to 'perso' rather than vanishing. A row written by a
@@ -107,6 +126,7 @@ export const LAYER_COLOUR = {
   scolaire: 'cat-1',
   perso: 'green',
   objectifs: 'cat-3',
+  anniversaires: 'ev-anniv',
   cycle: 'negative',
 }
 
@@ -320,6 +340,84 @@ export function occurrencesOf(event, from, to) {
     const d = addDays(start, i)
     if (wanted.has(d.getDay()) && !skipped.has(dayKey(d))) out.push(d)
   }
+  return out
+}
+
+/**
+ * LES ANNIVERSAIRES, EN ENTREES DE CALENDRIER.
+ *
+ *   "You should be able to see bday as little cake on the day it's scheduled,
+ *    it should automatically pull up your friends, the people you are in a
+ *    group with, in your calendar, your bday as well."
+ *
+ * Rien n'est ecrit nulle part: ces entrees sont fabriquees a chaque
+ * affichage, a partir de la date de naissance qui est deja sur le profil. La
+ * requete qui les charge est celle du tableau de bord, sans filtre de groupe,
+ * parce que la politique RLS de group_members rend deja exactement les
+ * listes dont on fait partie.
+ *
+ * POURQUOI PAS occurrencesOf.
+ *
+ * Il sait repeter par jour de semaine ou pas du tout. Un anniversaire se
+ * repete par DATE, une fois l'an, et c'est la seule chose dans cette
+ * application qui le fasse: ajouter une recurrence annuelle a l'expandeur
+ * pour un seul appelant compliquerait le chemin que prennent tous les autres
+ * evenements. Une boucle sur les annees que la plage touche suffit, et elle
+ * en touche une ou deux.
+ *
+ * LE 29 FEVRIER TOMBE LE 1er MARS LES ANNEES COMMUNES.
+ *
+ * `new Date(2027, 1, 29)` rend le 1er mars, et c'est le comportement voulu:
+ * l'anniversaire est fete tous les ans plutot que trois annees sur quatre.
+ * C'est deja ce que fait daysUntilBirthday pour la banniere, donc les deux
+ * ecrans disent la meme date.
+ *
+ * LE GATEAU EST DANS LE TITRE.
+ *
+ * "See bday as little cake": pose la, l'emoji traverse les trois vues sans
+ * qu'aucune ait a connaitre les anniversaires, et un lecteur d'ecran l'annonce
+ * ("gateau d'anniversaire") au lieu de lire un prenom seul et sans contexte.
+ * Ce n'est PAS le cas du chevron que CLAUDE.md interdit d'ecrire en
+ * caractere: celui-la etait une fleche d'interface qui change de forme selon
+ * la police, celui-ci est le contenu meme de l'entree.
+ */
+export function birthdayEntries(people, from, to, { mine = null, mineLabel = null } = {}) {
+  const out = []
+  const seen = new Set()
+
+  for (const person of people ?? []) {
+    if (!person?.id || seen.has(person.id)) continue
+    const [, month, day] = String(person.birthday ?? '').slice(0, 10).split('-').map(Number)
+    if (!month || !day) continue
+    seen.add(person.id)
+
+    /* Ton propre anniversaire est annonce comme le tien plutot que par ton
+       nom. "Kee" sur ta propre grille est la seule ligne du calendrier qui
+       parle de toi a la troisieme personne. */
+    const nom = person.id === mine ? mineLabel ?? person.display_name : person.display_name
+    if (!nom) continue
+
+    for (let y = from.getFullYear(); y <= to.getFullYear(); y += 1) {
+      const d = new Date(y, month - 1, day)
+      if (daysBetween(from, d) < 0 || daysBetween(d, to) < 0) continue
+      const k = dayKey(d)
+      out.push({
+        id: `bday:${person.id}:${k}`,
+        birthdayOf: person.id,
+        title: `\u{1F382} ${nom}`,
+        category: 'anniversaire',
+        colour: 'ev-anniv',
+        starts_on: k,
+        start_min: null,
+        end_min: null,
+        weekdays: [],
+        until_on: null,
+        location: null,
+        excluded_on: [],
+      })
+    }
+  }
+
   return out
 }
 

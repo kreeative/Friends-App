@@ -19,6 +19,7 @@ import {
   LAYERS,
   LAYER_COLOUR,
   agendaFor,
+  birthdayEntries,
   blockStyle,
   clockOf,
   dayBounds,
@@ -339,12 +340,16 @@ ok('no category borrows a step of the budget ramp any more', steps.length === 0,
   const cie76 = (a, b) => Math.hypot(...lab(a).map((v, i) => v - lab(b)[i]))
 
   for (const [nom, bloc] of Object.entries(blocs)) {
-    const valeurs = CATEGORIES.map((c) => {
-      const jeton = CATEGORY_COLOUR[c]
+    /* Les sept categories PLUS les anniversaires: ce n'est pas une categorie
+       mais ca se peint sur la meme grille, donc ca se mesure avec elles. Une
+       huitieme pastille indistinguable des sept est le meme defaut. */
+    const aMesurer = [...CATEGORIES.map((c) => [c, CATEGORY_COLOUR[c]]),
+                      ['anniversaires', LAYER_COLOUR.anniversaires]]
+    const valeurs = aMesurer.map(([c, jeton]) => {
       const m = new RegExp(`--c-${jeton}:\\s*(\\d+) (\\d+) (\\d+);`).exec(bloc)
       return { c, rgb: m && [Number(m[1]), Number(m[2]), Number(m[3])] }
     })
-    ok(`${nom}: les sept couleurs sont declarees`,
+    ok(`${nom}: les huit couleurs sont declarees`,
        valeurs.every((v) => v.rgb), valeurs.filter((v) => !v.rgb).map((v) => v.c).join(' '))
     if (!valeurs.every((v) => v.rgb)) continue
 
@@ -356,7 +361,7 @@ ok('no category borrows a step of the budget ramp any more', steps.length === 0,
     }
     const trop = paires.filter((p) => p.d < 10)
     const plus = paires.reduce((m, p) => (p.d < m.d ? p : m))
-    ok(`${nom}: aucune paire des sept ne se confond (la plus proche a ${plus.d.toFixed(1)})`,
+    ok(`${nom}: aucune paire des huit ne se confond (la plus proche a ${plus.d.toFixed(1)})`,
        trop.length === 0, trop.map((p) => `${p.a}/${p.b} ${p.d.toFixed(1)}`).join(', '))
 
     /* Et l'encre se lit sur chacun des sept. Le pastel est opaque, donc c'est
@@ -372,7 +377,7 @@ ok('no category borrows a step of the budget ramp any more', steps.length === 0,
       return { c: v.c, r: (x + 0.05) / (y + 0.05) }
     })
     const pire = pires.reduce((m, p) => (p.r < m.r ? p : m))
-    ok(`${nom}: l encre se lit sur les sept (au pire ${pire.r.toFixed(1)}:1 sur ${pire.c})`,
+    ok(`${nom}: l encre se lit sur les huit (au pire ${pire.r.toFixed(1)}:1 sur ${pire.c})`,
        pires.every((p) => p.r >= 4.5), pires.filter((p) => p.r < 4.5).map((p) => `${p.c} ${p.r.toFixed(2)}`).join(', '))
   }
 }
@@ -414,9 +419,88 @@ eq('a non-array is ignored rather than thrown on',
 eq('excluding a one-off leaves nothing', occurrencesOf({ ...once, excluded_on: ['2026-09-15'] }, fromKey('2026-09-01'), fromKey('2026-09-30')).length, 0)
 eq('and excluding a different day leaves it alone', occurrencesOf({ ...once, excluded_on: ['2026-09-14'] }, fromKey('2026-09-01'), fromKey('2026-09-30')).length, 1)
 
+/* --- les anniversaires, fabriques a partir des profils ------------------- */
+
+/**
+ * "IT SHOULD AUTOMATICALLY PULL UP YOUR FRIENDS [...] YOUR BDAY AS WELL."
+ *
+ * Rien n'est ecrit: ces entrees sont derivees de la date de naissance qui est
+ * deja sur le profil, a chaque affichage. Ce qui est verifie ici est ce qui
+ * casse pour de vrai dans ce genre de code: le passage d'une annee a l'autre,
+ * le 29 fevrier, une date absente, et la meme personne dans deux groupes.
+ */
+{
+  const gens = [
+    { id: 'a', display_name: 'Inaya', birthday: '1999-09-10' },
+    { id: 'b', display_name: 'Milo', birthday: '2001-12-31' },
+    { id: 'c', display_name: 'Sans date', birthday: null },
+    { id: 'a', display_name: 'Inaya', birthday: '1999-09-10' },
+  ]
+  const sept26 = birthdayEntries(gens, fromKey('2026-09-01'), fromKey('2026-09-30'))
+  eq('un anniversaire du mois apparait une fois', sept26.length, 1)
+  eq('et le bon jour', sept26[0].starts_on, '2026-09-10')
+  ok('avec le gateau dans le titre', sept26[0].title.startsWith('\u{1F382} '), sept26[0].title)
+  ok('et le nom apres', sept26[0].title.endsWith('Inaya'), sept26[0].title)
+  eq('il porte la categorie qui le range dans sa couche', sept26[0].category, 'anniversaire')
+  eq('et cette categorie tombe bien sur cette couche', layerOf(sept26[0]), 'anniversaires')
+  eq('une personne sans date ne produit rien', sept26.filter((e) => e.birthdayOf === 'c').length, 0)
+
+  /* La meme personne dans deux groupes est une personne. La requete qui les
+     charge rend une ligne par appartenance, donc le doublon arrive vraiment. */
+  eq('la meme personne dans deux groupes fait une entree', sept26.filter((e) => e.birthdayOf === 'a').length, 1)
+
+  /* La plage du mois est complete jusqu'a des semaines entieres, donc elle
+     traverse le 31 decembre une annee sur douze. Sans la boucle sur les
+     annees, un anniversaire du 31 decembre n'apparaitrait jamais dans la
+     grille de janvier. */
+  const bascule = birthdayEntries(gens, fromKey('2026-12-28'), fromKey('2027-01-03'))
+  eq('une plage a cheval sur deux annees trouve quand meme', bascule.length, 1)
+  eq('et le place dans la bonne annee', bascule[0].starts_on, '2026-12-31')
+
+  /* Le 29 fevrier. `new Date(2027, 1, 29)` rend le 1er mars, ce qui est le
+     comportement voulu: fete tous les ans plutot que trois ans sur quatre, et
+     c'est deja ce que fait daysUntilBirthday pour la banniere. */
+  const bissextile = [{ id: 'z', display_name: 'Zoe', birthday: '2000-02-29' }]
+  eq('le 29 fevrier tombe le 1er mars une annee commune',
+     birthdayEntries(bissextile, fromKey('2027-02-20'), fromKey('2027-03-05'))[0].starts_on,
+     '2027-03-01')
+  eq('et reste le 29 une annee bissextile',
+     birthdayEntries(bissextile, fromKey('2028-02-20'), fromKey('2028-03-05'))[0].starts_on,
+     '2028-02-29')
+
+  /* Le tien est annonce comme le tien. */
+  const mien = birthdayEntries(
+    [{ id: 'moi', display_name: 'Kee', birthday: '2000-09-15' }],
+    fromKey('2026-09-01'), fromKey('2026-09-30'),
+    { mine: 'moi', mineLabel: 'Mon anniversaire' },
+  )
+  eq('ton propre anniversaire ne dit pas ton prenom', mien[0].title, '\u{1F382} Mon anniversaire')
+
+  /* Et il passe par le meme expandeur que tout le reste, ce qui est la raison
+     pour laquelle la puce de la barre peut les enlever. */
+  const carte = agendaFor(sept26, fromKey('2026-09-01'), fromKey('2026-09-30'))
+  eq('il arrive bien dans la carte des jours', carte.get('2026-09-10')?.length, 1)
+  eq('il ne reste rien quand la couche est cachee',
+     visibleEvents(sept26, new Set(['anniversaires'])).length, 0)
+}
+
 /* --- the layers the filter toolbar toggles ------------------------------ */
 
-eq('four layers, as asked for', LAYERS, ['scolaire', 'perso', 'objectifs', 'cycle'])
+/**
+ * CINQ, ET LA CINQUIEME EST LES ANNIVERSAIRES.
+ *
+ *   "You should be able to see bday as little cake on the day it's scheduled
+ *    [...] and of course you can remove it if you want."
+ *
+ * "Quatre bascules" etait la demande d'origine et c'etait la bonne mesure a
+ * ce moment-la. La cinquieme arrive avec la fonctionnalite, et elle est ce
+ * qui repond a "tu peux l'enlever si tu veux": le basculement est deja ecrit,
+ * deja persiste, et il vaut pour tous les anniversaires d'un coup, le tien
+ * compris. Le `cycle` reste en dernier parce que c'est le seul qui disparait
+ * quand le suivi n'est pas allume.
+ */
+eq('five layers now, the birthdays being the fifth', LAYERS,
+   ['scolaire', 'perso', 'objectifs', 'anniversaires', 'cycle'])
 ok('and every one has a dot colour', LAYERS.every((l) => LAYER_COLOUR[l]))
 
 /* The grouping, which is the whole reason layers and categories are separate
