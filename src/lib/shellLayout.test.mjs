@@ -2475,6 +2475,52 @@ ok(
   ok('the home feed has a main and a side column',
      /className="page-grid"/.test(home) && /className="page-main/.test(home) && /className="page-side/.test(home))
 
+  /**
+   * ET LA COLONNE DE DROITE VA JUSQU'EN BAS.
+   *
+   *   "How much got done, book, bring them down and etire les pour qu'ils fit
+   *    la page."
+   *
+   * Mesure dans Chromium a 1024, 1180, 1290, 1440 et 1728: colonne de droite
+   * 562px contre 840px a gauche, donc 278px de vide dessous a TOUTES les
+   * largeurs, un tiers de la hauteur de la page.
+   *
+   * items-start etait juste quand cette grille est nee, pour la raison que
+   * .card-grid explique: une carte courte ne doit pas s'etirer pour rattraper
+   * la plus haute de sa rangee. Ca vaut entre cartes interchangeables. Ici il y
+   * a DEUX colonnes qui ne le sont pas, et celle de droite est structurellement
+   * plus courte: son vide est permanent, pas accidentel.
+   */
+  ok('the side column stretches to the main column',
+     /\.page-grid\s*\{[^}]*lg:items-stretch/.test(sheet)
+       && !/\.page-grid\s*\{[^}]*lg:items-start/.test(sheet),
+     'items-start laissait 278px de vide sous la colonne de droite')
+  ok('and it is a flex column so its sections can grow',
+     /\.page-side\s*\{[^}]*lg:flex-col/.test(sheet))
+
+  /* `flex-1` sur la section SEULE deplacait le trou d'un cran: la section
+     s'etirait et la carte restait collee en haut. Mesure faite. */
+  ok('a grown section passes the height to its card',
+     /\.grow-card > :last-child\s*\{[^}]*lg:flex-1/.test(sheet))
+  ok('and the card centres its content in the height it got',
+     /\.grow-card > :last-child\s*\{[^}]*lg:justify-center/.test(sheet),
+     'colle en haut, la carte a un fond blanc au lieu d avoir de l air')
+
+  /* Les DEUX, pas une seule: tout donner aux livres ferait descendre leur
+     carte jusqu'en bas sous un pourcentage reste petit. */
+  ok('both side sections grow, not just one',
+     (home.match(/className="grow-card"|className="grow-card"\s*\n/g) ?? []).length >= 1
+       && (home.match(/grow-card/g) ?? []).length === 2,
+     `${(home.match(/grow-card/g) ?? []).length} sections`)
+
+  /* En dessous de lg la page est une pile et rien ne doit changer: chaque
+     regle de l'etirement est prefixee lg:. */
+  for (const regle of ['.page-side', '.grow-card']) {
+    const bloc = new RegExp(`\\${regle}[^{]*\\{([^}]*)\\}`).exec(sheet)?.[1] ?? ''
+    const nu = bloc.split(/\s+/).filter((c) => /^(flex|min-h-0|flex-1|flex-col|justify-center)$/.test(c))
+    ok(`${regle} ne touche rien sous lg (${nu.length} classe(s) nue(s))`, nu.length === 0, nu.join(' '))
+  }
+
   const courses = code('src/pages/Courses.jsx')
   ok('a lesson and a course summary are reading columns',
      (courses.match(/className="reading"/g) ?? []).length === 2,
