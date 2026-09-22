@@ -292,7 +292,54 @@ ok(
   ok('la tuile cochee est remplie, pas surchargee d une pastille',
      /data-picked=\{on \? 'yes' : undefined\}/.test(cal)
        && /\{phase && !on &&/.test(cal),
-     'une pastille rouge sur un fond rouge ne dit plus rien')
+     'une pastille de plus dans le coin d une case pleine ne repond a rien')
+
+  /**
+   * NOIR, ET PAS ROUGE.
+   *
+   *   "Black not red."
+   *
+   * La tuile cochee etait `bg-negative`, le rouge des erreurs et des
+   * suppressions. Sur un mois entier ca faisait cinq grands blocs rouges,
+   * c'est-a-dire ce que cette couleur veut dire partout ailleurs: quelque
+   * chose ne va pas. Cocher ses jours ne veut pas dire ca.
+   *
+   * L'encre ne signifie rien d'autre que "plein". Mesure en pixels peints sur
+   * la tuile cochee, le chiffre et la ligne "+N autres":
+   *
+   *   soleil  17.48:1     mer  17.23:1
+   *
+   * Et le "+N autres" etait DEJA illisible avant, sur le rouge: son text-muted
+   * a ete choisi pour reculer sur du papier. Rejoue a la main pour avoir le
+   * chiffre plutot que de le supposer, 1.24:1 en soleil et 1.16:1 en mer,
+   * c'est-a-dire rien du tout.
+   */
+  ok('et elle est encre, pas rouge',
+     /on \? 'bg-ink text-on-accent'/.test(cal) && !/on \? 'bg-negative/.test(cal),
+     'bg-negative est la couleur des erreurs, pas celle d une case cochee')
+  ok('la ligne "+N autres" suit la tuile plutot que le papier',
+     /\$\{on \? 'text-on-accent' : 'text-muted'\}`}>\s*\n\s*\{t\('cal\.more'/.test(cal),
+     'text-muted a ete choisi pour reculer sur du papier, pas sur une case pleine')
+
+  /**
+   * ET LA PASTILLE D'EVENEMENT AUSSI.
+   *
+   * Chaque entree de SWATCH est un lavis translucide plus `text-ink`. Sur du
+   * papier c'est une pastille teintee avec du noir dessus; sur l'encre le
+   * lavis composite vers le noir et le texte noir disparait dedans.
+   *
+   * Mesure: 1.26:1 dans les deux themes, et il a fallu baisser le seuil de la
+   * sonde pour l'obtenir, parce qu'au seuil normal aucun pixel ne bougeait en
+   * rendant le texte transparent. Zero pixel d'encre n'est pas "pas de texte".
+   * Apres: 17.48:1 et 17.23:1.
+   *
+   * Une classe et pas une deuxieme table de couleurs: la note de SWATCH_BAR
+   * refuse deja les tables paralleles, parce qu'une categorie dont la couleur
+   * change doit changer aux deux endroits ou a aucun.
+   */
+  ok('et la pastille d evenement est sur sa propre plaque',
+     /on \? 'bg-surface text-ink' : SWATCH\[e\.colour\] \?\? SWATCH\.accent/.test(cal),
+     'un lavis translucide et du texte encre, poses sur de l encre, font du noir sur du noir')
   ok('et c est une case a cocher pour un lecteur d ecran aussi',
      /role=\{picking \? 'checkbox' : undefined\}/.test(cal)
        && /aria-checked=\{picking \? Boolean\(on\) : undefined\}/.test(cal),
