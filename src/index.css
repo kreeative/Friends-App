@@ -3095,6 +3095,45 @@
 }
 
 /**
+ * LA MEME ATTENTE, MAIS SUR UNE CARTE.
+ *
+ * `.hold-ring` est un balayage conique fait pour une pastille ronde de 36px.
+ * Une carte du rail fait 78 pour cent de l'ecran: un anneau au milieu d'elle
+ * n'a rien a entourer, et pose dans un coin il se lit comme un chargement.
+ *
+ * Donc une barre sur son bord bas, qui se remplit sur exactement la meme
+ * duree. Ce que la note de .hold-ring dit vaut mot pour mot: un geste qui a un
+ * delai dedans doit dire qu'il a commence, sinon la demi-seconde pendant
+ * laquelle rien ne se passe ne se distingue pas d'un controle qui ne marche
+ * pas. Et la duree est HOLD_MS de src/lib/gesture.js, troisieme endroit ou ce
+ * nombre est ecrit parce que CSS ne sait pas l'importer.
+ *
+ * `transform` et pas `width`: une largeur animee relaie a chaque image, une
+ * transformation reste sur la couche composee, et cette barre s'anime pendant
+ * qu'un doigt est pose sur un rail qui defile.
+ */
+@keyframes hold-fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.hold-bar {
+  transform-origin: left center;
+  animation: hold-fill 550ms linear both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hold-bar {
+    animation: none;
+    transform: scaleX(1);
+  }
+}
+
+/**
  * A panel that actually comes up from the bottom edge.
  *
  * `animate-rise` moves six pixels, which is the right amount for a card

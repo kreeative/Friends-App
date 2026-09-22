@@ -1527,6 +1527,83 @@ ok(
   ok('a category is a word, not its own glossary', longs.length === 0, longs.join(', '))
 }
 
+/* --- l'appui long sur une carte du rail ---------------------------------- */
+
+/**
+ * "APPUYER LONGUEMENT SUR LE GOAL POUR DETAILLER ET POUVOIR AJOUTER LA
+ *  PREUVE."
+ *
+ * Le meme geste et le meme composant que les dates du calendrier: une touche
+ * repond, un appui long ouvre. La note de DayCell dit pourquoi ca marche et ca
+ * vaut mot pour mot ici.
+ *
+ * DEUX PIEGES, ET LES DEUX ONT ETE TROUVES PAR LA SONDE, PAS PAR LECTURE.
+ *
+ * 1. LE CLIC QUI SUIT L'APPUI. Les gestionnaires sont sur la CARTE, donc un
+ *    appui long commence sur "Cocher aujourd'hui" ouvre la fiche puis le
+ *    relachement declenche quand meme le clic du bouton: la fiche s'ouvrirait
+ *    ET la journee serait cochee. `consumedClick` le jette, sur les trois
+ *    boutons de la carte.
+ *
+ * 2. LA CAPTURE DU POINTEUR. useLongPress capture par defaut, ce qui est juste
+ *    quand l'element qui tient le geste est celui qu'on clique. Ici le clic
+ *    appartient a un ENFANT, et le navigateur emet le clic sur l'ancetre
+ *    commun du bas et du haut du pointeur: avec la capture, les deux sont la
+ *    carte, donc le bouton ne recevait plus rien. Mesure: zero ecriture apres
+ *    une touche courte qui avait toujours marche.
+ *
+ * Sonde, huit cas, tous justes: une touche courte coche toujours, un appui
+ * long ouvre la fiche du bon objectif, un appui long commence sur le bouton
+ * ouvre sans cocher, un glissement ne l'ouvre pas, et la fiche porte le champ
+ * de preuve.
+ */
+{
+  const rail = read('src/components/CheckinRail.jsx')
+  const goals = read('src/pages/Goals.jsx')
+  const detail = read('src/components/GoalDetail.jsx')
+  const hook = read('src/lib/useLongPress.js')
+
+  ok('la carte du rail tient un appui long',
+     /useLongPress\(\(el\) => onOpen\?\.\(goal, el\)/.test(rail),
+     'et l element est transmis: c est le rectangle dont le panneau sort')
+  ok('et le hook est dans un composant, pas dans la boucle',
+     /^function RailCard\(/m.test(rail),
+     'un hook appele dans un .map est un hook dont le nombre d appels change avec les donnees')
+  ok('les trois boutons de la carte jettent le clic qui suit un appui long',
+     (rail.match(/if \(consumedClick\(\)\) return/g) ?? []).length === 3,
+     'sinon la fiche s ouvre ET la journee se coche')
+  ok('et le pointeur n est pas capture, parce que le clic appartient a un enfant',
+     /capture: false,/.test(rail) && /enabled = true, capture = true/.test(hook),
+     'avec la capture, le clic est emis sur la carte et le bouton ne recoit rien')
+  /* Un geste avec un delai dedans doit dire qu'il a commence, sinon la
+     demi-seconde ou rien ne se passe ne se distingue pas d'un controle mort.
+     Meme raison, meme duree que .hold-ring. */
+  ok('l appui se voit pendant qu il dure',
+     /hold-bar pointer-events-none/.test(rail) && /\.hold-bar \{/.test(css),
+     'et sans evenements de pointeur, ou il volerait les pointermove de l appui')
+  ok('la duree de la barre est celle de l appui', /animation: hold-fill 550ms/.test(css))
+
+  ok('la page ouvre la fiche de l objectif tenu',
+     /onOpen=\{\(goal, el\) => setDetail\(\{ goal, el \}\)\}/.test(goals))
+  ok('et la fiche recoit la preuve du jour',
+     /proofType=\{openGroup \? proofTypeOf\(detail\.goal\) : 'none'\}/.test(goals)
+       && /onProof=\{openGroup \?/.test(goals),
+     'une preuve vit sur un checkin_item: un objectif solo n a nulle part ou la mettre')
+  /* Le meme saveAll que le rail. submit_checkin reecrit la liste complete des
+     items d'un cycle, donc un deuxieme chemin d ecriture effacerait les autres
+     objectifs de la journee. C est deja la note du carrousel. */
+  ok('et l ecriture reste celle de la page',
+     /onProof=\{openGroup \? \(patch\) => \{\s*\n\s*set\(detail\.goal\.id, patch\)\s*\n\s*saveAll\(\)/.test(goals),
+     'un composant qui ne connait qu un objectif et qui enregistrerait lui-meme effacerait les autres')
+  ok('la fiche ne montre le champ que si on le lui donne',
+     /\{onProof && proofType !== 'none' && \(/.test(detail),
+     'ouverte depuis la liste des objectifs, la preuve du jour n a pas de sens')
+  for (const cle of ['goal.proof_today']) {
+    const n = read('src/lib/i18n.jsx').split(`'${cle}'`).length - 1
+    ok(`${cle} existe dans les deux langues (${n})`, n === 2)
+  }
+}
+
 /* --- les anniversaires sur la grille ------------------------------------ */
 
 /**

@@ -8,6 +8,7 @@ import { errorText } from '../lib/dberr'
 import { dragOffset, flipTransform, rectOf, shouldDismiss } from '../lib/gesture'
 import { monthGrid, monthStart, sameMonth } from '../lib/calendar'
 import { dateCaps, dateFull } from '../lib/datecaps'
+import ProofField from './ProofField'
 import {
   countOn,
   dayKey,
@@ -95,6 +96,19 @@ const DONE = {
   abandoned: { label: 'goal.dropped', chip: 'chip-quiet' },
 }
 
+/**
+ * @param proofType   quelle preuve cet objectif demande, ou 'none'. Absent sur
+ *   une fiche ouverte depuis la liste des objectifs: la preuve du JOUR n'a de
+ *   sens que la ou la question du jour est posee.
+ * @param proofValue  la reponse en cours pour aujourd'hui, telle que la page
+ *   la tient. Meme forme que dans le carrousel.
+ * @param onProof     ce que devient un changement. Il remonte a la page, qui
+ *   possede la carte des reponses ET l'ecriture, exactement comme le rail:
+ *   submit_checkin reecrit la liste complete des items d'un cycle, donc un
+ *   composant qui ne connait qu'un objectif et qui enregistrerait lui-meme
+ *   effacerait tous les autres. C'est deja la note du carrousel et elle vaut
+ *   deux fois ici.
+ */
 export default function GoalDetail({
   goal,
   origin = null,
@@ -102,6 +116,9 @@ export default function GoalDetail({
   track = false,
   deletable = false,
   editHref = null,
+  proofType = 'none',
+  proofValue = null,
+  onProof = null,
   onClose,
 }) {
   const { t, locale } = useT()
@@ -493,6 +510,42 @@ export default function GoalDetail({
                     {t('goal.not_due_today')}
                   </p>
                 )}
+              </section>
+            )}
+
+            {/**
+             * LA PREUVE DU JOUR, JUSTE SOUS CE QU'ELLE PROUVE.
+             *
+             *   "Appuyer longuement sur le goal pour detailler et pouvoir
+             *    ajouter la preuve."
+             *
+             * Elle etait derriere "Ajouter une preuve", un lien sous le rail
+             * qui ouvrait le carrousel au PREMIER objectif du jour: pour
+             * attacher une photo au troisieme, il fallait ouvrir le carrousel
+             * puis faire defiler jusqu'a lui. L'appui long amene ici, sur
+             * l'objectif qu'on tenait sous le doigt, et la preuve est la.
+             *
+             * Sous le bouton qui coche la journee, parce que c'est l'ordre des
+             * deux gestes: on fait la chose, puis on la prouve. C'est aussi ce
+             * que dit la note de ProofField, "la preuve va a cote de la
+             * reponse dont elle est la preuve".
+             *
+             * Rien n'est enregistre ici. Voir onProof.
+             */}
+            {onProof && proofType !== 'none' && (
+              <section data-hook="goal-proof">
+                <h3 className="eyebrow">{t('goal.proof_today')}</h3>
+                <p className="mt-3 text-body text-ink">
+                  {goal.evidence_def || t(`proof.want_${proofType}`)}
+                </p>
+                <div className="mt-3">
+                  <ProofField
+                    type={proofType}
+                    value={proofValue ?? {}}
+                    goalTitle={goal.commitment}
+                    onChange={(patch) => onProof({ ...patch, touched: true })}
+                  />
+                </div>
               </section>
             )}
 
