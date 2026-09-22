@@ -232,10 +232,15 @@ ok(
      plus que ce qu'elle voulait dire: pas de positionnement sur le marqueur
      ni sur son enveloppe. L'alignement, lui, a sa propre mesure dans
      shellLayout.test.mjs et sa sonde en pixels. */
+  /* Et elle est retombee une deuxieme fois, pour la meme raison: le SOMMAIRE
+     est devenu `relative`, pour le ::before qui rend a la cible les 24 px que
+     le disque a perdus en retrecissant. Le panneau est son FRERE, donc un
+     bloc conteneur pose la ne peut pas le rattraper. Le cas vise maintenant
+     le <details>, qui est le seul ancetre du panneau dans ce composant. */
   ok(
     'and the marker is not a positioned ancestor that would recapture it',
     /<details\s+className="group ml-2 inline-block align-/.test(ui) &&
-      !/(details|summary)[^>]*className="[^"]*\brelative\b/.test(ui),
+      !/<details[^>]*className="[^"]*\brelative\b/.test(ui),
     '`relative` here would anchor the panel back to the marker',
   )
   ok(

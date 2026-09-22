@@ -173,12 +173,42 @@ export function Hint({ text }) {
      * sa phrase en plein mot.
      */
     <details
-      className="group ml-2 inline-block align-[calc(0.383em-0.28rem)]"
+      className="group ml-2 inline-block align-[calc(0.383em-0.24rem)]"
       data-hook="hint"
     >
+      {/**
+       * LE DISQUE FAIT LA TAILLE DU TEXTE, ET LA CIBLE FAIT 24 PX QUAND MEME.
+       *
+       *   "The ? are too big, reduce the circle so it fits the text."
+       *
+       * C'etait 24 px de disque avec un "?" de 13 px, pose a cote de libelles
+       * de 16 px: a cote d'un texte dont les capitales font 11 px, une pastille
+       * de 24 px est plus haute que la ligne qu'elle annote, donc elle se lit
+       * comme un bouton et pas comme une note.
+       *
+       * 18 px de disque, 11 px de glyphe. Le disque fait alors a peu pres la
+       * hauteur d'une majuscule du texte a cote, ce qui est la demande.
+       *
+       * ET LA ZONE TOUCHABLE NE RETRECIT PAS AVEC LUI. WCAG 2.5.8 demande
+       * 24 px sur 24, et un point d'interrogation de 18 px rate d'un tiers.
+       * Le ::before etale la cible de 3 px sur les quatre cotes sans rien
+       * peindre: 18 + 3 + 3 = 24. C'est pour ca que le sommaire est
+       * `relative`, et ca ne touche pas au panneau, qui s'ancre plus haut.
+       *
+       * L'ALIGNEMENT SUIT LA TAILLE DU GLYPHE. La note ci-dessus explique le
+       * calcul: on remonte de la moitie de la hauteur de capitale du texte
+       * voisin (0,383em) moins la moitie de celle du "?" (une constante en
+       * rem, parce que le glyphe a sa propre taille fixe). Le "?" passe de 13
+       * a 11 px, sa capitale de 9 a 7,7 px, donc la constante passe de 0,28 a
+       * 0,24rem. Mesure apres coup sur les pixels peints, a cote d'un libelle
+       * de 16 px: 0,60 px entre le centre du disque et celui de la bande
+       * d'encre du libelle, pour un disque qui fait 1,10 fois cette bande. Le
+       * "?" y tient 6,61:1.
+       */}
       <summary
-        className="press inline-flex h-6 w-6 cursor-pointer list-none items-center justify-center rounded-pill
-                   bg-ink/[0.07] text-label font-bold text-muted marker:hidden hover:bg-ink/[0.12] hover:text-ink
+        className="press relative inline-flex h-[1.125rem] w-[1.125rem] cursor-pointer list-none items-center justify-center rounded-pill
+                   bg-ink/[0.07] text-[0.6875rem] font-bold leading-none text-muted marker:hidden hover:bg-ink/[0.12] hover:text-ink
+                   before:absolute before:-inset-[0.1875rem] before:content-['']
                    [&::-webkit-details-marker]:hidden"
         aria-label={text}
       >
