@@ -16,6 +16,7 @@ import { Empty, Screen, Section, TopBar } from '../components/ui'
 import GoalCard from '../components/GoalCard'
 import CheckinCarousel from '../components/CheckinCarousel'
 import CheckinRail from '../components/CheckinRail'
+import GoalDetail from '../components/GoalDetail'
 import ProofGallery from '../components/ProofGallery'
 import CelebrateStep from '../components/CelebrateStep'
 
@@ -428,6 +429,19 @@ export default function Goals() {
   const [carousel, setCarousel] = useState(false)
 
   /**
+   * L'OBJECTIF QU'ON TIENT SOUS LE DOIGT, ET LE RECTANGLE DONT IL SORT.
+   *
+   *   "Appuyer longuement sur le goal pour detailler et pouvoir ajouter la
+   *    preuve."
+   *
+   * L'element est garde avec l'objectif, pas seulement l'objectif: c'est la
+   * carte dont le panneau grandit, et la perdre fait apparaitre la fiche de
+   * nulle part. Voir la note d'origine dans useLongPress, qui raconte l'heure
+   * que ca a coute la premiere fois.
+   */
+  const [detail, setDetail] = useState(null)
+
+  /**
    * PROOF AND PRAISE, WHICH USED TO BE A TAB OF THEIR OWN.
    *
    * The Bravo tab was the check-in. When the check-in moved onto this page,
@@ -545,6 +559,11 @@ export default function Goals() {
                 set(goal.id, patch)
                 saveAll()
               }}
+              /* Un appui long ouvre la fiche de CET objectif-la. Le lien sous
+                 le rail ouvre toujours le carrousel, et il reste: c'est le
+                 chemin pour passer les objectifs en revue les uns apres les
+                 autres, ce que l'appui long ne fait pas. */
+              onOpen={(goal, el) => setDetail({ goal, el })}
             />
           </div>
 
@@ -572,6 +591,42 @@ export default function Goals() {
             </button>
           )}
         </Section>
+      )}
+
+      {/**
+       * LA FICHE D'UN OBJECTIF, OUVERTE PAR UN APPUI LONG SUR SA CARTE.
+       *
+       * Le meme composant que la liste plus bas ouvre, donc l'historique, le
+       * mois et les preuves deja deposees sont ceux qu'on connait. Ce qu'il a
+       * en plus ici est la preuve DU JOUR, parce que c'est ici que la question
+       * du jour est posee.
+       *
+       * L'ecriture reste celle du rail: le changement remonte dans la meme
+       * carte de reponses et passe par le meme saveAll. submit_checkin
+       * reecrit la liste complete des items d'un cycle, donc un deuxieme
+       * chemin d'ecriture effacerait les autres objectifs de la journee.
+       *
+       * `proofType` n'est passe que dans un groupe, pour la raison que le lien
+       * sous le rail donne deja: une preuve vit sur un checkin_item, et un
+       * objectif solo est une ligne de goal_days ou il n'y a nulle part ou
+       * mettre un fichier. Sans groupe, la fiche s'ouvre quand meme et montre
+       * l'historique, ce qui est utile en soi.
+       */}
+      {detail && (
+        <GoalDetail
+          goal={detail.goal}
+          origin={detail.el}
+          track
+          deletable={canDelete(detail.goal)}
+          editHref={`${base}/${detail.goal.id}/edit`}
+          proofType={openGroup ? proofTypeOf(detail.goal) : 'none'}
+          proofValue={answers[detail.goal.id]}
+          onProof={openGroup ? (patch) => {
+            set(detail.goal.id, patch)
+            saveAll()
+          } : null}
+          onClose={() => setDetail(null)}
+        />
       )}
 
       {/**

@@ -67,6 +67,10 @@ const STRINGS = {
     'cal.layer_scolaire': 'Timetable', 'cal.layer_perso': 'Work & life',
     'cal.layer_objectifs': 'Goals', 'cal.layer_cycle': 'Cycle',
     'cal.layer_anniversaires': 'Birthdays',
+    /* Son propre titre plutot que celui du lien sous le rail. "Add proof to a
+       goal" est juste sous une liste de plusieurs objectifs et faux en tete de
+       la fiche d'un seul: on sait deja duquel il s'agit. */
+    'goal.proof_today': 'Today’s proof',
     /* Ton propre anniversaire est annonce comme le tien plutot que par ton
        nom: ton prenom sur ta propre grille est la seule ligne du calendrier
        qui parle de toi a la troisieme personne. */
@@ -1818,6 +1822,7 @@ const STRINGS = {
     'cal.layer_scolaire': 'Cours', 'cal.layer_perso': 'Travail & Perso',
     'cal.layer_objectifs': 'Objectifs', 'cal.layer_cycle': 'Cycle',
     'cal.layer_anniversaires': 'Anniversaires',
+    'goal.proof_today': 'La preuve du jour',
     'cal.bday_mine': 'Mon anniversaire',
     'wiz.open': 'Ajouter un programme',
     'wiz.title': 'Ajouter mes cours recurrents',

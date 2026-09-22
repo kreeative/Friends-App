@@ -35,7 +35,26 @@ import { HOLD_MS, movedTooFar } from './gesture'
  * cell still delivers its pointerup here and the timer is always cleared. It
  * is what stops a hold from being left running when the finger leaves.
  */
-export function useLongPress(onLongPress, { ms = HOLD_MS, enabled = true } = {}) {
+/**
+ * @param capture  Faut-il capturer le pointeur ?
+ *
+ * VRAI QUAND L'ELEMENT QUI TIENT LE GESTE EST AUSSI CELUI QU'ON CLIQUE.
+ *
+ * C'est le cas d'une date du calendrier: les gestionnaires sont sur le bouton
+ * lui-meme, la capture ramene le relachement dessus, et `consumedClick` jette
+ * le clic que ca produit.
+ *
+ * FAUX QUAND LE CLIC APPARTIENT A UN ENFANT. Une carte du rail tient le geste
+ * et contient un bouton "Cocher aujourd'hui". Le navigateur emet le clic sur
+ * l'ancetre commun du bas et du haut du pointeur: avec la capture, les deux
+ * sont la CARTE, donc le clic n'atteint jamais le bouton et une touche courte
+ * ne cochait plus rien. Trouve par la sonde, pas par lecture: zero ecriture
+ * apres une touche qui avait toujours marche.
+ *
+ * Sans capture, `onPointerLeave` couvre ce que la capture couvrait: un doigt
+ * qui quitte la carte annule l'appui, ce qui est de toute facon ce qu'on veut.
+ */
+export function useLongPress(onLongPress, { ms = HOLD_MS, enabled = true, capture = true } = {}) {
   const [holding, setHolding] = useState(false)
 
   const timer = useRef(null)
@@ -79,7 +98,7 @@ export function useLongPress(onLongPress, { ms = HOLD_MS, enabled = true } = {})
     const el = e.currentTarget
 
     try {
-      el.setPointerCapture?.(e.pointerId)
+      if (capture) el.setPointerCapture?.(e.pointerId)
     } catch {
       /* Not every pointer can be captured. The move and up handlers still
          fire; they just stop arriving once the finger leaves the element,
