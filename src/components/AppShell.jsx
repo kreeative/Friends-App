@@ -538,8 +538,29 @@ function TabBar({ tabs }) {
   const { ref, box } = useSlider(rows[activeIdx]?.to ?? null)
 
   return (
+    /**
+     * LE VERRE N'EST PLUS SUR L'ELEMENT `fixed`, ET C'EST DELIBERE.
+     *
+     * Il y avait une seule boite ici: `lg lg-chrome fixed`. Donc l'element
+     * dont la position depend du defilement portait aussi un
+     * `backdrop-filter`, et un backdrop-filter doit reechantillonner ce qu'il
+     * y a derriere a chaque image. WebKit ne sait pas faire ca sur le fil du
+     * defilement: la couche retombe sur le fil principal et se peint avec un
+     * defilement en retard, ce qui est exactement une barre qui flotte au
+     * milieu de l'ecran pendant qu'on fait glisser la page.
+     *
+     * Deux boites: celle-ci tient la position et ne porte aucun filtre,
+     * l'interieure tient le verre et ne depend pas du defilement. C'est deja
+     * la forme de TopNav, ou le <header> est `sticky` et le verre est sur le
+     * <nav> dedans, et c'est la forme qu'il fallait ici aussi.
+     *
+     * A dire plutot qu'a cacher: Chromium ne montre pas le defaut et WebKit ne
+     * s'installe pas dans ce conteneur. Ce qui est verifie ici est que la
+     * barre est au meme pixel a tous les crans de defilement, et que sa
+     * capture est identique a l'ancienne.
+     */
     <nav
-      className="lg lg-chrome fixed inset-x-4 bottom-4 z-30 mx-auto max-w-content md:hidden"
+      className="fixed inset-x-4 bottom-4 z-30 mx-auto max-w-content md:hidden"
       /* A hook of its own, like the rail above. It was added so a floating
          menu could measure it; that menu is gone, and this stays because a
          probe looking for the bottom bar previously fell back to "the last
@@ -548,6 +569,7 @@ function TabBar({ tabs }) {
       data-hook="tab-bar"
       style={{ marginBottom: 'env(safe-area-inset-bottom)' }}
     >
+      <div className="lg lg-chrome">
       {/**
        * gap-0.5 rather than gap-1, and the tabs size to their labels.
        *
@@ -624,6 +646,7 @@ function TabBar({ tabs }) {
             <span className="mt-0.5 block truncate text-[0.6875rem] leading-[1.4]">{t(tab.key)}</span>
           </NavLink>
         ))}
+      </div>
       </div>
     </nav>
   )

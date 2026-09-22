@@ -43,7 +43,18 @@ import { existsSync, mkdirSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 
 const OUT = process.env.SWEEP_OUT ?? '.sweep'
-const WIDTHS = (process.env.SWEEP_WIDTHS ?? '390,820,1180,1440').split(',').map(Number)
+/**
+ * 320 EST ENTRE AVEC LE RETRAIT DE `overflow-x: clip` SUR `.ground`.
+ *
+ * C'est la largeur ou le defaut d'origine s'etait vu: un sticker qui
+ * s'echappait ajoutait sept pixels de defilement lateral sur un ecran de
+ * 320px, et personne ne balayait cette largeur, donc la seule parade avait ete
+ * une coupe sur toute la page. La coupe est partie; l'instrument arrive.
+ *
+ * 320 est aussi le plus petit ecran qu'on rencontre encore (un iPhone SE de
+ * premiere generation), donc ce n'est pas une largeur inventee pour le test.
+ */
+const WIDTHS = (process.env.SWEEP_WIDTHS ?? '320,390,820,1180,1440').split(',').map(Number)
 const ROUTES = (
   process.env.SWEEP_ROUTES ??
   '/,/goals,/goals/new,/money,/library,/library?shelf=articles,/calendar,/settings,/profile,/notifications,/cours,/cours/investir-101,/cours/carte-de-credit/c2.2'
