@@ -1741,31 +1741,52 @@
    * overscroll or a short page showed the other one at the edges, which is
    * what "you can see the edges of the site" was.
    */
+  /**
+   * ET CET ELEMENT NE COUPE PLUS RIEN, CE QUI EST LE CORRECTIF.
+   *
+   *   "The menu bar should stay fixed down, this is a bug."
+   *
+   * Deuxieme fois, photo a l'appui: la barre du bas flottant au milieu de
+   * l'ecran, ET l'en-tete collant absent du haut. Les deux ensemble, c'est ce
+   * qui a fini par designer la cause, parce qu'une seule chose de cette page
+   * peut casser les deux d'un coup.
+   *
+   * Il y avait ici `overflow-x: clip`, et la note qui l'accompagnait disait
+   * exactement pourquoi ce n'etait pas `hidden`: un ancetre qui coupe en
+   * `hidden` tue `position: sticky`, et l'en-tete de l'application est
+   * collant. `clip` coupe sans creer de conteneur de defilement, donc en
+   * theorie `sticky` survit.
+   *
+   * En theorie. La specification dit qu'un axe en `clip` laisse l'autre en
+   * `visible`, la ou `hidden` le force a `auto`. WebKit n'a pas toujours fait
+   * cette difference, et un `overflow-y` qui passe a `auto` est precisement un
+   * conteneur de defilement: l'en-tete se colle alors a CE conteneur, qui ne
+   * defile jamais, donc il s'en va avec la page. C'est ce que montre la photo.
+   *
+   * Chromium ne le montre pas, et il faut le dire plutot que le cacher: WebKit
+   * ne s'installe pas dans ce conteneur, donc rien ici ne prouve le defaut.
+   * Ce qui est prouve est que la coupe n'a plus lieu d'etre.
+   *
+   * POURQUOI ELLE AVAIT ETE AJOUTEE, ET POURQUOI ELLE NE MANQUE PLUS.
+   *
+   * Le rail de stickers coupe deja sur son propre enveloppe, `absolute
+   * inset-0` de cet element. La note d'alors disait que l'enveloppe s'arretait
+   * avant le bas d'une page longue, donc qu'un sticker place plus bas
+   * s'echappait, et que ca avait ajoute sept pixels de defilement horizontal
+   * sur un ecran de 320px.
+   *
+   * Mesure aujourd'hui, sur une page de 4412px: l'enveloppe fait 4412px, cet
+   * element aussi, et le document aussi. Les trois sont egaux, donc
+   * `overflow: hidden` de l'enveloppe couvre toute la page et il n'y a plus
+   * rien a rattraper ici. Et le balayage a 320, 390 et 820px ne trouve aucun
+   * defilement lateral sur aucune des treize routes.
+   *
+   * 320px entre d'ailleurs dans les largeurs par defaut du balayage avec ce
+   * correctif: c'est la largeur ou le defaut d'origine s'etait vu, et il
+   * n'avait pas d'instrument. Maintenant il en a un.
+   */
   .ground {
     background: rgb(var(--c-bg));
-
-    /**
-     * `clip`, not `hidden`, and the distinction is the whole reason this line
-     * can exist at all.
-     *
-     * The sticker rail below already clips on its own wrapper, and that holds
-     * while the wrapper is as tall as the page. It is `absolute inset-0` of
-     * this element, which is `min-h-dvh`, so on a page taller than the
-     * viewport the wrapper stops short and a sticker positioned further down
-     * escapes it. That is latent on every long page: it showed up the day the
-     * money screen grew two sections and went from 3086px to 3739px tall, and
-     * it added seven pixels of horizontal scroll on a 320px screen.
-     *
-     * `overflow: hidden` here would fix it and break something worse:
-     * a hidden ancestor silently kills `position: sticky`, and the app's
-     * header is sticky. `overflow: clip` does the clipping without
-     * establishing a scroll container, so sticky keeps working. See the note
-     * in components/Stickers.jsx, which chose its clipping wrapper for the
-     * same reason and could only reach so far.
-     *
-     * x only. Clipping y would cut the page off at the fold.
-     */
-    overflow-x: clip;
   }
 
   /**

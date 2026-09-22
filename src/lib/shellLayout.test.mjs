@@ -681,9 +681,63 @@ ok(
   ok('et la barre du bas en est le dernier enfant, hors de .ground',
      /<TabBar tabs=\{[^}]*\} \/>\s*<\/>\s*\)\s*\}/.test(src),
      'un ancetre qui coupe peut devenir le bloc conteneur d un enfant fixed')
-  ok('et .ground garde sa coupe, qui est la pour les stickers',
-     /overflow-x: clip/.test(code('src/index.css')),
-     'sept pixels de defilement horizontal a 320px, le jour ou le budget est passe a 3739px')
+
+  /**
+   * DEUXIEME FOIS, ET CETTE FOIS L'EN-TETE ETAIT SUR LA PHOTO AUSSI.
+   *
+   *   "The menu bar should stay fixed down, this is a bug."
+   *
+   * La barre du bas au milieu de l'ecran, ET l'en-tete collant absent du haut.
+   * Les deux ensemble designent la cause, parce qu'une seule chose de cette
+   * page peut casser les deux: `overflow-x: clip` sur `.ground`.
+   *
+   * La note d'alors disait pourquoi ce n'etait pas `hidden`: un ancetre qui
+   * coupe en `hidden` tue `position: sticky`. La specification dit qu'un axe
+   * en `clip` laisse l'autre en `visible`, la ou `hidden` le force a `auto`.
+   * WebKit n'a pas toujours fait cette difference, et un `overflow-y` a `auto`
+   * est un conteneur de defilement: l'en-tete se colle alors a lui, il ne
+   * defile jamais, donc l'en-tete s'en va avec la page.
+   *
+   * ELLE NE MANQUE PLUS. Le rail de stickers coupe sur son enveloppe,
+   * `absolute inset-0` de `.ground`. Elle s'arretait avant le bas d'une page
+   * longue; mesure aujourd'hui sur 4412px, l'enveloppe, `.ground` et le
+   * document font tous les trois 4412px. Et le balayage passe a 320px, la
+   * largeur ou le defaut s'etait vu et ou il n'y avait pas d'instrument.
+   */
+  ok('et .ground ne coupe plus rien',
+     !/overflow-x: clip/.test(code('src/index.css')),
+     'un ancetre qui coupe tue position: sticky sur les moteurs qui confondent clip et hidden')
+  ok('le rail de stickers coupe sur sa propre enveloppe',
+     /absolute inset-0 z-20 overflow-hidden/.test(code('src/components/Stickers.jsx')),
+     'c est la que la coupe appartient: sur ce qui deborde')
+  ok('et le balayage regarde enfin 320px',
+     /SWEEP_WIDTHS \?\? '320,390,820,1180,1440'/.test(read('scripts/sweep-widths.mjs')),
+     'la largeur ou les sept pixels de defilement lateral s etaient vus')
+
+  /**
+   * ET LE VERRE N'EST PLUS SUR L'ELEMENT `fixed`.
+   *
+   * Un backdrop-filter doit reechantillonner ce qu'il y a derriere a chaque
+   * image. WebKit ne sait pas le faire sur le fil du defilement: la couche
+   * retombe sur le fil principal et se peint avec un defilement en retard, ce
+   * qui est une barre qui flotte au milieu de l'ecran pendant qu'on glisse.
+   *
+   * Deux boites: la `fixed` tient la position et ne porte aucun filtre,
+   * l'interieure tient le verre et ne depend pas du defilement. C'est deja la
+   * forme de TopNav, ou le <header> est `sticky` et le verre est sur le <nav>
+   * dedans.
+   *
+   * Mesure: la barre est au meme pixel a tous les crans (836 sur 852), et la
+   * capture apres est identique a la capture avant, pixel pour pixel.
+   */
+  ok('la boite qui est fixed ne porte pas le verre',
+     /className="fixed inset-x-4 bottom-4 z-30 mx-auto max-w-content md:hidden"/.test(src),
+     'un backdrop-filter sur un element dont la position depend du defilement decroche sur WebKit')
+  ok('et le verre est sur une boite interieure',
+     /data-hook="tab-bar"[\s\S]{0,400}<div className="lg lg-chrome">/.test(src))
+  ok('comme l en-tete, qui a deja cette forme',
+     /<header className="sticky top-0 z-40 px-4 pt-4 md:hidden">\s*\n\s*<nav className="lg lg-chrome/.test(src),
+     'deux barres de la meme application ne doivent pas resoudre le meme probleme differemment')
 }
 
 ok(
