@@ -495,6 +495,12 @@ ok(
        donc elle ne pouvait pas trouver ceux du calendrier. */
     'la serie', 'se repete', 'Se repete', 'Debut du', 'A partir du',
     "'Etude'", 'Evenement', 'Fete', 'cet evenement',
+    /* Trouves en redessinant le formulaire: la puce "Sante" etait a l'ecran
+       sans son accent depuis le debut, et "a la date ci-dessous" est la ligne
+       qui s'affiche sous les jours de la semaine quand aucun n'est coche. Le
+       mot est dans la liste, la phrase est prise avec sa virgule parce que
+       "a la" tout seul a des lectures justes. */
+    "'Sante'", ', a la date',
   ]
   const restants = INTERDITS.filter((m) => fr.includes(m))
   ok('aucune chaine francaise ne se promene sans ses accents',
@@ -506,7 +512,8 @@ ok(
      phrase. */
   for (const attendu of ['Règles prévues', 'plutôt régulier', 'Fenêtre fertile',
                          'à un jour près', 'phase lutéale',
-                         'se répète', 'toute la série', 'Événement']) {
+                         'se répète', 'toute la série', 'Événement',
+                         "'Santé'", 'à la date ci-dessous']) {
     ok(`et "${attendu}" est ecrit comme ca`, fr.includes(attendu))
   }
 }
@@ -1360,6 +1367,37 @@ ok(
   /\.field:focus \{[\s\S]{0,200}box-shadow: 0 0 0 3px rgb\(var\(--c-accent\)/.test(css),
 )
 
+/**
+ * LE GRIS QUI SE TAIT EST MESURE, ET IL NE L'ETAIT PAS.
+ *
+ * Deux placeholders sont arrives sur le formulaire d'evenement, et la sonde de
+ * contraste les a pris avec la note sous les jours. Sur la feuille du
+ * dialogue, qui est --glass-tint a 0.75 sur une page teintee et pas du blanc:
+ *
+ *   .field::placeholder   --c-muted a 0.75   3.66:1 sun   3.53:1 sea
+ *   .field-note           rgb(100 106 116)   4.34:1 sun   4.36:1 sea
+ *
+ * Le commentaire de .field-note annoncait 4.6:1 "sur blanc". C'etait vrai, et
+ * c'etait sur un fond ou ce texte ne se trouve jamais.
+ *
+ * Apres: 5.50:1 et 4.89:1 en sun, 5.53:1 et 4.91:1 en sea.
+ */
+ok(
+  'the quiet grey is one value and it is named',
+  /--quiet-ink: 92 98 108;/.test(css),
+)
+ok(
+  'the placeholder and the hint under a field share it',
+  /\.field::placeholder \{\s*color: rgb\(var\(--quiet-ink\)\);/.test(css)
+    && /\.field-note \{[\s\S]{0,120}color: rgb\(var\(--quiet-ink\)\);/.test(css),
+)
+ok(
+  'and no placeholder is a diluted theme colour any more',
+  !/::placeholder \{[\s\S]{0,120}text-muted\//.test(css)
+    && !/::placeholder \{[\s\S]{0,120}var\(--c-muted\) \/ 0/.test(css),
+  'un gris a 60 pour cent n a pas de contraste, il a celui du fond sous lui',
+)
+
 /* --- the event form is a centred dialog, not a panel in the page --------- */
 
 ok(
@@ -1372,6 +1410,75 @@ ok(
   /items-end justify-center sm:items-center"[\s\S]{0,60}data-hook="cal-form"/.test(cal),
   'a sheet from the bottom on a phone, a centred card on everything else',
 )
+
+/* --- ce que la sonde avait trouve sur ce formulaire --------------------- */
+
+/**
+ * "AMELIORATE THE DESIGN."
+ *
+ * Une sonde a ouvert le dialogue a 390, 820, 1290 et 1728 avant d'y toucher.
+ * Ce qu'elle a rendu, et qui est ce que ce bloc empeche de revenir:
+ *
+ *   six etiquettes en CAPITALES grises pour un seul formulaire
+ *   "What" large de 608px et vide, "Where" pareil, sans rien dedans
+ *   "Starts" et "Ends" larges de 309px chacun, pour cinq caracteres
+ *   sept puces qui retombent en six et une, l'orpheline au bout
+ *   Enregistrer au fond du defilement, hors de l'ecran sur un telephone
+ */
+{
+  const form = cal.slice(cal.indexOf('function EventForm('))
+  ok(
+    'the event form has no shouting label left on it',
+    !/text-label font-semibold uppercase/.test(form),
+    'les capitales grises sont le style des entetes de carte; six empiles font une table des matieres',
+  )
+  ok(
+    'and every field is named in the style the rest of the app names fields',
+    (form.match(/className="field-label"/g) ?? []).length >= 8,
+    '.field-label existe depuis le formulaire d\'objectif et dit quoi, puis pourquoi, puis un exemple',
+  )
+  ok(
+    'the row of categories finally says what it is asking',
+    /field-label">\{t\('cal\.f_kind'\)\}/.test(form),
+    'elle flottait sous le titre sans nom, donc rien ne disait que c\'etait une question',
+  )
+  ok(
+    'the two free-text boxes carry an example inside them',
+    /placeholder=\{t\('cal\.ph_title'\)\}/.test(form) && /placeholder=\{t\('cal\.ph_where'\)\}/.test(form),
+    'un rectangle de 608 sur 74 sans une lettre dedans ne dit pas ce qu\'on attend',
+  )
+  ok(
+    'the clocks are capped at something a clock needs',
+    /grid grid-cols-2 gap-3 sm:max-w-\[24rem\]/.test(form),
+    'une heure fait cinq caracteres et le champ en faisait 309px',
+  )
+  ok('and so are the two dates', /grid grid-cols-2 gap-3 sm:max-w-\[28rem\]/.test(form))
+  ok(
+    'the seven categories sit in a grid rather than a row that falls over',
+    /grid grid-cols-2 gap-2 sm:grid-cols-4/.test(form),
+    'une puce seule sur sa ligne se lit comme un oubli; une derniere rangee courte se lit comme une grille',
+  )
+  ok(
+    'and the save button is pinned under the scroll, like the wizard next door',
+    /border-t border-hairline px-5 py-4">\s*\n\s*<button type="submit"/.test(form),
+    'il etait a la fin du defilement, donc a trois coups de pouce du formulaire qu\'on venait de remplir',
+  )
+  ok(
+    'which means the scrolling part is a div inside the form, not the form itself',
+    /<form onSubmit=\{save\} className="flex min-h-0 flex-1 flex-col">/.test(form)
+      && /<div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">/.test(form),
+  )
+}
+
+/* Un nom de categorie tient en un mot. "Evenement / Fete" mesurait 146px dans
+   une cellule de 146, ce qui est ce qui faisait retomber la rangee. */
+{
+  const i18n = read('src/lib/i18n.jsx')
+  const longs = [...i18n.matchAll(/'cal\.cat_\w+': '([^']*)'/g)]
+    .map((m) => m[1])
+    .filter((v) => v.includes('/') || v.includes(' '))
+  ok('a category is a word, not its own glossary', longs.length === 0, longs.join(', '))
+}
 
 /* --- deleting one of a series ------------------------------------------- */
 

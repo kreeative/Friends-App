@@ -1596,7 +1596,46 @@ function EventForm({ initial, onClose, onSaved }) {
    *
    * Same shell as TimetableWizard, deliberately down to the class list. Two
    * dialogs on one screen that are 90 per cent alike and 10 per cent different
-   * is worse than either being wrong on its own.
+   * is worse than either being wrong on its own. That now includes the footer,
+   * which the wizard pinned under the scroll and this form did not.
+   *
+   * WHAT WAS WRONG WITH IT, MEASURED BEFORE IT WAS TOUCHED.
+   *
+   *   "Ameliorate the design."
+   *
+   * A probe opened the dialog at 390, 820, 1290 and 1728 and read it back:
+   *
+   *   six etiquettes en CAPITALES grises pour un seul formulaire
+   *   "What" large de 608px et vide, "Where" pareil, sans rien dedans
+   *   "Starts" et "Ends" larges de 309px chacun, pour cinq caracteres
+   *   sept puces de categorie qui retombent, une seule orpheline au bout
+   *   un dialogue haut de 725px, avec Enregistrer au fond du defilement
+   *
+   * Aucun de ces points n'est une question de gout, ils sortent tous de la
+   * mesure, et chacun a sa reponse ci-dessous.
+   *
+   * LES ETIQUETTES.
+   *
+   * `.field-label` existe depuis que le formulaire d'objectif a ete repris, et
+   * la note qui l'accompagne dit pourquoi: l'etiquette, l'indice et le
+   * placeholder etaient trois lignes du meme gris et il fallait lire les trois
+   * pour trouver la question. Ce formulaire-ci avait rate ce passage et
+   * gardait des capitales grises, qui sont le style des entetes de carte, pas
+   * celui d'un champ. Six entetes de carte empiles font une table des
+   * matieres, pas un formulaire.
+   *
+   * LES BOITES VIDES.
+   *
+   * Un rectangle de 608 sur 74 sans une lettre dedans ne dit pas ce qu'on
+   * attend. Les deux champs libres ont un exemple en placeholder maintenant,
+   * et les quatre champs d'heure et de date sont bornes a la largeur de ce
+   * qu'ils contiennent: une heure fait cinq caracteres, pas trente-huit rem.
+   *
+   * LE TRAIT AU MILIEU.
+   *
+   * Neuf reglages a la suite, tous espaces pareil, se lisent comme neuf
+   * questions sans rapport. Ils sont deux groupes: ce que c'est, puis quand
+   * ca arrive. Un trait coute une ligne et remplace deux entetes.
    */
   return createPortal(
     <div className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center" data-hook="cal-form">
@@ -1628,14 +1667,20 @@ function EventForm({ initial, onClose, onSaved }) {
           </button>
         </div>
 
-      <form onSubmit={save} className="flex min-h-0 flex-1 flex-col overflow-y-auto px-5 py-4 space-y-3">
+      <form onSubmit={save} className="flex min-h-0 flex-1 flex-col">
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
         <label className="block">
-          <span className="text-label font-semibold uppercase tracking-[0.06em] text-muted">{t('cal.f_title')}</span>
+          <span className="field-label">{t('cal.f_title')}</span>
           {/* Un data-hook plutot qu'un selecteur sur le type: cet input n'en
               declare pas, donc input[type="text"] ne le trouve pas, et le
               chercher par sa classe est ce que CLAUDE.md interdit parce que ca
               a casse a chaque restylage. */}
-          <input data-hook="cal-f-title" value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} maxLength={120} className="field mt-1 w-full" />
+          <input data-hook="cal-f-title" value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} maxLength={120} placeholder={t('cal.ph_title')} className="field" />
+        </label>
+
+        <label className="mt-4 block">
+          <span className="field-label">{t('cal.f_where')}</span>
+          <input data-hook="cal-f-where" value={f.location} onChange={(e) => setF({ ...f, location: e.target.value })} maxLength={160} placeholder={t('cal.ph_where')} className="field" />
         </label>
 
         {/**
@@ -1652,57 +1697,80 @@ function EventForm({ initial, onClose, onSaved }) {
          * fill is still the thing that says "selected" and the lift is a
          * second signal on top of it, per 1.4.1, alongside the dot going white
          * so it stays visible on the accent.
+         *
+         * UNE GRILLE, ET PLUS UNE RANGEE QUI RETOMBE.
+         *
+         * Sept puces de largeurs inegales lachees dans un flex-wrap finissaient
+         * a six et une: une puce seule sur sa ligne se lit comme un oubli.
+         * Dans une grille les cellules font toutes la meme largeur, la
+         * derniere rangee est courte comme une derniere rangee de grille, et
+         * on voit que c'est la fin d'un ensemble.
+         *
+         * Pour que ca tienne il a fallu que les noms tiennent en un mot.
+         * "Evenement / Fete" mesurait 146px dans une cellule de 146: deux mots
+         * pour une puce, c'etait la vraie cause de la rangee ragged.
+         *
+         * Et la rangee porte enfin une etiquette. Elle flottait sous le titre
+         * sans nom, donc rien ne disait que c'etait une question.
          */}
-        <div className="flex flex-wrap gap-2">
-          {CATEGORIES.map((c) => {
-            const on = f.category === c
-            return (
-              <button
-                key={c}
-                type="button"
-                onClick={() => setF({ ...f, category: c })}
-                aria-pressed={on}
-                data-cat={c}
-                className={`press inline-flex items-center gap-1.5 rounded-pill px-3 py-1.5 text-small font-semibold transition-all duration-200 ease-settle ${
-                  on
-                    ? '-translate-y-px bg-accent text-on-accent shadow-[0_4px_12px_-2px_rgb(var(--c-accent)/0.45)]'
-                    : 'bg-ink/[0.06] text-ink hover:bg-ink/[0.11]'
-                }`}
-              >
-                <span
-                  aria-hidden="true"
-                  className={`h-2 w-2 shrink-0 rounded-pill ${
-                    on ? 'bg-on-accent' : SWATCH_BAR[CATEGORY_COLOUR[c]] ?? SWATCH_BAR.accent
+        <div className="mt-4">
+          <span className="field-label">{t('cal.f_kind')}</span>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {CATEGORIES.map((c) => {
+              const on = f.category === c
+              return (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setF({ ...f, category: c })}
+                  aria-pressed={on}
+                  data-cat={c}
+                  className={`press inline-flex items-center justify-center gap-1.5 rounded-pill px-3 py-2 text-small font-semibold transition-all duration-200 ease-settle ${
+                    on
+                      ? '-translate-y-px bg-accent text-on-accent shadow-[0_4px_12px_-2px_rgb(var(--c-accent)/0.45)]'
+                      : 'bg-ink/[0.06] text-ink hover:bg-ink/[0.11]'
                   }`}
-                />
-                {t(`cal.cat_${c}`)}
-              </button>
-            )
-          })}
+                >
+                  <span
+                    aria-hidden="true"
+                    className={`h-2 w-2 shrink-0 rounded-pill ${
+                      on ? 'bg-on-accent' : SWATCH_BAR[CATEGORY_COLOUR[c]] ?? SWATCH_BAR.accent
+                    }`}
+                  />
+                  {t(`cal.cat_${c}`)}
+                </button>
+              )
+            })}
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        {/* Ce que c'est, puis quand ca arrive. Le trait porte la separation que
+            deux entetes en capitales auraient portee, pour une ligne au lieu
+            de deux blocs, et sans rajouter les majuscules qu'on vient
+            d'enlever. */}
+        <hr className="my-4 border-0 border-t border-hairline" data-hook="cal-f-split" />
+
+        {/* Bornes a 24rem: une heure fait cinq caracteres et le champ en
+            faisait 309px. Le plafond de .field est 38rem, ce qui est la mesure
+            d'une ligne de texte et n'a jamais voulu dire quoi que ce soit pour
+            une horloge. */}
+        <div className="grid grid-cols-2 gap-3 sm:max-w-[24rem]">
           <label className="block">
-            <span className="text-label font-semibold uppercase tracking-[0.06em] text-muted">{t('cal.f_start')}</span>
-            <input type="time" value={f.start} onChange={(e) => setF({ ...f, start: e.target.value })} className="field mt-1 w-full" />
+            <span className="field-label">{t('cal.f_start')}</span>
+            <input type="time" data-hook="cal-f-start" value={f.start} onChange={(e) => setF({ ...f, start: e.target.value })} className="field" />
           </label>
           <label className="block">
-            <span className="text-label font-semibold uppercase tracking-[0.06em] text-muted">{t('cal.f_end')}</span>
-            <input type="time" value={f.end} onChange={(e) => setF({ ...f, end: e.target.value })} className="field mt-1 w-full" />
+            <span className="field-label">{t('cal.f_end')}</span>
+            <input type="time" data-hook="cal-f-end" value={f.end} onChange={(e) => setF({ ...f, end: e.target.value })} className="field" />
           </label>
         </div>
 
-        <label className="block">
-          <span className="text-label font-semibold uppercase tracking-[0.06em] text-muted">{t('cal.f_where')}</span>
-          <input value={f.location} onChange={(e) => setF({ ...f, location: e.target.value })} maxLength={160} className="field mt-1 w-full" />
-        </label>
-
-        <div>
-          <span className="text-label font-semibold uppercase tracking-[0.06em] text-muted">{t('cal.f_repeat')}</span>
+        <div className="mt-4">
+          <span className="field-label">{t('cal.f_repeat')}</span>
           {/* Monday first, because that is what a timetable looks like, while
               the stored numbers are getDay()'s, where Sunday is 0. The mapping
               lives here and nowhere else. */}
-          <div className="mt-1 flex flex-wrap gap-1">
+          <div className="flex flex-wrap gap-1.5">
             {[1, 2, 3, 4, 5, 6, 0].map((n) => (
               <button
                 key={n}
@@ -1729,14 +1797,14 @@ function EventForm({ initial, onClose, onSaved }) {
               </button>
             ))}
           </div>
-          <p className="mt-1.5 text-small text-muted">
+          <p className="field-note">
             {f.weekdays.length ? t('cal.repeats') : t('cal.once')}
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="mt-4 grid grid-cols-2 gap-3 sm:max-w-[28rem]">
           <label className="block">
-            <span className="text-label font-semibold uppercase tracking-[0.06em] text-muted">{t('cal.f_from')}</span>
+            <span className="field-label">{t('cal.f_from')}</span>
             {/* onBlur en plus de onChange: le selecteur de date natif peut
                 vider le champ sans qu'aucun evenement n'atteigne React, ce qui
                 laisse une case vide a l'ecran et l'ancienne valeur dans
@@ -1746,15 +1814,15 @@ function EventForm({ initial, onClose, onSaved }) {
             <input type="date" data-hook="cal-f-from" value={f.starts_on}
                    onChange={(e) => setF({ ...f, starts_on: e.target.value })}
                    onBlur={(e) => { if (e.target.value !== f.starts_on) setF({ ...f, starts_on: e.target.value }) }}
-                   className="field mt-1 w-full" />
+                   className="field" />
           </label>
           {f.weekdays.length > 0 && (
             <label className="block">
-              <span className="text-label font-semibold uppercase tracking-[0.06em] text-muted">{t('cal.f_until')}</span>
+              <span className="field-label">{t('cal.f_until')}</span>
               <input type="date" data-hook="cal-f-until" value={f.until_on} min={f.starts_on}
                      onChange={(e) => setF({ ...f, until_on: e.target.value })}
                      onBlur={(e) => { if (e.target.value !== f.until_on) setF({ ...f, until_on: e.target.value }) }}
-                     className="field mt-1 w-full" />
+                     className="field" />
             </label>
           )}
         </div>
@@ -1772,14 +1840,12 @@ function EventForm({ initial, onClose, onSaved }) {
          * plutot que de proposer un reglage qui ment.
          */}
         {minutesOf(f.start) != null && (
-          <label className="block" data-hook="event-remind">
-            <span className="text-label font-semibold uppercase tracking-[0.06em] text-muted">
-              {t('cal.f_remind')}
-            </span>
+          <label className="mt-4 block sm:max-w-[22rem]" data-hook="event-remind">
+            <span className="field-label">{t('cal.f_remind')}</span>
             <select
               value={f.remind_min}
               onChange={(e) => setF({ ...f, remind_min: e.target.value })}
-              className="field mt-1 w-full"
+              className="field"
             >
               <option value="">{t('cal.remind_none')}</option>
               <option value="0">{t('remind.lead_0')}</option>
@@ -1790,27 +1856,40 @@ function EventForm({ initial, onClose, onSaved }) {
               <option value="120">{t('water.every_h', { h: 2 })}</option>
               <option value="1440">{t('remind.lead_day')}</option>
             </select>
-            <span className="mt-1.5 block text-small text-muted">
+            <span className="field-note">
               {f.remind_min === '' ? t('cal.remind_hint') : t('cal.remind_on', {
                 n: f.weekdays.length ? t('cal.remind_each') : t('cal.remind_once'),
               })}
             </span>
           </label>
         )}
+        </div>
 
-        {error && (
-          <p className="text-safe text-small text-negative" role="alert">
-            {error}
-          </p>
-        )}
-
-        <div className="flex flex-wrap items-center gap-2 pt-1">
+        {/**
+         * ENREGISTRER RESTE A L'ECRAN.
+         *
+         * Le bouton etait a la fin du defilement, donc sur un telephone ou le
+         * dialogue est plafonne a 92dvh il fallait descendre tout le
+         * formulaire pour finir ce qu'on venait de remplir. Le wizard d'a cote
+         * epinglait deja le sien sous le trait; c'est la meme coque, c'est
+         * maintenant le meme bas de page.
+         *
+         * L'erreur vit ici plutot qu'au-dessus du bouton: c'est la reponse a
+         * l'appui sur Enregistrer, et elle etait affichee a un endroit qui
+         * pouvait etre hors de l'ecran au moment ou elle apparaissait.
+         */}
+        <div className="flex flex-wrap items-center gap-2 border-t border-hairline px-5 py-4">
           <button type="submit" disabled={busy} className="goal-action-done press">
             {busy ? t('cal.saving') : t('cal.save')}
           </button>
           <button type="button" onClick={onClose} className="goal-action press">
             {t('cal.cancel')}
           </button>
+          {error && (
+            <p className="text-safe w-full text-small text-negative" role="alert">
+              {error}
+            </p>
+          )}
         </div>
       </form>
       </section>
