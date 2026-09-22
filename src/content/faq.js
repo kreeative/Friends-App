@@ -126,6 +126,73 @@ export const FAQ = {
           },
         ],
       },
+      {
+        /**
+         * LES REGLAGES, UN PAR UN, PARCE QU'ILS NE SONT PLUS A L'ECRAN.
+         *
+         *   "Every explanation put them next to the bold name with a ?, and in
+         *    the help center article too."
+         *
+         * L'ecran des reglages portait sept paragraphes gris sous sept noms en
+         * gras, et il faisait 1882px de haut sur un telephone. Les phrases sont
+         * passees derriere un "?" la-bas, et elles sont ici en entier: le "?"
+         * repond a "c'est quoi ce reglage", cette page repond a "oui mais
+         * pourquoi", ce qui n'est pas la meme visite.
+         */
+        id: 'reglages',
+        title: 'Les réglages, un par un',
+        items: [
+          {
+            q: '« Où arrivent les messages », ça couvre quoi ?',
+            a: [
+              'Tout ce que l’application t’envoie : le récap, un ami qui prend de tes nouvelles, les anniversaires, les objectifs partagés. Décoche les deux et plus rien ne part.',
+              'Les deux peuvent être décochées en même temps, et c’est permis : t’obliger à en garder une te pousserait à couper les notifications au niveau du téléphone, ce qui couperait aussi celles que tu voulais garder. L’écran te le dit alors en clair, plutôt que de laisser croire que quelque chose arrivera encore.',
+            ],
+          },
+          {
+            q: 'Pourquoi il n’y a pas d’heure à régler pour l’eau ?',
+            a: [
+              'Parce que tu n’as pas à la calculer. Tu choisis une cible pour la journée, l’application en déduit le rythme, puis l’ajuste au fil des heures : si tu prends du retard les rappels se resserrent, si tu bois beaucoup d’un coup ils s’espacent.',
+              'La phrase sous le curseur montre le résultat pendant que tu le bouges : « 2,2 L par jour, environ un rappel toutes les 1 h 40 ». Sans elle, « 2 litres » est un nombre abstrait et le premier rappel est une surprise.',
+            ],
+          },
+          {
+            q: 'Si je passe des millilitres aux onces, est-ce que je perds ce que j’ai bu ?',
+            a: [
+              'Non. Le réglage change ce qui est écrit à l’écran et ce que tu tapes, rien d’autre. Tout ce qui est déjà enregistré est converti, jamais réinterprété.',
+              'Tout est gardé en millilitres quelle que soit l’unité affichée : une bouteille de 40 oz est enregistrée comme 1183 ml et se relit 40 oz. Changer d’unité deux fois de suite te rend exactement le même chiffre.',
+            ],
+          },
+          {
+            q: 'À quoi sert « Dans quoi tu bois » ?',
+            a: [
+              'C’est la contenance de ta bouteille ou de ton verre. Le bouton d’ajout en met cette quantité en une fois, et c’est elle qui donne le rythme des rappels : une grande bouteille veut dire moins de rappels dans la journée.',
+              'Le champ est dans l’unité affichée, la valeur est gardée en millilitres, et elle est ramenée entre 50 ml et 2 L avant d’être enregistrée. Taper 9999 te rend la valeur retenue plutôt qu’un message d’erreur.',
+            ],
+          },
+          {
+            q: 'Les heures d’éveil, ça concerne toutes les notifications ?',
+            a: [
+              'Non, seulement l’eau. C’est sur cette durée que tes verres sont répartis. Rien d’autre n’est affecté, et aucune autre notification n’est retenue en dehors de ces heures.',
+              'Elles traversent minuit sans rien de spécial : 22 h à 6 h est la journée de quelqu’un qui travaille de nuit, et le calcul la lit comme tu t’y attends.',
+            ],
+          },
+          {
+            q: 'Un rappel dans un événement et l’interrupteur « Rappels d’agenda », c’est pareil ?',
+            a: [
+              'Non. Le rappel se coche dans l’événement lui-même, un par un : c’est là que tu décides que celui-là te prévienne. L’interrupteur des réglages les coupe tous d’un coup, sans rien effacer.',
+              'Rallume-le et chaque événement retrouve le rappel que tu lui avais mis. C’est un robinet, pas une gomme.',
+            ],
+          },
+          {
+            q: '« Préviens-moi » par défaut, ça veut dire quoi exactement ?',
+            a: [
+              'C’est le délai utilisé pour un événement où tu n’as rien précisé. Chaque événement peut avoir le sien, réglé dans sa propre fiche, et celui-là gagne toujours sur le défaut.',
+              'Le rappel n’est proposé que sur un événement qui a une heure : « trente minutes avant » quelque chose qui dure toute la journée se calculerait depuis minuit et partirait à 23 h 30 la veille.',
+            ],
+          },
+        ],
+      },
     ],
   },
 
@@ -228,6 +295,61 @@ export const FAQ = {
               'Go to Settings, the Purchases section, and press "Check purchases". It checks the whole chain: the keys on this deployment, whether Stripe knows where to send a completed payment, whether recent payments were delivered, and whether the records can be written. It never shows a secret.',
               'If a purchase is missing, "Get the books I paid for" asks Stripe directly what you have paid for and hands it over. It cannot give you anything you did not pay for.',
               'The library already tries this on its own, a few seconds after a payment. That button is the floor underneath it.',
+            ],
+          },
+        ],
+      },
+      {
+        id: 'reglages',
+        title: 'The settings, one by one',
+        items: [
+          {
+            q: 'What does "Where messages land" cover?',
+            a: [
+              'Everything the app sends you: the recap, a friend checking in, birthdays, shared goals. Untick both and nothing is sent at all.',
+              'Both can be off at the same time, and that is allowed: forcing you to keep one would push you to turn notifications off at the phone level instead, which would also kill the ones you wanted. The screen says so plainly rather than letting you believe something is still coming.',
+            ],
+          },
+          {
+            q: 'Why is there no time to set for water?',
+            a: [
+              'Because you should not have to work it out. You pick a target for the day, the app works out the rhythm, then adjusts it as the hours go: fall behind and the reminders close up, drink a lot at once and they space out.',
+              'The line under the slider shows the result while you move it: "2.2 L a day. About one reminder every 1 h 40." Without it, "2 litres" is an abstract number and the first reminder is a surprise.',
+            ],
+          },
+          {
+            q: 'If I switch from millilitres to ounces, do I lose what I drank?',
+            a: [
+              'No. The setting changes what is written on screen and what you type, nothing else. Everything already recorded is converted, never reinterpreted.',
+              'It is all kept in millilitres whatever unit is shown: a 40 oz bottle is stored as 1183 ml and reads back as 40 oz. Switching units twice in a row gives you exactly the same number.',
+            ],
+          },
+          {
+            q: 'What is "What you drink from" for?',
+            a: [
+              'It is the size of your bottle or your glass. The add button puts that much in at once, and it is what sets the pace of the reminders: a big bottle means fewer reminders in the day.',
+              'The field is in the unit shown, the value is kept in millilitres, and it is pulled back between 50 ml and 2 L before it is saved. Typing 9999 gives you back the value that was kept rather than an error message.',
+            ],
+          },
+          {
+            q: 'Do the waking hours apply to every notification?',
+            a: [
+              'No, only to water. That is the stretch your glasses are spread across. Nothing else is affected, and no other notification is held back outside those hours.',
+              'They cross midnight with nothing special about it: 22:00 to 06:00 is the day of somebody who works nights, and the maths reads it the way you would expect.',
+            ],
+          },
+          {
+            q: 'Is a reminder inside an event the same as the "Calendar reminders" switch?',
+            a: [
+              'No. A reminder is turned on inside the event itself, one by one: that is where you decide that this one should warn you. The switch in settings turns all of them off at once, without erasing anything.',
+              'Turn it back on and every event gets back the reminder you had set. It is a tap, not an eraser.',
+            ],
+          },
+          {
+            q: 'What does the default "Remind me" actually mean?',
+            a: [
+              'It is the lead time used for an event where you have not said otherwise. Each event can carry its own, set on the event itself, and that one always wins over the default.',
+              'A reminder is only offered on an event that has a time: "thirty minutes before" something that lasts all day would be counted from midnight and would fire at 23:30 the night before.',
             ],
           },
         ],
