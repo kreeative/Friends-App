@@ -2761,49 +2761,57 @@
    * room, while the theme picker and the language picker are each one row of
    * chips and were sitting in 600px of it.
    *
-   * The placement is explicit rather than left to auto-flow. Every child
-   * defaults to the wide column, and .pane-aside pins one to column 1; grid
-   * then puts each in the first row where its column is free, so the source
-   * order Preferences, Profile, Groups, Regularity comes out as
-   * [Preferences | Profile] over [Groups | Regularity] with no order classes
-   * and nothing reordered for a screen reader.
+   * Le placement etait explicite, case par case, avec .pane-aside et un
+   * auto-flow `dense`. Ca n'est plus la, et la note qui suit dit pourquoi.
+   */
+  /**
+   * DEUX COLONNES QUI COULENT, ET PLUS UNE GRILLE DE CASES.
    *
-   * items-start, so a short aside does not stretch to the height of the form
-   * beside it. The gap under it is the honest result of two columns of
-   * different lengths and is better than a card padded out to match.
+   *   "Same here" -- le meme vide que sur le tableau de bord.
+   *
+   * La grille placait chaque carte dans une CASE, et la hauteur d'une rangee
+   * est celle de son plus grand element. Les preferences, 293px, tenaient donc
+   * seules une rangee haute de 1027px a cote du formulaire. Mesure a 1024,
+   * 1180, 1290, 1440 et 1728: 1096px de colonne vide, soit 79% d'elle.
+   *
+   * La note d'avant defendait `items-start` ici, et elle avait raison sur un
+   * point: gonfler deux rangees de puces a la hauteur d'un formulaire de six
+   * champs donne une carte rembourree, pas une mise en page. C'est pour ca que
+   * le correctif du tableau de bord ne s'appliquait pas tel quel. Ce qui
+   * manquait n'etait pas de la hauteur, c'etait du CONTENU dans cette colonne.
+   *
+   * Premiere tentative: deplacer "Ta regularite" dans la colonne etroite en
+   * gardant la grille. Mesure: la carte est partie en RANGEE 2, a y=1255, donc
+   * le trou a change de place sans changer de taille. `dense` ne backfille que
+   * dans une case libre, et la rangee 1 etait prise.
+   *
+   * Une colonne qui coule ne se fabrique pas avec des rangees. Donc deux
+   * colonnes, chacune empilant son contenu a sa propre hauteur, exactement
+   * comme .page-grid. Le placement explicite, `dense` et .pane-aside ne
+   * servent plus a rien et partent avec.
    */
   .profile-grid {
-    @apply grid items-start gap-6 lg:grid-cols-3;
+    @apply grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)];
   }
 
-  @media (min-width: 1024px) {
-    /**
-     * `dense`, and it is load bearing rather than a flourish.
-     *
-     * Default auto-flow is sparse: the cursor only moves forward, so an item
-     * with an explicit earlier column than the cursor goes to the NEXT row
-     * rather than backfilling. Measured without it, the wide Profile card took
-     * row one and the narrow Preferences card landed in row two, leaving the
-     * whole top-left of the page empty. The screenshot is what caught it.
-     *
-     * `dense` backfills, which is normally a reason NOT to use it: it can put
-     * things on screen in a different order from the DOM. Here that is exactly
-     * the point and it costs nothing, because the two columns hold unrelated
-     * cards rather than a sequence, and the DOM order stays the reading order
-     * a screen reader and a keyboard get.
-     */
-    .profile-grid {
-      grid-auto-flow: row dense;
-    }
+  /**
+   * L'ordre des colonnes A L'ECRAN, sans toucher a l'ordre du DOM.
+   *
+   * Le formulaire vient en premier dans le DOM, parce que c'est ce qu'on vient
+   * chercher et que c'est l'ordre juste sur un telephone, ou la page est une
+   * pile. A partir de lg il passe a droite et la colonne etroite a gauche, ce
+   * qui est la disposition que cette page a toujours eue.
+   *
+   * order plutot qu'un echange dans le JSX: un lecteur d'ecran et la tabulation
+   * suivent le DOM, et personne ne doit tabuler vers les preferences avant
+   * d'avoir vu son nom.
+   */
+  .pane-col-main {
+    @apply flex flex-col gap-6 lg:order-2;
   }
 
-  @media (min-width: 1024px) {
-    .profile-grid > * {
-      grid-column: 2 / span 2;
-    }
-    .profile-grid > .pane-aside {
-      grid-column: 1 / span 1;
-    }
+  .pane-col-aside {
+    @apply flex flex-col gap-6 lg:order-1;
   }
 
   /**

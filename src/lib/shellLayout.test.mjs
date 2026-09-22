@@ -1162,14 +1162,58 @@ ok(
   /prefers-reduced-motion[\s\S]{0,300}\.goal-action/.test(css),
 )
 
-/* --- the profile is an aside and a main column --------------------------- */
-
+/**
+ * LE PROFIL EST DEUX COLONNES QUI COULENT, PLUS UNE GRILLE DE CASES.
+ *
+ *   "Same here" -- le meme vide que sur le tableau de bord.
+ *
+ * La grille placait chaque carte dans une case, et la hauteur d'une rangee est
+ * celle de son plus grand element. Mesure a 1024, 1180, 1290, 1440 et 1728:
+ * les preferences, 293px, tenaient seules une rangee haute de 1027px, donc
+ * 1096px de colonne vide, 79% d'elle.
+ *
+ * `dense` etait la pour que l'aside remonte a cote du formulaire, et il
+ * marchait pour ca. Ce qu'il ne pouvait pas faire, c'est empiler DEUX cartes
+ * dans la colonne etroite: la rangee 1 etant prise, la deuxieme partait en
+ * rangee 2, sous le formulaire. Mesure: y=1255. Le trou changeait de place.
+ *
+ * Deux colonnes reelles, chacune a sa hauteur, comme .page-grid. Le placement
+ * explicite et `dense` n'ont plus d'objet et sont partis.
+ */
 ok('there is a profile grid', /\.profile-grid \{/.test(css))
 ok(
-  'and it backfills, which is what puts the aside beside the form',
-  /\.profile-grid \{[\s\S]{0,120}grid-auto-flow: row dense/.test(css),
-  'measured without it the whole top-left of the page was empty',
+  'et ce sont deux colonnes, pas des cases placees a la main',
+  /\.pane-col-main \{[^}]*flex-col/.test(css) && /\.pane-col-aside \{[^}]*flex-col/.test(css),
+  'une colonne qui coule ne se fabrique pas avec des rangees',
 )
+ok(
+  'le placement case par case est parti avec',
+  !/grid-auto-flow: row dense/.test(css) && !/\.profile-grid > \.pane-aside/.test(css),
+  'une regle qui ne place plus rien est une regle que le prochain doit verifier',
+)
+{
+  const me = code('src/pages/Me.jsx')
+  ok(
+    'la page ouvre bien ses deux colonnes',
+    /className="pane-col-main/.test(me) && /className="pane-col-aside/.test(me),
+  )
+  ok(
+    'et plus aucune section ne porte l ancienne classe',
+    !/className="pane-aside"/.test(me),
+  )
+  /* Le formulaire reste PREMIER dans le DOM: c'est ce qu'on vient chercher, et
+     c'est l'ordre juste sur un telephone. L'echange se fait avec `order`, donc
+     la tabulation et le lecteur d'ecran suivent toujours le DOM. */
+  ok(
+    'le formulaire vient avant les preferences dans le DOM',
+    me.indexOf('className="pane-col-main') < me.indexOf('className="pane-col-aside'),
+    'personne ne doit tabuler vers les preferences avant d avoir vu son nom',
+  )
+  ok(
+    'et les colonnes ne s echangent qu a partir de lg',
+    /\.pane-col-main \{[^}]*lg:order-2/.test(css) && /\.pane-col-aside \{[^}]*lg:order-1/.test(css),
+  )
+}
 
 /* --- the sign-in is a card, and only where there is room for one ---------- */
 

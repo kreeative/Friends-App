@@ -337,6 +337,26 @@ export default function Me() {
           being stretched across it. See .pane-grid in index.css for the
           measurement that produced this. */}
       <div className="profile-grid">
+      {/**
+       * DEUX VRAIES COLONNES, ET PLUS UNE GRILLE DE CASES.
+       *
+       *   "Same here" -- le meme vide que sur le tableau de bord.
+       *
+       * La grille placait chaque carte dans une CASE, et la hauteur d'une
+       * rangee est celle de son plus grand element. Les preferences, 293px, se
+       * retrouvaient donc seules dans une rangee haute de 1027px a cote du
+       * formulaire: 1096px de colonne vide, 79% d'elle, a toutes les largeurs.
+       *
+       * Deplacer "Ta regularite" dans cette colonne n'a rien regle et la
+       * mesure l'a montre tout de suite: `dense` ne peut backfiller que dans
+       * une case LIBRE, la rangee 1 etait prise, donc la carte est partie en
+       * rangee 2, a y=1255. Le trou avait change de place, pas de taille.
+       *
+       * Une colonne qui coule ne se fabrique pas avec des rangees. C'est la
+       * meme forme que .page-grid sur le tableau de bord: deux colonnes qui
+       * empilent leur propre contenu, chacune a sa hauteur.
+       */}
+      <div className="pane-col-main min-w-0">
       {quiet >= 2 && (
         <div className="pt-8">
           <div className="card">
@@ -550,8 +570,11 @@ export default function Me() {
        * for a real membership first and the flag only ever decides what to
        * show somebody who has none. See landing() in src/lib/onboarding.js.
        */}
+      </div>
+
+      <div className="pane-col-aside min-w-0">
       {offerGroup({ memberships: groups }) && (
-        <Section title={t('settings.group_title')} className="pane-aside">
+        <Section title={t('settings.group_title')}>
           <div className="lg p-6">
             <p className="max-w-[38ch] text-body text-muted">{t('settings.group_none')}</p>
             <Link to="/start" className="btn-primary press mt-6 inline-flex">
@@ -590,7 +613,7 @@ export default function Me() {
        * They are shared components rather than a second copy, so the two
        * screens cannot drift apart the next time a theme or a locale is added.
        */}
-      <Section title={t('me.preferences')} className="pane-aside">
+      <Section title={t('me.preferences')}>
         <div className="lg space-y-7 p-6">
           <ThemePicker />
           <LanguagePicker />
@@ -606,9 +629,33 @@ export default function Me() {
        * there. It is still a fact about you and still belongs on this page,
        * just not in the middle of the thing the page is for.
        */}
+      {/**
+       * DANS LA COLONNE ETROITE, AVEC LES PREFERENCES.
+       *
+       *   "Same here" -- le meme vide que sur le tableau de bord.
+       *
+       * Mesure a 1024, 1180, 1290, 1440 et 1728: la colonne de gauche ne
+       * tenait QUE les preferences, 293px, a cote d'une grille de 1389px.
+       * 1096px de colonne vide, soit 79% d'elle.
+       *
+       * Etirer etait exclu, et la note de .profile-grid le dit deja: deux
+       * rangees de puces gonflees a la hauteur d'un formulaire de six champs
+       * sont une carte rembourree, pas une mise en page. Ce qu'il fallait
+       * n'etait pas plus de hauteur, c'etait plus de CONTENU dans cette
+       * colonne.
+       *
+       * Cette carte-la, parce que c'est exactement la meme dans la colonne
+       * etroite du tableau de bord, ou elle vit a 336px de large. Elle sait
+       * faire.
+       *
+       * L'ordre du DOM ne bouge pas, donc l'ordre sur telephone non plus:
+       * les deux colonnes s'echangent avec `order`, a partir de lg seulement,
+       * et la tabulation comme le lecteur d'ecran suivent toujours le DOM.
+       */}
       <Section title={t('me.consistency')}>
         <MyCompletion />
       </Section>
+      </div>
       </div>
 
     </Screen>
