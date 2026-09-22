@@ -1192,8 +1192,27 @@ function MonthGrid({ range, anchor, agenda, cycle, onPick, picking = false, pick
                  show instead of collapsing into "+2 autres". The count line is
                  information about what is hidden; three visible entries is
                  information about the day. */
+              /**
+               * NOIR, ET PAS ROUGE.
+               *
+               *   "Black not red."
+               *
+               * La tuile cochee etait `bg-negative`, le rouge des erreurs et
+               * des suppressions. Sur une grille de septembre entier ca faisait
+               * cinq grands blocs rouges, qui est ce que cette couleur veut
+               * dire partout ailleurs dans l'application: quelque chose ne va
+               * pas. Ce n'est pas ce que cocher ses jours veut dire.
+               *
+               * L'encre. C'est la valeur la plus foncee du theme, elle ne
+               * signifie rien d'autre que "plein", et le blanc dessus mesure
+               * 17.48:1 en soleil et 17.23:1 en mer, en pixels peints.
+               *
+               * La pastille de phase reste rouge, elle: le rouge devient ce qui
+               * est ENREGISTRE, le noir ce qui est coche a l'instant, et les
+               * deux ne sont jamais sur la meme tuile en meme temps.
+               */
               className={`press relative flex min-h-[3.4rem] flex-col items-stretch overflow-hidden rounded-inner p-1 text-left transition-colors md:min-h-[6.5rem] md:p-1.5 ${
-                on ? 'bg-negative text-on-accent' : 'hover:bg-ink/[0.04]'
+                on ? 'bg-ink text-on-accent' : 'hover:bg-ink/[0.04]'
               } ${outside ? 'opacity-40' : ''} ${
                 future ? 'cursor-not-allowed opacity-30' : ''
               } ${k === today ? 'ring-1 ring-inset ring-accent/50' : ''}`}
@@ -1205,23 +1224,55 @@ function MonthGrid({ range, anchor, agenda, cycle, onPick, picking = false, pick
                 {/* The cycle mark. A dot in the corner, never a word, and
                     never a fill that would fight the event chips below. */}
                 {/* Pas sur une tuile cochee: la tuile EST deja la marque, et
-                    une pastille rouge sur un fond rouge ne dit plus rien. */}
+                    une pastille de plus dans le coin d'une case pleine est une
+                    forme qui ne repond a aucune question. */}
                 {phase && !on && (
                   <span className={`h-2 w-2 shrink-0 rounded-pill ${PHASE_DOT[phase]}`} aria-hidden="true" />
                 )}
               </span>
 
               {/* Two, then a count. Four chips in a 48px tile is a smear. */}
+              {/**
+               * ET SUR UNE TUILE COCHEE, LA PASTILLE EST SUR SA PROPRE PLAQUE.
+               *
+               * Chaque entree de SWATCH est un lavis translucide plus
+               * `text-ink`: pose sur du papier ca donne une pastille teintee
+               * avec du noir dessus. Pose sur l'encre, le lavis composite vers
+               * le noir et le texte noir disparait dedans. Mesure sur la tuile
+               * passee au noir: 1.26:1 dans les deux themes. Et il a fallu
+               * baisser le seuil de la sonde pour l'obtenir, parce qu'au seuil
+               * normal AUCUN pixel ne bougeait en rendant le texte
+               * transparent: zero pixel d'encre n'est pas "pas de texte",
+               * c'est du texte qu'on ne voit pas.
+               *
+               * La couleur de categorie est donc suspendue le temps du
+               * pointage, et la pastille revient blanche a texte encre. Ce
+               * n'est pas une perte: pendant qu'on coche ses jours, la seule
+               * question posee par la grille est noir ou pas noir, et la
+               * couleur revient entiere des que le pointage se ferme.
+               *
+               * Une seule classe plutot qu'une deuxieme table de couleurs: une
+               * table parallele est ce que la note de SWATCH_BAR refuse deja,
+               * parce qu'une categorie dont la couleur change doit changer aux
+               * deux endroits ou a aucun.
+               */}
               {list.slice(0, shown).map((e) => (
                 <span
                   key={e.occurrenceId}
-                  className={`mt-0.5 truncate rounded-[0.35rem] px-1 py-px text-[10px] font-semibold md:px-1.5 md:py-0.5 md:text-[11px] ${SWATCH[e.colour] ?? SWATCH.accent}`}
+                  className={`mt-0.5 truncate rounded-[0.35rem] px-1 py-px text-[10px] font-semibold md:px-1.5 md:py-0.5 md:text-[11px] ${
+                    on ? 'bg-surface text-ink' : SWATCH[e.colour] ?? SWATCH.accent
+                  }`}
                 >
                   {e.title}
                 </span>
               ))}
+              {/* Sur une tuile pleine le gris du theme n'est plus lisible: il
+                  a ete choisi pour reculer sur du papier. Trouve en passant la
+                  tuile au noir, et c'etait deja faux sur le rouge: 1.24:1 en
+                  soleil, 1.16:1 en mer, mesure en repeignant l'ancien
+                  habillage a la main. Il suit la tuile maintenant, 17.48:1. */}
               {list.length > shown && (
-                <span className="mt-0.5 px-1 text-[10px] font-semibold text-muted">
+                <span className={`mt-0.5 px-1 text-[10px] font-semibold ${on ? 'text-on-accent' : 'text-muted'}`}>
                   {t('cal.more', { n: list.length - shown })}
                 </span>
               )}
