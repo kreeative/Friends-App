@@ -38,10 +38,21 @@ const STRINGS = {
     'cal.new_title': 'New entry', 'cal.edit_title': 'Edit entry',
     'cal.f_title': 'What', 'cal.f_start': 'Starts', 'cal.f_end': 'Ends',
     'cal.f_where': 'Where', 'cal.f_repeat': 'Repeats on',
-    'cal.f_from': 'From', 'cal.f_until': 'Until',
+    'cal.f_from': 'From', 'cal.f_until': 'Until', 'cal.f_kind': 'Kind',
+    /* An example inside the box, because a 608px rectangle with nothing in it
+       does not say what it wants. Not instructions: one thing somebody would
+       actually type, which is how you learn that the title is the short name
+       and not the description. */
+    'cal.ph_title': 'Maths lecture, soccer…',
+    'cal.ph_where': 'Room 204, the gym…',
+    /* ONE WORD EACH, AND THAT IS THE WHOLE RULE HERE.
+       "Work / shift" and "Event / party" were a chip trying to be its own
+       glossary. Measured: "Evenement / Fete" came to 146px inside a 146px
+       grid cell, which is what made the row of pills fall ragged with one
+       orphan at the end. A category is a word. */
     'cal.cat_cours': 'Class', 'cal.cat_examen': 'Exam',
     'cal.cat_etude': 'Study', 'cal.cat_perso': 'Personal',
-    'cal.cat_travail': 'Work / shift', 'cal.cat_evenement': 'Event / party',
+    'cal.cat_travail': 'Work', 'cal.cat_evenement': 'Event',
     'cal.cat_sante': 'Health',
     'cal.del_title': 'Delete which?',
     'cal.del_body': '"{what}" repeats. This is {when}.',
@@ -1775,16 +1786,20 @@ const STRINGS = {
     'cal.new_title': 'Nouvelle entrée', 'cal.edit_title': "Modifier l'entrée",
     'cal.f_title': 'Quoi', 'cal.f_start': 'Début', 'cal.f_end': 'Fin',
     'cal.f_where': 'Où', 'cal.f_repeat': 'Se répète le',
-    'cal.f_from': 'À partir du', 'cal.f_until': "Jusqu'au",
+    'cal.f_from': 'À partir du', 'cal.f_until': "Jusqu'au", 'cal.f_kind': 'Type',
+    /* Coupe apres mesure: la version longue etait tronquee a 390px, et un
+       exemple qu'on ne peut pas lire en entier n'explique rien. */
+    'cal.ph_title': 'Cours de maths, soccer…',
+    'cal.ph_where': 'Salle 204, le gym…',
     'cal.cat_cours': 'Cours', 'cal.cat_examen': 'Examen',
     'cal.cat_etude': 'Étude', 'cal.cat_perso': 'Perso',
-    'cal.cat_travail': 'Travail / Shift', 'cal.cat_evenement': 'Événement / Fête',
+    'cal.cat_travail': 'Travail', 'cal.cat_evenement': 'Événement',
     /* "Sante" and not "Sante / Cycle", which is what was asked for. The cycle
        is not a calendar category and cannot become one: it lives in its own
        tables behind its own policies, and a pill that invites somebody to file
        a period as a calendar_event row would move that data onto a table four
        other people can be shown. The dentist at 14:00 is what this pill is. */
-    'cal.cat_sante': 'Sante',
+    'cal.cat_sante': 'Santé',
     'cal.del_title': 'Supprimer quoi ?',
     'cal.del_body': "« {what} » se répète. Il s'agit du {when}.",
     'cal.del_one': 'Supprimer uniquement cet événement',
@@ -1816,7 +1831,7 @@ const STRINGS = {
     'cal.dow_0': 'D', 'cal.dow_1': 'L', 'cal.dow_2': 'M', 'cal.dow_3': 'M',
     'cal.dow_4': 'J', 'cal.dow_5': 'V', 'cal.dow_6': 'S',
     'cal.repeats': 'Se répète chaque semaine, les jours ci-dessus.',
-    'cal.once': 'Une seule fois, a la date ci-dessous.',
+    'cal.once': 'Une seule fois, à la date ci-dessous.',
     'cal.save': 'Enregistrer', 'cal.saving': 'Enregistrement...', 'cal.cancel': 'Annuler',
     'cal.err_times': 'Mets un début et une fin, ou aucun des deux pour toute la journée.',
     'cal.err_order': 'Ça doit finir après avoir commencé.',

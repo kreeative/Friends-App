@@ -171,6 +171,33 @@
     --c-hairline: 240 226 231;
 
     /**
+     * LE GRIS DES CHOSES QUI SE TAISENT, ET IL EST MESURE.
+     *
+     * Le placeholder d'un champ et la note sous un champ sont le meme registre:
+     * present, lisible, et qui ne dispute rien a l'etiquette. Les deux avaient
+     * leur propre gris, et les deux ont echoue a la mesure dans un dialogue:
+     *
+     *   .field::placeholder   --c-muted a 0.75   3.66:1 (sun)   3.53:1 (sea)
+     *   ::placeholder global  --c-muted a 0.60   pire encore
+     *   .field-note           rgb(100 106 116)   4.34:1         4.36:1
+     *
+     * Le commentaire de .field-note annoncait 4.6:1 "sur blanc", ce qui est
+     * vrai sur blanc et faux la ou il est lu: la feuille du dialogue n'est pas
+     * blanche, c'est --glass-tint a 0.75 sur une page teintee. Mesurer sur
+     * blanc une chose qui n'est jamais posee sur du blanc est la faute que le
+     * CLAUDE.md decrit, et elle est ici en entier.
+     *
+     * Une seule valeur pour les deux maintenant, sans alpha: un gris a 60 pour
+     * cent d'opacite n'a pas de contraste, il a celui du fond sous lui, qui
+     * change d'ecran en ecran. Mesure a 4.90:1 sur la feuille du dialogue, qui
+     * est le pire fond clair de l'application.
+     *
+     * Pas de prefixe --c-: ce n'est pas un jeton de couleur Tailwind, et
+     * tailwind.config.js fabrique var(--c-<nom>) pour ceux qui le portent.
+     */
+    --quiet-ink: 92 98 108;
+
+    /**
      * Two shadows, both soft, both tinted.
      *
      * These were neutral grey and fairly dense: three stacked layers running
@@ -815,8 +842,11 @@
     font-weight: 600;
   }
 
+  /* Le gris mesure, et pas un alpha. Voir --quiet-ink: text-muted/60 etait la
+     teinte du theme diluee, donc rose pale en sun, et son contraste etait
+     celui du fond sous lui plutot qu'une valeur a elle. */
   ::placeholder {
-    @apply text-muted/60;
+    color: rgb(var(--quiet-ink));
   }
 
   input,
@@ -2429,7 +2459,7 @@
     box-shadow: 0 0 0 3px rgb(var(--c-accent) / 0.18);
   }
   .field::placeholder {
-    color: rgb(var(--c-muted) / 0.75);
+    color: rgb(var(--quiet-ink));
   }
   /**
    * The amount, which is the whole reason the sheet is open.
@@ -2521,13 +2551,20 @@
    * The rule added a second vertical pink mark beside it.
    *
    * A hint is the quietest thing on the form, so it is a neutral grey and
-   * nothing else. Hard-coded rather than themed: this grey has to stay
-   * receding in both palettes, and a themed token would drag it back to the
-   * hue it is here to escape. 4.6:1 on white, so it still passes as text.
+   * nothing else. Not themed: this grey has to stay receding in both palettes,
+   * and a themed token would drag it back to the hue it is here to escape.
+   *
+   * IT SAID 4.6:1 ON WHITE AND IT WAS NEVER ON WHITE.
+   *
+   * Measured inside the event dialog it came back 4.34:1 in sun and 4.36:1 in
+   * sea, because the sheet under it is --glass-tint at 0.75 over a tinted
+   * page, not paper. The number in this note was true about a background this
+   * text does not sit on, which is exactly the reading CLAUDE.md warns about.
+   * It shares --quiet-ink with the placeholder now, measured 4.90:1 there.
    */
   .field-note {
     @apply mt-2 block text-small;
-    color: rgb(100 106 116);
+    color: rgb(var(--quiet-ink));
   }
 
   /* Lists are separated by hairlines, never by nested cards. */
