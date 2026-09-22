@@ -276,16 +276,65 @@ export function Stat({ value, label, hint }) {
   )
 }
 
+/**
+ * L'ANCRE D'UN PANNEAU DE Hint, ET SON Z-INDEX SEULEMENT QUAND IL EST OUVERT.
+ *
+ * `relative` parce que Hint pose son panneau en `absolute left-0 right-0`: il
+ * se cale donc sur la ligne qui porte cette classe, qui fait la largeur de la
+ * carte, et ne peut sortir de l'ecran ni d'un cote ni de l'autre. La note de
+ * Hint raconte ce que l'ancrage sur le "?" lui-meme avait coute: une phrase
+ * coupee en plein mot sur un telephone.
+ *
+ * Le z-index est conditionnel, et c'est la partie qui a demande a etre
+ * regardee plutot que raisonnee. Chaque ligne d'etiquette est positionnee,
+ * donc entre deux lignes au meme z-index c'est l'ordre du DOM qui gagne: un
+ * panneau de 110px s'ouvre sur l'etiquette suivante, 24px plus bas, et c'est
+ * le texte de celle-ci qui se peint PAR-DESSUS la phrase. Un z-index fixe sur
+ * toutes les lignes ne repare pas ca, il le garantit.
+ *
+ * `:has([open])` ne vaut que pour la ligne dont le panneau est ouvert, et il
+ * n'y en a jamais deux. Le `!` est la pour depasser `.lg > *`, qui pose
+ * `relative z-[2]` sur chaque enfant direct d'une carte.
+ */
+export const HINT_ANCHOR = 'relative has-[[open]]:!z-40'
+
+/**
+ * UNE EXPLICATION DE CHAMP EST DERRIERE UN "?", PARTOUT.
+ *
+ *   "Every sub explanation put them next to the bold name with a ?, and in
+ *    the help center article too."
+ *
+ * C'etait `.field-note`, une ligne grise sous la boite. Repete par champ ca
+ * fait un formulaire ou chaque question tient trois lignes: le nom, la boite,
+ * et une phrase qu'on lit une fois et jamais plus. Le formulaire d'objectif en
+ * portait quinze, la page Profil cinq, et la carte des reglages sept avant
+ * d'y passer la premiere.
+ *
+ * Rien n'est supprime: la phrase est a cote du nom, derriere le "?", et la
+ * meme chose developpee est dans l'aide.
+ *
+ * LE <details> EST DANS LE <label>, ET CA A ETE VERIFIE PLUTOT QUE SUPPOSE.
+ *
+ * Un clic dans un label est transmis a son controle, ce qui aurait mis le
+ * curseur dans le champ en meme temps qu'on ouvre la phrase. La specification
+ * dit que la transmission n'a PAS lieu quand la cible est du contenu
+ * interactif, et <details> en est. Chromium l'applique: sonde faite, apres un
+ * clic sur le "?" l'element actif est le <summary>, pas l'input.
+ *
+ * ReminderSettings sort quand meme son "?" de son label, et ce n'est pas une
+ * incoherence: la-bas le label enveloppe un <button role="switch">, qui n'est
+ * pas un controle etiquetable, donc le label n'a rien a quoi transmettre.
+ */
 export function Field({ label, hint, children }) {
   return (
     <label className="block">
-      {label && <span className="field-label">{label}</span>}
+      {label && (
+        <span className={`${HINT_ANCHOR} mb-1.5 flex items-center`}>
+          <span className="field-label mb-0">{label}</span>
+          {hint && <Hint text={hint} />}
+        </span>
+      )}
       {children}
-      {/* field-note rather than another run of plain muted text. What survived
-          the trim is the guidance carrying a real finding, and it was reading
-          as a third line of the same grey as the label above it and the
-          placeholder inside the box. */}
-      {hint && <span className="field-note">{hint}</span>}
     </label>
   )
 }

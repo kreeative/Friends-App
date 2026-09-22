@@ -1527,6 +1527,53 @@ ok(
   ok('a category is a word, not its own glossary', longs.length === 0, longs.join(', '))
 }
 
+/* --- les anniversaires sur la grille ------------------------------------ */
+
+/**
+ * "IT SHOULD AUTOMATICALLY PULL UP YOUR FRIENDS [...] YOUR BDAY AS WELL, AND
+ *  OF COURSE YOU CAN REMOVE IT IF YOU WANT."
+ *
+ * Trois choses, et chacune a sa raison d'etre epinglee.
+ *
+ * AUTOMATIQUEMENT: la meme requete que la banniere du tableau de bord, SANS
+ * filtre de groupe. `group_members_select` est `is_member(group_id)` cote base,
+ * donc elle rend deja exactement les listes dont on fait partie et le profil
+ * embarque repasse par `profiles_select`. Nommer les groupes ici repeterait
+ * une regle que la base applique deja et se tromperait la premiere fois que
+ * quelqu'un en rejoint un en cours de session.
+ *
+ * LE TIEN AUSSI, et il arrive par la meme porte: le profil est ajoute a la
+ * liste plutot que traite a part. Un deuxieme chemin pour une seule personne
+ * est un deuxieme endroit ou la date peut etre fausse.
+ *
+ * TU PEUX L'ENLEVER: la couche `anniversaires`, avec sa puce dans la barre.
+ * Sonde: trois gateaux avant, zero apres la puce, zero apres rechargement,
+ * parce que la couche est dans localStorage comme les quatre autres.
+ */
+{
+  ok('le calendrier lit les gens de tes groupes pour leurs dates',
+     /from\('group_members'\)\s*\n\s*\.select\('profiles\(id, display_name, birthday\)'\)/.test(cal),
+     'sans filtre de groupe: la politique RLS rend deja les bonnes listes')
+  ok('et le tien passe par la meme porte que les autres',
+     /profile\?\.birthday \? \[\.\.\.friends, \{ id: user\?\.id/.test(cal),
+     'un deuxieme chemin pour une seule personne est un deuxieme endroit ou la date peut etre fausse')
+  ok('les entrees sont fabriquees pour la plage affichee, pas stockees',
+     /birthdayEntries\(gens, range\.from, range\.to/.test(cal))
+  ok('et elles passent par le meme filtre de couches que le reste',
+     /visibleEvents\(\[\.\.\.events, \.\.\.asEvents, \.\.\.anniversaires\], hidden\)/.test(cal),
+     'c est ce qui rend la puce "Anniversaires" capable de les enlever')
+  /* Un anniversaire est derive d'un profil comme un objectif est derive de sa
+     ligne: ouvrir le formulaire dessus insererait un vrai evenement portant le
+     meme texte, donc un doublon que l'annee suivante ne fera pas disparaitre. */
+  ok('un anniversaire ne s ouvre pas dans le formulaire',
+     (cal.match(/entry\?\.goalId \|\| entry\?\.birthdayOf/g) ?? []).length === 2,
+     'ni pour modifier, ni pour choisir la portee')
+  for (const cle of ['cal.layer_anniversaires', 'cal.bday_mine']) {
+    const n = read('src/lib/i18n.jsx').split(`'${cle}'`).length - 1
+    ok(`${cle} existe dans les deux langues (${n})`, n === 2)
+  }
+}
+
 /* --- deleting one of a series ------------------------------------------- */
 
 /**
@@ -2672,7 +2719,7 @@ ok(
          && new RegExp(`hint=\\{t\\('${cle.replace('.', '\\.')}'\\)\\}`).test(settings))
   }
   ok('et le point d interrogation est le composant qui existe deja',
-     /import \{ Field, Hint \} from '\.\/ui'/.test(settings),
+     /import \{ Field, HINT_ANCHOR, Hint \} from '\.\/ui'/.test(settings),
      'un deuxieme "?" a cote du premier serait deux reglages du meme glyphe')
 
   /* Un clic dans un <label> active le controle du label. Le <details> pose
@@ -2694,11 +2741,62 @@ ok(
    * Sonde: les sept panneaux ouverts un par un, a 390 et a 1290, et ce qui est
    * peint au milieu de chacun doit etre le panneau lui-meme.
    */
-  ok('l ancre du panneau fait la largeur de la ligne',
-     /const ANCRE = 'relative has-\[\[open\]\]:!z-40'/.test(settings))
+  ok('l ancre du panneau fait la largeur de la ligne, et elle est partagee',
+     /export const HINT_ANCHOR = 'relative has-\[\[open\]\]:!z-40'/.test(read('src/components/ui.jsx')),
+     'deux copies de cette ligne derivent, et la deuxieme est celle qu on oublie')
   ok('et elle ne monte qu une ligne a la fois, celle qui est ouverte',
-     (settings.match(/\$\{ANCRE\}/g) ?? []).length === 3,
+     (settings.match(/\$\{HINT_ANCHOR\}/g) ?? []).length === 3,
      'un z-index fixe sur toutes les lignes garantit le recouvrement au lieu de l empecher')
+
+  /**
+   * ET MAINTENANT C'EST CHAQUE CHAMP DE L'APPLICATION, PAS SEULEMENT CET
+   * ECRAN-LA.
+   *
+   *   "Every sub explanation put them next to the bold name with a ?, and in
+   *    the help center article too."
+   *
+   * La premiere fois, le "?" a ete pose a la main sur les sept reglages. La
+   * deuxieme demande est la meme, un cran plus bas: les explications SOUS
+   * chaque champ. Elles passent par un seul composant, `Field`, donc c'est lui
+   * qui change, et les trente et un `hint=` du depot suivent d'un coup:
+   * quinze dans le formulaire d'objectif, cinq sur le profil, trois dans les
+   * projets, deux dans le detail d'un projet, deux au demarrage d'un groupe.
+   *
+   * LE <details> EST DANS LE <label> ICI, ET C'EST VERIFIE PLUTOT QUE SUPPOSE.
+   *
+   * Un clic dans un label est transmis a son controle. La specification ne le
+   * transmet PAS quand la cible est du contenu interactif, et <details> en
+   * est; ce qui compte est ce que Chromium fait. Sonde: apres un clic sur le
+   * "?" de la page Profil, document.activeElement est le SUMMARY, a 390 comme
+   * a 1290, et le panneau est ouvert.
+   *
+   * ReminderSettings sort quand meme son "?" de son label, et ce n'est pas une
+   * incoherence: la-bas le label enveloppe un <button role="switch">, qui
+   * n'est pas un controle etiquetable, donc il n'y a rien a quoi transmettre.
+   */
+  {
+    const ui = read('src/components/ui.jsx')
+    ok('une explication de champ est derriere un "?" partout',
+       /\{hint && <Hint text=\{hint\} \/>\}/.test(ui)
+         && !/hint && <span className="field-note">/.test(ui),
+       'repetee par champ, la ligne grise fait un formulaire a trois lignes par question')
+    ok('et elle s ancre sur la ligne du nom, pas sur le champ entier',
+       /<span className=\{`\$\{HINT_ANCHOR\} mb-1\.5 flex items-center`\}>/.test(ui),
+       'ancre sur le label entier, le panneau s ouvrirait SOUS la boite')
+
+    /* Le compte des `hint=` est la mesure de la portee: si quelqu'un ecrit sa
+       propre note grise a cote plutot que de passer par Field, ce chiffre ne
+       bouge pas et le test ne dit rien. Donc on verifie aussi qu'il ne reste
+       pas de .field-note dans un formulaire. */
+    const formulaires = ['src/components/GoalForm.jsx', 'src/pages/Me.jsx',
+                         'src/components/Projects.jsx', 'src/components/ProjectDetail.jsx',
+                         'src/pages/Start.jsx']
+    const total = formulaires.reduce((n, f) => n + (read(f).match(/hint=\{t\(/g) ?? []).length, 0)
+    ok(`les ${total} explications de champ passent par Field`, total >= 25, String(total))
+    const restes = formulaires.filter((f) => /className="field-note"/.test(code(f)))
+    ok('et aucune ne s est reecrite a cote en gris',
+       restes.length <= 1, restes.join(' '))
+  }
 
   /* Les memes explications dans l'aide, qui est le deuxieme endroit demande. */
   const faq = read('src/content/faq.js')

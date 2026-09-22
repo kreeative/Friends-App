@@ -70,7 +70,25 @@ export const CATEGORIES = [
  * one reads goals, one switches the cycle overlay. What the toolbar controls
  * is what is DRAWN, which is what somebody toggling it means.
  */
-export const LAYERS = ['scolaire', 'perso', 'objectifs', 'cycle']
+/**
+ * `anniversaires` EST LA CINQUIEME, ET ELLE N'EST PAS UNE CATEGORIE NON PLUS.
+ *
+ *   "You should be able to see bday as little cake on the day it's scheduled,
+ *    it should automatically pull up your friends, the people you are in a
+ *    group with, in your calendar, your bday as well, and of course you can
+ *    remove it if you want."
+ *
+ * Meme raison que `objectifs` juste a cote: un anniversaire n'est pas une
+ * ligne de calendar_event et ne doit pas le devenir. C'est une date sur le
+ * profil de quelqu'un, lue par la meme requete qui charge deja les membres de
+ * tes groupes, et recopiee dans un evenement elle aurait deux endroits ou
+ * vivre dont un se perimerait. Elle est donc DERIVEE a chaque affichage.
+ *
+ * "Et bien sur tu peux l'enlever si tu veux": c'est cette couche-ci. Le
+ * basculement est deja ecrit, deja persiste, et il vaut pour tous les
+ * anniversaires d'un coup, le tien compris.
+ */
+export const LAYERS = ['scolaire', 'perso', 'objectifs', 'anniversaires', 'cycle']
 
 /**
  * Which layer an event's category belongs to.
@@ -94,6 +112,7 @@ const LAYER_OF = {
   perso: 'perso',
   sante: 'perso',
   objectif: 'objectifs',
+  anniversaire: 'anniversaires',
 }
 
 /* Unknown categories fall to 'perso' rather than vanishing. A row written by a
@@ -107,6 +126,7 @@ export const LAYER_COLOUR = {
   scolaire: 'cat-1',
   perso: 'green',
   objectifs: 'cat-3',
+  anniversaires: 'ev-anniv',
   cycle: 'negative',
 }
 
@@ -187,16 +207,44 @@ export function visibleEvents(events, hidden) {
  * tailwind.config.js declares AND a value that constraint allows; the test
  * reads the constraint out of the SQL and asserts both directions.
  */
+/**
+ * ET MAINTENANT LES SEPT ONT LEUR PROPRE FAMILLE, EN PASTEL.
+ *
+ *   "I don't like the colors, they should be tones that match the pink, like
+ *    pastel."
+ *
+ * Tout ce qui precede reste vrai et explique comment on en est arrive la: sept
+ * categories qui devaient se distinguer, et un seul endroit ou piocher, les
+ * jetons que l'application avait deja. D'ou un jaune de panneau de
+ * signalisation pour le travail, le noir du texte pour les examens et le rouge
+ * des erreurs pour les evenements.
+ *
+ * Ca tenait la mesure et c'etait la mauvaise reponse. Sur un mois entier,
+ * "WORK" revient cinq fois par semaine: un quart de la grille etait du jaune
+ * sature, et les examens des dalles noires. Trois couleurs empruntees a trois
+ * systemes differents ne font pas une palette, elles font un ecran qui crie.
+ *
+ * Les sept ont donc une famille a elles, --c-ev-*, sept pastels d'une meme
+ * clarte autour du rose du theme, avec leur version foncee pour ce qui doit
+ * tenir 3:1. Les valeurs et le reste du raisonnement sont dans index.css.
+ *
+ * LA CONTRAINTE DE LA BASE ACCEPTE LES ANCIENS NOMS AUSSI, ET C'EST VOULU.
+ *
+ * La migration 70 ajoute les sept nouveaux sans retirer les anciens, et
+ * reecrit les lignes existantes. Retirer les anciens dans la meme migration
+ * ferait echouer l'UPDATE sur sa propre contrainte, et les tables de rendu les
+ * gardent pour qu'une ligne ecrite avant la migration se peigne encore.
+ */
 export const CATEGORY_COLOUR = {
-  cours: 'cat-1',
-  examen: 'ink',
-  etude: 'cat-4',
-  travail: 'field',
-  evenement: 'negative',
-  perso: 'green',
-  /* Grey, and deliberately the quietest of the seven. A health entry sitting
-     on a shared screen should be the one that draws the least attention. */
-  sante: 'quiet',
+  cours: 'ev-cours',
+  examen: 'ev-examen',
+  etude: 'ev-etude',
+  travail: 'ev-travail',
+  evenement: 'ev-evenement',
+  perso: 'ev-perso',
+  /* Le sable, et deliberement la plus discrete des sept: une entree de sante
+     posee sur un ecran partage doit etre celle qui attire le moins l'oeil. */
+  sante: 'ev-sante',
 }
 
 /**
@@ -292,6 +340,84 @@ export function occurrencesOf(event, from, to) {
     const d = addDays(start, i)
     if (wanted.has(d.getDay()) && !skipped.has(dayKey(d))) out.push(d)
   }
+  return out
+}
+
+/**
+ * LES ANNIVERSAIRES, EN ENTREES DE CALENDRIER.
+ *
+ *   "You should be able to see bday as little cake on the day it's scheduled,
+ *    it should automatically pull up your friends, the people you are in a
+ *    group with, in your calendar, your bday as well."
+ *
+ * Rien n'est ecrit nulle part: ces entrees sont fabriquees a chaque
+ * affichage, a partir de la date de naissance qui est deja sur le profil. La
+ * requete qui les charge est celle du tableau de bord, sans filtre de groupe,
+ * parce que la politique RLS de group_members rend deja exactement les
+ * listes dont on fait partie.
+ *
+ * POURQUOI PAS occurrencesOf.
+ *
+ * Il sait repeter par jour de semaine ou pas du tout. Un anniversaire se
+ * repete par DATE, une fois l'an, et c'est la seule chose dans cette
+ * application qui le fasse: ajouter une recurrence annuelle a l'expandeur
+ * pour un seul appelant compliquerait le chemin que prennent tous les autres
+ * evenements. Une boucle sur les annees que la plage touche suffit, et elle
+ * en touche une ou deux.
+ *
+ * LE 29 FEVRIER TOMBE LE 1er MARS LES ANNEES COMMUNES.
+ *
+ * `new Date(2027, 1, 29)` rend le 1er mars, et c'est le comportement voulu:
+ * l'anniversaire est fete tous les ans plutot que trois annees sur quatre.
+ * C'est deja ce que fait daysUntilBirthday pour la banniere, donc les deux
+ * ecrans disent la meme date.
+ *
+ * LE GATEAU EST DANS LE TITRE.
+ *
+ * "See bday as little cake": pose la, l'emoji traverse les trois vues sans
+ * qu'aucune ait a connaitre les anniversaires, et un lecteur d'ecran l'annonce
+ * ("gateau d'anniversaire") au lieu de lire un prenom seul et sans contexte.
+ * Ce n'est PAS le cas du chevron que CLAUDE.md interdit d'ecrire en
+ * caractere: celui-la etait une fleche d'interface qui change de forme selon
+ * la police, celui-ci est le contenu meme de l'entree.
+ */
+export function birthdayEntries(people, from, to, { mine = null, mineLabel = null } = {}) {
+  const out = []
+  const seen = new Set()
+
+  for (const person of people ?? []) {
+    if (!person?.id || seen.has(person.id)) continue
+    const [, month, day] = String(person.birthday ?? '').slice(0, 10).split('-').map(Number)
+    if (!month || !day) continue
+    seen.add(person.id)
+
+    /* Ton propre anniversaire est annonce comme le tien plutot que par ton
+       nom. "Kee" sur ta propre grille est la seule ligne du calendrier qui
+       parle de toi a la troisieme personne. */
+    const nom = person.id === mine ? mineLabel ?? person.display_name : person.display_name
+    if (!nom) continue
+
+    for (let y = from.getFullYear(); y <= to.getFullYear(); y += 1) {
+      const d = new Date(y, month - 1, day)
+      if (daysBetween(from, d) < 0 || daysBetween(d, to) < 0) continue
+      const k = dayKey(d)
+      out.push({
+        id: `bday:${person.id}:${k}`,
+        birthdayOf: person.id,
+        title: `\u{1F382} ${nom}`,
+        category: 'anniversaire',
+        colour: 'ev-anniv',
+        starts_on: k,
+        start_min: null,
+        end_min: null,
+        weekdays: [],
+        until_on: null,
+        location: null,
+        excluded_on: [],
+      })
+    }
+  }
+
   return out
 }
 

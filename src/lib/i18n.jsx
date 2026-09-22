@@ -66,6 +66,11 @@ const STRINGS = {
     'cal.del_all': 'The whole series',
     'cal.layer_scolaire': 'Timetable', 'cal.layer_perso': 'Work & life',
     'cal.layer_objectifs': 'Goals', 'cal.layer_cycle': 'Cycle',
+    'cal.layer_anniversaires': 'Birthdays',
+    /* Ton propre anniversaire est annonce comme le tien plutot que par ton
+       nom: ton prenom sur ta propre grille est la seule ligne du calendrier
+       qui parle de toi a la troisieme personne. */
+    'cal.bday_mine': 'My birthday',
     'wiz.open': 'Add a schedule',
     'wiz.title': 'My weekly classes',
     'wiz.help': 'One row per class. The term dates are shared by all of them.',
@@ -1812,6 +1817,8 @@ const STRINGS = {
        and it fits at 390px, where the toolbar has to wrap otherwise. */
     'cal.layer_scolaire': 'Cours', 'cal.layer_perso': 'Travail & Perso',
     'cal.layer_objectifs': 'Objectifs', 'cal.layer_cycle': 'Cycle',
+    'cal.layer_anniversaires': 'Anniversaires',
+    'cal.bday_mine': 'Mon anniversaire',
     'wiz.open': 'Ajouter un programme',
     'wiz.title': 'Ajouter mes cours recurrents',
     'wiz.help': 'Une ligne par cours. Les dates du semestre valent pour tous.',

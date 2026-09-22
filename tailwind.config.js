@@ -67,6 +67,28 @@ export default {
           '1-soft': c('cat-1-soft'), '2-soft': c('cat-2-soft'), '3-soft': c('cat-3-soft'),
           '4-soft': c('cat-4-soft'), '5-soft': c('cat-5-soft'), '6-soft': c('cat-6-soft'),
         },
+
+        /**
+         * Les sept couleurs du calendrier, une par categorie.
+         *
+         * Une famille a elles plutot que sept jetons empruntes ailleurs: voir
+         * la note dans index.css, ou sont les valeurs et la raison. Le nom
+         * porte la CATEGORIE et pas la couleur, parce que la couleur change
+         * avec le theme et pas la categorie.
+         *
+         * `-deep` est le meme jeton assez fonce pour un filet de 4px ou une
+         * pastille de 8px, qui portent de l'information et doivent donc tenir
+         * 3:1 (1.4.11). Meme paire, meme raison que field / field-deep.
+         */
+        ev: {
+          cours: c('ev-cours'), examen: c('ev-examen'), etude: c('ev-etude'),
+          travail: c('ev-travail'), evenement: c('ev-evenement'),
+          perso: c('ev-perso'), sante: c('ev-sante'), anniv: c('ev-anniv'),
+          'cours-deep': c('ev-cours-deep'), 'examen-deep': c('ev-examen-deep'),
+          'etude-deep': c('ev-etude-deep'), 'travail-deep': c('ev-travail-deep'),
+          'evenement-deep': c('ev-evenement-deep'), 'perso-deep': c('ev-perso-deep'),
+          'sante-deep': c('ev-sante-deep'), 'anniv-deep': c('ev-anniv-deep'),
+        },
       },
       fontFamily: {
         // One typeface. `display` is kept as a name because the app's metrics

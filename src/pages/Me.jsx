@@ -13,7 +13,7 @@ import { localeTag, useT } from '../lib/i18n'
 import { offerGroup } from '../lib/onboarding'
 import ThemePicker from '../components/ThemePicker'
 import LanguagePicker from '../components/LanguagePicker'
-import { Avatar, Field, Screen, Section, TopBar } from '../components/ui'
+import { Avatar, Field, HINT_ANCHOR, Hint, Screen, Section, TopBar } from '../components/ui'
 import MyCompletion from '../components/MyCompletion'
 
 /**
@@ -538,12 +538,20 @@ export default function Me() {
               onChange={(e) => setCycleTracking(e.target.checked)}
               className="mt-0.5 h-5 w-5 shrink-0 accent-[rgb(var(--c-accent))]"
             />
-            <span>
-              <span className="block text-body text-ink">{t('me.cycle')}</span>
+            <span className="min-w-0 flex-1">
+              {/* Le nom et son "?" sur une ligne, la phrase d'ETAT en dessous.
+                  Les deux lignes n'etaient pas de la meme nature: "Active. Le
+                  calendrier montre tes regles" est la reponse de l'ecran a la
+                  case, donc elle reste visible, et "les lectures restent
+                  accessibles dans les deux cas" est une explication, donc elle
+                  passe derriere le "?" comme les autres. */}
+              <span className={`${HINT_ANCHOR} flex items-center`}>
+                <span className="text-body text-ink">{t('me.cycle')}</span>
+                <Hint text={t('me.cycle_note')} />
+              </span>
               <span className="mt-1 block text-small text-muted">
                 {cycleOn(profile) ? t('me.cycle_on') : t('me.cycle_off')}
               </span>
-              <span className="mt-2 block text-small text-muted">{t('me.cycle_note')}</span>
             </span>
           </label>
           {cycleError && <p className="text-small text-negative">{t('me.cycle_failed')}</p>}

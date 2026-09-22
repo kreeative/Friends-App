@@ -101,6 +101,19 @@ const stillness = () => {
    strength. Sharing them would mean one of the two carrying declarations it
    does not use. */
 const RECAP_DOT = {
+  /* Les sept du calendrier, en version foncee: un point de 10px porte de
+     l'information, donc 3:1 (1.4.11), et le pastel est une couleur de fond.
+     Voir --c-ev-* dans index.css. */
+  'ev-cours': 'bg-ev-cours-deep',
+  'ev-examen': 'bg-ev-examen-deep',
+  'ev-etude': 'bg-ev-etude-deep',
+  'ev-travail': 'bg-ev-travail-deep',
+  'ev-evenement': 'bg-ev-evenement-deep',
+  'ev-perso': 'bg-ev-perso-deep',
+  'ev-sante': 'bg-ev-sante-deep',
+  'ev-anniv': 'bg-ev-anniv-deep',
+
+  /* Les anciens noms, pour une ligne ecrite avant la migration 70. */
   'cat-1': 'bg-cat-1', 'cat-2': 'bg-cat-2', 'cat-3': 'bg-cat-3',
   'cat-4': 'bg-cat-4', 'cat-5': 'bg-cat-5', 'cat-6': 'bg-cat-6',
   accent: 'bg-accent', green: 'bg-green', ink: 'bg-ink',
