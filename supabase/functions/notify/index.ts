@@ -1654,6 +1654,27 @@ async function sendWaterReminders(from: string, to: string) {
       await supabase.from('notify_pref').update({ water_next_at: null }).eq('user_id', row.user_id)
       continue
     }
+    /**
+     * `glasses` N'ETAIT DECLARE NULLE PART.
+     *
+     * La ligne du dessous s'en servait depuis la migration qui a amene les
+     * rappels de la journee, et un identifiant libre dans un module ESM, c'est
+     * un ReferenceError a l'execution, pas une valeur `undefined`. Donc: le
+     * rappel d'eau partait, puis la boucle explosait, puis le travail
+     * `reminders` rendait un 500 et water_next_at n'avancait jamais. Trouve en
+     * transpilant le fichier pour le deployer, pas en le lisant.
+     *
+     * Aucun test ne pouvait le voir: ce fichier tourne sur Deno et les suites
+     * le lisent comme du TEXTE. C'est la limite de l'outil, ecrite ici parce
+     * que la meme classe d'erreur peut revenir n'importe ou dans ce fichier.
+     *
+     * La valeur est celle de planFor() dans src/lib/water.js, au mot pres: le
+     * verre de la personne, 250 ml a defaut, et ce qu'il reste a boire divise
+     * par lui. Le reste de la journee est ensuite reparti sur ces verres-la,
+     * borne entre 30 et 120 minutes.
+     */
+    const glass = Number(row.glass_ml) > 0 ? Number(row.glass_ml) : 250
+    const glasses = Math.ceil(remaining / glass)
     const gap = Math.min(120, Math.max(30, Math.round(minutesLeft / glasses)))
     const next = new Date(Date.now() + gap * 60 * 1000).toISOString()
     await supabase.from('notify_pref').update({ water_next_at: next }).eq('user_id', row.user_id)
