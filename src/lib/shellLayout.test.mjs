@@ -408,16 +408,38 @@ ok(
      /isMissingTable/.test(tog) && /data-hook="group-notify-absent"/.test(tog),
      'un commutateur qui ne commute rien apprend que les reglages ne comptent pas')
 
-  /* La phrase de l'etat coupe doit NOMMER ce qui continue d'arriver, sinon la
-     cloche qui se remplit passe pour un reglage qui n'a pas marche. */
   const i18n = read('src/lib/i18n.jsx')
-  for (const key of ['gnotif.section', 'gnotif.label', 'gnotif.on_help',
+  for (const key of ['gnotif.section', 'gnotif.label',
                      'gnotif.off_help', 'gnotif.failed', 'gnotif.absent']) {
     const hits = i18n.split(`'${key}'`).length - 1
     ok(`${key} existe dans les deux langues (${hits})`, hits === 2)
   }
-  ok('et l etat coupe nomme la cloche', /cloche/.test(i18n) && /in the bell/.test(i18n),
-     'trois lignes non lues apres avoir coupe se lisent comme une panne')
+
+  /**
+   * COURT, ET C'EST MESURE.
+   *
+   *   "The button for notification is hella too long and too detailed."
+   *
+   * L'etat allume portait l'enumeration des quatre messages du groupe: mesure
+   * a 390px, quatre lignes et 124 caracteres sous une case qui dit deja ce
+   * qu'elle fait. Elle est partie, avec sa cle.
+   */
+  ok('rien a lire quand c est allume',
+     !/gnotif\.on_help/.test(i18n) && !/gnotif\.on_help/.test(tog)
+       && /\{on === false && \(/.test(tog),
+     'un mode d emploi sous un interrupteur qui marche')
+
+  /* Mais l'etat coupe garde la sienne: elle porte le seul fait qui manquerait,
+     que la cloche continue de se remplir. Sans elle, trois lignes non lues
+     apres avoir coupe se lisent comme une panne. */
+  ok('et l etat coupe nomme toujours la cloche',
+     /cloche/.test(i18n) && /in the bell/.test(i18n))
+  /* Une seule ligne a 390px veut dire une cinquantaine de caracteres au plus
+     dans cette colonne. 164 en faisaient cinq. */
+  const courtes = [...i18n.matchAll(/'gnotif\.off_help': '([^']*)'/g)].map((m) => m[1])
+  ok(`les deux phrases d etat coupe tiennent en une ligne (${courtes.map((s) => s.length).join(', ')})`,
+     courtes.length === 2 && courtes.every((s) => s.length <= 50),
+     courtes.join(' | '))
 
   /* La politique n'a pas de chemin de groupe, et c'est la fonctionnalite. */
   /* Sans les commentaires: l'explication de cette migration NOMME is_member et
