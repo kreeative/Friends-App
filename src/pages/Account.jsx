@@ -68,8 +68,75 @@ export default function Account() {
 
       <div className="pane-grid">
       {/**
-       * Help first, because it is the reason most people open this screen and
-       * because everything below it is either a document or a way out.
+       * DEUX COLONNES QUI COULENT, ET PLUS UNE GRILLE DE CASES.
+       *
+       *   "Same" -- le meme vide que sur le profil et le tableau de bord.
+       *
+       * La grille placait chaque section dans une CASE, et la hauteur d'une
+       * rangee est celle de son plus grand element. Mesure a 1024, 1180, 1290,
+       * 1440 et 1728: "Quand et comment te joindre" fait 1686px, donc la
+       * rangee qui la contient aussi, et "Notifications" en face, 178px, avait
+       * 1471px de vide sous elle. Sur toute la page: 1856px de trous pour
+       * 2395px de grille, soit 77%.
+       *
+       * Le regroupement suit le SUJET plutot que l'alternance. Les deux
+       * sections des notifications sont les deux moities d'un meme reglage et
+       * la note en tete de la premiere dit pourquoi elles restent voisines;
+       * elles font une colonne a elles deux. Tout le reste fait l'autre.
+       *
+       * ET ELLES VIENNENT EN PREMIER DANS LE DOM, ce qui decide l'ordre sur un
+       * telephone: la page commence par les notifications et finit par la zone
+       * de danger. L'inverse aurait mis "Supprimer mon compte" au milieu de la
+       * pile, sur le chemin de quelqu'un qui descend vers autre chose.
+       */}
+      <div className="pane-col-a min-w-0">
+      {/**
+       * Signing out on its own, above the danger zone and below everything
+       * that is merely reading. It is not destructive, but it is the end of
+       * the visit, so it does not belong in a list of documents.
+       */}
+      {/* Above the account rows, because it is the only thing on this screen
+          that changes what the app DOES rather than what it shows. */}
+      <Section title={t('push.section')}>
+        <div className="lg px-5">
+          <PushToggle />
+        </div>
+      </Section>
+
+      {/**
+       * QUAND, ET PAS SEULEMENT SI.
+       *
+       * L'interrupteur au-dessus decide si le navigateur a le droit d'afficher
+       * quoi que ce soit. Celui-ci decide de ce qui arrive et a quelle heure,
+       * ce qui est la question suivante et pas la meme. Les deux se suivent
+       * parce que le premier sans le second ne fait rien de visible: accorder
+       * la permission puis ne recevoir que le digest du soir se lit comme une
+       * fonctionnalite cassee.
+       */}
+      <Section title={t('remind.section')}>
+        <div className="lg px-5 py-5">
+          <ReminderSettings />
+        </div>
+      </Section>
+
+      </div>
+
+      <div className="pane-col-b min-w-0">
+      {/**
+       * L'aide ouvre CETTE colonne, et non plus la page.
+       *
+       * "Help first, because it is the reason most people open this screen and
+       * because everything below it is either a document or a way out": c'est
+       * ce qui etait ecrit ici, et ca valait quand la page etait une seule
+       * pile. A partir de lg elle est en haut a DROITE, donc toujours en
+       * premiere lecture.
+       *
+       * Sur un telephone elle passe apres les notifications, et c'est le prix
+       * assume du reste: pour que les colonnes coulent, les deux sections des
+       * notifications doivent etre voisines dans le DOM, et les mettre apres
+       * celle-ci aurait pousse la zone de danger au MILIEU de la pile, sur le
+       * chemin de quelqu'un qui descend vers autre chose. Entre "l'aide
+       * d'abord" et "supprimer mon compte pas au milieu", le second gagne.
        */}
       <Section title={t('account.support')}>
         <div className="lg px-5">
@@ -102,35 +169,6 @@ export default function Account() {
             ))}
             <Row to="/about" label={t('account.about')} hook="about" />
           </div>
-        </div>
-      </Section>
-
-      {/**
-       * Signing out on its own, above the danger zone and below everything
-       * that is merely reading. It is not destructive, but it is the end of
-       * the visit, so it does not belong in a list of documents.
-       */}
-      {/* Above the account rows, because it is the only thing on this screen
-          that changes what the app DOES rather than what it shows. */}
-      <Section title={t('push.section')}>
-        <div className="lg px-5">
-          <PushToggle />
-        </div>
-      </Section>
-
-      {/**
-       * QUAND, ET PAS SEULEMENT SI.
-       *
-       * L'interrupteur au-dessus decide si le navigateur a le droit d'afficher
-       * quoi que ce soit. Celui-ci decide de ce qui arrive et a quelle heure,
-       * ce qui est la question suivante et pas la meme. Les deux se suivent
-       * parce que le premier sans le second ne fait rien de visible: accorder
-       * la permission puis ne recevoir que le digest du soir se lit comme une
-       * fonctionnalite cassee.
-       */}
-      <Section title={t('remind.section')}>
-        <div className="lg px-5 py-5">
-          <ReminderSettings />
         </div>
       </Section>
 
@@ -182,6 +220,7 @@ export default function Account() {
       <Section title={t('danger.zone')}>
         <DeleteAccount />
       </Section>
+      </div>
       </div>
 
     </Screen>

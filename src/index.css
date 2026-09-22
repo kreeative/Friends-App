@@ -2748,9 +2748,35 @@
    * Two columns fix it the other way round: the page keeps the window and each
    * section gets about 600px, where a text input is a text input. Never three.
    * A settings screen read in a Z is one where nobody finds anything.
+   *
+   * DEUX COLONNES QUI COULENT, ET PLUS UNE GRILLE DE CASES.
+   *
+   *   "Same" -- le meme vide que sur le profil et le tableau de bord.
+   *
+   * items-start etait juste: sans lui une section courte s'etirait a la
+   * hauteur de sa voisine. Mais dans une grille, la hauteur d'une RANGEE reste
+   * celle de son plus grand element, donc le vide ne disparait pas, il se
+   * range sous la section courte.
+   *
+   * Mesure a 1024, 1180, 1290, 1440 et 1728: "Quand et comment te joindre"
+   * fait 1686px, la rangee qui la contient aussi, et "Notifications" en face,
+   * 178px, avait 1471px de vide sous elle. Sur toute la page, 1856px de trous
+   * pour 2395px de grille: 77%.
+   *
+   * Deux colonnes qui empilent chacune leur contenu a leur propre hauteur.
+   * L'echange gauche-droite se fait avec `order`, donc la tabulation et le
+   * lecteur d'ecran suivent toujours le DOM.
    */
   .pane-grid {
     @apply grid items-start gap-x-8 gap-y-2 lg:grid-cols-2;
+  }
+
+  .pane-col-a {
+    @apply flex flex-col gap-y-2 lg:order-1;
+  }
+
+  .pane-col-b {
+    @apply flex flex-col gap-y-2 lg:order-2;
   }
 
   /**
