@@ -1215,6 +1215,45 @@ ok(
   )
 }
 
+/**
+ * LES REGLAGES AUSSI: DEUX COLONNES QUI COULENT.
+ *
+ *   "Same" -- le troisieme ecran avec le meme vide.
+ *
+ * Mesure a 1024, 1180, 1290, 1440 et 1728: "Quand et comment te joindre" fait
+ * 1686px, la rangee qui la contient aussi, et "Notifications" en face, 178px,
+ * avait 1471px de vide sous elle. Sur toute la page 1856px de trous pour
+ * 2395px de grille, soit 77%, et la page mesurait 2395px pour 1102px de
+ * contenu dans une colonne.
+ */
+{
+  const acc = code('src/pages/Account.jsx')
+  ok('la page des reglages a deux colonnes qui coulent',
+     /className="pane-col-a/.test(acc) && /className="pane-col-b/.test(acc)
+       && /\.pane-col-a \{[^}]*flex-col/.test(css) && /\.pane-col-b \{[^}]*flex-col/.test(css))
+  ok('et une seule de chaque, pas trois boites',
+     (acc.match(/className="pane-col-a/g) ?? []).length === 1
+       && (acc.match(/className="pane-col-b/g) ?? []).length === 1,
+     'la premiere version en avait ouvert trois')
+
+  /* Les deux moities d'un meme reglage restent voisines: la note en tete de
+     push.section dit qu'accorder la permission sans regler les heures se lit
+     comme une fonction cassee. */
+  ok('les deux sections des notifications sont dans la meme colonne',
+     acc.indexOf("t('push.section')") > acc.indexOf('className="pane-col-a')
+       && acc.indexOf("t('remind.section')") < acc.indexOf('className="pane-col-b'),
+     'les separer casserait la paire que la note de push.section protege')
+
+  /* ET LA ZONE DE DANGER RESTE DERNIERE SUR UN TELEPHONE. L'ordre du DOM est
+     l'ordre de la pile, et "Supprimer mon compte" au milieu serait une ligne
+     sur le chemin de quelqu'un qui descend vers autre chose. */
+  ok('la zone de danger est la derniere section du DOM',
+     acc.lastIndexOf("t('danger.zone')") > acc.lastIndexOf("t('me.account')")
+       && acc.lastIndexOf("t('danger.zone')") > acc.lastIndexOf("t('remind.section')"))
+  ok('et les colonnes ne s echangent qu a partir de lg',
+     /\.pane-col-a \{[^}]*lg:order-1/.test(css) && /\.pane-col-b \{[^}]*lg:order-2/.test(css))
+}
+
 /* --- the sign-in is a card, and only where there is room for one ---------- */
 
 const signin = read('src/pages/SignIn.jsx')
