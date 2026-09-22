@@ -193,6 +193,67 @@ export const FAQ = {
           },
         ],
       },
+      {
+        /**
+         * LE PROFIL, CHAMP PAR CHAMP.
+         *
+         *   "Every sub explanation put them next to the bold name with a ?,
+         *    and in the help center article too."
+         *
+         * Meme raison que le groupe des reglages juste au-dessus: la phrase
+         * sous chaque champ est passee derriere le "?", et elle est ici en
+         * entier. Ce sont surtout des questions de qui voit quoi, donc c'est
+         * exactement ce qu'on vient chercher dans une aide plutot que ce qu'on
+         * lit en remplissant un formulaire.
+         */
+        id: 'profil',
+        title: 'Ton profil, champ par champ',
+        items: [
+          {
+            q: 'Qui voit mon nom, et est-ce que mon adresse e-mail est visible ?',
+            a: [
+              'Ton nom est ce que tes groupes voient, partout : le fil, les objectifs partagés, les anniversaires. Ton adresse e-mail n’est montrée à personne, jamais, dans aucun écran de groupe.',
+              'Elle sert à te connecter et à t’envoyer ce que tu as demandé, et c’est tout. Elle apparaît sur ton propre écran de profil parce que c’est le tien.',
+            ],
+          },
+          {
+            q: 'Si je mets ma date de naissance, les autres voient mon âge ?',
+            a: [
+              'Non. Tes groupes voient le jour et le mois, jamais l’année. C’est ce qu’il faut pour qu’un anniversaire soit annoncé, et rien de plus.',
+              'Laisse le champ vide et rien n’est jamais affiché : pas de date, pas d’annonce, pas de gâteau dans le calendrier de personne.',
+            ],
+          },
+          {
+            q: 'Changer de devise, ça convertit mes montants ?',
+            a: [
+              'Non, ça les réétiquette. Un budget noté 200 reste 200 : il s’affichera en euros au lieu de dollars, mais aucun taux de change n’est appliqué.',
+              'C’est volontaire. Convertir voudrait dire choisir un taux et une date, et te rendre des chiffres que tu n’as jamais tapés. Si tu changes vraiment de pays, tu veux ressaisir tes montants, pas les voir glisser tout seuls.',
+            ],
+          },
+          {
+            q: 'À quoi servent les pronoms ?',
+            a: [
+              'Aux mots que les autres écrans emploient pour parler de toi : les relances, le fil du groupe, les phrases d’anniversaire. Sans réponse, l’application dit « iel ».',
+              'Ce n’est jamais deviné à partir de ton nom : un prénom ne dit pas les pronoms de quelqu’un, et se tromper là-dessus coûte plus cher que la neutralité.',
+            ],
+          },
+          {
+            q: '« Tu es », ça sert à quoi exactement ?',
+            a: [
+              'À une seule chose : est-ce que le suivi du cycle fait partie de ton application. Rien d’autre dans l’app ne lit cette réponse, et aucun écran de groupe ne la montre.',
+              'Tu peux la laisser vide, et tu peux allumer ou éteindre le suivi du cycle à la main juste en dessous, quelle que soit la réponse.',
+            ],
+          },
+          {
+            q: 'Si j’éteins le suivi du cycle, je perds ce que j’ai noté ?',
+            a: [
+              'Non. Rien n’est effacé : les données restent et cessent simplement d’être affichées. Rallume-le et tu retrouves ton historique là où tu l’avais laissé.',
+              'Les lectures et les études sur le cycle restent accessibles dans les deux cas : ce sont des textes, pas tes données.',
+              'Et dans tous les cas, personne d’autre ne les voit. Le cycle n’a pas de chemin vers un groupe, pas de vue partagée, pas de total : c’est la fonctionnalité, pas un réglage par défaut.',
+            ],
+          },
+        ],
+      },
     ],
   },
 
@@ -350,6 +411,55 @@ export const FAQ = {
             a: [
               'It is the lead time used for an event where you have not said otherwise. Each event can carry its own, set on the event itself, and that one always wins over the default.',
               'A reminder is only offered on an event that has a time: "thirty minutes before" something that lasts all day would be counted from midnight and would fire at 23:30 the night before.',
+            ],
+          },
+        ],
+      },
+      {
+        id: 'profil',
+        title: 'Your profile, field by field',
+        items: [
+          {
+            q: 'Who sees my name, and is my email address visible?',
+            a: [
+              'Your name is what your groups see, everywhere: the feed, shared goals, birthdays. Your email address is shown to nobody, ever, on any group screen.',
+              'It is there to sign you in and to send you what you asked for, and that is all. It appears on your own profile screen because that screen is yours.',
+            ],
+          },
+          {
+            q: 'If I fill in my date of birth, do other people see my age?',
+            a: [
+              'No. Your groups see the day and the month, never the year. That is what a birthday announcement needs, and nothing more.',
+              'Leave the field empty and nothing is ever shown: no date, no announcement, no cake in anybody else’s calendar.',
+            ],
+          },
+          {
+            q: 'Does changing currency convert my amounts?',
+            a: [
+              'No, it relabels them. A budget written as 200 stays 200: it will show in euros instead of dollars, but no exchange rate is applied.',
+              'That is deliberate. Converting would mean picking a rate and a date, and handing you numbers you never typed. If you really move country, you want to re-enter your amounts rather than watch them drift on their own.',
+            ],
+          },
+          {
+            q: 'What are the pronouns for?',
+            a: [
+              'For the words other people’s screens use about you: nudges, the group feed, birthday lines. With no answer, the app says they.',
+              'It is never guessed from your name: a first name does not tell you somebody’s pronouns, and getting that wrong costs more than staying neutral.',
+            ],
+          },
+          {
+            q: 'What is "You are" actually used for?',
+            a: [
+              'One thing only: whether the cycle tracker is part of your app. Nothing else in the app reads that answer, and no group screen shows it.',
+              'You can leave it blank, and you can switch cycle tracking on or off by hand just below, whatever the answer says.',
+            ],
+          },
+          {
+            q: 'If I turn cycle tracking off, do I lose what I recorded?',
+            a: [
+              'No. Nothing is deleted: the data stays and simply stops being drawn. Turn it back on and your history is where you left it.',
+              'The reading and the studies about the cycle stay open either way: those are articles, not your data.',
+              'And either way, nobody else sees it. The cycle has no path to a group, no shared view and no total: that is the feature, not a default waiting to be relaxed.',
             ],
           },
         ],

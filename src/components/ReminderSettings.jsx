@@ -4,7 +4,7 @@ import { DEFAULTS, LEAD_CHOICES, fromHm, isMuted, toHm } from '../lib/reminders'
 import { MAX_TARGET, MIN_TARGET, everyLabel } from '../lib/water'
 import { MAX_SERVING_ML, MIN_SERVING_ML, UNITS, formatAmount, parseAmount, safeServing, toUnit, unitLabel } from '../lib/units'
 import { useWaterToday } from '../lib/useWater'
-import { Field, Hint } from './ui'
+import { Field, HINT_ANCHOR, Hint } from './ui'
 
 /**
  * Choisir quand l'application a le droit de faire vibrer un telephone.
@@ -445,28 +445,6 @@ export default function ReminderSettings() {
   )
 }
 
-/**
- * L'ANCRE DU PANNEAU, ET LE Z-INDEX SEULEMENT QUAND IL EST OUVERT.
- *
- * `relative` parce que Hint pose son panneau en `absolute left-0 right-0`: il
- * se cale donc sur cette ligne-ci, qui fait la largeur de la carte, et ne peut
- * sortir de l'ecran ni d'un cote ni de l'autre. La note de Hint raconte ce que
- * l'ancrage sur le "?" lui-meme avait coute: une phrase coupee en plein mot.
- *
- * Le z-index est conditionnel, et c'est la partie qui a demande a etre
- * regardee plutot que raisonnee. Chaque ligne de titre est positionnee, donc
- * entre deux lignes au meme z-index c'est l'ordre du DOM qui gagne: le
- * panneau de "Boire de l'eau" s'ouvre sur 110px et le titre "Millilitres ou
- * onces" est 24px plus bas, donc son texte se peignait PAR-DESSUS la phrase.
- * Un z-index fixe sur toutes les lignes ne repare pas ca, il le garantit.
- *
- * `:has([open])` ne vaut que pour la ligne dont le panneau est ouvert, et il
- * n'y en a jamais deux: elle passe alors au-dessus de toutes les autres. Le
- * `!` est la pour depasser `.lg > *`, qui pose `relative z-[2]` sur chaque
- * enfant direct d'une carte, exactement le cas que la note de MyCompletion
- * decrit.
- */
-const ANCRE = 'relative has-[[open]]:!z-40'
 
 /**
  * LES EXPLICATIONS SONT PASSEES DERRIERE UN POINT D'INTERROGATION.
@@ -502,7 +480,7 @@ const ANCRE = 'relative has-[[open]]:!z-40'
  */
 function Titre({ children, hint, small = false }) {
   return (
-    <div className={`${ANCRE} flex items-center`}>
+    <div className={`${HINT_ANCHOR} flex items-center`}>
       <span className={`font-semibold text-ink ${small ? 'text-small' : 'text-body'}`}>
         {children}
       </span>
@@ -515,7 +493,7 @@ function Titre({ children, hint, small = false }) {
 function Reglage({ id, label, hint, children }) {
   return (
     <div>
-      <div className={`${ANCRE} flex items-center`}>
+      <div className={`${HINT_ANCHOR} flex items-center`}>
         <label htmlFor={id} className="field-label mb-0">
           {label}
         </label>
@@ -547,7 +525,7 @@ function Switch({ label, hint, on, onChange, hook }) {
     /* Le <label> s'arrete au nom et le "?" est son voisin, jamais son enfant:
        un clic dans un label active le controle du label, donc ouvrir la phrase
        aurait aussi bascule l'interrupteur. Voir la note sur Titre. */
-    <div className={`${ANCRE} flex items-center`}>
+    <div className={`${HINT_ANCHOR} flex items-center`}>
       <label className="flex cursor-pointer items-center gap-4">
         <button
           type="button"
