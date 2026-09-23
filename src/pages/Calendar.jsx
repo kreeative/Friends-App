@@ -691,6 +691,32 @@ export default function Calendar() {
     year: 'numeric',
     ...(view === 'day' ? { day: 'numeric', weekday: 'long' } : {}),
   })
+  /**
+   * LE MEME MOIS, EN COURT, POUR LES ECRANS LES PLUS ETROITS.
+   *
+   * Mesure a 320px: "September 2026" a 22px fait 165px, le pager a cote en
+   * fait 150, et la carte n'offre que 288 de large. Le titre passait PAR
+   * DESSUS le pager, parce que .text-safe porte min-w-0 et laisse donc la
+   * boite se serrer sous son propre contenu pendant que `whitespace-nowrap`
+   * interdit a ce contenu de passer a la ligne.
+   *
+   * Et le nom entier ne tient sur la ligne du pager a AUCUNE largeur de
+   * telephone: mesure a 390, la rangee interieure fait 324px pour un titre de
+   * 165, un pager de 148 et 12 d'ecart, soit 325. Un pixel de trop, donc le
+   * pager passait a la ligne et la barre reprenait ses trois etages.
+   *
+   * "Sep 2026" fait 95px, donc tout tient avec de la marge. La bascule est
+   * donc a sm et pas a une largeur intermediaire: c'est la premiere ou le nom
+   * entier passe pour de bon.
+   *
+   * La vue "jour" suit la meme regle: "Wed 23 Sep 2026" au lieu de "Wednesday
+   * 23 September 2026", qui ne tenait sur aucun telephone.
+   */
+  const fmtCourt = new Intl.DateTimeFormat(localeTag(locale), {
+    month: 'short',
+    year: 'numeric',
+    ...(view === 'day' ? { day: 'numeric', weekday: 'short' } : {}),
+  })
 
   /**
    * Deleting, and the question that has to be asked first.
@@ -1126,32 +1152,46 @@ export default function Calendar() {
        * tell which of the two they just did.
        */}
       <header className="lg w-full overflow-hidden px-4 py-3" data-hook="cal-toolbar">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        {/**
+         * DEUX LIGNES SUR UN TELEPHONE, PLUS TROIS.
+         *
+         *   "So there's more space for the calendar."
+         *
+         * Les trois groupes etaient trois elements d'une rangee qui passe a la
+         * ligne, donc a 390px chacun prenait la sienne: le mois, les onglets,
+         * le pager. Mesure avant: cette barre faisait 158px et la grille ne
+         * commencait qu'a 368px du haut, c'est-a-dire apres un ecran de
+         * reglages sur un ecran qui en fait 844.
+         *
+         * Le mois et le pager partagent la premiere ligne: ils parlent tous
+         * les deux du meme "quand", et le pager est court. Les onglets
+         * prennent la seconde sur toute la largeur, ce qui leur donne trois
+         * cibles larges au lieu de trois petites au milieu.
+         *
+         * A partir de sm les trois tiennent sur une ligne, comme avant, avec
+         * les deux commandes de navigation groupees a droite.
+         */}
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           {/* The month is the heading of this screen now that the h1 has gone
               up into the page. first-letter:uppercase because Intl gives
               "septembre 2026" in French and "September 2026" in English. */}
-          <h1 className="text-safe text-h2 font-semibold text-ink first-letter:uppercase">
-            {fmt.format(anchor)}
+          {/* `whitespace-nowrap` et pas `min-w-0`: sans lui, "September 2026"
+              se coupait en deux lignes pour laisser passer le pager a cote,
+              et un titre casse en deux fait une barre plus haute que les trois
+              lignes qu'on venait de supprimer. Avec, c'est le PAGER qui passe
+              a la ligne quand il n'y a plus la place, ce qui est la bonne
+              chose a deplacer: il est court et il n'est pas le titre. */}
+          {/* `shrink-0` et pas .text-safe: cette derniere porte min-w-0, donc
+              la boite se serrait sous son texte pendant que `nowrap` empechait
+              ce texte de se replier, et le titre finissait par dessus le
+              pager. Avec shrink-0, si un jour ca ne tient plus, c'est le PAGER
+              qui passe a la ligne, ce qui est la bonne chose a deplacer. */}
+          <h1 className="flex-1 shrink-0 whitespace-nowrap text-h2 font-semibold text-ink first-letter:uppercase">
+            <span className="sm:hidden">{fmtCourt.format(anchor)}</span>
+            <span className="hidden sm:inline">{fmt.format(anchor)}</span>
           </h1>
 
-          <div className="flex gap-1 rounded-pill bg-ink/[0.06] p-1" role="tablist" data-hook="cal-views">
-            {VIEWS.map((v) => (
-              <button
-                key={v}
-                type="button"
-                role="tab"
-                aria-selected={view === v}
-                onClick={() => setView(v)}
-                className={`press rounded-pill px-3 py-1.5 text-small font-semibold transition-colors ${
-                  view === v ? 'bg-surface text-ink shadow-raised' : 'text-muted hover:text-ink'
-                }`}
-              >
-                {t(`cal.${v}`)}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-1">
+          <div className="flex shrink-0 items-center gap-1">
             <button type="button" onClick={() => step(-1)} aria-label={t('cal.prev')} className="press h-9 w-9 rounded-pill hover:bg-ink/[0.06]">
               &#8249;
             </button>
@@ -1165,6 +1205,30 @@ export default function Calendar() {
             <button type="button" onClick={() => step(1)} aria-label={t('cal.next')} className="press h-9 w-9 rounded-pill hover:bg-ink/[0.06]">
               &#8250;
             </button>
+          </div>
+
+          {/* Toute la largeur sur un telephone, donc trois cibles larges; sa
+              largeur naturelle des qu'il y a de la place pour tout sur une
+              ligne. */}
+          <div
+            className="flex w-full gap-1 rounded-pill bg-ink/[0.06] p-1 sm:w-auto"
+            role="tablist"
+            data-hook="cal-views"
+          >
+            {VIEWS.map((v) => (
+              <button
+                key={v}
+                type="button"
+                role="tab"
+                aria-selected={view === v}
+                onClick={() => setView(v)}
+                className={`press flex-1 rounded-pill px-3 py-1.5 text-small font-semibold transition-colors sm:flex-none ${
+                  view === v ? 'bg-surface text-ink shadow-raised' : 'text-muted hover:text-ink'
+                }`}
+              >
+                {t(`cal.${v}`)}
+              </button>
+            ))}
           </div>
         </div>
       </header>

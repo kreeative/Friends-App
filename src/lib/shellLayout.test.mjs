@@ -1395,9 +1395,38 @@ ok(
 
 ok(
   'the month is the heading now that the page title has gone up',
-  /<h1[^>]*first-letter:uppercase[\s\S]{0,80}fmt\.format\(anchor\)/.test(cal),
+  /<h1[^>]*first-letter:uppercase[\s\S]{0,220}fmt\.format\(anchor\)/.test(cal),
   'Intl returns "septembre 2026" in French and "September 2026" in English',
 )
+
+/**
+ * ET LA BARRE DU MOIS TIENT SUR DEUX LIGNES SUR UN TELEPHONE, PLUS TROIS.
+ *
+ *   "So there's more space for the calendar."
+ *
+ * Les trois groupes etaient trois elements d'une rangee qui passe a la ligne,
+ * donc a 390px chacun prenait la sienne. Mesure avant: 158px de barre, la
+ * grille ne commencant qu'a 368px du haut d'un ecran de 844.
+ *
+ * Le mois et le pager partagent la premiere ligne, les onglets prennent la
+ * seconde sur toute la largeur. Mesure apres: 112px, grille a 322.
+ *
+ * ET LE NOM DU MOIS RACCOURCIT SOUS sm, parce qu'il ne tenait a AUCUNE largeur
+ * de telephone: a 390 la rangee interieure fait 324px pour un titre de 165, un
+ * pager de 148 et 12 d'ecart, soit 325. Un pixel de trop, et la barre
+ * reprenait ses trois etages.
+ */
+ok('le mois et le pager partagent une ligne, les onglets prennent la suivante',
+   /<div className="flex flex-wrap items-center gap-x-3 gap-y-2">/.test(cal)
+     && /className="flex w-full gap-1 rounded-pill bg-ink\/\[0\.06\] p-1 sm:w-auto"/.test(cal),
+   'trois elements dans une rangee qui passe a la ligne font trois lignes a 390px')
+ok('le titre ne se replie pas: c est le pager qui bouge s il le faut',
+   /<h1 className="flex-1 shrink-0 whitespace-nowrap/.test(cal) && !/<h1 className="text-safe[^"]*whitespace-nowrap/.test(cal),
+   '.text-safe porte min-w-0, donc le titre passait PAR DESSUS le pager a 320px')
+ok('et le mois est ecrit en court sous sm',
+   /const fmtCourt = new Intl\.DateTimeFormat/.test(cal)
+     && /<span className="sm:hidden">\{fmtCourt\.format\(anchor\)\}<\/span>/.test(cal),
+   '"September 2026" plus le pager font 325px pour 324 de rangee')
 
 /* --- the secondary button is glass --------------------------------------- */
 
