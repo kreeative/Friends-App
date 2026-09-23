@@ -1056,6 +1056,68 @@ ok('it is a drawer', /data-hook="cycle-drawer"/.test(read('src/components/CycleP
 /* --- the layers ---------------------------------------------------------- */
 
 ok('there is a layer toolbar', /data-hook="cal-layers"/.test(cal))
+
+/**
+ * ET LES CINQ PASTILLES SONT DERRIERE UN "..." .
+ *
+ *   "From timetable to cycle remove them, put them together on a 3 dots icon
+ *    like ..."
+ *
+ * Cinq pastilles en rang faisaient deux lignes de chrome sur un telephone
+ * avant d'arriver au mois, pour des reglages qu'on touche une fois et pas tous
+ * les jours.
+ *
+ * Trois choses sont epinglees, et chacune se casserait en silence.
+ */
+ok('les calques sont dans un menu, plus en rang',
+   /data-hook="cal-layers-open"/.test(cal) && /data-hook="cal-layers-menu"/.test(cal)
+     && /aria-haspopup="true"/.test(cal),
+   'cinq pastilles avant la grille sont deux lignes de reglages avant ce qu on vient voir')
+ok('le bouton dit combien sont eteints, en chiffres',
+   /data-hook="cal-layers-off"/.test(cal) && /cal\.layers_some/.test(cal),
+   'sinon un mois auquel il manque des choses ressemble a un mois vide')
+/**
+ * LES DEUX SORTIES. Un panneau qui ne se ferme qu'en retouchant son bouton est
+ * un panneau qu'on laisse ouvert par-dessus la grille. `pointerdown` et pas
+ * `click`: sur un ecran tactile le clic arrive a la fin du geste, donc le menu
+ * restait ouvert le temps du deplacement du doigt.
+ */
+ok('il se ferme en touchant ailleurs et avec Echap',
+   /document\.addEventListener\('pointerdown', ailleurs\)/.test(cal)
+     && /e\.key === 'Escape'/.test(cal),
+   'un seul des deux et le menu reste ouvert sur la grille')
+ok('et les deux ecouteurs sont retires avec lui',
+   /removeEventListener\('pointerdown', ailleurs\)/.test(cal)
+     && /removeEventListener\('keydown', echap\)/.test(cal),
+   'deux ecouteurs sur le document pour une page qui n en a pas besoin')
+/**
+ * ET LES DEUX FAUTES QUE CE PANNEAU A FAITES AVANT D'ETRE JUSTE, TOUTES DEUX
+ * DEJA ECRITES SUR LE PANNEAU DES "?" DANS ui.jsx.
+ *
+ * Ancre sur le BOUTON avec left-0: mesure a 390px, il partait a x=270 sur 224
+ * de large, donc il finissait a 494 sur un ecran de 390 et deux libelles
+ * etaient coupes en deux. `right-0` ne fait que deplacer le probleme, la
+ * rangee passant a la ligne. Ancre sur la rangee, il va de 16 a 256 sur 390.
+ *
+ * Et en `.lg`, la feuille des cartes: ouvert au-dessus de la carte du mois, on
+ * lisait "September 2026" a travers les libelles. Le flou n'y change rien, il
+ * floute ce qu'il y a derriere sans le cacher.
+ */
+/* Commentaires retires d'abord: les deux notes qui expliquent ces deux
+   corrections vivent entre le data-hook et la classe, et une fenetre assez
+   large pour les enjamber serait une fenetre assez large pour attraper
+   n'importe quoi. Ce depot a deja paye ce cas une fois. */
+const calNu = cal.replace(/\/\*[\s\S]*?\*\//g, '')
+ok('le menu s ancre sur la rangee, pas sur le bouton',
+   /className="relative flex flex-wrap items-center gap-2" data-hook="cal-actions"/.test(calNu)
+     && /data-hook="cal-layers-menu"[\s\S]{0,200}absolute left-0 right-0 top-full/.test(calNu),
+   'ancre sur le bouton, il sortait de l ecran par la droite a 390px')
+ok('et il est opaque, parce qu il flotte au-dessus de texte',
+   /data-hook="cal-layers-menu"[\s\S]{0,200}glass-strong[\s\S]{0,120}bg-surface/.test(calNu),
+   'en .lg on lisait le mois a travers les libelles')
+ok('les trois points sont dessines, pas le caractere',
+   /viewBox="0 0 20 6"/.test(cal) && (cal.match(/<circle cx="\d+" cy="3" r="2\.2"/g) ?? []).length === 3,
+   'le caractere tombe sur la ligne de base: trois points colles en bas du bouton')
 ok(
   'a layer that is off is not signalled by colour alone',
   /line-through/.test(cal) && /border-2 \$\{LAYER_RING\[layer\]\}/.test(cal),
