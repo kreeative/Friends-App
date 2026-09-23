@@ -364,7 +364,7 @@ export default function Dashboard() {
           argues for, and it was previously buried inside a check-in window
           that is shut six days out of seven. */}
       <Section title={t('mood.question')}>
-        <MoodToday groupCount={memberships.length} />
+        <MoodToday />
       </Section>
 
       {/* Renders its own Section, so it vanishes heading and all when there is

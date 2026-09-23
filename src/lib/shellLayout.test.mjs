@@ -3633,5 +3633,99 @@ ok(
      'sans elle, retirer la classe ne donnerait plus 600 mais la valeur du navigateur')
 }
 
+/**
+ * QUI VOIT MON HUMEUR: LE CHOIX A DEMENAGE DANS LES REGLAGES.
+ *
+ *   "Humeur du jour, remove l'option qui demande de partager dans les groupes,
+ *    bouge la plutot dans les parametres, comme ca chaque personne peut aller
+ *    dans ses parametres et choisir avec quel groupe elle veut partager ses
+ *    humeurs."
+ *
+ * Ce qui etait la: une case a cocher dans le formulaire, posee chaque jour, et
+ * indivisible. "Partager avec mes groupes" etait un seul oui pour tous les
+ * groupes a la fois, donc quelqu'un qui est dans le groupe de ses amies ET
+ * dans celui de son cours n'avait aucun moyen de dire oui a l'une et non a
+ * l'autre.
+ *
+ * Trois choses sont epinglees ici, et chacune se casserait en silence.
+ */
+{
+  const carte = read('src/components/MoodToday.jsx')
+  const bloc = read('src/components/MoodShare.jsx')
+  const compte = read('src/pages/Account.jsx')
+  const sql = read('supabase/71_mood_share.sql')
+
+  ok('la case a cocher a quitte le formulaire',
+     !/setDraftShared|t\('mood\.share'\)/.test(carte) && !/shared: nextShared/.test(carte),
+     'la question revenait tous les jours pour une reponse qui ne change pas')
+  ok('et le formulaire n ecrit plus la colonne',
+     !/shared: /.test(carte.replace(/\/\*[\s\S]*?\*\//g, '')),
+     'plus aucune politique ne la lit depuis la migration 71')
+  ok('il DIT ou va ce qui vient d etre tape',
+     /data-hook="mood-audience"/.test(carte) && /mood\.share_where_some/.test(carte)
+       && /to="\/settings"/.test(carte),
+     'enlever la case sans rien dire laisse quelqu un sans savoir qui voit')
+
+  ok('le bloc vit dans les reglages personnels, pas dans ceux d un groupe',
+     /<MoodShare \/>/.test(compte) && /moodshare\.section/.test(compte),
+     'la page d un groupe ne montre qu un groupe')
+  ok('un interrupteur par groupe, avec son etat ecrit',
+     /data-hook="moodshare-toggle"/.test(bloc)
+       && /moodshare\.on/.test(bloc) && /moodshare\.off/.test(bloc),
+     'une coche seule est une information portee par une forme, 1.4.1')
+
+  /**
+   * LE COMPTE EXACT SUR LE DELETE, ET C'EST LA SEULE ERREUR QUI SE PAIERAIT EN
+   * VIE PRIVEE.
+   *
+   * La RLS refuse un DELETE en silence: zero ligne, aucune erreur. Sans le
+   * compte, eteindre un groupe afficherait "eteint" pendant que la ligne reste
+   * en base, donc le groupe continuerait de voir l'humeur. Sonde: avec un stub
+   * qui repond zero ligne, l'interrupteur revient ET le dit.
+   */
+  ok('eteindre compte ses lignes et refuse de mentir',
+     /delete\(\{ count: 'exact' \}\)/.test(bloc) && /if \(!count\) throw/.test(bloc),
+     'un refus silencieux afficherait "eteint" sur un groupe qui voit encore')
+  ok('et un echec remet l interrupteur ou il etait, avec un mot',
+     /setOn\(avant\)/.test(bloc) && /data-hook="moodshare-failed"/.test(bloc),
+     'un interrupteur qui revient sans un mot est pire que pas d interrupteur')
+
+  /**
+   * ET LA POLITIQUE PASSE PAR UNE FONCTION, CE QUI N'EST PAS UN DETAIL.
+   *
+   * Une politique RLS qui fait `exists (select 1 from mood_share ...)` est
+   * elle-meme soumise a la RLS de mood_share, qui ne se lit que par son
+   * proprietaire. La sous-requete ne rendrait donc jamais rien et AUCUNE
+   * humeur ne serait plus visible nulle part: pas d'erreur, juste un tableau
+   * de groupe vide pour toujours.
+   */
+  ok('mood_share ne se lit que par la personne qu elle concerne',
+     /create policy mood_share_own on mood_share\s*\n\s*for all\s*\n\s*using \(user_id = auth\.uid\(\)\)/.test(sql)
+       && (sql.match(/create policy/g) ?? []).length === 2,
+     'un chemin par le groupe apprendrait qui a choisi de ne pas partager')
+  ok('la visibilite passe par une fonction SECURITY DEFINER',
+     /security definer/.test(sql) && /set search_path = public/.test(sql)
+       && /mood_visible_to_me\(user_id\)/.test(sql),
+     'sinon la politique se heurte a la RLS de mood_share et plus rien n est visible')
+  ok('et elle verifie les DEUX appartenances',
+     /join group_members moi[\s\S]{0,200}join group_members lelle/.test(sql),
+     'quitter un groupe doit arreter le partage sans rien nettoyer')
+  ok('la politique de lecture ne parle plus de `shared`',
+     /user_id = auth\.uid\(\)\s*\n\s*or \(day = current_date and mood_visible_to_me\(user_id\)\)/.test(sql),
+     'la colonne reste pour l historique et n est plus lue')
+  ok('personne ne perd ce qu il avait',
+     /insert into mood_share \(user_id, group_id\)[\s\S]{0,300}where dm\.shared/.test(sql),
+     'shared = true voulait dire "avec mes groupes", au pluriel')
+
+  const i18n = read('src/lib/i18n.jsx')
+  for (const cle of ['moodshare.section', 'moodshare.help', 'moodshare.on', 'moodshare.off',
+                     'moodshare.failed', 'mood.share_where_some', 'mood.share_where_none',
+                     'mood.share_pick']) {
+    ok(`${cle} existe dans les deux langues`,
+       (i18n.match(new RegExp(`'${cle.replace('.', '\\.')}':`, 'g')) ?? []).length === 2,
+       'une seule occurrence veut dire une langue qui rend la cle brute')
+  }
+}
+
 console.log(`\n  ${pass} passed, ${fail} failed\n`)
 process.exit(fail ? 1 : 0)
