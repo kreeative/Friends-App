@@ -1,4 +1,5 @@
-import { MOODS, moodById, toggleMood } from '../lib/moods'
+import { useState } from 'react'
+import { MOODS, moodById, motionOf, toggleMood } from '../lib/moods'
 import { useT } from '../lib/i18n'
 
 /**
@@ -137,6 +138,25 @@ export default function MoodBoard({ value, onChange }) {
   const { t } = useT()
   const chosen = Array.isArray(value) ? value : value ? [value] : []
 
+  /**
+   * QUELLE TUILE EST EN TRAIN DE JOUER, ET COMBIEN DE FOIS ON LUI A DEMANDE.
+   *
+   *   "So when you click on them, they make the face, like they reproduce the
+   *    emotion."
+   *
+   * Le compteur n'est pas du zele: il sert de `key`, donc un deuxieme appui
+   * pendant que le geste tourne REMONTE le noeud et rejoue depuis le debut.
+   * Sans lui, remettre la meme classe sur le meme element ne relance rien, et
+   * la deuxieme tape ne fait rien du tout, ce qui se lit comme un bouton mort.
+   *
+   * Un seul etat pour les dix-huit, pas un par tuile: il n'y a qu'un doigt.
+   *
+   * Le geste joue aussi quand on DECOCHE. Enlever une humeur est une reponse
+   * comme une autre, et une tuile qui ne repond que dans un sens se lit comme
+   * une tuile qui a rate le tap.
+   */
+  const [beat, setBeat] = useState({ id: null, n: 0 })
+
   return (
     /**
      * ONE RUN, NO HEADINGS.
@@ -182,7 +202,10 @@ export default function MoodBoard({ value, onChange }) {
                      change avec la langue. */
                   data-mood={mood.id}
                   aria-pressed={selected}
-                  onClick={() => onChange(toggleMood(chosen, mood.id))}
+                  onClick={() => {
+                    setBeat((b) => ({ id: mood.id, n: b.n + 1 }))
+                    onChange(toggleMood(chosen, mood.id))
+                  }}
                   className="press group flex flex-col items-center rounded-inner py-1 text-center"
                 >
                   {/* A fixed box, not a fraction of the column. The glyphs have
@@ -197,7 +220,32 @@ export default function MoodBoard({ value, onChange }) {
                         : 'drop-shadow(0 1px 2px rgb(0 0 0 / 0.12))',
                     }}
                   >
-                    <MoodGlyph mood={mood} />
+                    {/**
+                     * DEUX BOITES, ET C'EST CE QUI PERMET LES DEUX MOUVEMENTS.
+                     *
+                     * Celle du dessus porte `scale-110`, l'etat "choisi", en
+                     * transition. Celle-ci porte le geste, en animation. Les
+                     * deux ecrivent `transform`, et sur un seul element la
+                     * derniere declaree gagne: l'animation aurait avale le
+                     * grossissement pendant qu'elle joue, donc la tuile aurait
+                     * retreci d'un dixieme a chaque tape avant de repartir.
+                     * Imbriquees, les deux transformations se composent.
+                     */}
+                    <span
+                      key={beat.id === mood.id ? `b${beat.n}` : 'rest'}
+                      className={`mood-act block h-full w-full ${
+                        beat.id === mood.id ? motionOf(mood.id) : ''
+                      }`}
+                      /* Retiree a la fin, pour que la tuile revienne a un etat
+                         sans animation: c'est ce qui rend la suivante possible
+                         et ce qui evite de laisser dix-huit `will-change` en
+                         place sur une grille que plus personne ne touche. */
+                      onAnimationEnd={() =>
+                        setBeat((b) => (b.id === mood.id ? { id: null, n: b.n } : b))
+                      }
+                    >
+                      <MoodGlyph mood={mood} />
+                    </span>
                   </span>
                   {/* Selection is carried by the fill behind the label, not by
                       colour on the glyph, the glyph is already the mood's own

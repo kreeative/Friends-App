@@ -7,12 +7,17 @@
  * sensible answer or those two screens go blank for anybody who picks more
  * than one face.
  */
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+import { dirname, join } from 'node:path'
 import {
   MAX_MOODS,
   MOODS,
   MOOD_IDS,
+  MOOD_MOTION,
   cleanMoods,
   moodById,
+  motionOf,
   primaryMood,
   toggleMood,
 } from './moods.js'
@@ -171,6 +176,108 @@ ok(
   'the primary is always one the badge can draw',
   MOOD_IDS.every((id) => moodById(primaryMood([id])) !== null),
 )
+
+/**
+ * LE GESTE DE CHAQUE HUMEUR.
+ *
+ *   "So when you click on them, they make the face, like they reproduce the
+ *    emotion."
+ *
+ * Trois choses, et la troisieme est celle qui casserait en silence: une
+ * classe peut etre nommee dans ce fichier et ne rien declarer dans la feuille
+ * de style, auquel cas la tuile attend un `animationend` qui n'arrive jamais
+ * et reste marquee "en train de jouer" pour toujours. Donc on lit la feuille.
+ */
+{
+  const ici = dirname(fileURLToPath(import.meta.url))
+  const css = readFileSync(join(ici, '..', 'index.css'), 'utf8')
+
+  ok('chaque humeur a un geste', MOOD_IDS.every((id) => Boolean(motionOf(id))),
+     MOOD_IDS.filter((id) => !motionOf(id)).join(', '))
+  ok('et aucun geste ne designe une humeur qui n existe pas',
+     Object.keys(MOOD_MOTION).every((id) => MOOD_IDS.includes(id)),
+     Object.keys(MOOD_MOTION).filter((id) => !MOOD_IDS.includes(id)).join(', '))
+  ok('un geste par humeur, pas une famille pour six',
+     new Set(Object.values(MOOD_MOTION)).size === MOOD_IDS.length,
+     `${new Set(Object.values(MOOD_MOTION)).size} gestes pour ${MOOD_IDS.length} humeurs`)
+  eq('une humeur inconnue ne prend pas le geste d une autre', motionOf('wibble'), '')
+
+  const manquantes = MOOD_IDS.filter((id) => {
+    const classe = motionOf(id).replace('mood-', '')
+    return !new RegExp(`@keyframes mood-${classe}\\b`).test(css)
+      || !new RegExp(`\\.mood-${classe} \\{ animation: mood-${classe} `).test(css)
+  })
+  ok('et chaque geste est declare dans la feuille, images et classe',
+     manquantes.length === 0, manquantes.join(', '))
+
+  /* Chaque suite d'images part de `none` et y revient. Sans ca la tuile reste
+     de travers a la seconde ou la classe est retiree. Mesure aussi en pixels
+     peints par la sonde, mais la regle se lit ici. */
+  const sansRepos = MOOD_IDS.filter((id) => {
+    const nom = motionOf(id)
+    const i = css.indexOf(`@keyframes ${nom} {`)
+    if (i < 0) return true
+    const bloc = css.slice(i, css.indexOf('\n}', i))
+    return !/0%, 100% \{ transform: none; \}/.test(bloc)
+  })
+  ok('chaque geste part du repos et y revient', sansRepos.length === 0, sansRepos.join(', '))
+
+  /* Et le mouvement se coupe pour qui l'a demande, SANS supprimer l'animation:
+     une animation supprimee n'emet jamais `animationend`, donc la tuile ne se
+     nettoierait jamais. */
+  const reduit = css.slice(css.indexOf('@keyframes mood-still'))
+  ok('sans mouvement, les gestes deviennent une animation immobile',
+     /animation: mood-still/.test(reduit)
+       && MOOD_IDS.every((id) => reduit.includes(`.${motionOf(id)}`)),
+     MOOD_IDS.filter((id) => !reduit.includes(`.${motionOf(id)}`)).join(', '))
+}
+
+/**
+ * ET LE DECLENCHEUR, QUI EST LA MOITIE JAVASCRIPT DE LA DEMANDE.
+ *
+ * Trois choses ont chacune une raison d'etre exactement comme ca:
+ *
+ * LE COMPTEUR EN `key`. Remettre la meme classe d'animation sur le meme
+ * element ne relance rien. Sans un `key` qui change, la deuxieme tape pendant
+ * que le geste tourne ne fait rien du tout, ce qui se lit comme un bouton
+ * mort. Verifie dans Chromium: une deuxieme tape ramene currentTime de 83 ms
+ * a 0.
+ *
+ * LE NETTOYAGE SUR `animationend`. Sans lui la tuile garde sa classe et son
+ * `will-change`, et dix-huit tuiles marquees en permanence sont dix-huit
+ * couches que le compositeur garde pour rien.
+ *
+ * DEUX BOITES IMBRIQUEES. L'etat "choisi" est un `scale-110` en transition, le
+ * geste est une animation: les deux ecrivent `transform`, et sur un seul
+ * element l'animation gagne pendant qu'elle joue, donc la tuile choisie
+ * retrecirait d'un dixieme a chaque tape. Imbriquees, elles se composent.
+ */
+{
+  const ici2 = dirname(fileURLToPath(import.meta.url))
+  const board = readFileSync(join(ici2, '..', 'components', 'MoodBoard.jsx'), 'utf8')
+
+  ok('la tape rejoue le geste depuis le debut',
+     /key=\{beat\.id === mood\.id \? `b\$\{beat\.n\}` : 'rest'\}/.test(board)
+       && /setBeat\(\(b\) => \(\{ id: mood\.id, n: b\.n \+ 1 \}\)\)/.test(board),
+     'sans key qui change, une deuxieme tape ne relance rien')
+  ok('et la classe est retiree a la fin',
+     /onAnimationEnd=\{\(\) =>/.test(board) && /\{ id: null, n: b\.n \}/.test(board),
+     'sinon la tuile reste marquee, avec son will-change')
+  ok('le geste et l etat choisi sont sur deux boites differentes',
+     board.indexOf("selected ? 'scale-110'") < board.indexOf('mood-act'),
+     'sur un seul element, l animation avalerait le grossissement')
+  ok('le geste vient du catalogue, en classe entiere',
+     /motionOf\(mood\.id\)/.test(board) && !/`mood-\$\{/.test(board),
+     'une classe assemblee est une classe que personne ne retrouve')
+
+  /* Les badges au repos ne jouent rien: ils apparaissent dans la bande de
+     semaine et sur la carte du groupe, ou dix-huit gestes qui partent tout
+     seuls seraient du bruit. */
+  const badges = board.slice(board.indexOf('export function MoodBadges'))
+  ok('les badges poses ailleurs dans l app ne bougent pas',
+     !/mood-act|motionOf/.test(badges),
+     'un geste qui part sans que personne ait touche est du bruit')
+}
 
 console.log(`\n  ${pass} passed, ${fail} failed\n`)
 process.exit(fail === 0 ? 0 : 1)

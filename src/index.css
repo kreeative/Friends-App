@@ -3220,6 +3220,270 @@
 }
 
 /**
+ * LES HUMEURS JOUENT CE QU'ELLES DISENT, QUAND ON LES TOUCHE.
+ *
+ *   "Can you animate them so when you click on them, they make the face, like
+ *    they reproduce the emotion."
+ *
+ * Un geste par humeur, dix-huit, et pas six familles partagees. Une famille
+ * aurait donne le meme rebond a "joyeux" et a "impatient", et le meme
+ * affaissement a "decourage" et a "coupable": c'est justement la nuance qui
+ * fait que la grille repond quelque chose plutot que de bouger.
+ *
+ * TOUT EST EN `transform`, ET RIEN D'AUTRE. Une seule propriete, celle que le
+ * compositeur sait animer sans repasser par la mise en page: dix-huit tuiles
+ * dans une grille, sur un telephone, c'est la difference entre un geste et une
+ * saccade. Aucune n'anime une couleur, une ombre ou une taille de boite.
+ *
+ * ELLES REVIENNENT TOUTES A `none`. La derniere image est l'etat de repos,
+ * donc l'animation peut etre retiree a la fin sans que rien ne saute, et deux
+ * appuis de suite rejouent la meme chose depuis le meme point de depart.
+ *
+ * LE PIVOT EST EN BAS POUR CE QUI PIVOTE, AU CENTRE POUR CE QUI ENFLE. Un
+ * rebond dont l'origine est au centre flotte au lieu de decoller; un
+ * gonflement dont l'origine est au pied grandit vers le haut et sort de sa
+ * case. Les deux ont ete regardes.
+ *
+ * ET LES CLASSES SONT ECRITES EN ENTIER DANS src/lib/moods.js, pas
+ * construites. Ce bloc est hors de `@layer`, donc Tailwind ne l'epure pas,
+ * mais la regle du depot vaut quand meme: une classe assemblee est une classe
+ * que personne ne retrouve en cherchant son nom.
+ */
+.mood-act {
+  animation-fill-mode: both;
+  will-change: transform;
+}
+
+/* Ce qui rebondit, enfle ou se retracte: pivot au centre. */
+.mood-pop,
+.mood-swell,
+.mood-breathe,
+.mood-shrink,
+.mood-wince,
+.mood-buzz {
+  transform-origin: 50% 50%;
+}
+
+/* Ce qui pivote, tombe ou s'affaisse: pivot au pied, la ou un corps s'appuie. */
+.mood-bounce,
+.mood-nod,
+.mood-sway,
+.mood-quiver,
+.mood-sigh,
+.mood-queasy,
+.mood-tilt,
+.mood-shake,
+.mood-fume,
+.mood-slump,
+.mood-drip,
+.mood-turn {
+  transform-origin: 50% 88%;
+}
+
+/* --- le bout lumineux ---------------------------------------------------- */
+
+/* Joyeux: il saute, avec l'ecrasement avant et apres. Sans l'ecrasement, un
+   saut n'est qu'une translation. */
+@keyframes mood-bounce {
+  0%, 100% { transform: none; }
+  18% { transform: translate3d(0, 4%, 0) scale(1.1, 0.9); }
+  45% { transform: translate3d(0, -20%, 0) scale(0.94, 1.08); }
+  72% { transform: translate3d(0, 2%, 0) scale(1.06, 0.95); }
+}
+.mood-bounce { animation: mood-bounce 620ms cubic-bezier(0.34, 1.3, 0.64, 1); }
+
+/* Impatient: il n'attend pas, il eclate d'un coup et retombe. */
+@keyframes mood-pop {
+  0%, 100% { transform: none; }
+  25% { transform: scale(1.22); }
+  50% { transform: scale(0.94); }
+  75% { transform: scale(1.06); }
+}
+.mood-pop { animation: mood-pop 520ms cubic-bezier(0.34, 1.4, 0.64, 1); }
+
+/* Plein d'energie: une vibration, trop rapide pour etre tenue en place. */
+@keyframes mood-buzz {
+  0%, 100% { transform: none; }
+  10% { transform: translate3d(-4%, 0, 0) rotate(-4deg); }
+  25% { transform: translate3d(4%, 0, 0) rotate(4deg); }
+  40% { transform: translate3d(-3%, 0, 0) rotate(-3deg) scale(1.06); }
+  55% { transform: translate3d(3%, 0, 0) rotate(3deg) scale(1.06); }
+  75% { transform: rotate(-1.5deg); }
+}
+.mood-buzz { animation: mood-buzz 520ms ease-out; }
+
+/* Reconnaissant: ca monte lentement et ca redescend, comme une inspiration. */
+@keyframes mood-swell {
+  0%, 100% { transform: none; }
+  35% { transform: scale(1.14); }
+  62% { transform: scale(1.01) translate3d(0, 2%, 0); }
+}
+.mood-swell { animation: mood-swell 700ms ease-out; }
+
+/* Serein: une respiration entiere, et la seule animation lente du bout clair. */
+@keyframes mood-breathe {
+  0%, 100% { transform: none; }
+  40% { transform: scale(1.08); }
+  72% { transform: scale(0.98); }
+}
+.mood-breathe { animation: mood-breathe 1100ms ease-in-out; }
+
+/* --- le milieu ----------------------------------------------------------- */
+
+/* Neutre: un hochement, et rien de plus. C'est le geste de quelqu'un qui n'a
+   rien de particulier a signaler. */
+@keyframes mood-nod {
+  0%, 100% { transform: none; }
+  30% { transform: translate3d(0, 6%, 0) rotate(2deg); }
+  58% { transform: translate3d(0, 2%, 0) rotate(-1deg); }
+}
+.mood-nod { animation: mood-nod 700ms ease-in-out; }
+
+/* Nostalgique: un balancement, qui revient d'ou il vient. */
+@keyframes mood-sway {
+  0%, 100% { transform: none; }
+  25% { transform: rotate(-7deg); }
+  60% { transform: rotate(5deg); }
+  85% { transform: rotate(-2deg); }
+}
+.mood-sway { animation: mood-sway 900ms ease-in-out; }
+
+/* Sensible: un tremblement court, qui se retire un peu en tremblant.
+   Mesure: la premiere version faisait 1,9 px au plus fort, c'est-a-dire rien
+   sur un ecran de telephone, et elle etait la seule du lot a ne pas se voir.
+   Elle tremble plus large maintenant, pas plus longtemps: c'est l'amplitude
+   qui manquait, pas la duree. */
+@keyframes mood-quiver {
+  0%, 100% { transform: none; }
+  15% { transform: translate3d(-4.5%, 0, 0) rotate(-4deg) scale(0.96); }
+  30% { transform: translate3d(4.5%, 0, 0) rotate(4deg) scale(0.96); }
+  45% { transform: translate3d(-3.5%, 0, 0) rotate(-3deg) scale(0.97); }
+  62% { transform: translate3d(3%, 0, 0) rotate(2.5deg); }
+  80% { transform: translate3d(-1.5%, 0, 0) rotate(-1deg); }
+}
+.mood-quiver { animation: mood-quiver 560ms ease-out; }
+
+/* Ennuye: un soupir. Lent, petit, et il ne va nulle part. */
+@keyframes mood-sigh {
+  0%, 100% { transform: none; }
+  40% { transform: translate3d(0, 7%, 0) scale(1.03, 0.95); }
+  75% { transform: translate3d(0, 3%, 0); }
+}
+.mood-sigh { animation: mood-sigh 1000ms ease-in-out; }
+
+/* Malade: un roulis. La nausee est un mouvement qui ne s'arrete pas droit. */
+@keyframes mood-queasy {
+  0%, 100% { transform: none; }
+  25% { transform: rotate(-8deg) translate3d(0, 3%, 0); }
+  50% { transform: rotate(6deg) translate3d(0, 6%, 0) scale(0.97); }
+  75% { transform: rotate(-4deg) translate3d(0, 3%, 0); }
+}
+.mood-queasy { animation: mood-queasy 1000ms ease-in-out; }
+
+/* Confus: il penche, il RESTE penche un moment, puis il revient de l'autre
+   cote. C'est la pause au milieu qui fait la question. */
+@keyframes mood-tilt {
+  0%, 100% { transform: none; }
+  20% { transform: rotate(-12deg); }
+  45% { transform: rotate(-12deg); }
+  70% { transform: rotate(6deg); }
+}
+.mood-tilt { animation: mood-tilt 800ms ease-in-out; }
+
+/* --- le bout dur --------------------------------------------------------- */
+
+/* Peu sur: il se fait petit et s'ecarte un peu, sans partir. */
+@keyframes mood-shrink {
+  0%, 100% { transform: none; }
+  30% { transform: scale(0.84) translate3d(0, 4%, 0); }
+  55% { transform: scale(0.88) translate3d(-3%, 4%, 0); }
+  80% { transform: scale(0.96) translate3d(0, 1%, 0); }
+}
+.mood-shrink { animation: mood-shrink 700ms ease-out; }
+
+/* Stresse: une secousse qui decroit. */
+@keyframes mood-shake {
+  0%, 100% { transform: none; }
+  12% { transform: translate3d(-7%, 0, 0); }
+  24% { transform: translate3d(7%, 0, 0); }
+  36% { transform: translate3d(-6%, 0, 0); }
+  48% { transform: translate3d(6%, 0, 0); }
+  62% { transform: translate3d(-4%, 0, 0); }
+  78% { transform: translate3d(3%, 0, 0); }
+  90% { transform: translate3d(-1.5%, 0, 0); }
+}
+.mood-shake { animation: mood-shake 500ms ease-out; }
+
+/* En colere: la meme secousse, mais elle enfle en la faisant. La difference
+   entre etre secoue et prendre de la place. */
+@keyframes mood-fume {
+  0%, 100% { transform: none; }
+  15% { transform: scale(1.1) translate3d(-6%, 0, 0); }
+  30% { transform: scale(1.1) translate3d(6%, 0, 0); }
+  45% { transform: scale(1.08) translate3d(-5%, 0, 0); }
+  62% { transform: scale(1.06) translate3d(5%, 0, 0); }
+  82% { transform: scale(1.02) translate3d(-2%, 0, 0); }
+}
+.mood-fume { animation: mood-fume 560ms ease-out; }
+
+/* Decourage: il s'affaisse et il reste affaisse un temps avant de se relever. */
+@keyframes mood-slump {
+  0%, 100% { transform: none; }
+  35% { transform: translate3d(0, 10%, 0) scale(1.04, 0.92); }
+  70% { transform: translate3d(0, 4%, 0) scale(1.01, 0.98); }
+}
+.mood-slump { animation: mood-slump 760ms cubic-bezier(0.3, 0.9, 0.4, 1); }
+
+/* Triste: la goutte. Elle s'etire vers le haut, puis elle tombe. */
+@keyframes mood-drip {
+  0%, 100% { transform: none; }
+  30% { transform: translate3d(0, -4%, 0) scale(0.97, 1.05); }
+  65% { transform: translate3d(0, 12%, 0) scale(1.04, 0.94); }
+  85% { transform: translate3d(0, 3%, 0); }
+}
+.mood-drip { animation: mood-drip 800ms ease-in-out; }
+
+/* Blesse: un recul net, puis ca revient en tremblant un peu. */
+@keyframes mood-wince {
+  0%, 100% { transform: none; }
+  15% { transform: scale(0.88) rotate(-5deg); }
+  35% { transform: scale(1.06) rotate(3deg); }
+  60% { transform: scale(0.97) rotate(-2deg); }
+}
+.mood-wince { animation: mood-wince 520ms cubic-bezier(0.36, 1.2, 0.6, 1); }
+
+/* Coupable: il se detourne. Le seul geste du lot qui ne revienne pas au milieu
+   avant la toute fin. */
+@keyframes mood-turn {
+  0%, 100% { transform: none; }
+  30% { transform: rotate(-14deg) translate3d(-4%, 3%, 0); }
+  60% { transform: rotate(-10deg) translate3d(-3%, 4%, 0); }
+  85% { transform: rotate(-3deg) translate3d(0, 1%, 0); }
+}
+.mood-turn { animation: mood-turn 780ms ease-in-out; }
+
+/**
+ * ET RIEN DE TOUT CA SI LA PERSONNE A DIT NON AU MOUVEMENT.
+ *
+ * Pas `animation: none` seul: le declencheur attend `animationend` pour
+ * retirer la classe, et une animation supprimee n'en emet jamais. La tuile
+ * resterait marquee "en train de jouer" pour toujours. Donc une animation
+ * reelle, qui ne bouge rien et se termine tout de suite.
+ */
+@media (prefers-reduced-motion: reduce) {
+  @keyframes mood-still {
+    from { transform: none; }
+    to { transform: none; }
+  }
+  .mood-bounce, .mood-pop, .mood-buzz, .mood-swell, .mood-breathe,
+  .mood-nod, .mood-sway, .mood-quiver, .mood-sigh, .mood-queasy, .mood-tilt,
+  .mood-shrink, .mood-shake, .mood-fume, .mood-slump, .mood-drip,
+  .mood-wince, .mood-turn {
+    animation: mood-still 1ms linear;
+  }
+}
+
+/**
  * A panel that actually comes up from the bottom edge.
  *
  * `animate-rise` moves six pixels, which is the right amount for a card
