@@ -2010,12 +2010,71 @@ ok(
   /useEffect\(\(\) => \(\) => clearTimeout\(saidTimer\.current\), \[\]\)/.test(cyc),
   'the drawer unmounts every time it is closed, which is the normal path',
 )
-ok('the glasses are drawn, not emoji', /viewBox="0 0 16 20"/.test(cyc),
-   'the droplet emoji is blue in every font, and this app has two themes')
+/**
+ * L'EAU N'EST PLUS DANS CE TIROIR.
+ *
+ *   "Remove the water stuff since it's on the profile."
+ *
+ * Elle etait comptee a deux endroits, ici en verres et sur la carte de
+ * l'accueil en millilitres, sur la meme journee. Deux compteurs de la meme
+ * chose sont deux endroits ou verifier ce qu'on a bu et un ou le chiffre a
+ * l'air faux. Ce tiroir parle du cycle; boire de l'eau est une habitude de
+ * tous les jours.
+ *
+ * Ce cas verifiait que les gouttes etaient dessinees plutot qu'un emoji bleu.
+ * Il verifie maintenant qu'il n'en reste rien: ni le dessin, ni l'etat, ni la
+ * requete qui lisait cycle_day pour en jeter le contenu.
+ */
+ok('rien de l eau ne reste dans le tiroir du cycle',
+   !/viewBox="0 0 16 20"/.test(cyc) && !/WATER_GOAL|setWater|cycle\.water/.test(cyc)
+     && !/from\('cycle_day'\)/.test(cyc),
+   'un compteur en double est un endroit de plus ou le chiffre a l air faux')
+ok('et la constante des huit verres part avec lui',
+   !/export const WATER_GOAL/.test(read('src/lib/cycle.js')),
+   'la carte de l accueil compte des millilitres, pas des verres: voir water.js')
 ok(
   'there is a note about the phase',
   /data-hook="cycle-care"/.test(cyc),
 )
+
+/**
+ * ET CE QU'ON VIENT CHERCHER EST UN CHIFFRE, PAS UNE PHRASE GRISE.
+ *
+ *   "Modify the my cycle UI."
+ *
+ * C'etait "Expected in 28 days." en corps de texte, suivi d'une ligne grise,
+ * au milieu d'une pile de champs de date: la seule chose qu'on ouvre ce tiroir
+ * pour savoir etait ecrite de la meme taille que le reste.
+ *
+ * Le nombre est en `text-metric` et la DATE est dessous, parce que "dans 28
+ * jours" oblige a compter sur un calendrier. La ligne de confiance reste dans
+ * la meme boite: les separer est comment quelqu'un finit par citer la date en
+ * oubliant qu'elle est approximative.
+ */
+ok('le compte a rebours est un chiffre, avec sa date',
+   /data-hook="cycle-next"/.test(cyc) && /text-metric/.test(cyc)
+     && /t\('cycle\.expected_on'/.test(cyc),
+   'une phrase grise au milieu de champs de date ne se trouve pas')
+ok('aujourd hui n a pas de nombre',
+   /daysAway === 0 \? \(\s*\n?\s*<p className="text-h2 font-semibold text-ink">\{t\('cycle\.today_big'\)\}/.test(cyc),
+   '"0 jour restant" est une facon absurde d ecrire "c est aujourd hui"')
+ok('et la ligne de confiance reste collee au chiffre',
+   cyc.indexOf("data-hook=\"cycle-next\"") < cyc.indexOf("cycle.conf_")
+     && cyc.indexOf("cycle.conf_") < cyc.indexOf('data-hook="cycle-care"'),
+   'separees, la date se cite sans le qualificatif qui va avec')
+
+/**
+ * LES ECARTS REELS, SUR CHAQUE LIGNE DE L'HISTORIQUE.
+ *
+ * La carte du haut annonce une moyenne et un ecart-type. Les ecarts qui les
+ * produisent sont deja dans la liste juste en dessous; les ecrire rend la
+ * phrase verifiable par la personne avec ses propres dates.
+ */
+ok('chaque regle enregistree dit son ecart avec la precedente',
+   /data-hook="cycle-gap"/.test(cyc) && /daysBetween\(fromKey\(avant\.started_on\), fromKey\(row\.started_on\)\)/.test(cyc),
+   'la moyenne du haut est sinon un nombre a croire sur parole')
+ok('sauf la plus ancienne, qui n a rien avant elle',
+   /const ecart = avant\s*\n?\s*\?/.test(cyc) && /\{ecart != null &&/.test(cyc))
 /* Comments stripped first. The previous version of this assertion matched the
    comment written to explain it, which is a failure this repo has already paid
    for once: a test that reads its own prose is a test of nothing. */

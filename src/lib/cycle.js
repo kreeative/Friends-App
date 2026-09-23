@@ -294,16 +294,14 @@ export function remindOn(prediction, daysBefore, from = new Date()) {
  */
 export const PREP = ['prep.water', 'prep.warmth', 'prep.gentle']
 
-/**
- * Glasses in a day, for the hydration row.
- *
- * Eight, which is the number the advice is always given as and therefore the
- * one people are counting against. It is a target to fill a row toward, not a
- * threshold: nothing in the app treats seven as a failure, and the count is
- * shown in words beside the marks so the row is never the only signal.
- *
- * Not litres. cycle_day.water is a count of glasses because nobody knows what
- * their glass holds, and a number that has to be estimated precisely is a
- * number that does not get entered.
- */
-export const WATER_GOAL = 8
+/* WATER_GOAL est parti avec le compteur d'eau du tiroir du cycle.
+
+   "Remove the water stuff since it's on the profile."
+
+   La carte de l'accueil, elle, ne compte pas des verres: elle compte des
+   millilitres avec la cible et le contenant de la personne, dans
+   src/lib/water.js. Cette constante-la etait la cible de l'AUTRE compteur,
+   celui qui n'existe plus, et une constante exportee que personne n'importe
+   est une valeur que le prochain lecteur essaiera de reconcilier avec celle
+   qui sert vraiment. */
+
