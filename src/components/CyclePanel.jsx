@@ -2,12 +2,11 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
-import { useT } from '../lib/i18n'
+import { localeTag, useT } from '../lib/i18n'
 import {
   MAX_CYCLE,
   MIN_CYCLE,
   PREP,
-  WATER_GOAL,
   dayKey,
   daysBetween,
   estimate,
@@ -79,11 +78,10 @@ const PHASE_EMOJI = {
 
 export default function CyclePanel({ onChange, open = false, onClose }) {
   const { user } = useAuth()
-  const { t } = useT()
+  const { t, locale } = useT()
 
   const [starts, setStarts] = useState([])
   const [prefs, setPrefs] = useState(null)
-  const [today, setToday] = useState(null)
   const [loaded, setLoaded] = useState(false)
   const [setup, setSetup] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -118,16 +116,17 @@ export default function CyclePanel({ onChange, open = false, onClose }) {
   const avgNum = Number.parseInt(avgText, 10)
   const avgBad = avgText !== '' && !(Number.isFinite(avgNum) && avgNum >= MIN_CYCLE && avgNum <= MAX_CYCLE)
 
+  /* cycle_day n'est plus interroge ici. Il ne portait que le compteur d'eau,
+     qui est parti sur la carte de l'accueil; garder la requete aurait lu une
+     ligne pour en jeter le contenu, a chaque ouverture du tiroir. */
   const load = async () => {
     if (!user) return
-    const [{ data: logs }, { data: pref }, { data: day }] = await Promise.all([
+    const [{ data: logs }, { data: pref }] = await Promise.all([
       supabase.from('cycle_log').select('id, started_on, ended_on').order('started_on', { ascending: true }),
       supabase.from('notification_preference').select('*').maybeSingle(),
-      supabase.from('cycle_day').select('*').eq('on_day', dayKey(new Date())).maybeSingle(),
     ])
     setStarts(logs ?? [])
     setPrefs(pref ?? null)
-    setToday(day ?? null)
     setLoaded(true)
   }
 
@@ -309,24 +308,10 @@ export default function CyclePanel({ onChange, open = false, onClose }) {
     return write(() => supabase.from('notification_preference').upsert(next, { onConflict: 'user_id' }))
   }
 
-  /* Hydration. A glass at a time, because a number that has to be estimated
-     precisely is a number that does not get entered: the column is a count of
-     glasses for exactly this reason. */
-  const setWater = (n) => {
-    const water = Math.max(0, Math.min(30, n))
-    setToday((d) => ({ ...(d ?? {}), water }))
-    return write(() =>
-      supabase
-        .from('cycle_day')
-        .upsert({ user_id: user.id, on_day: dayKey(new Date()), water }, { onConflict: 'user_id,on_day' }),
-    )
-  }
-
   if (!loaded || !open) return null
 
   const daysAway = prediction ? daysBetween(new Date(), prediction.nextStart) : null
   const inPrep = daysAway != null && daysAway >= 0 && daysAway <= 3
-  const water = today?.water ?? 0
   /* The same call the calendar makes for the same day, so the drawer and the
      grid can never say two different things about today. */
   const phase = phaseOn(new Date(), starts, prediction)
@@ -440,28 +425,64 @@ export default function CyclePanel({ onChange, open = false, onClose }) {
 
         {prediction ? (
           <>
-            <p className="mt-3 text-body text-ink">
-              {daysAway === 0
-                ? t('cycle.due_today')
-                : daysAway > 0
-                  ? t('cycle.in_days', { n: daysAway })
-                  : t('cycle.late_days', { n: Math.abs(daysAway) })}
-            </p>
-
             {/**
-             * The estimate and how much to trust it, in the same sentence.
+             * LE COMPTE A REBOURS EST UN CHIFFRE, ET IL DIT LA DATE.
              *
-             * Separating them is how somebody ends up quoting the date and
-             * forgetting the qualifier. The window is shown as a range rather
-             * than a day whenever the recorded cycles disagree, which is what
-             * `window` is for.
+             *   "Modify the my cycle UI."
+             *
+             * C'etait deux phrases grises l'une sur l'autre, "Expected in 28
+             * days." puis la ligne de confiance, au milieu d'une pile de
+             * champs. La seule chose qu'on vient chercher ici etait ecrite de
+             * la meme taille que le reste, donc il fallait la lire pour la
+             * trouver.
+             *
+             * Le nombre est en gros, l'unite a cote, et la DATE est dessous.
+             * "Dans 28 jours" oblige a compter sur un calendrier; la date, non.
+             * Les deux, parce que le nombre se lit d'un coup d'oeil et que la
+             * date est ce qu'on note.
+             *
+             * ET LA LIGNE DE CONFIANCE RESTE COLLEE DESSOUS, dans la meme
+             * boite. Les separer est comment quelqu'un finit par citer la date
+             * en oubliant qu'elle est approximative. La fenetre s'affiche en
+             * "a x jours pres" des que les cycles enregistres ne sont pas
+             * d'accord entre eux, ce qui est le role de `window`.
+             *
+             * Aujourd'hui n'a pas de nombre: "0 jour restant" est une facon
+             * absurde d'ecrire "c'est aujourd'hui".
              */}
-            <p className="mt-1 text-small text-muted">
-              {t('cycle.cycle_len', { n: est.length })}
-              {' · '}
-              {t(`cycle.conf_${est.confidence}`)}
-              {prediction.window > 1 && ` · ${t('cycle.window', { n: prediction.window })}`}
-            </p>
+            <div
+              className="mt-4 rounded-card bg-accent/[0.07] px-4 py-4"
+              data-hook="cycle-next"
+              data-days={daysAway}
+            >
+              {daysAway === 0 ? (
+                <p className="text-h2 font-semibold text-ink">{t('cycle.today_big')}</p>
+              ) : (
+                <p className="flex items-baseline gap-2">
+                  <span className="text-metric text-ink">{Math.abs(daysAway)}</span>
+                  <span className="text-body font-semibold text-ink">
+                    {daysAway > 0
+                      ? t('cycle.away_unit', { n: daysAway })
+                      : t('cycle.late_unit', { n: Math.abs(daysAway) })}
+                  </span>
+                </p>
+              )}
+
+              <p className="mt-1 text-body text-ink">
+                {t('cycle.expected_on', {
+                  date: new Intl.DateTimeFormat(localeTag(locale), {
+                    weekday: 'long', day: 'numeric', month: 'long',
+                  }).format(prediction.nextStart),
+                })}
+              </p>
+
+              <p className="mt-2 text-small text-muted">
+                {t('cycle.cycle_len', { n: est.length })}
+                {' \xB7 '}
+                {t(`cycle.conf_${est.confidence}`)}
+                {prediction.window > 1 && ` \xB7 ${t('cycle.window', { n: prediction.window })}`}
+              </p>
+            </div>
 
             {/**
              * One line about where in the cycle today is, and one thing to do
@@ -517,81 +538,19 @@ export default function CyclePanel({ onChange, open = false, onClose }) {
           <p className="mt-3 text-small text-muted">{t('cycle.need_more')}</p>
         )}
 
-        {/* --- hydration ---------------------------------------------------
-            Its own block rather than a line in the checklist above, because
-            the checklist is advice and this is a thing you do. It is shown
-            every day, not only before a period: drinking water on day nine is
-            not worse than drinking it on day twenty-six. */}
-        <div className="mt-4 border-t border-hairline pt-4" data-hook="cycle-water" data-water={water}>
-          <div className="flex items-center justify-between gap-3">
-            <span className="min-w-0">
-              <span className="block text-small font-semibold text-ink">
-                <span aria-hidden="true" className="mr-1.5">💧</span>
-                {t('cycle.water')}
-              </span>
-              <span className="block text-small text-muted">
-                {t('cycle.water_help', { n: water, goal: WATER_GOAL })}
-              </span>
-            </span>
-            <div className="flex shrink-0 items-center gap-1">
-              <button
-                type="button"
-                onClick={() => setWater(water - 1)}
-                disabled={busy || water === 0}
-                aria-label={t('cycle.water_less')}
-                className="press h-9 w-9 rounded-pill bg-ink/[0.06] text-body font-semibold text-ink hover:bg-ink/[0.11] disabled:opacity-40"
-              >
-                &#8722;
-              </button>
-              <button
-                type="button"
-                onClick={() => setWater(water + 1)}
-                disabled={busy}
-                aria-label={t('cycle.water_more')}
-                className="press h-9 w-9 rounded-pill bg-accent text-body font-semibold text-on-accent"
-              >
-                +
-              </button>
-            </div>
-          </div>
+        {/* L'EAU N'EST PLUS ICI.
 
-          {/**
-           * Glasses that look like glasses, and the count above says the same
-           * thing in words. The row is decoration, per 1.4.1: nothing here is
-           * carried by the marks alone, which is why the whole thing is
-           * aria-hidden rather than being given labels nobody needs.
-           *
-           * A drop rather than the eight grey capsules that were here. They
-           * read as a progress bar somebody had chopped up, and the one thing
-           * this counter has going for it is that filling the next one is
-           * mildly satisfying, which a capsule is not.
-           *
-           * Drawn rather than an emoji. The blue droplet emoji is blue in
-           * every font on every platform, and this app has two themes.
-           */}
-          <div aria-hidden="true" className="mt-2.5 flex flex-wrap gap-1.5">
-            {Array.from({ length: WATER_GOAL }, (_, i) => {
-              const full = i < water
-              return (
-                <svg
-                  key={i}
-                  viewBox="0 0 16 20"
-                  className={`h-5 w-4 transition-all duration-300 ease-settle ${
-                    full ? 'scale-105 text-accent' : 'scale-100 text-ink/25'
-                  }`}
-                >
-                  <path
-                    d="M8 1.5C8 1.5 2 8.4 2 12.2a6 6 0 0 0 12 0C14 8.4 8 1.5 8 1.5Z"
-                    fill={full ? 'currentColor' : 'none'}
-                    stroke="currentColor"
-                    strokeWidth="1.6"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              )
-            })}
-          </div>
-        </div>
+            "Remove the water stuff since it's on the profile."
+
+            Elle etait a deux endroits: cette carte et celle de l'accueil, qui
+            compte la meme journee dans la meme table. Deux compteurs de la
+            meme chose sur deux ecrans, c'est deux endroits ou verifier ce
+            qu'on a bu et un ou le chiffre a l'air faux. Le reglage, lui, est
+            dans les reglages, avec l'unite et la cible.
+
+            Ce tiroir parle du cycle. Boire de l'eau n'est pas un fait du
+            cycle, c'est une habitude de tous les jours, et c'est la carte de
+            l'accueil qui la porte. */}
 
         {/* --- the recorded dates ------------------------------------------
             The part that was missing. Every start is editable in place and
@@ -604,8 +563,26 @@ export default function CyclePanel({ onChange, open = false, onClose }) {
             {t('cycle.history')}
           </h3>
 
+          {/**
+           * L'ECART AVEC LA PRECEDENTE, SUR CHAQUE LIGNE.
+           *
+           * La carte du haut dit "cycle de 33 jours, a 6 jours pres". C'est
+           * une moyenne et un ecart-type, c'est-a-dire deux nombres qu'il faut
+           * croire sur parole. Les ecarts reels, eux, sont deja dans cette
+           * liste: 30, 29, 41. Les ecrire rend la phrase du haut verifiable
+           * par la personne qui l'a produite, avec ses propres dates.
+           *
+           * Sur la ligne et pas dessous: quatre lignes a deux etages font une
+           * liste deux fois plus haute pour une information de second plan.
+           * La plus ancienne n'en a pas, parce qu'il n'y a rien avant elle.
+           */}
           <ul className="mt-2 space-y-1.5" data-hook="cycle-history">
-            {[...starts].reverse().map((row) => (
+            {[...starts].reverse().map((row, i, list) => {
+              const avant = list[i + 1]
+              const ecart = avant
+                ? daysBetween(fromKey(avant.started_on), fromKey(row.started_on))
+                : null
+              return (
               <li key={row.id} className="flex items-center gap-2" data-hook="cycle-entry">
                 <input
                   type="date"
@@ -615,6 +592,11 @@ export default function CyclePanel({ onChange, open = false, onClose }) {
                   aria-label={t('cycle.edit_date')}
                   className="field min-w-0 flex-1"
                 />
+                {ecart != null && (
+                  <span className="shrink-0 text-small text-muted" data-hook="cycle-gap">
+                    {t('cycle.gap', { n: ecart })}
+                  </span>
+                )}
                 <button
                   type="button"
                   onClick={async () => {
@@ -629,7 +611,8 @@ export default function CyclePanel({ onChange, open = false, onClose }) {
                   &#215;
                 </button>
               </li>
-            ))}
+              )
+            })}
           </ul>
 
           {/* Sous la liste, parce que c'est une correction de la liste. Ferme
