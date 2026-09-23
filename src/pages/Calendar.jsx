@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
@@ -383,6 +383,38 @@ export default function Calendar() {
   const [cycle, setCycle] = useState({ starts: [], prediction: null })
   const [editing, setEditing] = useState(null)
   const [hidden, setHidden] = useState(readHidden)
+
+  /**
+   * LE MENU DES CALQUES, ET CE QU'IL FAUT POUR QU'IL SE FERME.
+   *
+   * Un panneau qui ne se ferme qu'en retouchant le bouton qui l'a ouvert est
+   * un panneau qu'on laisse ouvert par-dessus la grille qu'on etait venu
+   * regarder. Donc les deux sorties que tout le monde connait sans les avoir
+   * apprises: une touche ailleurs, et Echap.
+   *
+   * `pointerdown` et pas `click`: sur un ecran tactile, le clic arrive apres
+   * la fin du geste, donc le menu restait ouvert le temps du deplacement du
+   * doigt. Les ecouteurs ne sont poses que pendant que le menu est ouvert, ce
+   * qui evite d'en garder deux sur le document pour une page qui n'en a pas
+   * besoin.
+   */
+  const layersRef = useRef(null)
+  const [layersOpen, setLayersOpen] = useState(false)
+  useEffect(() => {
+    if (!layersOpen) return undefined
+    const ailleurs = (e) => {
+      if (!layersRef.current?.contains(e.target)) setLayersOpen(false)
+    }
+    const echap = (e) => {
+      if (e.key === 'Escape') setLayersOpen(false)
+    }
+    document.addEventListener('pointerdown', ailleurs)
+    document.addEventListener('keydown', echap)
+    return () => {
+      document.removeEventListener('pointerdown', ailleurs)
+      document.removeEventListener('keydown', echap)
+    }
+  }, [layersOpen])
   const [drawer, setDrawer] = useState(false)
   const [wizard, setWizard] = useState(false)
   const [added, setAdded] = useState(0)
@@ -771,7 +803,9 @@ export default function Calendar() {
        * wraps to two lines on a phone without the box growing a second row of
        * empty space, and so nothing in it looks like a section heading.
        */}
-      <div className="flex flex-wrap items-center gap-2" data-hook="cal-actions">
+      {/* `relative` pour le menu des calques: il s'ancre sur CETTE rangee, pas
+          sur le bouton qui l'ouvre. Voir la note du menu plus bas. */}
+      <div className="relative flex flex-wrap items-center gap-2" data-hook="cal-actions">
         {/* A term is transcribed from a printout, not composed. Doing it
             through the single-event form means retyping the term dates once
             per class and counting how many are left. */}
@@ -800,34 +834,130 @@ export default function Calendar() {
          */}
         <span aria-hidden="true" className="mx-1 hidden h-6 w-px bg-hairline sm:block" />
 
-        <div className="flex flex-wrap items-center gap-2" data-hook="cal-layers">
-          {/* Three toggles rather than four when there is no cycle to overlay.
-              A switch that governs nothing is worse than a missing one: it
-              invites a tap and answers with no visible change. */}
-          {LAYERS.filter((l) => l !== 'cycle' || periodTracking).map((layer) => {
-            const on = !hidden.has(layer)
-            return (
-              <button
-                key={layer}
-                type="button"
-                aria-pressed={on}
-                data-layer={layer}
-                data-on={on}
-                onClick={() => toggleLayer(layer)}
-                className={`press flex items-center gap-1.5 rounded-pill px-3 py-2 text-small font-semibold transition-colors ${
-                  on ? 'bg-ink/[0.06] text-ink' : 'text-muted hover:bg-ink/[0.04]'
-                }`}
-              >
-                <span
-                  aria-hidden="true"
-                  className={`h-2.5 w-2.5 shrink-0 rounded-pill ${
-                    on ? LAYER_DOT[layer] : `border-2 ${LAYER_RING[layer]}`
-                  }`}
-                />
-                <span className={on ? '' : 'line-through decoration-1'}>{t(`cal.layer_${layer}`)}</span>
-              </button>
-            )
-          })}
+        {/**
+         * LES CINQ CALQUES SONT DERRIERE UN "..." MAINTENANT.
+         *
+         *   "From timetable to cycle remove them, put them together on a 3
+         *    dots icon like ..."
+         *
+         * Cinq pastilles en rang, sur un telephone, c'est deux lignes de
+         * chrome avant d'arriver au mois. Mesure sur sa capture: le premier
+         * chiffre de la grille commencait a 1600px du haut, soit plus d'un
+         * ecran et demi de reglages au-dessus de la chose qu'on vient voir.
+         *
+         * Et ce sont des reglages qu'on touche rarement: ils decident ce que
+         * la grille affiche, une fois, pas tous les jours.
+         *
+         * CE QUI RESTE VISIBLE SANS OUVRIR LE MENU: le nombre de calques
+         * eteints, ecrit sur le bouton. Sans lui, la seule facon de savoir
+         * qu'on a masque les anniversaires il y a trois semaines serait
+         * d'ouvrir le menu, donc un mois qui manque des choses ressemblerait a
+         * un mois vide. Un chiffre et pas un point de couleur, parce que 1.4.1
+         * demande que la couleur ne soit jamais seule a le dire.
+         *
+         * Les trois points sont DESSINES plutot que le caractere "...": il
+         * tombe sur la ligne de base dans la plupart des polices, donc un
+         * bouton carre avec trois points colles en bas. Trois cercles au
+         * milieu de leur boite font ce que l'icone veut dire.
+         */}
+        <div ref={layersRef} data-hook="cal-layers">
+          <button
+            type="button"
+            onClick={() => setLayersOpen((v) => !v)}
+            aria-expanded={layersOpen}
+            aria-haspopup="true"
+            aria-label={hidden.size ? t('cal.layers_some', { n: hidden.size }) : t('cal.layers')}
+            data-hook="cal-layers-open"
+            data-off={hidden.size}
+            className={`press flex items-center gap-1.5 rounded-pill px-3 py-2 text-small font-semibold transition-colors ${
+              layersOpen || hidden.size ? 'bg-ink/[0.06] text-ink' : 'text-muted hover:bg-ink/[0.04]'
+            }`}
+          >
+            <svg viewBox="0 0 20 6" aria-hidden="true" className="h-1.5 w-5">
+              <circle cx="3" cy="3" r="2.2" fill="currentColor" />
+              <circle cx="10" cy="3" r="2.2" fill="currentColor" />
+              <circle cx="17" cy="3" r="2.2" fill="currentColor" />
+            </svg>
+            {hidden.size > 0 && (
+              <span data-hook="cal-layers-off" className="text-small font-semibold text-ink">
+                {hidden.size}
+              </span>
+            )}
+          </button>
+
+          {layersOpen && (
+            /**
+             * Le meme contenu qu'avant, en colonne.
+             *
+             * aria-pressed plutot qu'une case a cocher, parce que ces boutons
+             * ne soumettent rien et qu'une case dans un menu suggere un
+             * formulaire. L'etat est porte trois fois, jamais par la couleur
+             * seule (1.4.1): le fond du bouton, la pastille qui se creuse, et
+             * le mot barre. Une capture en noir et blanc dit encore lesquels
+             * sont eteints.
+             */
+            <div
+              role="group"
+              aria-label={t('cal.layers')}
+              data-hook="cal-layers-menu"
+              /**
+               * ANCRE SUR LA RANGEE, PAS SUR LE BOUTON, ET C'EST MESURE.
+               *
+               * Ancre sur le bouton avec `left-0`, le panneau commencait la ou
+               * le bouton commence: mesure a 390px, il partait a x=270 sur
+               * 224 de large, donc il finissait a 494 sur un ecran de 390 et
+               * "Work & life" et "Birthdays" etaient coupes en deux.
+               *
+               * `right-0` a la place ne fait que deplacer le probleme: la
+               * rangee passe a la ligne, donc sur un ecran etroit le bouton
+               * peut se retrouver tout a gauche, et le panneau sortirait de
+               * l'autre cote. C'est exactement la lecon deja ecrite sur le
+               * panneau des "?" dans ui.jsx, et elle s'applique mot pour mot.
+               *
+               * Donc left-0 right-0 sur la RANGEE, qui fait la largeur du
+               * contenu: le panneau ne peut sortir d'aucun cote, dans aucune
+               * langue, a aucune largeur. max-w le garde etroit la ou il y a
+               * de la place.
+               */
+              /* OPAQUE, PARCE QU'IL FLOTTE AU-DESSUS DE TEXTE. `.lg` est la
+                 feuille des cartes, faite pour etre posee sur le fond de page;
+                 ouverte au-dessus de la carte du mois, la capture montrait
+                 "September 2026" et les onglets Mois/Semaine/Jour en
+                 transparence a travers les libelles. Le flou n'y change rien:
+                 il floute ce qu'il y a derriere, il ne le cache pas.
+                 .glass-strong plus bg-surface est exactement le cas, et c'est
+                 la meme correction que le panneau des "?" a deja recue. */
+              className="glass-strong absolute left-0 right-0 top-full z-40 mt-2 max-w-[15rem] rounded-card bg-surface p-1.5"
+            >
+              {/* Trois bascules plutot que quatre quand il n'y a pas de cycle a
+                  superposer. Une bascule qui ne gouverne rien est pire qu'une
+                  bascule manquante: elle invite a toucher et ne repond rien. */}
+              {LAYERS.filter((l) => l !== 'cycle' || periodTracking).map((layer) => {
+                const on = !hidden.has(layer)
+                return (
+                  <button
+                    key={layer}
+                    type="button"
+                    aria-pressed={on}
+                    data-layer={layer}
+                    data-on={on}
+                    onClick={() => toggleLayer(layer)}
+                    className={`press flex w-full items-center gap-2.5 rounded-inner px-3 py-2.5 text-left text-small font-semibold transition-colors ${
+                      on ? 'text-ink hover:bg-ink/[0.05]' : 'text-muted hover:bg-ink/[0.04]'
+                    }`}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`h-2.5 w-2.5 shrink-0 rounded-pill ${
+                        on ? LAYER_DOT[layer] : `border-2 ${LAYER_RING[layer]}`
+                      }`}
+                    />
+                    <span className={on ? '' : 'line-through decoration-1'}>{t(`cal.layer_${layer}`)}</span>
+                  </button>
+                )
+              })}
+            </div>
+          )}
         </div>
 
         {/**

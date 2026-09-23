@@ -66,6 +66,13 @@ const STRINGS = {
     'cal.del_all': 'The whole series',
     'cal.layer_scolaire': 'Timetable', 'cal.layer_perso': 'Work & life',
     'cal.layer_objectifs': 'Goals', 'cal.layer_cycle': 'Cycle',
+    /* Le bouton "..." qui tient les calques. Son nom dit ce qu'il gouverne,
+       pas la forme de son icone: "trois points" n'apprend rien a qui ne voit
+       pas l'ecran. Le compte des calques eteints est dans le nom aussi,
+       parce qu'il est ecrit sur le bouton. */
+    'cal.layers': 'What shows on the calendar',
+    'cal.layers_some_one': 'What shows on the calendar, 1 hidden',
+    'cal.layers_some_other': 'What shows on the calendar, {n} hidden',
     'cal.layer_anniversaires': 'Birthdays',
     /* Son propre titre plutot que celui du lien sous le rail. "Add proof to a
        goal" est juste sous une liste de plusieurs objectifs et faux en tete de
@@ -1837,6 +1844,9 @@ const STRINGS = {
        and it fits at 390px, where the toolbar has to wrap otherwise. */
     'cal.layer_scolaire': 'Cours', 'cal.layer_perso': 'Travail & Perso',
     'cal.layer_objectifs': 'Objectifs', 'cal.layer_cycle': 'Cycle',
+    'cal.layers': 'Ce qui s’affiche sur le calendrier',
+    'cal.layers_some_one': 'Ce qui s’affiche sur le calendrier, 1 masqué',
+    'cal.layers_some_other': 'Ce qui s’affiche sur le calendrier, {n} masqués',
     'cal.layer_anniversaires': 'Anniversaires',
     'goal.proof_today': 'La preuve du jour',
     'cal.bday_mine': 'Mon anniversaire',
