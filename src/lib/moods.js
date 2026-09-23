@@ -236,6 +236,57 @@ export const MOODS = [
 export const MOOD_IDS = MOODS.map((m) => m.id)
 
 /**
+ * LE GESTE QUE CHAQUE HUMEUR JOUE QUAND ON LA TOUCHE.
+ *
+ *   "Can you animate them so when you click on them, they make the face, like
+ *    they reproduce the emotion."
+ *
+ * Un par humeur, et pas six familles partagees. Une famille aurait donne le
+ * meme rebond a "joyeux" et a "impatient" et le meme affaissement a
+ * "decourage" et a "coupable": c'est justement la nuance qui fait que la
+ * grille repond quelque chose plutot que de bouger.
+ *
+ * LES NOMS DE CLASSE SONT ECRITS EN ENTIER, JAMAIS ASSEMBLES. `mood-${id}`
+ * aurait ete plus court et aurait attache le nom du geste au nom de l'humeur,
+ * ce qui est faux: deux humeurs pourraient un jour partager un geste, et une
+ * classe construite est une classe que personne ne retrouve en cherchant son
+ * nom. C'est la meme regle que pour `text-cat-${n}`, pour la meme raison.
+ *
+ * Les images sont dans src/index.css, hors de `@layer`, avec le detail de
+ * chaque mouvement et pourquoi le pivot n'est pas au meme endroit pour ce qui
+ * rebondit et pour ce qui pivote.
+ */
+export const MOOD_MOTION = {
+  joyful: 'mood-bounce',
+  energized: 'mood-buzz',
+  excited: 'mood-pop',
+  grateful: 'mood-swell',
+  serene: 'mood-breathe',
+  neutral: 'mood-nod',
+  nostalgic: 'mood-sway',
+  sensitive: 'mood-quiver',
+  bored: 'mood-sigh',
+  sick: 'mood-queasy',
+  confused: 'mood-tilt',
+  insecure: 'mood-shrink',
+  stressed: 'mood-shake',
+  angry: 'mood-fume',
+  discouraged: 'mood-slump',
+  sad: 'mood-drip',
+  hurt: 'mood-wince',
+  guilty: 'mood-turn',
+}
+
+/**
+ * Le geste d'une humeur, ou rien.
+ *
+ * Rien plutot qu'un geste par defaut: une humeur ajoutee au catalogue et
+ * oubliee ici ne doit pas emprunter le mouvement d'une autre en silence, elle
+ * doit rester immobile et se faire voir. Le test compare les deux listes.
+ */
+export const motionOf = (id) => MOOD_MOTION[id] ?? ''
+
+/**
  * How many one day may carry.
  *
  * The whole set, so this can only be hit by something that is not a person
