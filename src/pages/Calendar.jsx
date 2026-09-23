@@ -1363,7 +1363,31 @@ function MonthGrid({ range, anchor, agenda, cycle, onPick, picking = false, pick
                   picking ? '' : 'w-full justify-between'
                 }`}
               >
-                <span className="text-small font-semibold text-ink">{d.getDate()}</span>
+                {/**
+                 * PENDANT LE POINTAGE, LE CHIFFRE EST GRAND, GRAS ET BLANC SUR
+                 * LE ROSE.
+                 *
+                 *   "Regles rose carre, la date a l'interieur blanche."
+                 *
+                 * Le blanc sur ce rose fait 3,80:1. En 14px semibold c'est du
+                 * texte normal, il en faut 4,5, et c'est pour ca que l'encre
+                 * avait ete choisie. En 19px gras c'est du GRAND texte au sens
+                 * de 1.4.3, il en faut 3,0, et 3,80 passe.
+                 *
+                 * La place existe parce que la grille s'est videe: pendant le
+                 * pointage la tuile ne porte plus que ce chiffre. Hors
+                 * pointage elle partage sa place avec les pastilles
+                 * d'evenement, donc le chiffre y reste petit et a l'encre.
+                 */}
+                <span
+                  className={
+                    picking
+                      ? `text-[1.1875rem] font-bold leading-none ${on ? 'text-on-pick' : 'text-ink'}`
+                      : 'text-small font-semibold text-ink'
+                  }
+                >
+                  {d.getDate()}
+                </span>
                 {/* The cycle mark. A dot in the corner, never a word, and
                     never a fill that would fight the event chips below. */}
                 {/* Pas sur une tuile cochee: la marque EST deja la, et un point

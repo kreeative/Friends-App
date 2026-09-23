@@ -212,15 +212,32 @@
      * chose partout. Et surtout, prendre --c-accent aurait donne du bleu en
      * mer, ou "fais-le rose" n'aurait plus voulu dire grand-chose.
      *
-     * L'ENCRE DESSUS, PAS LE BLANC, ET C'EST MESURE.
+     * LE BLANC DESSUS, ET C'EST LA TAILLE QUI LE REND CONFORME.
      *
-     * Le blanc sur ce rose fait 3,80:1, ce que index.css documente deja comme
-     * une decision: assez pour du grand texte, pas pour du texte normal, et un
-     * chiffre de jour a 14px est du texte normal. L'encre, elle, mesure 4,60:1
-     * en soleil et 4,54:1 en mer sur les pixels peints, donc au-dessus des
-     * 4,5 exiges.
+     *   "Regles rose carre, la date a l'interieur blanche."
+     *
+     * Demande deux fois maintenant, ici et pour les boutons roses. Le blanc
+     * sur ce rose fait 3,80:1, mesure sur les pixels peints. WCAG 1.4.3
+     * demande 4,5 pour du texte normal et 3,0 pour du GRAND texte, et definit
+     * grand comme 24px, ou 18,66px a partir du gras 700.
+     *
+     * L'encre avait ete choisie a la place, a 4,60:1, parce qu'un chiffre de
+     * jour faisait 14px semibold: du texte normal, donc 3,80 ne passait pas.
+     * Ce n'est plus le cas. Pendant le pointage le chiffre est seul dans sa
+     * tuile, il n'a plus de pastilles avec qui partager la place, donc il est
+     * ecrit en 19px gras. A cette taille-la 3,80:1 est au-dessus des 3,0
+     * exiges, et le blanc demande est simplement conforme.
+     *
+     * Ce n'est pas une derogation, c'est l'autre moitie de la meme regle: la
+     * seule facon de faire tenir du blanc sur ce rose etait d'arreter de
+     * l'ecrire petit.
      */
-    --c-pick: 255 0 122;     /* #FF007A, 4.60:1 avec l'encre en soleil */
+    --c-pick: 255 0 122;     /* #FF007A, 3,80:1 avec le blanc, 4,60 avec l'encre */
+    /* Le dessus du rose coche. Une valeur unique a :root comme --c-pick, parce
+       que le rose est le meme dans les deux themes et que son dessus doit
+       l'etre aussi. Le chiffre qui le porte est en 19px gras; voir ci-dessus
+       pourquoi la taille fait partie de la couleur ici. */
+    --c-on-pick: 255 255 255;  /* 3,80:1 sur #FF007A, grand texte */
 
     /**
      * Two shadows, both soft, both tinted.

@@ -62,6 +62,9 @@ export default {
         /* Le rose des jours coches du calendrier. Un seul rose pour les deux
            themes: voir --c-pick dans index.css. */
         pick: c('pick'),
+        /* Et ce qui s'ecrit dessus: du blanc, a 19px gras. La taille fait
+           partie de la couleur ici, la note dans index.css dit pourquoi. */
+        'on-pick': c('on-pick'),
 
         /**
          * The six envelope shades and their pale partners, per theme. Declared
