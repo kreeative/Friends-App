@@ -341,11 +341,41 @@ ok(
          && !/\[data-theme='sea'\][\s\S]{0,6000}--c-pick:/.test(feuille),
        'par theme, il serait bleu en mer')
   }
-  /* Le chiffre est en encre sur le rose et en encre sur le papier, donc une
-     seule classe: c'est ce qui rend la mesure valable une fois pour toutes. */
-  ok('et le chiffre du jour est toujours en encre',
-     /<span className="text-small font-semibold text-ink">\{d\.getDate\(\)\}<\/span>/.test(cal),
-     'le blanc sur ce rose fait 3,80:1 et un chiffre de 14px est du texte normal')
+  /**
+   * ET LE CHIFFRE EST BLANC SUR LE ROSE, PARCE QU'IL EST DEVENU GRAND.
+   *
+   *   "Regles rose carre, la date a l'interieur blanche."
+   *
+   * Il etait a l'encre, a 4,60:1, et ce cas-la disait pourquoi: le blanc sur
+   * ce rose fait 3,80:1, WCAG 1.4.3 demande 4,5 pour du texte normal, et un
+   * chiffre de 14px semibold est du texte normal.
+   *
+   * Ce qui a change n'est pas l'exigence, c'est la taille. 1.4.3 demande 3,0
+   * pour du GRAND texte, defini comme 24px ou 18,66px a partir du gras 700.
+   * Le chiffre est en 19px gras pendant le pointage, ou la grille videe lui
+   * laisse toute la tuile, donc 3,80 est au-dessus de ce qu'il lui faut.
+   *
+   * Hors pointage il partage sa place avec les pastilles d'evenement, donc il
+   * y reste petit, et petit veut dire a l'encre. Les deux branches sont
+   * epinglees ensemble: separees, quelqu'un pourrait agrandir l'une ou
+   * recolorer l'autre sans que le couple taille-couleur soit relu.
+   */
+  ok('le chiffre coche est blanc, et assez grand pour l etre',
+     /picking\s*\n?\s*\? `text-\[1\.1875rem\] font-bold leading-none \$\{on \? 'text-on-pick' : 'text-ink'\}`/.test(cal),
+     '19px gras est du grand texte: 3,80:1 depasse les 3,0 exiges')
+  ok('et hors pointage il reste petit, donc a l encre',
+     /: 'text-small font-semibold text-ink'/.test(cal),
+     'a 14px il faudrait 4,5:1, et le blanc n en fait que 3,80')
+  {
+    const feuille2 = read('src/index.css')
+    ok('le dessus du rose est declare une fois, comme le rose',
+       /--c-on-pick: 255 255 255;/.test(feuille2)
+         && !/\[data-theme='sea'\][\s\S]{0,6000}--c-on-pick:/.test(feuille2),
+       'le rose est le meme dans les deux themes, son dessus doit l etre aussi')
+    ok('et tailwind en fait une classe',
+       /'on-pick': c\('on-pick'\)/.test(read('tailwind.config.js')),
+       'une couleur absente de la config sort du HTML sans regle du tout')
+  }
   ok('la grille se vide pendant le pointage',
      /\{!picking && list\.slice\(0, shown\)\.map/.test(cal)
        && /\{!picking && list\.length > shown && \(/.test(cal),
