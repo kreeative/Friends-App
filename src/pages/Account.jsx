@@ -60,7 +60,7 @@ export default function Account() {
   const docs = LEGAL[locale] ?? LEGAL.en
 
   return (
-    <Screen>
+    <Screen className="column-page">
       <TopBar
         title={t('account.title')}
         back={() => navigate('/profile')}

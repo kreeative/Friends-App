@@ -287,7 +287,7 @@ export default function Me() {
    */
 
   return (
-    <Screen>
+    <Screen className="column-page">
       {/**
        * Back on the left, the gear on the right, per the brief.
        *

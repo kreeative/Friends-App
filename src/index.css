@@ -2795,6 +2795,38 @@
   }
 
   /**
+   * UNE PAGE EN UNE SEULE COLONNE, BORNEE ET CENTREE.
+   *
+   *   "Pourquoi c'est pas aligne les unes apres les autres et c'est toujours
+   *    un bento ?"
+   *
+   * .shell est relachee au-dessus de md, et c'est juste pour les pages qui
+   * gagnent de la place: le calendrier, les listes de cartes, les lectures.
+   * Trois pages ne sont pas de celles-la. Le tableau de bord, le profil et les
+   * reglages sont des SUITES de cartes, et une suite relachee a 1366px donne
+   * des cartes de 1030px, c'est-a-dire des horizons. C'est cette mesure-la qui
+   * avait amene les deux colonnes, et les deux colonnes sont le bento.
+   *
+   * Donc la troisieme reponse: une colonne, bornee.
+   *
+   * 46rem PARCE QUE 720 EST LA LIMITE ECRITE AILLEURS. Le balayage de largeurs
+   * echoue sur trois cartes empilees de plus de 720px: c'est exactement la
+   * forme "liste de telephone relachee" qu'il existe pour attraper. 46rem de
+   * coquille moins 2x2rem de marge interieure font 672px de carte, donc sous
+   * la limite avec de quoi respirer, et la prose a l'interieur d'une carte
+   * reste tres en dessous des 800px que le meme balayage refuse.
+   *
+   * SUR LA COQUILLE ET PAS SUR LA GRILLE, parce que le titre de la page n'est
+   * pas dans la grille. Borner la grille seule aurait centre les cartes en
+   * laissant le titre colle a gauche, donc deux axes sur la meme page.
+   *
+   * En dessous de md, rien ne change: un telephone n'a qu'une largeur.
+   */
+  .column-page .shell {
+    @apply md:max-w-[46rem];
+  }
+
+  /**
    * The reading limit, on the thing being read.
    *
    * 65ch rather than a rem value, because the point is a count of characters
@@ -2886,11 +2918,31 @@
    * les deux colonnes, aucune des deux n'a de contenu a elle, donc aucune n'a
    * de raison d'etre plus large que l'autre.
    */
+  /**
+   * ET FINALEMENT UNE SEULE COLONNE, PARCE QUE C'EST CE QUI A ETE DEMANDE
+   * TROIS FOIS.
+   *
+   *   "Genre je veux que les cartes se suivent les unes apres les autres, pas
+   *    qu'elle soit comme un bento."
+   *   "Pourquoi c'est pas aligne les unes apres les autres et c'est toujours
+   *    un bento ?"
+   *
+   * La mise en colonnes ci-dessus repondait a la premiere phrase en gardant
+   * DEUX colonnes: les cartes coulaient au lieu d'etre assignees, ce qui reglait
+   * le trou, mais deux colonnes de cases restent deux colonnes de cases. La
+   * deuxieme phrase le dit, et elle a raison: ce qui etait demande n'etait pas
+   * un meilleur equilibre, c'etait une SUITE.
+   *
+   * Donc une colonne, a toutes les largeurs, dans l'ordre du DOM.
+   *
+   * CE QUI EMPECHE QUE CA REDEVIENNE LE DEFAUT D'ORIGINE. Une colonne unique
+   * relachee a 1366px, c'etait "one 1030px column, every card a horizon", et
+   * c'est la plainte qui avait amene les deux colonnes au depart. La largeur
+   * est donc bornee par .column-page, qui cape la coquille de la page entiere,
+   * titre compris, et la centre. Voir sa note.
+   */
   .page-grid {
-    @apply lg:columns-2 lg:gap-x-8;
-  }
-  .page-grid > * {
-    break-inside: avoid;
+    @apply block;
   }
 
   /**
@@ -2986,16 +3038,18 @@
    * L'echange gauche-droite se fait avec `order`, donc la tabulation et le
    * lecteur d'ecran suivent toujours le DOM.
    */
+  /* Une colonne, comme .page-grid et pour la meme raison. La largeur est
+     bornee par .column-page sur la page qui s'en sert. */
   .pane-grid {
-    @apply grid items-start gap-x-8 gap-y-2 lg:grid-cols-2;
+    @apply grid items-start gap-y-2;
   }
 
   .pane-col-a {
-    @apply flex flex-col gap-y-2 lg:order-1;
+    @apply flex flex-col gap-y-2;
   }
 
   .pane-col-b {
-    @apply flex flex-col gap-y-2 lg:order-2;
+    @apply flex flex-col gap-y-2;
   }
 
   /**
@@ -3035,8 +3089,9 @@
    * comme .page-grid. Le placement explicite, `dense` et .pane-aside ne
    * servent plus a rien et partent avec.
    */
+  /* Une colonne, comme les deux autres. */
   .profile-grid {
-    @apply grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)];
+    @apply grid items-start gap-6;
   }
 
   /**
@@ -3051,12 +3106,19 @@
    * suivent le DOM, et personne ne doit tabuler vers les preferences avant
    * d'avoir vu son nom.
    */
+  /* L'ORDRE DU DOM EST L'ORDRE A L'ECRAN, PARTOUT.
+     `order` existait pour poser l'aside a gauche du formulaire pendant
+     qu'il y avait deux colonnes. Il n'y en a plus qu'une, et un `order`
+     dans une colonne unique ne fait qu'une chose: montrer aux grands
+     ecrans une suite differente de celle du telephone. Le formulaire
+     vient en premier dans le DOM parce que c'est ce qu'on vient faire;
+     il vient donc en premier a l'ecran. */
   .pane-col-main {
-    @apply flex flex-col gap-6 lg:order-2;
+    @apply flex flex-col gap-6;
   }
 
   .pane-col-aside {
-    @apply flex flex-col gap-6 lg:order-1;
+    @apply flex flex-col gap-6;
   }
 
   /**

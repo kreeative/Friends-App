@@ -937,11 +937,13 @@ ok(
   /\.card-grid \{[\s\S]{0,120}lg:grid-cols-2/.test(css),
   'measured on goals at 1440: Supprimer and Terminer ended up 800px apart',
 )
+/* Les reglages sont une SUITE maintenant, pas deux colonnes: voir la note sur
+   .column-page. Ce qui restait a verifier de cette assertion est qu'aucune
+   colonne n'est revenue par la bande. */
 ok(
-  'a settings page is two columns, never three',
-  /\.pane-grid \{[\s\S]{0,120}lg:grid-cols-2/.test(css) &&
-    !/\.pane-grid \{[\s\S]{0,120}grid-cols-3/.test(css),
-  'a settings screen read in a Z is one where nobody finds anything',
+  'a settings page is one column, never a grid of boxes',
+  !/\.pane-grid \{[\s\S]{0,120}grid-cols-/.test(css),
+  'deux colonnes de cases sont ce qui a ete appele un bento, trois fois',
 )
 ok(
   'a button stops before it becomes a section of the page',
@@ -1400,9 +1402,13 @@ ok(
     me.indexOf('className="pane-col-main') < me.indexOf('className="pane-col-aside'),
     'personne ne doit tabuler vers les preferences avant d avoir vu son nom',
   )
+  /* Et il vient aussi en premier A L'ECRAN, partout. `order` posait l'aside a
+     gauche du formulaire pendant qu'il y avait deux colonnes; dans une colonne
+     unique il ne ferait qu'une chose, montrer aux grands ecrans une suite
+     differente de celle du telephone. */
   ok(
-    'et les colonnes ne s echangent qu a partir de lg',
-    /\.pane-col-main \{[^}]*lg:order-2/.test(css) && /\.pane-col-aside \{[^}]*lg:order-1/.test(css),
+    'et plus aucun `order` ne le contredit au-dessus de lg',
+    !/\.pane-col-main \{[^}]*order-/.test(css) && !/\.pane-col-aside \{[^}]*order-/.test(css),
   )
 }
 
@@ -1441,8 +1447,9 @@ ok(
   ok('la zone de danger est la derniere section du DOM',
      acc.lastIndexOf("t('danger.zone')") > acc.lastIndexOf("t('me.account')")
        && acc.lastIndexOf("t('danger.zone')") > acc.lastIndexOf("t('remind.section')"))
-  ok('et les colonnes ne s echangent qu a partir de lg',
-     /\.pane-col-a \{[^}]*lg:order-1/.test(css) && /\.pane-col-b \{[^}]*lg:order-2/.test(css))
+  ok('et plus aucun `order` ne le contredit au-dessus de lg',
+     !/\.pane-col-a \{[^}]*order-/.test(css) && !/\.pane-col-b \{[^}]*order-/.test(css),
+     'une colonne unique montrerait sinon deux suites differentes selon la largeur')
 }
 
 /* --- the sign-in is a card, and only where there is room for one ---------- */
@@ -3043,20 +3050,20 @@ ok(
      * tombe a 0,60 px de celui de cette bande, et le "?" y tient 6,61:1.
      *
      * Le ::before est ce qui empeche la reduction de devenir une regression:
-     * WCAG 2.5.8 demande une cible de 24 px sur 24, et 18 px la rate d'un
-     * tiers. Il etale la zone de 3 px sur les quatre cotes sans rien peindre.
+     * WCAG 2.5.8 demande une cible de 24 px sur 24. Il grandit quand le disque
+     * retrecit, 5 px sur les quatre cotes maintenant, sans rien peindre.
      * Verifie par elementFromPoint aux quatre coins d'un carre de 24 px: 4 sur
      * 4 tombent sur le sommaire.
      */
-    ok('le disque du "?" fait 18 px, pas 24',
-       /h-\[1\.125rem\] w-\[1\.125rem\]/.test(ui) && /text-\[0\.6875rem\]/.test(ui),
-       'a cote d un libelle de 16 px, 24 px se lit comme un bouton')
+    ok('le disque du "?" fait 14 px, pas 24 ni 18',
+       /h-\[0\.875rem\] w-\[0\.875rem\]/.test(ui) && /text-\[0\.625rem\]/.test(ui),
+       'un disque plus haut que la ligne qu il annote se lit comme un bouton')
     ok('et la cible tactile reste a 24 px',
-       /before:absolute before:-inset-\[0\.1875rem\] before:content-\[''\]/.test(ui)
+       /before:absolute before:-inset-\[0\.3125rem\] before:content-\[''\]/.test(ui)
          && /summary\s*\n?\s*className="press relative /.test(ui),
-       '18 + 3 + 3 = 24, et il faut `relative` pour que le ::before se pose')
+       '14 + 5 + 5 = 24: le ::before grandit quand le disque retrecit')
     ok('l alignement suit la taille du glyphe',
-       /align-\[calc\(0\.383em-0\.24rem\)\]/.test(ui),
+       /align-\[calc\(0\.383em-0\.22rem\)\]/.test(ui),
        'la constante est la moitie de la hauteur de capitale du "?", qui a retreci avec lui')
 
     /* Le compte des `hint=` est la mesure de la portee: si quelqu'un ecrit sa
@@ -3183,7 +3190,9 @@ ok(
 {
   const sheet = read('src/index.css')
   ok('there is a reading column', /\.reading\s*\{[^}]*max-w-\[60ch\]/.test(sheet))
-  ok('and a two-column feed', /\.page-grid\s*\{[^}]*lg:columns-2/.test(sheet))
+  ok('and a page that is one bounded column',
+     /\.column-page \.shell\s*\{[^}]*md:max-w-\[46rem\]/.test(sheet),
+     'la coquille, pas la grille: le titre de la page n est pas dans la grille')
 
   const lib = code('src/pages/Library.jsx')
   ok('the library shelves are grids, not stacks',
@@ -3213,26 +3222,37 @@ ok(
    * Forme 3, une seule suite mise en colonnes. Mesure a 1024, 1180, 1290, 1440
    * et 1728: les deux colonnes finissent a 33px puis 79px l'une de l'autre, au
    * lieu de 431px, sans qu'aucune carte soit etiree ni assignee.
+   *
+   * FORME 4, ET C'EST LA REPONSE A LA MEME PHRASE DITE UNE TROISIEME FOIS.
+   *
+   *   "Pourquoi c'est pas aligne les unes apres les autres et c'est toujours
+   *    un bento ?"
+   *
+   * La forme 3 reglait le trou en gardant DEUX colonnes. Deux colonnes de
+   * cases restent deux colonnes de cases, et ce qui etait demande n'etait pas
+   * un meilleur equilibre mais une SUITE. Donc une colonne, a toutes les
+   * largeurs, et la largeur bornee par .column-page pour que la suite ne
+   * redevienne pas ce qu'elle etait avant les colonnes: des cartes de 1030px.
    */
   ok('the home feed is one run of cards, not two assigned columns',
      /className="page-grid"/.test(home) && !/page-main/.test(home) && !/page-side/.test(home),
      'une carte assignee a une colonne decide la hauteur de cette colonne par la redaction')
-  ok('and it flows them into columns rather than placing them',
-     /\.page-grid\s*\{[^}]*lg:columns-2/.test(sheet)
-       && !/\.page-grid\s*\{[^}]*lg:grid-cols-/.test(sheet))
+  ok('and it is one column, not two and not a grid',
+     !/\.page-grid\s*\{[^}]*columns-2/.test(sheet)
+       && !/\.page-grid\s*\{[^}]*grid-cols-/.test(sheet))
   ok('with nothing left that stretches a card to fill a hole',
      !/grow-card\s*\{/.test(sheet) && !/\.page-side\s*\{/.test(sheet)
        && !/className="grow-card"/.test(home),
      'le vide etait passe dans les cartes au lieu de disparaitre')
-  /* Sans ceci une carte se coupe en deux au passage d'une colonne a l'autre,
-     ce qui est la seule vraie facon de rater une mise en colonnes. */
-  ok('and no card may be split across the break',
-     /\.page-grid > \*\s*\{\s*break-inside: avoid;/.test(sheet))
-  /* Sous lg la page est une pile et rien ne bouge: la regle est prefixee lg:,
-     donc l'ordre du DOM reste l'ordre a l'ecran sur un telephone. */
-  ok('the phone still sees one column in DOM order',
-     /\.page-grid\s*\{[^}]*lg:columns-2[^}]*\}/.test(sheet)
-       && !/\.page-grid\s*\{[^}]*[^-]columns-2/.test(sheet.replace(/lg:columns-2/g, '')))
+  /* `break-inside: avoid` protegeait les cartes du passage d'une colonne a
+     l'autre. Il n'y a plus de colonnes, donc il est parti avec elles: une
+     regle qu'aucun etat n'atteint est une regle que le prochain lecteur
+     essaiera de comprendre. */
+  ok('and the column-break guard went with the columns',
+     !/\.page-grid > \*/.test(sheet))
+  ok('the phone sees exactly what the laptop sees, in DOM order',
+     /\.page-grid\s*\{\s*@apply block;\s*\}/.test(sheet),
+     'une seule forme a toutes les largeurs, donc rien a verifier par palier')
 
   const courses = code('src/pages/Courses.jsx')
   ok('a lesson and a course summary are reading columns',
@@ -3401,7 +3421,7 @@ ok(
 {
   const ui = read('src/components/ui.jsx')
   ok('the marker is raised by a length, not centred on the x-height',
-     /align-\[calc\(0\.383em-0\.24rem\)\]/.test(ui),
+     /align-\[calc\(0\.383em-0\.22rem\)\]/.test(ui),
      'align-middle put its centre 9.3px below the title cap band')
   ok('and the length sits on the element that inherits the title’s size',
      /<details\s+className="group ml-2 inline-block align-\[/.test(ui),
