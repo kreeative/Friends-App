@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useT } from '../lib/i18n'
@@ -6,6 +7,7 @@ import { isMissingTable, readLocal, today, writeLocal } from '../lib/moodStore'
 import { isMissingColumn } from '../lib/dberr'
 import { cleanMoods, primaryMood } from '../lib/moods'
 import MoodBoard, { MoodBadges } from './MoodBoard'
+import { useMoodAudience } from './MoodShare'
 
 /**
  * How you are today, on the dashboard.
@@ -32,10 +34,13 @@ import MoodBoard, { MoodBadges } from './MoodBoard'
  * card would be a poor trade.
  *
  * Works with or without the database. Without it, the mood is kept on this
- * device and the sharing choice explains why it is unavailable rather than
- * appearing and reaching nobody.
+ * device and a sentence says why it can reach nobody, rather than a promise of
+ * sharing that would reach nobody.
  */
-export default function MoodToday({ groupCount = 0 }) {
+/* `groupCount` est parti avec la case a cocher: c'etait sa seule condition
+   d'affichage. Un parametre qu'aucune ligne ne lit est une question a laquelle
+   le prochain lecteur essaiera de repondre. */
+export default function MoodToday() {
   const { user } = useAuth()
   const { t } = useT()
 
@@ -54,14 +59,16 @@ export default function MoodToday({ groupCount = 0 }) {
      cleanMoods reads it as a list of one rather than needing its own branch. */
   const saved = useState(() => readLocal())[0]
   const [moods, setMoods] = useState(() => cleanMoods(saved?.mood ?? null))
-  const [shared, setShared] = useState(false)
   const [local, setLocal] = useState(true) // until the database says otherwise
+
+  /* Les groupes qui verront, lus une fois. Le formulaire ne les CHOISIT plus,
+     il les nomme: voir la note au-dessus de la phrase, plus bas. */
+  const audience = useMoodAudience()
 
   /* `draft` is what has been tapped but not saved, so closing the panel
      leaves today's mood exactly as it was. */
   const [open, setOpen] = useState(false)
   const [draft, setDraft] = useState([])
-  const [draftShared, setDraftShared] = useState(false)
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -74,7 +81,7 @@ export default function MoodToday({ groupCount = 0 }) {
       try {
         const { data, error } = await supabase
           .from('daily_mood')
-          .select('mood, moods, shared')
+          .select('mood, moods')
           .eq('user_id', user.id)
           .eq('day', today())
           .maybeSingle()
@@ -82,7 +89,6 @@ export default function MoodToday({ groupCount = 0 }) {
         if (cancelled || error) return
 
         setLocal(false)
-        setShared(data?.shared ?? false)
         /* `moods` first, falling back to `mood`. A row written before migration
            36, or by a client that has not been reloaded since, has an empty
            array and a single value, and reading the array alone would show
@@ -101,7 +107,7 @@ export default function MoodToday({ groupCount = 0 }) {
   }, [user?.id])
 
   const persist = useCallback(
-    async (nextMoods, nextShared) => {
+    async (nextMoods) => {
       const primary = primaryMood(nextMoods)
       /* The device copy is written first and unconditionally. Whatever the
          network does next, the tap is not lost. It stores the primary, because
@@ -130,7 +136,9 @@ export default function MoodToday({ groupCount = 0 }) {
           day: today(),
           mood: primary,
           moods: cleanMoods(nextMoods),
-          shared: nextShared,
+          /* `shared` n'est plus ecrit. La colonne existe encore et porte
+             l'historique, mais plus aucune politique ne la lit: c'est
+             mood_share qui decide, groupe par groupe. Migration 71. */
           updated_at: new Date().toISOString(),
         }
 
@@ -146,14 +154,10 @@ export default function MoodToday({ groupCount = 0 }) {
         }
 
         // The table was never there, or went away mid-session. Keep what was
-        // tapped and stop claiming it is shared.
-        if (error && isMissingTable(error)) {
-          setLocal(true)
-          setShared(false)
-        }
+        // tapped, and fall back to the device copy.
+        if (error && isMissingTable(error)) setLocal(true)
       } catch {
         setLocal(true)
-        setShared(false)
       }
     },
     [local, user?.id],
@@ -162,7 +166,6 @@ export default function MoodToday({ groupCount = 0 }) {
   function toggle() {
     if (open) return setOpen(false)
     setDraft(moods)
-    setDraftShared(shared)
     setOpen(true)
   }
 
@@ -170,8 +173,7 @@ export default function MoodToday({ groupCount = 0 }) {
     if (saving) return
     setSaving(true)
     setMoods(draft)
-    setShared(draftShared)
-    await persist(draft, draftShared)
+    await persist(draft)
     setSaving(false)
     setOpen(false)
   }
@@ -250,12 +252,22 @@ export default function MoodToday({ groupCount = 0 }) {
               <MoodBoard value={draft} onChange={setDraft} />
 
               {/**
-               * Appears the moment a face is tapped, not before. Asking
-               * whether to share a mood that has not been picked is asking
-               * about a decision that has not come up yet.
+               * OU VA CE QUI VIENT D'ETRE TAPE, DIT PLUTOT QUE DEMANDE.
+               *
+               *   "Remove l'option qui demande de partager dans les groupes,
+               *    bouge la plutot dans les parametres."
+               *
+               * Il y avait une case a cocher ici, posee chaque jour, et
+               * indivisible: un seul oui pour tous les groupes a la fois. Le
+               * choix se fait maintenant groupe par groupe dans les reglages,
+               * une fois. Ce qui reste est une phrase qui nomme ceux qui
+               * verront, et le chemin pour en changer.
+               *
+               * Elle apparait des qu'un visage est tape, comme la case avant
+               * elle: dire a qui va une humeur qui n'a pas ete choisie serait
+               * repondre a une question qui ne s'est pas posee.
                */}
               {draft.length > 0 &&
-                groupCount > 0 &&
                 (local ? (
                   /* Not a disabled checkbox. A control you can see and cannot
                      use invites you to keep trying it; a sentence explains. */
@@ -263,25 +275,15 @@ export default function MoodToday({ groupCount = 0 }) {
                     {t('mood.share_unavailable')}
                   </p>
                 ) : (
-                  /* No inner card. A tinted, padded box around one checkbox
-                     made a single optional choice look like a section of the
-                     form, on a panel that is already a panel. The checkbox
-                     sits inline with its label and the state is one short line
-                     under it, which is all it ever needed to be. */
-                  <label className="press mt-6 flex cursor-pointer items-center gap-3">
-                    <input
-                      type="checkbox"
-                      checked={draftShared}
-                      onChange={(e) => setDraftShared(e.target.checked)}
-                      className="h-5 w-5 shrink-0 accent-[rgb(var(--c-accent))]"
-                    />
-                    <span className="min-w-0">
-                      <span className="block text-body text-ink">{t('mood.share')}</span>
-                      <span className="mt-0.5 block text-small text-muted">
-                        {draftShared ? t('mood.share_on') : t('mood.share_off')}
-                      </span>
-                    </span>
-                  </label>
+                  <p className="mt-6 text-small text-muted" data-hook="mood-audience">
+                    {audience?.length
+                      ? t('mood.share_where_some', { names: audience.join(', ') })
+                      : t('mood.share_where_none')}
+                    {' '}
+                    <Link to="/settings" className="font-semibold text-ink underline underline-offset-2">
+                      {t('mood.share_pick')}
+                    </Link>
+                  </p>
                 ))}
 
               <div className="mt-7 flex flex-col gap-3 sm:flex-row-reverse">

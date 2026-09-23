@@ -5,6 +5,7 @@ import { useT } from '../lib/i18n'
 import { usePageMeta } from '../lib/pageMeta'
 import { CONTACT_EMAIL, DOC_ORDER, LEGAL } from '../legal/content'
 import DeleteAccount from '../components/DeleteAccount'
+import MoodShare from '../components/MoodShare'
 import PushToggle from '../components/PushToggle'
 import ReminderSettings from '../components/ReminderSettings'
 import PurchaseCheck from '../components/PurchaseCheck'
@@ -116,6 +117,25 @@ export default function Account() {
       <Section title={t('remind.section')}>
         <div className="lg px-5 py-5">
           <ReminderSettings />
+        </div>
+      </Section>
+
+      {/**
+       * QUI VOIT MON HUMEUR, ET POURQUOI C'EST ICI.
+       *
+       * "Bouge la plutot dans les parametres, comme ca chaque personne peut
+       * aller dans ses parametres et choisir avec quel groupe elle veut
+       * partager ses humeurs."
+       *
+       * Ici et pas dans les reglages d'un groupe: c'est une decision sur SES
+       * propres donnees, prise une fois pour tous ses groupes a la fois, et la
+       * page des reglages d'un groupe ne montre qu'un groupe. Voisine des
+       * notifications, parce que les deux repondent a la meme question, ce qui
+       * sort de chez moi et vers qui.
+       */}
+      <Section title={t('moodshare.section')}>
+        <div className="lg px-5 py-5">
+          <MoodShare />
         </div>
       </Section>
 

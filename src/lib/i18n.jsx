@@ -1394,6 +1394,19 @@ const STRINGS = {
     'mood.share': 'Share with my groups',
     'mood.share_on': 'Visible to your group for today only.',
     'mood.share_off': 'Kept private (only you can see it).',
+    /* La ou va l'humeur, dit sur la carte, sans redemander. Le choix se fait
+       une fois dans les reglages et pas tous les jours dans le formulaire. */
+    'mood.share_where_none': 'Nobody sees this. You choose who does in your settings.',
+    'mood.share_where_some': 'Seen today by {names}.',
+    'mood.share_pick': 'Choose who sees it',
+    'moodshare.section': 'Who sees my mood',
+    'moodshare.help':
+      'One group at a time. A group you turn on sees today’s mood only, never yesterday’s and never your history. Turning it off stops it immediately.',
+    'moodshare.none': 'Nobody, for now.',
+    'moodshare.empty': 'You are not in a group yet, so there is nobody to share with.',
+    'moodshare.on': 'Sees your mood',
+    'moodshare.off': 'Does not see it',
+    'moodshare.failed': 'That did not save. Check your connection and try again.',
     'mood.share_unavailable':
       'Sharing needs the database. Today’s mood is saved on this device, and a device cannot show it to anyone else. Run supabase/12_daily_mood.sql in Supabase to switch sharing on.',
     'mood.local_note': 'Saved on this device.',
@@ -3023,6 +3036,17 @@ const STRINGS = {
     'mood.share': 'Partager avec mes groupes',
     'mood.share_on': 'Visible par ton groupe aujourd’hui uniquement.',
     'mood.share_off': 'Gardé privé (visible par toi seul).',
+    'mood.share_where_none': 'Personne ne le voit. Tu choisis qui dans tes réglages.',
+    'mood.share_where_some': 'Vu aujourd’hui par {names}.',
+    'mood.share_pick': 'Choisir qui le voit',
+    'moodshare.section': 'Qui voit mon humeur',
+    'moodshare.help':
+      'Un groupe à la fois. Un groupe que tu allumes voit ton humeur du jour, jamais celle d’hier et jamais ton historique. L’éteindre arrête tout de suite.',
+    'moodshare.none': 'Personne, pour l’instant.',
+    'moodshare.empty': 'Tu n’es dans aucun groupe, donc il n’y a personne avec qui partager.',
+    'moodshare.on': 'Voit ton humeur',
+    'moodshare.off': 'Ne la voit pas',
+    'moodshare.failed': 'Ça n’a pas été enregistré. Vérifie ta connexion et réessaie.',
     'mood.share_unavailable':
       'Le partage a besoin de la base. Ton humeur du jour est enregistrée sur cet appareil, et un appareil ne peut la montrer à personne. Exécute supabase/12_daily_mood.sql dans Supabase pour activer le partage.',
     'mood.local_note': 'Enregistré sur cet appareil.',
