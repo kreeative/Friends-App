@@ -41,198 +41,237 @@
  * larme, c'est un oeil plus une goutte.
  */
 export const EYES = {
-  /* Fermes et RELEVES aux coins. Le contentement, et l'inverse exact de ce
-     qui etait dessine avant: l'ancien `closed` courbait vers le BAS, qui est
-     la forme d'un oeil triste, sur les neuf humeurs les plus heureuses. */
+  /**
+   * DES FORMES PLEINES, PAS DES TRAITS FINS.
+   *
+   * C'est toute la difference avec ce qui etait dessine avant, et elle a ete
+   * montree plutot que decrite: "you see those kind of eyes, that's exactly
+   * what I want".
+   *
+   * L'ancienne serie etait tracee a 3.4 d'epaisseur sur des cercles evides:
+   * des lunettes, pas des yeux. Le style demande est franc et massif. Un oeil
+   * ouvert est un BLANC plein et une PUPILLE pleine, tous les deux gros; un
+   * oeil ferme est un arc epais a bouts ronds. Rien n'est evide, rien n'est
+   * cercle, et il n'y a pas de contour autour du blanc: il se pose
+   * directement sur la couleur du corps.
+   *
+   * LES YEUX PORTENT L'EMOTION, PAS LA BOUCHE. Dans la reference, presque
+   * toutes les bouches sont un petit trait; ce sont les yeux qui font la
+   * difference entre l'ennui et la culpabilite. Ils sont donc GRANDS: le blanc
+   * fait 19 unites de haut sur une boite de 100, la ou l'ancien cercle en
+   * faisait 13.
+   *
+   * LA PUPILLE EST CE QUI REGARDE. La deplacer dans le blanc suffit a changer
+   * l'emotion sans rien redessiner d'autre, et c'est ce que fait la reference:
+   * l'ennui regarde en haut, la culpabilite regarde de cote.
+   */
+
+  /* Fermes et contents: deux arcs epais qui bombent vers le BAS. La forme la
+     plus courante de la reference, et celle que l'ancienne version avait a
+     l'envers. */
   joy: (
     <>
-      <path d="M29 48q7-9 14 0" />
-      <path d="M57 48q7-9 14 0" />
+      <path d="M25 41q10 12 20 0" strokeWidth="6" strokeLinecap="round" />
+      <path d="M55 41q10 12 20 0" strokeWidth="6" strokeLinecap="round" />
     </>
   ),
-  /* A peine clos, presque droits. Le repos plutot que le rire. */
+  /* Les memes, plus plats: la douceur plutot que le rire. */
+  archSoft: (
+    <>
+      <path d="M26 43q9 7 18 0" strokeWidth="6" strokeLinecap="round" />
+      <path d="M56 43q9 7 18 0" strokeWidth="6" strokeLinecap="round" />
+    </>
+  ),
+  /* Deux traits droits et epais. Le repos complet. */
   rest: (
     <>
-      <path d="M30 46h12" />
-      <path d="M58 46h12" />
+      <path d="M26 45h18" strokeWidth="6" strokeLinecap="round" />
+      <path d="M56 45h18" strokeWidth="6" strokeLinecap="round" />
     </>
   ),
-  /* Paupieres basses et douces: on regarde sans forcer. */
-  soft: (
-    <>
-      <path d="M30 44q6 5 12 0" />
-      <path d="M58 44q6 5 12 0" />
-      <path d="M30 41q6-3 12 0" />
-      <path d="M58 41q6-3 12 0" />
-    </>
-  ),
-  /* Grands ouverts. La pupille est un disque plein, le tour un cercle trace. */
+  /* Grands ouverts, pupilles au milieu. */
   wide: (
     <>
-      <circle cx="36" cy="45" r="6.5" />
-      <circle cx="64" cy="45" r="6.5" />
-      <circle cx="36" cy="45" r="2.6" fill="#141216" stroke="none" />
-      <circle cx="64" cy="45" r="2.6" fill="#141216" stroke="none" />
+      <ellipse cx="35" cy="46" rx="9.5" ry="11.5" fill="#FFFFFF" stroke="none" />
+      <ellipse cx="65" cy="46" rx="9.5" ry="11.5" fill="#FFFFFF" stroke="none" />
+      <circle cx="35" cy="46" r="5.6" fill="#141216" stroke="none" />
+      <circle cx="65" cy="46" r="5.6" fill="#141216" stroke="none" />
     </>
   ),
-  /* Ouverts avec un eclat. L'eclat est un petit disque CLAIR pose sur la
-     pupille, pas un trou: un trou prendrait la couleur du corps et changerait
-     d'aspect d'une humeur a l'autre. */
+  /* Ouverts avec un eclat: la pupille porte un petit blanc en haut a gauche. */
   sparkle: (
     <>
-      <circle cx="36" cy="45" r="6.5" fill="#141216" stroke="none" />
-      <circle cx="64" cy="45" r="6.5" fill="#141216" stroke="none" />
-      <circle cx="38.4" cy="42.6" r="2.1" fill="#FFFFFF" stroke="none" />
-      <circle cx="66.4" cy="42.6" r="2.1" fill="#FFFFFF" stroke="none" />
+      <ellipse cx="35" cy="46" rx="9.5" ry="11.5" fill="#FFFFFF" stroke="none" />
+      <ellipse cx="65" cy="46" rx="9.5" ry="11.5" fill="#FFFFFF" stroke="none" />
+      <circle cx="35" cy="46" r="5.6" fill="#141216" stroke="none" />
+      <circle cx="65" cy="46" r="5.6" fill="#141216" stroke="none" />
+      <circle cx="32.6" cy="43.4" r="1.9" fill="#FFFFFF" stroke="none" />
+      <circle cx="62.6" cy="43.4" r="1.9" fill="#FFFFFF" stroke="none" />
     </>
   ),
-  /* Deux points. Le degre zero, pour l'humeur qui est le degre zero. */
-  dots: (
+  /* Enormes et brillants: ca monte aux yeux sans encore tomber. */
+  glossy: (
     <>
-      <circle cx="36" cy="45" r="2.4" fill="#141216" stroke="none" />
-      <circle cx="64" cy="45" r="2.4" fill="#141216" stroke="none" />
+      <ellipse cx="35" cy="46" rx="10.5" ry="12.5" fill="#FFFFFF" stroke="none" />
+      <ellipse cx="65" cy="46" rx="10.5" ry="12.5" fill="#FFFFFF" stroke="none" />
+      <circle cx="35" cy="47" r="6.4" fill="#141216" stroke="none" />
+      <circle cx="65" cy="47" r="6.4" fill="#141216" stroke="none" />
+      <circle cx="31.8" cy="43.4" r="2.5" fill="#FFFFFF" stroke="none" />
+      <circle cx="61.8" cy="43.4" r="2.5" fill="#FFFFFF" stroke="none" />
     </>
   ),
-  /* Mi-clos, lourds. La paupiere coupe l'oeil en haut. */
-  half: (
+  /* Les pupilles EN HAUT. L'ennui, qui regarde le plafond. */
+  lookUp: (
     <>
-      <path d="M29 45h14" />
-      <path d="M57 45h14" />
-      <path d="M30 41q6-4 12 0" />
-      <path d="M58 41q6-4 12 0" />
+      <ellipse cx="35" cy="46" rx="9.5" ry="11.5" fill="#FFFFFF" stroke="none" />
+      <ellipse cx="65" cy="46" rx="9.5" ry="11.5" fill="#FFFFFF" stroke="none" />
+      <circle cx="35" cy="41" r="5.6" fill="#141216" stroke="none" />
+      <circle cx="65" cy="41" r="5.6" fill="#141216" stroke="none" />
+    </>
+  ),
+  /* Les pupilles DE COTE. On ne soutient pas le regard. */
+  away: (
+    <>
+      <ellipse cx="35" cy="46" rx="9.5" ry="11.5" fill="#FFFFFF" stroke="none" />
+      <ellipse cx="65" cy="46" rx="9.5" ry="11.5" fill="#FFFFFF" stroke="none" />
+      <circle cx="39.4" cy="44.6" r="5.6" fill="#141216" stroke="none" />
+      <circle cx="69.4" cy="44.6" r="5.6" fill="#141216" stroke="none" />
+    </>
+  ),
+  /* Les pupilles EN BAS. On regarde ses pieds. */
+  down: (
+    <>
+      <ellipse cx="35" cy="46" rx="9.5" ry="11.5" fill="#FFFFFF" stroke="none" />
+      <ellipse cx="65" cy="46" rx="9.5" ry="11.5" fill="#FFFFFF" stroke="none" />
+      <circle cx="35" cy="51" r="5.6" fill="#141216" stroke="none" />
+      <circle cx="65" cy="51" r="5.6" fill="#141216" stroke="none" />
+    </>
+  ),
+  /* Petits et rentres: on se fait discret. Le blanc retrecit avec la pupille,
+     sinon c'est un grand oeil avec un petit point, qui est de la surprise. */
+  small: (
+    <>
+      <ellipse cx="37" cy="46" rx="6" ry="7" fill="#FFFFFF" stroke="none" />
+      <ellipse cx="63" cy="46" rx="6" ry="7" fill="#FFFFFF" stroke="none" />
+      <circle cx="37" cy="46" r="3.4" fill="#141216" stroke="none" />
+      <circle cx="63" cy="46" r="3.4" fill="#141216" stroke="none" />
     </>
   ),
   /**
-   * Coins EXTERIEURS tombants: le visage abattu.
+   * MI-CLOS: UNE PAUPIERE PLEINE POSEE SUR L'OEIL.
    *
-   * CES DEUX-LA ETAIENT A L'ENVERS, et ca s'est vu en les regardant:
-   * "Discouraged" avait l'air furieux et "Angry" avait l'air inquiet. C'est le
-   * SENS de la pente qui nomme l'emotion, pas sa courbure, et une pente
-   * inversee ne rend pas un dessin un peu moins bon, elle rend l'autre
-   * emotion.
-   *
-   * Ici l'oeil gauche part BAS a l'exterieur (29,48) et monte vers le nez.
+   * Pas un oeil coupe en deux par un trait. La paupiere est une forme opaque
+   * de la couleur de l'encre qui RECOUVRE le haut du blanc, ce qui est
+   * exactement ce que fait la reference et ce qui donne le regard lourd.
    */
-  droop: (
+  half: (
     <>
-      <path d="M29 48q7-4 13-6" />
-      <path d="M71 48q-7-4-13-6" />
+      <ellipse cx="35" cy="46" rx="9.5" ry="11.5" fill="#FFFFFF" stroke="none" />
+      <ellipse cx="65" cy="46" rx="9.5" ry="11.5" fill="#FFFFFF" stroke="none" />
+      <circle cx="35" cy="47" r="5.6" fill="#141216" stroke="none" />
+      <circle cx="65" cy="47" r="5.6" fill="#141216" stroke="none" />
+      <path d="M25 46a10 12 0 0 1 20 0Z" fill="#141216" stroke="none" />
+      <path d="M55 46a10 12 0 0 1 20 0Z" fill="#141216" stroke="none" />
     </>
   ),
-  /* Coins INTERIEURS tombants: les sourcils fronces vers le nez. La colere.
-     L'oeil gauche part HAUT a l'exterieur (29,41) et descend vers le nez. */
+  /* La meme paupiere, inclinee vers le nez: la colere. */
   angry: (
     <>
-      <path d="M29 41q7 3 13 7" />
-      <path d="M71 41q-7 3-13 7" />
-      <circle cx="36" cy="51" r="2.2" fill="#141216" stroke="none" />
-      <circle cx="64" cy="51" r="2.2" fill="#141216" stroke="none" />
+      <ellipse cx="35" cy="47" rx="9.5" ry="11" fill="#FFFFFF" stroke="none" />
+      <ellipse cx="65" cy="47" rx="9.5" ry="11" fill="#FFFFFF" stroke="none" />
+      <circle cx="35" cy="49" r="5.4" fill="#141216" stroke="none" />
+      <circle cx="65" cy="49" r="5.4" fill="#141216" stroke="none" />
+      <path d="M24 34l22 10v-12h-22Z" fill="#141216" stroke="none" />
+      <path d="M76 34l-22 10v-12h22Z" fill="#141216" stroke="none" />
     </>
   ),
-  /* Plisses. La tension, qui n'est pas la colere: rien ne pointe vers le bas,
-     tout est serre. */
+  /**
+   * DES CHEVRONS QUI POINTENT VERS LE NEZ, PAS DES CROIX.
+   *
+   * La premiere version dessinait deux traits qui se croisent par oeil, donc
+   * un X. Regarde a l'ecran: un X sur les yeux, c'est le personnage ASSOMME de
+   * n'importe quel dessin anime, pas quelqu'un de tendu. "Stresse" annoncait
+   * "mort", et "Blesse" aussi.
+   *
+   * Un chevron, lui, est un oeil SERRE: les deux paupieres se rejoignent en
+   * pointe, et la pointe va vers le nez comme dans la reference.
+   */
   squint: (
     <>
-      <path d="M30 42l12 6" />
-      <path d="M70 42l-12 6" />
+      <path d="M27 39l15 7-15 7" strokeWidth="5.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M73 39l-15 7 15 7" strokeWidth="5.5" strokeLinecap="round" strokeLinejoin="round" />
     </>
   ),
-  /* Un oeil ouvert et une larme dessous. La goutte est une forme pleine, pas
-     un cercle: une larme ronde est une bulle. */
+  /* Coins EXTERIEURS tombants: le visage abattu. C'est le SENS de la pente qui
+     nomme l'emotion, pas sa courbure, et ces deux-la ont deja ete inversees
+     une fois. */
+  droop: (
+    <>
+      <path d="M25 49q10-9 20-4" strokeWidth="6" strokeLinecap="round" />
+      <path d="M75 49q-10-9-20-4" strokeWidth="6" strokeLinecap="round" />
+    </>
+  ),
+  /* Un ferme serre, un plisse: on encaisse. Le plisse est un chevron et pas
+     une croix, pour la raison ecrite sur `squint`. */
+  wince: (
+    <>
+      <path d="M25 41q10 11 20 0" strokeWidth="6" strokeLinecap="round" />
+      <path d="M73 39l-15 7 15 7" strokeWidth="5.5" strokeLinecap="round" strokeLinejoin="round" />
+    </>
+  ),
+  /* Fermes, et une larme pleine qui pend. */
   tear: (
     <>
-      <path d="M29 44q7 6 14 0" />
-      <path d="M57 44q7 6 14 0" />
-      <path d="M64 53c2.4 3.3 3.6 5.2 3.6 6.8a3.6 3.6 0 0 1-7.2 0c0-1.6 1.2-3.5 3.6-6.8Z"
+      <path d="M25 42q10 10 20 0" strokeWidth="6" strokeLinecap="round" />
+      <path d="M55 42q10 10 20 0" strokeWidth="6" strokeLinecap="round" />
+      <path d="M65 52c3 4.2 4.5 6.6 4.5 8.6a4.5 4.5 0 0 1-9 0c0-2 1.5-4.4 4.5-8.6Z"
             fill="#141216" stroke="none" className="mf-tear" />
     </>
   ),
-  /* Des spirales. L'etourdissement, et la seule forme ici qui ne ressemble a
-     rien d'anatomique, ce qui est exactement ce qu'on veut dire. */
+  /* Ondules: le mal au coeur. */
+  queasy: (
+    <>
+      <path d="M25 44q5-6 10 0t10 0" strokeWidth="5.5" strokeLinecap="round" />
+      <path d="M55 44q5-6 10 0t10 0" strokeWidth="5.5" strokeLinecap="round" />
+    </>
+  ),
   /**
-   * DEPAREILLES, ET PAS EN SPIRALE.
+   * UN OEIL OUVERT ET UNE SPIRALE.
    *
-   * Deux essais en spirale, tous les deux regardes a 56px et tous les deux
-   * rates. Le premier bouclait sur 5 unites avec un trait de 3.4: les tours se
-   * touchaient, la spirale se remplissait, et ca se lisait comme un gros
-   * point. Le deuxieme, plus large et a un tour et demi, se lisait comme un
-   * oeil ecarquille avec une boucle dedans, donc comme de la surprise.
+   * C'est exactement la reference, et c'est aussi ce qui marche: l'asymetrie
+   * porte l'incomprehension, et la spirale n'a plus besoin de se lire toute
+   * seule puisque l'autre oeil dit deja que quelque chose ne tourne pas rond.
    *
-   * Le probleme n'etait pas le dessin, c'etait le procede: une spirale demande
-   * du detail fin, et il n'y a pas de detail fin a cette taille.
-   *
-   * L'ASYMETRIE, ELLE, SURVIT A N'IMPORTE QUELLE TAILLE. Un oeil grand ouvert
-   * et un oeil plisse sous un sourcil releve: c'est ce que fait un visage qui
-   * ne comprend pas, et ca se lit a 16px comme a 160.
+   * La spirale est PLEINE et epaisse, comme le reste: les deux essais traces
+   * finement d'avant se remplissaient a 56px et rendaient un gros point.
    */
   swirl: (
     <>
-      <path d="M29 38q7-4 13 0" />
-      <path d="M31 46h10" />
-      <circle cx="64" cy="45" r="6.5" />
-      <circle cx="64" cy="45" r="2.6" fill="#141216" stroke="none" />
+      <ellipse cx="35" cy="46" rx="9.5" ry="11.5" fill="#FFFFFF" stroke="none" />
+      <circle cx="35" cy="46" r="5.6" fill="#141216" stroke="none" />
+      <ellipse cx="65" cy="46" rx="9.5" ry="11.5" fill="#FFFFFF" stroke="none" />
+      <path d="M65 38.5a7.5 7.5 0 1 1-6.6 4.4" strokeWidth="4.2" strokeLinecap="round" />
+      <path d="M65 42.6a3.4 3.4 0 1 0 2.4 5.8" strokeWidth="4.2" strokeLinecap="round" />
     </>
   ),
-  /* Les pupilles poussees sur le cote. On regarde ailleurs. */
-  away: (
+  /* Deux gros points pleins. Le degre zero, pour l'humeur qui l'est. */
+  dots: (
     <>
-      <circle cx="36" cy="45" r="6" />
-      <circle cx="64" cy="45" r="6" />
-      <circle cx="39.4" cy="45" r="2.4" fill="#141216" stroke="none" />
-      <circle cx="67.4" cy="45" r="2.4" fill="#141216" stroke="none" />
+      <circle cx="35" cy="46" r="5" fill="#141216" stroke="none" />
+      <circle cx="65" cy="46" r="5" fill="#141216" stroke="none" />
     </>
   ),
-  /* Les pupilles en bas. On regarde ses pieds. */
-  down: (
+  /* Deux traits fins et hauts, tres ecartes: la douceur attentive. */
+  soft: (
     <>
-      <circle cx="36" cy="44" r="6" />
-      <circle cx="64" cy="44" r="6" />
-      <circle cx="36" cy="48.4" r="2.6" fill="#141216" stroke="none" />
-      <circle cx="64" cy="48.4" r="2.6" fill="#141216" stroke="none" />
-    </>
-  ),
-  /* Petits, rentres. On se fait discret. */
-  small: (
-    <>
-      <circle cx="38" cy="46" r="3.2" />
-      <circle cx="62" cy="46" r="3.2" />
-    </>
-  ),
-  /* Un ferme serre, un plisse: on encaisse. */
-  wince: (
-    <>
-      <path d="M29 45q7-7 14 0" />
-      <path d="M58 42l11 6" />
-    </>
-  ),
-  /* Brillants et hauts: ca monte aux yeux sans encore tomber. */
-  glossy: (
-    <>
-      <circle cx="36" cy="45" r="7" fill="#141216" stroke="none" />
-      <circle cx="64" cy="45" r="7" fill="#141216" stroke="none" />
-      <circle cx="33.6" cy="42.4" r="2.6" fill="#FFFFFF" stroke="none" />
-      <circle cx="61.6" cy="42.4" r="2.6" fill="#FFFFFF" stroke="none" />
-      <circle cx="38.8" cy="47.4" r="1.4" fill="#FFFFFF" stroke="none" />
-      <circle cx="66.8" cy="47.4" r="1.4" fill="#FFFFFF" stroke="none" />
-    </>
-  ),
-  /* Un oeil plus ferme que l'autre, et les deux de travers. Le mal au coeur. */
-  queasy: (
-    <>
-      <path d="M29 45q7-6 14 0" />
-      <path d="M57 46h14" />
-      <path d="M58 41q6-3 12 0" />
+      <path d="M26 44q9 9 18 0" strokeWidth="4.4" strokeLinecap="round" />
+      <path d="M56 44q9 9 18 0" strokeWidth="4.4" strokeLinecap="round" />
+      <path d="M27 37q8-4 16 0" strokeWidth="3" strokeLinecap="round" />
+      <path d="M57 37q8-4 16 0" strokeWidth="3" strokeLinecap="round" />
     </>
   ),
 }
 
-/**
- * LES BOUCHES.
- *
- * Une bouche OUVERTE est une forme pleine et pas un trait: un sourire large
- * dessine au trait est un trait, et il lui manque precisement ce qui fait
- * qu'on le lit comme un rire.
- */
 export const MOUTHS = {
   /* Grand, ouvert, plein. */
   grin: <path d="M34 60q16 17 32 0q-16 7-32 0Z" fill="#141216" stroke="#141216" strokeWidth="2" />,
@@ -285,20 +324,24 @@ export const FACES = {
   joyful: { eyes: 'joy', mouth: 'grin', fx: { eyes: 'fx-squeeze', mouth: 'fx-open' } },
   energized: { eyes: 'sparkle', mouth: 'smile', fx: { eyes: 'fx-flash', mouth: 'fx-open' } },
   excited: { eyes: 'wide', mouth: 'o', fx: { eyes: 'fx-widen', mouth: 'fx-gasp' } },
-  grateful: { eyes: 'soft', mouth: 'softSmile', fx: { eyes: 'fx-blink', mouth: 'fx-lift' } },
+  grateful: { eyes: 'archSoft', mouth: 'softSmile', fx: { eyes: 'fx-blink', mouth: 'fx-lift' } },
   serene: { eyes: 'rest', mouth: 'smile', fx: { eyes: 'fx-settle', mouth: 'fx-lift' } },
   neutral: { eyes: 'dots', mouth: 'flat', fx: { eyes: 'fx-blink', mouth: 'fx-nudge' } },
   nostalgic: { eyes: 'away', mouth: 'softSmile', fx: { eyes: 'fx-glance', mouth: 'fx-lift' } },
   sensitive: { eyes: 'glossy', mouth: 'wobble', fx: { eyes: 'fx-well', mouth: 'fx-tremble' } },
-  bored: { eyes: 'half', mouth: 'flat', fx: { eyes: 'fx-droop', mouth: 'fx-nudge' } },
+  /* `half` est la paupiere lourde, gardee pour une humeur qui la merite plus
+     que l'ennui: l'ennui regarde ailleurs, il ne ferme pas les yeux. */
+  bored: { eyes: 'lookUp', mouth: 'flat', fx: { eyes: 'fx-glancedown', mouth: 'fx-nudge' } },
   sick: { eyes: 'queasy', mouth: 'wobble', fx: { eyes: 'fx-roll', mouth: 'fx-tremble' } },
   confused: { eyes: 'swirl', mouth: 'smirk', fx: { eyes: 'fx-spin', mouth: 'fx-nudge' } },
   insecure: { eyes: 'small', mouth: 'tiny', fx: { eyes: 'fx-shrinkface', mouth: 'fx-shrinkface' } },
   stressed: { eyes: 'squint', mouth: 'grit', fx: { eyes: 'fx-tense', mouth: 'fx-clench' } },
   angry: { eyes: 'angry', mouth: 'zigzag', fx: { eyes: 'fx-tense', mouth: 'fx-clench' } },
-  discouraged: { eyes: 'droop', mouth: 'frown', fx: { eyes: 'fx-droop', mouth: 'fx-fall' } },
+  discouraged: { eyes: 'half', mouth: 'frown', fx: { eyes: 'fx-droop', mouth: 'fx-fall' } },
   sad: { eyes: 'tear', mouth: 'bigFrown', fx: { eyes: 'fx-cry', mouth: 'fx-fall' } },
-  hurt: { eyes: 'wince', mouth: 'wobble', fx: { eyes: 'fx-squeeze', mouth: 'fx-tremble' } },
+  /* `droop` et `soft` restent au vocabulaire sans porteur pour l'instant: une
+     forme dessinee et non attribuee ne coute rien, une humeur sans visage si. */
+  hurt: { eyes: 'wince', mouth: 'flat', fx: { eyes: 'fx-squeeze', mouth: 'fx-tremble' } },
   guilty: { eyes: 'down', mouth: 'tiny', fx: { eyes: 'fx-glancedown', mouth: 'fx-nudge' } },
 }
 
