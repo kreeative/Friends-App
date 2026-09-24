@@ -3658,3 +3658,223 @@
     animation-delay: 0ms !important;
   }
 }
+
+/* ===========================================================================
+   LES VISAGES DES HUMEURS BOUGENT, PAS SEULEMENT LES STICKERS
+
+   "Last time when I meant animate them I meant everything on the sticker, so
+    I'd like their eyes to be animated too."
+   "Emotion sticker should redraw and fully animated according to the emotions
+    they'd express."
+
+   MOOD_MOTION donne son geste au CORPS: il rebondit, il tremble, il s'affaisse.
+   Ce qui suit donne le leur aux YEUX et a la BOUCHE, et les trois jouent
+   ensemble quand on touche une humeur.
+
+   transform-box: fill-box EST CE QUI FAIT MARCHER TOUT LE RESTE. Sans lui,
+   une transformation sur un element SVG prend pour origine le coin du
+   viewBox, pas le centre de l'element: un scale(1.3) sur un oeil place a
+   x=64 le deplace de vingt unites vers la droite en meme temps qu'il
+   l'agrandit, et l'oeil part du visage. Avec fill-box, l'origine est la boite
+   de l'element lui-meme, et `center` le centre de cette boite.
+   =========================================================================== */
+.mf-eyes,
+.mf-mouth,
+.mf-tear {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+/* Cligner: la paupiere tombe et remonte. scaleY et pas opacity, parce qu'un
+   oeil qui s'efface n'est pas un oeil qui se ferme. */
+@keyframes fx-blink {
+  0%, 100% { transform: scaleY(1); }
+  42% { transform: scaleY(0.08); }
+  58% { transform: scaleY(0.08); }
+}
+.fx-blink { animation: fx-blink 460ms ease-in-out; }
+
+/* Se plisser de rire, ou de douleur: ca se serre sans se fermer tout a fait. */
+@keyframes fx-squeeze {
+  0%, 100% { transform: scaleY(1); }
+  45% { transform: scaleY(0.45); }
+}
+.fx-squeeze { animation: fx-squeeze 520ms ease-in-out; }
+
+/* S'ouvrir en grand. */
+@keyframes fx-widen {
+  0%, 100% { transform: scale(1); }
+  40% { transform: scale(1.32); }
+}
+.fx-widen { animation: fx-widen 520ms cubic-bezier(0.34, 1.4, 0.64, 1); }
+
+/* L'eclat qui passe. Un battement rapide, deux fois. */
+@keyframes fx-flash {
+  0%, 100% { transform: scale(1); }
+  25% { transform: scale(1.18); }
+  50% { transform: scale(1); }
+  75% { transform: scale(1.18); }
+}
+.fx-flash { animation: fx-flash 560ms ease-out; }
+
+/* Se poser. Le calme ne fait pas de geste, il en finit un. */
+@keyframes fx-settle {
+  0% { transform: translateY(-1.5px); }
+  100% { transform: translateY(0); }
+}
+.fx-settle { animation: fx-settle 900ms ease-out; }
+
+/* Regarder ailleurs, puis revenir. */
+@keyframes fx-glance {
+  0%, 100% { transform: translateX(0); }
+  40% { transform: translateX(2.6px); }
+}
+.fx-glance { animation: fx-glance 760ms ease-in-out; }
+
+/* Regarder ses pieds. */
+@keyframes fx-glancedown {
+  0%, 100% { transform: translateY(0); }
+  45% { transform: translateY(2.4px); }
+}
+.fx-glancedown { animation: fx-glancedown 760ms ease-in-out; }
+
+/* Tomber, et rester tombe un instant avant de se relever. */
+@keyframes fx-droop {
+  0%, 100% { transform: translateY(0); }
+  40%, 70% { transform: translateY(2.8px); }
+}
+.fx-droop { animation: fx-droop 820ms ease-in-out; }
+
+/* Se tendre: ca se serre ET ca se rapproche. */
+@keyframes fx-tense {
+  0%, 100% { transform: scaleY(1) scaleX(1); }
+  35% { transform: scaleY(0.62) scaleX(1.06); }
+}
+.fx-tense { animation: fx-tense 460ms ease-out; }
+
+/* Rouler, pour le mal au coeur. */
+@keyframes fx-roll {
+  0%, 100% { transform: rotate(0deg) translateY(0); }
+  30% { transform: rotate(-7deg) translateY(1.5px); }
+  70% { transform: rotate(6deg) translateY(-1px); }
+}
+.fx-roll { animation: fx-roll 900ms ease-in-out; }
+
+/* Tourner. L'etourdissement fait un tour complet, parce qu'un demi-tour se lit
+   comme une erreur de dessin. */
+@keyframes fx-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.fx-spin { animation: fx-spin 900ms cubic-bezier(0.5, 0, 0.5, 1); }
+
+/* Monter aux yeux: ca gonfle, ca brille, ca ne tombe pas. */
+@keyframes fx-well {
+  0%, 100% { transform: scale(1); }
+  45% { transform: scale(1.16) translateY(0.8px); }
+}
+.fx-well { animation: fx-well 880ms ease-in-out; }
+
+/* Pleurer: l'oeil se serre et la larme, elle, TOMBE. Deux animations, parce
+   que ce sont deux gestes: un oeil qui descend avec sa larme est un oeil qui
+   glisse sur le visage. */
+@keyframes fx-cry {
+  0%, 100% { transform: scaleY(1); }
+  30% { transform: scaleY(0.7); }
+}
+.fx-cry { animation: fx-cry 900ms ease-in-out; }
+
+@keyframes fx-tear-fall {
+  0% { transform: translateY(-2px) scale(0.6); opacity: 0; }
+  25% { transform: translateY(0) scale(1); opacity: 1; }
+  100% { transform: translateY(16px) scale(0.9); opacity: 0; }
+}
+.fx-cry .mf-tear { animation: fx-tear-fall 900ms ease-in; }
+
+/* Se faire petit. Les deux traits en meme temps, donc la meme classe sur les
+   deux groupes. */
+@keyframes fx-shrinkface {
+  0%, 100% { transform: scale(1); }
+  45% { transform: scale(0.78); }
+}
+.fx-shrinkface { animation: fx-shrinkface 620ms ease-in-out; }
+
+/* --- et les bouches ------------------------------------------------------ */
+
+/* S'ouvrir. Une bouche qui rit s'ouvre vers le BAS: son bord haut ne bouge
+   pas, donc l'origine est en haut et pas au centre. */
+@keyframes fx-open {
+  0%, 100% { transform: scaleY(1); }
+  45% { transform: scaleY(1.55); }
+}
+.fx-open {
+  transform-origin: top;
+  animation: fx-open 520ms cubic-bezier(0.34, 1.3, 0.64, 1);
+}
+
+/* Le hoquet de surprise: ca s'ouvre plus haut et plus vite. */
+@keyframes fx-gasp {
+  0%, 100% { transform: scale(1); }
+  35% { transform: scale(1.18, 1.5); }
+}
+.fx-gasp { animation: fx-gasp 480ms cubic-bezier(0.34, 1.4, 0.64, 1); }
+
+/* Remonter aux coins. */
+@keyframes fx-lift {
+  0%, 100% { transform: translateY(0) scaleX(1); }
+  45% { transform: translateY(-1.4px) scaleX(1.1); }
+}
+.fx-lift { animation: fx-lift 700ms ease-in-out; }
+
+/* Un rien. Pour les humeurs qui ne font pas de bruit. */
+@keyframes fx-nudge {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(1.2px); }
+}
+.fx-nudge { animation: fx-nudge 600ms ease-in-out; }
+
+/* Trembler: rapide et court, et sur X, parce qu'un menton tremble
+   lateralement. */
+@keyframes fx-tremble {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-1.6px); }
+  40% { transform: translateX(1.6px); }
+  60% { transform: translateX(-1.2px); }
+  80% { transform: translateX(1.2px); }
+}
+.fx-tremble { animation: fx-tremble 640ms ease-in-out; }
+
+/* Serrer les dents. */
+@keyframes fx-clench {
+  0%, 100% { transform: scaleX(1); }
+  35% { transform: scaleX(0.86); }
+}
+.fx-clench { animation: fx-clench 440ms ease-out; }
+
+/* Tomber, et mettre du temps a remonter. */
+@keyframes fx-fall {
+  0%, 100% { transform: translateY(0); }
+  40%, 70% { transform: translateY(2.2px); }
+}
+.fx-fall { animation: fx-fall 860ms ease-in-out; }
+
+/**
+ * ET RIEN DE TOUT CA POUR QUI A DEMANDE MOINS DE MOUVEMENT.
+ *
+ * Une keyframe reelle qui ne bouge rien, et pas `animation: none`: le nettoyage
+ * cote JavaScript est accroche a animationend, et `none` ne le declenche
+ * jamais, donc la classe resterait posee pour toujours. Meme raison et meme
+ * forme que mood-still au-dessus.
+ */
+@media (prefers-reduced-motion: reduce) {
+  @keyframes fx-still {
+    from { transform: none; }
+    to { transform: none; }
+  }
+  .fx-blink, .fx-squeeze, .fx-widen, .fx-flash, .fx-settle, .fx-glance,
+  .fx-glancedown, .fx-droop, .fx-tense, .fx-roll, .fx-spin, .fx-well,
+  .fx-cry, .fx-shrinkface, .fx-open, .fx-gasp, .fx-lift, .fx-nudge,
+  .fx-tremble, .fx-clench, .fx-fall, .fx-cry .mf-tear {
+    animation: fx-still 1ms linear;
+  }
+}

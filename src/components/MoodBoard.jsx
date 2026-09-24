@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { MOODS, moodById, motionOf, toggleMood } from '../lib/moods'
+import MoodGlyph from './MoodFace'
 import { useT } from '../lib/i18n'
 
 /**
@@ -13,29 +14,6 @@ import { useT } from '../lib/i18n'
  * Nothing downstream requires it. Skipping it costs nothing and is not
  * recorded as a miss.
  */
-
-const FACE = {
-  eyes: {
-    // Relaxed, shut, curving up, the reference's whole cast wears these.
-    closed: (
-      <>
-        <path d="M30 46q6 7 12 0" />
-        <path d="M58 46q6 7 12 0" />
-      </>
-    ),
-    squint: (
-      <>
-        <path d="M31 43l11 6" />
-        <path d="M69 43l-11 6" />
-      </>
-    ),
-  },
-  mouth: {
-    smile: <path d="M38 62q12 10 24 0" />,
-    flat: <path d="M38 65h24" />,
-    frown: <path d="M38 68q12-10 24 0" />,
-  },
-}
 
 /**
  * Where the two long labels are allowed to break.
@@ -71,37 +49,6 @@ const SOFT = {
   Discouraged: 'Discour\u00ADaged',
 }
 const softWrap = (label) => SOFT[label] ?? label
-
-function MoodGlyph({ mood }) {
-  return (
-    <svg viewBox="0 0 100 100" className="h-full w-full" aria-hidden="true">
-      <path
-        d={mood.path}
-        fill={mood.color}
-        stroke={mood.color}
-        strokeWidth="6"
-        strokeLinejoin="round"
-      />
-      <g
-        fill="none"
-        stroke="#141216"
-        strokeWidth="3.4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        {mood.eyes === 'dots' ? (
-          <>
-            <circle cx="36" cy="46" r="1.8" fill="#141216" stroke="none" />
-            <circle cx="64" cy="46" r="1.8" fill="#141216" stroke="none" />
-          </>
-        ) : (
-          FACE.eyes[mood.eyes]
-        )}
-        {FACE.mouth[mood.mouth]}
-      </g>
-    </svg>
-  )
-}
 
 /**
  * @param value     the selected mood ids, as an array
@@ -244,7 +191,7 @@ export default function MoodBoard({ value, onChange }) {
                         setBeat((b) => (b.id === mood.id ? { id: null, n: b.n } : b))
                       }
                     >
-                      <MoodGlyph mood={mood} />
+                      <MoodGlyph mood={mood} playing={beat.id === mood.id} />
                     </span>
                   </span>
                   {/* Selection is carried by the fill behind the label, not by
