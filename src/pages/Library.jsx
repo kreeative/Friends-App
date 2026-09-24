@@ -170,26 +170,34 @@ export default function Library() {
       }
 
       /**
-       * THE POLL FIXES IT ITSELF NOW, INSTEAD OF WAITING TO GIVE UP.
+       * LA RECUPERATION PART TOUT DE SUITE, PAS AU TROISIEME ESSAI.
        *
-       * Three tries is about a second and a half on the schedule above. A
-       * working webhook has delivered by then, so reaching here means the
-       * entitlement is not coming: the
-       * endpoint is unregistered, or misconfigured, or Stripe dropped the
-       * event. Every one of those was previously resolved by waiting another
-       * twenty-four seconds and then telling somebody who had just paid to go
-       * and read a diagnostic on the settings screen.
+       *   "I know we double check but I want to make it extra smooth."
        *
-       * So it asks Stripe directly instead. This is the same recovery the
-       * settings button runs, and it is safe to call here: it grants only to
-       * the signed-in caller, only for sessions Stripe marks paid, and it
-       * upserts, so it cannot double-grant or grant to the wrong person.
+       * Elle partait a `tries === 3`, soit une seconde et demie apres le
+       * retour de Stripe. C'etait deja une bonne idee: ca remplacait vingt-
+       * quatre secondes d'attente suivies d'un renvoi vers un diagnostic. Mais
+       * ca laissait quand meme une seconde et demie de "ca prend un moment" a
+       * quelqu'un qui vient de payer, a chaque fois que le webhook tarde.
        *
-       * Once, not on every tick. Repeating it would put a Stripe API call
-       * behind every entry in the backoff, and if the first one did not find
-       * a paid session the fifteenth will not either.
+       * Maintenant c'est le premier geste du retour. Le webhook gagne presque
+       * toujours la course, et quand il ne la gagne pas le livre est la sans
+       * que personne ait attendu ni appuye sur quoi que ce soit.
+       *
+       * CE QUE CA COUTE: un appel a Stripe par achat, au lieu d'un appel par
+       * achat dont le webhook a tarde. Six achats depuis l'ouverture du site,
+       * donc le calcul n'est pas serre.
+       *
+       * UNE FOIS, pas a chaque tour. Le repeter mettrait un appel Stripe
+       * derriere chaque entree du backoff, et si le premier n'a pas trouve de
+       * session payee le quinzieme n'en trouvera pas non plus.
+       *
+       * Et c'est la meme recuperation que le bouton des reglages: elle
+       * n'accorde qu'a l'appelant signe, que pour des sessions que Stripe dit
+       * payees, et elle fait un upsert, donc elle ne peut ni accorder deux
+       * fois ni accorder a la mauvaise personne.
        */
-      if (tries === 3) {
+      if (tries === 0) {
         const out = await recoverPurchases()
         if (!live) return
         /* Straight back round rather than waiting out the interval: if that

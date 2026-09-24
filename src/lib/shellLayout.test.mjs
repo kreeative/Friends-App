@@ -319,6 +319,58 @@ ok(
      'visibilitychange et focus arrivent souvent ensemble')
 }
 
+/* --- l achat, pour qui n a pas de compte -------------------------------- */
+
+/**
+ * QUELQU'UN QUI PAYE SANS COMPTE DOIT S'ENTENDRE DIRE QUELQUE CHOSE.
+ *
+ *   "I know we double check but I want to make it extra smooth."
+ *
+ * Acheter ne demande pas de compte, c'est voulu, et /api/checkout accepte une
+ * session sans utilisateur. Mais success_url renvoie sur /library?purchase=
+ * success, et /library pour une personne deconnectee est le catalogue public.
+ * Cette page ne lisait pas le parametre: l'invite payait, Stripe le debitait,
+ * il revenait, et il tombait sur une boutique. Pas de confirmation, pas de
+ * livre, pas un mot.
+ *
+ * Le webhook garait deja l'achat sur l'adresse de la carte et
+ * claim_entitlements le reprenait a la premiere connexion. Tout etait la sauf
+ * la phrase qui le dit.
+ */
+{
+  const pub = code('src/pages/public/Books.jsx')
+  const lib = code('src/pages/Library.jsx')
+  const chk = code('api/checkout.js')
+
+  ok('le retour d un invite est reconnu sur la page publique',
+     /params\.get\('purchase'\) === 'success'/.test(pub)
+       && /data-hook="guest-purchase"/.test(pub),
+     'il payait et tombait sur le catalogue, sans un mot')
+  ok('et c est bien la page ou success_url le depose',
+     /success_url: `\$\{origin\}\/library\?purchase=success/.test(chk)
+       && /path="library" element=\{<Books \/>\}/.test(code('src/App.jsx')),
+     'si l un des deux bouge, la confirmation cesse de s afficher en silence')
+  ok('la phrase nomme l adresse, qui est la condition',
+     /library\.guest_paid_body/.test(pub),
+     '"cree ton compte" sans dire avec quelle adresse fabrique le compte en double')
+  ok('et elle emmene quelque part',
+     /library\.guest_paid_cta/.test(pub) && /to="\/signin"/.test(pub))
+
+  /* Et pour qui EST connecte: la recuperation part au premier tour au lieu du
+     quatrieme, donc plus personne n'attend une seconde et demie. */
+  ok('la recuperation part au premier tour',
+     /if \(tries === 0\) \{[\s\S]{0,200}await recoverPurchases\(\)/.test(lib),
+     'a tries === 3 elle laissait une seconde et demie de "ca prend un moment"')
+  ok('et une seule fois',
+     (lib.match(/await recoverPurchases\(\)/g) ?? []).length === 2,
+     'une dans le retour, une derriere le bouton de secours, pas une par tour')
+
+  for (const cle of ['library.guest_paid_title', 'library.guest_paid_body', 'library.guest_paid_cta']) {
+    const n = read('src/lib/i18n.jsx').split(`'${cle}'`).length - 1
+    ok(`${cle} existe dans les deux langues (${n})`, n === 2)
+  }
+}
+
 {
   const cal = code('src/pages/Calendar.jsx')
   /**
