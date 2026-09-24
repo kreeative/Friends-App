@@ -14,7 +14,7 @@
  * constraint, so there is no second chance to get it right.
  */
 import { readFileSync } from 'node:fs'
-import { transformSync } from '/home/user/Friends-App/node_modules/esbuild/lib/main.js'
+import { transformSync } from 'esbuild'
 import { bundle } from '../../scripts/bundle-notify.mjs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'

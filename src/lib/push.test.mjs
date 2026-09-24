@@ -19,6 +19,13 @@
  * web-push is a devDependency of a project that does not ship it: it is here to
  * be disagreed with, not to be used.
  *
+ * Both of those resolve normally, from this package. They used to be absolute
+ * paths into the container the test was first written in: esbuild by full path
+ * under /home/user/Friends-App, and http_ece out of a scratchpad directory
+ * that a session deletes when it ends. So this file only ever ran on one
+ * machine, and since the suite is 62 files chained with &&, and this one sits
+ * at 37, the twenty five after it were never reached anywhere else.
+ *
  * A round trip would NOT have been enough. Encrypting and decrypting with the
  * same wrong info string succeeds, and proves only that the code agrees with
  * itself.
@@ -27,11 +34,10 @@ import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import { readFileSync } from 'node:fs'
-import { transformSync } from '/home/user/Friends-App/node_modules/esbuild/lib/main.js'
+import { transformSync } from 'esbuild'
 import crypto from 'node:crypto'
 
 const here = dirname(fileURLToPath(import.meta.url))
-const REF = '/tmp/claude-0/-home-user-Friends-App/a6967461-6e34-5f5f-9257-a65ffd464597/scratchpad/pushref'
 
 /**
  * A source file with its comments removed.
@@ -81,7 +87,7 @@ const b64 = (b) => Buffer.from(b).toString('base64url')
 /* --- against the reference ------------------------------------------------ */
 
 {
-  const require = createRequire(`${REF}/package.json`)
+  const require = createRequire(import.meta.url)
   let ece
   try {
     ece = require('http_ece')
@@ -91,7 +97,7 @@ const b64 = (b) => Buffer.from(b).toString('base64url')
 
   if (!ece) {
     ok('the reference implementation is installed', false,
-       'npm i web-push in the pushref scratchpad')
+       'run npm install: web-push is a devDependency and http_ece comes with it')
   } else {
     /* A subscriber, as a browser would produce one. */
     const ua = crypto.createECDH('prime256v1')
