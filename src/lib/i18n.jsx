@@ -1534,6 +1534,10 @@ const STRINGS = {
     'me.cycle': 'Cycle tracking',
     'me.cycle_on': 'On. The calendar shows your period, the phases and the reminder before the predicted date.',
     'me.cycle_off': 'Off. None of it appears anywhere, and nothing you have recorded is deleted.',
+    'me.cycle_off_kept_one':
+      'Off. None of it appears anywhere. The 1 period you have recorded is still here and comes back the moment you turn this on.',
+    'me.cycle_off_kept_other':
+      'Off. None of it appears anywhere. The {n} periods you have recorded are still here and come back the moment you turn this on.',
     'me.cycle_note': 'The reading and the studies about the cycle stay open either way.',
     'me.cycle_failed': 'That did not save. This needs the database: run supabase/56_setup.sql in Supabase.',
     'me.currency': 'Currency',
@@ -3177,6 +3181,10 @@ const STRINGS = {
     'me.cycle': 'Suivi du cycle',
     'me.cycle_on': 'Activé. Le calendrier montre tes règles, les phases et le rappel avant la date prévue.',
     'me.cycle_off': 'Éteint. Plus rien n’apparaît nulle part, et rien de ce que tu as noté n’est effacé.',
+    'me.cycle_off_kept_one':
+      'Éteint. Plus rien n’apparaît nulle part. Les règles que tu as notées sont toujours là et reviennent dès que tu rallumes.',
+    'me.cycle_off_kept_other':
+      'Éteint. Plus rien n’apparaît nulle part. Tes {n} règles notées sont toujours là et reviennent dès que tu rallumes.',
     'me.cycle_note': 'Les lectures et les études sur le cycle restent accessibles dans les deux cas.',
     'me.cycle_failed': 'Ça n’a pas été enregistré. Il faut la base : exécute supabase/56_setup.sql dans Supabase.',
     'me.currency': 'Devise',

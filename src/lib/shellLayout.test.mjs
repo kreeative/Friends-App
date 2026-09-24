@@ -244,6 +244,39 @@ ok(
   ok('et il epargne les femmes',
      /gender is distinct from 'woman'/.test(sql ?? ''))
   ok('rien n est supprime', !/delete from cycle_(log|day)/i.test(sql ?? ''))
+
+  /**
+   * ET LE CLIENT PORTE LA MEME GARDE QUE LA MIGRATION.
+   *
+   *   "Where is the period thing I don't see it did you publish it"
+   *
+   * C'etait publie. Mesure sur son compte au moment du rapport: gender null,
+   * cycle_on false, et QUATRE lignes dans cycle_log. La migration 68 avait
+   * epargne cette ligne, exactement comme elle le promet. C'est l'ecran du
+   * profil qui l'a eteinte: pickGender ecrivait cycle_on: cycleForGender(next)
+   * sans condition, donc une touche sur la liste des genres d'un compte dont la
+   * question n'a jamais ete posee, ce que porte chaque ligne d'avant la
+   * migration 56, faisait partir "Mon cycle", "+ Mes regles", la couche Cycle,
+   * le tiroir et ses quatre dates dans la meme image.
+   *
+   * La migration avait la bonne regle et le client avait la meme derivation
+   * sans la garde. Les deux la portent maintenant.
+   */
+  const me = code('src/pages/Me.jsx')
+  ok('la reponse de genre ne decide plus seule de l interrupteur',
+     !/cycle_on: cycleForGender\(/.test(me),
+     'une touche sur la liste des genres eteignait un suivi qui servait')
+  ok('elle passe par la garde',
+     /updateProfile\?\.\(\{ gender: next, \.\.\.cyclePatchForGender\(next, recorded\) \}\)/.test(me))
+  ok('et seul un zero confirme la laisse bouger',
+     /cyclePatchForGender\(gender, recorded\) \{\s*return recorded === 0 \?/.test(setup),
+     'null et undefined sont un compte qui n est pas arrive, pas une absence de regles')
+  ok('le compte est demande sans rapatrier les lignes',
+     /from\('cycle_log'\)\s*\.select\('id', \{ count: 'exact', head: true \}\)/.test(me),
+     'ce sont les lignes les plus sensibles du produit et cet ecran n en a pas besoin')
+  ok('et l etat eteint dit ce qu il garde',
+     /data-hook="me-cycle-state"/.test(me) && /me\.cycle_off_kept/.test(me),
+     '"rien n est efface" est vrai et inverifiable pour qui vient de voir ses dates partir')
 }
 
 {

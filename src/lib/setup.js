@@ -79,6 +79,46 @@ export function cycleForGender(gender) {
 }
 
 /**
+ * What is the gender answer ALLOWED to do to the cycle switch?
+ *
+ * The profile derives the switch from the answer, same as the setup screen,
+ * because that is right nearly every time. It is wrong in one case, and the
+ * one case is what produced "Where is the period thing, I don't see it":
+ *
+ *   an account whose gender question was never answered, so gender is null,
+ *   which is what EVERY row backfilled before migration 56 carries,
+ *   with four periods written down in cycle_log,
+ *   and one touch of the gender box wrote cycle_on = false.
+ *
+ * "Mon cycle", "+ Mes regles", the Cycle layer, the drawer and those four
+ * dates left the app in the same frame, and nothing on the calendar said a
+ * switch had moved. Measured on her account: gender null, cycle_on false,
+ * cycle_log 4 rows.
+ *
+ * Migration 68 already settled this rule in SQL, when it turned the tracker
+ * off for everybody who had never used it:
+ *
+ *   and not exists (select 1 from cycle_log c where c.user_id = p.id)
+ *
+ * and wrote down why: "eteindre le suivi de quelqu'un qui s'en sert serait
+ * remplacer une erreur par une pire". The client had the same derivation and
+ * not the same guard, so the guard is here now.
+ *
+ * ONLY A CONFIRMED ZERO lets the answer move the switch. null and undefined
+ * mean the count has not landed, and a guess that hides a period tracker is
+ * not a guess worth making. Nothing is lost by refusing it: the switch sits
+ * directly under the box and turns the feature off in one tap, which is the
+ * only way it should ever go off for somebody who uses it.
+ *
+ * cycle_day is not counted, although migration 68 counted it. It holds water
+ * and symptoms, and water moved out of the cycle drawer onto the profile, so
+ * a cycle_day row is now mostly evidence that somebody drank a glass.
+ */
+export function cyclePatchForGender(gender, recorded) {
+  return recorded === 0 ? { cycle_on: cycleForGender(gender) } : {}
+}
+
+/**
  * Is the cycle tracker part of this person's app right now?
  *
  * Reads the switch, not the gender, everywhere the feature appears. Gender set

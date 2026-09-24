@@ -8,7 +8,7 @@ import { dayKey } from '../lib/time'
 import { ACCEPT, isMissingBucket, removeAvatar, uploadAvatar } from '../lib/avatar'
 import { CURRENCIES, FALLBACK, currencyName } from '../lib/currency'
 import { DECLINED, PRONOUN_OPTIONS } from '../lib/pronouns'
-import { GENDERS, cycleForGender, cycleOn } from '../lib/setup'
+import { GENDERS, cycleOn, cyclePatchForGender } from '../lib/setup'
 import { localeTag, useT } from '../lib/i18n'
 import { offerGroup } from '../lib/onboarding'
 import ThemePicker from '../components/ThemePicker'
@@ -261,12 +261,44 @@ export default function Me() {
   const [genderError, setGenderError] = useState(false)
   const [cycleError, setCycleError] = useState(false)
 
+  /**
+   * How many periods are written down.
+   *
+   * Two jobs, and both of them are about telling the truth rather than about
+   * drawing anything: it decides whether the gender answer is allowed to move
+   * the switch (see cyclePatchForGender) and it lets the off state say what it
+   * is keeping instead of "nothing you have recorded is deleted", which is the
+   * same fact stated in a way nobody can check.
+   *
+   * `head: true` so this is a count and not a download. The rows themselves
+   * are the most sensitive thing in the product and this screen has no use for
+   * them. Left at null on an error, which cyclePatchForGender reads as "do not
+   * touch the switch": a failed count must not be the reason a tracker goes
+   * off.
+   */
+  const [recorded, setRecorded] = useState(null)
+
+  useEffect(() => {
+    if (!user?.id) return undefined
+    let alive = true
+    supabase
+      .from('cycle_log')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .then(({ count, error }) => {
+        if (alive && !error) setRecorded(count ?? 0)
+      })
+    return () => {
+      alive = false
+    }
+  }, [user?.id])
+
   async function pickGender(value) {
     setGenderError(false)
     setCycleError(false)
     const next = value || null
     const { error } =
-      (await updateProfile?.({ gender: next, cycle_on: cycleForGender(next) })) ?? {}
+      (await updateProfile?.({ gender: next, ...cyclePatchForGender(next, recorded) })) ?? {}
     if (error) setGenderError(true)
   }
 
@@ -549,8 +581,17 @@ export default function Me() {
                 <span className="text-body text-ink">{t('me.cycle')}</span>
                 <Hint text={t('me.cycle_note')} />
               </span>
-              <span className="mt-1 block text-small text-muted">
-                {cycleOn(profile) ? t('me.cycle_on') : t('me.cycle_off')}
+              {/* L'etat eteint DIT CE QU'IL GARDE quand il y a quelque chose a
+                  garder. "Rien de ce que tu as noté n'est effacé" est vrai et
+                  invérifiable: c'est une promesse, et la personne qui vient de
+                  voir quatre dates disparaitre de son calendrier n'a aucune
+                  raison de la croire. Le compte, lui, se vérifie. */}
+              <span className="mt-1 block text-small text-muted" data-hook="me-cycle-state">
+                {cycleOn(profile)
+                  ? t('me.cycle_on')
+                  : recorded
+                    ? t('me.cycle_off_kept', { n: recorded })
+                    : t('me.cycle_off')}
               </span>
             </span>
           </label>
