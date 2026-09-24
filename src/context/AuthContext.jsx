@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { localTimezone } from '../lib/time'
 import { detectCurrency } from '../lib/currency'
@@ -179,6 +179,66 @@ export function AuthProvider({ children }) {
     })()
     return () => {
       cancelled = true
+    }
+  }, [session?.user?.id])
+
+  /**
+   * LE PROFIL SE RELIT QUAND ON REVIENT SUR L'APPLICATION.
+   *
+   * CE QUE CA REPARE, ET IL A FALLU QUATRE FOIS LA MEME QUESTION POUR LE VOIR:
+   *
+   *   "Where is the period thing I don't see it did you publish it"
+   *
+   * C'etait publie, et la colonne cycle_on etait revenue a true en base. Mais
+   * l'effet au-dessus ne se declenche que sur session?.user?.id, c'est-a-dire
+   * a la connexion. Une application installee sur l'ecran d'accueil n'est pas
+   * rechargee pendant des jours: son `profile` restait celui du premier
+   * chargement, donc cycle_on=false, donc "Mon cycle" et "+ Mes regles"
+   * restaient absents d'un ecran dont la base disait le contraire.
+   *
+   * N'IMPORTE QUELLE CORRECTION DE DONNEES A CE PROBLEME. Le cycle est
+   * seulement celle qui s'est fait remarquer, parce qu'elle fait disparaitre
+   * des boutons. Le theme, la devise, la langue, l'anniversaire et le nom
+   * passent tous par la meme variable et se seraient tus.
+   *
+   * LECTURE SEULE. L'effet au-dessus ECRIT aussi: fuseau, devise, langue. Rien
+   * de tout ca n'est repete ici. Une ecriture sur chaque retour a l'onglet
+   * serait une requete d'ecriture chaque fois que le telephone se deverrouille,
+   * et l'ensemencement n'a de sens qu'une fois par session de toute facon.
+   *
+   * ET UNE LECTURE RATEE NE VIDE RIEN. `setProfile(null)` sur une erreur
+   * reseau ferait clignoter l'application entiere vers son etat "pas encore
+   * charge" a chaque fois qu'on revient dans le metro. On garde ce qu'on a.
+   *
+   * Trente secondes de garde, parce que visibilitychange et focus arrivent
+   * souvent ensemble et qu'un aller-retour entre deux applications ne doit pas
+   * couter deux requetes.
+   */
+  const lastRead = useRef(0)
+  useEffect(() => {
+    const id = session?.user?.id
+    if (!id) return undefined
+    let alive = true
+
+    const relire = async () => {
+      if (document.visibilityState !== 'visible') return
+      if (Date.now() - lastRead.current < 30000) return
+      lastRead.current = Date.now()
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle()
+      if (!alive || error || !data) return
+      setProfile(data)
+    }
+
+    document.addEventListener('visibilitychange', relire)
+    window.addEventListener('focus', relire)
+    return () => {
+      alive = false
+      document.removeEventListener('visibilitychange', relire)
+      window.removeEventListener('focus', relire)
     }
   }, [session?.user?.id])
 
