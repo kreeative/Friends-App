@@ -1599,9 +1599,14 @@ ok(
  * pager de 148 et 12 d'ecart, soit 325. Un pixel de trop, et la barre
  * reprenait ses trois etages.
  */
+/* `w-full ... sm:w-auto` a demenage dans SegTabs avec le reste de la barre
+   d'onglets, mais c'est toujours lui qui tient les deux lignes: sans w-full,
+   les onglets remontent a cote du pager et la barre reprend trois etages a
+   390px. La regle est donc verifiee la ou elle vit maintenant. */
 ok('le mois et le pager partagent une ligne, les onglets prennent la suivante',
    /<div className="flex flex-wrap items-center gap-x-3 gap-y-2">/.test(cal)
-     && /className="flex w-full gap-1 rounded-pill bg-ink\/\[0\.06\] p-1 sm:w-auto"/.test(cal),
+     && /relative flex w-full gap-1 rounded-pill bg-ink\/\[0\.06\] p-1 sm:w-auto/
+       .test(code('src/components/ui.jsx')),
    'trois elements dans une rangee qui passe a la ligne font trois lignes a 390px')
 ok('le titre ne se replie pas: c est le pager qui bouge s il le faut',
    /<h1 className="flex-1 shrink-0 whitespace-nowrap/.test(cal) && !/<h1 className="text-safe[^"]*whitespace-nowrap/.test(cal),
@@ -4322,6 +4327,62 @@ ok(
      /motionOf\(mood\.id\)/.test(code('src/components/MoodBoard.jsx')))
   ok('et le visage joue pendant le meme battement',
      /<MoodGlyph mood=\{mood\} playing=\{beat\.id === mood\.id\} \/>/.test(code('src/components/MoodBoard.jsx')))
+}
+
+/* --- le mouvement fin ---------------------------------------------------- */
+
+/**
+ * "Make it smooth and very detailed animated at the nano level of everything."
+ *
+ * Deux choses SAUTAIENT. La pastille de Mois/Semaine/Jour n'etait pas un objet
+ * mais une classe posee sur le bouton actif: elle disparaissait d'un bouton et
+ * reapparaissait sur l'autre dans la meme image, pendant que transition-colors
+ * faisait fondre doucement la seule chose qui n'avait pas besoin de bouger. Et
+ * la grille des humeurs apparaissait d'un bloc, ce qui n'est pas un mouvement
+ * mais un changement d'image.
+ */
+{
+  const ui = code('src/components/ui.jsx')
+  const cal = code('src/pages/Calendar.jsx')
+  const css = read('src/index.css')
+
+  ok('la pastille est un element a elle, pose derriere les onglets',
+     /data-hook=\{hook \? `\$\{hook\}-pill` : undefined\}/.test(ui)
+       && /pointer-events-none absolute inset-y-1/.test(ui))
+  ok('et le calendrier ne repeint plus la sienne sur le bouton actif',
+     !/view === v \? 'bg-surface text-ink shadow-raised'/.test(cal)
+       && /<SegTabs/.test(cal),
+     'une classe deplacee d un bouton a l autre ne peut pas glisser')
+
+  /* On MESURE la position du bouton actif au lieu de la calculer: "Mois",
+     "Semaine" et "Jour" n'ont pas le meme nombre de lettres, et un tiers de la
+     largeur par onglet placerait la pastille a cote de son libelle. */
+  ok('sa position est mesuree, pas devinee',
+     /getBoundingClientRect\(\)/.test(ui) && /ResizeObserver/.test(ui),
+     'les trois onglets n ont pas la meme largeur, et elle change avec la langue')
+  ok('avant le premier peinturage',
+     /useLayoutEffect\(\(\) => \{[\s\S]{0,400}querySelector\('\[aria-selected="true"\]'\)/.test(ui),
+     'useEffect la dessinerait une image a son ancienne place')
+  ok('les onglets passent AU-DESSUS d elle',
+     /className=\{`press relative flex-1/.test(ui),
+     'sans `relative` le texte passe sous la pastille et disparait')
+
+  /* La cascade. Le peigne s'arrete a douze: la grille du mois fait quarante-
+     deux cases, et 42x26ms ferait plus d'une seconde avant la derniere. */
+  ok('la cascade existe', /\.stagger > \* \{/.test(css))
+  ok('et elle est peignee par le CSS, sans compteur en JSX',
+     /\.stagger > \*:nth-child\(1\)/.test(css) && /nth-child\(n \+ 12\)/.test(css),
+     'une regle CSS n a besoin de personne pour compter ses enfants')
+  ok('la grille des humeurs la porte', /className="stagger grid/.test(code('src/components/MoodBoard.jsx')))
+
+  /* ET LE PIEGE DE CETTE REGLE-LA, QUI PENCHE DANS L AUTRE SENS QUE LES
+     AUTRES: `both` sans keyframe laisse les elements a leur etat de depart,
+     c'est-a-dire invisibles. C'est le seul endroit du fichier ou
+     `animation: none` est la bonne reponse et pas une keyframe immobile. */
+  const apres = css.slice(css.indexOf('.stagger > * {'))
+  ok('et prefers-reduced-motion la coupe avec `none`',
+     /@media \(prefers-reduced-motion: reduce\) \{\s*\n\s*\.stagger > \* \{\s*\n\s*animation: none;/.test(apres),
+     'une keyframe immobile avec `both` laisserait les visages invisibles')
 }
 
 console.log(`\n  ${pass} passed, ${fail} failed\n`)

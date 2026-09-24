@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useT } from '../lib/i18n'
 
@@ -711,5 +711,104 @@ export function DismissButton({ label, onClick, className = '' }) {
         />
       </svg>
     </button>
+  )
+}
+
+/**
+ * Un selecteur segmente dont la pastille GLISSE.
+ *
+ *   "Make it smooth and very detailed animated at the nano level."
+ *
+ * CE QUI SE PASSAIT AVANT: la pastille blanche n'etait pas un objet, c'etait
+ * une classe posee sur le bouton actif. Passer de "Mois" a "Semaine" la
+ * retirait d'un bouton et la mettait sur l'autre, donc elle DISPARAISSAIT et
+ * REAPPARAISSAIT ailleurs dans la meme image. `transition-colors` faisait
+ * fondre la couleur du texte pendant ce temps-la, ce qui rendait le saut plus
+ * visible plutot que moins: la seule chose qui bougeait doucement etait celle
+ * qui n'avait pas besoin de bouger.
+ *
+ * Maintenant la pastille est UN element, pose derriere les trois boutons, et
+ * c'est lui qui se deplace. Le trajet est ce qui dit d'ou on vient et ou on
+ * va, et c'est aussi ce qui fait qu'un changement d'onglet ne clignote pas.
+ *
+ * POURQUOI ON MESURE PLUTOT QUE DE CALCULER. Les trois boutons n'ont pas la
+ * meme largeur: "Mois", "Semaine" et "Jour" ne font pas le meme nombre de
+ * lettres, et en anglais non plus. Un tiers de la largeur par onglet
+ * placerait la pastille a cote de son libelle des le deuxieme. On lit donc la
+ * position reelle du bouton actif, et un ResizeObserver la relit quand la
+ * barre change de taille, ce qui arrive a chaque rotation d'iPad et a chaque
+ * changement de langue.
+ *
+ * useLayoutEffect et pas useEffect: la mesure doit etre faite avant que le
+ * navigateur peigne, sinon la pastille est dessinee a sa position precedente
+ * pendant une image et on voit un saut au premier rendu.
+ */
+export function SegTabs({ value, options, onChange, label, hook, labelOf }) {
+  const wrap = useRef(null)
+  const [box, setBox] = useState(null)
+
+  useLayoutEffect(() => {
+    const parent = wrap.current
+    if (!parent) return undefined
+    const mesure = () => {
+      const actif = parent.querySelector('[aria-selected="true"]')
+      if (!actif) return
+      const a = parent.getBoundingClientRect()
+      const b = actif.getBoundingClientRect()
+      setBox({ x: b.left - a.left, w: b.width })
+    }
+    mesure()
+    /* Les polices arrivent apres le premier rendu et changent la largeur des
+       libelles. Sans cette relecture, la pastille garde la largeur qu'avait
+       "Semaine" en police de secours. */
+    const ro = new ResizeObserver(mesure)
+    ro.observe(parent)
+    for (const el of parent.children) ro.observe(el)
+    return () => ro.disconnect()
+  }, [value, options.length])
+
+  return (
+    <div
+      ref={wrap}
+      className="relative flex w-full gap-1 rounded-pill bg-ink/[0.06] p-1 sm:w-auto"
+      role="tablist"
+      aria-label={label}
+      data-hook={hook}
+    >
+      {/* aria-hidden: c'est de la peinture. L'etat est deja porte par
+          aria-selected sur les boutons, et un lecteur d'ecran qui annoncerait
+          une pastille en plus annoncerait la meme chose deux fois. */}
+      <span
+        aria-hidden="true"
+        data-hook={hook ? `${hook}-pill` : undefined}
+        className="pointer-events-none absolute inset-y-1 left-0 rounded-pill bg-surface shadow-raised
+                   transition-[transform,width,opacity] duration-300 ease-settle
+                   motion-reduce:transition-none"
+        style={{
+          transform: `translateX(${box?.x ?? 0}px)`,
+          width: box?.w ?? 0,
+          /* Invisible tant qu'on ne l'a pas mesuree, pour qu'elle n'apparaisse
+             pas d'abord a gauche et large de zero. */
+          opacity: box ? 1 : 0,
+        }}
+      />
+      {options.map((v) => (
+        <button
+          key={v}
+          type="button"
+          role="tab"
+          aria-selected={value === v}
+          onClick={() => onChange(v)}
+          /* `relative` pour passer AU-DESSUS de la pastille, qui est en
+             absolute derriere. Sans lui le texte passe dessous et disparait. */
+          className={`press relative flex-1 rounded-pill px-3 py-1.5 text-small font-semibold
+                      transition-colors sm:flex-none ${
+                        value === v ? 'text-ink' : 'text-muted hover:text-ink'
+                      }`}
+        >
+          {labelOf(v)}
+        </button>
+      ))}
+    </div>
   )
 }
