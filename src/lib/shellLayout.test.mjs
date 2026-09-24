@@ -4238,5 +4238,91 @@ ok(
   }
 }
 
+/* --- les visages des humeurs -------------------------------------------- */
+
+/**
+ * "The emotions are too [alike], especially their eyes and mouth."
+ * "Emotion sticker should redraw and fully animated according to the emotions
+ *  they'd express."
+ *
+ * CE QUI ETAIT MESURABLE: dix-huit humeurs partageaient TROIS paires d'yeux et
+ * TROIS bouches, et neuf d'entre elles portaient exactement les memes yeux
+ * fermes. "Joyeux", "Reconnaissant", "Serein" et "Nostalgique" etaient le meme
+ * visage sur quatre silhouettes.
+ */
+{
+  const face = code('src/components/MoodFace.jsx')
+  const css = read('src/index.css')
+  const ids = [...code('src/lib/moods.js').matchAll(/id: '([a-z]+)'/g)].map((m) => m[1])
+
+  /* La table est lue par expression reguliere plutot qu'importee: ce fichier
+     est du JSX et le test tourne sous node nu. Meme procede que partout
+     ailleurs ici. */
+  const entrees = [...face.matchAll(
+    /^\s{2}([a-z]+): \{ eyes: '([a-zA-Z]+)', mouth: '([a-zA-Z]+)', fx: \{ eyes: '([a-z-]+)', mouth: '([a-z-]+)' \} \},$/gm,
+  )].map((m) => ({ id: m[1], eyes: m[2], mouth: m[3], fxE: m[4], fxM: m[5] }))
+
+  ok(`les ${ids.length} humeurs ont toutes un visage (${entrees.length})`,
+     entrees.length === ids.length, `${entrees.length} visages pour ${ids.length} humeurs`)
+  ok('et ce sont les memes, dans le meme ordre',
+     entrees.map((e) => e.id).join(',') === ids.join(','),
+     'une humeur ajoutee au catalogue et oubliee ici n aurait pas de visage')
+
+  /* LA MESURE QUI COMPTE. */
+  const paires = new Set(entrees.map((e) => `${e.eyes}|${e.mouth}`))
+  ok(`chaque humeur a son PROPRE visage (${paires.size} paires)`,
+     paires.size === entrees.length,
+     'neuf humeurs portaient le meme visage ferme avant')
+
+  const yeux = new Set(entrees.map((e) => e.eyes))
+  const bouches = new Set(entrees.map((e) => e.mouth))
+  ok(`le vocabulaire des yeux est reel (${yeux.size})`, yeux.size >= 12, `${yeux.size}, il y en avait 3`)
+  ok(`celui des bouches aussi (${bouches.size})`, bouches.size >= 9, `${bouches.size}, il y en avait 3`)
+
+  /* Chaque forme nommee doit exister, sinon le visage tombe sur le defaut et
+     deux humeurs se remettent a se ressembler, en silence. */
+  for (const e of entrees) {
+    if (!face.includes(`  ${e.eyes}: (`) && !face.includes(`  ${e.eyes}: <`)) {
+      ok(`les yeux "${e.eyes}" de ${e.id} sont dessines`, false)
+    }
+    if (!face.includes(`  ${e.mouth}: (`) && !face.includes(`  ${e.mouth}: <`)) {
+      ok(`la bouche "${e.mouth}" de ${e.id} est dessinee`, false)
+    }
+  }
+  ok('toutes les formes nommees existent',
+     entrees.every((e) => (face.includes(`  ${e.eyes}: (`) || face.includes(`  ${e.eyes}: <`))
+       && (face.includes(`  ${e.mouth}: (`) || face.includes(`  ${e.mouth}: <`))))
+
+  /* LES YEUX ET LA BOUCHE BOUGENT, pas seulement le sticker: c'est la demande
+     exacte. Chaque classe fx doit exister dans la feuille de style, sinon elle
+     ne fait rien et personne ne le voit. */
+  const fx = new Set(entrees.flatMap((e) => [e.fxE, e.fxM]))
+  const manquantes = [...fx].filter((c) => !css.includes(`.${c} {`))
+  ok(`les ${fx.size} animations de visage existent toutes`, manquantes.length === 0,
+     manquantes.join(', '))
+
+  /* fill-box, sans quoi un scale sur un oeil place a x=64 le deplace hors du
+     visage en meme temps qu'il l'agrandit. */
+  ok('les transformations ont pour origine l element et pas le viewBox',
+     /\.mf-eyes,\s*\n\.mf-mouth,\s*\n\.mf-tear \{\s*\n\s*transform-box: fill-box;/.test(css),
+     'sans fill-box un scale deplace l oeil hors du visage')
+
+  /* Et rien ne bouge pour qui a demande moins de mouvement. Une vraie keyframe
+     immobile, pas `animation: none`, sinon animationend ne part jamais et la
+     classe reste posee pour toujours. */
+  const bloc = css.slice(css.indexOf('@keyframes fx-still'))
+  const oubliees = [...fx].filter((c) => !bloc.includes(`.${c}`))
+  ok('et prefers-reduced-motion les couvre toutes', oubliees.length === 0, oubliees.join(', '))
+  ok('avec une keyframe reelle et pas `animation: none`',
+     /animation: fx-still 1ms linear/.test(css),
+     'none ne declenche jamais animationend, donc le nettoyage ne tourne jamais')
+
+  /* Le corps garde son geste a lui: les trois jouent ensemble. */
+  ok('le corps garde son propre mouvement',
+     /motionOf\(mood\.id\)/.test(code('src/components/MoodBoard.jsx')))
+  ok('et le visage joue pendant le meme battement',
+     /<MoodGlyph mood=\{mood\} playing=\{beat\.id === mood\.id\} \/>/.test(code('src/components/MoodBoard.jsx')))
+}
+
 console.log(`\n  ${pass} passed, ${fail} failed\n`)
 process.exit(fail ? 1 : 0)
