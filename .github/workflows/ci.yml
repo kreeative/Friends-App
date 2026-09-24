@@ -1,0 +1,43 @@
+# Runs the suite on every push and pull request.
+#
+# There was no CI here until now, and it cost something concrete: two test
+# files imported esbuild by absolute path from the container they were written
+# in, and required a reference library out of a scratchpad directory that is
+# deleted when a session ends. The suite is chained with &&, so the twenty five
+# files after the first of those never ran on any other machine. Locally it
+# looked fine to whoever wrote it; everywhere else it died on file 37.
+#
+# Nothing here is clever. It installs, runs the tests, and builds. The point is
+# only that it runs somewhere that is not the author's laptop.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      # ci rather than install: it installs exactly what the lockfile says and
+      # fails if package.json and the lockfile disagree, which is the other way
+      # a dependency can be present on one machine and missing on the next.
+      - run: npm ci
+
+      - run: npm test
+
+      # The build is the only check that every import in the app resolves.
+      # The keys are placeholders: Vite inlines them at build time, so the
+      # build needs them to exist, and nothing here talks to a real project.
+      - run: npm run build
+        env:
+          VITE_SUPABASE_URL: https://placeholder.supabase.co
+          VITE_SUPABASE_ANON_KEY: placeholder-anon-key
