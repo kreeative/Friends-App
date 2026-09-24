@@ -12,8 +12,9 @@ deployed on Vercel. Bilingual, English and French, one flat dictionary in
 
 ## State of play
 
-All Supabase migrations through `20_quiet_and_birthdays.sql` have been run
-against production. There is nothing outstanding to paste into the SQL editor.
+Migrations are applied against production as they land. Many have been added
+since `20_quiet_and_birthdays.sql`; check `supabase/` rather than trusting a
+number written here.
 `supabase/RUN_ON_SUPABASE.sql` and its comment-stripped twin are the combined
 scripts that were used, kept for reference.
 
@@ -48,33 +49,56 @@ six-digit code rather than a magic link.
   neutral grey rather than the theme's pink, the plan form is a page rather
   than a Sheet, and the French copy was rewritten.
 
-## Not done, in the order it was asked for
+## Not done
 
-1. **Header profile dropdown**, `src/components/AppShell.jsx`. Remove the
-   floating white popup that appears on tapping the avatar, and the redundant
-   "You" link inside it since "You" is already in the bottom bar. The header
-   bar itself should expand downwards inline. Use the `grid-template-rows:
-   0fr -> 1fr` technique already used by `MoodToday`, so no new dependency.
-   Show full name, email, "Profile & Settings", "Sign out". Keep it inside the
-   header's existing border and padding. Test at 420, 768 and 1024 px.
-2. **Flo-style calendar strip** at the top of the personal dashboard.
-   Horizontal scrolling week, circular date badges, today in the accent,
-   tapping a date shows that day's goals and budget entries.
-3. **Group analytics rework.** Replace "check-in rate 0/0" with a goal success
-   rate and a consistency leaderboard ranked by consecutive daily check-ins.
-   Rename "Check-in" to "Daily Goal Complete" throughout.
-4. **Birthdays, front end.** A date of birth field in profile settings, and
-   rendering `group_feed` rows of `kind = 'birthday'`. The column and the
-   writer function already exist from migration 20; only the UI is missing.
-5. **"Re-watch intro"** in settings, setting `has_seen_budget_intro` back to
-   false.
-6. **Stale copy.** The landing page and the sign-in pitch still say "one
-   check-in a week". Cycles are daily now.
-7. **The logo.** The user says the mark in the top bar is "the old logo". It
-   is `public/brand/mark-pink.png`, which is what the code is configured to
-   use, so nothing is stale in the repo. ASK which they want: a different
-   existing file, a new image they will supply, or the same mark resized.
-   Do not guess.
+The seven items that used to be listed here were all built in the weeks after
+this file was written, and nobody rewrote the list, so it sat here claiming
+finished work was outstanding. Checked against the code on 2026-09-24: the
+calendar strip shipped as WeekStrip and the Calendar page, the profile popup
+was replaced by the avatar linking straight to Account, the birthday field is
+in Me.jsx, re-watch intro is in Account.jsx. Do not trust a stale list here;
+check the code.
+
+The one thing still genuinely open is the logo. The user has twice called the
+mark in the top bar "the old logo". It is public/brand/mark-pink.png, which is
+what the code is configured to use, so nothing is stale in the repo. ASK which
+they want. Do not guess.
+
+## Known security findings
+
+From the Supabase advisors, checked 2026-09-24. None of these is an active
+breach, and two things that would have been serious were verified safe:
+
+- **Paid chapter text is properly protected.** chapters has one policy, for
+  authenticated only, requiring is_preview or owns_book. anon has no policy at
+  all, so it reads nothing.
+- **Bank tokens are locked.** plaid_item and pending_entitlements have RLS on
+  with no policies and no anon grant.
+
+Open, in rough order of how much they matter:
+
+- **books has three overlapping SELECT policies**, and permissive policies are
+  OR'd, so "Allow public read access on books" with qual true defeats
+  books_select's published = true. Harmless today because all three books are
+  published. The day a draft is added it is world readable. Drop the redundant
+  two and keep the published check.
+- **anon can call 31 SECURITY DEFINER functions** over /rest/v1/rpc. Most
+  guard themselves by raising when auth.uid() is null, and those are fine.
+  The ones that do not are worth a look: tick() runs the whole scheduler for
+  anyone who posts to it, and days_silent, is_member_of, shares_group,
+  owns_book, proof_group and missed_cycle each answer a question about an
+  arbitrary uuid without asking who is calling. Trigger functions are exposed
+  too (handle_new_user, sync_profile_email, notify_group_goal,
+  notify_book_share), which should simply not be reachable by RPC.
+- **chapter_index is a SECURITY DEFINER view** (advisor level ERROR). It
+  carries id, book_id, idx, title, is_preview, word_count and no body, so it
+  is a table of contents rather than content. Probably intentional, worth
+  confirming.
+- **Four functions have a mutable search_path**: gen_random_bytes,
+  email_check, budget_touch, touch_journal_entry.
+- pg_net is installed in the public schema.
+- Leaked password protection is off, which is moot while sign-in is OTP and
+  Google only.
 
 ## Conventions worth keeping
 
