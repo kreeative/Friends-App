@@ -277,6 +277,46 @@ ok(
   ok('et l etat eteint dit ce qu il garde',
      /data-hook="me-cycle-state"/.test(me) && /me\.cycle_off_kept/.test(me),
      '"rien n est efface" est vrai et inverifiable pour qui vient de voir ses dates partir')
+
+  /**
+   * ET LE PROFIL SE RELIT EN REVENANT SUR L'APPLICATION.
+   *
+   * Il a fallu QUATRE fois "Where is the period thing I don't see it did you
+   * publish it" pour trouver celle-la. C'etait publie, la colonne etait
+   * revenue a true, et son ecran disait toujours non: l'effet qui lit le
+   * profil ne se declenche que sur session?.user?.id, donc a la connexion. Une
+   * application posee sur l'ecran d'accueil n'est pas rechargee pendant des
+   * jours, et gardait le profil de son premier chargement.
+   *
+   * Le cycle est seulement la correction qui s'est fait remarquer, parce
+   * qu'elle fait disparaitre des boutons. Le theme, la devise, la langue et le
+   * nom passent par la meme variable et se seraient tus.
+   */
+  const ctx = code('src/context/AuthContext.jsx')
+  ok('le profil se relit quand on revient sur l application',
+     /addEventListener\('visibilitychange', relire\)/.test(ctx)
+       && /addEventListener\('focus', relire\)/.test(ctx))
+  ok('et les deux ecouteurs sont retires',
+     (ctx.match(/removeEventListener\('(visibilitychange|focus)', relire\)/g) ?? []).length === 2,
+     'sinon chaque remontage en empile une paire de plus')
+  /* Le corps de `relire`, decoupe entre sa declaration et le branchement des
+     ecouteurs juste apres, plutot qu'avec une expression reguliere gourmande
+     qui attrapait l'ensemencement de l'effet d'au-dessus et rendait ce cas
+     faux pour une ecriture qui n'est pas la sienne. */
+  const corpsRelire = ctx.slice(
+    ctx.indexOf('const relire = async () =>'),
+    ctx.indexOf("document.addEventListener('visibilitychange'"),
+  )
+  ok('la relecture lit, et seulement ca',
+     /\.select\('\*'\)/.test(corpsRelire)
+       && !/\.(update|upsert|insert|delete|rpc)\(/.test(corpsRelire),
+     `une ecriture a chaque deverrouillage du telephone: ${corpsRelire.slice(0, 80)}`)
+  ok('et une lecture ratee garde ce qu on a',
+     /if \(!alive \|\| error \|\| !data\) return/.test(ctx),
+     'setProfile(null) sur une panne reseau ferait clignoter toute l application')
+  ok('deux evenements pour un aller-retour ne font qu une requete',
+     /Date\.now\(\) - lastRead\.current < 30000/.test(ctx),
+     'visibilitychange et focus arrivent souvent ensemble')
 }
 
 {

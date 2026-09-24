@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm test)",
+      "Bash(npm run build)",
+      "Bash(npm run sweep)",
+      "Bash(git fetch *)",
+      "mcp__Vercel__list_deployments",
+      "mcp__Supabase__list_migrations",
+      "mcp__Supabase__list_tables",
+      "mcp__Supabase__list_projects",
+      "mcp__Supabase__list_edge_functions",
+      "mcp__Supabase__query_logs"
+    ]
+  }
+}
