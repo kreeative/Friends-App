@@ -135,7 +135,11 @@ export default function MoodBoard({ value, onChange }) {
          nothing saying what they were for. */
       aria-label={t('mood.question_day')}
       data-hook="mood-grid"
-      className="grid grid-cols-3 gap-x-3 gap-y-6 sm:grid-cols-4 sm:gap-x-2"
+      /* stagger: les visages arrivent en cascade plutot que d'un bloc. Le
+         geste de selection vit sur un span a l'interieur du bouton, donc
+         l'animation d'entree posee ici ne se dispute pas `transform` avec lui.
+         Voir la note des deux boites plus bas. */
+      className="stagger grid grid-cols-3 gap-x-3 gap-y-6 sm:grid-cols-4 sm:gap-x-2"
     >
       {MOODS.map((mood) => {
               const selected = chosen.includes(mood.id)

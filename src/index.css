@@ -3878,3 +3878,59 @@
     animation: fx-still 1ms linear;
   }
 }
+
+
+/* ===========================================================================
+   L'ENTREE EN CASCADE
+
+   "Make it smooth and very detailed animated at the nano level of everything."
+
+   Une grille de dix-huit visages qui apparait d'un bloc est un CHANGEMENT
+   D'IMAGE: a un rendu il n'y a rien, au suivant il y a tout, et l'oeil n'a
+   rien a suivre. En cascade, c'est un mouvement, et un mouvement se regarde.
+
+   LE DELAI EST MINUSCULE ET C'EST TOUT L'INTERET. 26ms entre deux elements ne
+   se voit pas comme un decalage, ca se sent comme de la matiere. A 80ms on
+   voit une liste se remplir une case a la fois, ce qui est une animation de
+   chargement et fait paraitre l'application lente.
+
+   LE PEIGNE S'ARRETE A DOUZE. Au-dela, chaque element supplementaire ajoute du
+   retard a la fin de la cascade et rien a sa lecture: la grille du mois fait
+   quarante-deux cases, et 42x26ms fait plus d'une seconde avant que la
+   derniere arrive. Les elements au-dela du douzieme partagent le dernier
+   delai, donc la cascade dure toujours 312ms quelle que soit la longueur.
+
+   nth-child plutot qu'une variable posee en JSX: une regle CSS n'a besoin de
+   personne pour compter, et elle marche sur toute liste a qui on donne la
+   classe, y compris celles rendues par une boucle qui ne sait pas son index.
+   =========================================================================== */
+.stagger > * {
+  animation: rise 260ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+.stagger > *:nth-child(1) { animation-delay: 0ms; }
+.stagger > *:nth-child(2) { animation-delay: 26ms; }
+.stagger > *:nth-child(3) { animation-delay: 52ms; }
+.stagger > *:nth-child(4) { animation-delay: 78ms; }
+.stagger > *:nth-child(5) { animation-delay: 104ms; }
+.stagger > *:nth-child(6) { animation-delay: 130ms; }
+.stagger > *:nth-child(7) { animation-delay: 156ms; }
+.stagger > *:nth-child(8) { animation-delay: 182ms; }
+.stagger > *:nth-child(9) { animation-delay: 208ms; }
+.stagger > *:nth-child(10) { animation-delay: 234ms; }
+.stagger > *:nth-child(11) { animation-delay: 260ms; }
+.stagger > *:nth-child(n + 12) { animation-delay: 286ms; }
+
+/**
+ * Et rien pour qui a demande moins de mouvement.
+ *
+ * `animation: none` suffit ICI, contrairement aux visages des humeurs: cette
+ * animation-la n'a pas de nettoyage accroche a animationend, personne
+ * n'attend sa fin, et `both` sans keyframe laisserait les elements a leur
+ * etat de depart, c'est-a-dire invisibles. C'est le seul endroit ou le
+ * raisonnement penche dans l'autre sens, et c'est pour ca qu'il est ecrit.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .stagger > * {
+    animation: none;
+  }
+}

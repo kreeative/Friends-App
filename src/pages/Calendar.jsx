@@ -21,6 +21,7 @@ import {
   weekdayName,
 } from '../lib/agenda'
 import { bookingEntries } from '../lib/bookings'
+import { SegTabs } from '../components/ui'
 import CyclePanel from '../components/CyclePanel'
 import TimetableWizard from '../components/TimetableWizard'
 
@@ -1260,27 +1261,14 @@ export default function Calendar() {
 
           {/* Toute la largeur sur un telephone, donc trois cibles larges; sa
               largeur naturelle des qu'il y a de la place pour tout sur une
-              ligne. */}
-          <div
-            className="flex w-full gap-1 rounded-pill bg-ink/[0.06] p-1 sm:w-auto"
-            role="tablist"
-            data-hook="cal-views"
-          >
-            {VIEWS.map((v) => (
-              <button
-                key={v}
-                type="button"
-                role="tab"
-                aria-selected={view === v}
-                onClick={() => setView(v)}
-                className={`press flex-1 rounded-pill px-3 py-1.5 text-small font-semibold transition-colors sm:flex-none ${
-                  view === v ? 'bg-surface text-ink shadow-raised' : 'text-muted hover:text-ink'
-                }`}
-              >
-                {t(`cal.${v}`)}
-              </button>
-            ))}
-          </div>
+              ligne. La pastille GLISSE d'un onglet a l'autre: voir SegTabs. */}
+          <SegTabs
+            value={view}
+            options={VIEWS}
+            onChange={setView}
+            labelOf={(v) => t(`cal.${v}`)}
+            hook="cal-views"
+          />
         </div>
       </header>
 
