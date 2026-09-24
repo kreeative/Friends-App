@@ -1913,6 +1913,50 @@ ok('both callers name their strings',
      && (cal.match(/allKey="cal\.(del|edit)_all"/g) ?? []).length === 2)
 ok('offering the one day', /data-hook="del-one"/.test(cal))
 ok('and the whole rule', /data-hook="del-all"/.test(cal))
+
+/**
+ * ET ON PEUT SUPPRIMER DEPUIS LE FORMULAIRE, PAS SEULEMENT DEPUIS LA LISTE.
+ *
+ *   "There should also be an option to delete the thing, if you don't want it
+ *    anymore, and then when you're going to delete it's going to ask you
+ *    again: do you want to delete this thing or the whole thing."
+ *
+ * Supprimer existait, mais seulement dans la liste de la vue Jour. Apres avoir
+ * repondu "cette date ou toute la serie", on arrivait dans le formulaire sans
+ * aucun moyen d'en sortir en effacant: il fallait annuler, retrouver la ligne
+ * dans la vue Jour, et la supprimer de la.
+ *
+ * LE FORMULAIRE NE SUPPRIME PAS LUI-MEME. Il rend la main a la page, qui
+ * possede deja les deux chemins et leurs garde-fous: le dialogue de perimetre,
+ * le `count` exact sur le DELETE, et la remise en place si l'ecriture n'a pas
+ * eu lieu. Les refaire dans le formulaire en donnerait deux versions, et c'est
+ * la deuxieme qui oublie le compte.
+ *
+ * Sonde Chromium, les quatre cas du parcours:
+ *
+ *   serie, "toute la serie" -> formulaire -> Supprimer -> la meme question ->
+ *     un seul DELETE, sur l'id de la serie, et rien avant la reponse
+ *   serie, "cette date" -> Supprimer -> pas de question, un PATCH qui ajoute
+ *     le 23 septembre a excluded_on
+ *   evenement d'un seul jour -> pas de question, un DELETE
+ *   evenement en creation -> pas de bouton du tout
+ */
+ok('le formulaire peut supprimer',
+   /data-hook="cal-form-delete"/.test(cal) && /function EventForm\(\{ initial, onClose, onSaved, onDelete \}\)/.test(cal),
+   'il fallait annuler, retrouver la ligne dans la vue Jour, et la supprimer de la')
+ok('et il repose la question du perimetre par le meme chemin',
+   /if \(entry\.id\) return askRemove\(entry\)/.test(cal),
+   'askRemove porte le dialogue, le count exact et la remise en place')
+ok('une occurrence detachee retire son jour au lieu d effacer la regle',
+   /return detachDay\(entry\.detachFrom\)\.then\(load\)/.test(cal),
+   'supprimer une occurrence jamais ecrite, c est une exception sur la regle d origine')
+ok('rien a supprimer sur un evenement qu on est en train de creer',
+   /editing\.id \|\| editing\.detachFrom\s*\n?\s*\?/.test(cal),
+   'la, supprimer et annuler sont le meme geste, et en montrer deux fait douter des deux')
+ok('et le bouton est loin d Enregistrer',
+   /data-hook="cal-form-delete"[\s\S]{0,160}ml-auto[\s\S]{0,120}text-negative/.test(cal)
+     || /ml-auto[\s\S]{0,200}data-hook="cal-form-delete"/.test(cal),
+   'deux boutons de sens contraire cote a cote sont deux boutons qu on confond')
 ok(
   'it sits above the form it was opened from',
   /z-\[70\][\s\S]{0,200}data-hook=\{hook\}/.test(cal),

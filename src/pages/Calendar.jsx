@@ -1351,6 +1351,35 @@ export default function Calendar() {
         <EventForm
           initial={editing}
           onClose={() => setEditing(null)}
+          /**
+           * Le formulaire ne supprime pas lui-meme: il rend la main.
+           *
+           * La page possede deja les deux chemins et leurs garde-fous, le
+           * dialogue de perimetre, le compte exact sur le DELETE et la remise
+           * en place si l'ecriture n'a pas eu lieu. Les refaire ici en
+           * donnerait deux versions, et c'est la deuxieme qui oublie le
+           * `count`.
+           *
+           * Deux cas, parce qu'il y a deux sortes de choses dans `editing`:
+           * une ligne enregistree, qui passe par la question habituelle; et
+           * une occurrence qu'on avait choisi de detacher et qui n'a jamais
+           * ete ecrite, ou supprimer veut dire retirer ce jour-la de la regle
+           * d'origine et ne rien creer. Le perimetre n'y est pas demande, il a
+           * deja ete choisi a l'ouverture.
+           */
+          onDelete={
+            /* Absent, et pas inerte, sur un evenement qu'on est en train de
+               creer: la, "supprimer" et "annuler" sont le meme geste, et en
+               montrer deux fait douter des deux. */
+            editing.id || editing.detachFrom
+              ? () => {
+                  const entry = editing
+                  setEditing(null)
+                  if (entry.id) return askRemove(entry)
+                  return detachDay(entry.detachFrom).then(load)
+                }
+              : undefined
+          }
           onSaved={async () => {
             /* L'exception APRES l'ecriture: la nouvelle ligne existe, donc
                retirer le jour de la regle ne peut plus laisser un trou. */
@@ -1896,7 +1925,7 @@ function DayList({ day, agenda, cycle, onEdit, onRemove, t }) {
 
 /* --- the form ------------------------------------------------------------ */
 
-function EventForm({ initial, onClose, onSaved }) {
+function EventForm({ initial, onClose, onSaved, onDelete }) {
   const { user } = useAuth()
   const { t, locale } = useT()
   const [busy, setBusy] = useState(false)
@@ -2280,6 +2309,47 @@ function EventForm({ initial, onClose, onSaved }) {
           <button type="button" onClick={onClose} className="goal-action press">
             {t('cal.cancel')}
           </button>
+
+          {/**
+           * SUPPRIMER, DEPUIS L'ENDROIT OU ON EST DEJA.
+           *
+           *   "There should also be an option to delete the thing, if you
+           *    don't want it anymore, and then when you're going to delete
+           *    it's going to ask you again: do you want to delete this thing
+           *    or the whole thing."
+           *
+           * Supprimer existait, mais seulement dans la liste du jour. Apres
+           * avoir repondu "cette date ou toute la serie", on arrivait dans ce
+           * formulaire sans aucun moyen d'en sortir en effacant: il fallait
+           * annuler, retrouver la ligne dans la vue Jour, et la supprimer de
+           * la.
+           *
+           * `ml-auto` le pousse au bout de la rangee, loin d'Enregistrer. Deux
+           * boutons de sens contraire cote a cote sont deux boutons qu'on
+           * confond une fois sur dix, et celui-ci ne se rattrape pas.
+           *
+           * Il n'apparait que sur quelque chose qui EXISTE: une ligne
+           * enregistree, ou une occurrence qu'on etait en train de detacher.
+           * Sur un evenement en train d'etre cree, "supprimer" et "annuler"
+           * sont le meme geste, et en montrer deux fait douter des deux.
+           *
+           * La question du perimetre n'est pas posee ici: le bouton rend la
+           * main a la page, qui pose exactement la meme qu'a la modification,
+           * avec le meme composant. Une serie demande, un evenement d'un seul
+           * jour part tout de suite, parce que "celui-ci" et "toute la serie"
+           * sont la meme reponse quand la serie fait un jour.
+           */}
+          {onDelete && (
+            <button
+              type="button"
+              onClick={onDelete}
+              data-hook="cal-form-delete"
+              className="press ml-auto rounded-pill px-3 py-2 text-small font-semibold text-negative hover:bg-negative/[0.09]"
+            >
+              {t('cal.delete')}
+            </button>
+          )}
+
           {error && (
             <p className="text-safe w-full text-small text-negative" role="alert">
               {error}
