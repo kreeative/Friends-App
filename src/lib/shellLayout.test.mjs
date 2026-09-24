@@ -1899,7 +1899,7 @@ ok(
   ok('les entrees sont fabriquees pour la plage affichee, pas stockees',
      /birthdayEntries\(gens, range\.from, range\.to/.test(cal))
   ok('et elles passent par le meme filtre de couches que le reste',
-     /visibleEvents\(\[\.\.\.events, \.\.\.asEvents, \.\.\.anniversaires\], hidden\)/.test(cal),
+     /visibleEvents\(\[\.\.\.events, \.\.\.asEvents, \.\.\.anniversaires, \.\.\.reserves\], hidden\)/.test(cal),
      'c est ce qui rend la puce "Anniversaires" capable de les enlever')
   /* Un anniversaire est derive d'un profil comme un objectif est derive de sa
      ligne: ouvrir le formulaire dessus insererait un vrai evenement portant le
@@ -1908,6 +1908,111 @@ ok(
      (cal.match(/entry\?\.goalId \|\| entry\?\.birthdayOf/g) ?? []).length === 2,
      'ni pour modifier, ni pour choisir la portee')
   for (const cle of ['cal.layer_anniversaires', 'cal.bday_mine']) {
+    const n = read('src/lib/i18n.jsx').split(`'${cle}'`).length - 1
+    ok(`${cle} existe dans les deux langues (${n})`, n === 2)
+  }
+}
+
+/* --- les reservations Cal.com ------------------------------------------- */
+
+/**
+ * LES RENDEZ-VOUS PRIS SUR SES PAGES DE RESERVATION.
+ *
+ *   "So when people book me on my Kreeative cal booking pages it shows on my
+ *    Rich and Friends calendar can you do that?"
+ *   "And hyperlink to Rich and Friends so I can directly click and go."
+ *
+ * Trois choses a tenir, et chacune est une facon differente de se tromper en
+ * silence: ce que l'API accepte d'ecrire, ce qu'elle garde du paiload, et le
+ * fait que le clic marche sur les trois rendus et pas sur un seul.
+ */
+{
+  const api = read('api/cal-webhook.js')
+  const sql = read('supabase/72_cal_bookings.sql')
+  const cal = code('src/pages/Calendar.jsx')
+  const conn = code('src/components/CalConnect.jsx')
+
+  /* L'URL SEULE N'AUTORISE RIEN. Un token qui suffirait a ecrire serait une
+     URL qui traine dans un tableau de bord tiers, et n'importe qui pourrait
+     poser des rendez-vous sur le calendrier de quelqu'un. */
+  ok('la signature est exigee, pas seulement le token',
+     /if \(!signatureOk\(body, req\.headers\['x-cal-signature-256'\], lien\.signing_secret\)\)/.test(api))
+  ok('et la comparaison est a temps constant',
+     /crypto\.timingSafeEqual/.test(api) && !/attendu === /.test(api),
+     'un === ici rend le bon resultat en fuyant le secret sur le temps de reponse')
+  ok('les longueurs sont comparees avant',
+     /if \(a\.length !== b\.length\) return false[\s\S]{0,80}timingSafeEqual/.test(api),
+     'timingSafeEqual leve sur deux tampons de tailles differentes au lieu de rendre false')
+  /* Repondre 404 sur un token inconnu et 401 sur une signature fausse ferait
+     de cette URL un oracle qui confirme quels tokens existent. */
+  ok('token inconnu et signature fausse rendent le meme refus',
+     (api.match(/return refus\(/g) ?? []).length >= 4
+       && (api.match(/status\(401\)/g) ?? []).length === 1)
+  ok('et aucun refus ne dit le secret',
+     !/signing_secret[^\n]*console\./.test(api) && !/console\.[a-z]+\([^)]*secret/i.test(api),
+     'un message d erreur ne porte jamais un identifiant')
+
+  /* LA DECISION DE CONFIDENTIALITE, TENUE PAR LE SCHEMA ET PAS PAR LA BONNE
+     VOLONTE: le courriel et les reponses au formulaire arrivent dans le
+     paiload et n'ont pas de colonne. Une colonne vide finit par etre remplie
+     par le prochain qui passe. */
+  ok('la table ne peut pas porter de courriel', !/\bemail\b/.test(sql))
+  ok('ni les reponses au formulaire', !/responses|notes/.test(sql))
+  ok('et le webhook n en ecrit pas non plus', !/email:/.test(api))
+
+  /* Supprimer une reservation ici n'annule rien chez Cal, donc rien ne la
+     supprime ici: le rendez-vous resterait vivant et la personne arriverait. */
+  ok('booking n a qu une policy select',
+     /create policy booking_select on booking\s*\n\s*for select using \(user_id = auth\.uid\(\)\)/.test(sql)
+       && !/create policy [a-z_]+ on booking\s*\n\s*for (insert|update|delete)/.test(sql))
+  ok('les deux tables ont RLS',
+     /alter table cal_link enable row level security/.test(sql)
+       && /alter table booking enable row level security/.test(sql))
+  /* Cal reessaye une livraison qui n'a pas repondu, et un report reutilise
+     l'uid. Sans la clef d'unicite, chaque reessai ferait une ligne de plus. */
+  ok('une livraison rejouee reste une seule ligne',
+     /unique \(user_id, source, uid\)/.test(sql)
+       && /onConflict: 'user_id,source,uid'/.test(api))
+  ok('une annulation marque la ligne au lieu de la supprimer',
+     /cancelled_at: new Date\(\)\.toISOString\(\)/.test(api)
+       && !/from\('booking'\)\s*\n?\s*\.delete\(/.test(api),
+     '"ou est passe mon rendez-vous de jeudi" doit avoir une reponse')
+  ok('et elle demande le compte',
+     /\{ count: 'exact' \}\)\s*\n\s*\.eq\('user_id', lien\.user_id\)/.test(api),
+     'un UPDATE qui ne touche rien ne dit rien de lui-meme')
+
+  /* Le clic est dans openEditor, ou passent la puce du mois, le bloc de la
+     semaine et la ligne du jour. Dans un seul des trois, il marcherait sur un
+     ecran sur trois. */
+  ok('une reservation s ouvre chez Cal',
+     /if \(entry\?\.bookingOf\) \{\s*\n\s*if \(entry\.href\) window\.open\(entry\.href, '_blank', 'noopener,noreferrer'\)/.test(cal),
+     'sans noopener la page ouverte peut renvoyer celle-ci ailleurs')
+  ok('et elle ne s ouvre pas dans le formulaire',
+     /if \(entry\?\.bookingOf\) \{[\s\S]{0,200}return\s*\n\s*\}/.test(cal),
+     'elle se modifie dans Cal, et un formulaire ici ecrirait un doublon')
+  ok('la page les lit sans refiltrer par user_id',
+     /\.from\('booking'\)\s*\n\s*\.select\('id, title, guest_name/.test(cal)
+       && !/from\('booking'\)[\s\S]{0,200}eq\('user_id'/.test(cal),
+     'booking_select EST user_id = auth.uid(), le repeter fait deux endroits qui divergent')
+
+  /* Les deux chaines sont tirees avec le generateur cryptographique. Les
+     sorties de Math.random sont predictibles a partir de quelques tirages, et
+     un secret de signature devinable ne signe rien. */
+  ok('le token et le secret sont imprevisibles',
+     /crypto\.getRandomValues/.test(conn) && !/Math\.random/.test(conn))
+  ok('l URL est construite sur l origine courante',
+     /window\.location\.origin/.test(conn),
+     'une URL en dur ferait pointer le webhook d une preview vers la production')
+  ok('debrancher demande le compte',
+     /\.delete\(\{ count: 'exact' \}\)/.test(conn) && /if \(error \|\| !count\)/.test(conn),
+     'RLS refuse un DELETE en silence, et Cal continuerait d ecrire')
+  ok('l etat branche est une date et pas un voyant',
+     /lien\.last_seen_at\s*\n?\s*\? t\('cal\.connect_live'/.test(conn),
+     'un voyant vert serait vert avant meme que Cal ait ete configure')
+
+  for (const cle of ['cal.layer_reservations', 'cal.connect_section', 'cal.connect_what',
+                     'cal.connect_step_url', 'cal.connect_step_secret', 'cal.connect_waiting',
+                     'cal.connect_live', 'cal.connect_stop']) {
     const n = read('src/lib/i18n.jsx').split(`'${cle}'`).length - 1
     ok(`${cle} existe dans les deux langues (${n})`, n === 2)
   }

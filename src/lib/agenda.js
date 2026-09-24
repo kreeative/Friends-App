@@ -88,7 +88,7 @@ export const CATEGORIES = [
  * basculement est deja ecrit, deja persiste, et il vaut pour tous les
  * anniversaires d'un coup, le tien compris.
  */
-export const LAYERS = ['scolaire', 'perso', 'objectifs', 'anniversaires', 'cycle']
+export const LAYERS = ['scolaire', 'perso', 'objectifs', 'anniversaires', 'reservations', 'cycle']
 
 /**
  * Which layer an event's category belongs to.
@@ -113,6 +113,13 @@ const LAYER_OF = {
   sante: 'perso',
   objectif: 'objectifs',
   anniversaire: 'anniversaires',
+  /* Synthetique comme 'objectif' et 'anniversaire', et pour la meme raison: la
+     ligne vit dans `booking`, pas dans calendar_event, et la contrainte de
+     categorie la refuserait. Elle passe par le meme expanseur et la meme
+     grille parce qu'une reservation EST une entree de calendrier, et un
+     deuxieme chemin de dessin serait un deuxieme endroit ou l'heure peut etre
+     fausse. */
+  reservation: 'reservations',
 }
 
 /* Unknown categories fall to 'perso' rather than vanishing. A row written by a
@@ -127,6 +134,7 @@ export const LAYER_COLOUR = {
   perso: 'green',
   objectifs: 'cat-3',
   anniversaires: 'ev-anniv',
+  reservations: 'cat-4',
   cycle: 'negative',
 }
 
