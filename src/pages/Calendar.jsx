@@ -20,6 +20,7 @@ import {
   visibleEvents,
   weekdayName,
 } from '../lib/agenda'
+import { bookingEntries } from '../lib/bookings'
 import CyclePanel from '../components/CyclePanel'
 import TimetableWizard from '../components/TimetableWizard'
 
@@ -455,6 +456,10 @@ export default function Calendar() {
   /* Les gens de tes groupes, pour leurs anniversaires. Rien d'autre n'est lu
      de ces profils ici: un nom et une date. */
   const [friends, setFriends] = useState([])
+  /* Les reservations Cal.com. Lecture seule: elles sont ecrites par
+     /api/cal-webhook avec la cle service_role, et la seule policy de la table
+     est un select. Voir supabase/72_cal_bookings.sql. */
+  const [bookings, setBookings] = useState([])
 
   const load = useCallback(async () => {
     if (!user) return
@@ -500,6 +505,26 @@ export default function Calendar() {
       .eq('status', 'active')
       .not('due_on', 'is', null)
     setGoals(g ?? [])
+
+    /**
+     * LES RESERVATIONS PRISES SUR SES PAGES CAL.COM.
+     *
+     *   "So when people book me on my Kreeative cal booking pages it shows on
+     *    my Rich and Friends calendar can you do that?"
+     *
+     * Pas de filtre user_id dans la requete, comme partout ailleurs sur cette
+     * page: la policy booking_select EST `user_id = auth.uid()`, et le repeter
+     * ici ecrirait la meme regle a deux endroits qui peuvent diverger.
+     *
+     * Les annulees descendent avec les autres et sont ecartees au dessin. La
+     * ligne reste en base, ce qui est ce qui permet de repondre a "ou est passe
+     * mon rendez-vous de jeudi".
+     */
+    const { data: b } = await supabase
+      .from('booking')
+      .select('id, title, guest_name, starts_at, ends_at, web_url, join_url, cancelled_at')
+      .order('starts_at')
+    setBookings(b ?? [])
   }, [user])
 
   useEffect(() => {
@@ -575,8 +600,11 @@ export default function Calendar() {
       mine: user?.id,
       mineLabel: t('cal.bday_mine'),
     })
-    return visibleEvents([...events, ...asEvents, ...anniversaires], hidden)
-  }, [events, goals, hidden, friends, profile, user?.id, range, t])
+    /* Les reservations, par la meme porte. Elles arrivent deja bornees par la
+       requete, donc la plage n'est pas repassee ici. */
+    const reserves = bookingEntries(bookings)
+    return visibleEvents([...events, ...asEvents, ...anniversaires, ...reserves], hidden)
+  }, [events, goals, bookings, hidden, friends, profile, user?.id, range, t])
 
   const agenda = useMemo(() => agendaFor(drawn, range.from, range.to), [drawn, range])
 
@@ -596,6 +624,25 @@ export default function Calendar() {
        evenement portant le meme texte, donc un doublon que personne n'a
        demande et que l'annee suivante ne fera pas disparaitre. */
     if (entry?.goalId || entry?.birthdayOf) return
+
+    /**
+     * UNE RESERVATION S'OUVRE CHEZ CAL, ELLE NE S'EDITE PAS ICI.
+     *
+     *   "And hyperlink to Rich and Friends so I can directly click and go."
+     *
+     * Le geste est ici et pas dans un seul des trois rendus, parce que c'est
+     * ici que les trois passent: la puce du mois, le bloc de la semaine et la
+     * ligne du jour appellent tous openEditor. Le mettre dans la liste du jour
+     * seulement aurait fait un lien qui marche sur un ecran sur trois.
+     *
+     * noopener,noreferrer: sans noopener, la page ouverte recoit window.opener
+     * et peut renvoyer celle-ci ailleurs.
+     */
+    if (entry?.bookingOf) {
+      if (entry.href) window.open(entry.href, '_blank', 'noopener,noreferrer')
+      return
+    }
+
     setEditing(entry)
   }
 
@@ -1903,17 +1950,46 @@ function DayList({ day, agenda, cycle, onEdit, onRemove, t }) {
                   {e.location ? ` · ${e.location}` : ''}
                 </span>
               </span>
+              {/**
+                * UNE RESERVATION N'A NI "MODIFIER" NI "SUPPRIMER".
+                *
+                *   "And hyperlink to Rich and Friends so I can directly click
+                *    and go."
+                *
+                * Modifier: elle se change chez Cal, et la personne qui a
+                * reserve doit etre prevenue, ce que Cal fait et pas nous.
+                * Supprimer: la supprimer ici n'annule rien, le rendez-vous
+                * resterait vivant et la personne arriverait quand meme.
+                *
+                * Reste le seul geste qui a un sens sur cette ligne, et c'est
+                * celui qui a ete demande.
+                */}
               <span className="flex shrink-0 gap-1">
-                <button type="button" onClick={() => onEdit(e)} className="goal-action press">
-                  {t('cal.edit')}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onRemove(e)}
-                  className="press rounded-pill px-3 py-2 text-small font-semibold text-negative hover:bg-negative/[0.09]"
-                >
-                  {t('cal.delete')}
-                </button>
+                {e.bookingOf ? (
+                  e.href && (
+                    <button
+                      type="button"
+                      onClick={() => onEdit(e)}
+                      className="goal-action press"
+                      data-hook="cal-day-open"
+                    >
+                      {e.joinable ? t('cal.join') : t('cal.open_booking')}
+                    </button>
+                  )
+                ) : (
+                  <>
+                    <button type="button" onClick={() => onEdit(e)} className="goal-action press">
+                      {t('cal.edit')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onRemove(e)}
+                      className="press rounded-pill px-3 py-2 text-small font-semibold text-negative hover:bg-negative/[0.09]"
+                    >
+                      {t('cal.delete')}
+                    </button>
+                  </>
+                )}
               </span>
             </li>
           ))}

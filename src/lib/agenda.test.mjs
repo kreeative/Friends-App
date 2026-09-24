@@ -487,21 +487,29 @@ eq('and excluding a different day leaves it alone', occurrencesOf({ ...once, exc
 /* --- the layers the filter toolbar toggles ------------------------------ */
 
 /**
- * CINQ, ET LA CINQUIEME EST LES ANNIVERSAIRES.
+ * SIX, ET LA SIXIEME EST LES RESERVATIONS.
  *
  *   "You should be able to see bday as little cake on the day it's scheduled
  *    [...] and of course you can remove it if you want."
+ *   "So when people book me on my Kreeative cal booking pages it shows on my
+ *    Rich and Friends calendar can you do that?"
  *
  * "Quatre bascules" etait la demande d'origine et c'etait la bonne mesure a
- * ce moment-la. La cinquieme arrive avec la fonctionnalite, et elle est ce
- * qui repond a "tu peux l'enlever si tu veux": le basculement est deja ecrit,
- * deja persiste, et il vaut pour tous les anniversaires d'un coup, le tien
- * compris. Le `cycle` reste en dernier parce que c'est le seul qui disparait
- * quand le suivi n'est pas allume.
+ * ce moment-la. Chaque bascule suivante est arrivee avec sa fonctionnalite,
+ * et elle est ce qui repond a "tu peux l'enlever si tu veux": le basculement
+ * est deja ecrit, deja persiste, et il vaut pour toute la couche d'un coup.
+ *
+ * Les reservations passent AVANT le cycle, parce que `cycle` reste en dernier:
+ * c'est le seul qui disparait quand le suivi n'est pas allume, donc le seul
+ * dont la position dans la liste peut changer la longueur de la liste.
  */
-eq('five layers now, the birthdays being the fifth', LAYERS,
-   ['scolaire', 'perso', 'objectifs', 'anniversaires', 'cycle'])
+eq('six layers now, the bookings being the sixth', LAYERS,
+   ['scolaire', 'perso', 'objectifs', 'anniversaires', 'reservations', 'cycle'])
 ok('and every one has a dot colour', LAYERS.every((l) => LAYER_COLOUR[l]))
+/* La couche a besoin de sa categorie synthetique, sinon une reservation tombe
+   dans 'perso' par le defaut de layerOf et la bascule "Reservations" ne
+   retirerait rien du tout, en silence. */
+eq('a booking is on its own layer', layerOf({ category: 'reservation' }), 'reservations')
 
 /* The grouping, which is the whole reason layers and categories are separate
    lists. Three school categories collapse to one toggle and keep their own
