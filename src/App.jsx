@@ -22,6 +22,7 @@ import Goals from './pages/Goals'
 import GoalEditor from './pages/GoalEditor'
 import Account from './pages/Account'
 import Me from './pages/Me'
+import MeDetails from './pages/MeDetails'
 import Money from './pages/Money'
 import Calendar from './pages/Calendar'
 import Settings from './pages/Settings'
@@ -356,6 +357,10 @@ function Gate() {
             link somebody bookmarked. */}
         <Route path="profile" element={<Me />} />
         <Route path="me" element={<Me />} />
+        {/* Tout ce qui se modifie, derriere le rectangle du haut. La page
+            elle-meme n'a pas change: elle a change d'adresse. */}
+        <Route path="me/details" element={<MeDetails />} />
+        <Route path="profile/details" element={<MeDetails />} />
         {/* Top level, and distinct from /g/:groupId/settings, which is the
             GROUP's settings and is unreachable to anybody without a group. */}
         <Route path="settings" element={<Account />} />

@@ -264,7 +264,7 @@ export default function Calendar() {
    *
    * Three things follow from it and all three are needed. The layer chip is not
    * offered, so the row of toggles has three entries rather than a fourth that
-   * governs nothing. The drawer button is gone, so there is no way in. And
+   * governs nothing. "+ Mes regles" is gone, so there is no way to record. And
    * CyclePanel is not mounted, which is what actually stops the reading: it is
    * the component that fetches cycle_log, so leaving it out means a man's
    * period history is never queried rather than queried and then hidden.
@@ -416,7 +416,6 @@ export default function Calendar() {
       document.removeEventListener('keydown', echap)
     }
   }, [layersOpen])
-  const [drawer, setDrawer] = useState(false)
   const [wizard, setWizard] = useState(false)
   const [added, setAdded] = useState(0)
   /**
@@ -886,15 +885,20 @@ export default function Calendar() {
           {t('wiz.open')}
         </button>
 
-        {/* The way in to everything about the cycle: the tracker, the recorded
-            periods and the reminder settings. Absent, rather than disabled, for
-            somebody whose app does not have the tracker in it: a greyed-out
-            button is still an advertisement for a feature they said no to. */}
-        {periodTracking && (
-          <button type="button" onClick={() => setDrawer(true)} className="goal-action press" data-hook="cal-cycle-open">
-            {t('cycle.manage')}
-          </button>
-        )}
+        {/**
+         * "MON CYCLE" N'EST PLUS ICI.
+         *
+         *   "Since it can be confusing to see my cycle and my regles, remove
+         *    my cycle from the calendar and move it to the personal."
+         *
+         * Deux boutons voisins commencant par le meme mot, l'un qui NOTE une
+         * date et l'autre qui MONTRE un historique. "+ Mes regles" reste,
+         * parce que noter une date est un geste de calendrier; le tiroir est
+         * parti sur le profil, parce que le relire est un geste de bien-etre.
+         *
+         * Le CALQUE Cycle reste dans le menu "...": il decide ce que la grille
+         * dessine, ce qui est une question de calendrier et pas de profil.
+         */}
 
         {/**
          * The layers, as pressed-in toggles, beside the things that open.
@@ -1331,13 +1335,21 @@ export default function Calendar() {
         {view === 'day' && <DayList day={anchor} agenda={agenda} cycle={shownCycle} onEdit={askEdit} onRemove={askRemove} t={t} />}
       </div>
 
-      {/* Mounted always, so the tracker's own load runs and the overlay is
-          there before anybody opens the drawer. `open` only draws it. */}
-      {/* Not mounted at all, which is the line that stops the reading: this is
-          the component that queries cycle_log. */}
-      {periodTracking && (
-        <CyclePanel onChange={setCycle} open={drawer} onClose={() => setDrawer(false)} />
-      )}
+      {/**
+       * MONTE, ET PLUS JAMAIS OUVERT ICI.
+       *
+       * Le tiroir est parti sur le profil. Ce composant reste parce qu'il est
+       * AUSSI ce qui charge cycle_log, et c'est cette lecture qui alimente le
+       * calque Cycle de la grille. Le retirer aurait enleve les jours de
+       * regles du mois en meme temps que le bouton, ce qui n'a pas ete
+       * demande: c'est "Mon cycle" qui deroutait a cote de "+ Mes regles",
+       * pas la couleur sur la grille.
+       *
+       * `open` est donc une constante fausse et il n'y a plus de onClose: il
+       * n'y a plus rien pour l'ouvrir. Et toujours pas monte du tout quand le
+       * suivi est eteint, ce qui reste la ligne qui empeche la lecture.
+       */}
+      {periodTracking && <CyclePanel onChange={setCycle} open={false} />}
 
       {/**
        * The choice, before anything is lost.

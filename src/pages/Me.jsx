@@ -1,335 +1,103 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
-import { useGroup } from '../context/GroupContext'
-import { consecutiveMisses } from '../lib/stats'
-import { dayKey } from '../lib/time'
-import { ACCEPT, isMissingBucket, removeAvatar, uploadAvatar } from '../lib/avatar'
-import { CURRENCIES, FALLBACK, currencyName } from '../lib/currency'
-import { DECLINED, PRONOUN_OPTIONS } from '../lib/pronouns'
-import { GENDERS, cycleOn, cyclePatchForGender } from '../lib/setup'
-import { localeTag, useT } from '../lib/i18n'
-import { offerGroup } from '../lib/onboarding'
-import ThemePicker from '../components/ThemePicker'
-import LanguagePicker from '../components/LanguagePicker'
-import { Avatar, Field, HINT_ANCHOR, Hint, Screen, Section, TopBar } from '../components/ui'
-import MyCompletion from '../components/MyCompletion'
+import { useT } from '../lib/i18n'
+import { cycleOn } from '../lib/setup'
+import { daysBetween, fromKey } from '../lib/cycle'
+import { Avatar, Screen, Section, TopBar } from '../components/ui'
+import CyclePanel from '../components/CyclePanel'
+import WaterToday from '../components/WaterToday'
+import { useWaterToday } from '../lib/useWater'
 
 /**
- * The settings gear.
+ * Le profil, qui s'ouvre sur comment tu vas et pas sur des champs a remplir.
  *
- * Drawn rather than imported: this project has one icon file per family and a
- * single-use glyph in a shared file is how that file becomes a sprite sheet.
- * Stroked at 1.9 because the teeth close up into a blob when filled at 20px.
+ *   "So basically when you click on your profile now you will see your
+ *    picture, your name etc, but instead of having the other feature where you
+ *    can modify your name and etc, you will have to click on the rectangle
+ *    where you see your picture and your name and that will open the page. And
+ *    then just under this rectangle you will see the my cycle with a little
+ *    preview. You will also have the setting for the water. So the first point
+ *    of contact with your profile will be your personal well-being, and then
+ *    the little setting icon stays on top for also more settings."
+ *
+ * CE QUE CA RENVERSE. Cette page etait un formulaire: photo, nom, date de
+ * naissance, pronoms, genre, preferences. Des choses qu'on change une fois et
+ * qu'on ne regarde plus, posees en premier, tous les jours, devant la personne
+ * qui vient voir comment elle va.
+ *
+ * Maintenant l'identite est UN RECTANGLE. Il montre qui tu es, il s'ouvre
+ * quand on a quelque chose a y changer, et il prend six lignes au lieu de six
+ * ecrans. Tout ce qu'il contenait est intact derriere, sur /me/details.
+ *
+ * ET LE CYCLE EST ICI, PLUS SUR LE CALENDRIER.
+ *
+ *   "Since it can be confusing to see my cycle and my regles, remove my cycle
+ *    from the calendar and move it to the personal."
+ *
+ * Deux boutons voisins qui commencent par le meme mot, l'un qui NOTE et
+ * l'autre qui MONTRE. "+ Mes regles" reste sur le calendrier, parce que noter
+ * une date est un geste de calendrier. "Mon cycle" vient ici, parce que le
+ * relire est un geste de bien-etre, et parce que c'est la chose la plus intime
+ * de l'application et que sa place est derriere son propre visage.
  */
-function GearIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5">
-      {/* A real cog outline. The first attempt was a circle with eight
-          radiating spokes, which is not a gear, it is a sun: on screen at 20px
-          it read as a brightness control sitting where the settings button was
-          meant to be. Teeth have to be lobes on the rim, not lines off it. */}
-      <path
-        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" strokeWidth="1.7" />
-    </svg>
-  )
+
+/**
+ * Combien de cycles complets les dates notees permettent de mesurer.
+ *
+ * Un cycle est un ECART entre deux dates, donc trois dates font deux cycles,
+ * et c'est la source d'erreur evidente ici: compter les lignes et les appeler
+ * des cycles annonce "3 cycles" a quelqu'un qui n'en a mesure que deux, et la
+ * prediction qu'on lui montre est plus sure qu'elle ne l'est.
+ */
+export function cyclesMeasured(rows) {
+  const n = (rows ?? []).length
+  return n > 0 ? n - 1 : 0
 }
 
 export default function Me() {
-  const { user, profile, updateProfile } = useAuth()
-  const { statusesFor, myGoals, soloGoals, groups, reloadGroup } = useGroup()
-  const { t, locale } = useT()
+  const { user, profile } = useAuth()
+  const { t } = useT()
   const navigate = useNavigate()
-  const [busy, setBusy] = useState(false)
 
-  const rows = statusesFor(user?.id)
-  const quiet = consecutiveMisses(rows)
+  const [drawer, setDrawer] = useState(false)
+  const [logs, setLogs] = useState(null)
 
-  /* Both kinds count. Someone running three solo goals and none in a group is
-     not a person with no goals, which is what this said before. */
-  const liveGoals =
-    myGoals.filter((g) => g.status === 'active').length +
-    soloGoals.filter((g) => g.status === 'active').length
+  /* WaterToday ne dessine RIEN quand le rappel est eteint, ce qui est juste
+     sur le tableau de bord: un compteur d'eau que personne n'a demande n'a
+     rien a y faire. Ici c'est faux, parce que c'est la page ou l'eau a ete
+     demandee: quelqu'un qui vient la chercher et ne trouve rien ne conclut
+     pas "c'est eteint", il conclut que ca n'existe pas. */
+  const { loading: waterLoading, pref: waterPref } = useWaterToday()
 
-  /**
-   * Frictionless re-entry.
-   *
-   * Someone coming back after a gap should not have to face a wall of overdue
-   * items, that backlog is precisely what makes people close the app and not
-   * return. So coming back parks everything old (paused, not failed) and asks
-   * for exactly one new thing.
-   */
-  async function restart() {
-    setBusy(true)
-    await supabase
-      .from('goals')
-      .update({ status: 'paused' })
-      .eq('owner_id', user.id)
-      .eq('status', 'active')
-    await reloadGroup()
-    setBusy(false)
-    // Straight to the form, on its own page. This used to open a sheet on top
-    // of this screen, which is the container the goal form has just left.
-    navigate('/goals/new')
-  }
-
-  /**
-   * Date of birth, saved the moment a whole date is in the box.
-   *
-   * No Save button, because a date input only fires a change when the value is
-   * complete, so there is no half-typed state to protect anybody from. The
-   * field is seeded from the profile and then owned locally, otherwise every
-   * keystroke would fight the value coming back from the round trip.
-   *
-   * The year is stored because Postgres has no date-without-year, and it is
-   * never shown: see supabase/20_quiet_and_birthdays.sql, and record_birthdays,
-   * which compares the month and the day only.
-   */
-  const [birthday, setBirthday] = useState('')
-  const [birthdayError, setBirthdayError] = useState(false)
+  const periodTracking = cycleOn(profile)
 
   useEffect(() => {
-    setBirthday(profile?.birthday ?? '')
-  }, [profile?.birthday])
-
-  async function saveBirthday(value) {
-    setBirthday(value)
-    setBirthdayError(false)
-    const { error } = (await updateProfile?.({ birthday: value || null })) ?? {}
-    if (error) setBirthdayError(true)
-  }
-
-  /**
-   * Your name, saved when you leave the field.
-   *
-   * Not on every keystroke, which would be a write per letter, and not behind
-   * a Save button either: a form with one text box and a button under it makes
-   * a two second edit feel like filling something in. Blur is the moment you
-   * have finished typing, and Enter is the same moment for anyone who does not
-   * think to tap away.
-   *
-   * An empty name is refused rather than saved. display_name is `not null` and
-   * is the only thing identifying a row in every roster in the app, so a blank
-   * one is an unreadable board for everybody in the group, not just for the
-   * person who cleared it. The box reverts to what it was.
-   */
-  const [name, setName] = useState('')
-  const [nameError, setNameError] = useState(false)
-
-  useEffect(() => {
-    setName(profile?.display_name ?? '')
-  }, [profile?.display_name])
-
-  async function saveName() {
-    const next = name.trim().slice(0, 60)
-    if (!next) return setName(profile?.display_name ?? '')
-    if (next === profile?.display_name) return
-
-    setNameError(false)
-    const { error } = (await updateProfile?.({ display_name: next })) ?? {}
-    if (error) setNameError(true)
-    else setName(next)
-  }
-
-  /**
-   * A photo, shrunk on this device before it is sent anywhere.
-   *
-   * See src/lib/avatar.js for why the resize happens in the browser. The two
-   * failures worth telling apart are a missing bucket, which is an unrun
-   * migration and has an instruction, and everything else, which does not.
-   */
-  const [photoBusy, setPhotoBusy] = useState(false)
-  const [photoError, setPhotoError] = useState(null)
-
-  async function pickPhoto(file) {
-    if (!file || !user) return
-    setPhotoBusy(true)
-    setPhotoError(null)
-
-    const { url, error } = await uploadAvatar(user.id, file)
-    if (error) {
-      setPhotoError(isMissingBucket(error) ? 'missing' : 'failed')
-      setPhotoBusy(false)
-      return
-    }
-
-    const { error: saveError } = (await updateProfile?.({ avatar_url: url })) ?? {}
-    if (saveError) setPhotoError('failed')
-    setPhotoBusy(false)
-  }
-
-  async function clearPhoto() {
-    if (!user) return
-    setPhotoBusy(true)
-    setPhotoError(null)
-    await removeAvatar(user.id)
-    const { error } = (await updateProfile?.({ avatar_url: null })) ?? {}
-    if (error) setPhotoError('failed')
-    setPhotoBusy(false)
-  }
-
-  /**
-   * The currency the budget is counted in.
-   *
-   * Saved straight from the select, because a dropdown has no half-chosen
-   * state to protect anybody from. Nothing is converted: the amounts are the
-   * numbers the person typed, and switching the label from dollars to francs
-   * does not move any money. Anyone who genuinely relocates is retyping their
-   * plan anyway, and an app that silently multiplied their rent by six hundred
-   * because it looked up a rate would be far worse than one that does nothing.
-   */
-  const [currencyError, setCurrencyError] = useState(false)
-
-  async function saveCurrency(code) {
-    setCurrencyError(false)
-    const { error } = (await updateProfile?.({ currency: code })) ?? {}
-    if (error) setCurrencyError(true)
-  }
-
-  /**
-   * The words other people's screens should use about you.
-   *
-   * The app writes sentences about people who are not reading them, and every
-   * one of them was they/them. That is the right default and it is not an
-   * answer for somebody who has told you otherwise.
-   *
-   * FIVE OPTIONS, ONE OF WHICH IS A TEXT BOX.
-   *
-   * Three sets covers most people; a free text box covers the rest without
-   * this app deciding in advance which sets exist. "Prefer not to say" is
-   * stored rather than left blank, because declining is an answer and a
-   * profile that has been asked is a different state from one that has not.
-   *
-   * The select is saved on change like the currency above. Custom is not:
-   * saving on every keystroke would write "s", "sh", "she" as three separate
-   * values, so it saves on blur, when the person has stopped typing.
-   */
-  const [pronounError, setPronounError] = useState(false)
-  const stored = profile?.pronouns ?? ''
-  const isCustom = Boolean(stored) && !PRONOUN_OPTIONS.includes(stored)
-  const [custom, setCustom] = useState(isCustom ? stored : '')
-  const [customOpen, setCustomOpen] = useState(isCustom)
-
-  useEffect(() => {
-    const next = profile?.pronouns ?? ''
-    const free = Boolean(next) && !PRONOUN_OPTIONS.includes(next)
-    setCustom(free ? next : '')
-    setCustomOpen(free)
-  }, [profile?.pronouns])
-
-  async function savePronouns(value) {
-    setPronounError(false)
-    const { error } = (await updateProfile?.({ pronouns: value || null })) ?? {}
-    if (error) setPronounError(true)
-  }
-
-  function pickPronouns(choice) {
-    if (choice === 'custom') {
-      setCustomOpen(true)
-      return
-    }
-    setCustomOpen(false)
-    /* The empty option means "has not said", which is null rather than a
-       string, so the column can tell the two apart. */
-    savePronouns(choice)
-  }
-
-  /**
-   * The answer given at sign-up, and the switch it set.
-   *
-   * TWO CONTROLS, NOT ONE, AND THAT IS THE POINT OF THE PAIR.
-   *
-   * The setup screen asks one question and derives the switch from it, because
-   * that is right nearly every time. "Nearly" is doing real work in that
-   * sentence: a woman who does not menstruate should not have to call herself
-   * something else to make a period tracker go away, and somebody who answered
-   * "something else" should not lose the feature because the app could not work
-   * out what they meant.
-   *
-   * So changing the answer moves the switch with it, which is what somebody
-   * correcting a mis-tap expects, and the switch can then be moved back on its
-   * own and stays where it is put.
-   */
-  const [genderError, setGenderError] = useState(false)
-  const [cycleError, setCycleError] = useState(false)
-
-  /**
-   * How many periods are written down.
-   *
-   * Two jobs, and both of them are about telling the truth rather than about
-   * drawing anything: it decides whether the gender answer is allowed to move
-   * the switch (see cyclePatchForGender) and it lets the off state say what it
-   * is keeping instead of "nothing you have recorded is deleted", which is the
-   * same fact stated in a way nobody can check.
-   *
-   * `head: true` so this is a count and not a download. The rows themselves
-   * are the most sensitive thing in the product and this screen has no use for
-   * them. Left at null on an error, which cyclePatchForGender reads as "do not
-   * touch the switch": a failed count must not be the reason a tracker goes
-   * off.
-   */
-  const [recorded, setRecorded] = useState(null)
-
-  useEffect(() => {
-    if (!user?.id) return undefined
+    if (!user?.id || !periodTracking) return undefined
     let alive = true
-    supabase
-      .from('cycle_log')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', user.id)
-      .then(({ count, error }) => {
-        if (alive && !error) setRecorded(count ?? 0)
-      })
-    return () => {
-      alive = false
-    }
-  }, [user?.id])
+    ;(async () => {
+      /* Pas de filtre user_id: cycle_log_select EST user_id = auth.uid(), et
+         le repeter ici ecrirait la meme regle a deux endroits qui peuvent
+         diverger. Meme raison que sur le calendrier. */
+      const { data, error } = await supabase
+        .from('cycle_log')
+        .select('id, started_on')
+        .order('started_on', { ascending: false })
+      if (!alive) return
+      setLogs(error ? [] : data ?? [])
+    })()
+    return () => { alive = false }
+  }, [user?.id, periodTracking])
 
-  async function pickGender(value) {
-    setGenderError(false)
-    setCycleError(false)
-    const next = value || null
-    const { error } =
-      (await updateProfile?.({ gender: next, ...cyclePatchForGender(next, recorded) })) ?? {}
-    if (error) setGenderError(true)
-  }
-
-  async function setCycleTracking(next) {
-    setCycleError(false)
-    const { error } = (await updateProfile?.({ cycle_on: next })) ?? {}
-    if (error) setCycleError(true)
-  }
-
-  /**
-   * Play the budget intro again.
-   *
-   * The flag is the whole mechanism: Money renders the carousel whenever it is
-   * false, so putting it back is the entire feature. Navigating afterwards is
-   * the difference between a switch and an action, a control that appears to
-   * do nothing until you happen to visit another screen is one people press
-   * twice.
-   */
+  const mesures = cyclesMeasured(logs)
+  const derniere = logs?.[0]?.started_on ?? null
+  const depuis = derniere ? daysBetween(fromKey(derniere), new Date()) : null
 
   return (
     <Screen className="column-page">
-      {/**
-       * Back on the left, the gear on the right, per the brief.
-       *
-       * The gear is the ONLY way to /settings from here, which is why it is a
-       * 44px target with a real label rather than a decorative glyph beside
-       * the title: an icon that is the sole door to a screen has to be findable
-       * by somebody who does not already know it is a door.
-       */}
       <TopBar
-        title={t('me.profile')}
+        title={t('nav.you')}
         back={() => navigate(-1)}
         backLabel={t('common.back')}
         right={
@@ -346,367 +114,149 @@ export default function Me() {
       />
 
       {/**
-       * Who you are, before anything you can change about it.
+       * LE RECTANGLE. C'est un lien, pas une carte avec un bouton dedans.
        *
-       * The old page opened on a consistency chart and put the name in the
-       * page title, so the one screen called "you" never actually showed your
-       * email anywhere. It does now, because "is this the right account" is a
-       * question people come here to answer.
+       * Toute la surface est la cible, parce que "clique sur le rectangle" est
+       * ce qui a ete demande et parce qu'un lien de 64px de haut qu'on ne peut
+       * ouvrir que par un chevron de 20px est un lien qu'on rate au pouce.
+       *
+       * Le chevron reste, mais comme un SIGNE et pas comme la cible: sans lui,
+       * rien ne dit qu'un rectangle s'ouvre, et une surface cliquable qui ne
+       * l'annonce pas est une surface que personne ne touche.
        */}
-      <div className="mt-2 flex items-center gap-4" data-hook="identity">
+      <Link
+        to="/me/details"
+        data-hook="identity-card"
+        className="press mt-2 flex w-full items-center gap-4 rounded-card border border-hairline
+                   bg-[rgb(var(--glass-tint))] p-4 text-left shadow-raised"
+      >
         <Avatar profile={profile} size={56} />
-        <div className="min-w-0">
-          <p className="truncate text-h2 font-semibold text-ink" data-hook="identity-name">
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-h2 font-semibold text-ink" data-hook="identity-name">
             {profile?.display_name ?? t('nav.you')}
-          </p>
-          <p className="truncate text-small text-muted" data-hook="identity-email">
+          </span>
+          <span className="block truncate text-small text-muted" data-hook="identity-email">
             {user?.email}
-          </p>
-        </div>
-      </div>
+          </span>
+        </span>
+        <span aria-hidden="true" className="shrink-0 text-muted">
+          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 18l6-6-6-6" />
+          </svg>
+        </span>
+      </Link>
 
-      {/* Two columns from lg, so a settings form uses the width instead of
-          being stretched across it. See .pane-grid in index.css for the
-          measurement that produced this. */}
-      <div className="profile-grid">
       {/**
-       * DEUX VRAIES COLONNES, ET PLUS UNE GRILLE DE CASES.
+       * LE CYCLE, JUSTE SOUS LE RECTANGLE.
        *
-       *   "Same here" -- le meme vide que sur le tableau de bord.
+       * Un APERCU, pas le tiroir entier: la question qu'on se pose en arrivant
+       * est "j'en suis ou", et elle tient en une ligne. Le detail s'ouvre.
        *
-       * La grille placait chaque carte dans une CASE, et la hauteur d'une
-       * rangee est celle de son plus grand element. Les preferences, 293px, se
-       * retrouvaient donc seules dans une rangee haute de 1027px a cote du
-       * formulaire: 1096px de colonne vide, 79% d'elle, a toutes les largeurs.
+       * ET L'INDICATEUR QUAND IL N'Y A PAS ASSEZ DE DATES.
        *
-       * Deplacer "Ta regularite" dans cette colonne n'a rien regle et la
-       * mesure l'a montre tout de suite: `dense` ne peut backfiller que dans
-       * une case LIBRE, la rangee 1 etait prise, donc la carte est partie en
-       * rangee 2, a y=1255. Le trou avait change de place, pas de taille.
+       *   "But there will be an indicator if you never registered your last
+       *    three cycles, to go into that setting with a shortcut."
        *
-       * Une colonne qui coule ne se fabrique pas avec des rangees. C'est la
-       * meme forme que .page-grid sur le tableau de bord: deux colonnes qui
-       * empilent leur propre contenu, chacune a sa hauteur.
+       * Trois dates font DEUX cycles mesures, et c'est a peu pres le minimum
+       * pour que la moyenne veuille dire quelque chose. En dessous, la carte
+       * ne montre pas une prediction a laquelle elle ne croit pas: elle dit ce
+       * qui manque et emmene le noter. Un chiffre confiant tire d'une seule
+       * date serait la pire des deux reponses.
        */}
-      <div className="pane-col-main min-w-0">
-      {quiet >= 2 && (
-        <div className="pt-8">
-          <div className="card">
-            <p className="eyebrow">{t('me.quiet_label')}</p>
-            <h3 className="mt-2 text-h2 text-ink">{t('me.still_in')}</h3>
-            <p className="mt-2 text-body text-muted">{t('me.still_in_body')}</p>
-            <button onClick={restart} disabled={busy} className="btn-primary press mt-6">
-              {busy ? '…' : t('me.reset')}
-            </button>
-          </div>
-        </div>
-      )}
+      {periodTracking && (
+        <Section title={t('cycle.manage')}>
+          <div className="lg p-6" data-hook="cycle-card" data-ready={mesures >= 2 ? 'yes' : 'no'}>
+            {logs === null ? (
+              /* Rien plutot qu'un "chargement": la carte fait quatre lignes,
+                 la requete en prend deux cents millisecondes, et un mot qui
+                 apparait pour disparaitre est un clignotement. */
+              <p className="text-small text-muted">&nbsp;</p>
+            ) : mesures >= 2 ? (
+              <>
+                <p className="text-body text-ink" data-hook="cycle-since">
+                  {depuis === 0
+                    ? t('cycle.started_today')
+                    : t('cycle.since_days', { n: depuis })}
+                </p>
+                <p className="mt-1 text-small text-muted">
+                  {t('cycle.measured_on', { n: mesures })}
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-body text-ink" data-hook="cycle-needs-more">
+                  {t('cycle.need_three')}
+                </p>
+                <p className="reading mt-1 text-small text-muted">{t('cycle.need_three_why')}</p>
+              </>
+            )}
 
-      {/* The only thing on this screen that is about who you are rather than
-          about how you are doing, which is why it is its own section and not a
-          row in the account list underneath. */}
-      <Section title={t('me.profile')}>
-        <div className="lg space-y-6 p-6">
-          {/* The picture first, and shown at the size it is actually used at
-              plus a bit. A 40px preview cannot tell you whether the crop took
-              your head off. */}
-          <div className="flex items-center gap-4">
-            <Avatar profile={profile} size={64} />
-            <div className="min-w-0">
-              {/* A file input styled as a button rather than a button that
-                  clicks a hidden input: the label is the control, so it keeps
-                  the keyboard behaviour and the focus ring for free. */}
-              <label
-                className={`goal-action press inline-flex cursor-pointer ${
-                  photoBusy ? 'pointer-events-none opacity-60' : ''
-                }`}
+            <div className="mt-5 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setDrawer(true)}
+                className="goal-action press"
+                data-hook="cycle-open"
               >
-                {photoBusy ? '…' : profile?.avatar_url ? t('me.photo_change') : t('me.photo_add')}
-                <input
-                  type="file"
-                  accept={ACCEPT}
-                  className="sr-only"
-                  disabled={photoBusy}
-                  onChange={(e) => {
-                    pickPhoto(e.target.files?.[0])
-                    // Cleared so choosing the same file twice fires again.
-                    e.target.value = ''
-                  }}
-                />
-              </label>
-              {profile?.avatar_url && (
-                <button
-                  onClick={clearPhoto}
-                  disabled={photoBusy}
-                  className="ml-2 text-small text-muted underline-offset-4 hover:underline disabled:opacity-60"
-                >
-                  {t('me.photo_remove')}
-                </button>
+                {t('cycle.manage')}
+              </button>
+              {/* LE RACCOURCI. Il n'apparait que quand il manque des dates,
+                  parce qu'un raccourci permanent vers "ajoute des regles" sur
+                  la page de quelqu'un qui en a note douze est du bruit. */}
+              {mesures < 2 && (
+                <Link to="/calendar" className="btn-primary press inline-flex" data-hook="cycle-shortcut">
+                  {t('cycle.go_record')}
+                </Link>
               )}
             </div>
-          </div>
-
-          {photoError && (
-            <p className="text-small text-negative">
-              {photoError === 'missing' ? t('me.photo_not_installed') : t('me.photo_failed')}
-            </p>
-          )}
-
-          <Field label={t('me.name')} hint={t('me.name_hint')}>
-            <input
-              type="text"
-              className="field"
-              value={name}
-              maxLength={60}
-              autoComplete="name"
-              onChange={(e) => setName(e.target.value)}
-              onBlur={saveName}
-              onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-            />
-          </Field>
-          {nameError && <p className="text-small text-negative">{t('me.name_failed')}</p>}
-
-          <Field label={t('me.birthday')} hint={t('me.birthday_hint')}>
-            <input
-              type="date"
-              className="field"
-              value={birthday}
-              max={dayKey()}
-              onChange={(e) => saveBirthday(e.target.value)}
-            />
-          </Field>
-          {birthdayError && <p className="text-small text-negative">{t('me.birthday_failed')}</p>}
-
-          <Field label={t('me.currency')} hint={t('me.currency_hint')}>
-            {/* The code and the name together. "XOF" alone is a lookup, and
-                "franc CFA (BCEAO)" alone does not tell somebody scanning for
-                the three letters their bank app shows them. */}
-            <select
-              className="field"
-              value={profile?.currency ?? FALLBACK}
-              onChange={(e) => saveCurrency(e.target.value)}
-            >
-              {CURRENCIES.map((code) => (
-                <option key={code} value={code}>
-                  {`${code} · ${currencyName(code, localeTag(locale))}`}
-                </option>
-              ))}
-            </select>
-          </Field>
-          {currencyError && <p className="text-small text-negative">{t('me.currency_failed')}</p>}
-
-          <Field label={t('me.pronouns')} hint={t('me.pronouns_hint')}>
-            <select
-              className="field"
-              value={customOpen ? 'custom' : stored}
-              onChange={(e) => pickPronouns(e.target.value)}
-            >
-              <option value="">{t('me.pronouns_unset')}</option>
-              {PRONOUN_OPTIONS.map((option) => (
-                <option key={option} value={option}>
-                  {option === 'custom'
-                    ? t('me.pronouns_custom')
-                    : option === DECLINED
-                      ? t('me.pronouns_declined')
-                      : option}
-                </option>
-              ))}
-            </select>
-          </Field>
-
-          {customOpen && (
-            <input
-              className="field"
-              value={custom}
-              maxLength={40}
-              placeholder={t('me.pronouns_ph')}
-              onChange={(e) => setCustom(e.target.value)}
-              onBlur={() => savePronouns(custom.trim())}
-              onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-            />
-          )}
-
-          {pronounError && <p className="text-small text-negative">{t('me.pronouns_failed')}</p>}
-
-          {/**
-           * The answer from the setup screen, in the same words it was asked.
-           *
-           * Deliberately next to the pronouns and deliberately not the same
-           * thing. Nothing the app writes about you reads this column: the
-           * sentences use pronouns, which is a free string that defaults to
-           * they and that migration 26 forbids guessing from anything else.
-           * This one decides whether one feature is in your app, which is why
-           * it is here at all rather than being inferred from something.
-           */}
-          <Field label={t('me.gender')} hint={t('me.gender_hint')}>
-            <select
-              className="field"
-              data-hook="me-gender"
-              value={profile?.gender ?? ''}
-              onChange={(e) => pickGender(e.target.value)}
-            >
-              <option value="">{t('me.gender_unset')}</option>
-              {GENDERS.map((key) => (
-                <option key={key} value={key}>
-                  {t(`me.gender_${key}`)}
-                </option>
-              ))}
-            </select>
-          </Field>
-          {genderError && <p className="text-small text-negative">{t('me.gender_failed')}</p>}
-
-          {/* The switch the answer above set, which can be moved back. Nothing
-              recorded is deleted by turning it off; the rows stay and stop
-              being drawn, so turning it on again finds the history where it
-              was left. */}
-          <label
-            className="press flex cursor-pointer items-start gap-3 rounded-inner bg-ink/[0.035] p-4"
-            data-hook="me-cycle"
-            data-on={cycleOn(profile) ? 'yes' : 'no'}
-          >
-            <input
-              type="checkbox"
-              checked={cycleOn(profile)}
-              onChange={(e) => setCycleTracking(e.target.checked)}
-              className="mt-0.5 h-5 w-5 shrink-0 accent-[rgb(var(--c-accent))]"
-            />
-            <span className="min-w-0 flex-1">
-              {/* Le nom et son "?" sur une ligne, la phrase d'ETAT en dessous.
-                  Les deux lignes n'etaient pas de la meme nature: "Active. Le
-                  calendrier montre tes regles" est la reponse de l'ecran a la
-                  case, donc elle reste visible, et "les lectures restent
-                  accessibles dans les deux cas" est une explication, donc elle
-                  passe derriere le "?" comme les autres. */}
-              <span className={`${HINT_ANCHOR} flex items-center`}>
-                <span className="text-body text-ink">{t('me.cycle')}</span>
-                <Hint text={t('me.cycle_note')} />
-              </span>
-              {/* L'etat eteint DIT CE QU'IL GARDE quand il y a quelque chose a
-                  garder. "Rien de ce que tu as noté n'est effacé" est vrai et
-                  invérifiable: c'est une promesse, et la personne qui vient de
-                  voir quatre dates disparaitre de son calendrier n'a aucune
-                  raison de la croire. Le compte, lui, se vérifie. */}
-              <span className="mt-1 block text-small text-muted" data-hook="me-cycle-state">
-                {cycleOn(profile)
-                  ? t('me.cycle_on')
-                  : recorded
-                    ? t('me.cycle_off_kept', { n: recorded })
-                    : t('me.cycle_off')}
-              </span>
-            </span>
-          </label>
-          {cycleError && <p className="text-small text-negative">{t('me.cycle_failed')}</p>}
-        </div>
-      </Section>
-
-      {/**
-       * The way back out of solo mode.
-       *
-       * Choosing "continue on my own" at sign-up is remembered, which is the
-       * whole point of it, and a remembered choice with no way to change it
-       * is a trap rather than a preference.
-       *
-       * HERE AND NOT IN SETTINGS. /settings is nested under /g/:groupId: it
-       * is the GROUP's settings, and somebody with no group can never reach
-       * it. This page is what the profile menu calls "Profile and settings"
-       * and is the only settings screen a solo person actually has.
-       *
-       * Shown only to somebody with no group. Offering "create or join a
-       * group" to a person already in three is offering them a thing they
-       * are already doing, and the dashboard has that link anyway.
-       *
-       * Nothing here clears solo_mode, and nothing needs to: the app checks
-       * for a real membership first and the flag only ever decides what to
-       * show somebody who has none. See landing() in src/lib/onboarding.js.
-       */}
-      </div>
-
-      <div className="pane-col-aside min-w-0">
-      {offerGroup({ memberships: groups }) && (
-        <Section title={t('settings.group_title')}>
-          <div className="lg p-6">
-            <p className="max-w-[38ch] text-body text-muted">{t('settings.group_none')}</p>
-            <Link to="/start" className="btn-primary press mt-6 inline-flex">
-              {t('settings.group_start')}
-            </Link>
           </div>
         </Section>
       )}
 
-      {/**
-       * WHAT LEFT THIS PAGE.
-       *
-       * Signing out, the legal documents and deleting the account are on
-       * /settings behind the gear now. They are not about who you are, they
-       * are about what you can end or read, and having them here meant the
-       * destructive button shared a screen with a row that opens your reading
-       * list.
-       *
-       * The shortcuts to your goals and the library stayed behind too: both
-       * are one tap away in the tab bar, so a second copy on this screen was
-       * a row that existed to make the list look complete.
-       *
-       * "Revoir l'intro" moved with them. It is a setting, not a fact about
-       * you.
-       */}
+      {/* L'eau, parce qu'elle a ete demandee ici et qu'elle est du meme ordre
+          que le reste de cette page: une chose du corps, pas un reglage de
+          compte. Le MEME composant que sur le tableau de bord, pas une copie:
+          deux compteurs du meme verre finiraient par etre en desaccord, et
+          celui qui a tort serait invisible. */}
+      {waterPref?.water_on ? (
+        <WaterToday />
+      ) : (
+        !waterLoading && (
+          <Section title={t('remind.water')}>
+            <div className="lg p-6" data-hook="water-off">
+              <p className="reading text-body text-muted">{t('me.water_off')}</p>
+              <Link to="/notifications" className="goal-action press mt-5 inline-flex" data-hook="water-turn-on">
+                {t('me.water_turn_on')}
+              </Link>
+            </div>
+          </Section>
+        )
+      )}
 
-      {/**
-       * How the app looks and what language it speaks.
-       *
-       * Both controls already existed, on /g/:groupId/settings, which is the
-       * GROUP's settings page and is unreachable to anybody without a group.
-       * So the two preferences that are purely about this person and this
-       * device were behind a door that solo users cannot open, on a screen
-       * otherwise full of things that belong to everybody.
-       *
-       * They are shared components rather than a second copy, so the two
-       * screens cannot drift apart the next time a theme or a locale is added.
-       */}
-      <Section title={t('me.preferences')}>
-        <div className="lg space-y-7 p-6">
-          <ThemePicker />
-          <LanguagePicker />
-        </div>
-      </Section>
-
-      {/**
-       * Last, not second.
-       *
-       * It used to sit between the identity block and the settings, so the
-       * page went: who you are, a chart, what you can change. Somebody opening
-       * the profile to change their currency scrolled past a graph to get
-       * there. It is still a fact about you and still belongs on this page,
-       * just not in the middle of the thing the page is for.
-       */}
-      {/**
-       * DANS LA COLONNE ETROITE, AVEC LES PREFERENCES.
-       *
-       *   "Same here" -- le meme vide que sur le tableau de bord.
-       *
-       * Mesure a 1024, 1180, 1290, 1440 et 1728: la colonne de gauche ne
-       * tenait QUE les preferences, 293px, a cote d'une grille de 1389px.
-       * 1096px de colonne vide, soit 79% d'elle.
-       *
-       * Etirer etait exclu, et la note de .profile-grid le dit deja: deux
-       * rangees de puces gonflees a la hauteur d'un formulaire de six champs
-       * sont une carte rembourree, pas une mise en page. Ce qu'il fallait
-       * n'etait pas plus de hauteur, c'etait plus de CONTENU dans cette
-       * colonne.
-       *
-       * Cette carte-la, parce que c'est exactement la meme dans la colonne
-       * etroite du tableau de bord, ou elle vit a 336px de large. Elle sait
-       * faire.
-       *
-       * L'ordre du DOM ne bouge pas, donc l'ordre sur telephone non plus:
-       * les deux colonnes s'echangent avec `order`, a partir de lg seulement,
-       * et la tabulation comme le lecteur d'ecran suivent toujours le DOM.
-       */}
-      <Section title={t('me.consistency')}>
-        <MyCompletion />
-      </Section>
-      </div>
-      </div>
-
+      {periodTracking && drawer && <CyclePanel open onClose={() => setDrawer(false)} />}
     </Screen>
+  )
+}
+
+/**
+ * The settings gear.
+ *
+ * Drawn rather than imported: this project has one icon file per family and a
+ * single-use glyph in a shared file is how that file becomes a sprite sheet.
+ * Stroked at 1.9 because the teeth close up into a blob when filled at 20px.
+ */
+function GearIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5">
+      <path
+        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" strokeWidth="1.7" />
+    </svg>
   )
 }

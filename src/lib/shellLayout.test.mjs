@@ -262,7 +262,7 @@ ok(
    * La migration avait la bonne regle et le client avait la meme derivation
    * sans la garde. Les deux la portent maintenant.
    */
-  const me = code('src/pages/Me.jsx')
+  const me = code('src/pages/MeDetails.jsx')
   ok('la reponse de genre ne decide plus seule de l interrupteur',
      !/cycle_on: cycleForGender\(/.test(me),
      'une touche sur la liste des genres eteignait un suivi qui servait')
@@ -366,6 +366,64 @@ ok(
      'une dans le retour, une derriere le bouton de secours, pas une par tour')
 
   for (const cle of ['library.guest_paid_title', 'library.guest_paid_body', 'library.guest_paid_cta']) {
+    const n = read('src/lib/i18n.jsx').split(`'${cle}'`).length - 1
+    ok(`${cle} existe dans les deux langues (${n})`, n === 2)
+  }
+}
+
+/* --- le profil s ouvre sur le bien-etre --------------------------------- */
+
+/**
+ * "The first point of contact with your profile will be your personal
+ *  well-being, and then the little setting icon stays on top."
+ *
+ * Cette page etait un formulaire: photo, nom, date de naissance, pronoms,
+ * genre, preferences. Des choses qu'on change une fois, posees en premier,
+ * tous les jours, devant quelqu'un qui vient voir comment il va.
+ */
+{
+  const me = code('src/pages/Me.jsx')
+  const det = code('src/pages/MeDetails.jsx')
+  const app = code('src/App.jsx')
+
+  /* Le rectangle est un LIEN et pas une carte avec un chevron cliquable: la
+     consigne est "clique sur le rectangle", et un lien de 90px qu'on ne peut
+     ouvrir que par un chevron de 20px est un lien qu'on rate au pouce. */
+  ok('l identite est un rectangle qui s ouvre en entier',
+     /<Link\s*\n\s*to="\/me\/details"\s*\n\s*data-hook="identity-card"/.test(me))
+  ok('et tout ce qui se modifie est derriere',
+     /path="me\/details" element=\{<MeDetails \/>\}/.test(app)
+       && /export default function MeDetails\(\)/.test(det))
+  ok('la page des details n a pas ete reecrite, elle a change d adresse',
+     /data-hook="me-cycle"/.test(det) && /t\('me\.name'\)/.test(det),
+     'un formulaire reecrit est un formulaire ou un champ disparait sans que personne le voie')
+
+  /* L'ordre demande: le cycle JUSTE sous le rectangle, l'eau ensuite. */
+  /* `<WaterToday />` et pas `WaterToday`: la premiere occurrence du nom nu est
+     l'import en haut du fichier, donc la comparaison portait sur la ligne 5 et
+     rendait faux un ordre qui est juste. */
+  ok('le cycle vient juste sous le rectangle',
+     me.indexOf('data-hook="cycle-card"') > me.indexOf('data-hook="identity-card"')
+       && me.indexOf('data-hook="cycle-card"') < me.indexOf('<WaterToday />'))
+
+  /* L'indicateur. Trois dates font DEUX cycles mesures, et compter les lignes
+     annoncerait "3 cycles" a quelqu'un qui n'en a mesure que deux. */
+  ok('la carte ne predit qu a partir de deux cycles mesures',
+     /mesures >= 2 \? \(/.test(me) && /data-hook="cycle-needs-more"/.test(me),
+     'un chiffre confiant tire d une seule date est la pire des deux reponses')
+  ok('et le raccourci n apparait que quand il manque des dates',
+     /\{mesures < 2 && \(\s*\n\s*<Link to="\/calendar"[\s\S]{0,160}data-hook="cycle-shortcut"/.test(me))
+
+  /* L'eau eteinte doit quand meme etre offerte ICI, parce que c'est la page ou
+     elle a ete demandee: ne rien y trouver se lit comme "ca n'existe pas". */
+  ok('l eau eteinte propose de l allumer',
+     /data-hook="water-off"/.test(me) && /data-hook="water-turn-on"/.test(me))
+  ok('et allumee, c est le MEME compteur que l accueil',
+     /<WaterToday \/>/.test(me),
+     'deux compteurs du meme verre finiraient par etre en desaccord')
+
+  for (const cle of ['cycle.since_days', 'cycle.need_three', 'cycle.go_record',
+                     'me.water_off', 'me.water_turn_on']) {
     const n = read('src/lib/i18n.jsx').split(`'${cle}'`).length - 1
     ok(`${cle} existe dans les deux langues (${n})`, n === 2)
   }
@@ -1086,7 +1144,7 @@ ok(
 )
 ok(
   'and the settings pages use the pane grid',
-  /pane-grid/.test(read('src/pages/Me.jsx')) && /pane-grid/.test(read('src/pages/Account.jsx')),
+  /pane-grid/.test(read('src/pages/MeDetails.jsx')) && /pane-grid/.test(read('src/pages/Account.jsx')),
 )
 
 /**
@@ -1601,7 +1659,7 @@ ok(
   'une regle qui ne place plus rien est une regle que le prochain doit verifier',
 )
 {
-  const me = code('src/pages/Me.jsx')
+  const me = code('src/pages/MeDetails.jsx')
   ok(
     'la page ouvre bien ses deux colonnes',
     /className="pane-col-main/.test(me) && /className="pane-col-aside/.test(me),
@@ -2654,10 +2712,18 @@ ok(
   'the calendar asks it too',
   /const periodTracking = cycleOn\(profile\)/.test(cal),
 )
+/* "Mon cycle" a quitte le calendrier: il deroutait a cote de "+ Mes regles",
+   deux boutons commencant par le meme mot dont l'un NOTE et l'autre MONTRE. Ce
+   qui reste gate par periodTracking ici, c'est le bouton qui note. */
 ok(
-  'the drawer button is absent rather than disabled',
-  /\{periodTracking && \(\s*\n\s*<button type="button" onClick=\{\(\) => setDrawer\(true\)\}/.test(cal),
+  'the record button is absent rather than disabled',
+  /\{periodTracking && \(\s*\n\s*<button[\s\S]{0,400}data-hook="cal-add-period"/.test(cal),
   'a greyed-out button still advertises the feature',
+)
+ok(
+  'and the drawer has left the calendar entirely',
+  !/data-hook="cal-cycle-open"/.test(cal) && !/setDrawer/.test(cal),
+  'il est sur le profil maintenant, derriere son propre visage',
 )
 ok(
   'the layer toggle is not offered',
@@ -2670,7 +2736,8 @@ ok(
 )
 ok(
   'and CyclePanel, which is what reads cycle_log, is not mounted',
-  /\{periodTracking && \(\s*\n\s*<CyclePanel/.test(cal),
+  /\{periodTracking && <CyclePanel onChange=\{setCycle\} open=\{false\} \/>\}/.test(cal),
+  'toujours la ligne qui empeche la lecture; `open` est constant parce que plus rien ne l ouvre ici',
 )
 ok(
   'and it is a card in its own right',
@@ -3494,7 +3561,7 @@ ok(
        propre note grise a cote plutot que de passer par Field, ce chiffre ne
        bouge pas et le test ne dit rien. Donc on verifie aussi qu'il ne reste
        pas de .field-note dans un formulaire. */
-    const formulaires = ['src/components/GoalForm.jsx', 'src/pages/Me.jsx',
+    const formulaires = ['src/components/GoalForm.jsx', 'src/pages/MeDetails.jsx',
                          'src/components/Projects.jsx', 'src/components/ProjectDetail.jsx',
                          'src/pages/Start.jsx']
     const total = formulaires.reduce((n, f) => n + (read(f).match(/hint=\{t\(/g) ?? []).length, 0)
