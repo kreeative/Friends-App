@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { LANDING } from '../../content/landing'
 import { PREVIEW_BOOKS } from '../../content/previews'
 import { useT } from '../../lib/i18n'
@@ -7,6 +7,7 @@ import { usePageMeta } from '../../lib/pageMeta'
 export default function Books() {
   const { locale, t } = useT()
   const c = (LANDING[locale] ?? LANDING.en).library
+  const [params] = useSearchParams()
 
   usePageMeta({ title: `${c.eyebrow} · Rich & Friends`, description: c.body })
 
@@ -18,6 +19,43 @@ export default function Books() {
 
   return (
     <section className="mx-auto w-full max-w-5xl animate-rise px-6 pb-20 pt-10 md:pt-14">
+      {/**
+       * QUELQU'UN QUI VIENT DE PAYER, ET QUI N'A PAS DE COMPTE.
+       *
+       * Acheter ne demande pas de compte: la page d'extrait a son bouton, et
+       * /api/checkout accepte une session sans utilisateur. C'est voulu.
+       *
+       * Mais success_url renvoie sur /library?purchase=success, et /library
+       * pour une personne deconnectee EST CETTE PAGE. Elle ne lisait pas le
+       * parametre, donc le parcours complet d'un invite etait: il paye, Stripe
+       * le debite, il revient, et il tombe sur le catalogue. Pas de
+       * confirmation, pas de livre, pas un mot sur ce qu'il faut faire
+       * ensuite. Il a paye et l'application ne dit rien.
+       *
+       * Le webhook, lui, fait son travail: il gare l'achat dans
+       * pending_entitlements sur l'adresse de la carte, et claim_entitlements
+       * le reprend a la premiere connexion. Tout le mecanisme etait la. Ce qui
+       * manquait, c'etait de LE DIRE.
+       *
+       * L'ADRESSE EST LA CONDITION, donc elle est nommee. "Cree ton compte"
+       * sans preciser avec quelle adresse est l'instruction qui fabrique le
+       * deuxieme compte, celui qui ne trouvera jamais le livre, et c'est
+       * exactement le genre de compte en double que ce projet a deja.
+       */}
+      {params.get('purchase') === 'success' && (
+        <div
+          className="panel mb-10 border-l-4 border-accent p-7"
+          role="status"
+          data-hook="guest-purchase"
+        >
+          <p className="text-h2 font-semibold text-ink">{t('library.guest_paid_title')}</p>
+          <p className="reading mt-2 text-body text-muted">{t('library.guest_paid_body')}</p>
+          <Link to="/signin" className="btn-primary press mt-6 inline-flex w-auto px-8">
+            {t('library.guest_paid_cta')}
+          </Link>
+        </div>
+      )}
+
       <div className="panel p-8 md:p-11">
         <p className="eyebrow">{c.eyebrow}</p>
         <div className="mt-4 grid gap-6 md:grid-cols-[1.1fr_1fr] md:items-end">
