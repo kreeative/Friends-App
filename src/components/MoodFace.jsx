@@ -61,6 +61,27 @@
  * Le contour du CORPS, lui, reste a 6. Ce n'est pas un trait de visage, c'est
  * ce qui arrondit la silhouette.
  */
+/**
+ * LA BANDE DU VISAGE, MESUREE SUR SA REFERENCE.
+ *
+ *   "Nope, does not look exactly the same."
+ *
+ * Quatre redraws et toujours faux, parce que je comparais un dessin que
+ * j'avais sous les yeux au SOUVENIR de l'autre. Mis cote a cote a la meme
+ * echelle, puis mesures avec le meme code, l'ecart saute:
+ *
+ *   hauteur de l'encre, en % de la hauteur du corps
+ *     elle   Excited 21   Grateful 23   Stressed 27   Bored 28
+ *     moi    Excited 46   Grateful 34   Stressed 39
+ *
+ * La largeur etait deja bonne. C'est la HAUTEUR qui n'allait pas: chez elle
+ * les yeux et la bouche tiennent dans une bande fine au milieu du corps, chez
+ * moi ils s'etalaient sur deux fois plus haut. C'est ca qui faisait un visage
+ * different a chaque fois sans que je sache dire quoi.
+ *
+ * Tout ce qui suit tient donc entre y=40 et y=64, soit 24 unites sur les 92 du
+ * corps: 26%, le milieu de sa fourchette.
+ */
 export const EYES = {
   /**
    * TROIS FOIS REDESSINES, ET LA TROISIEME EN AYANT ENFIN REGARDE DE PRES.
@@ -94,46 +115,46 @@ export const EYES = {
      AVANT les pupilles pour que celles-ci passent par-dessus. */
   wide: (
     <>
-      <circle cx="38" cy="47" r="13" fill="#FFFFFF" stroke="none" />
-      <circle cx="62" cy="47" r="13" fill="#FFFFFF" stroke="none" />
-      <circle cx="37" cy="42" r="8" fill="#141216" stroke="none" />
-      <circle cx="63" cy="42" r="8" fill="#141216" stroke="none" />
+      <circle cx="38" cy="45" r="11.5" fill="#FFFFFF" stroke="none" />
+      <circle cx="62" cy="45" r="11.5" fill="#FFFFFF" stroke="none" />
+      <circle cx="37" cy="41" r="7.2" fill="#141216" stroke="none" />
+      <circle cx="63" cy="41" r="7.2" fill="#141216" stroke="none" />
     </>
   ),
   /* Les pupilles encore plus haut: l'ennui regarde le plafond. */
   lookUp: (
     <>
-      <circle cx="38" cy="47" r="13" fill="#FFFFFF" stroke="none" />
-      <circle cx="62" cy="47" r="13" fill="#FFFFFF" stroke="none" />
-      <circle cx="37" cy="39.5" r="8" fill="#141216" stroke="none" />
-      <circle cx="63" cy="39.5" r="8" fill="#141216" stroke="none" />
+      <circle cx="38" cy="45" r="11.5" fill="#FFFFFF" stroke="none" />
+      <circle cx="62" cy="45" r="11.5" fill="#FFFFFF" stroke="none" />
+      <circle cx="37" cy="39" r="7.2" fill="#141216" stroke="none" />
+      <circle cx="63" cy="39" r="7.2" fill="#141216" stroke="none" />
     </>
   ),
   /* De cote. On ne soutient pas le regard. */
   away: (
     <>
-      <circle cx="38" cy="47" r="13" fill="#FFFFFF" stroke="none" />
-      <circle cx="62" cy="47" r="13" fill="#FFFFFF" stroke="none" />
-      <circle cx="42" cy="43" r="8" fill="#141216" stroke="none" />
-      <circle cx="68" cy="43" r="8" fill="#141216" stroke="none" />
+      <circle cx="38" cy="45" r="11.5" fill="#FFFFFF" stroke="none" />
+      <circle cx="62" cy="45" r="11.5" fill="#FFFFFF" stroke="none" />
+      <circle cx="42" cy="43" r="7.2" fill="#141216" stroke="none" />
+      <circle cx="68" cy="43" r="7.2" fill="#141216" stroke="none" />
     </>
   ),
   /* En bas. On regarde ses pieds. */
   down: (
     <>
-      <circle cx="38" cy="47" r="13" fill="#FFFFFF" stroke="none" />
-      <circle cx="62" cy="47" r="13" fill="#FFFFFF" stroke="none" />
-      <circle cx="37" cy="52" r="8" fill="#141216" stroke="none" />
-      <circle cx="63" cy="52" r="8" fill="#141216" stroke="none" />
+      <circle cx="38" cy="45" r="11.5" fill="#FFFFFF" stroke="none" />
+      <circle cx="62" cy="45" r="11.5" fill="#FFFFFF" stroke="none" />
+      <circle cx="37" cy="52" r="7.2" fill="#141216" stroke="none" />
+      <circle cx="63" cy="52" r="7.2" fill="#141216" stroke="none" />
     </>
   ),
   /* Avec un eclat sur la pupille. */
   sparkle: (
     <>
-      <circle cx="38" cy="47" r="13" fill="#FFFFFF" stroke="none" />
-      <circle cx="62" cy="47" r="13" fill="#FFFFFF" stroke="none" />
-      <circle cx="37" cy="42" r="8" fill="#141216" stroke="none" />
-      <circle cx="63" cy="42" r="8" fill="#141216" stroke="none" />
+      <circle cx="38" cy="45" r="11.5" fill="#FFFFFF" stroke="none" />
+      <circle cx="62" cy="45" r="11.5" fill="#FFFFFF" stroke="none" />
+      <circle cx="37" cy="41" r="7.2" fill="#141216" stroke="none" />
+      <circle cx="63" cy="41" r="7.2" fill="#141216" stroke="none" />
       <circle cx="33.6" cy="38.8" r="2.7" fill="#FFFFFF" stroke="none" />
       <circle cx="59.6" cy="38.8" r="2.7" fill="#FFFFFF" stroke="none" />
     </>
@@ -141,10 +162,10 @@ export const EYES = {
   /* Plus gros encore, et deux eclats: ca monte aux yeux. */
   glossy: (
     <>
-      <circle cx="38" cy="47" r="14" fill="#FFFFFF" stroke="none" />
-      <circle cx="62" cy="47" r="14" fill="#FFFFFF" stroke="none" />
-      <circle cx="37" cy="43" r="9" fill="#141216" stroke="none" />
-      <circle cx="63" cy="43" r="9" fill="#141216" stroke="none" />
+      <circle cx="38" cy="45" r="12.5" fill="#FFFFFF" stroke="none" />
+      <circle cx="62" cy="45" r="12.5" fill="#FFFFFF" stroke="none" />
+      <circle cx="37" cy="42" r="8" fill="#141216" stroke="none" />
+      <circle cx="63" cy="42" r="8" fill="#141216" stroke="none" />
       <circle cx="33" cy="39" r="3.2" fill="#FFFFFF" stroke="none" />
       <circle cx="59" cy="39" r="3.2" fill="#FFFFFF" stroke="none" />
       <circle cx="40.5" cy="46" r="1.7" fill="#FFFFFF" stroke="none" />
@@ -155,8 +176,8 @@ export const EYES = {
      facon de retrecir sans que l'encoche devienne un trait. */
   small: (
     <>
-      <circle cx="40" cy="47" r="7.5" fill="#FFFFFF" stroke="none" />
-      <circle cx="60" cy="47" r="7.5" fill="#FFFFFF" stroke="none" />
+      <circle cx="40" cy="47" r="6.8" fill="#FFFFFF" stroke="none" />
+      <circle cx="60" cy="47" r="6.8" fill="#FFFFFF" stroke="none" />
       <circle cx="40" cy="44.5" r="4.6" fill="#141216" stroke="none" />
       <circle cx="60" cy="44.5" r="4.6" fill="#141216" stroke="none" />
     </>
@@ -164,23 +185,23 @@ export const EYES = {
   /* La paupiere lourde: une forme PLEINE qui recouvre le haut du blanc. */
   half: (
     <>
-      <circle cx="38" cy="47" r="13" fill="#FFFFFF" stroke="none" />
-      <circle cx="62" cy="47" r="13" fill="#FFFFFF" stroke="none" />
-      <circle cx="37" cy="44" r="8" fill="#141216" stroke="none" />
-      <circle cx="63" cy="44" r="8" fill="#141216" stroke="none" />
-      <path d="M25 44a13 13 0 0 1 26 0Z" fill="#141216" stroke="none" />
-      <path d="M49 44a13 13 0 0 1 26 0Z" fill="#141216" stroke="none" />
+      <circle cx="38" cy="45" r="11.5" fill="#FFFFFF" stroke="none" />
+      <circle cx="62" cy="45" r="11.5" fill="#FFFFFF" stroke="none" />
+      <circle cx="37" cy="44" r="7.2" fill="#141216" stroke="none" />
+      <circle cx="63" cy="44" r="7.2" fill="#141216" stroke="none" />
+      <path d="M27 45a11.5 11.5 0 0 1 23 0Z" fill="#141216" stroke="none" />
+      <path d="M50 45a11.5 11.5 0 0 1 23 0Z" fill="#141216" stroke="none" />
     </>
   ),
   /* La meme paupiere inclinee vers le nez: la colere. */
   angry: (
     <>
-      <circle cx="38" cy="48" r="13" fill="#FFFFFF" stroke="none" />
-      <circle cx="62" cy="48" r="13" fill="#FFFFFF" stroke="none" />
-      <circle cx="37" cy="47" r="7.5" fill="#141216" stroke="none" />
-      <circle cx="63" cy="47" r="7.5" fill="#141216" stroke="none" />
-      <path d="M24 33l27 13v-13H24Z" fill="#141216" stroke="none" />
-      <path d="M76 33L49 46V33h27Z" fill="#141216" stroke="none" />
+      <circle cx="38" cy="46" r="11.5" fill="#FFFFFF" stroke="none" />
+      <circle cx="62" cy="46" r="11.5" fill="#FFFFFF" stroke="none" />
+      <circle cx="37" cy="47" r="6.8" fill="#141216" stroke="none" />
+      <circle cx="63" cy="47" r="6.8" fill="#141216" stroke="none" />
+      <path d="M27 35l23 11v-11H27Z" fill="#141216" stroke="none" />
+      <path d="M73 35L50 46V35h23Z" fill="#141216" stroke="none" />
     </>
   ),
   /**
@@ -192,10 +213,10 @@ export const EYES = {
    */
   swirl: (
     <>
-      <circle cx="38" cy="47" r="13" fill="#FFFFFF" stroke="none" />
-      <circle cx="62" cy="47" r="13" fill="#FFFFFF" stroke="none" />
-      <circle cx="36" cy="43" r="8" fill="#141216" stroke="none" />
-      <path d="M62 38.5a8.5 8.5 0 1 1-7.4 5a4.6 4.6 0 1 0 3.2 7.4"
+      <circle cx="38" cy="45" r="11.5" fill="#FFFFFF" stroke="none" />
+      <circle cx="62" cy="45" r="11.5" fill="#FFFFFF" stroke="none" />
+      <circle cx="36" cy="43" r="7.2" fill="#141216" stroke="none" />
+      <path d="M61.5 37a7.5 7.5 0 1 1-6.5 4.4a4 4 0 1 0 2.8 6.5"
             fill="none" stroke="#F08A2C" strokeWidth="3.5" strokeLinecap="round" />
     </>
   ),
@@ -207,22 +228,22 @@ export const EYES = {
      reference et celle que j'avais dessinee en arc plat deux fois de suite. */
   joy: (
     <>
-      <path d="M31 39c0 8.5 12 8.5 12 0" strokeWidth="3.7" strokeLinecap="round" />
-      <path d="M57 39c0 8.5 12 8.5 12 0" strokeWidth="3.7" strokeLinecap="round" />
+      <path d="M31 41c0 6.5 12 6.5 12 0" strokeWidth="3.7" strokeLinecap="round" />
+      <path d="M57 41c0 6.5 12 6.5 12 0" strokeWidth="3.7" strokeLinecap="round" />
     </>
   ),
   /* Le meme, moins creux: la douceur. */
   archSoft: (
     <>
-      <path d="M31 40c0 6 12 6 12 0" strokeWidth="3.7" strokeLinecap="round" />
-      <path d="M57 40c0 6 12 6 12 0" strokeWidth="3.7" strokeLinecap="round" />
+      <path d="M31 42c0 5 12 5 12 0" strokeWidth="3.7" strokeLinecap="round" />
+      <path d="M57 42c0 5 12 5 12 0" strokeWidth="3.7" strokeLinecap="round" />
     </>
   ),
   /* Deux traits droits: le repos complet. */
   rest: (
     <>
-      <path d="M31 44h12" strokeWidth="3.7" strokeLinecap="round" />
-      <path d="M57 44h12" strokeWidth="3.7" strokeLinecap="round" />
+      <path d="M31 45h12" strokeWidth="3.7" strokeLinecap="round" />
+      <path d="M57 45h12" strokeWidth="3.7" strokeLinecap="round" />
     </>
   ),
   /* Deux gros points. Le degre zero. */
@@ -235,48 +256,48 @@ export const EYES = {
   /* Coins exterieurs tombants: le visage abattu. */
   droop: (
     <>
-      <path d="M30 48q7-8 14-3" strokeWidth="3.7" strokeLinecap="round" />
-      <path d="M70 48q-7-8-14-3" strokeWidth="3.7" strokeLinecap="round" />
+      <path d="M31 48q7-6 12-2" strokeWidth="3.7" strokeLinecap="round" />
+      <path d="M69 48q-7-6-12-2" strokeWidth="3.7" strokeLinecap="round" />
     </>
   ),
   /* Des chevrons pointe vers le nez: l'oeil SERRE. Pas une croix, qui est le
      personnage assomme de n'importe quel dessin anime. */
   squint: (
     <>
-      <path d="M30 39l13 6-13 6" strokeWidth="3.7" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M70 39l-13 6 13 6" strokeWidth="3.7" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M31 41l11 5-11 5" strokeWidth="3.7" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M69 41l-11 5 11 5" strokeWidth="3.7" strokeLinecap="round" strokeLinejoin="round" />
     </>
   ),
   /* Un ferme, un serre: on encaisse. */
   wince: (
     <>
-      <path d="M31 39c0 8.5 12 8.5 12 0" strokeWidth="3.7" strokeLinecap="round" />
-      <path d="M70 39l-13 6 13 6" strokeWidth="3.7" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M31 41c0 6.5 12 6.5 12 0" strokeWidth="3.7" strokeLinecap="round" />
+      <path d="M69 41l-11 5 11 5" strokeWidth="3.7" strokeLinecap="round" strokeLinejoin="round" />
     </>
   ),
   /* Fermes, et une larme pleine qui pend sous l'oeil droit. */
   tear: (
     <>
-      <path d="M31 40c0 7.5 12 7.5 12 0" strokeWidth="3.7" strokeLinecap="round" />
-      <path d="M57 40c0 7.5 12 7.5 12 0" strokeWidth="3.7" strokeLinecap="round" />
-      <path d="M63 50c2.7 3.8 4 6 4 7.8a4 4 0 0 1-8 0c0-1.8 1.3-4 4-7.8Z"
+      <path d="M31 41c0 6 12 6 12 0" strokeWidth="3.7" strokeLinecap="round" />
+      <path d="M57 41c0 6 12 6 12 0" strokeWidth="3.7" strokeLinecap="round" />
+      <path d="M63 49c2.4 3.4 3.6 5.4 3.6 7a3.6 3.6 0 0 1-7.2 0c0-1.6 1.2-3.6 3.6-7Z"
             fill="#141216" stroke="none" className="mf-tear" />
     </>
   ),
   /* Ondules: le mal au coeur. */
   queasy: (
     <>
-      <path d="M30 43q3.5-5 7 0t7 0" strokeWidth="3.4" strokeLinecap="round" />
-      <path d="M56 43q3.5-5 7 0t7 0" strokeWidth="3.4" strokeLinecap="round" />
+      <path d="M31 45q3-4 6 0t6 0" strokeWidth="3.4" strokeLinecap="round" />
+      <path d="M57 45q3-4 6 0t6 0" strokeWidth="3.4" strokeLinecap="round" />
     </>
   ),
   /* Attentifs: le U avec un sourcil haut au-dessus. */
   soft: (
     <>
-      <path d="M31 41c0 7 12 7 12 0" strokeWidth="3.5" strokeLinecap="round" />
-      <path d="M57 41c0 7 12 7 12 0" strokeWidth="3.5" strokeLinecap="round" />
-      <path d="M30 33q7-3.5 14 0" strokeWidth="2.3" strokeLinecap="round" />
-      <path d="M56 33q7-3.5 14 0" strokeWidth="2.3" strokeLinecap="round" />
+      <path d="M31 42c0 5.5 12 5.5 12 0" strokeWidth="3.5" strokeLinecap="round" />
+      <path d="M57 42c0 5.5 12 5.5 12 0" strokeWidth="3.5" strokeLinecap="round" />
+      <path d="M31 36q6-3 12 0" strokeWidth="2.3" strokeLinecap="round" />
+      <path d="M57 36q6-3 12 0" strokeWidth="2.3" strokeLinecap="round" />
     </>
   ),
 }
@@ -293,36 +314,36 @@ export const MOUTHS = {
      bouches partaient a 55: elles traversaient l'oeil. "Energise" se lisait
      comme un visage ecrase, et c'etait ca. Tout ce qui est large commence
      maintenant sous 62. */
-  grin: <path d="M25 64q25 17 50 0" strokeWidth="3.5" strokeLinecap="round" />,
+  grin: <path d="M28 55q22 9 44 0" strokeWidth="3.5" strokeLinecap="round" />,
   /* Un sourire trace, franc mais ferme. */
-  smile: <path d="M28 65q22 14 44 0" strokeWidth="3.4" strokeLinecap="round" />,
+  smile: <path d="M30 56q20 8 40 0" strokeWidth="3.4" strokeLinecap="round" />,
   /* Petit sourire. La douceur. */
-  softSmile: <path d="M34 66q16 9 32 0" strokeWidth="3.4" strokeLinecap="round" />,
+  softSmile: <path d="M35 57q15 6 30 0" strokeWidth="3.4" strokeLinecap="round" />,
   /* Droite. */
-  flat: <path d="M41 67h18" strokeWidth="3.4" strokeLinecap="round" />,
+  flat: <path d="M41 58h18" strokeWidth="3.4" strokeLinecap="round" />,
   /* Tombante. */
-  frown: <path d="M37 69q13-11 26 0" />,
+  frown: <path d="M37 60q13-8 26 0" />,
   /* Tombante et large: ca ne se retient plus. */
-  bigFrown: <path d="M34 71q16-15 32 0" />,
+  bigFrown: <path d="M35 61q15-10 30 0" />,
   /* Ondulee. Le menton qui tremble, avant les larmes. */
-  wobble: <path d="M35 68q4-5 7.5 0t7.5 0t7.5 0t7.5 0" strokeWidth="3.1" />,
+  wobble: <path d="M36 58q3.5-4 7 0t7 0t7 0t7 0" strokeWidth="3.1" />,
   /* Ronde et ouverte: la surprise. */
-  o: <ellipse cx="50" cy="71" rx="6.4" ry="7.6" fill="#141216" stroke="none" />,
+  o: <ellipse cx="50" cy="58" rx="5.6" ry="6.4" fill="#141216" stroke="none" />,
   /* Serree, dents visibles. La tension. */
   grit: (
     <>
-      <path d="M36 61h28v8H36Z" />
-      <path d="M43 61v8" />
-      <path d="M50 61v8" />
-      <path d="M57 61v8" />
+      <path d="M38 54h24v7H38Z" />
+      <path d="M44 54v7" />
+      <path d="M50 54v7" />
+      <path d="M56 54v7" />
     </>
   ),
   /* Un coin releve. Le doute. */
-  smirk: <path d="M38 67q11 5 23-5" />,
+  smirk: <path d="M38 58q11 4 23-4" />,
   /* Minuscule. On n'a pas grand-chose a dire. */
-  tiny: <path d="M45 66h10" />,
+  tiny: <path d="M45 58h10" />,
   /* En zigzag: la rage dessinee, pas mimee. */
-  zigzag: <path d="M35 66l6-5 5 5 5-5 5 5 5-5 4 5" />,
+  zigzag: <path d="M37 59l5-4 4 4 4-4 4 4 4-4 3 4" />,
 }
 
 /**
