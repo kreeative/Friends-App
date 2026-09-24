@@ -13,6 +13,7 @@ import {
   cleanName,
   cycleForGender,
   cycleOn,
+  cyclePatchForGender,
   needsSetup,
   setupPatch,
 } from './setup.js'
@@ -74,6 +75,50 @@ eq('no argument', cycleOn(), true)
    it; a woman who turned it off stays rid of it. */
 eq('a man who turned it on', cycleOn({ gender: 'man', cycle_on: true }), true)
 eq('a woman who turned it off', cycleOn({ gender: 'woman', cycle_on: false }), false)
+
+/* --- cyclePatchForGender: what the answer may do to the switch ----------- */
+/**
+ * Le cas qui a coute une matinee de "Where is the period thing I don't see it":
+ * un compte gender=null avec quatre regles notees, une touche sur la liste des
+ * genres, et cycle_on part a false. Mesure sur son compte au moment du rapport:
+ * gender null, cycle_on false, cycle_log 4 lignes.
+ *
+ * La regle est celle que la migration 68 a deja tranchee en SQL. Seul un zero
+ * CONFIRME laisse la reponse bouger l'interrupteur.
+ */
+{
+  const patch = (g, n) => JSON.stringify(cyclePatchForGender(g, n))
+
+  /* Rien de note: la derivation marche comme avant, dans les deux sens. */
+  eq('nothing recorded, a woman turns it on', patch('woman', 0), '{"cycle_on":true}')
+  eq('nothing recorded, a man turns it off', patch('man', 0), '{"cycle_on":false}')
+  eq('nothing recorded, other turns it off', patch('other', 0), '{"cycle_on":false}')
+  eq('nothing recorded, unanswered turns it off', patch(null, 0), '{"cycle_on":false}')
+
+  /* Une seule regle notee suffit a proteger l'interrupteur. C'est le bug. */
+  eq('one period recorded, the answer may not touch it', patch(null, 1), '{}')
+  eq('her four periods, the answer may not touch it', patch(null, 4), '{}')
+  eq('and not for a man either', patch('man', 3), '{}')
+  /* Meme pour 'woman', ou le resultat aurait ete le meme: le patch reste vide
+     plutot que d'ecrire true, parce qu'un ecran qui rallume un suivi que la
+     personne avait eteint est le meme defaut dans l'autre sens. */
+  eq('nor turn it back ON for a woman who had turned it off', patch('woman', 4), '{}')
+
+  /* Le compte pas encore arrive. Un suivi ne s'eteint pas sur une supposition. */
+  eq('count still loading', patch('man', null), '{}')
+  eq('count never asked', patch('man', undefined), '{}')
+  /* Et rien qui ressemble a zero sans en etre un. '0' vient d'un champ texte,
+     false vient d'un ?? mal place, et les deux passeraient un == 0. */
+  eq('the string zero is not zero', patch('man', '0'), '{}')
+  eq('false is not zero', patch('man', false), '{}')
+
+  /* La forme compte autant que la valeur: le patch est etale dans l'objet
+     envoye a updateProfile, donc `{}` doit laisser la colonne intacte et non
+     pas y ecrire undefined. */
+  const merged = { gender: null, ...cyclePatchForGender(null, 4) }
+  eq('a blocked patch leaves the column out of the write', 'cycle_on' in merged, false)
+  eq('and still writes the answer that was given', Object.keys(merged).join(','), 'gender')
+}
 
 /* --- the name ----------------------------------------------------------- */
 eq('trimmed', cleanName('  Anne-Kelly  '), 'Anne-Kelly')
