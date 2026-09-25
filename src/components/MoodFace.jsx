@@ -82,6 +82,42 @@
  * Tout ce qui suit tient donc entre y=40 et y=64, soit 24 unites sur les 92 du
  * corps: 26%, le milieu de sa fourchette.
  */
+/**
+ * LE TRAIT N'EST PLUS EGAL, ET IL N'EST PLUS UN TRAIT.
+ *
+ *   "Our line on the emotions is a little bit too bold and too even."
+ *
+ * Un stroke SVG a la meme epaisseur d'un bout a l'autre, et le trait de la
+ * reference n'a pas ca: il est plein au ventre et il s'amincit vers les bouts,
+ * comme un pinceau. Mesure sur la bouche d'Excited, la suite verticale d'encre
+ * fait 5px partout, mais la courbe est raide aux extremites, donc l'epaisseur
+ * PERPENDICULAIRE y est plus faible: un trait egal a l'oeil qui ne l'est pas.
+ *
+ * Chaque trait est donc maintenant une FORME PLEINE: deux courbes qui
+ * partagent leurs bouts et dont les points de controle sont ecartes. Le ventre
+ * est epais, les extremites sont fines, et la forme se lit comme un coup de
+ * pinceau au lieu d'un fil de fer.
+ *
+ * Les nombres viennent de la geometrie des courbes, pas d'essais: pour une
+ * quadratique, ecarter les deux controles de +-t deplace les ventres de t au
+ * total; pour une cubique, de 1.5 fois l'ecart.
+ *
+ * PREMIERE VERSION TROP FINE. Des ventres a 3.3 et des bouts en aiguille (0.8)
+ * donnaient un trait qui se lit plus leger qu'il n'est: "Serein" n'avait
+ * presque plus de visage. La reference s'amincit vers les bouts sans jamais
+ * finir en pointe: ses extremites font a peu pres la moitie du ventre.
+ *
+ * DEUXIEME PASSE, AU CHIFFRE. Avec un ventre a 3.8 la mediane mesuree chez moi
+ * faisait 3.1 a 3.9 contre 4.0 a 4.7 sur sa planche: encore quinze pour cent
+ * de moins. Une lentille repartit son encre autrement qu'un trait egal, donc
+ * a ventre egal elle se lit plus fine. Ventre 4.3 sur les yeux, 4.0 sur les
+ * bouches, bouts de 1.4: c'est ce qui aligne les medianes.
+ *
+ * Les vagues, le zigzag, les dents serrees et la spirale restent traces, plus
+ * fins (2.9): ce sont des formes anguleuses ou tres petites ou l'amincissement
+ * ne se verrait pas, et une lentille sur un zigzag fait un zigzag en dents de
+ * scie.
+ */
 export const EYES = {
   /**
    * TROIS FOIS REDESSINES, ET LA TROISIEME EN AYANT ENFIN REGARDE DE PRES.
@@ -217,7 +253,7 @@ export const EYES = {
       <circle cx="62" cy="45" r="11.5" fill="#FFFFFF" stroke="none" />
       <circle cx="36" cy="43" r="7.2" fill="#141216" stroke="none" />
       <path d="M61.5 37a7.5 7.5 0 1 1-6.5 4.4a4 4 0 1 0 2.8 6.5"
-            fill="none" stroke="#F08A2C" strokeWidth="3.5" strokeLinecap="round" />
+            fill="none" stroke="#F08A2C" strokeWidth="3" strokeLinecap="round" />
     </>
   ),
 
@@ -228,22 +264,22 @@ export const EYES = {
      reference et celle que j'avais dessinee en arc plat deux fois de suite. */
   joy: (
     <>
-      <path d="M31 41c0 6.5 12 6.5 12 0" strokeWidth="3.7" strokeLinecap="round" />
-      <path d="M57 41c0 6.5 12 6.5 12 0" strokeWidth="3.7" strokeLinecap="round" />
+      <path d="M30.5 40.3C30.2 50.3667 43.8 50.3667 43.5 40.3L42.5 41.7C42.2 44.6333 31.8 44.6333 31.5 41.7Z" fill="#141216" stroke="none" />
+      <path d="M56.5 40.3C56.2 50.3667 69.8 50.3667 69.5 40.3L68.5 41.7C68.2 44.6333 57.8 44.6333 57.5 41.7Z" fill="#141216" stroke="none" />
     </>
   ),
   /* Le meme, moins creux: la douceur. */
   archSoft: (
     <>
-      <path d="M31 42c0 5 12 5 12 0" strokeWidth="3.7" strokeLinecap="round" />
-      <path d="M57 42c0 5 12 5 12 0" strokeWidth="3.7" strokeLinecap="round" />
+      <path d="M30.5 41.3C30.2 49.8667 43.8 49.8667 43.5 41.3L42.5 42.7C42.2 44.1333 31.8 44.1333 31.5 42.7Z" fill="#141216" stroke="none" />
+      <path d="M56.5 41.3C56.2 49.8667 69.8 49.8667 69.5 41.3L68.5 42.7C68.2 44.1333 57.8 44.1333 57.5 42.7Z" fill="#141216" stroke="none" />
     </>
   ),
   /* Deux traits droits: le repos complet. */
   rest: (
     <>
-      <path d="M31 45h12" strokeWidth="3.7" strokeLinecap="round" />
-      <path d="M57 45h12" strokeWidth="3.7" strokeLinecap="round" />
+      <path d="M31 44.3Q37 49.3 43 44.3L43 45.7Q37 40.7 31 45.7Z" fill="#141216" stroke="none" />
+      <path d="M57 44.3Q63 49.3 69 44.3L69 45.7Q63 40.7 57 45.7Z" fill="#141216" stroke="none" />
     </>
   ),
   /* Deux gros points. Le degre zero. */
@@ -256,30 +292,33 @@ export const EYES = {
   /* Coins exterieurs tombants: le visage abattu. */
   droop: (
     <>
-      <path d="M31 48q7-6 12-2" strokeWidth="3.7" strokeLinecap="round" />
-      <path d="M69 48q-7-6-12-2" strokeWidth="3.7" strokeLinecap="round" />
+      <path d="M31 48.7Q38 37.7 43 46.7L43 45.3Q38 46.3 31 47.3Z" fill="#141216" stroke="none" />
+      <path d="M69 48.7Q62 37.7 57 46.7L57 45.3Q62 46.3 69 47.3Z" fill="#141216" stroke="none" />
     </>
   ),
   /* Des chevrons pointe vers le nez: l'oeil SERRE. Pas une croix, qui est le
      personnage assomme de n'importe quel dessin anime. */
   squint: (
     <>
-      <path d="M31 41l11 5-11 5" strokeWidth="3.7" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M69 41l-11 5 11 5" strokeWidth="3.7" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M31 40.3Q36.5 47.8 42 45.3L42 46.7Q36.5 39.2 31 41.7Z" fill="#141216" stroke="none" />
+      <path d="M42 45.3Q36.5 52.8 31 50.3L31 51.7Q36.5 44.2 42 46.7Z" fill="#141216" stroke="none" />
+      <path d="M69 40.3Q63.5 47.8 58 45.3L58 46.7Q63.5 39.2 69 41.7Z" fill="#141216" stroke="none" />
+      <path d="M58 45.3Q63.5 52.8 69 50.3L69 51.7Q63.5 44.2 58 46.7Z" fill="#141216" stroke="none" />
     </>
   ),
   /* Un ferme, un serre: on encaisse. */
   wince: (
     <>
-      <path d="M31 41c0 6.5 12 6.5 12 0" strokeWidth="3.7" strokeLinecap="round" />
-      <path d="M69 41l-11 5 11 5" strokeWidth="3.7" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M30.5 40.3C30.2 50.3667 43.8 50.3667 43.5 40.3L42.5 41.7C42.2 44.6333 31.8 44.6333 31.5 41.7Z" fill="#141216" stroke="none" />
+      <path d="M69 40.3Q63.5 47.8 58 45.3L58 46.7Q63.5 39.2 69 41.7Z" fill="#141216" stroke="none" />
+      <path d="M58 45.3Q63.5 52.8 69 50.3L69 51.7Q63.5 44.2 58 46.7Z" fill="#141216" stroke="none" />
     </>
   ),
   /* Fermes, et une larme pleine qui pend sous l'oeil droit. */
   tear: (
     <>
-      <path d="M31 41c0 6 12 6 12 0" strokeWidth="3.7" strokeLinecap="round" />
-      <path d="M57 41c0 6 12 6 12 0" strokeWidth="3.7" strokeLinecap="round" />
+      <path d="M30.5 40.3C30.2 49.8667 43.8 49.8667 43.5 40.3L42.5 41.7C42.2 44.1333 31.8 44.1333 31.5 41.7Z" fill="#141216" stroke="none" />
+      <path d="M56.5 40.3C56.2 49.8667 69.8 49.8667 69.5 40.3L68.5 41.7C68.2 44.1333 57.8 44.1333 57.5 41.7Z" fill="#141216" stroke="none" />
       <path d="M63 49c2.4 3.4 3.6 5.4 3.6 7a3.6 3.6 0 0 1-7.2 0c0-1.6 1.2-3.6 3.6-7Z"
             fill="#141216" stroke="none" className="mf-tear" />
     </>
@@ -287,17 +326,17 @@ export const EYES = {
   /* Ondules: le mal au coeur. */
   queasy: (
     <>
-      <path d="M31 45q3-4 6 0t6 0" strokeWidth="3.4" strokeLinecap="round" />
-      <path d="M57 45q3-4 6 0t6 0" strokeWidth="3.4" strokeLinecap="round" />
+      <path d="M31 45q3-4 6 0t6 0" strokeWidth="3.5" strokeLinecap="round" />
+      <path d="M57 45q3-4 6 0t6 0" strokeWidth="3.5" strokeLinecap="round" />
     </>
   ),
   /* Attentifs: le U avec un sourcil haut au-dessus. */
   soft: (
     <>
-      <path d="M31 42c0 5.5 12 5.5 12 0" strokeWidth="3.5" strokeLinecap="round" />
-      <path d="M57 42c0 5.5 12 5.5 12 0" strokeWidth="3.5" strokeLinecap="round" />
-      <path d="M31 36q6-3 12 0" strokeWidth="2.3" strokeLinecap="round" />
-      <path d="M57 36q6-3 12 0" strokeWidth="2.3" strokeLinecap="round" />
+      <path d="M30.5 41.3C30.2 50.3667 43.8 50.3667 43.5 41.3L42.5 42.7C42.2 44.6333 31.8 44.6333 31.5 42.7Z" fill="#141216" stroke="none" />
+      <path d="M56.5 41.3C56.2 50.3667 69.8 50.3667 69.5 41.3L68.5 42.7C68.2 44.6333 57.8 44.6333 57.5 42.7Z" fill="#141216" stroke="none" />
+      <path d="M31 36.4Q37 30.8 43 36.4L43 35.6Q37 35.2 31 35.6Z" fill="#141216" stroke="none" />
+      <path d="M57 36.4Q63 30.8 69 36.4L69 35.6Q63 35.2 57 35.6Z" fill="#141216" stroke="none" />
     </>
   ),
 }
@@ -314,19 +353,19 @@ export const MOUTHS = {
      bouches partaient a 55: elles traversaient l'oeil. "Energise" se lisait
      comme un visage ecrase, et c'etait ca. Tout ce qui est large commence
      maintenant sous 62. */
-  grin: <path d="M28 55q22 9 44 0" strokeWidth="3.5" strokeLinecap="round" />,
+  grin: <path d="M28 54.3Q50 68 72 54.3L72 55.7Q50 60 28 55.7Z" fill="#141216" stroke="none" />,
   /* Un sourire trace, franc mais ferme. */
-  smile: <path d="M30 56q20 8 40 0" strokeWidth="3.4" strokeLinecap="round" />,
+  smile: <path d="M30 55.3Q50 68 70 55.3L70 56.7Q50 60 30 56.7Z" fill="#141216" stroke="none" />,
   /* Petit sourire. La douceur. */
-  softSmile: <path d="M35 57q15 6 30 0" strokeWidth="3.4" strokeLinecap="round" />,
+  softSmile: <path d="M35 56.3Q50 67 65 56.3L65 57.7Q50 59 35 57.7Z" fill="#141216" stroke="none" />,
   /* Droite. */
-  flat: <path d="M41 58h18" strokeWidth="3.4" strokeLinecap="round" />,
+  flat: <path d="M41 57.3Q50 62 59 57.3L59 58.7Q50 54 41 58.7Z" fill="#141216" stroke="none" />,
   /* Tombante. */
-  frown: <path d="M37 60q13-8 26 0" />,
+  frown: <path d="M37 60.7Q50 48 63 60.7L63 59.3Q50 56 37 59.3Z" fill="#141216" stroke="none" />,
   /* Tombante et large: ca ne se retient plus. */
-  bigFrown: <path d="M35 61q15-10 30 0" />,
+  bigFrown: <path d="M35 61.7Q50 47 65 61.7L65 60.3Q50 55 35 60.3Z" fill="#141216" stroke="none" />,
   /* Ondulee. Le menton qui tremble, avant les larmes. */
-  wobble: <path d="M36 58q3.5-4 7 0t7 0t7 0t7 0" strokeWidth="3.1" />,
+  wobble: <path d="M36 58q3.5-4 7 0t7 0t7 0t7 0" strokeWidth="3.5" />,
   /* Ronde et ouverte: la surprise. */
   o: <ellipse cx="50" cy="58" rx="5.6" ry="6.4" fill="#141216" stroke="none" />,
   /* Serree, dents visibles. La tension. */
@@ -339,9 +378,9 @@ export const MOUTHS = {
     </>
   ),
   /* Un coin releve. Le doute. */
-  smirk: <path d="M38 58q11 4 23-4" />,
+  smirk: <path d="M38 57.3Q49 66 61 53.3L61 54.7Q49 58 38 58.7Z" fill="#141216" stroke="none" />,
   /* Minuscule. On n'a pas grand-chose a dire. */
-  tiny: <path d="M45 58h10" />,
+  tiny: <path d="M45 57.4Q50 61.6 55 57.4L55 58.6Q50 54.4 45 58.6Z" fill="#141216" stroke="none" />,
   /* En zigzag: la rage dessinee, pas mimee. */
   zigzag: <path d="M37 59l5-4 4 4 4-4 4 4 4-4 3 4" />,
 }
@@ -416,7 +455,7 @@ export default function MoodGlyph({ mood, playing = false }) {
       <g
         fill="none"
         stroke="#141216"
-        strokeWidth="3.4"
+        strokeWidth="3.5"
         strokeLinecap="round"
         strokeLinejoin="round"
       >

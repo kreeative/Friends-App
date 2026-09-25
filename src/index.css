@@ -3905,7 +3905,15 @@
    classe, y compris celles rendues par une boucle qui ne sait pas son index.
    =========================================================================== */
 .stagger > * {
-  animation: rise 260ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  /* `backwards`, PAS `both`. `backwards` applique l'etat de depart pendant le
+     delai, ce qui est ce qui rend l'element invisible avant son tour; c'est
+     tout ce dont la cascade a besoin. `both` gardait AUSSI l'etat final, donc
+     `transform` restait pose sur chaque bouton pour toujours, et comme une
+     animation l'emporte sur une declaration ordinaire, `.press:active`
+     (scale .97) ne pouvait plus s'appliquer: toucher une humeur ne
+     s'enfoncait plus. L'etat final de `rise` est l'etat naturel, donc le
+     relacher ne change rien a l'image et rend `transform` au bouton. */
+  animation: rise 260ms cubic-bezier(0.22, 0.61, 0.36, 1) backwards;
 }
 .stagger > *:nth-child(1) { animation-delay: 0ms; }
 .stagger > *:nth-child(2) { animation-delay: 26ms; }
