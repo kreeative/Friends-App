@@ -113,12 +113,21 @@ export const EYES = {
       <ellipse cx="57.6" cy="49.2" rx="6.3" ry="6.5" />
     </g>
   ),
+  /* "Insecure should look shy." La planche le faisait regarder de cote, un
+     oeil a demi cache: ca se lisait mefiant, pas timide. Timide, c'est les
+     yeux qui descendent vers le coin, les joues qui rougissent, et une toute
+     petite bouche. Construit a la main dans la grammaire de la planche: deux
+     blancs ronds, les pupilles basses et a gauche, deux ovales roses sous les
+     yeux. Le rose est plein et non transparent, pour rester rose sur le corps
+     orange comme sur n'importe quel autre. */
   insecure: (
-    <g transform="translate(-1 -4.2)">
-      <path fill="#FFFFFF" d="M35.0 61.5C30.1 60.5 26.5 57.4 25.1 53.1C24.8 52.2 24.9 52.2 25.8 52.8C29.8 55.4 36.6 51.1 36.6 45.8C36.6 41.9 33.6 38.0 30.5 37.9C28.9 37.9 33.0 36.1 35.7 35.6C42.4 34.5 50.4 40.2 48.9 45.1C48.1 47.6 47.9 51.0 48.2 53.8C48.7 57.2 45.2 60.8 40.6 61.5C39.7 61.6 38.7 61.8 38.3 61.9C37.9 61.9 36.4 61.8 35.0 61.5Z" />
-      <path fill="#FFFFFF" d="M56.1 57.7C55.5 57.5 55.7 57.3 56.9 56.2C59.5 54.0 60.3 49.7 58.7 46.6C58.0 45.2 55.8 43.2 55.1 43.2C54.8 43.2 54.7 43.1 54.7 43.0C55.0 42.8 74.0 41.2 74.5 41.5C75.9 42.0 76.2 52.7 75.0 56.2C74.5 57.7 74.5 57.7 65.7 57.8C60.8 57.8 56.5 57.8 56.1 57.7Z" />
-      <ellipse cx="29.4" cy="45.7" rx="6.6" ry="7.55" />
-      <path d="M51.6 57.6C48.9 57.5 48.8 57.2 48.4 52.7C48.2 49.0 49.0 43.8 50.0 43.5C58.2 40.3 63.0 52.2 55.4 57.0C54.6 57.5 53.9 57.9 53.9 57.9C53.8 57.8 52.8 57.7 51.6 57.6Z" />
+    <g>
+      <circle cx="37.5" cy="45" r="12" fill="#FFFFFF" />
+      <circle cx="62.5" cy="45" r="12" fill="#FFFFFF" />
+      <circle cx="33" cy="50.2" r="6" />
+      <circle cx="58" cy="50.2" r="6" />
+      <ellipse cx="26" cy="58.5" rx="6.2" ry="3.2" fill="#F0508C" />
+      <ellipse cx="74" cy="58.5" rx="6.2" ry="3.2" fill="#F0508C" />
     </g>
   ),
   stressed: (
@@ -134,11 +143,23 @@ export const EYES = {
       <path d="M59.1 42.8C57.6 41.9 56.3 39.3 56.3 37.5C56.2 36.0 57.7 35.7 64.7 35.7C68.4 35.7 68.4 35.7 68.4 37.4C68.4 42.1 63.0 45.2 59.1 42.8Z" />
     </g>
   ),
+  /* "Discouraged should look a little bit shocked and sad." La planche lui
+     donnait des paupieres lourdes: ca se lisait blase. Le choc, c'est l'oeil
+     grand ouvert avec une PETITE pupille; la tristesse est dans la bouche
+     (voir MOUTHS.discouraged). Deux blancs ronds qui se touchent presque,
+     pupilles un cran sous le centre. */
   discouraged: (
-    <g transform="translate(0 -5)">
-      <path fill="#FFFFFF" d="M33.9 57.6C28.5 56.0 24.4 50.8 24.3 45.1C24.3 43.0 24.3 43.0 27.7 43.0C30.9 43.0 31.1 43.1 31.1 43.9C31.2 51.7 42.2 52.5 43.9 44.8C44.3 42.6 44.3 42.6 50.3 42.6C56.2 42.6 56.2 42.6 56.2 43.7C56.2 45.4 57.8 48.3 59.4 49.3C63.2 51.9 68.9 48.7 68.9 43.9C68.9 42.7 68.9 42.7 72.3 42.4C76.4 42.1 76.3 42.0 75.8 45.2C73.4 59.4 55.1 62.8 50.8 49.8C50.0 47.3 49.7 47.3 48.8 49.8C46.7 55.7 39.9 59.2 33.9 57.6Z" />
-      <path d="M35.3 49.7C32.9 48.6 31.5 46.2 31.5 43.3C31.5 42.2 31.5 42.2 37.7 42.2C43.9 42.2 43.9 42.2 43.7 44.1C43.1 48.6 38.9 51.3 35.3 49.7Z" />
-      <path d="M61.2 49.9C58.7 49.3 56.6 46.4 56.6 43.7C56.6 42.1 57.7 41.8 64.6 41.8C68.3 41.8 68.5 41.9 68.6 42.7C69.3 46.9 65.0 50.9 61.2 49.9Z" />
+    <g>
+      {/* Deux sourcils fins qui montent vers le milieu: c'est le trait qui
+          fait passer un oeil ecarquille de "surpris" a "inquiet". Les bouts
+          interieurs sont plus hauts que les exterieurs, et ils flottent a
+          cinq unites au-dessus des blancs. */}
+      <path d="M27.5 31.2Q34.75 33.45 42 27.7L42 29.3Q34.75 27.05 27.5 32.8Z" />
+      <path d="M72.5 31.2Q65.25 33.45 58 27.7L58 29.3Q65.25 27.05 72.5 32.8Z" />
+      <circle cx="37" cy="45" r="12.5" fill="#FFFFFF" />
+      <circle cx="63" cy="45" r="12.5" fill="#FFFFFF" />
+      <circle cx="37.5" cy="46.5" r="4.8" />
+      <circle cx="62.5" cy="46.5" r="4.8" />
     </g>
   ),
   sad: (
@@ -221,9 +242,10 @@ export const MOUTHS = {
       <path d="M42.4 65.8C41.2 64.2 43.6 62.4 46.4 63.0C48.4 63.4 49.8 63.2 51.4 62.3C54.4 60.6 57.6 61.2 58.6 63.2C59.4 64.8 57.6 65.8 56.2 64.6C54.8 63.4 53.2 63.6 51.4 64.7C49.0 66.1 46.6 66.2 44.6 65.4C43.6 65.0 43.0 66.6 42.4 65.8Z" />
     </g>
   ),
+  /* Timide: une toute petite bouche qui sourit a peine, 9 de large. */
   insecure: (
-    <g transform="translate(-1 -4.2)">
-      <path d="M43.8 67.1C42.8 65.2 43.6 64.8 49.6 64.5C54.3 64.2 54.3 64.2 54.6 65.3C55.0 67.0 54.3 67.3 49.0 67.6C44.4 67.8 44.2 67.8 43.8 67.1Z" />
+    <g>
+      <path d="M45.5 61.4Q50 65.4 54.5 61.4L54.5 62.6Q50 58.6 45.5 62.6Z" />
     </g>
   ),
   stressed: (
@@ -236,9 +258,15 @@ export const MOUTHS = {
       <path d="M39.5 63.8C37.1 61.3 45.5 56.3 50.9 57.0C55.8 57.7 61.1 62.0 59.3 63.8C58.5 64.6 57.4 64.3 55.7 62.7C52.0 59.4 46.1 59.5 42.8 63.0C41.6 64.3 40.3 64.6 39.5 63.8Z" />
     </g>
   ),
+  /* Choque et triste: la bouche est OUVERTE (le choc) et son bord haut est un
+     arc qui monte au milieu, donc les coins tombent (la tristesse). C'est la
+     bouche de l'emoji "angoisse", pleine, 17 de large. Premiere version trop
+     ronde: a 4x elle se lisait comme un "o" de surprise, sans rien de triste.
+     Le dome du haut est deux fois plus haut que le ventre du bas maintenant,
+     et c'est ce rapport qui fait les coins qui tombent. */
   discouraged: (
-    <g transform="translate(0 -5)">
-      <path d="M42.1 69.3C40.2 68.2 42.8 64.8 46.6 63.6C51.3 62.0 59.4 65.3 58.4 68.5C57.9 69.9 56.7 69.9 55.0 68.4C51.8 65.7 48.2 65.7 45.0 68.3C43.2 69.9 43.1 69.9 42.1 69.3Z" />
+    <g>
+      <path d="M41.5 65.5C43.5 57.5 56.5 57.5 58.5 65.5C57 69.5 43 69.5 41.5 65.5Z" />
     </g>
   ),
   sad: (
@@ -288,10 +316,10 @@ export const FACES = {
   bored: { eyes: 'bored', mouth: 'bored', fx: { eyes: 'fx-glancedown', mouth: 'fx-nudge' } },
   sick: { eyes: 'sick', mouth: 'sick', fx: { eyes: 'fx-roll', mouth: 'fx-tremble' } },
   confused: { eyes: 'confused', mouth: 'confused', fx: { eyes: 'fx-roll', mouth: 'fx-nudge' } },
-  insecure: { eyes: 'insecure', mouth: 'insecure', fx: { eyes: 'fx-shrinkface', mouth: 'fx-shrinkface' } },
+  insecure: { eyes: 'insecure', mouth: 'insecure', fx: { eyes: 'fx-glancedown', mouth: 'fx-shrinkface' } },
   stressed: { eyes: 'stressed', mouth: 'stressed', fx: { eyes: 'fx-tense', mouth: 'fx-clench' } },
   angry: { eyes: 'angry', mouth: 'angry', fx: { eyes: 'fx-tense', mouth: 'fx-clench' } },
-  discouraged: { eyes: 'discouraged', mouth: 'discouraged', fx: { eyes: 'fx-droop', mouth: 'fx-fall' } },
+  discouraged: { eyes: 'discouraged', mouth: 'discouraged', fx: { eyes: 'fx-widen', mouth: 'fx-fall' } },
   sad: { eyes: 'sad', mouth: 'sad', fx: { eyes: 'fx-cry', mouth: 'fx-fall' } },
   hurt: { eyes: 'hurt', mouth: 'hurt', fx: { eyes: 'fx-squeeze', mouth: 'fx-tremble' } },
   guilty: { eyes: 'guilty', mouth: 'guilty', fx: { eyes: 'fx-glancedown', mouth: 'fx-nudge' } },
