@@ -1,6 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { MOODS, moodById, motionOf, toggleMood } from '../lib/moods'
+import { REACTION_MS } from '../lib/bursts'
 import MoodGlyph from './MoodFace'
+import MoodBurst from './MoodBurst'
 import { useT } from '../lib/i18n'
 
 /**
@@ -104,6 +106,33 @@ export default function MoodBoard({ value, onChange }) {
    */
   const [beat, setBeat] = useState({ id: null, n: 0 })
 
+  /**
+   * LA REACTION FINIT AU MINUTEUR, PLUS SUR `animationend`.
+   *
+   *   "Where are the new emotions reactions?"
+   *
+   * Trois choses jouent sur une tape: le corps, le visage, et la bouffee de
+   * particules (MoodBurst). Attendre la fin de l'une coupait les autres: le
+   * corps de "Triste" finissait a 800 ms et la larme, qui tombe en 900,
+   * disparaissait en l'air. Et sous prefers-reduced-motion la bouffee n'est
+   * pas rendue du tout, donc l'attendre serait attendre pour toujours.
+   *
+   * Le minuteur est REACTION_MS, le plus long geste plus une marge, et le test
+   * verifie qu'aucune animation ne le depasse. `n` est compare pour qu'une
+   * deuxieme tape pendant la reaction ne se fasse pas couper par le minuteur
+   * de la premiere. Le nettoyage retire aussi le `will-change`: dix-huit tuiles
+   * marquees en permanence sont dix-huit couches que le compositeur garde
+   * pour rien.
+   */
+  useEffect(() => {
+    if (!beat.id) return undefined
+    const timer = setTimeout(
+      () => setBeat((b) => (b.n === beat.n ? { id: null, n: b.n } : b)),
+      REACTION_MS,
+    )
+    return () => clearTimeout(timer)
+  }, [beat])
+
   return (
     /**
      * ONE RUN, NO HEADINGS.
@@ -162,7 +191,9 @@ export default function MoodBoard({ value, onChange }) {
                   {/* A fixed box, not a fraction of the column. The glyphs have
                       to line up across rows whatever the label under them does. */}
                   <span
-                    className={`block h-14 w-14 shrink-0 transition-transform duration-200 ease-settle ${
+                    /* `relative`: la bouffee de particules est posee en absolu
+                       par-dessus cette boite et deborde de 20px tout autour. */
+                    className={`relative block h-14 w-14 shrink-0 transition-transform duration-200 ease-settle ${
                       selected ? 'scale-110' : 'group-hover:scale-105'
                     }`}
                     style={{
@@ -187,16 +218,13 @@ export default function MoodBoard({ value, onChange }) {
                       className={`mood-act block h-full w-full ${
                         beat.id === mood.id ? motionOf(mood.id) : ''
                       }`}
-                      /* Retiree a la fin, pour que la tuile revienne a un etat
-                         sans animation: c'est ce qui rend la suivante possible
-                         et ce qui evite de laisser dix-huit `will-change` en
-                         place sur une grille que plus personne ne touche. */
-                      onAnimationEnd={() =>
-                        setBeat((b) => (b.id === mood.id ? { id: null, n: b.n } : b))
-                      }
                     >
                       <MoodGlyph mood={mood} playing={beat.id === mood.id} />
                     </span>
+                    {/* La bouffee: ce qui sort du sticker. Montee a la tape,
+                        remontee par sa cle si on retape, retiree a la fin de
+                        la reaction par le minuteur ci-dessus. */}
+                    {beat.id === mood.id && <MoodBurst key={`k${beat.n}`} mood={mood.id} />}
                   </span>
                   {/* Selection is carried by the fill behind the label, not by
                       colour on the glyph, the glyph is already the mood's own
