@@ -243,9 +243,13 @@ ok(
  * mort. Verifie dans Chromium: une deuxieme tape ramene currentTime de 83 ms
  * a 0.
  *
- * LE NETTOYAGE SUR `animationend`. Sans lui la tuile garde sa classe et son
- * `will-change`, et dix-huit tuiles marquees en permanence sont dix-huit
- * couches que le compositeur garde pour rien.
+ * LE NETTOYAGE AU MINUTEUR. Il etait sur `animationend`, et trois animations
+ * jouent maintenant sur une tape (le corps, le visage, la bouffee): attendre
+ * la fin de l'une coupait les autres, et la bouffee n'existe pas du tout sous
+ * prefers-reduced-motion, donc l'attendre serait attendre pour toujours. Sans
+ * nettoyage du tout, la tuile garde sa classe et son `will-change`, et
+ * dix-huit tuiles marquees en permanence sont dix-huit couches que le
+ * compositeur garde pour rien.
  *
  * DEUX BOITES IMBRIQUEES. L'etat "choisi" est un `scale-110` en transition, le
  * geste est une animation: les deux ecrivent `transform`, et sur un seul
@@ -260,9 +264,12 @@ ok(
      /key=\{beat\.id === mood\.id \? `b\$\{beat\.n\}` : 'rest'\}/.test(board)
        && /setBeat\(\(b\) => \(\{ id: mood\.id, n: b\.n \+ 1 \}\)\)/.test(board),
      'sans key qui change, une deuxieme tape ne relance rien')
-  ok('et la classe est retiree a la fin',
-     /onAnimationEnd=\{\(\) =>/.test(board) && /\{ id: null, n: b\.n \}/.test(board),
+  ok('et la classe est retiree a la fin, au minuteur',
+     /setTimeout\(/.test(board) && /REACTION_MS/.test(board) && /\{ id: null, n: b\.n \}/.test(board)
+       && !/onAnimationEnd/.test(board),
      'sinon la tuile reste marquee, avec son will-change')
+  ok('une deuxieme tape n est pas coupee par le minuteur de la premiere',
+     /b\.n === beat\.n \? \{ id: null, n: b\.n \} : b/.test(board))
   ok('le geste et l etat choisi sont sur deux boites differentes',
      board.indexOf("selected ? 'scale-110'") < board.indexOf('mood-act'),
      'sur un seul element, l animation avalerait le grossissement')
@@ -277,6 +284,59 @@ ok(
   ok('les badges poses ailleurs dans l app ne bougent pas',
      !/mood-act|motionOf/.test(badges),
      'un geste qui part sans que personne ait touche est du bruit')
+}
+
+/**
+ * LA BOUFFEE, ET LE MINUTEUR QUI LA COUVRE.
+ *
+ *   "Where are the new emotions reactions?"
+ *
+ * Chaque humeur envoie quelque chose en l'air, chaque trajectoire nommee
+ * existe dans la feuille, rien ne depasse REACTION_MS (sinon la reaction est
+ * coupee en plein vol), et la bouffee disparait entierement pour qui a demande
+ * moins de mouvement.
+ */
+{
+  const { BURSTS, FLIGHTS, REACTION_MS, TINTS, burstOf } = await import('./bursts.js')
+  const ici3 = dirname(fileURLToPath(import.meta.url))
+  const css = readFileSync(join(ici3, '..', 'index.css'), 'utf8')
+  const board = readFileSync(join(ici3, '..', 'components', 'MoodBoard.jsx'), 'utf8')
+
+  ok('chaque humeur a une bouffee', MOOD_IDS.every((id) => burstOf(id).length > 0),
+     MOOD_IDS.filter((id) => burstOf(id).length === 0).join(', '))
+  ok('et aucune bouffee ne designe une humeur qui n existe pas',
+     Object.keys(BURSTS).every((id) => MOOD_IDS.includes(id)))
+  eq('une humeur inconnue n envoie rien', burstOf('wibble').length, 0)
+
+  const parts = Object.values(BURSTS).flat()
+  ok('chaque particule vole sur une trajectoire connue',
+     parts.every((p) => FLIGHTS.includes(p.fly)),
+     [...new Set(parts.filter((p) => !FLIGHTS.includes(p.fly)).map((p) => p.fly))].join(', '))
+  ok('et porte une couleur connue', parts.every((p) => p.tint in TINTS))
+  ok('chaque trajectoire est declaree dans la feuille, images et classe',
+     FLIGHTS.every((f) => css.includes(`@keyframes mp-${f} {`) && css.includes(`.mp-${f} { animation-name: mp-${f};`)),
+     FLIGHTS.filter((f) => !css.includes(`@keyframes mp-${f} {`)).join(', '))
+  ok('les particules partent au-dessus ou autour de la tete, jamais loin',
+     parts.every((p) => p.at[0] >= 18 && p.at[0] <= 78 && p.at[1] >= 8 && p.at[1] <= 52),
+     'la grille vit dans un panneau qui coupe ce qui depasse')
+
+  /* Rien ne dure plus longtemps que la reaction: le corps, le visage, la
+     bouffee et ses retards. Un geste plus long serait coupe en plein vol par
+     le minuteur. */
+  const durees = [...css.matchAll(/animation: (?:mood|fx)-[a-z-]+ (\d+)ms/g)].map((m) => Number(m[1]))
+  const bouffee = [...css.matchAll(/\.mp(?:-[a-z]+)? \{[^}]*animation-duration: (\d+)ms/g)].map((m) => Number(m[1]))
+  const retardMax = Math.max(...parts.map((p) => p.delay))
+  ok(`aucun geste ne depasse REACTION_MS (${Math.max(...durees)} <= ${REACTION_MS})`,
+     durees.length > 30 && Math.max(...durees) <= REACTION_MS)
+  ok(`ni aucune particule, retard compris (${Math.max(...bouffee) + retardMax} <= ${REACTION_MS})`,
+     bouffee.length > 0 && Math.max(...bouffee) + retardMax <= REACTION_MS + 400,
+     'une particule retardee finit apres la reaction si on ne compte pas son retard')
+  ok('la bouffee disparait pour qui a demande moins de mouvement',
+     /@media \(prefers-reduced-motion: reduce\) \{\s*\n\s*\.mood-burst \{\s*\n\s*display: none;/.test(css))
+  ok('la tuile la porte, remontee a chaque tape',
+     /<MoodBurst key=\{`k\$\{beat\.n\}`\} mood=\{mood\.id\} \/>/.test(board)
+       && /className=\{`relative block h-14 w-14/.test(board),
+     'sans `relative`, la bouffee se pose en absolu par rapport a la page')
 }
 
 console.log(`\n  ${pass} passed, ${fail} failed\n`)
