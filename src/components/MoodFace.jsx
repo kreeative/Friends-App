@@ -275,11 +275,16 @@ export const EYES = {
       <path d="M56.5 41.3C56.2 49.8667 69.8 49.8667 69.5 41.3L68.5 42.7C68.2 44.1333 57.8 44.1333 57.5 42.7Z" fill="#141216" stroke="none" />
     </>
   ),
-  /* Deux traits droits: le repos complet. */
+  /* Le repos: le meme U creux que les autres yeux fermes, mais le moins
+     profond de tous et pose un cran plus bas. La version d'avant etait une
+     lentille droite, et une lentille droite de 12 de large sur 4 d'epais est
+     une AMANDE: deux yeux plisses sans pupille au-dessus d'un grand sourire.
+     "Serene looks fucking scary." Oui. Un oeil ferme, dans ce style, a
+     toujours les bouts qui remontent; c'est ce qui le rend paisible. */
   rest: (
     <>
-      <path d="M31 44.3Q37 49.3 43 44.3L43 45.7Q37 40.7 31 45.7Z" fill="#141216" stroke="none" />
-      <path d="M57 44.3Q63 49.3 69 44.3L69 45.7Q63 40.7 57 45.7Z" fill="#141216" stroke="none" />
+      <path d="M30.5 42.3C30.2 49.6667 43.8 49.6667 43.5 42.3L42.5 43.7C42.2 43.9333 31.8 43.9333 31.5 43.7Z" fill="#141216" stroke="none" />
+      <path d="M56.5 42.3C56.2 49.6667 69.8 49.6667 69.5 42.3L68.5 43.7C68.2 43.9333 57.8 43.9333 57.5 43.7Z" fill="#141216" stroke="none" />
     </>
   ),
   /* Deux gros points. Le degre zero. */
