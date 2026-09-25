@@ -3997,9 +3997,19 @@
  *   - une vaguelette GLISSE d'une periode exacte (32 unites), donc elle finit
  *     la ou elle a commence et il n'y a rien a relacher apres.
  *
- * `--c-progress` et pas `--c-accent`: c'est le jeton des jauges partout
- * ailleurs (epargne, projets, enveloppes), bleu en theme mer quand le bouton
- * reste rose.
+ * L'EAU EST BLEUE, DANS LES DEUX THEMES.
+ *
+ *   "Le truc de l'eau c'est bien mais ca n'a qu'a etre bleu."
+ *
+ * Le liquide prenait `--c-progress`, le jeton des jauges, donc du rose en
+ * theme soleil. Une jauge d'epargne peut etre rose; de l'eau rose est une
+ * erreur de rendu. C'est donc un bleu fixe, comme les larmes des humeurs et
+ * comme le vert du "present cette semaine": un fait, pas un choix de theme.
+ *
+ * #178AD9 et pas un bleu plus clair: sur la piste (239,239,239 une fois
+ * composee) il fait 3,2:1, ce qu'un graphique doit tenir (1.4.11). Le bleu des
+ * larmes (#3AA7F5) est plus gai et ne tient que 2,3:1; il va sur un sticker
+ * de 56 px, pas sur une jauge qu'on lit.
  */
 .water-drop-track {
   fill: rgb(var(--c-ink) / 0.07);
@@ -4008,7 +4018,7 @@
   transition: transform 700ms cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 .water-drop-wave {
-  fill: rgb(var(--c-progress));
+  fill: #178AD9;
 }
 .water-drop-wave.is-slosh {
   animation: water-slosh 900ms ease-out;
