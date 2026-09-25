@@ -39,11 +39,14 @@
  */
 
 export const EYES = {
+  /* "Joyful should look crazy and excited." Deuxieme planche Higgsfield, meme
+     style, tracee comme la premiere: deux yeux fermes en arcs renverses (le
+     rire qui plisse), le droit plus haut que le gauche parce que tout le
+     visage penche de joie. La bouche est dans MOUTHS. */
   joyful: (
-    <g transform="translate(1.3 -1.2)">
-      <path fill="#FFFFFF" d="M33.1 57.0C23.8 54.7 20.6 42.0 27.8 35.8C30.6 33.3 37.1 30.9 35.4 32.9C32.0 36.9 33.4 43.1 38.2 45.2C44.1 47.9 50.2 42.2 47.3 36.8C46.8 35.9 49.1 35.6 50.6 36.4C51.2 36.7 51.6 36.5 53.2 35.1C55.2 33.3 58.6 31.9 61.2 31.9C62.6 31.9 62.6 31.9 61.2 33.4C58.8 35.9 58.5 39.3 60.5 42.5C63.3 47.0 70.3 47.1 73.0 42.6C73.9 41.2 74.2 41.6 74.2 44.3C74.2 58.0 55.9 62.4 50.0 50.1C49.0 48.2 49.0 48.2 48.0 50.1C45.1 55.5 38.8 58.4 33.1 57.0Z" />
-      <ellipse cx="40.6" cy="38.6" rx="7.2" ry="6.85" />
-      <ellipse cx="66.4" cy="38.7" rx="7.2" ry="7" />
+    <g transform="translate(0 4.2)">
+      <path d="M28.2 50.8C27.1 49.5 28.6 45.1 30.8 42.6C34.6 38.2 42.1 38.7 45.6 43.6C47.5 46.3 45.4 47.0 42.7 44.7C37.7 40.2 32.6 42.0 30.7 48.9C30.1 51.3 29.2 52.0 28.2 50.8Z" />
+      <path d="M51.3 43.4C50.9 42.5 51.7 39.5 52.8 37.7C56.1 32.0 63.2 31.4 67.8 36.4C70.4 39.2 68.9 41.1 66.2 38.5C61.4 33.8 56.0 35.2 54.1 41.6C53.4 43.8 51.8 44.8 51.3 43.4Z" />
     </g>
   ),
   energized: (
@@ -121,13 +124,13 @@ export const EYES = {
      yeux. Le rose est plein et non transparent, pour rester rose sur le corps
      orange comme sur n'importe quel autre. */
   insecure: (
-    <g>
-      <circle cx="37.5" cy="45" r="12" fill="#FFFFFF" />
-      <circle cx="62.5" cy="45" r="12" fill="#FFFFFF" />
-      <circle cx="33" cy="50.2" r="6" />
-      <circle cx="58" cy="50.2" r="6" />
-      <ellipse cx="26" cy="58.5" rx="6.2" ry="3.2" fill="#F0508C" />
-      <ellipse cx="74" cy="58.5" rx="6.2" ry="3.2" fill="#F0508C" />
+    <g transform="translate(2.5 -5.3)">
+      <path fill="#FFFFFF" d="M35.6 61.7C35.0 61.5 34.7 61.4 35.0 61.4C35.9 61.3 36.9 59.0 36.9 57.0C36.9 50.9 30.4 47.0 26.6 50.7C25.3 52.0 25.0 51.6 25.3 48.9C26.5 38.7 38.5 34.9 45.2 42.5C46.9 44.5 46.9 44.5 47.4 42.9C49.0 38.0 56.9 35.3 62.3 37.6C74.4 43.0 69.5 61.6 56.4 60.3C54.9 60.2 54.9 60.2 55.9 59.1C60.8 54.3 53.8 44.6 47.9 48.2C45.7 49.6 45.1 52.0 46.1 55.2C47.0 58.3 39.7 62.8 35.6 61.7Z" />
+      <ellipse cx="30.8" cy="55.5" rx="5.85" ry="6" />
+      <ellipse cx="51.3" cy="53.8" rx="5.85" ry="6.2" />
+      {/* Les joues, dans le rose que la planche leur a donne. */}
+      <path fill="#FDADCE" d="M23.5 69.0C17.4 66.2 21.6 60.5 28.3 62.6C30.6 63.3 32.1 64.7 32.1 66.2C32.1 69.1 27.2 70.7 23.5 69.0Z" />
+      <path fill="#FDADCE" d="M65.1 64.8C63.7 63.6 63.8 62.0 65.4 60.3C69.8 55.7 77.9 57.6 74.9 62.6C73.2 65.4 67.3 66.7 65.1 64.8Z" />
     </g>
   ),
   stressed: (
@@ -149,17 +152,15 @@ export const EYES = {
      (voir MOUTHS.discouraged). Deux blancs ronds qui se touchent presque,
      pupilles un cran sous le centre. */
   discouraged: (
-    <g>
-      {/* Deux sourcils fins qui montent vers le milieu: c'est le trait qui
-          fait passer un oeil ecarquille de "surpris" a "inquiet". Les bouts
-          interieurs sont plus hauts que les exterieurs, et ils flottent a
-          cinq unites au-dessus des blancs. */}
-      <path d="M27.5 31.2Q34.75 33.45 42 27.7L42 29.3Q34.75 27.05 27.5 32.8Z" />
-      <path d="M72.5 31.2Q65.25 33.45 58 27.7L58 29.3Q65.25 27.05 72.5 32.8Z" />
-      <circle cx="37" cy="45" r="12.5" fill="#FFFFFF" />
-      <circle cx="63" cy="45" r="12.5" fill="#FFFFFF" />
-      <circle cx="37.5" cy="46.5" r="4.8" />
-      <circle cx="62.5" cy="46.5" r="4.8" />
+    <g transform="translate(0.3 -3.9)">
+      {/* Deux sourcils courts qui montent vers le milieu, deux yeux ronds et
+          separes avec la pupille petite et basse: le choc, inquiet. */}
+      <path d="M33.8 36.0C33.5 35.3 33.8 35.0 35.2 34.8C36.9 34.6 39.5 33.2 40.9 31.8C42.2 30.5 43.0 30.2 43.3 31.1C43.6 31.8 40.9 34.3 38.6 35.4C36.5 36.4 34.0 36.7 33.8 36.0Z" />
+      <path d="M63.5 35.7C60.7 34.7 57.1 31.7 57.5 30.7C57.8 30.0 58.6 30.2 59.6 31.3C60.6 32.5 63.5 34.1 65.2 34.4C67.2 34.8 67.6 36.1 65.6 36.1C65.1 36.1 64.2 35.9 63.5 35.7Z" />
+      <circle cx="38.7" cy="48.9" r="10.5" fill="#FFFFFF" />
+      <circle cx="60.6" cy="48.9" r="10.5" fill="#FFFFFF" />
+      <circle cx="41.8" cy="52" r="3.1" />
+      <circle cx="56.9" cy="52" r="3.1" />
     </g>
   ),
   sad: (
@@ -187,9 +188,15 @@ export const EYES = {
 }
 
 export const MOUTHS = {
+  /* Le rire: une bouche grande ouverte, penchee comme les yeux, un tiers du
+     visage, avec la langue dedans. Le trace avait la langue en TROU dans
+     l'encre; le trou est retire et la langue posee par-dessus, sinon un
+     filet de corps passe entre les deux la ou l'ellipse ne suit pas
+     exactement le bord du trou. */
   joyful: (
-    <g transform="translate(1.3 -1.2)">
-      <path d="M45.4 67.7C41.6 66.2 38.8 60.5 41.9 60.5C42.7 60.5 43.1 60.8 43.7 62.0C45.8 65.9 51.0 66.2 53.4 62.5C55.1 59.9 55.2 59.9 56.0 60.1C58.5 60.9 56.0 65.6 52.2 67.4C50.6 68.1 46.9 68.3 45.4 67.7Z" />
+    <g transform="translate(0 4.2)">
+      <path d="M46.9 66.8C40.6 65.3 33.5 57.5 36.1 54.9C36.7 54.2 37.7 53.9 45.4 51.5C48.4 50.5 53.7 48.7 57.1 47.4C66.1 43.9 67.4 44.1 67.4 49.1C67.4 59.7 56.6 69.1 46.9 66.8Z" />
+      <ellipse cx="52.6" cy="61.3" rx="6.5" ry="5" fill="#FDA6CF" />
     </g>
   ),
   energized: (
@@ -242,10 +249,10 @@ export const MOUTHS = {
       <path d="M42.4 65.8C41.2 64.2 43.6 62.4 46.4 63.0C48.4 63.4 49.8 63.2 51.4 62.3C54.4 60.6 57.6 61.2 58.6 63.2C59.4 64.8 57.6 65.8 56.2 64.6C54.8 63.4 53.2 63.6 51.4 64.7C49.0 66.1 46.6 66.2 44.6 65.4C43.6 65.0 43.0 66.6 42.4 65.8Z" />
     </g>
   ),
-  /* Timide: une toute petite bouche qui sourit a peine, 9 de large. */
+  /* Timide: une toute petite bouche serree, 7 de large. */
   insecure: (
-    <g>
-      <path d="M45.5 61.4Q50 65.4 54.5 61.4L54.5 62.6Q50 58.6 45.5 62.6Z" />
+    <g transform="translate(2.5 -5.3)">
+      <path d="M45.3 68.9C44.4 68.0 46.7 66.1 48.7 66.1C50.1 66.1 51.8 67.1 51.8 67.9C51.8 68.7 51.5 68.8 49.6 68.2C48.3 67.8 48.0 67.8 47.1 68.6C45.8 69.5 45.9 69.5 45.3 68.9Z" />
     </g>
   ),
   stressed: (
@@ -265,8 +272,8 @@ export const MOUTHS = {
      Le dome du haut est deux fois plus haut que le ventre du bas maintenant,
      et c'est ce rapport qui fait les coins qui tombent. */
   discouraged: (
-    <g>
-      <path d="M41.5 65.5C43.5 57.5 56.5 57.5 58.5 65.5C57 69.5 43 69.5 41.5 65.5Z" />
+    <g transform="translate(0.3 -3.9)">
+      <path d="M43.9 68.2C42.4 66.7 45.3 62.5 48.4 61.7C50.8 61.1 52.9 61.8 54.7 63.9C57.0 66.4 56.5 68.1 53.6 67.2C50.6 66.3 48.8 66.5 44.6 68.4C44.4 68.5 44.1 68.4 43.9 68.2Z" />
     </g>
   ),
   sad: (
