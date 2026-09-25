@@ -4,6 +4,8 @@ import { useT } from '../lib/i18n'
 import { toHm } from '../lib/reminders'
 import { useWaterToday } from '../lib/useWater'
 import { formatAmount, parseAmount, toUnit, unitLabel } from '../lib/units'
+import GearIcon from './GearIcon'
+import WaterDrop from './WaterDrop'
 
 /**
  * L'eau du jour, sur l'accueil, avec le bouton a portee de pouce.
@@ -27,41 +29,43 @@ import { formatAmount, parseAmount, toUnit, unitLabel } from '../lib/units'
  * Sinon c'est une carte de plus sur un tableau de bord, pour une
  * fonctionnalite que la personne n'a pas demandee. Le reglage reste la porte.
  *
- * LA BARRE DIT LA MEME CHOSE QUE LE CHIFFRE.
+ * LA GOUTTE DIT LA MEME CHOSE QUE LE CHIFFRE.
  *
- * La couleur n'est jamais le seul signal (1.4.1): "750 ml sur 2 L" est ecrit
- * au-dessus, donc la barre est une redite visuelle et pas l'information
+ * La couleur n'est jamais le seul signal (1.4.1): "250 ml sur 2,6 L" est
+ * ecrit a cote, donc la goutte est une redite visuelle et pas l'information
  * elle-meme.
  */
 
 /**
- * LA BARRE, REDESSINEE.
+ * LA CARTE, TROISIEME DESSIN.
  *
- *   "Can you improve the drink water bar as well?"
+ *   "I really don't like what I highlighted, and I don't really like the
+ *    water bar too."
  *
- * Avant: un filet de 8px, une rangee de pastilles en dessous qui repetait le
- * filet en pointille, et le chiffre en petit gris a droite du titre. Trois
- * rangees pour dire une chose, et la plus lisible des trois etait la moins
- * mise en avant.
+ * Ce qu'elle avait surligne: la phrase grise du bas, "2,4 L to go. Next
+ * reminder around 11:59. Settings", avec son lien souligne qui passait a la
+ * ligne. Trois informations dans une phrase de journal, sous les boutons, la
+ * ou l'oeil finit sa lecture: on quittait la carte sur une note
+ * administrative.
  *
- * Maintenant: UNE jauge de 14px, decoupee en autant de cases que de
- * contenances quand ca se compte d'un coup d'oeil (de 4 a 16), pleine d'un
- * seul tenant sinon. La case en cours se remplit en proportion, donc la
- * jauge dit a la fois "combien" et "ou j'en suis dans ce verre-ci". Les
- * pastilles n'ont plus rien a dire et sont parties.
+ * Et la barre a cases: 2,6 L par 250 ml font onze cases de 236 ml, donc un
+ * verre remplissait une case et six pour cent de la suivante. Une jauge qui
+ * a l'air fausse quand on vient de faire le geste juste n'est pas une jauge.
  *
- * Et le chiffre est devenu LE chiffre: la quantite bue en grand, la cible en
- * petit a cote, comme un compteur. C'est ce qu'on vient lire.
+ * MAINTENANT
  *
- * DEUX MOUVEMENTS, PETITS, ET SEULEMENT QUAND ON A BU.
+ *   - la phrase est partie. Le prochain rappel est un mot dans l'en-tete, a
+ *     droite du titre ("Next at 11:59"), et les reglages sont l'engrenage a
+ *     cote, le meme que sur le profil. Ce qu'il reste a boire se lit dans
+ *     "250 ml / sur 2,6 L", qui etait deja la;
+ *   - la barre est une GOUTTE qui se remplit (WaterDrop). Le niveau est la
+ *     quantite, il n'y a rien a compter, et elle se lit "eau" avant le titre;
+ *   - le chiffre a grossi d'un cran pour tenir tete a la goutte, et "Annuler"
+ *     est monte a cote de lui: il defait ce chiffre-la, et la rangee des
+ *     boutons ne passe plus a la ligne sur un iPhone.
  *
- *   - le chiffre ROULE de l'ancienne valeur a la nouvelle en 480ms, plutot que
- *     de sauter: on voit ce que le geste a ajoute;
- *   - un reflet traverse la jauge une fois, de gauche a droite. C'est l'eau
- *     qui bouge, et ca dure 650ms.
- *
- * Les deux s'eteignent sous prefers-reduced-motion. La largeur de la jauge
- * garde sa transition de 500ms, qui existait deja.
+ * Quand on boit: le chiffre roule (useRolled), l'eau monte, et une vaguelette
+ * glisse. Les trois s'eteignent sous prefers-reduced-motion.
  */
 
 /**
@@ -112,9 +116,8 @@ export default function WaterToday() {
      contenance; ceci est pour les fois ou ce n'est pas ca. */
   const [other, setOther] = useState(false)
   const [amount, setAmount] = useState('')
-  /* Compte les gestes "j'ai bu". Sert de cle au reflet qui traverse la jauge:
-     une cle qui change remonte l'element, donc l'animation repart du debut a
-     chaque tap au lieu de rester bloquee a sa fin. */
+  /* Compte les gestes "j'ai bu". C'est la cle de la vaguelette: une cle qui
+     change remonte l'element, donc elle repart a chaque tap. */
   const [pours, setPours] = useState(0)
   const rolled = useRolled(drunk)
 
@@ -151,20 +154,6 @@ export default function WaterToday() {
   const target = pref.water_target_ml
   const serving = pref.water_glass_ml
   const full = drunk >= target
-  const left = Math.max(0, target - drunk)
-  const pct = Math.round(Math.min(100, (drunk / target) * 100))
-
-  /**
-   * Les cases, seulement quand elles veulent dire quelque chose.
-   *
-   * Une case par contenance marche pour des verres de 250 ml: huit cases se
-   * comptent d'un coup d'oeil. Avec une bouteille de 40 oz et une cible de
-   * 2 L, ca fait DEUX cases, ce qui n'est plus une jauge, c'est un
-   * interrupteur. Au-dela de seize c'est l'inverse: des fentes que personne ne
-   * compte. Dans les deux cas la jauge reste d'un seul tenant.
-   */
-  const segments = glasses >= 4 && glasses <= 16 ? glasses : 1
-  const per = target / segments
 
   function pour(ml) {
     drink(ml)
@@ -185,6 +174,13 @@ export default function WaterToday() {
     total: formatAmount(target, unit, locale),
   })
 
+  /* Un mot dans l'en-tete, pas une phrase sous les boutons. */
+  const next = full
+    ? t('water.done_short')
+    : plan.nextMin !== null
+      ? t('water.next_short', { time: toHm(plan.nextMin) })
+      : t('water.none_left')
+
   return (
     <div className="pt-6">
       <div
@@ -196,51 +192,63 @@ export default function WaterToday() {
           lit ? 'ring-2 ring-accent ring-offset-2 ring-offset-transparent' : ''
         }`}
       >
-        <p className="eyebrow">{t('water.card')}</p>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <p className="eyebrow">{t('water.card')}</p>
+          {/* Le prochain rappel et l'engrenage forment UN groupe, pour qu'ils
+              passent a la ligne ensemble: en francais le titre est long, et
+              l'engrenage se retrouvait seul sous lui, colle a gauche. */}
+          <span className="ml-auto flex items-center gap-x-3">
+            <p className="text-small text-muted" data-hook="water-card-next">
+              {next}
+            </p>
+            {/* L'engrenage du profil, le meme glyphe: c'est la que l'eau se
+                regle, et une icone nommee vaut un mot souligne qui passe a la
+                ligne. Le nom est dans aria-label, pas dans la couleur. */}
+            <Link
+              to="/settings"
+              aria-label={t('water.settings_aria')}
+              data-hook="water-card-settings"
+              className="press -my-1.5 -mr-2 flex h-9 w-9 items-center justify-center rounded-pill text-muted hover:bg-ink/[0.06]"
+            >
+              <GearIcon className="h-[18px] w-[18px]" />
+            </Link>
+          </span>
+        </div>
 
-        {/* LE CHIFFRE, EN GRAND. Une quantite et pas un nombre de verres,
-            c'est toute la demande: "je ne bois pas de verre d'eau, j'ai une
-            bouteille de 40 oz". La phrase complete reste pour les lecteurs
-            d'ecran, en une seule fois et sans les valeurs intermediaires du
-            roulement, qui sont un effet et pas une information. */}
-        <p className="mt-1 flex flex-wrap items-baseline gap-x-2" data-hook="water-card-count">
-          <span className="sr-only" aria-live="polite">
-            {sentence}
-          </span>
-          <span aria-hidden="true" className="text-h2 font-semibold tabular-nums text-ink" data-hook="water-card-done">
-            {formatAmount(rolled, unit, locale)}
-          </span>
-          <span aria-hidden="true" className="text-small text-muted">
-            {t('water.of', { total: formatAmount(target, unit, locale) })}
-          </span>
-        </p>
+        <div className="mt-3 flex items-center gap-4">
+          <WaterDrop level={drunk / target} pours={pours} />
 
-        {/* LA JAUGE. Elle lit une quantite et pas un compte, donc elle marche
-            aussi bien pour huit verres que pour une bouteille et demie.
-            aria-hidden: la phrase au-dessus le dit deja en mots. */}
-        <div
-          aria-hidden="true"
-          className="water-track mt-3"
-          data-hook="water-bar"
-          data-pct={pct}
-          data-segments={segments}
-        >
-          {Array.from({ length: segments }, (_, i) => {
-            const fill = Math.max(0, Math.min(1, (drunk - i * per) / per))
-            return (
-              <span
-                key={i}
-                className="water-seg"
-                data-hook="water-seg"
-                data-fill={fill >= 1 ? 'full' : fill > 0 ? 'part' : 'none'}
-              >
-                <span className="water-fill" style={{ width: `${fill * 100}%` }} />
-              </span>
-            )
-          })}
-          {/* Le reflet qui traverse quand on vient de boire. Remonte a chaque
-              geste par sa cle, donc il repart a chaque fois. */}
-          {pours > 0 && <span key={pours} className="water-sweep" data-hook="water-sweep" />}
+          {/* LE CHIFFRE, EN GRAND. Une quantite et pas un nombre de verres,
+              c'est toute la demande: "je ne bois pas de verre d'eau, j'ai une
+              bouteille de 40 oz". La phrase complete reste pour les lecteurs
+              d'ecran, en une seule fois et sans les valeurs intermediaires du
+              roulement, qui sont un effet et pas une information. */}
+          <p className="min-w-0 flex-1" data-hook="water-card-count">
+            <span className="sr-only" aria-live="polite">
+              {sentence}
+            </span>
+            <span
+              aria-hidden="true"
+              className="block text-h1 font-semibold tabular-nums leading-none text-ink"
+              data-hook="water-card-done"
+            >
+              {formatAmount(rolled, unit, locale)}
+            </span>
+            <span aria-hidden="true" className="mt-1.5 block text-small text-muted">
+              {t('water.of', { total: formatAmount(target, unit, locale) })}
+            </span>
+          </p>
+
+          {drunk > 0 && (
+            <button
+              type="button"
+              onClick={undo}
+              data-hook="water-card-undo"
+              className="press self-start rounded-pill px-3 py-1.5 text-small font-semibold text-muted hover:bg-ink/[0.06]"
+            >
+              {t('remind.undo')}
+            </button>
+          )}
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -264,16 +272,6 @@ export default function WaterToday() {
           >
             {t('remind.other')}
           </button>
-          {drunk > 0 && (
-            <button
-              type="button"
-              onClick={undo}
-              data-hook="water-card-undo"
-              className="press rounded-pill px-4 py-2 text-small font-semibold text-muted hover:bg-ink/[0.06]"
-            >
-              {t('remind.undo')}
-            </button>
-          )}
         </div>
 
         {/**
@@ -327,25 +325,6 @@ export default function WaterToday() {
             </button>
           </form>
         )}
-
-        {/* Une ligne, et une seule: quand arrive le prochain, ou que c'est
-            fini. Le raisonnement complet (le rythme, le retard) reste dans les
-            reglages, ou on regle; ici on note. */}
-        <p className="mt-3 text-small text-muted" data-hook="water-card-next">
-          {full ? (
-            t('water.full')
-          ) : (
-            <>
-              {/* Ce qu'il RESTE, en toutes lettres. C'est la soustraction qui
-                  se faisait a la calculatrice. */}
-              {t('water.left', { amount: formatAmount(left, unit, locale) })}{' '}
-              {plan.nextMin !== null ? t('water.next_at', { time: toHm(plan.nextMin) }) : t('water.none_left')}
-            </>
-          )}{' '}
-          <Link to="/settings" className="underline underline-offset-4">
-            {t('water.settings')}
-          </Link>
-        </p>
       </div>
     </div>
   )
