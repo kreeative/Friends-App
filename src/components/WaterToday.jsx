@@ -27,11 +27,81 @@ import { formatAmount, parseAmount, toUnit, unitLabel } from '../lib/units'
  * Sinon c'est une carte de plus sur un tableau de bord, pour une
  * fonctionnalite que la personne n'a pas demandee. Le reglage reste la porte.
  *
- * LES PASTILLES DISENT LA MEME CHOSE QUE LE CHIFFRE.
+ * LA BARRE DIT LA MEME CHOSE QUE LE CHIFFRE.
  *
- * La couleur n'est jamais le seul signal (1.4.1): "3 sur 12" est ecrit a cote,
- * donc les pastilles sont une redite visuelle et pas l'information elle-meme.
+ * La couleur n'est jamais le seul signal (1.4.1): "750 ml sur 2 L" est ecrit
+ * au-dessus, donc la barre est une redite visuelle et pas l'information
+ * elle-meme.
  */
+
+/**
+ * LA BARRE, REDESSINEE.
+ *
+ *   "Can you improve the drink water bar as well?"
+ *
+ * Avant: un filet de 8px, une rangee de pastilles en dessous qui repetait le
+ * filet en pointille, et le chiffre en petit gris a droite du titre. Trois
+ * rangees pour dire une chose, et la plus lisible des trois etait la moins
+ * mise en avant.
+ *
+ * Maintenant: UNE jauge de 14px, decoupee en autant de cases que de
+ * contenances quand ca se compte d'un coup d'oeil (de 4 a 16), pleine d'un
+ * seul tenant sinon. La case en cours se remplit en proportion, donc la
+ * jauge dit a la fois "combien" et "ou j'en suis dans ce verre-ci". Les
+ * pastilles n'ont plus rien a dire et sont parties.
+ *
+ * Et le chiffre est devenu LE chiffre: la quantite bue en grand, la cible en
+ * petit a cote, comme un compteur. C'est ce qu'on vient lire.
+ *
+ * DEUX MOUVEMENTS, PETITS, ET SEULEMENT QUAND ON A BU.
+ *
+ *   - le chiffre ROULE de l'ancienne valeur a la nouvelle en 480ms, plutot que
+ *     de sauter: on voit ce que le geste a ajoute;
+ *   - un reflet traverse la jauge une fois, de gauche a droite. C'est l'eau
+ *     qui bouge, et ca dure 650ms.
+ *
+ * Les deux s'eteignent sous prefers-reduced-motion. La largeur de la jauge
+ * garde sa transition de 500ms, qui existait deja.
+ */
+
+/**
+ * Un nombre qui roule vers sa valeur au lieu de sauter.
+ *
+ * Part de ce qui est AFFICHE et pas de la valeur precedente: deux taps
+ * rapproches relancent le roulement depuis la position en cours, sans saut en
+ * arriere. Sous prefers-reduced-motion, le nombre change d'un coup.
+ */
+function useRolled(value, ms = 480) {
+  const [shown, setShown] = useState(value)
+  const at = useRef(value)
+
+  useEffect(() => {
+    const start = at.current
+    if (start === value) return undefined
+    const still =
+      typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (still) {
+      at.current = value
+      setShown(value)
+      return undefined
+    }
+    const t0 = performance.now()
+    let raf = 0
+    const tick = (now) => {
+      const p = Math.min(1, (now - t0) / ms)
+      const eased = 1 - (1 - p) ** 3
+      const v = Math.round(start + (value - start) * eased)
+      at.current = v
+      setShown(v)
+      if (p < 1) raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [value, ms])
+
+  return shown
+}
+
 export default function WaterToday() {
   const { t, locale } = useT()
   const { loading, pending, pref, glasses, done, drunk, plan, drink, undo } = useWaterToday()
@@ -42,6 +112,11 @@ export default function WaterToday() {
      contenance; ceci est pour les fois ou ce n'est pas ca. */
   const [other, setOther] = useState(false)
   const [amount, setAmount] = useState('')
+  /* Compte les gestes "j'ai bu". Sert de cle au reflet qui traverse la jauge:
+     une cle qui change remonte l'element, donc l'animation repart du debut a
+     chaque tap au lieu de rester bloquee a sa fin. */
+  const [pours, setPours] = useState(0)
+  const rolled = useRolled(drunk)
 
   /**
    * La notification atterrit ICI, et le dit.
@@ -77,29 +152,38 @@ export default function WaterToday() {
   const serving = pref.water_glass_ml
   const full = drunk >= target
   const left = Math.max(0, target - drunk)
+  const pct = Math.round(Math.min(100, (drunk / target) * 100))
 
   /**
-   * Les pastilles, seulement quand elles veulent dire quelque chose.
+   * Les cases, seulement quand elles veulent dire quelque chose.
    *
-   * Une pastille par contenance marche pour des verres de 250 ml: huit
-   * pastilles se comptent d'un coup d'oeil. Avec une bouteille de 40 oz et une
-   * cible de 2 L, ca fait DEUX pastilles, ce qui n'est plus une jauge, c'est
-   * un interrupteur. Au-dela de seize c'est l'inverse: un nuage de points que
-   * personne ne compte.
-   *
-   * Dans les deux cas la barre dit mieux la meme chose, et le chiffre au-dessus
-   * la dit en toutes lettres, donc la couleur n'est jamais le seul signal.
+   * Une case par contenance marche pour des verres de 250 ml: huit cases se
+   * comptent d'un coup d'oeil. Avec une bouteille de 40 oz et une cible de
+   * 2 L, ca fait DEUX cases, ce qui n'est plus une jauge, c'est un
+   * interrupteur. Au-dela de seize c'est l'inverse: des fentes que personne ne
+   * compte. Dans les deux cas la jauge reste d'un seul tenant.
    */
-  const pips = glasses >= 4 && glasses <= 16
+  const segments = glasses >= 4 && glasses <= 16 ? glasses : 1
+  const per = target / segments
+
+  function pour(ml) {
+    drink(ml)
+    setPours((n) => n + 1)
+  }
 
   function addOther(e) {
     e.preventDefault()
     const ml = parseAmount(amount, unit)
     if (!ml) return
-    drink(ml)
+    pour(ml)
     setAmount('')
     setOther(false)
   }
+
+  const sentence = t('remind.today', {
+    done: formatAmount(drunk, unit, locale),
+    total: formatAmount(target, unit, locale),
+  })
 
   return (
     <div className="pt-6">
@@ -112,46 +196,52 @@ export default function WaterToday() {
           lit ? 'ring-2 ring-accent ring-offset-2 ring-offset-transparent' : ''
         }`}
       >
-        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-          <p className="eyebrow">{t('water.card')}</p>
-          {/* UNE QUANTITE, PAS UN NOMBRE DE VERRES. C'est toute la demande:
-              "je ne bois pas de verre d'eau, j'ai une bouteille de 40 oz, donc
-              je ne suivais pas vraiment avec la notation en verres combien je
-              bois". */}
-          <p className="text-small text-muted" data-hook="water-card-count">
-            {t('remind.today', {
-              done: formatAmount(drunk, unit, locale),
-              total: formatAmount(target, unit, locale),
-            })}
-          </p>
-        </div>
+        <p className="eyebrow">{t('water.card')}</p>
 
-        {/* La barre, toujours. Elle lit une quantite et pas un compte, donc
-            elle marche aussi bien pour huit verres que pour une bouteille et
-            demie. aria-hidden: le chiffre au-dessus le dit deja en mots. */}
-        <div aria-hidden="true" className="mt-3 h-2 overflow-hidden rounded-pill bg-ink/[0.07]">
-          <div
-            data-hook="water-bar"
-            data-pct={Math.round(Math.min(100, (drunk / target) * 100))}
-            className="h-full rounded-pill bg-accent transition-[width] duration-500 ease-out"
-            style={{ width: `${Math.min(100, (drunk / target) * 100)}%` }}
-          />
-        </div>
+        {/* LE CHIFFRE, EN GRAND. Une quantite et pas un nombre de verres,
+            c'est toute la demande: "je ne bois pas de verre d'eau, j'ai une
+            bouteille de 40 oz". La phrase complete reste pour les lecteurs
+            d'ecran, en une seule fois et sans les valeurs intermediaires du
+            roulement, qui sont un effet et pas une information. */}
+        <p className="mt-1 flex flex-wrap items-baseline gap-x-2" data-hook="water-card-count">
+          <span className="sr-only" aria-live="polite">
+            {sentence}
+          </span>
+          <span aria-hidden="true" className="text-h2 font-semibold tabular-nums text-ink" data-hook="water-card-done">
+            {formatAmount(rolled, unit, locale)}
+          </span>
+          <span aria-hidden="true" className="text-small text-muted">
+            {t('water.of', { total: formatAmount(target, unit, locale) })}
+          </span>
+        </p>
 
-        {/* Les pastilles en plus, quand leur nombre se compte d'un coup
-            d'oeil. Voir `pips`. */}
-        {pips && (
-          <div aria-hidden="true" className="mt-3 flex flex-wrap gap-1.5">
-            {Array.from({ length: glasses }, (_, i) => (
+        {/* LA JAUGE. Elle lit une quantite et pas un compte, donc elle marche
+            aussi bien pour huit verres que pour une bouteille et demie.
+            aria-hidden: la phrase au-dessus le dit deja en mots. */}
+        <div
+          aria-hidden="true"
+          className="water-track mt-3"
+          data-hook="water-bar"
+          data-pct={pct}
+          data-segments={segments}
+        >
+          {Array.from({ length: segments }, (_, i) => {
+            const fill = Math.max(0, Math.min(1, (drunk - i * per) / per))
+            return (
               <span
                 key={i}
-                data-hook="water-pip"
-                data-filled={i < done ? 'yes' : 'no'}
-                className={`h-2.5 w-2.5 rounded-pill ${i < done ? 'bg-accent' : 'bg-ink/[0.14]'}`}
-              />
-            ))}
-          </div>
-        )}
+                className="water-seg"
+                data-hook="water-seg"
+                data-fill={fill >= 1 ? 'full' : fill > 0 ? 'part' : 'none'}
+              >
+                <span className="water-fill" style={{ width: `${fill * 100}%` }} />
+              </span>
+            )
+          })}
+          {/* Le reflet qui traverse quand on vient de boire. Remonte a chaque
+              geste par sa cle, donc il repart a chaque fois. */}
+          {pours > 0 && <span key={pours} className="water-sweep" data-hook="water-sweep" />}
+        </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-3">
           {/* Le bouton DIT ce qu'il ajoute. "J'ai bu un verre" demandait de se
@@ -159,7 +249,7 @@ export default function WaterToday() {
               et c'est le chiffre imprime sur la bouteille. */}
           <button
             type="button"
-            onClick={() => drink(serving)}
+            onClick={() => pour(serving)}
             data-hook="water-card-drink"
             className="goal-action press"
           >

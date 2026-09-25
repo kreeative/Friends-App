@@ -518,6 +518,7 @@ const STRINGS = {
        d'ecrire une duree dans toute l'application. */
     'water.every_m': '{m} min',
     'water.card': 'Water today',
+    'water.of': 'of {total}',
     'water.next_at': 'Next reminder around {time}.',
     'water.left': '{amount} to go.',
     'water.full': 'Target reached for today.',
@@ -2281,6 +2282,7 @@ const STRINGS = {
 
     'water.every_m': '{m} min',
     'water.card': 'Ton eau aujourd’hui',
+    'water.of': 'sur {total}',
     'water.next_at': 'Prochain rappel vers {time}.',
     'water.left': 'Il reste {amount}.',
     'water.full': 'Cible atteinte pour aujourd’hui.',
