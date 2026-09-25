@@ -145,6 +145,10 @@ ok(
   'the hashed bundle is cached forever',
   /immutable/.test(valueOf('/assets/(.*)', 'Cache-Control') || ''),
 )
+/* version.json is the file the app reads to learn a deploy went out. A cached
+   copy would say "nothing new" for as long as the cache lasts, which is the
+   exact failure it exists to end. */
+ok('version.json is never cached', /no-store/.test(valueOf('/version.json', 'Cache-Control') || ''))
 
 console.log(`\n  ${pass} passed, ${fail} failed\n`)
 process.exit(fail ? 1 : 0)
