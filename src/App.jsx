@@ -12,6 +12,7 @@ import SignIn from './pages/SignIn'
 import Start from './pages/Start'
 import Dashboard from './pages/Dashboard'
 import Seo from './components/Seo'
+import UpdateWatch from './components/UpdateWatch'
 import Wordmark from './components/Wordmark'
 import Welcome from './pages/Welcome'
 import Setup from './pages/Setup'
@@ -502,6 +503,10 @@ export default function App() {
                * Google not to index them. See src/lib/seo.js.
                */}
               <Seo />
+              {/* Au-dessus de toutes les routes aussi, et pour la meme raison:
+                  l'application installee se reveille la ou on l'a laissee, et
+                  c'est ici qu'on regarde si le serveur a avance entre-temps. */}
+              <UpdateWatch />
               {/**
                * The legal routes sit above the auth gate: nobody can be asked
                * to accept terms they are not allowed to read until after

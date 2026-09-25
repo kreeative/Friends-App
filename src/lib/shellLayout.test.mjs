@@ -4385,5 +4385,51 @@ ok(
      'une keyframe immobile avec `both` laisserait les visages invisibles')
 }
 
+/* --- l application se met a jour quand on y revient --------------------- */
+/**
+ *   "Where is the period thing, I don't see it, did you publish it?" (quatre
+ *   fois), puis "Okay now update the website app."
+ *
+ * Le deploiement etait passe a chaque fois. C'est l'application installee qui
+ * tournait encore sur l'ancien paquet, parce que rien ne la rechargeait. Ce
+ * qui est epingle ici: le paquet connait son numero, le serveur publie le
+ * sien, et la comparaison se fait au RETOUR, jamais au milieu d'un geste.
+ */
+{
+  const cfg = read('vite.config.js')
+  const watch = read('src/components/UpdateWatch.jsx')
+  const app = read('src/App.jsx')
+
+  ok('le paquet porte un numero de construction',
+     /define: \{ __BUILD_ID__: JSON\.stringify\(build\) \}/.test(cfg))
+  ok('et le serveur publie le sien dans version.json, emis par la construction',
+     /fileName: 'version\.json'/.test(cfg) && /JSON\.stringify\(\{ build \}\)/.test(cfg),
+     'un fichier pose a la main dans public/ dirait "rien de neuf" pour toujours')
+  ok('sur Vercel le numero est le commit',
+     /VERCEL_GIT_COMMIT_SHA/.test(cfg))
+  ok('la lecture ne passe jamais par un cache',
+     /fetcher\('\/version\.json', \{ cache: 'no-store'/.test(watch))
+  ok('le retour sur l application recharge, la minuterie previent seulement',
+     /const retour = \(\) => verifier\(true\)/.test(watch)
+       && /const minuterie = \(\) => verifier\(false\)/.test(watch)
+       && /if \(!auto \|\| typing\(\)\) \{\s*\n\s*setReady\(true\)\s*\n\s*return\s*\n\s*\}\s*\n\s*window\.location\.reload\(\)/.test(watch),
+     'recharger au milieu d une session perd ce qu on etait en train de faire')
+  ok('et jamais sous les doigts de quelqu un qui ecrit',
+     /export function typing\(/.test(watch) && /TEXTAREA/.test(watch) && /isContentEditable/.test(watch))
+  ok('deux evenements pour un aller-retour ne font qu une requete',
+     /Date\.now\(\) - lastCheck\.current < GUARD_MS/.test(watch) && /const GUARD_MS = 60000/.test(watch))
+  ok('les ecouteurs et la minuterie sont retires',
+     (watch.match(/removeEventListener\('(visibilitychange|focus)', retour\)/g) ?? []).length === 2
+       && /clearInterval\(timer\)/.test(watch))
+  ok('rien ne tourne en developpement',
+     /if \(BUILD === 'dev'\) return undefined/.test(watch))
+  ok('le numero courant est lisible dans le DOM',
+     /document\.documentElement\.dataset\.build = BUILD/.test(watch),
+     'pour qu un rapport de bug dise sur quelle version il a ete pris')
+  ok('la pastille est accrochee par data-hook et la veille est montee au-dessus des routes',
+     /data-hook="update-ready"/.test(watch) && /data-hook="update-now"/.test(watch)
+       && /<UpdateWatch \/>/.test(app))
+}
+
 console.log(`\n  ${pass} passed, ${fail} failed\n`)
 process.exit(fail ? 1 : 0)
