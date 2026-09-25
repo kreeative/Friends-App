@@ -239,9 +239,18 @@ export default function GoalForm({ onDone, onCancel, initial = null, groupId = n
   const [stake, setStake] = useState(initial?.stake_text ?? '')
   const [remind, setRemind] = useState(initial?.remind ?? true)
   /* "HH:MM" pour l'input, converti en minutes dans goalRow. Vide veut dire
-     pas de notification horaire, seulement le recap. */
+     pas de notification horaire, seulement le recap.
+
+     UN NOUVEL OBJECTIF ARRIVE AVEC UNE HEURE.
+
+     Mesure en base le 25 septembre: 28 des 31 objectifs actifs avec la case
+     "me le rappeler" cochee n'avaient pas d'heure, donc aucun rappel n'est
+     jamais parti, et les gens ont dit "je ne recois pas les rappels". La case
+     cochee promet un rappel; un champ vide par defaut ne le tient pas. Neuf
+     heures est un defaut visible, et la croix du champ l'efface pour qui ne
+     veut que le recap. Un objectif existant garde ce qu'il a. */
   const [remindAt, setRemindAt] = useState(
-    initial?.remind_at_min != null ? toHm(initial.remind_at_min) : '',
+    initial?.remind_at_min != null ? toHm(initial.remind_at_min) : initial ? '' : '09:00',
   )
   /* "An option for the frequency of the notification?" En minutes, en
      chaine pour le select; vide veut dire une seule fois. */

@@ -308,8 +308,11 @@ const keysOf = (lang) => [...block(lang).matchAll(/^ {4}(\w+):/gm)].map((m) => m
      /smallPrint/.test(tpl) && /\$\{esc\(smallPrint\)\}/.test(tpl))
   ok('and no longer says it in English in the markup',
      !tpl.includes('You get at most two of these'))
+  /* Six since the reminder fallback: digest, nudge, birthday, group goal,
+     cycle, and the goal-or-event reminder that goes by email when no phone
+     took the push. A seventh send that forgets its language fails here. */
   ok('so every send passes a language to the shell',
-     (src.match(/loc: who\.loc/g) ?? []).length === 5,
+     (src.match(/loc: who\.loc/g) ?? []).length === 6,
      String((src.match(/loc: who\.loc/g) ?? []).length))
 
   /* Three days is the whole argument for the message existing: on the day

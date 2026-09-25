@@ -916,6 +916,11 @@ const COPY = {
        notification qui dit "encore 3" oblige a se rappeler ce que vaut un 3
        ici; "il reste 27 oz" ne demande rien. */
     remindWaterBody: (left: string) => `Il reste ${left} aujourd\u2019hui.`,
+    remindMailSubject: (what: string) => `Rappel : ${what}`,
+    remindMailPre: 'Un rappel que tu as demand\u00e9.',
+    remindMailFoot:
+      'Envoy\u00e9 par courriel parce qu\u2019aucun de tes t\u00e9l\u00e9phones n\u2019a les notifications activ\u00e9es pour Rich & Friends. Active-les dans les R\u00e9glages pour les recevoir sur ton \u00e9cran verrouill\u00e9.',
+    remindMailCta: 'Ouvrir Rich & Friends',
 
     cycleSubject: 'Un petit rappel',
     cycleTitle: 'Un petit rappel',
@@ -1000,6 +1005,11 @@ const COPY = {
       ([when, where].filter(Boolean).join(' \u00b7 ') || 'Now is the time.'),
     remindWaterTitle: 'Drink some water',
     remindWaterBody: (left: string) => `${left} to go today.`,
+    remindMailSubject: (what: string) => `Reminder: ${what}`,
+    remindMailPre: 'A reminder you asked for.',
+    remindMailFoot:
+      'Sent by email because no phone of yours has notifications turned on for Rich & Friends. Turn them on in Settings to get these on your lock screen instead.',
+    remindMailCta: 'Open Rich & Friends',
 
     cycleSubject: 'A small heads-up',
     cycleTitle: 'A small heads-up',
@@ -1993,7 +2003,55 @@ async function sendGoalReminders(from: string, to: string) {
       tag: `goal-${row.goal_id}-${row.on_day}`,
     })
     if (out.delivered > 0) tally.remindGoal += 1
+    else if (
+      await mailReminder(row.user_id, c, String(row.commitment).slice(0, 80), [
+        { kind: 'lead', text: String(row.commitment) },
+        { kind: 'text', text: c.remindGoalBody(row.trigger_when, row.trigger_where, Number(row.slot_n) > 0) },
+        { kind: 'button', label: c.remindMailCta, href: `${SITE}/goals` },
+      ])
+    ) {
+      tally.remindGoal += 1
+    }
   }
+}
+
+/**
+ * Le courriel quand aucun telephone n'a recu le push.
+ *
+ * MESURE EN BASE LE 25 SEPTEMBRE: 18 personnes sur 28 n'ont aucun appareil
+ * abonne au push. Sur iPhone il faut ajouter l'application a l'ecran
+ * d'accueil PUIS autoriser les notifications, et la plupart ne l'ont pas fait.
+ * Les rappels d'objectif et d'agenda ne partaient que par push, donc pour ces
+ * personnes un rappel demande n'arrivait nulle part, sans trace: la
+ * reclamation etait posee, le compteur disait "0 appareil", et c'etait tout.
+ * Rapporte tel quel: "les gens disent qu'ils ne recoivent pas les rappels".
+ *
+ * Donc: push d'abord, et si rien n'a ete livre (aucun appareil, ou tous
+ * refuses), le meme rappel part par courriel, si la personne n'a pas coupe le
+ * courriel dans les reglages. Pas les deux a la fois: un rappel qui arrive
+ * deux fois se lit comme une panne.
+ *
+ * L'eau n'est pas concernee, et c'est voulu: un courriel toutes les heures
+ * pour boire un verre serait du spam, et l'ecran des reglages dit deja que
+ * l'eau est "push seulement".
+ */
+async function mailReminder(
+  userId: string,
+  c: (typeof COPY)[Loc],
+  what: string,
+  blocks: Block[],
+): Promise<boolean> {
+  if (!(await channelsFor(userId)).email) return false
+  const who = await recipient(userId)
+  if (!who) return false
+  const sent = await send(who.to, c.remindMailSubject(what), {
+    title: what,
+    preheader: c.remindMailPre,
+    blocks,
+    footnote: c.remindMailFoot,
+    loc: who.loc,
+  })
+  return sent === 'sent'
 }
 
 /**
@@ -2066,6 +2124,15 @@ async function sendEventReminders(from: string, to: string) {
       tag: `event-${row.ref}`,
     })
     if (out.delivered > 0) tally.remindEvent += 1
+    else if (
+      await mailReminder(row.user_id, c, row.title, [
+        { kind: 'lead', text: row.title },
+        { kind: 'text', text: row.location ? c.remindEventAt(hhmm, row.location) : c.remindEvent(hhmm) },
+        { kind: 'button', label: c.remindMailCta, href: `${SITE}/calendrier` },
+      ])
+    ) {
+      tally.remindEvent += 1
+    }
   }
 }
 
