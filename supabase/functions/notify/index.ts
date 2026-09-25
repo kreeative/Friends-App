@@ -882,7 +882,22 @@ async function settle(
   await release(userId, cycleId, kind)
 }
 
+/**
+ * COUPE LE 25 SEPTEMBRE, PARTOUT ET POUR DE BON.
+ *
+ * "Delete this kind of notification everywhere ever, no one's looking at it",
+ * avec une capture de l'ecran verrouille: "Check-in opens tonight" empile
+ * au-dessus des rappels d'eau, a 3 h du matin pour les gens en Europe. Le
+ * push et le courriel partaient tous les deux; plus aucun des deux ne part.
+ *
+ * Le corps de la fonction reste pour que les gardes des tests, qui lisent ce
+ * fichier comme du texte, continuent de decrire ce que ferait le message s'il
+ * etait remis. Le remettre, c'est effacer le return ci-dessous.
+ */
+const DIGEST_OFF = true
+
 async function sendDigests() {
+  if (DIGEST_OFF) return
   // Cycles opening in the next three hours.
   const { data: cycles } = await supabase
     .from('cycles')
