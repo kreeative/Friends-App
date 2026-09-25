@@ -4431,5 +4431,49 @@ ok(
        && /<UpdateWatch \/>/.test(app))
 }
 
+/* --- l eau est une goutte, pas une barre --------------------------------- */
+/**
+ *   "I really don't like what I highlighted, and I don't really like the
+ *    water bar too."
+ *
+ * Surligne: la phrase grise du bas avec son lien souligne. Et la barre a
+ * cases, qui a 2,6 L par 250 ml faisait onze cases de 236 ml, donc un verre
+ * remplissait une case et six pour cent de la suivante. Ce qui est epingle:
+ * la goutte, le prochain rappel dans l'en-tete, l'engrenage nomme, et la
+ * phrase pour le lecteur d'ecran qui reste entiere.
+ */
+{
+  const card = read('src/components/WaterToday.jsx')
+  const drop = read('src/components/WaterDrop.jsx')
+  const css = read('src/index.css')
+
+  ok('la carte dessine une goutte et plus aucune barre',
+     /<WaterDrop level=\{drunk \/ target\} pours=\{pours\} \/>/.test(card)
+       && !/water-seg|water-bar|water-pip|water-sweep/.test(card))
+  ok('la goutte se remplit par le bas, et une goutte vide est vide',
+     /export function liquidOffset\(level\)/.test(drop) && /p === 0 \? 78 : 68 - 70 \* p/.test(drop),
+     'sans le cas zero, la crete de la vague laisse un fil rose au fond')
+  ok('le liquide est le jeton des jauges, pas l accent',
+     /\.water-drop-wave \{\s*\n\s*fill: rgb\(var\(--c-progress\)\);/.test(css))
+  ok('la phrase du bas est partie: le prochain rappel est un mot dans l en-tete',
+     !/water\.left/.test(card) && /water\.next_short/.test(card) && /water\.done_short/.test(card))
+  ok('et les reglages sont un engrenage nomme, pas un mot souligne',
+     /<GearIcon/.test(card) && /aria-label=\{t\('water\.settings_aria'\)\}/.test(card)
+       && !/underline/.test(card))
+  ok('le prochain rappel et l engrenage passent a la ligne ensemble',
+     /<span className="ml-auto flex items-center gap-x-3">/.test(card),
+     'en francais le titre est long et l engrenage se retrouvait seul sous lui')
+  ok('la phrase complete reste pour le lecteur d ecran, une seule fois',
+     /className="sr-only" aria-live="polite"/.test(card) && /remind\.today/.test(card))
+  ok('la vaguelette repart a chaque gorgee',
+     /key=\{pours\}/.test(drop) && /is-slosh/.test(drop))
+  ok('et tout s eteint sous prefers-reduced-motion',
+     /\.water-drop-liquid \{\s*\n\s*transition: none;/.test(css)
+       && /\.water-drop-wave\.is-slosh \{\s*\n\s*animation: none;/.test(css))
+  ok('l engrenage du profil est le meme composant',
+     /import GearIcon from '\.\.\/components\/GearIcon'/.test(read('src/pages/Me.jsx'))
+       && !/function GearIcon\(\)/.test(read('src/pages/Me.jsx')))
+}
+
 console.log(`\n  ${pass} passed, ${fail} failed\n`)
 process.exit(fail ? 1 : 0)

@@ -525,6 +525,9 @@ const STRINGS = {
     'water.full': 'Target reached for today.',
     'water.none_left': 'Nothing else planned today.',
     'water.settings': 'Settings',
+    'water.settings_aria': 'Water settings',
+    'water.next_short': 'Next at {time}',
+    'water.done_short': 'Done for today',
     'water.every_h': '{h} h',
     'water.every_hm': '{h} h {m}',
 
@@ -2290,6 +2293,9 @@ const STRINGS = {
     'water.full': 'Cible atteinte pour aujourd’hui.',
     'water.none_left': 'Rien d’autre de prévu aujourd’hui.',
     'water.settings': 'Réglages',
+    'water.settings_aria': 'Réglages de l’eau',
+    'water.next_short': 'Prochain à {time}',
+    'water.done_short': 'Fait pour aujourd’hui',
     'water.every_h': '{h} h',
     'water.every_hm': '{h} h {m}',
 
