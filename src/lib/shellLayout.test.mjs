@@ -4453,8 +4453,11 @@ ok(
   ok('la goutte se remplit par le bas, et une goutte vide est vide',
      /export function liquidOffset\(level\)/.test(drop) && /p === 0 \? 78 : 68 - 70 \* p/.test(drop),
      'sans le cas zero, la crete de la vague laisse un fil rose au fond')
-  ok('le liquide est le jeton des jauges, pas l accent',
-     /\.water-drop-wave \{\s*\n\s*fill: rgb\(var\(--c-progress\)\);/.test(css))
+  /* "Le truc de l'eau c'est bien mais ca n'a qu'a etre bleu." Un bleu fixe,
+     pas le jeton des jauges qui est rose en theme soleil: de l'eau rose est
+     une erreur de rendu. Et assez soutenu pour 3:1 sur la piste. */
+  ok('le liquide est bleu, dans les deux themes',
+     /\.water-drop-wave \{\s*\n\s*fill: #178AD9;/.test(css) && !/water-drop-wave \{\s*\n\s*fill: rgb\(var\(--c-progress/.test(css))
   ok('la phrase du bas est partie: le prochain rappel est un mot dans l en-tete',
      !/water\.left/.test(card) && /water\.next_short/.test(card) && /water\.done_short/.test(card))
   ok('et les reglages sont un engrenage nomme, pas un mot souligne',
