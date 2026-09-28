@@ -6,8 +6,7 @@ import { usePageMeta } from '../lib/pageMeta'
 import { CONTACT_EMAIL, DOC_ORDER, LEGAL } from '../legal/content'
 import DeleteAccount from '../components/DeleteAccount'
 import MoodShare from '../components/MoodShare'
-import CalConnect from '../components/CalConnect'
-import CalendarLinks from '../components/CalendarLinks'
+import CalendarHub from '../components/CalendarHub'
 import PushToggle from '../components/PushToggle'
 import ReminderSettings from '../components/ReminderSettings'
 import PurchaseCheck from '../components/PurchaseCheck'
@@ -142,34 +141,25 @@ export default function Account() {
       </Section>
 
       {/**
-       * LES RESERVATIONS CAL.COM.
+       * LES AUTRES CALENDRIERS: CAL.COM, GOOGLE, OUTLOOK, ET L'AUTRE SENS.
        *
        *   "So when people book me on my Kreeative cal booking pages it shows on
        *    my Rich and Friends calendar can you do that?"
+       *   "add an option into the app to link google calendar or outlook"
+       *   "keep the ui explanation simple a simple connect your other
+       *    calendar  cal.  connect.  xyz.  connect etc"
        *
        * Ici et pas sur le calendrier: c'est un branchement qu'on fait une fois
        * et qu'on ne regarde plus, et la page du calendrier vient de passer
        * trois PR a se debarrasser de tout ce qui n'est pas la grille.
        *
-       * Voisine du partage des humeurs, parce que les deux repondent a la meme
-       * question que les notifications: ce qui entre et ce qui sort de chez
-       * moi.
+       * UNE liste, et plus deux sections de paragraphes: un nom par ligne et
+       * "Brancher" a droite. Voisine du partage des humeurs, parce que les
+       * deux repondent a la meme question que les notifications: ce qui entre
+       * et ce qui sort de chez moi.
        */}
-      <Section title={t('cal.connect_section')}>
-        <CalConnect />
-      </Section>
-
-      {/**
-       * GOOGLE AGENDA ET OUTLOOK, DANS LES DEUX SENS.
-       *
-       *   "add an option into the app to link google calendar or outlook"
-       *
-       * Juste sous Cal.com, parce que c'est la meme question (ce qui entre
-       * sur mon calendrier et ce qui en sort) posee a un autre service, et
-       * qu'on cherche les deux au meme endroit.
-       */}
-      <Section title={t('cal.links_section')}>
-        <CalendarLinks />
+      <Section title={t('cal.hub_section')}>
+        <CalendarHub />
       </Section>
 
       </div>
