@@ -756,6 +756,13 @@
     --c-ev-perso-deep: 46 139 99;
     --c-ev-sante-deep: 139 127 108;
     --c-ev-anniv-deep: 23 134 140;
+
+    /* La neuvieme, pour ce qui vient d'un Google Agenda ou d'un Outlook
+       branche. Un citron: aucune des huit n'est jaune-vert, et la plus
+       proche (menthe, 198 235 213) en est a 34. Le fonce tient 4,4:1 sur
+       blanc, mesure sur les pixels peints par la sonde des flux. */
+    --c-ev-ext: 234 240 200;         /* citron */
+    --c-ev-ext-deep: 112 126 36;
   }
 
   /**
@@ -864,6 +871,10 @@
     --c-ev-perso-deep: 46 139 87;
     --c-ev-sante-deep: 119 128 138;
     --c-ev-anniv-deep: 210 100 63;
+    /* Le meme citron que dans sun: ce theme n'a pas de jaune-vert non plus,
+       et la plus proche (menthe, 206 238 212) en est a 42. */
+    --c-ev-ext: 234 240 200;         /* citron */
+    --c-ev-ext-deep: 112 126 36;
 
     --c-bg: 240 249 255;     /* ice */
     --c-raised: 224 242 254; /* sky, the soft well inside a card */

@@ -503,13 +503,17 @@ eq('and excluding a different day leaves it alone', occurrencesOf({ ...once, exc
  * c'est le seul qui disparait quand le suivi n'est pas allume, donc le seul
  * dont la position dans la liste peut changer la longueur de la liste.
  */
-eq('six layers now, the bookings being the sixth', LAYERS,
-   ['scolaire', 'perso', 'objectifs', 'anniversaires', 'reservations', 'cycle'])
+eq('seven layers now, Google and Outlook being the seventh', LAYERS,
+   ['scolaire', 'perso', 'objectifs', 'anniversaires', 'reservations', 'externes', 'cycle'])
 ok('and every one has a dot colour', LAYERS.every((l) => LAYER_COLOUR[l]))
 /* La couche a besoin de sa categorie synthetique, sinon une reservation tombe
    dans 'perso' par le defaut de layerOf et la bascule "Reservations" ne
    retirerait rien du tout, en silence. */
 eq('a booking is on its own layer', layerOf({ category: 'reservation' }), 'reservations')
+/* Meme piege pour un evenement lu dans Google ou Outlook: sans sa categorie
+   synthetique il tomberait dans 'perso' et la bascule "Google & Outlook" ne
+   cacherait rien. */
+eq('an external event is on its own layer', layerOf({ category: 'externe' }), 'externes')
 
 /* The grouping, which is the whole reason layers and categories are separate
    lists. Three school categories collapse to one toggle and keep their own
