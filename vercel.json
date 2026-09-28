@@ -5,6 +5,10 @@
   "framework": "vite",
   "rewrites": [
     {
+      "source": "/cal/:token.ics",
+      "destination": "/api/ics?t=:token"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }

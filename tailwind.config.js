@@ -99,6 +99,8 @@ export default {
           'etude-deep': c('ev-etude-deep'), 'travail-deep': c('ev-travail-deep'),
           'evenement-deep': c('ev-evenement-deep'), 'perso-deep': c('ev-perso-deep'),
           'sante-deep': c('ev-sante-deep'), 'anniv-deep': c('ev-anniv-deep'),
+          /* Ce qui vient d'un Google Agenda ou d'un Outlook branche. */
+          ext: c('ev-ext'), 'ext-deep': c('ev-ext-deep'),
         },
       },
       fontFamily: {

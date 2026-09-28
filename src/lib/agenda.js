@@ -88,7 +88,14 @@ export const CATEGORIES = [
  * basculement est deja ecrit, deja persiste, et il vaut pour tous les
  * anniversaires d'un coup, le tien compris.
  */
-export const LAYERS = ['scolaire', 'perso', 'objectifs', 'anniversaires', 'reservations', 'cycle']
+/**
+ * `externes`, apres les reservations et avant le cycle: les evenements lus
+ * dans un Google Agenda ou un Outlook branche depuis les reglages. Une couche
+ * a eux parce que ce sont les seuls qu'on ne peut ni modifier ni supprimer
+ * ici, et "cacher ce qui n'est pas a moi" est la bascule qu'on veut le jour
+ * ou le calendrier du travail noie le sien.
+ */
+export const LAYERS = ['scolaire', 'perso', 'objectifs', 'anniversaires', 'reservations', 'externes', 'cycle']
 
 /**
  * Which layer an event's category belongs to.
@@ -120,6 +127,9 @@ const LAYER_OF = {
      deuxieme chemin de dessin serait un deuxieme endroit ou l'heure peut etre
      fausse. */
   reservation: 'reservations',
+  /* Meme statut: la ligne vit dans feed_event, ecrite par /api/feed-sync
+     depuis un flux Google ou Outlook, et passe par la meme grille. */
+  externe: 'externes',
 }
 
 /* Unknown categories fall to 'perso' rather than vanishing. A row written by a
@@ -135,6 +145,11 @@ export const LAYER_COLOUR = {
   objectifs: 'cat-3',
   anniversaires: 'ev-anniv',
   reservations: 'cat-4',
+  /* Une neuvieme paire de jetons, `ev-ext` et `ev-ext-deep`, mesuree avec les
+     huit autres dans index.css: ce qui vient d'ailleurs a sa propre couleur,
+     et la liste du jour ecrit aussi d'ou ca vient, parce qu'une couleur
+     seule n'est pas un signal (1.4.1). */
+  externes: 'ev-ext',
   cycle: 'negative',
 }
 

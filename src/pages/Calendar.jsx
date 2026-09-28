@@ -21,6 +21,7 @@ import {
   weekdayName,
 } from '../lib/agenda'
 import { bookingEntries } from '../lib/bookings'
+import { feedEntries, staleFeeds, syncFeeds } from '../lib/feeds'
 import { SegTabs } from '../components/ui'
 import CyclePanel from '../components/CyclePanel'
 import TimetableWizard from '../components/TimetableWizard'
@@ -135,6 +136,8 @@ const SWATCH = {
   'ev-perso': 'bg-ev-perso text-ink ring-ev-perso-deep/40',
   'ev-sante': 'bg-ev-sante text-ink ring-ev-sante-deep/40',
   'ev-anniv': 'bg-ev-anniv text-ink ring-ev-anniv-deep/40',
+  /* La neuvieme: ce qui vient d'un Google Agenda ou d'un Outlook branche. */
+  'ev-ext': 'bg-ev-ext text-ink ring-ev-ext-deep/40',
 
   /* LES ANCIENS NOMS RESTENT, ET C'EST LA RAISON POUR LAQUELLE LA MIGRATION
      N'EST PAS URGENTE. `colour` est une colonne, donc une ligne ecrite avant
@@ -172,6 +175,7 @@ const SWATCH_BAR = {
   'ev-perso': 'bg-ev-perso-deep',
   'ev-sante': 'bg-ev-sante-deep',
   'ev-anniv': 'bg-ev-anniv-deep',
+  'ev-ext': 'bg-ev-ext-deep',
 
   /* Les anciens noms, pour les lignes ecrites avant la migration 70. */
   'cat-1': 'bg-cat-1', 'cat-2': 'bg-cat-2', 'cat-3': 'bg-cat-3',
@@ -223,6 +227,10 @@ const LAYER_DOT = {
   /* La version foncee: une pastille de 10px porte de l'information, donc 3:1
      (1.4.11), et le pastel est une couleur de fond. */
   anniversaires: 'bg-ev-anniv-deep',
+  /* La meme couleur que les entrees de la couche, comme pour les autres. La
+     bascule n'en avait pas et sa pastille etait vide, allumee ou pas. */
+  reservations: 'bg-cat-4',
+  externes: 'bg-ev-ext-deep',
   cycle: 'bg-negative',
 }
 const LAYER_RING = {
@@ -230,6 +238,8 @@ const LAYER_RING = {
   perso: 'border-green',
   objectifs: 'border-cat-3',
   anniversaires: 'border-ev-anniv-deep',
+  reservations: 'border-cat-4',
+  externes: 'border-ev-ext-deep',
   cycle: 'border-negative',
 }
 
@@ -460,6 +470,11 @@ export default function Calendar() {
      /api/cal-webhook avec la cle service_role, et la seule policy de la table
      est un select. Voir supabase/72_cal_bookings.sql. */
   const [bookings, setBookings] = useState([])
+  /* Les calendriers Google et Outlook branches depuis les reglages, et les
+     occurrences que /api/feed-sync en a lues. Lecture seule ici aussi: la
+     seule policy de feed_event est un select. Voir 73_calendar_feeds.sql. */
+  const [feeds, setFeeds] = useState([])
+  const [feedRows, setFeedRows] = useState([])
 
   const load = useCallback(async () => {
     if (!user) return
@@ -525,6 +540,44 @@ export default function Calendar() {
       .select('id, title, guest_name, starts_at, ends_at, web_url, join_url, cancelled_at')
       .order('starts_at')
     setBookings(b ?? [])
+
+    /**
+     * LES CALENDRIERS GOOGLE ET OUTLOOK BRANCHES.
+     *
+     *   "add an option into the app to link google calendar or outlook"
+     *
+     * Les occurrences sont deja depliees en base par /api/feed-sync, donc la
+     * page les lit comme elle lit les reservations: sans filtre user_id (la
+     * policy EST user_id = auth.uid()), bornees a ce qui finit apres il y a
+     * deux mois, ce qui est la fenetre que l'API remplit.
+     *
+     * LA RELECTURE EST DEMANDEE D'ICI, ET SANS ATTENDRE. Un flux n'a pas
+     * de webhook: Google ne previent personne quand un evenement change.
+     * Donc a l'ouverture du calendrier, si un flux n'a pas ete relu depuis
+     * une demi-heure, on demande a l'API de le relire, et on redessine quand
+     * elle a fini. La grille est deja peinte avec ce qu'on avait: une
+     * relecture qui prend quatre secondes ne retient pas la page.
+     */
+    const { data: fl } = await supabase
+      .from('calendar_feed')
+      .select('id, provider, label, checked_at')
+    const flux = fl ?? []
+    setFeeds(flux)
+    const lireFlux = async () => {
+      const { data: fe } = await supabase
+        .from('feed_event')
+        .select('id, feed_id, title, location, url, all_day, starts_at, ends_at, starts_on, ends_on')
+        .gte('ends_at', new Date(Date.now() - 62 * 86400000).toISOString())
+        .order('starts_at')
+        .limit(6000)
+      setFeedRows(fe ?? [])
+    }
+    await lireFlux()
+    if (staleFeeds(flux).length > 0) {
+      syncFeeds(supabase).then((rep) => {
+        if (rep?.ok) lireFlux()
+      })
+    }
   }, [user])
 
   useEffect(() => {
@@ -603,8 +656,13 @@ export default function Calendar() {
     /* Les reservations, par la meme porte. Elles arrivent deja bornees par la
        requete, donc la plage n'est pas repassee ici. */
     const reserves = bookingEntries(bookings)
-    return visibleEvents([...events, ...asEvents, ...anniversaires, ...reserves], hidden)
-  }, [events, goals, bookings, hidden, friends, profile, user?.id, range, t])
+    /* Ce qui vient de Google et d'Outlook, par la meme porte encore. Borne a
+       la plage parce qu'une journee entiere de plusieurs jours fait une
+       entree par jour, et qu'il n'y a pas de raison d'en fabriquer pour des
+       jours que la grille ne montre pas. */
+    const externes = feedEntries(feedRows, feeds, range.from, range.to)
+    return visibleEvents([...events, ...asEvents, ...anniversaires, ...reserves, ...externes], hidden)
+  }, [events, goals, bookings, feedRows, feeds, hidden, friends, profile, user?.id, range, t])
 
   const agenda = useMemo(() => agendaFor(drawn, range.from, range.to), [drawn, range])
 
@@ -639,6 +697,15 @@ export default function Calendar() {
      * et peut renvoyer celle-ci ailleurs.
      */
     if (entry?.bookingOf) {
+      if (entry.href) window.open(entry.href, '_blank', 'noopener,noreferrer')
+      return
+    }
+    /* Un evenement lu dans Google ou Outlook se modifie la-bas. S'il porte
+       un lien (Google en met un vers la fiche de l'evenement), le clic
+       l'ouvre; sinon il ne fait rien, comme un anniversaire. Le formulaire
+       d'ici insererait une copie que la relecture suivante ne ferait pas
+       disparaitre. */
+    if (entry?.feedOf) {
       if (entry.href) window.open(entry.href, '_blank', 'noopener,noreferrer')
       return
     }
@@ -1948,6 +2015,10 @@ function DayList({ day, agenda, cycle, onEdit, onRemove, t }) {
                 <span className="block text-small text-muted">
                   {e.start_min != null ? `${clockOf(e.start_min)} - ${clockOf(e.end_min)}` : t('cal.all_day')}
                   {e.location ? ` · ${e.location}` : ''}
+                  {/* D'ou ca vient, en toutes lettres. C'est le signal qui
+                      n'est pas une couleur (1.4.1): la teinte citron dit
+                      "d'ailleurs" a qui la voit, ceci le dit a tout le monde. */}
+                  {e.feedOf ? ` · ${e.sourceLabel || t(`cal.links_provider_${e.source}`)}` : ''}
                 </span>
               </span>
               {/**
@@ -1974,6 +2045,20 @@ function DayList({ day, agenda, cycle, onEdit, onRemove, t }) {
                       data-hook="cal-day-open"
                     >
                       {e.joinable ? t('cal.join') : t('cal.open_booking')}
+                    </button>
+                  )
+                ) : e.feedOf ? (
+                  /* Ni "Modifier" ni "Supprimer" non plus, pour la raison
+                     donnee dans openEditor. "Ouvrir" quand Google a mis un
+                     lien vers la fiche, rien sinon. */
+                  e.href && (
+                    <button
+                      type="button"
+                      onClick={() => onEdit(e)}
+                      className="goal-action press"
+                      data-hook="cal-day-open"
+                    >
+                      {t('cal.open_link')}
                     </button>
                   )
                 ) : (

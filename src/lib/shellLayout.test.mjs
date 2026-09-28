@@ -2054,7 +2054,7 @@ ok(
   ok('les entrees sont fabriquees pour la plage affichee, pas stockees',
      /birthdayEntries\(gens, range\.from, range\.to/.test(cal))
   ok('et elles passent par le meme filtre de couches que le reste',
-     /visibleEvents\(\[\.\.\.events, \.\.\.asEvents, \.\.\.anniversaires, \.\.\.reserves\], hidden\)/.test(cal),
+     /visibleEvents\(\[\.\.\.events, \.\.\.asEvents, \.\.\.anniversaires, \.\.\.reserves, \.\.\.externes\], hidden\)/.test(cal),
      'c est ce qui rend la puce "Anniversaires" capable de les enlever')
   /* Un anniversaire est derive d'un profil comme un objectif est derive de sa
      ligne: ouvrir le formulaire dessus insererait un vrai evenement portant le
@@ -2168,6 +2168,128 @@ ok(
   for (const cle of ['cal.layer_reservations', 'cal.connect_section', 'cal.connect_what',
                      'cal.connect_step_url', 'cal.connect_step_secret', 'cal.connect_waiting',
                      'cal.connect_live', 'cal.connect_stop']) {
+    const n = read('src/lib/i18n.jsx').split(`'${cle}'`).length - 1
+    ok(`${cle} existe dans les deux langues (${n})`, n === 2)
+  }
+}
+
+/* --- Google Agenda et Outlook --------------------------------------------- */
+
+/**
+ * LES DEUX SENS DU LIEN.
+ *
+ *   "add an option into the app to link google calendar or outlook"
+ *
+ * Entrant: une adresse secrete que l'API va lire. Sortant: une adresse
+ * secrete que Google et Outlook viennent lire. Les deux sont des secrets, et
+ * ce bloc tient ce qui empeche l'un et l'autre de fuir: l'API ne va chercher
+ * que ce que feedUrlProblem accepte, l'adresse n'apparait dans aucune reponse
+ * ni aucun journal, le token sortant rend un 404 uniforme, et le cycle n'a
+ * aucun chemin vers le fichier.
+ */
+{
+  const sync = read('api/feed-sync.js')
+  const out = read('api/ics.js')
+  const sql = read('supabase/73_calendar_feeds.sql')
+  const links = code('src/components/CalendarLinks.jsx')
+  const feedsLib = read('src/lib/feeds.js')
+  const cssAll = read('src/index.css')
+  const tw = read('tailwind.config.js')
+
+  /* L'API va chercher l'URL qu'on lui donne, donc elle ne doit aller chercher
+     QUE ce que la garde accepte: https, un vrai hote, jamais une IP, jamais
+     un nom local. Et chaque redirection repasse par la meme porte. */
+  ok('la lecture d un flux passe par feedUrlProblem avant tout fetch',
+     /if \(feedUrlProblem\(url\)\) return \{ error: 'bad_url' \}[\s\S]*fetchImpl\(url/.test(sync))
+  ok('les redirections sont suivies a la main et reverifiees',
+     /redirect: 'manual'/.test(sync) && /return fetchIcs\(next, \{ fetchImpl, hops: hops \+ 1 \}\)/.test(sync))
+  ok('la garde refuse les IP, localhost et les noms sans point',
+     /\/\^\[\\d\.\]\+\$\/\.test\(host\)/.test(feedsLib) && /host\.includes\('\.'\)/.test(feedsLib)
+       && /localhost\|local\|internal/.test(feedsLib))
+  ok('et exige https', /u\.protocol !== 'https:'/.test(feedsLib))
+  /* L'adresse secrete de Google lit tout le calendrier de la personne. Elle
+     ne sort dans aucune reponse et dans aucune ligne de journal. */
+  ok('l URL du flux n est jamais ecrite au journal',
+     !/console\.[a-z]+\([^)]*\burl\b/.test(sync) && !/console\.[a-z]+\([^)]*feed\.url/.test(sync))
+  ok('ni renvoyee dans une reponse', !/json\([^)]*\burl\b/.test(sync) && !/url: feed\.url/.test(sync))
+  ok('l erreur remontee est un mot-code, pas le message d un serveur tiers',
+     /return \{ error: `http_\$\{res\.status\}` \}/.test(sync) && !/error: err\.message/.test(sync))
+  ok('qui appelle est lu dans le Bearer, et ce sont SES flux',
+     /db\.auth\.getUser\(token\)/.test(sync) && /from\('calendar_feed'\)[^\n]*\n?[^\n]*\.eq\('user_id', user\.id\)/.test(sync))
+  ok('une relecture remplace, elle ne fusionne pas',
+     /from\('feed_event'\)\.delete\(\)\.eq\('feed_id', feed\.id\)/.test(sync),
+     'un evenement supprime chez Google doit disparaitre ici')
+  ok('la boucle des regles est bornee', /MAX_STEPS = 100000/.test(read('src/lib/ics.js')))
+
+  /* Le sens sortant: un token inconnu et un token absent rendent le meme
+     404, et le token n'est ecrit nulle part. */
+  ok('tout ce qui rate rend le meme 404',
+     (out.match(/return refus\(/g) ?? []).length >= 2 && (out.match(/status\(404\)/g) ?? []).length === 1)
+  ok('et le token n est ni journalise ni renvoye', !/console\.[a-z]+\([^)]*token/.test(out) && !/refus\(`[^`]*\$\{token/.test(out))
+  ok('le fichier est servi comme un calendrier, jamais mis en cache',
+     /text\/calendar; charset=utf-8/.test(out) && /'Cache-Control', 'private, no-store'/.test(out))
+  ok('le cycle n a aucun chemin vers le fichier',
+     !/cycle|period|menstru/i.test(code('api/ics.js')) && !/cycle|period|menstru/i.test(code('src/lib/icsExport.js')),
+     'la policy du cycle est user_id = auth.uid() sans aucune sortie, et ce fichier n en est pas une')
+  ok('ni les anniversaires des autres', !/birthday|group_members/.test(out))
+  ok('les objectifs exportes sont les siens', /from\('goals'\)[\s\S]{0,120}\.eq\('owner_id', uid\)/.test(out))
+  ok('l adresse .ics est reecrite vers l API',
+     /"source": "\/cal\/:token\.ics",\s*\n\s*"destination": "\/api\/ics\?t=:token"/.test(read('vercel.json')))
+
+  /* Le schema tient la decision: feed_event ne s'ecrit que par l'API, l'URL
+     est https par contrainte, et cinq flux au plus. */
+  ok('les trois tables ont RLS',
+     /alter table calendar_feed enable row level security/.test(sql)
+       && /alter table feed_event enable row level security/.test(sql)
+       && /alter table ics_share enable row level security/.test(sql))
+  ok('feed_event n a qu une policy select',
+     /create policy feed_event_select on feed_event\s*\n\s*for select using \(user_id = auth\.uid\(\)\)/.test(sql)
+       && !/create policy [a-z_]+ on feed_event\s*\n\s*for (insert|update|delete)/.test(sql))
+  ok('ics_share n a pas d update', !/create policy [a-z_]+ on ics_share\s*\n\s*for update/.test(sql),
+     'un token se remplace, il ne se modifie pas')
+  ok('l URL est https par contrainte', /url\s+text not null check \(url ~ '\^https:\/\/'/.test(sql))
+  ok('cinq flux au plus, tenu par la base et par le navigateur',
+     /count\(\*\) from calendar_feed where user_id = new\.user_id\) >= 5/.test(sql) && /FEED_LIMIT = 5/.test(feedsLib))
+
+  /* Le composant: l'adresse n'est jamais relue, le token est tire au
+     generateur cryptographique, et les suppressions demandent le compte. */
+  ok('la liste ne relit jamais la colonne url',
+     /const FEED_COLS = 'id, provider, label, last_sync_at, checked_at, last_error, event_count, created_at'/.test(links)
+       && !/select\([^)]*\burl\b/.test(links))
+  ok('le token sortant est imprevisible', /crypto\.getRandomValues/.test(links) && !/Math\.random/.test(links))
+  ok('et l adresse est construite sur l origine courante', /window\.location\.origin/.test(links))
+  ok('retirer et arreter demandent le compte',
+     (links.match(/\.delete\(\{ count: 'exact' \}\)/g) ?? []).length === 2 && (links.match(/if \(error \|\| !count\)/g) ?? []).length === 2)
+  ok('l ajout verifie l adresse avant d ecrire', /if \(feedUrlProblem\(adresse\)\) return setFailed\('url'\)/.test(links))
+  ok('et relit tout de suite', /await relire\(data\.id, true\)/.test(links))
+
+  /* Le calendrier: une entree externe ne s'edite pas ici, et la liste du jour
+     dit d'ou elle vient, en toutes lettres. */
+  ok('un evenement externe n ouvre pas le formulaire',
+     /if \(entry\?\.feedOf\) \{\s*\n\s*if \(entry\.href\) window\.open\(entry\.href, '_blank', 'noopener,noreferrer'\)\s*\n\s*return/.test(cal))
+  ok('la liste du jour nomme la source', /e\.feedOf \? ` · \$\{e\.sourceLabel \|\| t\(`cal\.links_provider_\$\{e\.source\}`\)\}` : ''/.test(cal),
+     'une couleur seule n est pas un signal (1.4.1)')
+  ok('et ne propose ni modifier ni supprimer dessus', /\) : e\.feedOf \? \(/.test(cal))
+  ok('la relecture est demandee quand un flux est vieux, sans retenir la page',
+     /if \(staleFeeds\(flux\)\.length > 0\) \{\s*\n\s*syncFeeds\(supabase\)\.then/.test(cal))
+  ok('la page lit feed_event sans refiltrer par user_id',
+     /\.from\('feed_event'\)/.test(cal) && !/from\('feed_event'\)[\s\S]{0,300}eq\('user_id'/.test(cal))
+
+  /* La neuvieme paire de jetons, dans les deux themes, et branchee. */
+  ok('ev-ext existe dans les deux themes', (cssAll.match(/--c-ev-ext: /g) ?? []).length === 2)
+  ok('ev-ext-deep aussi', (cssAll.match(/--c-ev-ext-deep: /g) ?? []).length === 2)
+  ok('et Tailwind les connait', /ext: c\('ev-ext'\), 'ext-deep': c\('ev-ext-deep'\)/.test(tw))
+  ok('la couche a sa pastille et son anneau', /externes: 'bg-ev-ext-deep'/.test(cal) && /externes: 'border-ev-ext-deep'/.test(cal))
+  ok('et les reservations ont enfin les leurs', /reservations: 'bg-cat-4'/.test(cal) && /reservations: 'border-cat-4'/.test(cal))
+
+  for (const cle of ['cal.layer_externes', 'cal.open_link', 'cal.links_section', 'cal.links_in_what',
+                     'cal.links_url_label', 'cal.links_add', 'cal.links_how_google_steps',
+                     'cal.links_how_outlook_steps', 'cal.links_provider_google', 'cal.links_provider_outlook',
+                     'cal.links_provider_ics', 'cal.links_synced', 'cal.links_waiting', 'cal.links_remove',
+                     'cal.links_err_http_401', 'cal.links_err_http_404', 'cal.links_err_not_ics',
+                     'cal.links_out_what', 'cal.links_share_start', 'cal.links_share_url',
+                     'cal.links_share_google', 'cal.links_share_outlook', 'cal.links_share_stop',
+                     'cal.links_failed_url', 'cal.links_failed_limit', 'cal.links_failed_dup']) {
     const n = read('src/lib/i18n.jsx').split(`'${cle}'`).length - 1
     ok(`${cle} existe dans les deux langues (${n})`, n === 2)
   }

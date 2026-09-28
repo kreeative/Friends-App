@@ -7,6 +7,7 @@ import { CONTACT_EMAIL, DOC_ORDER, LEGAL } from '../legal/content'
 import DeleteAccount from '../components/DeleteAccount'
 import MoodShare from '../components/MoodShare'
 import CalConnect from '../components/CalConnect'
+import CalendarLinks from '../components/CalendarLinks'
 import PushToggle from '../components/PushToggle'
 import ReminderSettings from '../components/ReminderSettings'
 import PurchaseCheck from '../components/PurchaseCheck'
@@ -156,6 +157,19 @@ export default function Account() {
        */}
       <Section title={t('cal.connect_section')}>
         <CalConnect />
+      </Section>
+
+      {/**
+       * GOOGLE AGENDA ET OUTLOOK, DANS LES DEUX SENS.
+       *
+       *   "add an option into the app to link google calendar or outlook"
+       *
+       * Juste sous Cal.com, parce que c'est la meme question (ce qui entre
+       * sur mon calendrier et ce qui en sort) posee a un autre service, et
+       * qu'on cherche les deux au meme endroit.
+       */}
+      <Section title={t('cal.links_section')}>
+        <CalendarLinks />
       </Section>
 
       </div>
