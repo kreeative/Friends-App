@@ -2165,7 +2165,7 @@ ok(
      /lien\.last_seen_at\s*\n?\s*\? t\('cal\.connect_live'/.test(conn),
      'un voyant vert serait vert avant meme que Cal ait ete configure')
 
-  for (const cle of ['cal.layer_reservations', 'cal.connect_section', 'cal.connect_what',
+  for (const cle of ['cal.layer_reservations', 'cal.connect_start', 'cal.connect_steps',
                      'cal.connect_step_url', 'cal.connect_step_secret', 'cal.connect_waiting',
                      'cal.connect_live', 'cal.connect_stop']) {
     const n = read('src/lib/i18n.jsx').split(`'${cle}'`).length - 1
@@ -2289,16 +2289,59 @@ ok(
   ok('la couche a sa pastille et son anneau', /externes: 'bg-ev-ext-deep'/.test(cal) && /externes: 'border-ev-ext-deep'/.test(cal))
   ok('et les reservations ont enfin les leurs', /reservations: 'bg-cat-4'/.test(cal) && /reservations: 'border-cat-4'/.test(cal))
 
-  for (const cle of ['cal.layer_externes', 'cal.open_link', 'cal.links_section', 'cal.links_in_what',
-                     'cal.links_url_label', 'cal.links_add', 'cal.links_how_google_steps',
-                     'cal.links_how_outlook_steps', 'cal.links_provider_google', 'cal.links_provider_outlook',
+  for (const cle of ['cal.layer_externes', 'cal.open_link', 'cal.links_how_google_steps',
+                     'cal.links_how_outlook_steps', 'cal.links_how_ics_steps',
+                     'cal.links_provider_google', 'cal.links_provider_outlook',
                      'cal.links_provider_ics', 'cal.links_synced', 'cal.links_waiting', 'cal.links_remove',
                      'cal.links_err_http_401', 'cal.links_err_http_404', 'cal.links_err_not_ics',
-                     'cal.links_out_what', 'cal.links_share_start', 'cal.links_share_url',
-                     'cal.links_share_google', 'cal.links_share_outlook', 'cal.links_share_stop',
+                     'cal.links_share_start', 'cal.links_share_steps', 'cal.links_share_stop',
                      'cal.links_failed_url', 'cal.links_failed_limit', 'cal.links_failed_dup']) {
     const n = read('src/lib/i18n.jsx').split(`'${cle}'`).length - 1
     ok(`${cle} existe dans les deux langues (${n})`, n === 2)
+  }
+
+  /**
+   * UNE LISTE, UN NOM PAR LIGNE, "BRANCHER".
+   *
+   *   "the icon to connect to your cal calendar contained so many
+   *    informations its confusing can you fix that and keep the ui
+   *    explanation simple a simple connect your other calendar  cal.
+   *    connect.  xyz.  connect etc"
+   *
+   * Ce qui se voit avant d'appuyer: cinq noms et cinq mots. Les phrases sont
+   * dans les panneaux, un a la fois, et les modes d'emploi derriere un
+   * "Ou la trouver ?" replie.
+   */
+  const hub = code('src/components/CalendarHub.jsx')
+  const account = code('src/pages/Account.jsx')
+  const conn = code('src/components/CalConnect.jsx')
+  ok('les reglages montrent UNE liste, et plus deux sections',
+     /<CalendarHub \/>/.test(account) && !/<CalConnect|<CalendarLinks/.test(account))
+  ok('cinq lignes: Cal.com, Google, Outlook, un autre, et l autre sens',
+     ["id: 'cal'", "id: 'google'", "id: 'outlook'", "id: 'ics'", "id: 'share'"].every((s) => hub.includes(s)))
+  ok('un panneau ne s ouvre qu au toucher, et un seul a la fois',
+     /const ouvert = open === r\.id/.test(hub) && /\{ouvert && \(/.test(hub) && /setOpen\(ouvert \? null : r\.id\)/.test(hub))
+  ok('la ligne porte un mot qui change avec l etat, pas seulement une couleur',
+     /ouvert \? t\('cal\.hub_close'\) : r\.on \? t\('cal\.hub_manage'\) : t\('cal\.hub_connect'\)/.test(hub))
+  ok('les donnees sont chargees une fois, dans la liste',
+     /from\('cal_link'\)\.select\(/.test(hub) && /from\('calendar_feed'\)\.select\(FEED_COLS\)/.test(hub) && /from\('ics_share'\)\.select\(/.test(hub)
+       && !/from\('cal_link'\)\s*\n?\s*\.select\(/.test(conn) && !/useEffect/.test(conn),
+     'la liste doit dire "Branche" sur la ligne Cal.com avant que son panneau soit ouvert')
+  ok('le mode d emploi de Cal est replie derriere une question',
+     /<details className="mt-4" data-hook="cal-connect-how">/.test(conn) && /t\('cal\.connect_steps'\)/.test(conn))
+  ok('celui de chaque flux aussi', /data-hook=\{`cal-links-how-\$\{provider\}`\}/.test(links) && /t\(`cal\.links_how_\$\{provider\}_steps`\)/.test(links))
+  for (const cle of ['cal.hub_section', 'cal.hub_connect', 'cal.hub_manage', 'cal.hub_close', 'cal.hub_on_since',
+                     'cal.hub_on_when', 'cal.hub_on_waiting', 'cal.hub_check', 'cal.hub_other', 'cal.hub_share',
+                     'cal.hub_paste', 'cal.hub_where', 'cal.hub_where_cal', 'cal.hub_where_share']) {
+    const n = read('src/lib/i18n.jsx').split(`'${cle}'`).length - 1
+    ok(`${cle} existe dans les deux langues (${n})`, n === 2)
+  }
+  /* Les cles des paragraphes retires n'ont plus de lecteur; les garder,
+     c'est laisser une traduction a maintenir pour un texte que personne ne
+     voit. */
+  for (const cle of ['cal.connect_what', 'cal.connect_step_events', 'cal.links_in_what', 'cal.links_out_what',
+                     'cal.links_section', 'cal.connect_section']) {
+    ok(`${cle} n existe plus`, !read('src/lib/i18n.jsx').includes(`'${cle}'`))
   }
 }
 

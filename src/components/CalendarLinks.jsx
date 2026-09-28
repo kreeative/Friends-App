@@ -1,23 +1,28 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useT } from '../lib/i18n'
 import { FEED_LIMIT, feedUrlProblem, providerOf, syncFeeds } from '../lib/feeds'
 
 /**
- * Brancher Google Agenda ou Outlook, dans les deux sens.
+ * Les panneaux Google Agenda, Outlook et "Rich & Friends dans ton autre
+ * calendrier", ouverts depuis la liste de CalendarHub.
  *
  *   "add an option into the app to link google calendar or outlook"
+ *   "keep the ui explanation simple a simple connect your other calendar
+ *    cal.  connect.  xyz.  connect etc"
  *
- * DEUX MOITIES, PARCE QUE "LIER" VEUT DIRE DEUX CHOSES.
+ * DEUX PANNEAUX, PARCE QUE "LIER" VEUT DIRE DEUX CHOSES.
  *
- *   1. VOIR GOOGLE ICI. Elle colle l'adresse secrete iCal de son calendrier
- *      Google (ou l'adresse ICS publiee de son Outlook). L'API la relit, et
- *      les evenements arrivent sur le calendrier, en lecture seule, sur leur
- *      propre couche.
+ *   FeedPanel  VOIR GOOGLE ICI. Elle colle l'adresse secrete iCal de son
+ *              calendrier (ou l'adresse ICS publiee de son Outlook). L'API la
+ *              relit, et les evenements arrivent sur le calendrier, en lecture
+ *              seule, sur leur propre couche. Un panneau par fournisseur, qui
+ *              ne montre que SES flux et SA phrase d'aide.
  *
- *   2. VOIR RICH & FRIENDS DANS GOOGLE. Elle cree une adresse a elle et
- *      l'ajoute dans Google ("From URL") ou Outlook ("Subscribe from web").
+ *   SharePanel VOIR RICH & FRIENDS DANS GOOGLE. Elle cree une adresse a elle
+ *              et l'ajoute dans Google ("From URL") ou Outlook ("Subscribe
+ *              from web").
  *
  * POURQUOI DES ADRESSES ET PAS UN BOUTON "SE CONNECTER AVEC GOOGLE".
  *
@@ -26,11 +31,11 @@ import { FEED_LIMIT, feedUrlProblem, providerOf, syncFeeds } from '../lib/feeds'
  * serveur et des jetons a rafraichir. L'adresse secrete fait la meme chose
  * pour un calendrier, sans rien de tout ca, et Outlook a exactement la meme
  * porte. Le prix est qu'il faut aller la chercher dans les reglages de
- * Google, et le petit mode d'emploi sous le champ est la pour ca.
+ * Google, et la phrase repliee derriere "Ou la trouver ?" est la pour ca.
  *
  * L'ADRESSE SECRETE N'EST JAMAIS RELUE. Elle est ecrite une fois a l'ajout et
- * le composant ne la redemande pas: la liste ne selectionne pas la colonne
- * `url`. Ce qui s'affiche est le fournisseur, l'etiquette, et une date.
+ * personne ne la redemande: FEED_COLS ne contient pas la colonne `url`. Ce
+ * qui s'affiche est le fournisseur et une date.
  */
 
 /** Une chaine imprevisible, en base64url. Meme tirage que CalConnect. */
@@ -42,50 +47,39 @@ function tirage(octets = 24) {
 
 /**
  * L'adresse a coller dans Google ou Outlook. `/cal/<token>.ics` plutot que
- * `/api/calendar?t=`: les deux marchent (vercel.json reecrit l'une vers l'autre),
- * mais certains lecteurs veulent voir `.ics` au bout pour accepter une URL.
- * Sur l'origine courante, pour la raison que webhookUrl donne.
+ * `/api/calendar?t=`: les deux marchent (vercel.json reecrit l'une vers
+ * l'autre), mais certains lecteurs veulent voir `.ics` au bout pour accepter
+ * une URL. Sur l'origine courante, pour la raison que webhookUrl donne.
  */
 export function shareUrl(token, origin = '') {
   return `${origin || ''}/cal/${encodeURIComponent(token ?? '')}.ics`
 }
 
-const FEED_COLS = 'id, provider, label, last_sync_at, checked_at, last_error, event_count, created_at'
+/** Les colonnes que le navigateur lit. Jamais `url`: c'est elle qui est secrete. */
+export const FEED_COLS = 'id, provider, label, last_sync_at, checked_at, last_error, event_count, created_at'
 
-export default function CalendarLinks() {
+/**
+ * Le panneau d'un fournisseur: ses flux, et un champ pour en ajouter un.
+ *
+ * `provider` est 'google', 'outlook' ou 'ics'. L'adresse collee est
+ * classee par son hote (providerOf), pas par le panneau ou elle a ete
+ * collee: une adresse Google collee dans le panneau Outlook est un flux
+ * Google, et il apparaitra sur la ligne Google. C'est ce qui est vrai.
+ */
+export function FeedPanel({ provider, feeds, onChange }) {
   const { user } = useAuth()
   const { t } = useT()
 
-  const [feeds, setFeeds] = useState(undefined)
-  const [share, setShare] = useState(undefined)
   const [url, setUrl] = useState('')
-  const [label, setLabel] = useState('')
   const [busy, setBusy] = useState('')
   const [failed, setFailed] = useState('')
-  const [copied, setCopied] = useState(false)
 
-  useEffect(() => {
-    if (!user?.id) return undefined
-    let alive = true
-    ;(async () => {
-      const [{ data: f, error: fe }, { data: s, error: se }] = await Promise.all([
-        supabase.from('calendar_feed').select(FEED_COLS).order('created_at'),
-        supabase.from('ics_share').select('token, last_read_at').maybeSingle(),
-      ])
-      if (!alive) return
-      /* Une table absente, c'est la migration 73 pas encore passee. L'etat
-         "rien de branche" est vrai, et l'erreur arrivera au premier ajout,
-         avec le nom du fichier a executer. */
-      setFeeds(fe ? [] : (f ?? []))
-      setShare(se ? null : (s ?? null))
-    })()
-    return () => { alive = false }
-  }, [user?.id])
+  const miens = (feeds ?? []).filter((f) => f.provider === provider)
 
   async function relire(feedId = null, force = false) {
     const rep = await syncFeeds(supabase, { feedId, force })
     const { data } = await supabase.from('calendar_feed').select(FEED_COLS).order('created_at')
-    if (data) setFeeds(data)
+    if (data) onChange?.(data)
     return rep
   }
 
@@ -97,7 +91,7 @@ export default function CalendarLinks() {
     if (feedUrlProblem(adresse)) return setFailed('url')
     if ((feeds?.length ?? 0) >= FEED_LIMIT) return setFailed('limit')
     setBusy('add')
-    const row = { user_id: user.id, provider: providerOf(adresse), url: adresse, label: label.trim().slice(0, 80) || null }
+    const row = { user_id: user.id, provider: providerOf(adresse), url: adresse, label: null }
     const { data, error } = await supabase.from('calendar_feed').insert(row).select(FEED_COLS).single()
     if (error) {
       setBusy('')
@@ -107,9 +101,8 @@ export default function CalendarLinks() {
       if (/feed_limit/.test(error.message ?? '')) return setFailed('limit')
       return setFailed('save')
     }
-    setFeeds((prev) => [...(prev ?? []), data])
+    onChange?.([...(feeds ?? []), data])
     setUrl('')
-    setLabel('')
     /* Tout de suite, pour qu'elle voie "12 evenements" ou "adresse refusee"
        avant d'avoir quitte l'ecran, plutot qu'un calendrier vide sans
        explication. */
@@ -125,7 +118,7 @@ export default function CalendarLinks() {
     const { error, count } = await supabase.from('calendar_feed').delete({ count: 'exact' }).eq('id', id)
     setBusy('')
     if (error || !count) return setFailed('remove')
-    setFeeds((prev) => (prev ?? []).filter((f) => f.id !== id))
+    onChange?.((feeds ?? []).filter((f) => f.id !== id))
   }
 
   async function syncNow() {
@@ -136,43 +129,6 @@ export default function CalendarLinks() {
     setBusy('')
   }
 
-  async function startShare() {
-    if (!user?.id || busy) return
-    setBusy('share')
-    setFailed('')
-    const row = { user_id: user.id, token: tirage(24) }
-    const { error } = await supabase.from('ics_share').upsert(row, { onConflict: 'user_id' })
-    setBusy('')
-    if (error) return setFailed('share')
-    setShare({ token: row.token, last_read_at: null })
-  }
-
-  async function stopShare() {
-    if (!user?.id || busy) return
-    setBusy('stop')
-    setFailed('')
-    const { error, count } = await supabase.from('ics_share').delete({ count: 'exact' }).eq('user_id', user.id)
-    setBusy('')
-    if (error || !count) return setFailed('stop')
-    setShare(null)
-  }
-
-  async function copier(texte) {
-    try {
-      await navigator.clipboard.writeText(texte)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    } catch {
-      setFailed('copy')
-    }
-  }
-
-  if (feeds === undefined || share === undefined) return null
-
-  const origin = typeof window === 'undefined' ? '' : window.location.origin
-  const lien = share ? shareUrl(share.token, origin) : ''
-
-  const nom = (f) => f.label || t(`cal.links_provider_${f.provider}`)
   const etat = (f) => {
     if (f.last_error) {
       const cle = `cal.links_err_${f.last_error}`
@@ -187,15 +143,10 @@ export default function CalendarLinks() {
   }
 
   return (
-    <div className="lg p-6" data-hook="cal-links" data-feeds={feeds.length} data-share={share ? 'yes' : 'no'}>
-      {/* --- 1. Voir Google et Outlook ici --------------------------------- */}
-      <p className="reading text-body text-muted">{t('cal.links_in_what')}</p>
-
-      {feeds.length === 0 ? (
-        <p className="mt-4 text-small text-muted" data-hook="cal-links-none">{t('cal.links_none')}</p>
-      ) : (
-        <ul className="mt-5 divide-y divide-hairline">
-          {feeds.map((f) => (
+    <div data-hook="cal-links" data-provider={provider} data-feeds={miens.length}>
+      {miens.length > 0 && (
+        <ul className="divide-y divide-hairline">
+          {miens.map((f) => (
             <li
               key={f.id}
               className="flex items-start gap-3 py-3"
@@ -203,17 +154,11 @@ export default function CalendarLinks() {
               data-provider={f.provider}
               data-state={f.last_error ? 'error' : f.last_sync_at ? 'ok' : 'waiting'}
             >
-              <span className="min-w-0 flex-1">
-                <span className="text-safe block text-body font-semibold text-ink">{nom(f)}</span>
-                {f.label && (
-                  <span className="block text-small text-muted">{t(`cal.links_provider_${f.provider}`)}</span>
-                )}
-                <span
-                  className={`reading block text-small ${f.last_error ? 'font-semibold text-negative' : 'text-muted'}`}
-                  data-hook="cal-links-state"
-                >
-                  {etat(f)}
-                </span>
+              <span
+                className={`reading min-w-0 flex-1 text-small ${f.last_error ? 'font-semibold text-negative' : 'text-muted'}`}
+                data-hook="cal-links-state"
+              >
+                {etat(f)}
               </span>
               <button
                 type="button"
@@ -229,22 +174,22 @@ export default function CalendarLinks() {
         </ul>
       )}
 
-      {feeds.length > 0 && (
+      {miens.length > 0 && (
         <button
           type="button"
           onClick={syncNow}
           disabled={Boolean(busy)}
-          className="goal-action press mt-3 disabled:opacity-60"
+          className="goal-action press mt-2 disabled:opacity-60"
           data-hook="cal-links-sync"
         >
           {busy === 'sync' || busy === 'add' ? t('cal.links_syncing') : t('cal.links_sync')}
         </button>
       )}
 
-      {feeds.length < FEED_LIMIT && (
-        <form onSubmit={add} className="measure-form mt-6 space-y-4" data-hook="cal-links-form">
+      {(feeds?.length ?? 0) < FEED_LIMIT && (
+        <form onSubmit={add} className={`measure-form ${miens.length ? 'mt-4' : ''}`} data-hook="cal-links-form">
           <label className="block">
-            <span className="field-label">{t('cal.links_url_label')}</span>
+            <span className="field-label">{t('cal.hub_paste')}</span>
             {/* type="url" pour le clavier et la validation du navigateur,
                 spellCheck a false parce qu'une adresse soulignee de rouge a
                 l'air fausse quand elle ne l'est pas. */}
@@ -255,55 +200,94 @@ export default function CalendarLinks() {
               autoCapitalize="off"
               spellCheck={false}
               className="field mt-1"
-              placeholder="https://calendar.google.com/calendar/ical/.../basic.ics"
+              placeholder="https://"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               data-hook="cal-links-add-url"
             />
           </label>
-          <label className="block">
-            <span className="field-label">{t('cal.links_name_label')}</span>
-            <input
-              type="text"
-              maxLength={80}
-              className="field mt-1"
-              value={label}
-              onChange={(e) => setLabel(e.target.value)}
-              data-hook="cal-links-add-label"
-            />
-          </label>
-          <button
-            type="submit"
-            disabled={Boolean(busy) || !url.trim()}
-            className="btn-primary press inline-flex disabled:opacity-60"
-            data-hook="cal-links-add"
-          >
-            {busy === 'add' ? t('cal.links_adding') : t('cal.links_add')}
-          </button>
+          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+            <button
+              type="submit"
+              disabled={Boolean(busy) || !url.trim()}
+              className="btn-primary press inline-flex disabled:opacity-60"
+              data-hook="cal-links-add"
+            >
+              {busy === 'add' ? t('cal.links_adding') : t('cal.hub_connect')}
+            </button>
+            {/* La phrase d'aide, repliee: on ne la lit qu'une fois. */}
+            <details data-hook={`cal-links-how-${provider}`}>
+              <summary className="cursor-pointer text-small font-semibold text-ink">{t('cal.hub_where')}</summary>
+              <p className="reading mt-2 text-small text-muted">{t(`cal.links_how_${provider}_steps`)}</p>
+            </details>
+          </div>
         </form>
       )}
 
-      {/* Le mode d'emploi, replie: c'est la moitie de la page une fois
-          deplie, et on ne le lit qu'une fois par calendrier. */}
-      <details className="mt-5" data-hook="cal-links-how-google">
-        <summary className="cursor-pointer text-small font-semibold text-ink">{t('cal.links_how_google')}</summary>
-        <p className="reading mt-2 text-small text-muted">{t('cal.links_how_google_steps')}</p>
-      </details>
-      <details className="mt-2" data-hook="cal-links-how-outlook">
-        <summary className="cursor-pointer text-small font-semibold text-ink">{t('cal.links_how_outlook')}</summary>
-        <p className="reading mt-2 text-small text-muted">{t('cal.links_how_outlook_steps')}</p>
-      </details>
+      {failed && (
+        <p className="mt-4 text-small font-semibold text-negative" role="alert" data-hook="cal-links-failed">
+          {t(`cal.links_failed_${failed}`)}
+        </p>
+      )}
+    </div>
+  )
+}
 
-      {/* --- 2. Voir Rich & Friends dans Google et Outlook ----------------- */}
-      <hr className="my-6 border-hairline" />
-      <p className="reading text-body text-muted">{t('cal.links_out_what')}</p>
+/**
+ * L'autre sens: une adresse a elle, a coller dans Google ou Outlook.
+ *
+ * `share` est la ligne ics_share (ou null), chargee par CalendarHub.
+ */
+export function SharePanel({ share, onChange }) {
+  const { user } = useAuth()
+  const { t } = useT()
 
+  const [busy, setBusy] = useState(false)
+  const [failed, setFailed] = useState('')
+  const [copied, setCopied] = useState(false)
+
+  async function startShare() {
+    if (!user?.id || busy) return
+    setBusy(true)
+    setFailed('')
+    const row = { user_id: user.id, token: tirage(24) }
+    const { error } = await supabase.from('ics_share').upsert(row, { onConflict: 'user_id' })
+    setBusy(false)
+    if (error) return setFailed('share')
+    onChange?.({ token: row.token, last_read_at: null })
+  }
+
+  async function stopShare() {
+    if (!user?.id || busy) return
+    setBusy(true)
+    setFailed('')
+    const { error, count } = await supabase.from('ics_share').delete({ count: 'exact' }).eq('user_id', user.id)
+    setBusy(false)
+    if (error || !count) return setFailed('stop')
+    onChange?.(null)
+  }
+
+  async function copier(texte) {
+    try {
+      await navigator.clipboard.writeText(texte)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      setFailed('copy')
+    }
+  }
+
+  const origin = typeof window === 'undefined' ? '' : window.location.origin
+  const lien = share ? shareUrl(share.token, origin) : ''
+
+  return (
+    <div data-hook="cal-share" data-share={share ? 'yes' : 'no'}>
       {!share && (
         <button
           type="button"
           onClick={startShare}
-          disabled={Boolean(busy)}
-          className="btn-primary press mt-5 inline-flex disabled:opacity-60"
+          disabled={busy}
+          className="btn-primary press inline-flex disabled:opacity-60"
           data-hook="cal-links-share-start"
         >
           {t('cal.links_share_start')}
@@ -312,9 +296,8 @@ export default function CalendarLinks() {
 
       {share && (
         <>
-          <p className="mt-5 text-small font-semibold text-ink">{t('cal.links_share_url')}</p>
           <code
-            className="mt-2 block break-all rounded-inner bg-ink/[0.045] p-3 text-small text-ink"
+            className="block break-all rounded-inner bg-ink/[0.045] p-3 text-small text-ink"
             data-hook="cal-links-share-url"
           >
             {lien}
@@ -327,8 +310,10 @@ export default function CalendarLinks() {
           >
             {copied ? t('cal.connect_copied') : t('cal.connect_copy')}
           </button>
-          <p className="reading mt-4 text-small text-muted">{t('cal.links_share_google')}</p>
-          <p className="reading mt-1 text-small text-muted">{t('cal.links_share_outlook')}</p>
+          <details className="mt-4" data-hook="cal-links-how-share">
+            <summary className="cursor-pointer text-small font-semibold text-ink">{t('cal.hub_where_share')}</summary>
+            <p className="reading mt-2 text-small text-muted">{t('cal.links_share_steps')}</p>
+          </details>
           <p className="mt-4 text-small text-muted" data-hook="cal-links-share-state">
             {share.last_read_at
               ? t('cal.links_share_live', { when: new Date(share.last_read_at).toLocaleString() })
@@ -337,7 +322,7 @@ export default function CalendarLinks() {
           <button
             type="button"
             onClick={stopShare}
-            disabled={Boolean(busy)}
+            disabled={busy}
             className="goal-action press mt-3 text-negative disabled:opacity-60"
             data-hook="cal-links-share-stop"
           >
