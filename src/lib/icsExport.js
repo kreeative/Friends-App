@@ -8,7 +8,7 @@ import { bookingTitle } from './bookings.js'
  *
  * L'autre sens du lien: Google Agenda et Outlook savent tous les deux
  * s'abonner a une adresse .ics ("From URL", "Subscribe from web"). Ce fichier
- * fabrique ce qu'ils lisent. Il est servi par /api/ics, qui ne fait que
+ * fabrique ce qu'ils lisent. Il est servi par GET /api/calendar, qui ne fait que
  * trouver a qui est le token et appeler buildIcs.
  *
  * CE QUI SORT: les evenements du calendrier, les reservations Cal.com, et les

@@ -100,7 +100,7 @@ export async function syncFeeds(supabase, { feedId = null, force = false, origin
     const { data } = await supabase.auth.getSession()
     const token = data?.session?.access_token
     if (!token) return null
-    const res = await fetch(`${origin}/api/feed-sync`, {
+    const res = await fetch(`${origin}/api/calendar`, {
       method: 'POST',
       headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
       body: JSON.stringify({ ...(feedId ? { feed_id: feedId } : {}), ...(force ? { force: true } : {}) }),

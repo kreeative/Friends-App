@@ -10,12 +10,12 @@
 -- Deux sens, trois tables.
 --
 --   ENTRANT. Elle colle l'adresse secrete iCal de son Google (ou l'adresse ICS
---   publiee de son Outlook). /api/feed-sync va la lire, deplie les
+--   publiee de son Outlook). POST /api/calendar va la lire, deplie les
 --   repetitions, et pose les occurrences dans feed_event. Le calendrier les
 --   dessine, en lecture seule, sur leur propre couche.
 --
 --   SORTANT. Elle cree une adresse a elle, et l'ajoute dans Google ("From
---   URL") ou Outlook ("Subscribe from web"). /api/ics sert son calendrier en
+--   URL") ou Outlook ("Subscribe from web"). GET /api/calendar sert son calendrier en
 --   iCalendar a qui presente le token.
 --
 -- CE QUI EST SECRET, ET POURQUOI.

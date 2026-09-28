@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
-import { env, missingEnv } from './_env.js'
-import { expandCalendar, looksLikeIcs } from '../src/lib/ics.js'
-import { feedUrlProblem } from '../src/lib/feeds.js'
+import { env, missingEnv } from '../_env.js'
+import { expandCalendar, looksLikeIcs } from '../../src/lib/ics.js'
+import { feedUrlProblem } from '../../src/lib/feeds.js'
 
 /**
  * Relire les calendriers Google et Outlook branches, et poser leurs

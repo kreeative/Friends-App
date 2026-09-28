@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
-import { env } from './_env.js'
-import { buildIcs } from '../src/lib/icsExport.js'
+import { env } from '../_env.js'
+import { buildIcs } from '../../src/lib/icsExport.js'
 
 /**
  * Le calendrier Rich & Friends, en iCalendar, pour Google Agenda et Outlook.
@@ -11,7 +11,7 @@ import { buildIcs } from '../src/lib/icsExport.js'
  * from web") viennent lire cette adresse tout seuls, toutes les quelques
  * heures. Elle est de la forme
  *
- *   https://richandfriends.xyz/cal/<token>.ics   (reecrit vers /api/ics?t=)
+ *   https://richandfriends.xyz/cal/<token>.ics   (reecrit vers /api/calendar?t=)
  *
  * et le token est la ligne ics_share qui nomme le compte. C'est une adresse
  * secrete au meme titre que celle de Google: qui la connait lit le calendrier.

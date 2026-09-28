@@ -42,7 +42,7 @@ function tirage(octets = 24) {
 
 /**
  * L'adresse a coller dans Google ou Outlook. `/cal/<token>.ics` plutot que
- * `/api/ics?t=`: les deux marchent (vercel.json reecrit l'une vers l'autre),
+ * `/api/calendar?t=`: les deux marchent (vercel.json reecrit l'une vers l'autre),
  * mais certains lecteurs veulent voir `.ics` au bout pour accepter une URL.
  * Sur l'origine courante, pour la raison que webhookUrl donne.
  */

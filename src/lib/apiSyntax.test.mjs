@@ -56,9 +56,22 @@ const ok = (name, cond, extra = '') => {
 
 console.log('\napi syntax')
 
-const files = readdirSync(API)
-  .filter((f) => f.endsWith('.js'))
-  .sort()
+/**
+ * Every .js under api/, nested directories included, as a path relative to
+ * api/. The Plaid routes lived in api/plaid/ for a year without ever being
+ * parsed here, because this list stopped at the top level.
+ */
+function walk(dir, prefix = '') {
+  const out = []
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (entry.name === 'node_modules') continue
+    const rel = prefix ? `${prefix}/${entry.name}` : entry.name
+    if (entry.isDirectory()) out.push(...walk(join(dir, entry.name), rel))
+    else if (entry.name.endsWith('.js')) out.push(rel)
+  }
+  return out
+}
+const files = walk(API).sort()
 
 /* If this directory is ever emptied or moved, the loop below would pass
    vacuously and this file would go on reporting success while checking
@@ -68,7 +81,7 @@ ok(`there are api files to check (${files.length})`, files.length > 0)
 const scratch = mkdtempSync(join(tmpdir(), 'apisyntax-'))
 try {
   for (const file of files) {
-    const copy = join(scratch, `${file.replace(/\.js$/, '')}.mjs`)
+    const copy = join(scratch, `${file.replace(/\.js$/, '').replace(/\//g, '__')}.mjs`)
     copyFileSync(join(API, file), copy)
     try {
       execFileSync(process.execPath, ['--check', copy], { stdio: 'pipe' })
@@ -85,6 +98,33 @@ try {
 } finally {
   rmSync(scratch, { recursive: true, force: true })
 }
+
+/* --- twelve functions, and not one more ---------------------------------- */
+
+/**
+ * The Hobby plan deploys at most twelve Serverless Functions. Every .js under
+ * api/ is one, unless its name or one of its directories starts with an
+ * underscore, which is how _env.js, _plaid.js, api/_bank/ and api/_calendar/
+ * stay out of the count.
+ *
+ * This is asserted because it failed AFTER a green build: #301 added two
+ * routes to a directory that already held twelve, npm test passed, the Vite
+ * build passed, and Vercel refused the deployment at the last step with
+ * "No more than 12 Serverless Functions can be added to a Deployment on the
+ * Hobby plan". Production stayed on the previous commit and nothing in the
+ * repo said why. Now something does, before the push.
+ */
+const FUNCTION_LIMIT = 12
+const deployed = files.filter((rel) => !rel.split('/').some((part) => part.startsWith('_')))
+ok(
+  `at most ${FUNCTION_LIMIT} functions are deployed (${deployed.length})`,
+  deployed.length <= FUNCTION_LIMIT,
+  `Vercel Hobby refuses the deployment past ${FUNCTION_LIMIT}. Fold a route into a dynamic [action].js or a method switch: ${deployed.join(', ')}`,
+)
+ok('the Plaid routes are one dynamic function', deployed.includes('plaid/[action].js')
+   && !deployed.some((f) => /^plaid\/(sync|status|exchange|disconnect|link-token)\.js$/.test(f)))
+ok('and their handlers still exist, out of the count',
+   ['disconnect', 'exchange', 'link-token', 'status', 'sync'].every((n) => files.includes(`_bank/${n}.js`)))
 
 /* --- the diagnostic must never become a way to read a secret ------------- */
 

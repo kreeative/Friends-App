@@ -6,7 +6,7 @@
   "rewrites": [
     {
       "source": "/cal/:token.ics",
-      "destination": "/api/ics?t=:token"
+      "destination": "/api/calendar?t=:token"
     },
     {
       "source": "/((?!api/).*)",
