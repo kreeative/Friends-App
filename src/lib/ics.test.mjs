@@ -371,7 +371,7 @@ eq('le reste est un flux', providerOf('https://p12-caldav.icloud.com/published/2
  */
 process.env.SUPABASE_URL ||= 'http://feeds-test.invalid'
 process.env.SUPABASE_SERVICE_ROLE_KEY ||= 'not-a-key'
-const { fetchIcs, rowOf } = await import('../../api/feed-sync.js')
+const { fetchIcs, rowOf } = await import('../../api/_calendar/sync.js')
 {
   const calls = []
   const reponse = (status, body, headers = {}) => ({

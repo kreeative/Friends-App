@@ -2188,8 +2188,8 @@ ok(
  * aucun chemin vers le fichier.
  */
 {
-  const sync = read('api/feed-sync.js')
-  const out = read('api/ics.js')
+  const sync = read('api/_calendar/sync.js')
+  const out = read('api/_calendar/export.js')
   const sql = read('supabase/73_calendar_feeds.sql')
   const links = code('src/components/CalendarLinks.jsx')
   const feedsLib = read('src/lib/feeds.js')
@@ -2229,12 +2229,19 @@ ok(
   ok('le fichier est servi comme un calendrier, jamais mis en cache',
      /text\/calendar; charset=utf-8/.test(out) && /'Cache-Control', 'private, no-store'/.test(out))
   ok('le cycle n a aucun chemin vers le fichier',
-     !/cycle|period|menstru/i.test(code('api/ics.js')) && !/cycle|period|menstru/i.test(code('src/lib/icsExport.js')),
+     !/cycle|period|menstru/i.test(code('api/_calendar/export.js')) && !/cycle|period|menstru/i.test(code('src/lib/icsExport.js')),
      'la policy du cycle est user_id = auth.uid() sans aucune sortie, et ce fichier n en est pas une')
   ok('ni les anniversaires des autres', !/birthday|group_members/.test(out))
   ok('les objectifs exportes sont les siens', /from\('goals'\)[\s\S]{0,120}\.eq\('owner_id', uid\)/.test(out))
   ok('l adresse .ics est reecrite vers l API',
-     /"source": "\/cal\/:token\.ics",\s*\n\s*"destination": "\/api\/ics\?t=:token"/.test(read('vercel.json')))
+     /"source": "\/cal\/:token\.ics",\s*\n\s*"destination": "\/api\/calendar\?t=:token"/.test(read('vercel.json')))
+  /* Une seule fonction pour les deux sens, et la methode decide: le plan
+     Hobby en accepte douze par deploiement, et #301 a ete refuse a treize. */
+  const porte = code('api/calendar.js')
+  ok('les deux sens passent par une seule fonction, et la methode decide',
+     /if \(req\.method === 'GET' \|\| req\.method === 'HEAD'\) return exportIcs\(req, res\)/.test(porte)
+       && /if \(req\.method === 'POST'\) return syncFeeds\(req, res\)/.test(porte))
+  ok('et le navigateur appelle cette porte-la', /\/api\/calendar`/.test(feedsLib))
 
   /* Le schema tient la decision: feed_event ne s'ecrit que par l'API, l'URL
      est https par contrainte, et cinq flux au plus. */

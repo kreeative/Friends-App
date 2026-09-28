@@ -471,7 +471,7 @@ export default function Calendar() {
      est un select. Voir supabase/72_cal_bookings.sql. */
   const [bookings, setBookings] = useState([])
   /* Les calendriers Google et Outlook branches depuis les reglages, et les
-     occurrences que /api/feed-sync en a lues. Lecture seule ici aussi: la
+     occurrences que POST /api/calendar en a lues. Lecture seule ici aussi: la
      seule policy de feed_event est un select. Voir 73_calendar_feeds.sql. */
   const [feeds, setFeeds] = useState([])
   const [feedRows, setFeedRows] = useState([])
@@ -546,7 +546,7 @@ export default function Calendar() {
      *
      *   "add an option into the app to link google calendar or outlook"
      *
-     * Les occurrences sont deja depliees en base par /api/feed-sync, donc la
+     * Les occurrences sont deja depliees en base par POST /api/calendar, donc la
      * page les lit comme elle lit les reservations: sans filtre user_id (la
      * policy EST user_id = auth.uid()), bornees a ce qui finit apres il y a
      * deux mois, ce qui est la fenetre que l'API remplit.

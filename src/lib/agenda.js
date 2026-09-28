@@ -127,7 +127,7 @@ const LAYER_OF = {
      deuxieme chemin de dessin serait un deuxieme endroit ou l'heure peut etre
      fausse. */
   reservation: 'reservations',
-  /* Meme statut: la ligne vit dans feed_event, ecrite par /api/feed-sync
+  /* Meme statut: la ligne vit dans feed_event, ecrite par POST /api/calendar
      depuis un flux Google ou Outlook, et passe par la meme grille. */
   externe: 'externes',
 }
