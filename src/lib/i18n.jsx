@@ -1687,12 +1687,9 @@ const STRINGS = {
     'form.times_per_day': 'How many times a day',
     'form.on_days': 'On which days',
     'form.on_days_hint': 'It only appears in your check-in on these days.',
-    'form.every_day': 'Every day.',
     'form.due_by_hint': 'Optional. It stays out of your check-in until the date is a week away.',
     'form.step_when': 'When will you actually do it?',
     'form.step_proof': 'Proof and stakes',
-    'form.optional_step': 'Both optional.',
-    'form.cadence_hint': '',
     'form.times_hint': '',
     'form.until_hint': 'Leave empty to keep going.',
     'form.clear_date': 'Clear the date',
@@ -1711,7 +1708,7 @@ const STRINGS = {
      * The hint names the channel the person actually chose. It is filled in
      * at render from notify_pref, so it stays true when they change it.
      */
-    'form.remind': 'Remind me before check-in',
+    'form.remind': 'Remind me',
     'form.remind_hint':
       'Your commitment and the when-and-where, in the recap that already goes out before the window opens. {by} Never more than one per cycle.',
     'form.remind_where': 'Change where these land in Settings.',
@@ -3449,19 +3446,16 @@ const STRINGS = {
     'form.times_per_day': 'Combien de fois par jour',
     'form.on_days': 'Quels jours',
     'form.on_days_hint': 'Il n’apparaît dans ton point que ces jours-là.',
-    'form.every_day': 'Tous les jours.',
     'form.due_by_hint': 'Facultatif. Il reste hors de ton point jusqu’à une semaine avant la date.',
     'form.step_when': 'Tu le feras quand, concrètement ?',
     'form.step_proof': 'Preuve et gage',
-    'form.optional_step': 'Les deux sont facultatifs.',
-    'form.cadence_hint': '',
     'form.times_hint': '',
     'form.until_hint': 'Laisse vide pour continuer indéfiniment.',
     'form.clear_date': 'Effacer la date',
     'form.clear_time': 'Effacer l’heure',
     'form.where_hint':
       'Une note pour toi, rien de plus. L’app ne sait pas où tu es et ne le demande jamais. Écrire le lieu, c’est ce qui rend le plan assez précis pour être suivi.',
-    'form.remind': 'Me le rappeler avant le point',
+    'form.remind': 'Me le rappeler',
     'form.remind_hint':
       'Ton engagement et le quand-et-où, dans le récap qui part déjà avant l’ouverture. {by} Jamais plus d’un par cycle.',
     'form.remind_where': 'Tu choisis où ils arrivent dans les Réglages.',

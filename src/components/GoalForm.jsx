@@ -9,7 +9,7 @@ import { errorText, isMissingColumn, isNetworkError } from '../lib/dberr'
 import { goalRow } from '../lib/goalRow'
 import { draftOf, stepsOf } from '../lib/steps'
 import { channelKey, toHm } from '../lib/reminders'
-import { Field, PickerField } from './ui'
+import { Field, HINT_ANCHOR, Hint, PickerField } from './ui'
 import { Slider, useSlider } from './Segmented'
 
 /**
@@ -42,7 +42,7 @@ function looksLikeOutcome(text) {
  * four named steps is the whole change, and it is enough. You can now tell
  * at a glance where you are and how much is left.
  */
-function Step({ n, title, hint, children }) {
+function Step({ n, title, hint, hintHook, children }) {
   return (
     /**
      * No divider rule.
@@ -65,9 +65,20 @@ function Step({ n, title, hint, children }) {
         <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-pill bg-ink text-[0.6875rem] font-semibold text-white">
           {n}
         </span>
-        <div>
+        {/**
+         * LA PHRASE SOUS LE TITRE EST DERRIERE UN "?", COMME CELLE DES CHAMPS.
+         *
+         *   "Trop de texte, je t'ai deja donne l'alternative."
+         *
+         * Chaque etape ouvrait sur un paragraphe de deux a quatre lignes, et
+         * la case du rappel sur quatre de plus: un formulaire qu'on lit avant
+         * de pouvoir le remplir. La regle des champs vaut pour les titres: le
+         * nom, et la phrase derriere le "?" pour qui la veut. Rien n'est
+         * supprime, tout est replie.
+         */}
+        <div className={`${HINT_ANCHOR} flex min-w-0 flex-1 items-center`} data-hook={hintHook}>
           <h3 className="text-h2 text-ink">{title}</h3>
-          {hint && <p className="mt-1.5 max-w-[46ch] text-small text-muted">{hint}</p>}
+          {hint && <Hint text={hint} />}
         </div>
       </div>
       <div className="mt-6 space-y-6 sm:pl-9">{children}</div>
@@ -142,8 +153,11 @@ function DayPicker({ value, onChange }) {
 
   return (
     <div>
-      <span className="field-label">{t('form.on_days')}</span>
-      <div className="mt-2 flex gap-1.5">
+      <div className={`${HINT_ANCHOR} mb-1.5 flex items-center`}>
+        <span className="field-label mb-0">{t('form.on_days')}</span>
+        <Hint text={t('form.on_days_hint')} />
+      </div>
+      <div className="flex gap-1.5">
         {labels.map((label, day) => {
           const on = value.includes(day)
           return (
@@ -161,9 +175,6 @@ function DayPicker({ value, onChange }) {
           )
         })}
       </div>
-      <span className="field-note">
-        {value.length === 7 ? t('form.every_day') : t('form.on_days_hint')}
-      </span>
     </div>
   )
 }
@@ -222,9 +233,11 @@ function StepsEditor({ drafts, onChange }) {
 
   return (
     <div data-hook="goal-steps">
-      <span className="field-label">{t('form.steps')}</span>
-      <p className="field-note">{t('form.steps_hint')}</p>
-      <ol className="mt-3 space-y-3">
+      <div className={`${HINT_ANCHOR} mb-1.5 flex items-center`}>
+        <span className="field-label mb-0">{t('form.steps')}</span>
+        <Hint text={t('form.steps_hint')} />
+      </div>
+      <ol className="space-y-3">
         {drafts.map((d, i) => (
           <li key={d._k} className="rounded-inner bg-ink/[0.035] p-3" data-hook="goal-step">
             <div className="flex items-start gap-2">
@@ -584,7 +597,16 @@ export default function GoalForm({ onDone, onCancel, initial = null, groupId = n
         )}
       </Step>
 
-      <Step n={2} title={t('form.step_often')} hint={t('form.cadence_hint')}>
+      {/* The sentence for the chosen kind sits behind the title's "?", and it
+          follows the switch: "recurring" and "one-off" are the app's
+          vocabulary and not anybody else's, but it is one tap away rather
+          than a line under the switch. */}
+      <Step
+        n={2}
+        title={t('form.step_often')}
+        hint={mode === 'recurring' ? t('form.routine_hint') : mode === 'once' ? t('form.milestone_hint') : t('form.todo_hint')}
+        hintHook="goal-mode-hint"
+      >
         <Toggle
           value={mode}
           onChange={setMode}
@@ -594,12 +616,6 @@ export default function GoalForm({ onDone, onCancel, initial = null, groupId = n
             ['todo', t('form.todo')],
           ]}
         />
-
-        {/* Said in words under the switch, because "recurring" and "one-off"
-            are the app's vocabulary and not anybody else's. */}
-        <p className="text-small text-muted" data-hook="goal-mode-hint">
-          {mode === 'recurring' ? t('form.routine_hint') : mode === 'once' ? t('form.milestone_hint') : t('form.todo_hint')}
-        </p>
 
         {cadence === 'recurring' ? (
           <>
@@ -679,23 +695,31 @@ export default function GoalForm({ onDone, onCancel, initial = null, groupId = n
          * promettre un courriel a quelqu'un qui les a coupes.
          */}
         <label
-          className="flex cursor-pointer items-start gap-3 rounded-inner bg-ink/[0.035] p-4"
+          className="flex cursor-pointer items-center gap-3 rounded-inner bg-ink/[0.035] p-4"
           data-hook="goal-remind"
         >
           <input
             type="checkbox"
             checked={remind}
             onChange={(e) => setRemind(e.target.checked)}
-            className="mt-0.5 h-5 w-5 shrink-0 accent-[rgb(var(--c-accent))]"
+            className="h-5 w-5 shrink-0 accent-[rgb(var(--c-accent))]"
           />
-          <span>
-            <span className="block text-body text-ink">{t('form.remind')}</span>
-            <span className="mt-1 block text-small text-muted" data-hook="goal-remind-hint">
-              {t('form.remind_hint', { by: t(channelKey(channels)) })}{' '}
-              <Link to="/settings" className="underline underline-offset-4 hover:text-ink">
-                {t('form.remind_where')}
-              </Link>
-            </span>
+          {/* Le canal et le lien vers les reglages sont derriere le "?": la
+              case dit "me le rappeler", le reste est pour qui demande. */}
+          {/* min-w-0 flex-1: le panneau du "?" fait la largeur de son ancre,
+              et une ancre large comme "Me le rappeler" donnait une colonne de
+              quatre mots par ligne. L'ancre prend toute la ligne, le panneau
+              aussi. */}
+          <span className={`${HINT_ANCHOR} flex min-w-0 flex-1 items-center`}>
+            <span className="text-body text-ink">{t('form.remind')}</span>
+            <Hint text={t('form.remind_hint', { by: t(channelKey(channels)) })}>
+              <span data-hook="goal-remind-hint">
+                {t('form.remind_hint', { by: t(channelKey(channels)) })}{' '}
+                <Link to="/settings" className="underline underline-offset-4 hover:text-ink">
+                  {t('form.remind_where')}
+                </Link>
+              </span>
+            </Hint>
           </span>
         </label>
 
@@ -755,7 +779,7 @@ export default function GoalForm({ onDone, onCancel, initial = null, groupId = n
         )}
       </Step>
 
-      <Step n={4} title={t('form.step_proof')} hint={t('form.optional_step')}>
+      <Step n={4} title={t('form.step_proof')}>
         {/**
          * What the check-in will ask for.
          *
