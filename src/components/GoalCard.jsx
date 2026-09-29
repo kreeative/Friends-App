@@ -6,9 +6,11 @@ import { shortDate } from '../lib/time'
 import { localeTag, useT } from '../lib/i18n'
 import { errorText } from '../lib/dberr'
 import { rectOf } from '../lib/gesture'
+import { nextStep, progressOf, stepsOf } from '../lib/steps'
 import { Avatar } from './ui'
 import ConfirmDialog from './ConfirmDialog'
 import GoalDetail from './GoalDetail'
+import ProgressRing from './ProgressRing'
 
 /**
  * Finished states. Each gets its own card colour and a chip, rather than the
@@ -48,10 +50,27 @@ export default function GoalCard({
   /** Whether the person looking at this may delete it. See canDelete in Goals. */
   deletable = false,
 }) {
-  const { reloadGroup, removeGoal } = useGroup()
+  const { reloadGroup, removeGoal, steps } = useGroup()
   const { t, locale } = useT()
   const paused = goal.status === 'paused'
   const finished = DONE[goal.status] ?? null
+
+  /**
+   * UNE LISTE A COCHER: SES ETAPES, SON AVANCEMENT, LA PROCHAINE.
+   *
+   *   "quand tu vas checker le goal sur une vue tu vois comme un pourcentage
+   *    de progression"
+   *
+   * Un objectif est une liste des qu'il a une etape. La carte montre alors un
+   * anneau avec le pourcentage a droite du titre, et une ligne "3 sur 7
+   * faites · Ensuite : ..." sous les pastilles. Le chiffre vient de
+   * progressOf, le meme que la fiche: un arrondi fait a deux endroits finit
+   * par rendre 66 ici et 67 la.
+   */
+  const mySteps = stepsOf(steps, goal.id)
+  const isList = mySteps.length > 0
+  const prog = progressOf(mySteps)
+  const next = nextStep(mySteps)
 
   const [asking, setAsking] = useState(false)
   /* Whether the overflow menu is open. Per card, so two cards cannot both be
@@ -144,9 +163,11 @@ export default function GoalCard({
   const cadence =
     goal.cadence === 'recurring'
       ? t('goal.times_a_day', { n: goal.target_per_cycle })
-      : due
-        ? t('goal.by_date', { date: due })
-        : t('goal.once')
+      : isList
+        ? t('goal.todo')
+        : due
+          ? t('goal.by_date', { date: due })
+          : t('goal.once')
 
   const when = [goal.trigger_when, goal.trigger_where].filter(Boolean).join(', ')
 
@@ -290,6 +311,9 @@ export default function GoalCard({
             GoalDetail renders the same field unclamped, so nothing is lost:
             the full text is one tap away, and the card is a summary. */}
         <h3 className="text-safe line-clamp-3 text-h2 font-semibold text-ink">{goal.commitment}</h3>
+        {/* L'anneau, a droite du titre. Il est dans la region qui ouvre la
+            fiche, ou la liste entiere se coche. */}
+        {isList && <ProgressRing pct={prog.pct} label={t('goal.steps_pct', { pct: prog.pct })} />}
         {finished && !owner && goal.kind !== 'group' && (
           <span className={`${finished.chip} shrink-0`}>{t(finished.label)}</span>
         )}
@@ -305,6 +329,13 @@ export default function GoalCard({
         <span className="inline-flex items-center rounded-pill bg-accent/[0.14] px-3 py-1 text-label font-semibold text-ink ring-1 ring-inset ring-accent/25">
           {cadence}
         </span>
+
+        {/* Une liste garde sa date limite, dans sa propre pastille. */}
+        {isList && due && (
+          <span className="inline-flex items-center rounded-pill bg-ink/[0.055] px-3 py-1 text-label font-semibold text-muted">
+            {t('goal.by_date', { date: due })}
+          </span>
+        )}
 
         {/* These three carry whatever was typed into the form, so they are the
             ones that escape. pill-safe caps them at the card width and clamps
@@ -334,6 +365,15 @@ export default function GoalCard({
           </span>
         )}
         </div>
+
+      {/* En toutes lettres sous les pastilles, parce qu'un anneau seul n'est
+          pas un signal (1.4.1) et que "Ensuite : ..." est la chose utile. */}
+      {isList && (
+        <p className="text-safe mt-3 text-small text-muted" data-hook="goal-steps-line">
+          {t('goal.steps_progress', { done: prog.done, total: prog.total })}
+          {next ? ` · ${t('goal.steps_next', { title: next.title })}` : ''}
+        </p>
+      )}
       </button>
 
       {progress && (

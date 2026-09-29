@@ -5,6 +5,7 @@ import { useAuth } from './AuthContext'
 import { cyclePhase, lastClosed, soonestUpcoming } from '../lib/time'
 import { dayKey, indexDays, since } from '../lib/streak'
 import { openHides } from '../lib/nudgeHidden'
+import { cleanDrafts, stepDiff } from '../lib/steps'
 
 /* Exported so a test or a preview can supply a value without standing up a
    Supabase client. Application code should use the hook. */
@@ -341,6 +342,127 @@ export function GroupProvider({ children }) {
     return { error: null }
   }, [])
 
+  /**
+   * LES ETAPES DES OBJECTIFS, POUR TOUS LES OBJECTIFS CHARGES.
+   *
+   *   "un goal a l'interieur duquel il y a des checklists ... et quand tu vas
+   *    checker le goal sur une vue tu vois comme un pourcentage de
+   *    progression"
+   *
+   * Une requete a part et pas un embed dans `select('*')` des objectifs:
+   * migration 74 peut ne pas etre passee, et un embed sur une table absente
+   * fait echouer TOUTE la lecture des objectifs. Ici une table absente rend
+   * une erreur, la liste reste vide, et les objectifs s'affichent comme
+   * avant, sans anneau.
+   *
+   * Rechargee quand la liste des objectifs change, parce que c'est d'elle
+   * que viennent les ids: un objectif tout juste cree n'a ses etapes ici
+   * qu'apres le reloadGroup qui le fait apparaitre.
+   */
+  const [steps, setSteps] = useState([])
+  const goalIds = useMemo(() => [...goals, ...soloGoals].map((g) => g.id), [goals, soloGoals])
+
+  const reloadSteps = useCallback(async () => {
+    if (goalIds.length === 0) {
+      setSteps([])
+      return
+    }
+    const { data, error } = await supabase
+      .from('goal_step')
+      .select('*')
+      .in('goal_id', goalIds)
+      .order('position')
+      .order('created_at')
+    if (!error) setSteps(data ?? [])
+  }, [goalIds])
+
+  useEffect(() => {
+    reloadSteps()
+  }, [reloadSteps])
+
+  /**
+   * Cocher une etape, ou la decocher. Optimiste, comme setGoalDay et pour la
+   * meme raison: c'est une case a cocher. `count: 'exact'`, parce que RLS
+   * refuse un UPDATE en silence, et sur un refus les vraies lignes sont
+   * relues plutot que restaurees d'une variable.
+   */
+  const toggleStep = useCallback(
+    async (step) => {
+      if (!user || !step?.id) return { error: { message: 'not signed in' } }
+      const done = !step.done_at
+      const patch = { done_at: done ? new Date().toISOString() : null, done_by: done ? user.id : null }
+      setSteps((rows) => rows.map((s) => (s.id === step.id ? { ...s, ...patch } : s)))
+      const { error, count } = await supabase
+        .from('goal_step')
+        .update(patch, { count: 'exact' })
+        .eq('id', step.id)
+      if (error || !count) {
+        await reloadSteps()
+        return { error: error ?? { code: '42501', message: 'not allowed' } }
+      }
+      return { error: null }
+    },
+    [user?.id, reloadSteps],
+  )
+
+  /** Une etape de plus, au bout de la liste de cet objectif. */
+  const addStep = useCallback(
+    async (goalId, draft) => {
+      const [row] = cleanDrafts([draft])
+      if (!row) return { error: { message: 'empty' } }
+      const position = steps
+        .filter((s) => s.goal_id === goalId)
+        .reduce((m, s) => Math.max(m, (s.position ?? 0) + 1), 0)
+      const { data, error } = await supabase
+        .from('goal_step')
+        .insert({ goal_id: goalId, title: row.title, due_on: row.due_on, at_min: row.at_min, position })
+        .select('*')
+        .single()
+      if (error) return { error }
+      setSteps((rows) => [...rows, data])
+      return { error: null, step: data }
+    },
+    [steps],
+  )
+
+  /** Retirer une etape. Le compte est demande, voir removeGoal. */
+  const removeStep = useCallback(async (step) => {
+    if (!step?.id) return { error: { message: 'no step' } }
+    const { error, count } = await supabase.from('goal_step').delete({ count: 'exact' }).eq('id', step.id)
+    if (error || !count) return { error: error ?? { code: '42501', message: 'not allowed' } }
+    setSteps((rows) => rows.filter((s) => s.id !== step.id))
+    return { error: null }
+  }, [])
+
+  /**
+   * Ce que le formulaire enregistre: la liste entiere telle qu'elle est a
+   * l'ecran. stepDiff en fait trois listes (inserer, modifier, retirer)
+   * plutot qu'un tout-effacer-tout-reecrire, qui perdrait `done_at` sur
+   * chaque enregistrement.
+   */
+  const saveSteps = useCallback(
+    async (goalId, drafts) => {
+      const existing = steps.filter((s) => s.goal_id === goalId)
+      const { insert, update, remove } = stepDiff(existing, drafts, goalId)
+      if (insert.length) {
+        const { error } = await supabase.from('goal_step').insert(insert)
+        if (error) return { error }
+      }
+      for (const u of update) {
+        const { id, ...patch } = u
+        const { error } = await supabase.from('goal_step').update(patch).eq('id', id)
+        if (error) return { error }
+      }
+      if (remove.length) {
+        const { error } = await supabase.from('goal_step').delete().in('id', remove)
+        if (error) return { error }
+      }
+      await reloadSteps()
+      return { error: null }
+    },
+    [steps, reloadSteps],
+  )
+
   const value = {
     loading,
     error,
@@ -362,6 +484,12 @@ export function GroupProvider({ children }) {
     dayIndex,
     setGoalDay,
     removeGoal,
+    steps,
+    reloadSteps,
+    toggleStep,
+    addStep,
+    removeStep,
+    saveSteps,
     myRole,
     statuses,
     statusesFor,

@@ -2054,7 +2054,7 @@ ok(
   ok('les entrees sont fabriquees pour la plage affichee, pas stockees',
      /birthdayEntries\(gens, range\.from, range\.to/.test(cal))
   ok('et elles passent par le meme filtre de couches que le reste',
-     /visibleEvents\(\[\.\.\.events, \.\.\.asEvents, \.\.\.anniversaires, \.\.\.reserves, \.\.\.externes\], hidden\)/.test(cal),
+     /visibleEvents\(\[\.\.\.events, \.\.\.asEvents, \.\.\.anniversaires, \.\.\.reserves, \.\.\.externes, \.\.\.etapes\], hidden\)/.test(cal),
      'c est ce qui rend la puce "Anniversaires" capable de les enlever')
   /* Un anniversaire est derive d'un profil comme un objectif est derive de sa
      ligne: ouvrir le formulaire dessus insererait un vrai evenement portant le
@@ -2342,6 +2342,97 @@ ok(
   for (const cle of ['cal.connect_what', 'cal.connect_step_events', 'cal.links_in_what', 'cal.links_out_what',
                      'cal.links_section', 'cal.connect_section']) {
     ok(`${cle} n existe plus`, !read('src/lib/i18n.jsx').includes(`'${cle}'`))
+  }
+}
+
+/* --- les listes a cocher ------------------------------------------------- */
+
+/**
+ * UN OBJECTIF FAIT D'ETAPES, ET UN POURCENTAGE.
+ *
+ *   "Dans la section goals construit une option todo du genre un goal a
+ *    l'interieur duquel il y a des checklists qui auront un peu la meme
+ *    fonctionnalite que les goals normaux avec des options pour le temps
+ *    aussi et tout et quand tu vas checker le goal sur une vue tu vois comme
+ *    un pourcentage de progression"
+ *
+ * Ce qui doit tenir: qui peut voir et cocher une etape (le schema), un seul
+ * arrondi pour la carte et la fiche, une lecture des etapes qui ne casse pas
+ * les objectifs quand la table manque, et un formulaire qui ne perd pas les
+ * coches en enregistrant.
+ */
+{
+  const sql = read('supabase/74_goal_steps.sql')
+  const ctx = code('src/context/GroupContext.jsx')
+  const form = code('src/components/GoalForm.jsx')
+  const card = code('src/components/GoalCard.jsx')
+  const detail = code('src/components/GoalDetail.jsx')
+  const ring = code('src/components/ProgressRing.jsx')
+  const lib = code('src/lib/steps.js')
+  const goalsPage = code('src/pages/Goals.jsx')
+  const dash = code('src/pages/Dashboard.jsx')
+
+  /* Voir une etape, c'est voir son objectif: goals_select s'applique dans le
+     sous-select. Ecrire passe par une fonction qui dit qui peut modifier
+     l'objectif, revoquee d'anon. */
+  ok('goal_step a RLS', /alter table goal_step enable row level security/.test(sql))
+  ok('voir une etape, c est voir son objectif',
+     /create policy goal_step_select on goal_step for select to authenticated\s*\n\s*using \(exists \(select 1 from goals g where g\.id = goal_step\.goal_id\)\)/.test(sql))
+  ok('ecrire passe par can_edit_goal, sur les trois verbes',
+     /for insert to authenticated\s*\n\s*with check \(can_edit_goal\(goal_id\)\)/.test(sql)
+       && /for update to authenticated\s*\n\s*using \(can_edit_goal\(goal_id\)\) with check \(can_edit_goal\(goal_id\)\)/.test(sql)
+       && /for delete to authenticated\s*\n\s*using \(can_edit_goal\(goal_id\)\)/.test(sql))
+  ok('et la fonction n est pas ouverte a anon',
+     /revoke execute on function can_edit_goal\(uuid\) from public, anon;\s*\ngrant\s+execute on function can_edit_goal\(uuid\) to authenticated;/.test(sql))
+  ok('une heure sans date est refusee par le schema', /check \(at_min is null or due_on is not null\)/.test(sql))
+
+  /* La lecture des etapes est une requete a part: un embed sur une table
+     absente ferait echouer TOUTE la lecture des objectifs. */
+  ok('les etapes sont lues a part, jamais en embed des objectifs',
+     /from\('goal_step'\)\s*\n?\s*\.select\('\*'\)\s*\n?\s*\.in\('goal_id', goalIds\)/.test(ctx)
+       && !/from\('goals'\)\s*\.select\('\*,\s*goal_step/.test(ctx))
+  ok('cocher demande le compte et relit sur un refus',
+     /\.update\(patch, \{ count: 'exact' \}\)\s*\n?\s*\.eq\('id', step\.id\)\s*\n\s*if \(error \|\| !count\) \{\s*\n\s*await reloadSteps\(\)/.test(ctx))
+  ok('retirer aussi', /from\('goal_step'\)\.delete\(\{ count: 'exact' \}\)\.eq\('id', step\.id\)/.test(ctx))
+  ok('enregistrer fait trois listes et pas un tout-effacer', /stepDiff\(existing, drafts, goalId\)/.test(ctx) && !/from\('goal_step'\)\.delete\(\)\.eq\('goal_id'/.test(ctx))
+
+  /* Un seul arrondi, dans lib, lu par la carte ET la fiche. */
+  ok('le pourcentage est arrondi une fois, dans lib', /Math\.round\(\(100 \* done\) \/ total\)/.test(lib)
+     && !/Math\.round/.test(card) && !/Math\.round\(\(100/.test(detail))
+  ok('la carte et la fiche lisent le meme progressOf', /progressOf\(mySteps\)/.test(card) && /progressOf\(mySteps\)/.test(detail))
+  ok('l anneau n a pas de bout rond a zero', /strokeLinecap=\{p > 0 \? 'round' : 'butt'\}/.test(ring),
+     'un linecap rond sur un tiret de longueur nulle peint quand meme un point')
+  ok('et il ecrit le chiffre au milieu', /\{p\}%/.test(ring))
+
+  /* Le formulaire: un troisieme choix, l insert qui rend son id, et les
+     etapes ecrites apres, sans jamais effacer ce qu on n a pas encore lu. */
+  ok('le formulaire offre la liste comme troisieme genre', /\['todo', t\('form\.todo'\)\]/.test(form))
+  ok('l insert rend l id sous lequel les etapes s ecrivent', /\.insert\(row\)\.select\('id'\)\.single\(\)/.test(form))
+  ok('les etapes ne s effacent que si on les a vues',
+     /if \(goalId && \(mode === 'todo' \|\| seeded\.current\)\) \{\s*\n\s*const \{ error: stepErr \} = await saveSteps\(goalId, mode === 'todo' \? drafts : \[\]\)/.test(form))
+  ok('une heure ne s offre qu avec une date', /\{d\.due_on && \(\s*\n?\s*<Field label=\{t\('form\.step_at'\)\}>/.test(form))
+
+  /* La carte et la fiche. */
+  ok('l anneau n est sur la carte que d une liste', /\{isList && <ProgressRing pct=\{prog\.pct\}/.test(card))
+  ok('et la carte le dit en toutes lettres', /data-hook="goal-steps-line"/.test(card) && /t\('goal\.steps_next', \{ title: next\.title \}\)/.test(card))
+  ok('la case de la fiche est une vraie case, cochee ET barree',
+     /role="checkbox"/.test(detail) && /aria-checked=\{done\}/.test(detail) && /done \? 'text-muted line-through' : 'text-ink'/.test(detail))
+  ok('une liste n a pas de question du jour', /const daily = track && !isList/.test(detail) && /\{daily && !finished && \(/.test(detail))
+  ok('tout coche propose de fermer l objectif', /prog\.complete && !finished && canTick && \(/.test(detail))
+
+  /* Le rail, la bande de la semaine et le calendrier. */
+  ok('le rail du jour ne pose pas la question sur une liste', /g\.status === 'active' && !hasSteps\(steps, g\.id\)/.test(goalsPage))
+  ok('la bande de la semaine non plus', /from\('goal_step'\)\.select\('goal_id'\)/.test(dash) && /filter\(\(g\) => !lists\.has\(g\.id\)\)/.test(dash))
+  ok('les etapes datees sont sur le calendrier', /stepEntries\(steps, new Map/.test(cal) && /from\('goal_step'\)/.test(cal))
+  ok('et le test des etapes tourne', /node src\/lib\/steps\.test\.mjs/.test(read('package.json')))
+
+  for (const cle of ['form.todo', 'form.todo_hint', 'form.steps', 'form.steps_hint', 'form.step_ph', 'form.step_due',
+                     'form.step_at', 'form.add_step', 'form.remove_step', 'goal.todo', 'goal.steps_progress',
+                     'goal.steps_next', 'goal.steps_pct', 'goal.checklist', 'goal.step_add', 'goal.step_add_ph',
+                     'goal.step_remove', 'goal.step_due', 'goal.step_at', 'goal.step_done_on', 'goal.steps_all_done',
+                     'goal.steps_failed']) {
+    const n = read('src/lib/i18n.jsx').split(`'${cle}'`).length - 1
+    ok(`${cle} existe dans les deux langues (${n})`, n === 2)
   }
 }
 
