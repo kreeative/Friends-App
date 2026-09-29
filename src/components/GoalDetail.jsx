@@ -9,6 +9,9 @@ import { dragOffset, flipTransform, rectOf, shouldDismiss } from '../lib/gesture
 import { monthGrid, monthStart, sameMonth } from '../lib/calendar'
 import { dateCaps, dateFull } from '../lib/datecaps'
 import ProofField from './ProofField'
+import ProgressRing from './ProgressRing'
+import { nextStep, progressOf, stepsOf } from '../lib/steps'
+import { toHm } from '../lib/reminders'
 import {
   countOn,
   dayKey,
@@ -123,7 +126,7 @@ export default function GoalDetail({
 }) {
   const { t, locale } = useT()
   const tag = localeTag(locale)
-  const { dayIndex, setGoalDay, removeGoal, reloadGroup } = useGroup()
+  const { dayIndex, setGoalDay, removeGoal, reloadGroup, steps, toggleStep, addStep, removeStep } = useGroup()
 
   const open = Boolean(goal)
 
@@ -145,6 +148,11 @@ export default function GoalDetail({
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState(null)
   const [month, setMonth] = useState(() => monthStart(new Date()))
+  /* La liste a cocher: le texte de la prochaine etape a ajouter, l'etape en
+     cours d'ecriture (un id, ou 'new'), et la derniere panne. */
+  const [newStep, setNewStep] = useState('')
+  const [stepBusy, setStepBusy] = useState(null)
+  const [stepError, setStepError] = useState(null)
 
   /* The one thing on this screen that is not already in memory. Solo goals are
      drawn entirely from dayIndex, which the context already holds; a goal in a
@@ -294,15 +302,65 @@ export default function GoalDetail({
 
   const grid = useMemo(() => (goal ? monthGrid(month) : []), [goal, month])
 
+  /**
+   * LA LISTE A COCHER, ICI, OU ELLE SE COCHE.
+   *
+   *   "un goal a l'interieur duquel il y a des checklists ... et quand tu vas
+   *    checker le goal sur une vue tu vois comme un pourcentage de
+   *    progression"
+   *
+   * Les memes lignes que la carte, le meme progressOf. Un objectif qui a des
+   * etapes n'a pas de question du jour: le gros bouton, les statistiques de
+   * jours et le mois sont ceux d'une habitude, et une liste n'en est pas une.
+   * Ils s'effacent, et la liste prend leur place en haut de la fiche.
+   */
+  const mySteps = useMemo(() => (goal ? stepsOf(steps, goal.id) : []), [steps, goal])
+  const isList = mySteps.length > 0
+  const prog = progressOf(mySteps)
+  const next = nextStep(mySteps)
+
   if (phase === 'closed' || !goal) return null
 
   const finished = DONE[goal.status] ?? null
   const paused = goal.status === 'paused'
+  const daily = track && !isList
+  const canTick = Boolean(editHref) && !finished
+
+  async function tickStep(step) {
+    if (stepBusy) return
+    setStepBusy(step.id)
+    setStepError(null)
+    const { error } = await toggleStep(step)
+    if (error) setStepError(errorText(error))
+    setStepBusy(null)
+  }
+
+  async function addOne(e) {
+    e.preventDefault()
+    if (!newStep.trim() || stepBusy) return
+    setStepBusy('new')
+    setStepError(null)
+    const { error } = await addStep(goal.id, { title: newStep, due_on: '', at: '' })
+    if (error) setStepError(errorText(error))
+    else setNewStep('')
+    setStepBusy(null)
+  }
+
+  async function dropStep(step) {
+    if (stepBusy) return
+    setStepBusy(step.id)
+    setStepError(null)
+    const { error } = await removeStep(step)
+    if (error) setStepError(errorText(error))
+    setStepBusy(null)
+  }
 
   const cadence =
     goal.cadence === 'recurring'
       ? t('goal.times_a_day', { n: goal.target_per_cycle })
-      : t('goal.by_date', { date: fmtDay(goal.due_on, tag) })
+      : isList
+        ? t('goal.todo')
+        : t('goal.by_date', { date: fmtDay(goal.due_on, tag) })
 
   async function tick() {
     if (ticking) return
@@ -478,9 +536,89 @@ export default function GoalDetail({
           style={body}
         >
           <div className="mx-auto w-full max-w-content space-y-7">
+            {/* --- la liste a cocher ------------------------------------------ */}
+            {isList && (
+              <section data-hook="goal-checklist" data-pct={prog.pct} data-done={prog.done} data-total={prog.total}>
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="eyebrow">{t('goal.checklist')}</h3>
+                  <span className="text-small font-semibold text-muted [font-variant-numeric:tabular-nums]" data-hook="goal-steps-count">
+                    {t('goal.steps_progress', { done: prog.done, total: prog.total })}
+                  </span>
+                </div>
+
+                {/* L'anneau en grand, le chiffre a cote, et la prochaine chose
+                    a faire: c'est la reponse a "ou j'en suis" en un regard. */}
+                <div className="mt-3 flex items-center gap-4 rounded-card bg-surface px-5 py-4">
+                  <ProgressRing pct={prog.pct} size={64} stroke={6} label={t('goal.steps_pct', { pct: prog.pct })} />
+                  <div className="min-w-0">
+                    <p className="text-h2 font-semibold text-ink [font-variant-numeric:tabular-nums]">{t('goal.steps_pct', { pct: prog.pct })}</p>
+                    <p className="text-safe text-small text-muted" data-hook="goal-steps-next">
+                      {prog.complete ? t('goal.steps_all_done') : next ? t('goal.steps_next', { title: next.title }) : ''}
+                    </p>
+                  </div>
+                </div>
+
+                <ul className="lg mt-3 divide-y divide-hairline px-5">
+                  {mySteps.map((s) => (
+                    <StepRow
+                      key={s.id}
+                      step={s}
+                      canTick={canTick}
+                      busy={stepBusy === s.id}
+                      onToggle={() => tickStep(s)}
+                      onRemove={() => dropStep(s)}
+                      t={t}
+                      tag={tag}
+                    />
+                  ))}
+                </ul>
+
+                {canTick && (
+                  <form onSubmit={addOne} className="mt-3 flex gap-2" data-hook="goal-step-form">
+                    <input
+                      className="field min-w-0 flex-1"
+                      value={newStep}
+                      onChange={(e) => setNewStep(e.target.value)}
+                      placeholder={t('goal.step_add_ph')}
+                      maxLength={200}
+                      data-hook="goal-step-new"
+                    />
+                    <button
+                      type="submit"
+                      disabled={!newStep.trim() || stepBusy === 'new'}
+                      className="goal-action press shrink-0 disabled:opacity-60"
+                      data-hook="goal-step-add"
+                    >
+                      {t('goal.step_add')}
+                    </button>
+                  </form>
+                )}
+
+                {/* Tout coche et l'objectif encore ouvert: le geste qui reste
+                    est de le fermer, et il est propose ici plutot que laisse
+                    au pied de la page. */}
+                {prog.complete && !finished && canTick && (
+                  <button
+                    type="button"
+                    onClick={() => setStatus('completed')}
+                    className="goal-action-done press mt-3"
+                    data-hook="goal-steps-finish"
+                  >
+                    {t('goal.mark_done')}
+                  </button>
+                )}
+
+                {stepError && (
+                  <p className="mt-3 text-small font-semibold text-negative" role="alert" data-hook="goal-step-failed">
+                    {stepError}
+                  </p>
+                )}
+              </section>
+            )}
+
             {/* The one big action. Everything else on this page is a record;
                 this is the only thing you came to do. */}
-            {track && !finished && (
+            {daily && !finished && (
               <section>
                 {progress.due ? (
                   <button
@@ -550,7 +688,7 @@ export default function GoalDetail({
             )}
 
             {/* --- the numbers --------------------------------------------- */}
-            {track && (
+            {daily && (
               <section>
                 <h3 className="eyebrow">{t('goal.stats')}</h3>
                 <div className="mt-3 grid grid-cols-3 gap-2">
@@ -591,7 +729,7 @@ export default function GoalDetail({
             )}
 
             {/* --- the month ------------------------------------------------ */}
-            {track && (
+            {daily && (
               <section>
                 <div className="flex items-center justify-between gap-3">
                   <h3 className="eyebrow">{monthLabel(month, tag)}</h3>
@@ -675,6 +813,9 @@ export default function GoalDetail({
             )}
 
             {/* --- what was attached ---------------------------------------- */}
+            {/* Une liste solo n'a pas d'historique de jours: sa memoire, ce sont
+                les etapes cochees, avec leur date, juste au-dessus. */}
+            {(goal.group_id || !isList) && (
             <section>
               <h3 className="eyebrow">{t('goal.history')}</h3>
               <div className="mt-3">
@@ -695,6 +836,7 @@ export default function GoalDetail({
                 )}
               </div>
             </section>
+            )}
           </div>
         </div>
 
@@ -756,6 +898,59 @@ export default function GoalDetail({
       />
     </div>,
     document.body,
+  )
+}
+
+/**
+ * Une etape de la liste: une case, le texte, et sous lui la date, l'heure et
+ * le jour ou elle a ete cochee, quand il y en a.
+ *
+ * La case est un vrai bouton role=checkbox, coche ET barre quand c'est fait:
+ * la couleur n'est jamais seule a le dire (1.4.1). La croix ne retire
+ * l'etape que pour qui peut modifier l'objectif; les autres lisent.
+ */
+function StepRow({ step, canTick, busy, onToggle, onRemove, t, tag }) {
+  const done = Boolean(step.done_at)
+  const bits = [
+    step.due_on && t('goal.step_due', { date: fmtDay(step.due_on, tag) }),
+    step.due_on && step.at_min != null && t('goal.step_at', { time: toHm(step.at_min) }),
+    done && t('goal.step_done_on', { date: fmtDay(step.done_at, tag) }),
+  ].filter(Boolean)
+
+  return (
+    <li className="flex items-start gap-3 py-3" data-hook="goal-step-row" data-done={done ? 'yes' : 'no'}>
+      <button
+        type="button"
+        role="checkbox"
+        aria-checked={done}
+        aria-label={step.title}
+        disabled={!canTick || busy}
+        onClick={onToggle}
+        data-hook="goal-step-tick"
+        className={`press mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-[0.55rem] border-2 transition-colors duration-200 ease-settle disabled:opacity-60 ${
+          done ? 'border-accent bg-accent text-on-accent' : 'border-ink/25 bg-transparent text-transparent'
+        }`}
+      >
+        {done && <CheckIcon className="h-4 w-4" />}
+      </button>
+      <span className="min-w-0 flex-1">
+        <span className={`text-safe block text-body ${done ? 'text-muted line-through' : 'text-ink'}`}>{step.title}</span>
+        {bits.length > 0 && <span className="block text-small text-muted">{bits.join(' · ')}</span>}
+      </span>
+      {canTick && (
+        <button
+          type="button"
+          onClick={onRemove}
+          disabled={busy}
+          aria-label={t('goal.step_remove')}
+          title={t('goal.step_remove')}
+          data-hook="goal-step-remove"
+          className="press -mr-2 flex h-9 w-9 shrink-0 items-center justify-center rounded-pill text-h2 leading-none text-muted transition-colors hover:bg-ink/[0.06] hover:text-ink disabled:opacity-60"
+        >
+          &times;
+        </button>
+      )}
+    </li>
   )
 }
 

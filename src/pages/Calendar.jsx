@@ -22,6 +22,7 @@ import {
 } from '../lib/agenda'
 import { bookingEntries } from '../lib/bookings'
 import { feedEntries, staleFeeds, syncFeeds } from '../lib/feeds'
+import { stepEntries } from '../lib/steps'
 import { SegTabs } from '../components/ui'
 import CyclePanel from '../components/CyclePanel'
 import TimetableWizard from '../components/TimetableWizard'
@@ -475,6 +476,8 @@ export default function Calendar() {
      seule policy de feed_event est un select. Voir 73_calendar_feeds.sql. */
   const [feeds, setFeeds] = useState([])
   const [feedRows, setFeedRows] = useState([])
+  /* Les etapes datees des listes a cocher, avec l'etat de leur objectif. */
+  const [steps, setSteps] = useState([])
 
   const load = useCallback(async () => {
     if (!user) return
@@ -520,6 +523,24 @@ export default function Calendar() {
       .eq('status', 'active')
       .not('due_on', 'is', null)
     setGoals(g ?? [])
+
+    /**
+     * LES ETAPES DATEES DES LISTES A COCHER.
+     *
+     *   "des checklists ... avec des options pour le temps aussi"
+     *
+     * Une etape qui porte une date est une chose a faire ce jour-la, donc
+     * elle est sur le calendrier, sur la couche des objectifs, comme une
+     * echeance. L'etat de l'objectif descend en embed pour ecarter celles
+     * des objectifs finis, comme la requete au-dessus ne prend que les
+     * actifs. Une table absente (migration 74 pas passee) rend une erreur et
+     * une liste vide, et le calendrier se dessine comme avant.
+     */
+    const { data: st } = await supabase
+      .from('goal_step')
+      .select('id, goal_id, title, due_on, at_min, done_at, goals(status)')
+      .not('due_on', 'is', null)
+    setSteps(st ?? [])
 
     /**
      * LES RESERVATIONS PRISES SUR SES PAGES CAL.COM.
@@ -661,8 +682,11 @@ export default function Calendar() {
        entree par jour, et qu'il n'y a pas de raison d'en fabriquer pour des
        jours que la grille ne montre pas. */
     const externes = feedEntries(feedRows, feeds, range.from, range.to)
-    return visibleEvents([...events, ...asEvents, ...anniversaires, ...reserves, ...externes], hidden)
-  }, [events, goals, bookings, feedRows, feeds, hidden, friends, profile, user?.id, range, t])
+    /* Les etapes datees, sur la couche des objectifs, avec le goalId qui
+       ferme le formulaire d'evenement. */
+    const etapes = stepEntries(steps, new Map(steps.map((s) => [s.goal_id, s.goals ?? { status: 'active' }])))
+    return visibleEvents([...events, ...asEvents, ...anniversaires, ...reserves, ...externes, ...etapes], hidden)
+  }, [events, goals, bookings, feedRows, feeds, steps, hidden, friends, profile, user?.id, range, t])
 
   const agenda = useMemo(() => agendaFor(drawn, range.from, range.to), [drawn, range])
 

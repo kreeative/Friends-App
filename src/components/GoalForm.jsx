@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
@@ -7,6 +7,7 @@ import { localeTag, useT } from '../lib/i18n'
 import { PROOF_TYPES, proofTypeOf } from '../lib/proofKinds'
 import { errorText, isMissingColumn, isNetworkError } from '../lib/dberr'
 import { goalRow } from '../lib/goalRow'
+import { draftOf, stepsOf } from '../lib/steps'
 import { channelKey, toHm } from '../lib/reminders'
 import { Field, PickerField } from './ui'
 import { Slider, useSlider } from './Segmented'
@@ -197,14 +198,113 @@ function DateField(props) {
   return <PickerField type="date" {...props} />
 }
 
+/** Une ligne vide de la liste, avec une clef pour que React la suive. */
+const blank = () => ({ id: null, _k: Math.random().toString(36).slice(2), title: '', due_on: '', at: '' })
+
+/**
+ * LES ETAPES D'UNE LISTE A COCHER, DANS LE FORMULAIRE.
+ *
+ *   "un goal a l'interieur duquel il y a des checklists qui auront un peu la
+ *    meme fonctionnalite que les goals normaux avec des options pour le
+ *    temps aussi"
+ *
+ * Une ligne par etape: le texte, une date, et une heure qui n'apparait
+ * qu'une fois la date posee (une heure sans jour ne veut rien dire). La
+ * croix retire la ligne; "Ajouter une etape" en ouvre une. Ce que la liste
+ * devient en base est decide par cleanDrafts et stepDiff dans lib/steps.js,
+ * qui sont testes: ici il n'y a que des champs.
+ */
+function StepsEditor({ drafts, onChange }) {
+  const { t } = useT()
+  const update = (k, patch) => onChange(drafts.map((d) => (d._k === k ? { ...d, ...patch } : d)))
+  const remove = (k) => onChange(drafts.filter((d) => d._k !== k))
+  const add = () => onChange([...drafts, blank()])
+
+  return (
+    <div data-hook="goal-steps">
+      <span className="field-label">{t('form.steps')}</span>
+      <p className="field-note">{t('form.steps_hint')}</p>
+      <ol className="mt-3 space-y-3">
+        {drafts.map((d, i) => (
+          <li key={d._k} className="rounded-inner bg-ink/[0.035] p-3" data-hook="goal-step">
+            <div className="flex items-start gap-2">
+              <span className="mt-3 flex h-6 w-6 shrink-0 items-center justify-center rounded-pill bg-ink/[0.08] text-[0.6875rem] font-semibold text-ink">
+                {i + 1}
+              </span>
+              <input
+                className="field min-w-0 flex-1"
+                value={d.title}
+                onChange={(e) => update(d._k, { title: e.target.value })}
+                placeholder={t('form.step_ph')}
+                maxLength={200}
+                data-hook="goal-step-title"
+              />
+              <button
+                type="button"
+                onClick={() => remove(d._k)}
+                aria-label={t('form.remove_step')}
+                title={t('form.remove_step')}
+                className="press mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-pill text-h2 leading-none text-muted transition-colors hover:bg-ink/[0.06] hover:text-ink"
+                data-hook="goal-step-remove"
+              >
+                &times;
+              </button>
+            </div>
+            <div className="mt-2 grid gap-3 sm:grid-cols-2 sm:pl-8">
+              <Field label={t('form.step_due')}>
+                <DateField hook={`step-due-${i}`} value={d.due_on} onChange={(v) => update(d._k, { due_on: v })} />
+              </Field>
+              {d.due_on && (
+                <Field label={t('form.step_at')}>
+                  <PickerField type="time" hook={`step-at-${i}`} value={d.at} onChange={(v) => update(d._k, { at: v })} />
+                </Field>
+              )}
+            </div>
+          </li>
+        ))}
+      </ol>
+      <button type="button" onClick={add} className="goal-action press mt-3" data-hook="goal-step-add">
+        {t('form.add_step')}
+      </button>
+    </div>
+  )
+}
+
 export default function GoalForm({ onDone, onCancel, initial = null, groupId = null }) {
   const { user } = useAuth()
-  const { reloadGroup } = useGroup()
+  const { reloadGroup, steps, saveSteps } = useGroup()
   const { t } = useT()
 
   const [kind, setKind] = useState(initial?.kind ?? 'personal')
   const [commitment, setCommitment] = useState(initial?.commitment ?? '')
-  const [cadence, setCadence] = useState(initial?.cadence ?? 'recurring')
+  /**
+   * TROIS GENRES, DEUX CADENCES.
+   *
+   * Routine, jalon, liste a cocher. La base n'en connait que deux (cadence
+   * 'recurring' ou 'once'): une liste EST un jalon qui a des etapes, et c'est
+   * la presence d'etapes qui la fait, pas une colonne de plus. Le mode est
+   * donc ce que le formulaire montre; la cadence en decoule.
+   *
+   * En modification, les etapes peuvent arriver du contexte apres le premier
+   * rendu. `seeded` note qu'on les a vues une fois: c'est ce qui autorise a
+   * les effacer si on repasse la liste en jalon, et ce qui interdit de les
+   * effacer parce qu'on ne les avait simplement pas encore recues.
+   */
+  const existingSteps = useMemo(() => (initial ? stepsOf(steps, initial.id) : []), [steps, initial])
+  const [mode, setMode] = useState(() => (initial ? (existingSteps.length ? 'todo' : initial.cadence) : 'recurring'))
+  const [drafts, setDrafts] = useState(() => existingSteps.map((s) => ({ ...draftOf(s), _k: s.id })))
+  const seeded = useRef(existingSteps.length > 0)
+  useEffect(() => {
+    if (seeded.current || !initial || existingSteps.length === 0) return
+    seeded.current = true
+    setDrafts(existingSteps.map((s) => ({ ...draftOf(s), _k: s.id })))
+    setMode('todo')
+  }, [existingSteps, initial])
+  /* Une liste neuve s'ouvre sur trois lignes vides: une liste, ca se voit. */
+  useEffect(() => {
+    if (mode === 'todo') setDrafts((d) => (d.length === 0 ? [blank(), blank(), blank()] : d))
+  }, [mode])
+  const cadence = mode === 'recurring' ? 'recurring' : 'once'
   const [target, setTarget] = useState(initial?.target_per_cycle ?? 3)
   /* Null means every day, which is what every goal written before this field
      existed is. An empty set is refused below rather than stored, because a
@@ -344,12 +444,16 @@ export default function GoalForm({ onDone, onCancel, initial = null, groupId = n
       remindEvery,
     })
 
+    /* `.select('id').single()` sur les deux: l'insert rend l'id sous lequel
+       les etapes s'ecrivent juste apres, et un update que RLS refuse rend
+       zero ligne, donc une erreur ici plutot qu'un "enregistre" qui ne l'est
+       pas. */
     const write = (row) =>
       initial
-        ? supabase.from('goals').update(row).eq('id', initial.id)
-        : supabase.from('goals').insert(row)
+        ? supabase.from('goals').update(row).eq('id', initial.id).select('id').single()
+        : supabase.from('goals').insert(row).select('id').single()
 
-    let { error: err } = await write(payload)
+    let { data: saved, error: err } = await write(payload)
 
     /**
      * A goal must not depend on a migration having been run.
@@ -373,7 +477,7 @@ export default function GoalForm({ onDone, onCancel, initial = null, groupId = n
      */
     if (err && isMissingColumn(err, 'proof_type')) {
       const { proof_type: _dropped, ...withoutProof } = payload
-      ;({ error: err } = await write(withoutProof))
+      ;({ data: saved, error: err } = await write(withoutProof))
     }
 
     /* One retry on a connection that dropped. A phone on a lift or a train
@@ -382,18 +486,42 @@ export default function GoalForm({ onDone, onCancel, initial = null, groupId = n
        their signal. Only once: a second failure is a real one. */
     if (err && isNetworkError(err)) {
       await new Promise((r) => setTimeout(r, 700))
-      ;({ error: err } = await write(payload))
+      ;({ data: saved, error: err } = await write(payload))
     }
 
-    setSaving(false)
-
     if (err) {
+      setSaving(false)
       /* The whole error, code included. "TypeError: Load failed" on its own
          is a sentence nobody can act on; with the code and the hint beside it
          there is something to search for and something to tell somebody. */
       setError(errorText(err))
       return
     }
+
+    /**
+     * LES ETAPES, SOUS L'OBJECTIF QUI VIENT D'ETRE ECRIT.
+     *
+     * Toute la liste telle qu'elle est a l'ecran; saveSteps en fait le
+     * minimum de requetes et garde les coches. En repassant une liste en
+     * routine ou en jalon, ses etapes partent: c'est ce qu'on vient de voir
+     * disparaitre de l'ecran. Mais seulement si on les avait vues (seeded),
+     * jamais parce qu'elles n'etaient pas encore chargees.
+     *
+     * Un echec ici ne perd pas l'objectif, qui est ecrit: le message nomme
+     * la migration a passer, et la liste se recharge avec ce qui a tenu.
+     */
+    const goalId = initial?.id ?? saved?.id
+    if (goalId && (mode === 'todo' || seeded.current)) {
+      const { error: stepErr } = await saveSteps(goalId, mode === 'todo' ? drafts : [])
+      if (stepErr) {
+        setSaving(false)
+        setError(t('goal.steps_failed'))
+        await reloadGroup()
+        return
+      }
+    }
+
+    setSaving(false)
     await reloadGroup()
     onDone?.()
   }
@@ -458,18 +586,19 @@ export default function GoalForm({ onDone, onCancel, initial = null, groupId = n
 
       <Step n={2} title={t('form.step_often')} hint={t('form.cadence_hint')}>
         <Toggle
-          value={cadence}
-          onChange={setCadence}
+          value={mode}
+          onChange={setMode}
           options={[
             ['recurring', t('form.routine')],
             ['once', t('form.milestone')],
+            ['todo', t('form.todo')],
           ]}
         />
 
         {/* Said in words under the switch, because "recurring" and "one-off"
             are the app's vocabulary and not anybody else's. */}
-        <p className="text-small text-muted">
-          {cadence === 'recurring' ? t('form.routine_hint') : t('form.milestone_hint')}
+        <p className="text-small text-muted" data-hook="goal-mode-hint">
+          {mode === 'recurring' ? t('form.routine_hint') : mode === 'once' ? t('form.milestone_hint') : t('form.todo_hint')}
         </p>
 
         {cadence === 'recurring' ? (
@@ -507,6 +636,7 @@ export default function GoalForm({ onDone, onCancel, initial = null, groupId = n
             <Field label={t('form.starts')} hint={t('form.starts_hint')}>
               <DateField hook="starts-on" value={startsOn} onChange={setStartsOn} />
             </Field>
+            {mode === 'todo' && <StepsEditor drafts={drafts} onChange={setDrafts} />}
           </>
         )}
       </Step>

@@ -10,6 +10,7 @@ import { useT } from '../lib/i18n'
 import { dueOn, outcomeFor, targetFor } from '../lib/schedule'
 import { countOn, progressFor } from '../lib/streak'
 import { canDeleteGoal } from '../lib/goalPerms'
+import { hasSteps } from '../lib/steps'
 import { proofFields, proofTypeOf } from '../lib/proofKinds'
 import { errorText } from '../lib/dberr'
 import { Empty, Screen, Section, TopBar } from '../components/ui'
@@ -39,7 +40,7 @@ export default function Goals() {
   const { groupId } = useParams()
   const {
     goals, soloGoals, members, myRole, group, cycles, cadence, currentCycle, reloadGroup,
-    dayIndex, setGoalDay,
+    dayIndex, setGoalDay, steps,
   } = useGroup()
   const { t } = useT()
   /**
@@ -140,9 +141,12 @@ export default function Goals() {
     [live, user?.id],
   )
 
+  /* Pas les listes a cocher: leur question du jour, c'est leurs etapes, et
+     "l'as-tu fait aujourd'hui ?" sur une liste de sept choses n'a pas de
+     reponse. Leur avancement est sur la carte et se coche dans la fiche. */
   const dueToday = useMemo(
-    () => new Set(dueOn(answerable.filter((g) => g.status === 'active')).map((g) => g.id)),
-    [answerable],
+    () => new Set(dueOn(answerable.filter((g) => g.status === 'active' && !hasSteps(steps, g.id))).map((g) => g.id)),
+    [answerable, steps],
   )
 
   const [answers, setAnswers] = useState({})

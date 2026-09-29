@@ -134,7 +134,7 @@ export default function Dashboard() {
     if (!user) return
     let cancelled = false
     ;(async () => {
-      const [st, gl, bk, fr] = await Promise.all([
+      const [st, gl, bk, fr, sp] = await Promise.all([
         supabase
           .from('member_cycle_status')
           .select('*')
@@ -177,10 +177,17 @@ export default function Dashboard() {
          * joins one mid-session.
          */
         supabase.from('group_members').select('profiles(id, display_name, avatar_url, birthday)'),
+        /* Quels objectifs sont des listes a cocher. Ceux-la n'ont pas de
+           question du jour, donc pas de place dans la bande de la semaine:
+           "pas note" sur une liste de sept choses ne veut rien dire. Une
+           table absente rend une erreur, donc aucune liste, donc la bande
+           comme avant. */
+        supabase.from('goal_step').select('goal_id'),
       ])
       if (cancelled) return
       setRows(st.data ?? [])
-      setGoals(gl.data ?? [])
+      const lists = new Set((sp?.data ?? []).map((r) => r.goal_id))
+      setGoals((gl.data ?? []).filter((g) => !lists.has(g.id)))
       setBooks(bk)
       setFriends((fr.data ?? []).map((r) => r.profiles).filter(Boolean))
     })()

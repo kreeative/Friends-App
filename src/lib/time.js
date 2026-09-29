@@ -38,7 +38,14 @@ export function untilLabel(iso, { prefix = '' } = {}) {
  */
 export function shortDate(iso, locale) {
   if (!iso) return null
-  const d = new Date(iso)
+  const s = String(iso)
+  /* Une date sans heure ('2026-10-20') est un JOUR, pas un instant. Lue par
+     new Date() telle quelle, elle est minuit UTC, donc la veille au soir a
+     Montreal, et la carte disait "avant le 19 oct." pour une echeance du 20.
+     Trouve en sondant la carte d'une liste a cocher, fuseau America/Toronto.
+     Une heure locale ajoutee la garde le jour qu'elle nomme, comme fmtDay
+     dans GoalDetail le faisait deja. */
+  const d = new Date(/^\d{4}-\d{2}-\d{2}$/.test(s) ? `${s}T00:00:00` : s)
   if (Number.isNaN(d.getTime())) return null
   return d.toLocaleDateString(locale, { month: 'short', day: 'numeric' })
 }
