@@ -2426,6 +2426,31 @@ ok(
   ok('les etapes datees sont sur le calendrier', /stepEntries\(steps, new Map/.test(cal) && /from\('goal_step'\)/.test(cal))
   ok('et le test des etapes tourne', /node src\/lib\/steps\.test\.mjs/.test(read('package.json')))
 
+  /**
+   * LE FORMULAIRE NE SE LIT PLUS AVANT DE SE REMPLIR.
+   *
+   *   "Trop de texte, je t'ai deja donne l'alternative."
+   *
+   * Les paragraphes sous les titres d'etape, la phrase sous la bascule, les
+   * quatre lignes de la case du rappel et les notes grises sont derriere
+   * un "?", la regle des champs appliquee aux titres. Mesure par la sonde a
+   * 390: 566 caracteres visibles en anglais pour tout le formulaire, onze
+   * "?" fermes, aucun paragraphe visible de plus d'une ligne et demie, et la
+   * case du rappel tient en "Remind me ?".
+   */
+  ok('la phrase d une etape est derriere le ? de son titre',
+     /<div className=\{`\$\{HINT_ANCHOR\} flex min-w-0 flex-1 items-center`\} data-hook=\{hintHook\}>\s*\n\s*<h3 className="text-h2 text-ink">\{title\}<\/h3>\s*\n\s*\{hint && <Hint text=\{hint\} \/>\}/.test(form)
+       && !/\{hint && <p className=/.test(form))
+  ok('la bascule n a plus de phrase sous elle, le titre la porte',
+     !/data-hook="goal-mode-hint">\s*\n?\s*\{mode ===/.test(form) && /hintHook="goal-mode-hint"/.test(form))
+  ok('la case du rappel dit trois mots, le reste est derriere le ?',
+     /<Hint text=\{t\('form\.remind_hint', \{ by: t\(channelKey\(channels\)\) \}\)\}>/.test(form)
+       && !/<span className="mt-1 block text-small text-muted" data-hook="goal-remind-hint">/.test(form))
+  ok('et il n y a plus de note grise dans le formulaire', !/field-note/.test(form))
+  for (const cle of ['form.cadence_hint', 'form.optional_step', 'form.every_day']) {
+    ok(`${cle} n existe plus`, !read('src/lib/i18n.jsx').includes(`'${cle}'`))
+  }
+
   for (const cle of ['form.todo', 'form.todo_hint', 'form.steps', 'form.steps_hint', 'form.step_ph', 'form.step_due',
                      'form.step_at', 'form.add_step', 'form.remove_step', 'goal.todo', 'goal.steps_progress',
                      'goal.steps_next', 'goal.steps_pct', 'goal.checklist', 'goal.step_add', 'goal.step_add_ph',

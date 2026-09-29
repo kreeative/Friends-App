@@ -122,7 +122,12 @@ export function TopBar({ title, right, sub, hint, back, backLabel }) {
  * That is why this element must NOT be `relative`. Whatever wraps it is the
  * anchor, and every caller wraps it in something the width of the content.
  */
-export function Hint({ text }) {
+/**
+ * `children`, en plus de `text`: le panneau peut porter un lien (le rappel
+ * d'objectif renvoie aux reglages). `text` reste le libelle du "?", parce
+ * qu'un aria-label ne peut pas etre du JSX.
+ */
+export function Hint({ text, children }) {
   return (
     /* Not `relative`. The panel deliberately anchors to the header above,
        and a positioned ancestor here would capture it again. */
@@ -248,7 +253,7 @@ export function Hint({ text }) {
            translucide; il garde le bord et l'ombre de la feuille. */
         className="glass-strong absolute left-0 right-0 top-full z-30 mt-2 block max-w-sm rounded-card bg-surface p-4 text-left text-small font-normal leading-snug text-ink"
       >
-        {text}
+        {children ?? text}
       </span>
     </details>
   )
