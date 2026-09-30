@@ -59,7 +59,7 @@ const ON_GRID = new Set(['exam', 'quiz'])
 /* Les mots-codes que l'ecran sait traduire. Tout autre code devient
    "la lecture a echoue", plutot qu'une cle de traduction a l'ecran. */
 const KNOWN_ERRORS = new Set([
-  'not_pdf', 'too_big', 'no_key', 'setup', 'unauthorized', 'network', 'timeout',
+  'not_pdf', 'too_big', 'no_key', 'no_workspace', 'setup', 'unauthorized', 'network', 'timeout',
   'refused', 'busy', 'model_failed', 'empty', 'term', 'nothing', 'db',
 ])
 

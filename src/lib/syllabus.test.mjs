@@ -458,6 +458,30 @@ eq('base64 round-trips', Buffer.from(toBase64(new Uint8Array([37, 80, 68, 70, 45
   eq('text that is not JSON is a failure with a detail', (await api.analyse(PDF, { today: TODAY, client: client({ stop_reason: 'end_turn', content: [{ type: 'text', text: 'Sure! Here is' }] }) })).detail, 'no JSON in the answer')
   eq('a model override is honoured', (await (async () => { const c = client(answer({})); await api.analyse(PDF, { today: TODAY, client: c, model: 'claude-sonnet-5-5' }); return seen.at(-1).model })()), 'claude-sonnet-5-5')
 
+  /* Le premier vrai PDF: une cle hors de tout espace de travail. */
+  const ws = http(400, 'This API key is not scoped to a workspace, so this request must include the anthropic-workspace-id header with the ID of the workspace to use.')
+  eq('a key without a workspace is its own code word, a setup problem, not a model failure', [api.failureOf(ws).status, api.failureOf(ws).error], [503, 'no_workspace'])
+  ok('and carries the API sentence', /anthropic-workspace-id/.test(api.failureOf(ws).detail))
+  eq('another 400 is the model failing, with the sentence', [api.failureOf(http(400, 'max_tokens: too large')).status, api.failureOf(http(400, 'max_tokens: too large')).error], [502, 'model_failed'])
+  eq('a bad key is no_key', api.failureOf(http(401, 'invalid x-api-key')).error, 'no_key')
+  eq('too many requests is busy', api.failureOf(http(429, 'rate limited')).error, 'busy')
+  eq('an unknown model says so', api.failureOf(http(404, 'model: not found')).detail, 'model not available: model: not found')
+  eq('anything else is the model failing', api.failureOf(http(529, 'overloaded')).error, 'model_failed')
+  const both = client(() => ws)
+  let twice = null
+  try {
+    await api.analyse(PDF, { today: TODAY, client: both })
+  } catch (e) {
+    twice = e
+  }
+  ok('the workspace 400 hits both attempts and comes out for the handler to name', twice?.status === 400 && /workspace/.test(api.apiMessage(twice)))
+  ok('the client sends the workspace header only when there is a workspace', (() => {
+    const withWs = api.makeClient({ apiKey: 'sk-test', workspace: 'wrkspc_01' })
+    const without = api.makeClient({ apiKey: 'sk-test' })
+    const h = (c) => c?._options?.defaultHeaders ?? c?.defaultHeaders ?? {}
+    return h(withWs)['anthropic-workspace-id'] === 'wrkspc_01' && !h(without)['anthropic-workspace-id']
+  })(), 'the SDK keeps constructor options on the client')
+
   eq('apiMessage reads the structured API message', api.apiMessage(http(400, 'messages.0.content.0: unexpected field')), 'messages.0.content.0: unexpected field')
   eq('and falls back to the error message', api.apiMessage(new Error('socket hang up')), 'socket hang up')
   eq('and to nothing for nothing', api.apiMessage(undefined), '')

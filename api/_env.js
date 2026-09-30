@@ -48,6 +48,12 @@ const NAMES = {
      envoie le PDF a notre fonction et recoit un plan; la cle ne le quitte
      pas. */
   anthropicKey: ['ANTHROPIC_API_KEY', 'anthropic_api_key'],
+  /* Une cle creee au niveau de l'organisation, hors de tout espace de
+     travail, exige l'en-tete anthropic-workspace-id a chaque appel. Le
+     premier vrai PDF a echoue la-dessus: "This API key is not scoped to a
+     workspace". Facultatif: une cle creee dans un espace n'en a pas
+     besoin. */
+  anthropicWorkspace: ['ANTHROPIC_WORKSPACE_ID', 'anthropic_workspace_id'],
   /* Le modele, si on veut en changer sans redeployer. Defaut au point
      d'appel, pour la meme raison que plaidEnv. */
   syllabusModel: ['SYLLABUS_MODEL', 'syllabus_model'],

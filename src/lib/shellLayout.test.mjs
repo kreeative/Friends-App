@@ -4859,7 +4859,7 @@ ok(
   for (const k of [...keys, 'help_pick', 'help_review', 'help_when', 'help_plan',
     'step_pick', 'step_review', 'step_when', 'step_plan',
     'kind_exam', 'kind_quiz', 'kind_assignment', 'kind_project', 'kind_presentation', 'kind_reading', 'kind_other',
-    'err_not_pdf', 'err_too_big', 'err_no_key', 'err_setup', 'err_unauthorized', 'err_network', 'err_timeout',
+    'err_not_pdf', 'err_too_big', 'err_no_key', 'err_no_workspace', 'err_setup', 'err_unauthorized', 'err_network', 'err_timeout',
     'err_refused', 'err_busy', 'err_model_failed', 'err_empty', 'err_nothing', 'err_term', 'err_db',
     'sum_sessions_one', 'sum_sessions_other', 'sum_exams_one', 'sum_exams_other', 'sum_steps_one', 'sum_steps_other',
     'sum_study_one', 'sum_study_other', 'open', 'done']) {
