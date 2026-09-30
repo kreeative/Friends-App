@@ -132,7 +132,7 @@ export default function TransactionHistory({ entries, currency, locale, onOpen, 
       />
 
       {days.length === 0 ? (
-        <div className="glass-card rounded-3xl p-5">
+        <div className="glass-card rounded-card p-5">
           {/* Which empty this is matters: "you have never logged anything" and
               "nothing matches this filter" want different next actions. */}
           <Empty>{filtered ? t('hist.none_filtered') : t('hist.none')}</Empty>
@@ -155,7 +155,7 @@ export default function TransactionHistory({ entries, currency, locale, onOpen, 
                 </span>
               </div>
 
-              <ul className="glass-card divide-y divide-hairline rounded-3xl px-4">
+              <ul className="glass-card divide-y divide-hairline rounded-card px-4">
                 {d.entries.map((r) => (
                   <TxnRow key={r.id} row={r} currency={currency} locale={locale} onOpen={onOpen} onDelete={onDelete} />
                 ))}

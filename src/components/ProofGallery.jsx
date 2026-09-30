@@ -128,7 +128,7 @@ function PhotoFrame({ url }) {
 
   return (
     <div
-      className="relative w-full shrink-0 overflow-hidden rounded-3xl bg-black/30 shadow-float"
+      className="relative w-full shrink-0 overflow-hidden rounded-card bg-black/30 shadow-float"
       /* Capped by the room actually left rather than by a share of the
          screen. The chrome above and below the picture is a fixed twenty rem
          (header, the goal pill, the edit button, the reaction row, the safe
@@ -159,7 +159,7 @@ function PhotoFrame({ url }) {
        */}
       <span
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 rounded-3xl ring-1 ring-inset ring-white/20"
+        className="pointer-events-none absolute inset-0 rounded-card ring-1 ring-inset ring-white/20"
       />
     </div>
   )
@@ -291,7 +291,7 @@ function Viewer({ proof, onClose, onReact, onEdit, locale, mine }) {
             href={proof.link_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="press flex shrink-0 items-center gap-3 rounded-3xl bg-white/10 p-4 no-underline ring-1 ring-inset ring-white/15 backdrop-blur-md"
+            className="press flex shrink-0 items-center gap-3 rounded-card bg-white/10 p-4 no-underline ring-1 ring-inset ring-white/15 backdrop-blur-md"
           >
             <span className="text-white/70">
               <LinkGlyph />
@@ -309,7 +309,7 @@ function Viewer({ proof, onClose, onReact, onEdit, locale, mine }) {
         )}
 
         {kind === 'text' && (
-          <p className="shrink-0 whitespace-pre-wrap rounded-3xl bg-white/10 p-5 text-body leading-relaxed text-white ring-1 ring-inset ring-white/15 backdrop-blur-md">
+          <p className="shrink-0 whitespace-pre-wrap rounded-card bg-white/10 p-5 text-body leading-relaxed text-white ring-1 ring-inset ring-white/15 backdrop-blur-md">
             {proof.evidence}
           </p>
         )}

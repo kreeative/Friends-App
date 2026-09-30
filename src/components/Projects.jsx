@@ -57,7 +57,7 @@ export default function Projects({ userId, projects, members, entries, profiles,
       </div>
 
       {rows.length === 0 ? (
-        <div className="glass-card rounded-3xl p-5">
+        <div className="glass-card rounded-card p-5">
           <Empty>{t('proj.empty')}</Empty>
         </div>
       ) : (
@@ -68,7 +68,7 @@ export default function Projects({ userId, projects, members, entries, profiles,
                 type="button"
                 data-project={project.id}
                 onClick={() => onOpen(project.id)}
-                className="press glass-card w-full rounded-3xl p-5 text-left"
+                className="press glass-card w-full rounded-card p-5 text-left"
               >
                 <div className="flex items-baseline justify-between gap-3">
                   <span className="min-w-0 flex-1 truncate text-body font-semibold text-ink">

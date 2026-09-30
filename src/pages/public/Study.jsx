@@ -252,7 +252,7 @@ function DotPanel({ label, on, n, warn = false }) {
         {Array.from({ length: n }, (_, i) => (
           <span
             key={i}
-            className={`aspect-square rounded-full ${
+            className={`aspect-square rounded-pill ${
               i < on ? 'bg-ink' : warn ? 'bg-accent' : 'bg-ink/15'
             }`}
           />

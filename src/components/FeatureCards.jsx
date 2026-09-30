@@ -76,10 +76,10 @@ export default function FeatureCards({ onOpen }) {
           /* Title and body both, because the title alone ("Analyse &
              Comparaison") does not say what happens when you press it. */
           aria-label={`${c.title}. ${c.body}`}
-          className="press glass-card flex flex-col items-start rounded-3xl border p-5 text-left"
+          className="press glass-card flex flex-col items-start rounded-card border p-5 text-left"
         >
           <span
-            className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${c.well}`}
+            className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-inner ${c.well}`}
           >
             <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6 text-mark">
               <g fill="currentColor" fillRule="evenodd" clipRule="evenodd">

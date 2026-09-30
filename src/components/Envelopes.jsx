@@ -306,7 +306,7 @@ export default function Envelopes({ s, allocations, locale, onChange }) {
        * round because a percentage is four characters in every currency and an
        * amount is not, so the hole never has to be sized for the long case.
        */}
-      <div data-card="pool" className="glass-card glass-card-quiet rounded-3xl p-6">
+      <div data-card="pool" className="glass-card glass-card-quiet rounded-card p-6">
         <p className="text-label font-semibold uppercase tracking-wider text-muted">
           {t('env.to_allocate')}
         </p>
@@ -391,7 +391,7 @@ export default function Envelopes({ s, allocations, locale, onChange }) {
                * there; this makes the card legible as a group at a glance
                * rather than one row at a time.
                */
-              className={`flex flex-col rounded-2xl border p-4 shadow-sm ${
+              className={`flex flex-col rounded-card border p-4 shadow-raised ${
                 e.over > 0 ? 'border-negative/25 bg-negative/[0.06]' : 'glass-card'
               }`}
             >
@@ -414,7 +414,7 @@ export default function Envelopes({ s, allocations, locale, onChange }) {
                   six cards apart now that every arc is one colour, and it is
                   also what the track needs to be legible against. */}
               <span
-                className={`flex h-[3.75rem] w-[3.75rem] shrink-0 items-center justify-center rounded-2xl ${
+                className={`flex h-[3.75rem] w-[3.75rem] shrink-0 items-center justify-center rounded-inner ${
                   e.over > 0 ? 'bg-negative/[0.10]' : tone.well
                 }`}
               >
@@ -512,7 +512,7 @@ export default function Envelopes({ s, allocations, locale, onChange }) {
                    * A tinted well settles it. The odd formatting stops being
                    * an inconsistency and becomes the contents of an input.
                    */
-                  className="mt-1 w-full rounded-lg border-0 bg-accent/10 px-2 py-1 text-left text-small font-semibold text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/40 [font-variant-numeric:tabular-nums]"
+                  className="mt-1 w-full rounded-field border-0 bg-accent/10 px-2 py-1 text-left text-small font-semibold text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/40 [font-variant-numeric:tabular-nums]"
                   value={text}
                   onChange={(ev) => setDraft((d) => ({ ...d, [e.key]: ev.target.value }))}
                   onBlur={() => commit(e.key)}
@@ -571,7 +571,7 @@ export function SpendableBar({ bar, currency, locale }) {
        separate restyles and took a test suite with it every time. */
     <div
       data-card="spendable"
-      className="glass-card relative overflow-hidden rounded-3xl bg-surface p-6"
+      className="glass-card relative overflow-hidden rounded-card bg-surface p-6"
     >
       {/**
        * The badge rides the label's line, and it is pop pink rather than ink.

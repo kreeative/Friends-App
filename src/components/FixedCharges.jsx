@@ -165,7 +165,7 @@ export default function FixedCharges({ fixed = [], s, locale, onChange }) {
   }
 
   return (
-    <div className="glass-card divide-y divide-hairline rounded-3xl px-5">
+    <div className="glass-card divide-y divide-hairline rounded-card px-5">
       {live.map((f) => {
         const paid = paidThisPeriod(f)
         return (

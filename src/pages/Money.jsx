@@ -156,7 +156,7 @@ function AmountTile({ label, hint, ariaLabel, symbol, value, onChange, digits, a
     <label
       data-hook="plan-tile"
       data-editable=""
-      className="glass-card flex min-h-[7.5rem] cursor-text flex-col justify-between rounded-3xl p-4
+      className="glass-card flex min-h-[7.5rem] cursor-text flex-col justify-between rounded-card p-4
                  ring-1 ring-inset ring-ink/50 transition-shadow duration-200 ease-settle
                  focus-within:ring-2 focus-within:ring-ink/60
                  focus-within:shadow-[0_0_0_4px_rgb(var(--c-accent)/0.4)]"
@@ -199,7 +199,7 @@ function PlanTile({ label, value }) {
   return (
     <div
       data-hook="plan-tile"
-      className="glass-card glass-card-quiet flex min-h-[7.5rem] flex-col justify-between rounded-3xl p-4"
+      className="glass-card glass-card-quiet flex min-h-[7.5rem] flex-col justify-between rounded-card p-4"
     >
       <p className="text-label font-semibold uppercase leading-tight tracking-wider text-muted">
         {label}
@@ -1020,11 +1020,11 @@ export default function Money() {
             }
           >
             {recent.length === 0 ? (
-              <div className="glass-card rounded-3xl p-5">
+              <div className="glass-card rounded-card p-5">
                 <Empty>{t('hist.none')}</Empty>
               </div>
             ) : (
-              <ul className="glass-card divide-y divide-hairline rounded-3xl px-4">
+              <ul className="glass-card divide-y divide-hairline rounded-card px-4">
                 {recent.map((r) => (
                   <TxnRow
                     key={r.id}
@@ -1141,7 +1141,7 @@ export default function Money() {
            */}
           {s.byCategory.some((c) => c.cents > 0) && (
             <Section title={t('money.variable_title')}>
-              <ul className="glass-card divide-y divide-hairline rounded-3xl px-4">
+              <ul className="glass-card divide-y divide-hairline rounded-card px-4">
                 {s.byCategory
                   .filter((c) => c.cents > 0)
                   .sort((a, b) => b.cents - a.cents)
@@ -1476,7 +1476,7 @@ function PlanForm({ plan, fixed, userId, currency, onCancel, onSaved }) {
          */}
         <div
           data-card="plan-hero"
-          className="glass-card relative overflow-hidden rounded-3xl bg-surface p-6"
+          className="glass-card relative overflow-hidden rounded-card bg-surface p-6"
         >
           {/* The badge rides the label's line rather than the bottom corner it
               started in. Pinned bottom-right it came within ten pixels of the
@@ -1562,7 +1562,7 @@ function PlanForm({ plan, fixed, userId, currency, onCancel, onSaved }) {
           <p className="-mt-2 mb-4 text-small text-muted">{t('money.fixed_hint')}</p>
 
           {rows.length === 0 ? (
-            <p className="rounded-3xl border border-dashed border-ink/15 p-6 text-center text-small text-muted">
+            <p className="rounded-card border border-dashed border-ink/15 p-6 text-center text-small text-muted">
               {t('money.fixed_none')}
             </p>
           ) : (
@@ -1581,7 +1581,7 @@ function PlanForm({ plan, fixed, userId, currency, onCancel, onSaved }) {
                 <li
                   key={r.id ?? `new-${i}`}
                   data-hook="fixed-row"
-                  className="glass-card flex items-center gap-2 rounded-3xl p-2.5"
+                  className="glass-card flex items-center gap-2 rounded-card p-2.5"
                 >
                   {/* px-1.5, not px-2.5. Every pixel of padding here comes off
                       the name, and at 390px the column only has so much: the
@@ -1597,7 +1597,7 @@ function PlanForm({ plan, fixed, userId, currency, onCancel, onSaved }) {
                       is where the single-line row runs out. */}
                   <input
                     aria-label={t('money.fixed_label_ph')}
-                    className="min-w-0 flex-1 rounded-2xl border-0 bg-transparent px-1.5 py-2 text-body
+                    className="min-w-0 flex-1 rounded-field border-0 bg-transparent px-1.5 py-2 text-body
                                font-semibold text-ink outline-none transition-colors duration-200 ease-settle
                                placeholder:font-normal placeholder:text-muted focus:bg-ink/[0.05]"
                     placeholder={t('money.fixed_label_ph')}
@@ -1618,7 +1618,7 @@ function PlanForm({ plan, fixed, userId, currency, onCancel, onSaved }) {
                       measures it at 3.26:1 in sun and 3.21:1 in sea, so it
                       still clears 1.4.11. */}
                   <span
-                    className="flex shrink-0 items-baseline rounded-2xl bg-raised px-3 py-2
+                    className="flex shrink-0 items-baseline rounded-inner bg-raised px-3 py-2
                                ring-1 ring-inset ring-ink/50 transition-shadow duration-200 ease-settle
                                focus-within:ring-2 focus-within:ring-ink/60
                                focus-within:shadow-[0_0_0_4px_rgb(var(--c-accent)/0.4)]"

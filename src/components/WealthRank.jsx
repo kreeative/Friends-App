@@ -112,7 +112,7 @@ export default function WealthRank({
         type="button"
         data-hook="rank-card"
         onClick={() => setOpen(true)}
-        className="press glass-card flex w-full items-center gap-4 rounded-3xl p-5 text-left"
+        className="press glass-card flex w-full items-center gap-4 rounded-card p-5 text-left"
       >
         <span className="min-w-0 flex-1">
           <span className="block text-body font-bold leading-tight text-ink">
@@ -258,7 +258,7 @@ export default function WealthRank({
                * knows it came from a survey.
                */}
               {peers && (
-                <div data-hook="rank-peers" className="mt-6 rounded-2xl bg-ink/[0.04] px-4 py-4">
+                <div data-hook="rank-peers" className="mt-6 rounded-inner bg-ink/[0.04] px-4 py-4">
                   <p className="text-center text-body leading-relaxed text-ink">
                     {peers.savesNothing
                       ? t('peers.none', { pct: SURVEY.savesNothingPct })
@@ -291,7 +291,7 @@ export default function WealthRank({
                   age" and "you against the country" are different claims, and
                   showing one while the reader assumes the other is the quiet
                   way this feature could mislead. */}
-              <dl data-hook="rank-against" className="mt-5 flex items-baseline justify-between gap-3 rounded-2xl bg-ink/[0.04] px-4 py-3">
+              <dl data-hook="rank-against" className="mt-5 flex items-baseline justify-between gap-3 rounded-inner bg-ink/[0.04] px-4 py-3">
                 <dt className="min-w-0 text-small font-semibold text-ink">
                   {bench.scope === 'age'
                     ? t('rank.same_age', { band: t(`rank.band_${bench.band}`) })
@@ -349,7 +349,7 @@ export default function WealthRank({
           <details className="group mt-7 border-t border-hairline pt-2" data-hook="rank-what-details">
             <summary
               data-hook="rank-what-toggle"
-              className="press flex cursor-pointer list-none items-center justify-between gap-3 rounded-2xl py-3
+              className="press flex cursor-pointer list-none items-center justify-between gap-3 rounded-inner py-3
                          text-label font-semibold uppercase tracking-wider text-muted
                          [&::-webkit-details-marker]:hidden"
             >

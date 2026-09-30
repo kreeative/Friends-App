@@ -44,7 +44,7 @@ export default function PlanVsActual({ s, locale }) {
      element of a return is the trap CLAUDE.md already records for this exact
      file. It broke it silently once; this time it was a syntax error. */
   return (
-    <div data-card="planvsactual" className="glass-card rounded-3xl px-5 py-2">
+    <div data-card="planvsactual" className="glass-card rounded-card px-5 py-2">
       {/* The two headings are the whole point, so they carry the weight. */}
       <div className="flex items-baseline gap-2 border-b border-hairline py-3 sm:gap-4">
         <span className="min-w-0 flex-1" aria-hidden="true" />

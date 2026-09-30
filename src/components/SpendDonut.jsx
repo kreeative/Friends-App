@@ -58,7 +58,7 @@ export default function SpendDonut({ byCategory, total, currency, locale }) {
   })
 
   return (
-    <div className="glass-card rounded-3xl p-5">
+    <div className="glass-card rounded-card p-5">
       <div className="flex justify-center">
         <div className="relative" style={{ width: SIZE, height: SIZE }}>
           <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} aria-hidden="true">

@@ -4766,6 +4766,48 @@ ok(
        && !/function GearIcon\(\)/.test(read('src/pages/Me.jsx')))
 }
 
+/* --- une seule marque, partout ------------------------------------------ */
+
+/**
+ *   "I feel like the brand design is not even everywhere"
+ *
+ * Elle avait raison, et le compte le disait avant les captures: 49 coins
+ * en rounded-3xl (1,5 rem), 11 en rounded-2xl (1 rem), 34 en rounded-card
+ * (1,375 rem), pour la meme idee de carte; deux shadow-sm de Tailwind a
+ * cote de shadow-raised; un text-lg a cote de l'echelle. Trois rayons pour
+ * une carte, c'est trois marques.
+ *
+ * Les jetons existent (tailwind.config.js: card, inner, field, pill;
+ * raised, float; h1, h2, body, small, label). Ce bloc interdit les valeurs
+ * brutes de Tailwind a leur place, pour que la prochaine carte ecrite en
+ * rounded-3xl echoue ici plutot que sur l'ecran.
+ */
+{
+  const walk = (dir) => {
+    const out = []
+    for (const e of readdirSync(join(root, dir), { withFileTypes: true })) {
+      const p = `${dir}/${e.name}`
+      if (e.isDirectory()) out.push(...walk(p))
+      else if (/\.jsx?$/.test(e.name) && !/\.test\./.test(e.name)) out.push(p)
+    }
+    return out
+  }
+  const files = [...walk('src/pages'), ...walk('src/components')]
+  ok(`there are screens to check (${files.length})`, files.length > 40)
+  const RAW = [
+    ['radius', /\brounded-(3xl|2xl|xl|lg|md|sm|full)\b/g, 'rounded-card, rounded-inner, rounded-field or rounded-pill'],
+    ['shadow', /\bshadow-(sm|md|lg|xl|2xl)\b/g, 'shadow-raised or shadow-float'],
+    ['text size', /\btext-(xs|sm|base|lg|xl|2xl|3xl|4xl)\b/g, 'text-label, text-small, text-body, text-h2, text-h1, text-hero'],
+  ]
+  for (const [what, re, instead] of RAW) {
+    const hits = []
+    for (const f of files) for (const m of read(f).matchAll(re)) hits.push(`${f}: ${m[0]}`)
+    ok(`no raw Tailwind ${what} in a screen (use ${instead})`, hits.length === 0, hits.slice(0, 8).join('; '))
+  }
+  const radii = read('tailwind.config.js').match(/borderRadius: \{[^}]+\}/)?.[0] ?? ''
+  ok('the radius tokens are the four named ones', /card: '1\.375rem'/.test(radii) && /inner: '0\.8125rem'/.test(radii) && /pill: '999px'/.test(radii))
+}
+
 /* --- le plan de cours en PDF -------------------------------------------- */
 
 /**

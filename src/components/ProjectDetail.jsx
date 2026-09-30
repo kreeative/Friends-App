@@ -156,7 +156,7 @@ export default function ProjectDetail({
       </button>
 
       {/* What it has cost, against what it was meant to. */}
-      <div className="glass-card rounded-3xl p-5" data-hook="project-total">
+      <div className="glass-card rounded-card p-5" data-hook="project-total">
         <p className="text-label font-semibold uppercase tracking-wider text-muted">
           {project.name}
         </p>
@@ -231,11 +231,11 @@ export default function ProjectDetail({
           </div>
 
           {plan.length === 0 ? (
-            <div className="glass-card rounded-3xl p-5">
+            <div className="glass-card rounded-card p-5">
               <Empty>{t('proj.no_lines')}</Empty>
             </div>
           ) : (
-            <ul className="glass-card divide-y divide-hairline rounded-3xl px-5" data-hook="plan-list">
+            <ul className="glass-card divide-y divide-hairline rounded-card px-5" data-hook="plan-list">
               {plan.map(({ line, state }) => (
                 <li key={line.id} className="relative py-4 pr-11" data-line={line.id} data-settled={state.settled ? '' : undefined}>
                   <div className="flex items-baseline gap-3">
@@ -336,7 +336,7 @@ export default function ProjectDetail({
         <h3 className="px-1 text-label font-semibold uppercase tracking-wider text-muted">
           {t('proj.settle')}
         </h3>
-        <div className="glass-card rounded-3xl p-5" data-hook="settle">
+        <div className="glass-card rounded-card p-5" data-hook="settle">
           {owing.length === 0 ? (
             <p className="text-small text-muted">{t('proj.all_square')}</p>
           ) : (
@@ -376,7 +376,7 @@ export default function ProjectDetail({
           <h3 className="px-1 text-label font-semibold uppercase tracking-wider text-muted">
             {t('money.where')}
           </h3>
-          <dl className="glass-card divide-y divide-hairline rounded-3xl px-5">
+          <dl className="glass-card divide-y divide-hairline rounded-card px-5">
             {cats.map((c) => (
               <div key={c.category} className="flex items-baseline justify-between gap-4 py-3">
                 <dt className="min-w-0 flex-1 truncate text-body text-muted">{c.category}</dt>
@@ -395,11 +395,11 @@ export default function ProjectDetail({
           {t('money.recent')}
         </h3>
         {entries.length === 0 ? (
-          <div className="glass-card rounded-3xl p-5">
+          <div className="glass-card rounded-card p-5">
             <Empty>{t('proj.no_spend')}</Empty>
           </div>
         ) : (
-          <ul className="glass-card divide-y divide-hairline rounded-3xl px-5" data-hook="project-ledger">
+          <ul className="glass-card divide-y divide-hairline rounded-card px-5" data-hook="project-ledger">
             {entries.map((e) => (
               <li key={e.id} className="flex items-center gap-3 py-3.5">
                 <Avatar profile={profiles?.[e.paid_by]} size={34} />
@@ -476,7 +476,7 @@ export default function ProjectDetail({
         <h3 className="px-1 text-label font-semibold uppercase tracking-wider text-muted">
           {t('proj.members')}
         </h3>
-        <div className="glass-card rounded-3xl p-5">
+        <div className="glass-card rounded-card p-5">
           <ul className="space-y-3">
             {members.map((m) => {
               const b = bal.find((x) => x.user_id === m.user_id)
@@ -561,7 +561,7 @@ export default function ProjectDetail({
           <h3 className="px-1 text-label font-semibold uppercase tracking-wider text-muted">
             {t('proj.currency')}
           </h3>
-          <div className="glass-card rounded-3xl p-5">
+          <div className="glass-card rounded-card p-5">
             <select
               className="field"
               value={cur}
