@@ -4798,10 +4798,24 @@ ok(
      (syl.match(/supabase\.from\('calendar_event'\)\.insert/g) ?? []).length === 1 && /data-hook="syl-save"/.test(syl))
   ok('the availability question is asked', /data-hook="syl-day"/.test(syl) && /data-hook="syl-av-start"/.test(syl))
   ok('every hook is a data-* one, never a class', !/locator\('\./.test(syl))
+  /* Le raffinement: un fil d'etapes, une zone de depot a la place du bouton
+     natif du navigateur, une barre pendant la lecture, les jours en toutes
+     lettres courtes ("Tue, Thu", pas "T T"), et un seul Annuler. */
+  ok('the steps are shown, with the current one named for the reader',
+     /data-hook="syl-steps" data-step=/.test(syl) && /aria-current=\{state === 'now' \? 'step' : undefined\}/.test(syl))
+  ok('the native file input is hidden behind a drop zone, not removed',
+     /data-hook="syl-drop"/.test(syl) && /data-hook="syl-file"[\s\S]{0,200}className="sr-only"/.test(syl) && /onDrop=/.test(syl))
+  ok('reading shows a bar, and the bar stands still under reduced motion',
+     /className="bar-busy"/.test(syl) && /\.bar-busy::after \{[\s\S]{0,300}animation: bar-busy/.test(css)
+       && /prefers-reduced-motion: reduce\) \{\s*\.bar-busy::after \{\s*animation: none;/.test(css))
+  ok('weekdays are short names, never one letter each', /weekday: 'short', timeZone: 'UTC'/.test(syl) && !/dayLetters/.test(syl))
+  ok('one Cancel, on the first step; the cross closes the rest', (syl.match(/t\('cal\.cancel'\)/g) ?? []).length === 1)
+  ok('the helper components live outside the render', /^function Label\(/m.test(syl) && /^function Pill\(/m.test(syl) && /^function Stepper\(/m.test(syl))
   const keys = [...new Set([...syl.matchAll(/t\(\s*['`]syl\.([a-z_]+)['`]/g)].map((m) => m[1]))]
-    .filter((k) => !k.startsWith('help_') && !k.startsWith('kind_') && !k.startsWith('err_'))
+    .filter((k) => !k.startsWith('help_') && !k.startsWith('kind_') && !k.startsWith('err_') && !k.startsWith('step_'))
   const missing = []
   for (const k of [...keys, 'help_pick', 'help_review', 'help_when', 'help_plan',
+    'step_pick', 'step_review', 'step_when', 'step_plan',
     'kind_exam', 'kind_quiz', 'kind_assignment', 'kind_project', 'kind_presentation', 'kind_reading', 'kind_other',
     'err_not_pdf', 'err_too_big', 'err_no_key', 'err_setup', 'err_unauthorized', 'err_network', 'err_timeout',
     'err_refused', 'err_busy', 'err_model_failed', 'err_empty', 'err_nothing', 'err_term', 'err_db',
