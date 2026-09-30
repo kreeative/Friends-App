@@ -42,6 +42,15 @@ const NAMES = {
   /* sandbox | production. Defaulted at the call site rather than here, so a
      missing value is a deliberate choice of sandbox and not a silent one. */
   plaidEnv: ['PLAID_ENV', 'plaid_env'],
+
+  /* La cle Anthropic, pour lire un plan de cours (api/syllabus.js). Meme
+     regle que Plaid et Stripe: PAS de VITE_ devant, jamais. Le navigateur
+     envoie le PDF a notre fonction et recoit un plan; la cle ne le quitte
+     pas. */
+  anthropicKey: ['ANTHROPIC_API_KEY', 'anthropic_api_key'],
+  /* Le modele, si on veut en changer sans redeployer. Defaut au point
+     d'appel, pour la meme raison que plaidEnv. */
+  syllabusModel: ['SYLLABUS_MODEL', 'syllabus_model'],
 }
 
 /** The value, or undefined. Empty strings count as unset. */

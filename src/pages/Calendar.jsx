@@ -26,6 +26,7 @@ import { stepEntries } from '../lib/steps'
 import { SegTabs } from '../components/ui'
 import CyclePanel from '../components/CyclePanel'
 import TimetableWizard from '../components/TimetableWizard'
+import SyllabusWizard from '../components/SyllabusWizard'
 
 /**
  * The whole timetable, on one screen.
@@ -430,6 +431,10 @@ export default function Calendar() {
   }, [layersOpen])
   const [wizard, setWizard] = useState(false)
   const [added, setAdded] = useState(0)
+  /* Le plan de cours en PDF, et ce que sa lecture a ecrit: des entrees de
+     calendrier et des etapes de liste, deux comptes, donc pas `added`. */
+  const [syllabus, setSyllabus] = useState(false)
+  const [sylDone, setSylDone] = useState(null)
   /**
    * LE MODE "COCHE LES JOURS", ET SES TROIS ETATS.
    *
@@ -689,6 +694,14 @@ export default function Calendar() {
   }, [events, goals, bookings, feedRows, feeds, steps, hidden, friends, profile, user?.id, range, t])
 
   const agenda = useMemo(() => agendaFor(drawn, range.from, range.to), [drawn, range])
+
+  /* Ce qui est occupe sans etre une regle de calendar_event: les
+     reservations et ce qui vient de Google et d'Outlook, sur les six mois
+     a venir. Le plan d'etude du plan de cours ne se pose pas dessus. */
+  const extras = useMemo(() => {
+    const from = new Date()
+    return [...bookingEntries(bookings), ...feedEntries(feedRows, feeds, from, addDays(from, 200))]
+  }, [bookings, feedRows, feeds])
 
   /* The cycle overlay is a layer too, so switching it off has to empty what
      the grids read rather than just hiding a panel. The same emptying answers
@@ -975,6 +988,11 @@ export default function Calendar() {
             per class and counting how many are left. */}
         <button type="button" onClick={() => setWizard(true)} className="goal-action press" data-hook="cal-wiz-open">
           {t('wiz.open')}
+        </button>
+        {/* Le meme geste, depuis le PDF du plan de cours: le modele lit, la
+            personne coche, et ce qui est deja la arrive decoche. */}
+        <button type="button" onClick={() => setSyllabus(true)} className="goal-action press" data-hook="cal-syl-open">
+          {t('syl.open')}
         </button>
 
         {/**
@@ -1271,6 +1289,19 @@ export default function Calendar() {
         </p>
       )}
 
+      {sylDone && (
+        <p className="text-small font-semibold text-ink" role="status" data-hook="syl-done">
+          {t('syl.done', { n: sylDone.events, m: sylDone.steps })}{' '}
+          <button
+            type="button"
+            onClick={() => setSylDone(null)}
+            className="press underline decoration-1 underline-offset-2"
+          >
+            {t('wiz.close')}
+          </button>
+        </p>
+      )}
+
       {/* A write that did not happen. role="alert" and not "status", because
           the thing that was on screen a second ago has just come back and the
           reason is the only way to make sense of that. */}
@@ -1461,6 +1492,19 @@ export default function Calendar() {
         onSaved={async (n) => {
           setWizard(false)
           setAdded(n)
+          await load()
+        }}
+      />
+
+      <SyllabusWizard
+        open={syllabus}
+        events={events}
+        extras={extras}
+        steps={steps}
+        onClose={() => setSyllabus(false)}
+        onSaved={async (done) => {
+          setSyllabus(false)
+          setSylDone(done)
           await load()
         }}
       />

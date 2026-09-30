@@ -22,7 +22,7 @@
  * plausibly reach for next. Adding a genuinely new one means adding it here
  * first, which is a deliberate half-minute rather than a red deploy.
  */
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 
@@ -69,6 +69,7 @@ const TOP = new Set([
   'cleanUrls',
   'crons',
   'devCommand',
+  'fluid',
   'framework',
   'functions',
   'headers',
@@ -103,6 +104,27 @@ config.rewrites.forEach((rule, i) => {
   const bad = unknown(rule, REWRITE_RULE)
   ok(`rewrites[${i}] has no unknown key`, bad.length === 0, bad.join(', '))
 })
+
+/**
+ * LA LECTURE D'UN PLAN DE COURS A BESOIN DE PLUS DE SOIXANTE SECONDES.
+ *
+ * Un modele qui lit dix pages et ecrit un JSON de deux mille mots prend une
+ * a deux minutes. Sans Fluid compute, le plan Hobby coupe a 60 s et une
+ * valeur au-dessus fait echouer le DEPLOIEMENT, pas la fonction. `fluid`
+ * est donc pose dans le meme fichier que la duree, et les deux sont
+ * verifies ensemble: l'un sans l'autre est un deploiement rouge ou une
+ * lecture coupee au milieu.
+ */
+const FUNCTION_RULE = new Set(['maxDuration', 'memory', 'runtime', 'includeFiles', 'excludeFiles'])
+for (const [path, rule] of Object.entries(config.functions ?? {})) {
+  const bad = unknown(rule, FUNCTION_RULE)
+  ok(`functions[${path}] has no unknown key`, bad.length === 0, bad.join(', '))
+  ok(`functions[${path}] names a file that exists`, existsSync(join(root, path)), path)
+  if ((rule.maxDuration ?? 0) > 60) {
+    eq(`functions[${path}] over 60 s needs fluid compute on`, config.fluid, true)
+    ok(`and stays within the 300 s the Hobby plan allows`, rule.maxDuration <= 300)
+  }
+}
 
 /**
  * The specific mistake, named.

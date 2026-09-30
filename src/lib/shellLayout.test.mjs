@@ -4766,5 +4766,53 @@ ok(
        && !/function GearIcon\(\)/.test(read('src/pages/Me.jsx')))
 }
 
+/* --- le plan de cours en PDF -------------------------------------------- */
+
+/**
+ *   "est-ce que tu peux ajouter une option intelligente ou tu peux ajouter
+ *    ton PDF de ton syllabus et ca va analyser pour te donner des events,
+ *    des rappels de goals et des to-dos a propos de ton calendrier, et te
+ *    demander une question de quand tu es disponible"
+ *
+ *   "comme certaines personnes auront deja ajoute des events, faire
+ *    attention de ne pas les repeter"
+ *
+ * Le bouton est a cote de l'assistant d'horaire, la feuille est la meme, et
+ * ce qui est deja la est compare AVANT d'afficher. Les cles existent dans
+ * les deux langues, y compris les mots-codes d'erreur que le serveur peut
+ * rendre: une cle absente d'une langue affiche 'syl.err_x' a l'ecran.
+ */
+{
+  const syl = read('src/components/SyllabusWizard.jsx')
+  const calPage = read('src/pages/Calendar.jsx')
+  const i18n = read('src/lib/i18n.jsx')
+  ok('the calendar opens it beside the timetable wizard',
+     /data-hook="cal-wiz-open"[\s\S]{0,600}data-hook="cal-syl-open"/.test(calPage) && /<SyllabusWizard/.test(calPage))
+  ok('it gets what the page already knows, to avoid repeating it',
+     /<SyllabusWizard[\s\S]{0,200}events=\{events\}[\s\S]{0,200}steps=\{steps\}/.test(calPage))
+  ok('and it compares before it shows', /dedupPlan\(got\.plan, \{ events, goals, steps \}\)/.test(syl))
+  ok('what is already there arrives unticked and says so',
+     /filter\(\(s\) => !s\.dup\)/.test(syl) && /hook="syl-dup"/.test(syl))
+  ok('the same sheet as the wizard', /lg lg-modal/.test(syl) && /data-hook="syl"/.test(syl))
+  ok('nothing is written before the last button',
+     (syl.match(/supabase\.from\('calendar_event'\)\.insert/g) ?? []).length === 1 && /data-hook="syl-save"/.test(syl))
+  ok('the availability question is asked', /data-hook="syl-day"/.test(syl) && /data-hook="syl-av-start"/.test(syl))
+  ok('every hook is a data-* one, never a class', !/locator\('\./.test(syl))
+  const keys = [...new Set([...syl.matchAll(/t\(\s*['`]syl\.([a-z_]+)['`]/g)].map((m) => m[1]))]
+    .filter((k) => !k.startsWith('help_') && !k.startsWith('kind_') && !k.startsWith('err_'))
+  const missing = []
+  for (const k of [...keys, 'help_pick', 'help_review', 'help_when', 'help_plan',
+    'kind_exam', 'kind_quiz', 'kind_assignment', 'kind_project', 'kind_presentation', 'kind_reading', 'kind_other',
+    'err_not_pdf', 'err_too_big', 'err_no_key', 'err_setup', 'err_unauthorized', 'err_network', 'err_timeout',
+    'err_refused', 'err_busy', 'err_model_failed', 'err_empty', 'err_nothing', 'err_term', 'err_db',
+    'sum_sessions_one', 'sum_sessions_other', 'sum_exams_one', 'sum_exams_other', 'sum_steps_one', 'sum_steps_other',
+    'sum_study_one', 'sum_study_other', 'open', 'done']) {
+    const n = i18n.split(`'syl.${k}'`).length - 1
+    if (n !== 2) missing.push(`${k}:${n}`)
+  }
+  ok(`every syl.* key is in both locales (${keys.length} read from the component)`, missing.length === 0, missing.join(' '))
+  ok('no em dash in the new strings', !/syl\.[a-z_]+': '[^']*—/.test(i18n))
+}
+
 console.log(`\n  ${pass} passed, ${fail} failed\n`)
 process.exit(fail ? 1 : 0)
