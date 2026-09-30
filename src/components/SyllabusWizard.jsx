@@ -118,6 +118,7 @@ export default function SyllabusWizard({ open, onClose, onSaved, events = [], ex
   const [stage, setStage] = useState('pick')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
+  const [detail, setDetail] = useState(null)
   const [file, setFile] = useState(null)
   const [over, setOver] = useState(false)
   /* La cle de l'<input type=file>: sa valeur n'est pas controlable, donc
@@ -172,11 +173,18 @@ export default function SyllabusWizard({ open, onClose, onSaved, events = [], ex
     const d = fromKey(iso)
     return d ? dayKey(addDays(d, -((d.getDay() + 6) % 7))) : iso
   }
-  const fail = (code) => setError(t(`syl.err_${KNOWN_ERRORS.has(code) ? code : 'model_failed'}`))
+  /* La phrase traduite, et dessous, quand le serveur en a une, la phrase
+     brute de l'API: c'est elle qu'on colle dans un message pour se faire
+     aider, et sans elle huit essais ont dit la meme chose. */
+  const fail = (code, detail = null) => {
+    setError(t(`syl.err_${KNOWN_ERRORS.has(code) ? code : 'model_failed'}`))
+    setDetail(detail || null)
+  }
 
   const pick = (f) => {
     setFile(f ?? null)
     setError(null)
+    setDetail(null)
     if (!f) setFileKey((k) => k + 1)
   }
 
@@ -184,6 +192,7 @@ export default function SyllabusWizard({ open, onClose, onSaved, events = [], ex
     setStage('pick')
     setBusy(false)
     setError(null)
+    setDetail(null)
     setFile(null)
     setOver(false)
     setFileKey((k) => k + 1)
@@ -214,7 +223,7 @@ export default function SyllabusWizard({ open, onClose, onSaved, events = [], ex
     setError(null)
     const got = await analyseSyllabus(supabase, file, { locale, today })
     setBusy(false)
-    if (got.error) return fail(got.error)
+    if (got.error) return fail(got.error, got.detail)
     if (!got.plan.sessions.length && !got.plan.deadlines.length) return fail('empty')
 
     /* Compare a ce que la page a deja charge: les regles du calendrier, les
@@ -229,7 +238,7 @@ export default function SyllabusWizard({ open, onClose, onSaved, events = [], ex
         [...deduped.sessions.filter((s) => !s.dup), ...deduped.deadlines.filter((d) => !d.dup && !d.past)].map((x) => x.id),
       ),
     )
-    setNote(got.fallback ? t('syl.fallback_note') : null)
+    setNote(got.strict === false ? t('syl.loose_note') : null)
     setStage('review')
   }
 
@@ -537,7 +546,7 @@ export default function SyllabusWizard({ open, onClose, onSaved, events = [], ex
 
           {stage === 'when' && (
             <>
-              <h3 className="text-safe text-lg font-semibold text-ink">{t('syl.av_days')}</h3>
+              <h3 className="text-safe text-h2 font-semibold text-ink">{t('syl.av_days')}</h3>
               <div className="mt-3 flex flex-wrap gap-1.5">
                 {DAY_ORDER.map((d) => {
                   const on = av.weekdays.includes(d)
@@ -720,6 +729,11 @@ export default function SyllabusWizard({ open, onClose, onSaved, events = [], ex
           {error && (
             <p className="text-safe w-full text-small text-negative" role="alert" data-hook="syl-error">
               {error}
+              {detail && (
+                <span className="mt-1 block break-words font-mono text-label text-muted" data-hook="syl-detail">
+                  {detail}
+                </span>
+              )}
             </p>
           )}
         </div>

@@ -371,13 +371,14 @@ eq('base64 round-trips', Buffer.from(toBase64(new Uint8Array([37, 80, 68, 70, 45
   const sb = (token) => ({ auth: { getSession: async () => ({ data: { session: token ? { access_token: token } : null } }) } })
   const file = new File([new Uint8Array([37, 80, 68, 70, 45, 49, 46, 52])], 'plan.pdf', { type: 'application/pdf' })
 
-  const good = await analyseSyllabus(sb('tok'), file, { locale: 'fr', today: TODAY, fetchImpl: fakeFetch(200, { plan: { course: 'X', sessions: [], deadlines: [{ title: 'Quiz', kind: 'quiz', due_on: '2026-10-09' }] }, model: 'm', fallback: true }) })
+  const good = await analyseSyllabus(sb('tok'), file, { locale: 'fr', today: TODAY, fetchImpl: fakeFetch(200, { plan: { course: 'X', sessions: [], deadlines: [{ title: 'Quiz', kind: 'quiz', due_on: '2026-10-09' }] }, model: 'm', strict: false }) })
   eq('it POSTs to /api/syllabus with the session token', [calls[0].url, calls[0].init.method, calls[0].init.headers.authorization], ['/api/syllabus', 'POST', 'Bearer tok'])
   const sent = JSON.parse(calls[0].init.body)
   eq('the body is the PDF in base64, the name, the locale and the day', [sent.pdf, sent.name, sent.locale, sent.today], ['JVBERi0xLjQ=', 'plan.pdf', 'fr', TODAY])
   ok('and nothing else, no email, no id', Object.keys(sent).sort().join(',') === 'locale,name,pdf,today')
   eq('the plan comes back normalised', good.plan.deadlines[0].id, 'd1')
-  eq('with the fallback flag', good.fallback, true)
+  eq('with the strict flag as the server said it', good.strict, false)
+  eq('and the detail comes through on a failure', (await analyseSyllabus(sb('t'), file, { fetchImpl: fakeFetch(502, { error: 'model_failed', detail: 'output_config.format: no' }) })).detail, 'output_config.format: no')
 
   eq('no session is unauthorized before any request', (await analyseSyllabus(sb(null), file, { fetchImpl: fakeFetch(200, {}) })).error, 'unauthorized')
   eq('a wrong file never leaves the browser', (await analyseSyllabus(sb('t'), new File(['x'], 'x.txt', { type: 'text/plain' }), { fetchImpl: fakeFetch(200, {}) })).error, 'not_pdf')
@@ -393,32 +394,75 @@ eq('base64 round-trips', Buffer.from(toBase64(new Uint8Array([37, 80, 68, 70, 45
 {
   const PDF = 'JVBERi0xLjQK'
   const seen = []
+  /* Le faux client: `stream()` rend tout de suite, et c'est finalMessage()
+     qui tient la reponse ou l'erreur, comme le vrai SDK. `message` peut etre
+     une fonction des parametres, pour refuser le premier essai et pas le
+     second. */
   const client = (message) => ({
-    beta: { messages: { stream: (params) => { seen.push(params); return { finalMessage: async () => (typeof message === 'function' ? message(params) : message) } } } },
+    messages: {
+      stream: (params) => {
+        seen.push(params)
+        return {
+          finalMessage: async () => {
+            const m = typeof message === 'function' ? message(params) : message
+            if (m instanceof Error) throw m
+            return m
+          },
+        }
+      },
+    },
   })
   const answer = (obj, extra = {}) => ({ stop_reason: 'end_turn', model: 'claude-opus-5-5', content: [{ type: 'text', text: JSON.stringify(obj) }], ...extra })
+  const http = (status, message) => {
+    const e = new Error(`${status} {"type":"error","error":{"type":"invalid_request_error","message":"${message}"}}`)
+    e.status = status
+    e.error = { type: 'error', error: { type: 'invalid_request_error', message } }
+    return e
+  }
 
   const out = await api.analyse(PDF, { today: TODAY, locale: 'en', client: client(answer({ course: 'X', term: {}, sessions: [], deadlines: [{ title: 'Quiz 1', kind: 'quiz', due_on: '2026-10-01' }] })) })
   eq('the plan is read from the text block and normalised', out.plan.deadlines[0], { id: 'd1', title: 'Quiz 1', kind: 'quiz', due_on: '2026-10-01', at: null, weight: null, location: null, steps: [], past: false })
-  eq('and no fallback was used', out.fallback, false)
+  eq('and the strict format was used, with no note', [out.strict, out.note], [true, null])
   const p = seen[0]
   eq('the default model', p.model, api.MODEL)
-  eq('the server-side fallback is on, with its beta', [p.fallbacks, p.betas], ['default', ['server-side-fallback-2026-07-01']])
+  ok('the plain request shape: no fallbacks, no beta header, no thinking block', !('fallbacks' in p) && !('betas' in p) && !('thinking' in p))
   eq('the PDF is the first block of the user turn, as a document', [p.messages[0].role, p.messages[0].content[0].type, p.messages[0].content[0].source.media_type, p.messages[0].content[0].source.data], ['user', 'document', 'application/pdf', PDF])
   eq('the output is schema-bound', p.output_config.format.type, 'json_schema')
-  ok('with the effort set and no thinking block (Opus 5.5 thinks by itself)', p.output_config.effort === 'medium' && !('thinking' in p))
+  eq('with the effort set', p.output_config.effort, 'medium')
   ok('the consigne names today and the weekday numbering', p.system.includes(TODAY) && p.system.includes('0 = Sunday') && p.system.includes('English'))
   ok('and tells it not to invent', /Do not invent/.test(p.system))
   ok('no email anywhere in the request', !JSON.stringify(p).includes('@'))
 
   const parsed = await api.analyse(PDF, { today: TODAY, client: client({ stop_reason: 'end_turn', model: 'm', content: [], parsed_output: { course: 'P', sessions: [], deadlines: [] } }) })
   eq('parsed_output is used when the SDK gives it', parsed.plan.course, 'P')
-  const fb = await api.analyse(PDF, { today: TODAY, client: client({ stop_reason: 'end_turn', model: 'other', content: [{ type: 'fallback' }, { type: 'text', text: '{"sessions":[],"deadlines":[]}' }] }) })
-  eq('a fallback block is reported', [fb.fallback, fb.model], [true, 'other'])
+
+  /* Le 400 sur le format strict: un deuxieme essai sans lui, lu entre les accolades. */
+  seen.length = 0
+  const loose = await api.analyse(PDF, { today: TODAY, client: client((params) => (params.output_config?.format
+    ? http(400, 'output_config.format: this combination is not supported')
+    : { stop_reason: 'end_turn', model: 'claude-opus-5-5', content: [{ type: 'text', text: 'Here you go:\n```json\n{"course":"L","sessions":[],"deadlines":[{"title":"Quiz","kind":"quiz","due_on":"2026-10-09"}]}\n```' }] })) })
+  eq('a 400 on the strict format retries once without it', seen.length, 2)
+  ok('the second request has no format, and asks for the JSON alone', !seen[1].output_config?.format && seen[1].output_config?.effort === 'medium' && /JSON object only/.test(seen[1].system))
+  eq('the loose answer is read between its braces, prose and fence ignored', [loose.plan.course, loose.plan.deadlines.length, loose.strict], ['L', 1, false])
+  eq('and the note says what the API refused', loose.note, 'output_config.format: this combination is not supported')
+  let thrown = null
+  try {
+    await api.analyse(PDF, { today: TODAY, client: client(http(500, 'overloaded')) })
+  } catch (e) {
+    thrown = e
+  }
+  eq('any other status is rethrown for the handler to name', thrown?.status, 500)
+
   eq('a refusal is a code word', (await api.analyse(PDF, { today: TODAY, client: client({ stop_reason: 'refusal', content: [] }) })).error, 'refused')
   eq('a truncated answer is a failure, not half a plan', (await api.analyse(PDF, { today: TODAY, client: client({ stop_reason: 'max_tokens', content: [{ type: 'text', text: '{"sessions":[' }] }) })).error, 'model_failed')
-  eq('text that is not JSON is a failure', (await api.analyse(PDF, { today: TODAY, client: client({ stop_reason: 'end_turn', content: [{ type: 'text', text: 'Sure! Here is' }] }) })).error, 'model_failed')
+  eq('text that is not JSON is a failure with a detail', (await api.analyse(PDF, { today: TODAY, client: client({ stop_reason: 'end_turn', content: [{ type: 'text', text: 'Sure! Here is' }] }) })).detail, 'no JSON in the answer')
   eq('a model override is honoured', (await (async () => { const c = client(answer({})); await api.analyse(PDF, { today: TODAY, client: c, model: 'claude-sonnet-5-5' }); return seen.at(-1).model })()), 'claude-sonnet-5-5')
+
+  eq('apiMessage reads the structured API message', api.apiMessage(http(400, 'messages.0.content.0: unexpected field')), 'messages.0.content.0: unexpected field')
+  eq('and falls back to the error message', api.apiMessage(new Error('socket hang up')), 'socket hang up')
+  eq('and to nothing for nothing', api.apiMessage(undefined), '')
+  ok('anything that looks like base64 is cut out', api.apiMessage(new Error(`bad data ${'JVBERi0x'.repeat(20)} here`)) === 'bad data [base64] here')
+  eq('and it never exceeds 300 characters', api.apiMessage(new Error('word '.repeat(200))).length, 300)
 
   eq('a PDF header passes', api.pdfBytesProblem(PDF), null)
   eq('other bytes are not a PDF', api.pdfBytesProblem(Buffer.from('hello world!').toString('base64')), 'not_pdf')
