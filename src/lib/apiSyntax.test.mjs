@@ -276,7 +276,7 @@ const code = (rel) => src(rel).replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\
      is meant to be in the browser, which is the whole point of a keypair. So
      the rule cannot be "no VITE_ name mentioning a key". It is a list of the
      words that mean server-side, with PUBLIC deliberately absent. */
-  const DANGEROUS = /^VITE_.*(SECRET|SERVICE_ROLE|STRIPE|PLAID|WEBHOOK|RESEND|PRIVATE|SERVICE_KEY)/
+  const DANGEROUS = /^VITE_.*(SECRET|SERVICE_ROLE|STRIPE|PLAID|WEBHOOK|RESEND|PRIVATE|SERVICE_KEY|ANTHROPIC)/
   const offenders = []
   for (const file of sources) {
     for (const m of readFileSync(file, 'utf8').matchAll(/\bVITE_[A-Z0-9_]+/g)) {
@@ -383,6 +383,62 @@ const code = (rel) => src(rel).replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\
     'the settings screen can run it',
     /library-health/.test(src('src/components/PurchaseCheck.jsx')) &&
       /data-hook="library-check"/.test(src('src/components/PurchaseCheck.jsx')),
+  )
+}
+
+/**
+ * /api/syllabus LIT UN PDF AVEC UNE CLE QUI COUTE DE L'ARGENT A CHAQUE APPEL.
+ *
+ *   "est-ce que tu peux ajouter une option intelligente ou tu peux ajouter
+ *    ton PDF de ton syllabus et ca va analyser"
+ *
+ * Trois choses a tenir, et chacune est une ligne qui pourrait partir dans
+ * un nettoyage: la cle ne s'appelle jamais VITE_ (DANGEROUS ci-dessus la
+ * couvre aussi), l'appel demande un jeton de session, et rien de ce qui
+ * passe (le PDF, la cle, le message du SDK) n'entre dans un journal ou une
+ * reponse.
+ */
+{
+  const syl = src('api/syllabus.js')
+  const sylCode = code('api/syllabus.js')
+  ok('it requires a signed-in caller',
+     /db\.auth\.getUser\(token\)/.test(syl) && /return res\.status\(401\)/.test(syl))
+  ok('and it is a POST, because it spends', /req\.method !== 'POST'/.test(syl))
+  ok(
+    'the key is read by intent, and only its presence reaches a response',
+    /env\('anthropicKey'\)/.test(syl) && !/anthropicKey'\)\s*[,)}]?\s*(\+|\.slice|\.substring)/.test(syl)
+      && !/missing: \[env\(/.test(syl),
+  )
+  ok(
+    'the key has a server-side name, never a VITE_ one',
+    /anthropicKey: \['ANTHROPIC_API_KEY'/.test(src('api/_env.js')) && !/VITE_ANTHROPIC/.test(src('api/_env.js')),
+  )
+  ok(
+    'the PDF is never logged',
+    !/console\.\w+\([^)]*\b(pdf|base64|body)\b/.test(sylCode),
+    'a syllabus can carry a name and a student number; the log is not the place for it',
+  )
+  ok(
+    'and a failure logs a status and a name, not the SDK message',
+    /console\.error\(`syllabus: model call failed: \$\{err\?\.status/.test(syl) && !/err\.message|err\?\.message/.test(sylCode),
+    'the SDK message can quote the request',
+  )
+  ok(
+    'the model is the most capable one, with the server-side fallback on',
+    /MODEL = 'claude-opus-5-5'/.test(syl) && /fallbacks: 'default'/.test(syl) && /server-side-fallback-2026-07-01/.test(syl),
+  )
+  ok(
+    'the output is schema-constrained and re-normalised anyway',
+    /jsonSchemaOutputFormat\(PLAN_SCHEMA\)/.test(syl) && /normalisePlan\(raw/.test(syl),
+  )
+  ok(
+    'the reading has the time it needs',
+    /"api\/syllabus\.js": \{ "maxDuration": 300 \}/.test(src('vercel.json')) && /"fluid": true/.test(src('vercel.json')),
+    'a model reading ten pages takes longer than the 60 s a Hobby function gets without fluid compute',
+  )
+  ok(
+    'the browser sends the live session token and never the key',
+    /supabase\.auth\.getSession\(\)/.test(src('src/lib/syllabus.js')) && !/ANTHROPIC|anthropicKey/.test(src('src/lib/syllabus.js')),
   )
 }
 

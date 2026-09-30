@@ -3,6 +3,10 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": "vite",
+  "fluid": true,
+  "functions": {
+    "api/syllabus.js": { "maxDuration": 300 }
+  },
   "rewrites": [
     {
       "source": "/cal/:token.ics",
