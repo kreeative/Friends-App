@@ -50,9 +50,36 @@ const MAX_OUTPUT = 16000
  * a 300 caracteres.
  */
 export function apiMessage(err) {
-  const raw = err?.error?.error?.message ?? err?.error?.message ?? err?.message ?? ''
-  return String(raw).replace(/[A-Za-z0-9+/=]{80,}/g, '[base64]').replace(/\s+/g, ' ').slice(0, 300)
+  const structured = err?.error?.error?.message ?? err?.error?.message ?? null
+  const raw = structured ?? rawMessage(err)
+  /* Une erreur qui n'est pas de l'API (un TypeError de fetch, de Headers)
+     peut citer ce qu'on lui a donne, et ce qu'on donne a Headers est la
+     cle. Le premier vrai essai avec une cle collee sur deux lignes a rendu
+     "Headers.append: sk-ant-... is an invalid header value" jusqu'a
+     l'ecran. Pour ces erreurs-la, le nom suffit. */
+  const text = structured == null && /header/i.test(raw) ? `${err?.name ?? 'Error'}: header value refused` : raw
+  return redact(text)
 }
+
+/** Le message brut, lu a un seul endroit. */
+const rawMessage = (err) => String(err?.message ?? '')
+
+/**
+ * Rien qui ressemble a un secret ne traverse: une cle Anthropic (sk-...),
+ * une suite de 40 caracteres de jeton, du base64. Puis une ligne, 300
+ * caracteres au plus.
+ */
+export function redact(s) {
+  return String(s ?? '')
+    .replace(/sk-[A-Za-z0-9_-]{8,}/g, '[key]')
+    .replace(/[A-Za-z0-9+/=_-]{40,}/g, '[token]')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 300)
+}
+
+/** Une cle collee avec un espace ou un retour a la ligne, remise sur une ligne. */
+export const cleanKey = (k) => String(k ?? '').replace(/\s+/g, '')
 
 /**
  * Ce que le handler repond quand l'appel au modele a leve: le statut HTTP
@@ -67,6 +94,11 @@ export function apiMessage(err) {
 export function failureOf(err) {
   const detail = apiMessage(err)
   const status = err?.status
+  /* Headers a refuse la valeur: la cle porte un caractere qu'un en-tete
+     n'accepte pas. Pas de detail du tout, la phrase de l'ecran suffit. */
+  if (status == null && /invalid header value|invalid character in header/i.test(rawMessage(err))) {
+    return { status: 503, error: 'key_format', detail: null }
+  }
   if (status === 429) return { status: 429, error: 'busy', detail }
   if (status === 401 || status === 403) return { status: 503, error: 'no_key', detail }
   if (status === 400 && /workspace/i.test(detail)) return { status: 503, error: 'no_workspace', detail }
@@ -77,8 +109,8 @@ export function failureOf(err) {
 /** Le client, avec l'en-tete d'espace de travail quand la cle en a besoin. */
 export function makeClient({ apiKey, workspace } = {}) {
   return new Anthropic({
-    apiKey,
-    ...(workspace ? { defaultHeaders: { 'anthropic-workspace-id': workspace } } : {}),
+    apiKey: cleanKey(apiKey),
+    ...(workspace ? { defaultHeaders: { 'anthropic-workspace-id': cleanKey(workspace) } } : {}),
   })
 }
 
