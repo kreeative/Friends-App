@@ -54,6 +54,34 @@ export function apiMessage(err) {
   return String(raw).replace(/[A-Za-z0-9+/=]{80,}/g, '[base64]').replace(/\s+/g, ' ').slice(0, 300)
 }
 
+/**
+ * Ce que le handler repond quand l'appel au modele a leve: le statut HTTP
+ * pour nous, le mot-code pour l'ecran, et la phrase de l'API en detail.
+ *
+ * Le cas "workspace" a son propre mot-code parce qu'il a sa propre
+ * solution, et qu'elle n'est pas dans le code: une cle creee hors de tout
+ * espace de travail exige l'en-tete anthropic-workspace-id, donc soit on
+ * pose ANTHROPIC_WORKSPACE_ID dans Vercel, soit on cree la cle dans un
+ * espace. Un "la lecture a echoue" n'aurait jamais mene la.
+ */
+export function failureOf(err) {
+  const detail = apiMessage(err)
+  const status = err?.status
+  if (status === 429) return { status: 429, error: 'busy', detail }
+  if (status === 401 || status === 403) return { status: 503, error: 'no_key', detail }
+  if (status === 400 && /workspace/i.test(detail)) return { status: 503, error: 'no_workspace', detail }
+  if (status === 404) return { status: 502, error: 'model_failed', detail: `model not available: ${detail}` }
+  return { status: 502, error: 'model_failed', detail }
+}
+
+/** Le client, avec l'en-tete d'espace de travail quand la cle en a besoin. */
+export function makeClient({ apiKey, workspace } = {}) {
+  return new Anthropic({
+    apiKey,
+    ...(workspace ? { defaultHeaders: { 'anthropic-workspace-id': workspace } } : {}),
+  })
+}
+
 /* Le JSON dans une reponse qui n'est pas contrainte: la premiere accolade
    a la derniere, ce qui passe par-dessus une phrase avant et une cloture de
    bloc de code apres. */
@@ -204,7 +232,7 @@ export default async function handler(req, res) {
 
   const today = isoDate(body.today) ?? new Date().toISOString().slice(0, 10)
   const locale = body.locale === 'en' ? 'en' : 'fr'
-  const client = new Anthropic({ apiKey: env('anthropicKey') })
+  const client = makeClient({ apiKey: env('anthropicKey'), workspace: env('anthropicWorkspace') })
 
   let out
   try {
@@ -214,12 +242,9 @@ export default async function handler(req, res) {
        jamais le PDF, jamais la cle. Le meme texte part a l'ecran en
        `detail`, parce qu'un "la lecture a echoue" sans raison a deja coute
        huit essais a l'aveugle. */
-    const detail = apiMessage(err)
-    console.error(`syllabus: model call failed: ${err?.status ?? '-'} ${err?.name ?? 'Error'}: ${detail}`)
-    if (err?.status === 429) return res.status(429).json({ error: 'busy', detail })
-    if (err?.status === 401 || err?.status === 403) return res.status(503).json({ error: 'no_key', detail })
-    if (err?.status === 404) return res.status(502).json({ error: 'model_failed', detail: `model not available: ${detail}` })
-    return res.status(502).json({ error: 'model_failed', detail })
+    const failure = failureOf(err)
+    console.error(`syllabus: model call failed: ${err?.status ?? '-'} ${err?.name ?? 'Error'}: ${failure.detail}`)
+    return res.status(failure.status).json({ error: failure.error, detail: failure.detail })
   }
   if (out.error) return res.status(out.error === 'refused' ? 422 : 502).json({ error: out.error, detail: out.detail ?? null })
   return res.status(200).json({ plan: out.plan, model: out.model, strict: out.strict, note: out.note })

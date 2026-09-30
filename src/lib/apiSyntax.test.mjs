@@ -420,8 +420,8 @@ const code = (rel) => src(rel).replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\
   )
   ok(
     'a failure logs the status, the name and the API message, cleaned by apiMessage',
-    /const detail = apiMessage\(err\)/.test(syl)
-      && /console\.error\(`syllabus: model call failed: \$\{err\?\.status \?\? '-'\} \$\{err\?\.name \?\? 'Error'\}: \$\{detail\}`\)/.test(syl),
+    /const failure = failureOf\(err\)/.test(syl) && /const detail = apiMessage\(err\)/.test(syl)
+      && /console\.error\(`syllabus: model call failed: \$\{err\?\.status \?\? '-'\} \$\{err\?\.name \?\? 'Error'\}: \$\{failure\.detail\}`\)/.test(syl),
     'eight production attempts logged "400 Error" and nothing else, which is a log that cannot be acted on',
   )
   ok(
@@ -444,6 +444,12 @@ const code = (rel) => src(rel).replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\
     'the reading has the time it needs',
     /"api\/syllabus\.js": \{ "maxDuration": 300 \}/.test(src('vercel.json')) && /"fluid": true/.test(src('vercel.json')),
     'a model reading ten pages takes longer than the 60 s a Hobby function gets without fluid compute',
+  )
+  ok(
+    'the workspace header comes from the environment, never from the code',
+    /workspace: env\('anthropicWorkspace'\)/.test(syl) && /anthropicWorkspace: \['ANTHROPIC_WORKSPACE_ID'/.test(src('api/_env.js'))
+      && !/wrkspc_/.test(sylCode),
+    'a key made outside a workspace needs anthropic-workspace-id on every call; the first real PDF failed on exactly that',
   )
   ok(
     'the browser sends the live session token and never the key',
