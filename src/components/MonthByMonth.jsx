@@ -68,7 +68,7 @@ export default function MonthByMonth({ entries, startDay, currency, locale }) {
 
   if (rows.length === 0 || top === 0) {
     return (
-      <div className="glass-card rounded-3xl p-5" data-hook="months-empty">
+      <div className="glass-card rounded-card p-5" data-hook="months-empty">
         <Empty>{t('months.empty')}</Empty>
       </div>
     )
@@ -124,7 +124,7 @@ export default function MonthByMonth({ entries, startDay, currency, locale }) {
       {/* The one number that makes every bar mean something. Without it a
           reader has twelve lengths and no idea which of them is normal. */}
       {typical > 0 && (
-        <div className="glass-card rounded-3xl p-5" data-hook="months-typical">
+        <div className="glass-card rounded-card p-5" data-hook="months-typical">
           <p className="text-label font-semibold uppercase tracking-wider text-muted">
             {t('months.typical')}
           </p>
@@ -137,7 +137,7 @@ export default function MonthByMonth({ entries, startDay, currency, locale }) {
         </div>
       )}
 
-      <ul className="glass-card divide-y divide-hairline rounded-3xl px-5" data-hook="months-list">
+      <ul className="glass-card divide-y divide-hairline rounded-card px-5" data-hook="months-list">
         {compared.map((r) => {
           const width = top > 0 ? Math.max(2, Math.round((r.amount / top) * 100)) : 0
           const up = (r.delta ?? 0) > 0

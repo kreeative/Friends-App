@@ -60,7 +60,7 @@ export default function ProjectInvites({ invites, profiles, onDone }) {
         <li
           key={i.invite_id}
           data-invite={i.invite_id}
-          className="animate-rise glass-card rounded-3xl p-5"
+          className="animate-rise glass-card rounded-card p-5"
         >
           <div className="flex items-center gap-3">
             <Avatar profile={profiles?.[i.invited_by]} size={38} />

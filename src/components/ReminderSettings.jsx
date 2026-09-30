@@ -543,7 +543,7 @@ function Switch({ label, hint, on, onChange, hook }) {
         >
           <span
             aria-hidden="true"
-            className={`h-5 w-5 rounded-pill bg-white shadow-sm transition-transform ${
+            className={`h-5 w-5 rounded-pill bg-white shadow-raised transition-transform ${
               on ? 'translate-x-5' : 'translate-x-0'
             }`}
           />

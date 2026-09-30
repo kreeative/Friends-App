@@ -47,10 +47,10 @@ export default function BudgetShortcuts({ items, onOpen }) {
              lines under the label announce a bare number and then a bare
              word, which is why they are aria-hidden below. */
           aria-label={`${item.label}. ${item.value} ${item.word}`}
-          className="press glass-card flex flex-col items-start rounded-3xl border p-4 text-left"
+          className="press glass-card flex flex-col items-start rounded-card border p-4 text-left"
         >
           <span
-            className={`flex h-[3.5rem] w-[3.5rem] shrink-0 items-center justify-center rounded-2xl ${item.well}`}
+            className={`flex h-[3.5rem] w-[3.5rem] shrink-0 items-center justify-center rounded-inner ${item.well}`}
           >
             {/**
              * A gauge where there is a real ratio, the section's own mark

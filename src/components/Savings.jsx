@@ -118,7 +118,7 @@ export default function Savings({
   if (missing) {
     return (
       <Section title={t('sav.title')}>
-        <div className="glass-card rounded-3xl p-6">
+        <div className="glass-card rounded-card p-6">
           <Empty>{t('sav.not_installed')}</Empty>
         </div>
       </Section>
@@ -132,7 +132,7 @@ export default function Savings({
       <Section>
         <div
           data-card="savings-hero"
-          className="glass-card relative overflow-hidden rounded-3xl bg-surface p-6"
+          className="glass-card relative overflow-hidden rounded-card bg-surface p-6"
         >
           <div className="flex items-baseline justify-between gap-3">
             <p className="text-label font-semibold uppercase tracking-wider text-muted">
@@ -175,7 +175,7 @@ export default function Savings({
        * typed into a form once are worth different amounts of trust.
        */}
       <Section title={t('sav.cushion')}>
-        <div data-card="cushion" className="glass-card rounded-3xl p-5">
+        <div data-card="cushion" className="glass-card rounded-card p-5">
           <div className="flex items-baseline justify-between gap-3">
             <p className="font-display text-h2 leading-none text-ink [font-variant-numeric:tabular-nums]">
               {fmt(cushion.target)}
@@ -219,7 +219,7 @@ export default function Savings({
            */}
           <ul className="space-y-2.5">
             {pending.map((p) => (
-              <li key={p.key} data-hook="sweep" className="glass-card rounded-3xl p-4">
+              <li key={p.key} data-hook="sweep" className="glass-card rounded-card p-4">
                 <div className="flex items-baseline justify-between gap-3">
                   <span className="min-w-0 truncate text-body font-semibold leading-tight text-ink">
                     {monthName(p.start)}
@@ -247,9 +247,9 @@ export default function Savings({
 
       {/* Anything else: a bonus, a gift, a transfer nobody's month explains. */}
       <Section title={t('sav.add')}>
-        <div className="glass-card flex items-center gap-2 rounded-3xl p-2.5">
+        <div className="glass-card flex items-center gap-2 rounded-card p-2.5">
           <span
-            className="flex min-w-0 flex-1 items-baseline rounded-2xl bg-raised px-3 py-2
+            className="flex min-w-0 flex-1 items-baseline rounded-inner bg-raised px-3 py-2
                        ring-1 ring-inset ring-ink/50 transition-shadow duration-200 ease-settle
                        focus-within:ring-2 focus-within:ring-ink/60
                        focus-within:shadow-[0_0_0_4px_rgb(var(--c-accent)/0.4)]"
@@ -287,11 +287,11 @@ export default function Savings({
 
       <Section title={t('sav.ledger')}>
         {savings.length === 0 ? (
-          <div className="glass-card rounded-3xl px-5 py-2">
+          <div className="glass-card rounded-card px-5 py-2">
             <Empty>{t('sav.empty')}</Empty>
           </div>
         ) : (
-          <ul data-hook="savings-ledger" className="glass-card divide-y divide-hairline rounded-3xl px-4">
+          <ul data-hook="savings-ledger" className="glass-card divide-y divide-hairline rounded-card px-4">
             {savings.slice(0, 12).map((r) => (
               <li key={r.id} className="flex items-center gap-3 py-3.5">
                 <span className="min-w-0 flex-1 text-body text-ink">

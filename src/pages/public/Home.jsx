@@ -129,11 +129,11 @@ export default function Home() {
             <li
               key={item.n}
               data-pillar={item.n}
-              /* rounded-3xl with a light border, as asked. The tint is on the
+              /* rounded-card with a light border, as asked. The tint is on the
                  numeral's tile rather than on the card: a full card of colour
                  three times in a row is a page of blocks, and the text on it
                  would have to be re-measured against three grounds. */
-              className="glass-card flex flex-col rounded-3xl border p-6"
+              className="glass-card flex flex-col rounded-card border p-6"
             >
               {/**
                * A solid tile per pillar, one in each brand colour, and the
@@ -158,7 +158,7 @@ export default function Home() {
                */}
               <span
                 aria-hidden="true"
-                className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${item.tone}
+                className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-inner ${item.tone}
                             font-display text-body font-bold text-[#111111] [font-variant-numeric:tabular-nums]`}
               >
                 {item.n}
@@ -257,7 +257,7 @@ export default function Home() {
        * closing ask becomes the field itself, with black on it at 13.5:1.
        */}
       <section id="mouvement" className="relative mx-auto w-full max-w-5xl px-6 pb-20">
-        <div className="relative overflow-hidden rounded-3xl bg-field px-6 py-20 text-center">
+        <div className="relative overflow-hidden rounded-card bg-field px-6 py-20 text-center">
           <h2 className="mx-auto max-w-[18ch] text-[clamp(1.875rem,5vw,3rem)] font-semibold leading-[1.02] tracking-[-0.024em] text-on-field">
             {c.close.title}
           </h2>

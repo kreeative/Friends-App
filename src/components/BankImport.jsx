@@ -144,7 +144,7 @@ export default function BankImport({ onImported }) {
   }
 
   return (
-    <div className="glass-card rounded-3xl p-5" data-hook="bank-import">
+    <div className="glass-card rounded-card p-5" data-hook="bank-import">
       <p className="text-body font-semibold text-ink">{t('bank.title')}</p>
       <p className="mt-1.5 text-small leading-relaxed text-muted">{t('bank.body')}</p>
 

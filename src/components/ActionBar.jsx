@@ -67,7 +67,7 @@ export default function ActionBar({ items, value, onChange }) {
             type="button"
             onClick={() => onChange(item.id)}
             aria-pressed={on}
-            className={`press group flex w-full min-w-0 items-center gap-3 rounded-3xl p-3 text-left transition-[background-color,color,box-shadow] duration-200 ${
+            className={`press group flex w-full min-w-0 items-center gap-3 rounded-card p-3 text-left transition-[background-color,color,box-shadow] duration-200 ${
               /**
                * Selected is a PINK card, not a dark one.
                *
