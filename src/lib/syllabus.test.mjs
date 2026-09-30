@@ -482,10 +482,26 @@ eq('base64 round-trips', Buffer.from(toBase64(new Uint8Array([37, 80, 68, 70, 45
     return h(withWs)['anthropic-workspace-id'] === 'wrkspc_01' && !h(without)['anthropic-workspace-id']
   })(), 'the SDK keeps constructor options on the client')
 
+  /* LA LIGNE GRISE A MONTRE UNE CLE. Une cle collee sur deux lignes dans
+     Vercel, Headers.append qui la refuse en la citant, et le message qui
+     descend jusqu'a l'ecran. Plus jamais: une erreur hors API ne montre
+     que son nom, et tout ce qui ressemble a une cle ou a un jeton est
+     remplace, meme dans un message de l'API. */
+  const FAKE_KEY = 'sk-ant-usr-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB'
+  const headersErr = new TypeError(`Headers.append: "${FAKE_KEY}" is an invalid header value.`)
+  ok('a Headers error never carries the value, only the name', api.apiMessage(headersErr) === 'TypeError: header value refused')
+  eq('and it is its own code word, with no detail at all', api.failureOf(headersErr), { status: 503, error: 'key_format', detail: null })
+  ok('a key inside an API message is replaced', api.redact(`invalid x-api-key: ${FAKE_KEY}`) === 'invalid x-api-key: [key] [token]')
+  ok('a long token run is replaced even without the sk- prefix', api.redact(`token ${'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9abcdef'}`) === 'token [token]')
+  ok('nothing in a redacted string is longer than 39 characters without a space', api.redact(`x ${'Q'.repeat(60)} y`).split(' ').every((w) => w.length < 40))
+  eq('a pasted key with a space or a newline is cleaned before use', api.cleanKey(' sk-ant-a\nbc d '), 'sk-ant-abcd')
+  ok('so the client gets it on one line', api.makeClient({ apiKey: 'sk-test\n-x' })._options.apiKey === 'sk-test-x')
+  ok('no key value in any failure for any error', [headersErr, http(401, `bad key ${FAKE_KEY}`), new Error(FAKE_KEY)].every((e) => !JSON.stringify(api.failureOf(e)).includes('AAAAAAAA') && !JSON.stringify(api.failureOf(e)).includes('BBBBBBBB')))
+
   eq('apiMessage reads the structured API message', api.apiMessage(http(400, 'messages.0.content.0: unexpected field')), 'messages.0.content.0: unexpected field')
   eq('and falls back to the error message', api.apiMessage(new Error('socket hang up')), 'socket hang up')
   eq('and to nothing for nothing', api.apiMessage(undefined), '')
-  ok('anything that looks like base64 is cut out', api.apiMessage(new Error(`bad data ${'JVBERi0x'.repeat(20)} here`)) === 'bad data [base64] here')
+  ok('anything that looks like base64 is cut out', api.apiMessage(new Error(`bad data ${'JVBERi0x'.repeat(20)} here`)) === 'bad data [token] here')
   eq('and it never exceeds 300 characters', api.apiMessage(new Error('word '.repeat(200))).length, 300)
 
   eq('a PDF header passes', api.pdfBytesProblem(PDF), null)

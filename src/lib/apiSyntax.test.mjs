@@ -425,10 +425,14 @@ const code = (rel) => src(rel).replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\
     'eight production attempts logged "400 Error" and nothing else, which is a log that cannot be acted on',
   )
   ok(
-    'and apiMessage strips anything that looks like base64 and truncates',
-    /export function apiMessage/.test(syl) && /\[A-Za-z0-9\+\/=\]\{80,\}/.test(syl) && /\.slice\(0, 300\)/.test(syl)
-      && (sylCode.match(/err\?\.message/g) ?? []).length === 1,
-    'the raw SDK message is read in exactly one place, the sanitiser',
+    'and everything that could be a secret is redacted before it is logged or shown',
+    /export function redact/.test(syl) && /sk-\[A-Za-z0-9_-\]\{8,\}/.test(syl) && /\[A-Za-z0-9\+\/=_-\]\{40,\}/.test(syl) && /\.slice\(0, 300\)/.test(syl)
+      && (sylCode.match(/err\?\.message/g) ?? []).length === 1 && /header value refused/.test(syl),
+    'the raw SDK message is read in exactly one place; a Headers error once quoted the key itself onto the screen',
+  )
+  ok(
+    'a key pasted with a space or a line break is cleaned before it becomes a header',
+    /apiKey: cleanKey\(apiKey\)/.test(syl) && /replace\(\/\\s\+\/g, ''\)/.test(syl),
   )
   ok(
     'the model is the most capable one and the request is the plain shape',
