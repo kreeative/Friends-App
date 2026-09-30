@@ -639,7 +639,10 @@ export async function analyseSyllabus(
   }
   if (!res.ok) {
     const byStatus = { 401: 'unauthorized', 413: 'too_big', 429: 'busy', 504: 'timeout' }
-    return { error: body?.error || byStatus[res.status] || 'model_failed' }
+    /* `detail` est la phrase de l'API, deja nettoyee par le serveur: elle
+       nomme le parametre refuse ou le modele absent, et c'est ce qu'il faut
+       lire quand "la lecture a echoue". */
+    return { error: body?.error || byStatus[res.status] || 'model_failed', detail: typeof body?.detail === 'string' ? body.detail.slice(0, 300) : null }
   }
-  return { plan: normalisePlan(body.plan, { today }), model: body.model ?? null, fallback: Boolean(body.fallback) }
+  return { plan: normalisePlan(body.plan, { today }), model: body.model ?? null, strict: body.strict !== false }
 }

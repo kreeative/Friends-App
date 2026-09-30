@@ -36,11 +36,37 @@ import { MAX_PDF_BYTES, PLAN_SCHEMA, isoDate, normalisePlan } from '../src/lib/s
    dix pages avec des tableaux est exactement ce pour quoi on ne descend pas
    de gamme. SYLLABUS_MODEL dans Vercel pour en changer sans redeployer. */
 export const MODEL = 'claude-opus-5-5'
-/* Le repli cote serveur: si le modele refuse le document pour une raison de
-   politique, la requete est rejouee sur le modele de repli et la reponse le
-   dit (bloc `fallback`), ce que l'ecran repete en une ligne. */
-const FALLBACK_BETA = 'server-side-fallback-2026-07-01'
 const MAX_OUTPUT = 16000
+
+/**
+ * Le message de l'API, bon a journaliser et a montrer.
+ *
+ * Le premier essai en production a rendu huit fois "400 Error" et rien
+ * d'autre, parce que ce fichier ne journalisait que le statut et le nom, de
+ * peur que le message cite la requete. Il ne cite jamais le document: un
+ * 400 d'Anthropic nomme le parametre refuse, et c'est exactement ce qu'il
+ * fallait lire. Ce qui pourrait ressembler a du base64 (80 caracteres et
+ * plus d'un seul tenant) est tout de meme remplace, et le reste est coupe
+ * a 300 caracteres.
+ */
+export function apiMessage(err) {
+  const raw = err?.error?.error?.message ?? err?.error?.message ?? err?.message ?? ''
+  return String(raw).replace(/[A-Za-z0-9+/=]{80,}/g, '[base64]').replace(/\s+/g, ' ').slice(0, 300)
+}
+
+/* Le JSON dans une reponse qui n'est pas contrainte: la premiere accolade
+   a la derniere, ce qui passe par-dessus une phrase avant et une cloture de
+   bloc de code apres. */
+function looseJson(text) {
+  const s = text.indexOf('{')
+  const e = text.lastIndexOf('}')
+  if (s < 0 || e <= s) return null
+  try {
+    return JSON.parse(text.slice(s, e + 1))
+  } catch {
+    return null
+  }
+}
 
 function admin() {
   return createClient(env('supabaseUrl'), env('serviceRole'), { auth: { persistSession: false } })
@@ -85,42 +111,71 @@ export function pdfBytesProblem(base64) {
 /**
  * L'appel au modele, avec le client en parametre pour que le test passe un
  * faux: il n'y a pas de cle dans le conteneur de test et il ne doit pas y
- * en avoir. Rend { plan, model, fallback } ou { error: <mot-code> }.
+ * en avoir. Rend { plan, model, strict } ou { error: <mot-code>, detail }.
+ *
+ * DEUX ESSAIS, LE STRICT PUIS LE SOUPLE.
+ *
+ * Le premier demande la sortie contrainte par le schema. Si l'API refuse la
+ * requete (400), le second redemande la meme chose sans le schema, avec la
+ * consigne de ne rendre que le JSON, et le lit entre la premiere et la
+ * derniere accolade. normalisePlan() ne croit de toute facon aucun champ,
+ * donc la reponse souple vaut la stricte une fois relue. Le message du
+ * premier refus est journalise et rendu dans `note`, pour qu'on sache ce
+ * que l'API n'a pas voulu plutot que de le deviner depuis un conteneur
+ * sans cle.
+ *
+ * La requete est volontairement la forme la plus courante de l'API: le
+ * document, une phrase, le schema. Pas de repli cote serveur ni d'en-tete
+ * beta: les huit premiers appels en production ont tous ete refuses en 400,
+ * et chaque option de moins est une cause de moins.
  */
 export async function analyse(pdf, { today, locale = 'fr', client, model = env('syllabusModel') || MODEL } = {}) {
-  const stream = client.beta.messages.stream({
+  const system = systemPrompt(today, locale)
+  const base = {
     model,
     max_tokens: MAX_OUTPUT,
-    betas: [FALLBACK_BETA],
-    fallbacks: 'default',
-    system: systemPrompt(today, locale),
     messages: [
       {
         role: 'user',
         content: [
-          { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: pdf }, title: 'syllabus.pdf' },
+          { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: pdf } },
           { type: 'text', text: 'Extract the weekly sessions and every dated deadline of this syllabus.' },
         ],
       },
     ],
-    output_config: { effort: 'medium', format: jsonSchemaOutputFormat(PLAN_SCHEMA) },
-  })
-  const msg = await stream.finalMessage()
+  }
 
-  if (msg.stop_reason === 'refusal') return { error: 'refused' }
-  if (msg.stop_reason === 'max_tokens') return { error: 'model_failed' }
+  let msg
+  let strict = true
+  let note = null
+  try {
+    msg = await client.messages
+      .stream({ ...base, system, output_config: { effort: 'medium', format: jsonSchemaOutputFormat(PLAN_SCHEMA) } })
+      .finalMessage()
+  } catch (err) {
+    if (err?.status !== 400) throw err
+    note = apiMessage(err)
+    console.error(`syllabus: strict format refused (400): ${note}`)
+    strict = false
+    msg = await client.messages
+      .stream({
+        ...base,
+        system: `${system}\nAnswer with the JSON object only: no prose before or after it, no code fence.`,
+        output_config: { effort: 'medium' },
+      })
+      .finalMessage()
+  }
+
+  if (msg.stop_reason === 'refusal') return { error: 'refused', detail: note }
+  if (msg.stop_reason === 'max_tokens') return { error: 'model_failed', detail: 'max_tokens' }
 
   let raw = msg.parsed_output ?? null
   if (!raw) {
     const text = (msg.content ?? []).filter((b) => b.type === 'text').map((b) => b.text).join('')
-    try {
-      raw = JSON.parse(text)
-    } catch {
-      return { error: 'model_failed' }
-    }
+    raw = looseJson(text)
+    if (!raw) return { error: 'model_failed', detail: note ?? 'no JSON in the answer' }
   }
-  const fallback = (msg.content ?? []).some((b) => b.type === 'fallback')
-  return { plan: normalisePlan(raw, { today }), model: msg.model ?? model, fallback }
+  return { plan: normalisePlan(raw, { today }), model: msg.model ?? model, strict, note }
 }
 
 export default async function handler(req, res) {
@@ -155,11 +210,17 @@ export default async function handler(req, res) {
   try {
     out = await analyse(body.pdf, { today, locale, client })
   } catch (err) {
-    console.error(`syllabus: model call failed: ${err?.status ?? '-'} ${err?.name ?? 'Error'}`)
-    if (err?.status === 429) return res.status(429).json({ error: 'busy' })
-    if (err?.status === 401 || err?.status === 403) return res.status(503).json({ error: 'no_key' })
-    return res.status(502).json({ error: 'model_failed' })
+    /* Le statut, le nom et le message de l'API, nettoye par apiMessage():
+       jamais le PDF, jamais la cle. Le meme texte part a l'ecran en
+       `detail`, parce qu'un "la lecture a echoue" sans raison a deja coute
+       huit essais a l'aveugle. */
+    const detail = apiMessage(err)
+    console.error(`syllabus: model call failed: ${err?.status ?? '-'} ${err?.name ?? 'Error'}: ${detail}`)
+    if (err?.status === 429) return res.status(429).json({ error: 'busy', detail })
+    if (err?.status === 401 || err?.status === 403) return res.status(503).json({ error: 'no_key', detail })
+    if (err?.status === 404) return res.status(502).json({ error: 'model_failed', detail: `model not available: ${detail}` })
+    return res.status(502).json({ error: 'model_failed', detail })
   }
-  if (out.error) return res.status(out.error === 'refused' ? 422 : 502).json({ error: out.error })
-  return res.status(200).json({ plan: out.plan, model: out.model, fallback: out.fallback })
+  if (out.error) return res.status(out.error === 'refused' ? 422 : 502).json({ error: out.error, detail: out.detail ?? null })
+  return res.status(200).json({ plan: out.plan, model: out.model, strict: out.strict, note: out.note })
 }

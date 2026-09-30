@@ -419,17 +419,26 @@ const code = (rel) => src(rel).replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\
     'a syllabus can carry a name and a student number; the log is not the place for it',
   )
   ok(
-    'and a failure logs a status and a name, not the SDK message',
-    /console\.error\(`syllabus: model call failed: \$\{err\?\.status/.test(syl) && !/err\.message|err\?\.message/.test(sylCode),
-    'the SDK message can quote the request',
+    'a failure logs the status, the name and the API message, cleaned by apiMessage',
+    /const detail = apiMessage\(err\)/.test(syl)
+      && /console\.error\(`syllabus: model call failed: \$\{err\?\.status \?\? '-'\} \$\{err\?\.name \?\? 'Error'\}: \$\{detail\}`\)/.test(syl),
+    'eight production attempts logged "400 Error" and nothing else, which is a log that cannot be acted on',
   )
   ok(
-    'the model is the most capable one, with the server-side fallback on',
-    /MODEL = 'claude-opus-5-5'/.test(syl) && /fallbacks: 'default'/.test(syl) && /server-side-fallback-2026-07-01/.test(syl),
+    'and apiMessage strips anything that looks like base64 and truncates',
+    /export function apiMessage/.test(syl) && /\[A-Za-z0-9\+\/=\]\{80,\}/.test(syl) && /\.slice\(0, 300\)/.test(syl)
+      && (sylCode.match(/err\?\.message/g) ?? []).length === 1,
+    'the raw SDK message is read in exactly one place, the sanitiser',
   )
   ok(
-    'the output is schema-constrained and re-normalised anyway',
-    /jsonSchemaOutputFormat\(PLAN_SCHEMA\)/.test(syl) && /normalisePlan\(raw/.test(syl),
+    'the model is the most capable one and the request is the plain shape',
+    /MODEL = 'claude-opus-5-5'/.test(syl) && !/fallbacks:/.test(sylCode) && !/betas:/.test(sylCode) && /client\.messages\s*\.stream\(/.test(syl),
+    'the first eight calls with the fallback option and its beta header were all refused with a 400',
+  )
+  ok(
+    'the output is schema-constrained first, loose on a 400, and re-normalised anyway',
+    /jsonSchemaOutputFormat\(PLAN_SCHEMA\)/.test(syl) && /if \(err\?\.status !== 400\) throw err/.test(syl)
+      && /output_config: \{ effort: 'medium' \}/.test(syl) && /normalisePlan\(raw/.test(syl),
   )
   ok(
     'the reading has the time it needs',
