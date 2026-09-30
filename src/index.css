@@ -4152,3 +4152,42 @@
     display: none;
   }
 }
+
+/**
+ * Une barre qui avance sans savoir jusqu'ou.
+ *
+ * La lecture d'un plan de cours par le modele dure une a deux minutes, et
+ * un bouton grise avec "Lecture" ne dit pas si quelque chose se passe. Le
+ * ruban qui traverse le dit. Hors de @layer comme le bloc des humeurs, pour
+ * que Tailwind ne l'epure pas; et sous prefers-reduced-motion il devient
+ * une bande pleine, immobile, qui dit la meme chose sans bouger.
+ */
+.bar-busy {
+  position: relative;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 9999px;
+  background: rgb(var(--c-accent) / 0.18);
+}
+.bar-busy::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 34%;
+  border-radius: 9999px;
+  background: rgb(var(--c-accent));
+  animation: bar-busy 1.4s ease-in-out infinite;
+}
+@keyframes bar-busy {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(300%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bar-busy::after {
+    animation: none;
+    width: 100%;
+    opacity: 0.6;
+  }
+}
