@@ -103,7 +103,7 @@ export default function TodayObjective({ cycle, goals, doneGoalIds, groupId, onM
      * the most important thing on the board and it does not need to be the
      * tallest.
      */
-    <div className="mt-6 rounded-card bg-field p-4 text-on-field sm:p-5">
+    <div className="tilt-r mt-6 rounded-card bg-field p-4 text-on-field sm:p-5">
       <span className="block text-label font-semibold uppercase tracking-[0.14em] text-on-field/70">
         {t('board.today_objective')}
       </span>

@@ -2232,8 +2232,14 @@
       box-shadow 260ms ease,
       opacity 200ms ease;
   }
+  /**
+   * L'enfoncement lui-meme n'est plus ici. Il est dans src/lib/motion.js,
+   * sur TOUS les controles et pas seulement ceux qui portent la classe, et
+   * sur la propriete `scale` plutot que `transform`. Un scale(0.97) laisse
+   * ici se serait multiplie avec lui: deux appuis pour un doigt. L'ombre
+   * qui se pose reste, c'est le seul morceau que le script ne fait pas.
+   */
   .press:active {
-    transform: scale(0.97);
     transition-duration: 90ms;
     box-shadow: var(--e-raised);
   }
@@ -2422,8 +2428,9 @@
     }
   }
 
+  /* L'appui est dans motion.js; ici seulement le retour au sol. */
   .goal-action:active {
-    transform: translateY(0) scale(0.985);
+    transform: translateY(0);
   }
 
   /* Decoration is opt-out, same as everywhere else in this file. */
@@ -2527,7 +2534,19 @@
    * ratio between them is the one thing a press cannot change.
    */
   .btn-primary {
-    @apply btn bg-accent text-on-accent hover:opacity-90 active:opacity-80 active:scale-[0.97];
+    @apply btn bg-accent text-on-accent hover:opacity-90 active:opacity-80;
+  }
+  /**
+   * Et il se souleve sous la souris, avec une ombre dans sa propre couleur:
+   * le bouton rose etait le seul controle de la page qui ne repondait au
+   * survol que par un peu moins de rose. `translate`, pas `transform`, pour
+   * se composer avec le `scale` de l'appui et ne rien ecraser.
+   */
+  @media (hover: hover) {
+    .btn-primary:hover {
+      translate: 0 -1px;
+      box-shadow: 0 10px 22px -10px rgb(var(--c-accent) / 0.65);
+    }
   }
 
   /**
@@ -2581,7 +2600,7 @@
   }
 
   .btn-ghost:active {
-    transform: translateY(0) scale(0.985);
+    transform: translateY(0);
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -4189,5 +4208,211 @@
     animation: none;
     width: 100%;
     opacity: 0.6;
+  }
+}
+
+/* ===========================================================================
+   LE MOUVEMENT PARTOUT, ET LES COINS QUI NE SONT PAS A L'EQUERRE
+
+   "why is there zero motion design on the app ? i need it right now
+    everywhere at every button the design should also be fun some rectangles
+    can be slightly inclined not sit as 90 straight i don't understand why
+    the check mark have rigid edges"
+
+   Quatre choses ici, et l'appui lui-meme est dans src/lib/motion.js:
+
+   1. LA CASE A COCHER est dessinee par nous, plus par le navigateur. La
+      case native a une coche aux bouts carres, une taille et un rayon qui
+      ne sont pas les notres, et accent-color n'en change que la couleur.
+      Ici la boite a le petit rayon de la maison et la coche est un trace a
+      bouts ronds, pose en masque pour prendre la couleur du texte. Elle
+      arrive avec un rebond. Le bouton radio pareil, avec un point.
+
+   2. LA COCHE DESSINEE (<Tick draw />) se trace de gauche a droite quand
+      elle apparait, au lieu d'etre la d'un coup.
+
+   3. L'INCLINAISON: quatre classes, de 1,25 a 3 degres. Sur la propriete
+      `rotate`, pas `transform`, pour se composer avec le survol qui souleve
+      et l'appui qui enfonce. Sous la souris la carte se redresse: ce qu'on
+      vise se range. Pour des cartes-stickers, des pastilles, des notices;
+      jamais un bloc de lecture.
+
+   4. LE TOUR: une croix ou un plus qui tourne d'un quart sous la souris, et
+      l'icone de l'onglet qui saute quand il devient l'onglet courant.
+
+   Hors @layer, comme .bar-busy: ces classes sont posees en JSX et Tailwind
+   ne doit pas les epurer. prefers-reduced-motion: tout s'arrete, les cases
+   restent cochees et les cartes restent inclinees (c'est une pose, pas un
+   mouvement).
+   =========================================================================== */
+:where(input[type='checkbox'], input[type='radio']) {
+  -webkit-appearance: none;
+  appearance: none;
+  display: inline-grid;
+  place-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin: 0;
+  flex-shrink: 0;
+  border: 2px solid rgb(var(--c-ink) / 0.32);
+  border-radius: 0.4rem;
+  background: rgb(var(--c-surface));
+  color: rgb(var(--c-on-accent));
+  cursor: pointer;
+  vertical-align: middle;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+:where(input[type='radio']) {
+  border-radius: 9999px;
+}
+:where(input[type='checkbox'], input[type='radio'])::before {
+  content: '';
+  width: 0.95rem;
+  height: 0.95rem;
+  scale: 0;
+  transition: scale 120ms ease-in;
+}
+:where(input[type='checkbox'])::before {
+  background: currentColor;
+  /* La coche: M5 12.5 l4.5 4.5 L19 7.5, trait 4.2, bouts et angle ronds.
+     Grasse expres: a 15 px, un trait de 3 fait une coche d'un pixel et
+     demi qui se perd dans le rose. Mesuree: 9 % de la case en blanc. */
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5' fill='none' stroke='%23000' stroke-width='4.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5' fill='none' stroke='%23000' stroke-width='4.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+}
+:where(input[type='radio'])::before {
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 9999px;
+  background: rgb(var(--c-accent));
+}
+:where(input[type='checkbox']):checked {
+  background: rgb(var(--c-accent));
+  border-color: rgb(var(--c-accent));
+}
+:where(input[type='radio']):checked {
+  border-color: rgb(var(--c-accent));
+}
+:where(input[type='checkbox'], input[type='radio']):checked::before {
+  scale: 1;
+  animation: tick-pop 420ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+:where(input[type='checkbox'], input[type='radio']):focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px rgb(var(--c-surface)),
+    0 0 0 4px rgb(var(--c-accent) / 0.6);
+}
+:where(input[type='checkbox'], input[type='radio']):disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+@keyframes tick-pop {
+  0% {
+    scale: 0;
+    rotate: -25deg;
+  }
+  55% {
+    scale: 1.3;
+    rotate: 6deg;
+  }
+  100% {
+    scale: 1;
+    rotate: 0deg;
+  }
+}
+
+/* 2. La coche qui se trace. 22 est la longueur du trace, un peu arrondie vers le haut. */
+.tick-draw path {
+  stroke-dasharray: 22;
+  stroke-dashoffset: 22;
+  animation: tick-draw 420ms 60ms cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+@keyframes tick-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* 3. L'inclinaison. */
+.tilt-l {
+  rotate: -1.5deg;
+}
+.tilt-r {
+  rotate: 1.25deg;
+}
+.tilt-ll {
+  rotate: -3deg;
+}
+.tilt-rr {
+  rotate: 2.5deg;
+}
+.tilt-l,
+.tilt-r,
+.tilt-ll,
+.tilt-rr {
+  transition: rotate 360ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+@media (hover: hover) {
+  .tilt-l:hover,
+  .tilt-r:hover,
+  .tilt-ll:hover,
+  .tilt-rr:hover {
+    rotate: 0deg;
+  }
+}
+
+/* 4. Le tour, et le saut de l'onglet. */
+.spin-hover > :is(svg, span) {
+  transition: rotate 360ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+@media (hover: hover) {
+  .spin-hover:hover > :is(svg, span) {
+    rotate: 90deg;
+  }
+}
+nav a[aria-current='page'] > svg {
+  animation: nav-bounce 520ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+@keyframes nav-bounce {
+  0% {
+    translate: 0 0;
+    scale: 1;
+  }
+  35% {
+    translate: 0 -4px;
+    scale: 1.12;
+  }
+  100% {
+    translate: 0 0;
+    scale: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :where(input[type='checkbox'], input[type='radio']):checked::before,
+  nav a[aria-current='page'] > svg,
+  .tick-draw path {
+    animation: none;
+  }
+  .tick-draw path {
+    stroke-dashoffset: 0;
+  }
+  :where(input[type='checkbox'], input[type='radio']),
+  :where(input[type='checkbox'], input[type='radio'])::before,
+  .tilt-l,
+  .tilt-r,
+  .tilt-ll,
+  .tilt-rr,
+  .spin-hover > :is(svg, span) {
+    transition: none;
+  }
+  .btn-primary:hover {
+    translate: none;
   }
 }

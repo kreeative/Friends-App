@@ -703,7 +703,7 @@ export function DismissButton({ label, onClick, className = '' }) {
       data-hook="dismiss"
       aria-label={label}
       title={label}
-      className={`press absolute right-3 top-3 flex h-9 w-9 items-center justify-center
+      className={`press spin-hover absolute right-3 top-3 flex h-9 w-9 items-center justify-center
                   rounded-pill text-muted transition-colors hover:bg-ink/[0.06] hover:text-ink ${className}`}
     >
       <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4">
@@ -716,6 +716,37 @@ export function DismissButton({ label, onClick, className = '' }) {
         />
       </svg>
     </button>
+  )
+}
+
+/**
+ * LA COCHE, UN TRACE AUX BOUTS RONDS.
+ *
+ *   "i don't understand why the check mark have rigid edges"
+ *
+ * Le glyphe U+2713 n'existe pas dans Poppins, donc il venait d'une police de
+ * secours du systeme, avec des bouts carres et une graisse qui n'etait pas
+ * la notre, differente d'un telephone a l'autre. Un trace SVG a bouts et
+ * angle ronds est le meme partout, prend la couleur du texte, et peut se
+ * dessiner (`draw`) quand il apparait au lieu d'etre la d'un coup.
+ *
+ * aria-hidden: la coche accompagne toujours un mot ou un etat dit
+ * autrement (aria-pressed, un libelle), par 1.4.1.
+ */
+export function Tick({ className = 'h-3.5 w-3.5', strokeWidth = 3, draw = false }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" data-tick="" className={`${draw ? 'tick-draw ' : ''}${className}`}>
+      <path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+/** La croix soeur, memes bouts ronds, pour "faux" a cote de "juste". */
+export function Cross({ className = 'h-3.5 w-3.5', strokeWidth = 3 }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" data-cross="" className={className}>
+      <path d="M6.5 6.5l11 11M17.5 6.5l-11 11" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   )
 }
 

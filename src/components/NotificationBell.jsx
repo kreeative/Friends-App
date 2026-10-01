@@ -86,7 +86,7 @@ export default function NotificationBell({ placement = 'bar' }) {
        * the tint is decoration.
        */}
       {count > 0 && (
-        <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-pill bg-accent px-1 text-[11px] font-bold leading-none text-on-accent">
+        <span className="tilt-rr absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-pill bg-accent px-1 text-[11px] font-bold leading-none text-on-accent">
           {count > 9 ? '9+' : count}
         </span>
       )}

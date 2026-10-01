@@ -98,7 +98,7 @@ export default function CelebrateStep({ groupId, members = [], value, onChange, 
           is typed. A toast that vanishes in three seconds is the wrong shape
           for "your friend has been told". */}
       {sent && (
-        <p className="mb-5 rounded-inner bg-green/10 p-4 text-small font-semibold text-green">
+        <p className="tilt-l mb-5 rounded-inner bg-green/10 p-4 text-small font-semibold text-green">
           {/**
            * The words the person themselves asked for.
            *

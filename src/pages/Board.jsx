@@ -7,7 +7,7 @@ import { cycleEnd, cyclePhase, untilLabel } from '../lib/time'
 import { groupGoalProgress } from '../lib/stats'
 import { dueOn } from '../lib/schedule'
 import { useT } from '../lib/i18n'
-import { Avatar, Empty, Screen, Section, TopBar } from '../components/ui'
+import { Avatar, Empty, Screen, Section, Tick, TopBar } from '../components/ui'
 import BirthdayBanner from '../components/BirthdayBanner'
 import CelebrationBanner from '../components/CelebrationBanner'
 import NudgeBanner from '../components/NudgeBanner'
@@ -447,7 +447,7 @@ function Leaderboard({ members, checkins, items, awayIds, revealed, settled, me,
                       ck ? 'bg-green text-white' : 'bg-ink/25 text-white'
                     }`}
                   >
-                    {ck ? '✓' : '–'}
+                    {ck ? <Tick className="h-2.5 w-2.5" strokeWidth={3.8} /> : '–'}
                   </span>
                 )}
               </span>

@@ -67,7 +67,8 @@ export default function BudgetBanner() {
 
   return (
     <div
-      className={`relative mt-6 overflow-hidden rounded-card border border-accent/25 p-5 transition-all duration-200 ease-settle ${
+      data-hook="budget-banner"
+      className={`tilt-l relative mt-6 overflow-hidden rounded-card border border-accent/25 p-5 transition-all duration-200 ease-settle ${
         leaving ? 'scale-[0.98] opacity-0' : 'scale-100 opacity-100'
       }`}
       style={{

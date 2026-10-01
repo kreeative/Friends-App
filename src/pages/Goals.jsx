@@ -508,9 +508,13 @@ export default function Goals() {
             to={`${base}/new`}
             aria-label={t('goals.new_goal')}
             title={t('goals.new_goal')}
-            className="press flex h-11 w-11 shrink-0 items-center justify-center rounded-pill bg-accent text-[1.375rem] font-semibold leading-none text-on-accent"
+            className="press spin-hover flex h-11 w-11 shrink-0 items-center justify-center rounded-pill bg-accent text-on-accent"
           >
-            +
+            {/* Un trace, pas le caractere "+": le trait est a bouts ronds et
+                tourne d'un quart sous la souris, ce qu'un glyphe ne sait pas. */}
+            <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5">
+              <path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" />
+            </svg>
           </Link>
         }
       />

@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import { localeTag, useT } from '../lib/i18n'
 import { clockOf, weekdayName } from '../lib/agenda'
 import { addDays, dayKey, fromKey } from '../lib/cycle'
+import { Cross, Tick } from './ui'
 import {
   DEFAULT_AVAILABILITY,
   SESSION_LENGTHS,
@@ -97,7 +98,7 @@ function Stepper({ stage, t }) {
                 state === 'now' ? 'bg-accent text-on-accent' : state === 'done' ? 'bg-ink text-on-accent' : 'bg-ink/[0.08] text-ink'
               }`}
             >
-              {state === 'done' ? '✓' : i + 1}
+              {state === 'done' ? <Tick className="h-3 w-3" strokeWidth={3.6} draw /> : i + 1}
             </span>
             {/* Sur un telephone, seul le libelle de l'etape courante est
                 ecrit: quatre libelles et trois traits passaient a la ligne
@@ -397,9 +398,9 @@ export default function SyllabusWizard({ open, onClose, onSaved, events = [], ex
               onClick={close}
               aria-label={t('wiz.close')}
               data-hook="syl-close"
-              className="press -mr-1 h-9 w-9 shrink-0 rounded-pill text-muted hover:bg-ink/[0.06] hover:text-ink"
+              className="press spin-hover -mr-1 grid h-9 w-9 shrink-0 place-items-center rounded-pill text-muted hover:bg-ink/[0.06] hover:text-ink"
             >
-              &#215;
+              <Cross className="h-4 w-4" strokeWidth={2.4} />
             </button>
           </div>
           <Stepper stage={stage} t={t} />
@@ -666,7 +667,7 @@ export default function SyllabusWizard({ open, onClose, onSaved, events = [], ex
 
           {stage === 'plan' && study && (
             <>
-              <ul className={`${rowClass} space-y-1 text-small text-ink`} data-hook="syl-summary">
+              <ul className={`${rowClass} tilt-l space-y-1 text-small text-ink`} data-hook="syl-summary">
                 {chosenSessions.length > 0 && (
                   <li data-hook="syl-sum-sessions">
                     {t(chosenSessions.length === 1 ? 'syl.sum_sessions_one' : 'syl.sum_sessions_other', { n: chosenSessions.length })}

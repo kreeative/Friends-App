@@ -1275,7 +1275,7 @@ export default function Calendar() {
           just looking at, and without a word it reads as the page having done
           something on its own. Dismissible, and it says how many. */}
       {added > 0 && (
-        <p className="text-small font-semibold text-ink" role="status" data-hook="wiz-done">
+        <p className="animate-rise text-small font-semibold text-ink" role="status" data-hook="wiz-done">
           {t(added === 1 ? 'wiz.done_one' : 'wiz.done_other', { n: added })}{' '}
           {/* "Fermer", not "Annuler". Cancel on a notice that something was
               added reads as an offer to undo the add, which this is not. */}
@@ -1290,7 +1290,7 @@ export default function Calendar() {
       )}
 
       {sylDone && (
-        <p className="text-small font-semibold text-ink" role="status" data-hook="syl-done">
+        <p className="animate-rise text-small font-semibold text-ink" role="status" data-hook="syl-done">
           {t('syl.done', { n: sylDone.events, m: sylDone.steps })}
           {sylDone.goals ? ` ${t('syl.done_goal')}` : ''}{' '}
           <button

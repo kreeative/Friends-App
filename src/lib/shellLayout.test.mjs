@@ -2712,7 +2712,7 @@ ok(
 )
 ok(
   'the state is not carried by the fill alone',
-  /todayRow \? '✓' : '🌸'/.test(cyc),
+  /todayRow \? <Tick [^>]*draw \/> : '🌸'/.test(cyc),
   '1.4.1: colour is never the only thing saying it',
 )
 ok('deleting a date says so', /data-hook="cycle-said"/.test(cyc))
@@ -4868,6 +4868,61 @@ ok(
   }
   ok(`every syl.* key is in both locales (${keys.length} read from the component)`, missing.length === 0, missing.join(' '))
   ok('no em dash in the new strings', !/syl\.[a-z_]+': '[^']*—/.test(i18n))
+}
+
+/* --- motion everywhere ----------------------------------------------------
+   "why is there zero motion design on the app ? i need it right now
+    everywhere at every button the design should also be fun some rectangles
+    can be slightly inclined not sit as 90 straight i don't understand why
+    the check mark have rigid edges" */
+{
+  console.log('\nmotion everywhere')
+  const motion = read('src/lib/motion.js')
+  const main = read('src/main.jsx')
+  const ui = read('src/components/ui.jsx')
+  const tail = css.slice(css.indexOf('LE MOUVEMENT PARTOUT'))
+  const jsx = []
+  for (const dir of ['src/pages', 'src/components']) {
+    for (const e of readdirSync(join(root, dir), { withFileTypes: true })) {
+      if (e.isFile() && /\.jsx$/.test(e.name)) jsx.push(`${dir}/${e.name}`)
+      else if (e.isDirectory()) for (const f of readdirSync(join(root, dir, e.name))) if (/\.jsx$/.test(f)) jsx.push(`${dir}/${e.name}/${f}`)
+    }
+  }
+  ok('the press is installed once, before React mounts', /^installPress\(\)/m.test(main) && main.indexOf('installPress()') < main.indexOf('createRoot('))
+  ok('the press animates scale, never transform, so it composes with lifts, tilts and translates',
+     /\{ scale: 1 \}/.test(motion) && !/transform/.test(motion.replace(/\/\*[\s\S]*?\*\//g, '')))
+  ok('a link in a sentence is left alone: only block links press', /display === 'inline'\) return null/.test(motion))
+  ok('reduced motion is read at each press, not once at start', /const still = \(\) => win\.matchMedia/.test(motion) && /if \(still\(\)\) return/.test(motion))
+  ok('the CSS press no longer scales: one press per finger, not two',
+     !/\.press:active \{[^}]*scale/.test(css) && !/active:scale-\[0\.97\]/.test(css) && !/translateY\(0\) scale\(0\.985\)/.test(css))
+  ok('checkboxes and radios are drawn by us, with a round-capped tick in a mask',
+     /:where\(input\[type='checkbox'\], input\[type='radio'\]\) \{[^}]*appearance: none/.test(tail)
+       && /:where\(input\[type='checkbox'\]\)::before \{[\s\S]{0,500}stroke-linecap='round' stroke-linejoin='round'/.test(tail))
+  ok('and the tick pops in', /:checked::before \{\s*scale: 1;\s*animation: tick-pop/.test(tail) && /@keyframes tick-pop/.test(tail))
+  ok('the box rules are :where(), so mt-0.5 and sr-only on the inputs still win', !/^input\[type='checkbox'\]/m.test(tail))
+  ok('Tick and Cross are SVG traces with round caps and joins',
+     /export function Tick\(/.test(ui) && /export function Cross\(/.test(ui) && /data-tick=""/.test(ui)
+       && (ui.match(/strokeLinecap="round" strokeLinejoin="round"/g) ?? []).length >= 2)
+  ok('the drawn tick traces itself, and stays drawn under reduced motion',
+     /\.tick-draw path \{[^}]*stroke-dashoffset: 22;[^}]*animation: tick-draw/.test(tail)
+       && /prefers-reduced-motion: reduce\) \{[\s\S]*\.tick-draw path \{\s*stroke-dashoffset: 0;/.test(tail))
+  const glyphs = jsx.filter((p) => /[✓✔]/.test(read(p)))
+  ok('no ✓ glyph is left in a component: every tick is the trace', glyphs.length === 0, glyphs.join(' '))
+  const tilts = ['tilt-l', 'tilt-r', 'tilt-ll', 'tilt-rr']
+  ok('four tilts, on rotate not transform, straightening under the mouse',
+     tilts.every((c) => new RegExp(`\\.${c} \\{\\s*rotate: -?[\\d.]+deg;`).test(tail)) && /\(hover: hover\) \{\s*\.tilt-l:hover,[\s\S]{0,80}rotate: 0deg/.test(tail))
+  const used = []
+  for (const p of jsx) for (const c of tilts) if (new RegExp(`\\b${c}\\b`).test(read(p))) used.push(`${p.split('/').pop()}:${c}`)
+  ok(`tilts are used, on stickers, badges, notices and cards (${used.length})`, used.length >= 6, used.join(' '))
+  ok('the close crosses and the plus spin a quarter turn under the mouse',
+     /\.spin-hover:hover > :is\(svg, span\) \{\s*rotate: 90deg/.test(tail) && /spin-hover/.test(ui) && /spin-hover/.test(read('src/pages/Goals.jsx')))
+  ok('the current tab icon bounces', /nav a\[aria-current='page'\] > svg \{\s*animation: nav-bounce/.test(tail))
+  ok('the primary button lifts in its own colour, on translate so the press composes',
+     /\.btn-primary:hover \{\s*translate: 0 -1px;\s*box-shadow: 0 10px 22px -10px rgb\(var\(--c-accent\)/.test(css))
+  ok('reduced motion stops the pop, the bounce, the spin and the lift',
+     /prefers-reduced-motion: reduce\) \{\s*:where\(input\[type='checkbox'\], input\[type='radio'\]\):checked::before,\s*nav a\[aria-current='page'\] > svg,\s*\.tick-draw path \{\s*animation: none;/.test(tail)
+       && /\.btn-primary:hover \{\s*translate: none;/.test(tail))
+  ok('motion.test.mjs runs with the suite', /node src\/lib\/motion\.test\.mjs/.test(read('package.json')))
 }
 
 console.log(`\n  ${pass} passed, ${fail} failed\n`)
