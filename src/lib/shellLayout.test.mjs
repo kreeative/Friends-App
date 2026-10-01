@@ -4862,7 +4862,7 @@ ok(
     'err_not_pdf', 'err_too_big', 'err_no_key', 'err_no_workspace', 'err_key_format', 'err_setup', 'err_unauthorized', 'err_network', 'err_timeout',
     'err_refused', 'err_busy', 'err_model_failed', 'err_empty', 'err_nothing', 'err_term', 'err_db',
     'sum_sessions_one', 'sum_sessions_other', 'sum_exams_one', 'sum_exams_other', 'sum_steps_one', 'sum_steps_other',
-    'sum_study_one', 'sum_study_other', 'open', 'done']) {
+    'sum_study_one', 'sum_study_other', 'sum_study_todo_one', 'sum_study_todo_other', 'done_goal', 'open', 'done']) {
     const n = i18n.split(`'syl.${k}'`).length - 1
     if (n !== 2) missing.push(`${k}:${n}`)
   }

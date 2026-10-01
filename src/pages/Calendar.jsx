@@ -1291,7 +1291,8 @@ export default function Calendar() {
 
       {sylDone && (
         <p className="text-small font-semibold text-ink" role="status" data-hook="syl-done">
-          {t('syl.done', { n: sylDone.events, m: sylDone.steps })}{' '}
+          {t('syl.done', { n: sylDone.events, m: sylDone.steps })}
+          {sylDone.goals ? ` ${t('syl.done_goal')}` : ''}{' '}
           <button
             type="button"
             onClick={() => setSylDone(null)}

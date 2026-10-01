@@ -560,6 +560,62 @@ export function goalPayload({ userId, title, deadlines = [], today = dayKey(new 
   )
 }
 
+/**
+ * Le plan d'etude comme OBJECTIF, pas seulement comme des blocs de couleur.
+ *
+ *   "when you upload your syllabus the study plan should also assign you a
+ *    goal and/or a to-do list"
+ *
+ * Des blocs sur la grille, personne ne les voit et rien ne demande le soir
+ * si on y est alle. Un objectif recurrent, si: "Etudier : CCT112, trois
+ * fois par semaine, lundi mercredi vendredi", avec le rappel a l'heure de
+ * la fenetre dite, et le point du jour que les amis voient. Tout vient de
+ * la reponse a "quand peux-tu etudier ?", qui est deja la: les jours, la
+ * cadence, l'heure du rappel. Fin a la derniere date du plan.
+ */
+export function studyGoalPayload({ userId, title, availability, blocks = [], deadlines = [], today = dayKey(new Date()) } = {}) {
+  const av = { ...DEFAULT_AVAILABILITY, ...(availability ?? {}) }
+  const days = uniqueDays(av.weekdays)
+  const lastBlock = blocks.map((b) => b.starts_on).filter(Boolean).sort().at(-1) ?? null
+  const lastDue = deadlines.map((d) => d.due_on).filter(Boolean).sort().at(-1) ?? null
+  const ends = [lastBlock, lastDue].filter(Boolean).sort().at(-1) ?? ''
+  return goalRow(
+    {
+      groupId: null,
+      kind: 'personal',
+      userId,
+      commitment: String(title ?? '').slice(0, 200),
+      goalType: 'process',
+      proofType: 'none',
+      cadence: 'recurring',
+      target: Math.max(1, Math.min(7, Number(av.perWeek) || 1)),
+      days,
+      dueOn: '',
+      endsOn: ends,
+      startsOn: today,
+      stake: '',
+      remind: true,
+      remindAt: readClock(av.start) ?? '',
+      remindEvery: '',
+      when: '',
+      where: '',
+      evidence: '',
+    },
+    today,
+  )
+}
+
+/**
+ * Les seances d'etude en etapes de la liste a cocher, datees et a l'heure
+ * du bloc, pour que cocher une seance fasse monter l'anneau. `label` met la
+ * phrase de la langue devant ("Etude : Intra").
+ */
+export function studyStepRows(blocks, { goalId, offset = 0, label = (s) => s } = {}) {
+  return [...(blocks ?? [])]
+    .sort((a, b) => a.starts_on.localeCompare(b.starts_on) || a.start_min - b.start_min)
+    .map((b, i) => ({ goal_id: goalId, title: String(label(b.title)).slice(0, 200), due_on: b.starts_on, at_min: b.start_min, position: offset + i }))
+}
+
 /** "Devoir 1 (15 %)": le poids dans le titre, parce que c'est ce qui fait choisir par quoi commencer. */
 export const stepTitle = (d) => (d.weight ? `${d.title} (${d.weight} %)` : d.title).slice(0, 200)
 
@@ -579,9 +635,15 @@ export function stepRows(deadlines, { goalId, offset = 0 } = {}) {
   return out
 }
 
-/** La liste qui existe deja pour ce cours, s'il y en a une, pour y ajouter plutot que doubler. */
+/**
+ * La liste qui existe deja pour ce cours, s'il y en a une, pour y ajouter
+ * plutot que doubler. Jamais un objectif recurrent: "Etude : PSY1001" et
+ * "PSY1001 : a faire" partagent assez de mots pour que sameTitle les
+ * confonde, et des echeances ajoutees en etapes d'une routine seraient une
+ * liste au mauvais endroit.
+ */
 export function findGoal(goals, title) {
-  return (goals ?? []).find((g) => g && g.status !== 'done' && sameTitle(g.commitment, title)) ?? null
+  return (goals ?? []).find((g) => g && g.status !== 'done' && (g.cadence ?? 'once') !== 'recurring' && sameTitle(g.commitment, title)) ?? null
 }
 
 /* --- parler au serveur ---------------------------------------------------- */
