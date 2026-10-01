@@ -4,9 +4,11 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useT } from '../lib/i18n'
 import { cycleOn } from '../lib/setup'
-import { daysBetween, fromKey } from '../lib/cycle'
+import { daysBetween, fromKey, predict } from '../lib/cycle'
+import { ringModel } from '../lib/cycleRing'
 import { Avatar, Screen, Section, TopBar } from '../components/ui'
 import CyclePanel from '../components/CyclePanel'
+import CycleRing from '../components/CycleRing'
 import WaterToday from '../components/WaterToday'
 import GearIcon from '../components/GearIcon'
 import { useWaterToday } from '../lib/useWater'
@@ -92,8 +94,16 @@ export default function Me() {
   }, [user?.id, periodTracking])
 
   const mesures = cyclesMeasured(logs)
-  const derniere = logs?.[0]?.started_on ?? null
+  /* La plus recente par sa VALEUR, pas par sa place: la requete demande
+     l'ordre decroissant, mais la phrase et l'anneau lisent les memes lignes
+     et doivent dire le meme jour meme si l'ordre arrivait autrement. */
+  const derniere = logs?.length ? logs.map((r) => r.started_on).filter(Boolean).sort().at(-1) : null
   const depuis = derniere ? daysBetween(fromKey(derniere), new Date()) : null
+  /* L'anneau en petit, le meme dessin que dans le tiroir: la carte repond
+     "j'en suis ou" d'un regard, le detail s'ouvre. Sans la moyenne declaree,
+     que seul le tiroir lit: l'estimation mesuree suffit a un apercu. */
+  const prediction = logs?.length ? predict(logs) : null
+  const ring = prediction ? ringModel(logs, prediction) : null
 
   return (
     <Screen className="column-page">
@@ -173,16 +183,19 @@ export default function Me() {
                  apparait pour disparaitre est un clignotement. */
               <p className="text-small text-muted">&nbsp;</p>
             ) : mesures >= 2 ? (
-              <>
-                <p className="text-body text-ink" data-hook="cycle-since">
-                  {depuis === 0
-                    ? t('cycle.started_today')
-                    : t('cycle.since_days', { n: depuis })}
-                </p>
-                <p className="mt-1 text-small text-muted">
-                  {t('cycle.measured_on', { n: mesures })}
-                </p>
-              </>
+              <div className="flex items-center gap-5">
+                {ring && <CycleRing model={ring} size={104} compact className="shrink-0" />}
+                <div className="min-w-0">
+                  <p className="text-body text-ink" data-hook="cycle-since">
+                    {depuis === 0
+                      ? t('cycle.started_today')
+                      : t('cycle.since_days', { n: depuis })}
+                  </p>
+                  <p className="mt-1 text-small text-muted">
+                    {t('cycle.measured_on', { n: mesures })}
+                  </p>
+                </div>
+              </div>
             ) : (
               <>
                 <p className="text-body text-ink" data-hook="cycle-needs-more">

@@ -4925,5 +4925,49 @@ ok(
   ok('motion.test.mjs runs with the suite', /node src\/lib\/motion\.test\.mjs/.test(read('package.json')))
 }
 
+/* --- the cycle drawer draws the cycle ---------------------------------------
+   "The menstruation tab... it looks cheap, it doesn't feel like I care about
+    women's health." It was a pill, a number in a box, a list of native date
+    inputs, a number field and a checkbox: a settings page about a body. */
+{
+  console.log('\ncycle drawer')
+  const cp = read('src/components/CyclePanel.jsx')
+  const ringC = read('src/components/CycleRing.jsx')
+  const ringL = read('src/lib/cycleRing.js')
+  const cpCode = cp.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '')
+  const i18n = read('src/lib/i18n.jsx')
+  ok('the cycle is drawn as a ring, first thing in the running state',
+     /<CycleRing model=\{ring\} size=\{224\} legend/.test(cp) && cp.indexOf('<CycleRing') < cp.indexOf('data-hook="cycle-log-today"'))
+  ok('the ring is an image with a name, in the calendar two colours, facts solid and estimates dashed',
+     /role="img" aria-label=\{aria\}/.test(ringC) && /--c-negative/.test(ringC) && /--c-mark/.test(ringC)
+       && /strokeDasharray=\{ESTIMATES\.has\(s\.kind\) \? '[\d. ]+' : undefined\}/.test(ringC))
+  ok('colours reach the SVG through style, never an attribute, which does not resolve var()',
+     !/stroke="rgb\(var/.test(ringC) && /style=\{\{ stroke: STROKE\[s\.kind\] \}\}/.test(ringC))
+  ok('with periods unrecorded the ring invents no windows', /if \(!prediction\.missed\) \{/.test(ringL))
+  ok('the privacy promise is written under the title, with a lock, before anything else',
+     /data-hook="cycle-lock"/.test(cp) && /t\('cycle\.private_line'\)/.test(cp)
+       && cp.indexOf('data-hook="cycle-lock"') < cp.indexOf('data-hook="cycle-close"'))
+  ok('recorded periods are read as dates; the input appears only on the row being corrected',
+     /data-hook="cycle-entry-date"/.test(cp) && /data-hook="cycle-entry-input"/.test(cp) && /const open = editing === row\.id/.test(cp))
+  ok('the stated rhythm is tucked under a fold, after the history',
+     /<details [^>]*data-hook="cycle-tune"/.test(cp) && cp.indexOf('data-hook="cycle-tune"') < cp.indexOf('data-hook="cycle-avg"')
+       && cp.indexOf('data-hook="cycle-history"') < cp.indexOf('data-hook="cycle-tune"'))
+  ok('the reminder stays in the open, as a card', /data-hook="cycle-remind-card"/.test(cp))
+  ok('no emoji carries a phase; the care card uses the calendar dot and names the phase',
+     !/PHASE_EMOJI/.test(cp) && /PHASE_DOT\[phase\]/.test(cp) && /t\(`cycle\.phase_\$\{phase\}`\)/.test(cp))
+  ok('the ring arrives and the marker pops, and both stop under reduced motion',
+     /\.ring-in \{\s*animation: ring-in/.test(css) && /\.ring-marker \{[\s\S]{0,160}animation: ring-pop/.test(css)
+       && /prefers-reduced-motion: reduce\) \{\s*\.ring-in,\s*\.ring-marker \{\s*animation: none;/.test(css))
+  ok('the profile card shows the same ring, small', /<CycleRing model=\{ring\} size=\{104\} compact/.test(read('src/pages/Me.jsx')))
+  ok('nothing about how somebody feels is asked', !/symptom|mood/i.test(cpCode) && !/<textarea|type="text"/.test(cpCode))
+  const missing = []
+  for (const k of ['title', 'private_line', 'day_word', 'of_len', 'ring_aria', 'today_label', 'legend_note', 'next_title', 'history_help', 'tune']) {
+    const n = i18n.split(`'cycle.${k}'`).length - 1
+    if (n !== 2) missing.push(`${k}:${n}`)
+  }
+  ok('every new cycle.* key is in both locales', missing.length === 0, missing.join(' '))
+  ok('cycleRing.test.mjs runs with the suite', /node src\/lib\/cycleRing\.test\.mjs/.test(read('package.json')))
+}
+
 console.log(`\n  ${pass} passed, ${fail} failed\n`)
 process.exit(fail ? 1 : 0)
