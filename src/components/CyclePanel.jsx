@@ -3,7 +3,9 @@ import { createPortal } from 'react-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { localeTag, useT } from '../lib/i18n'
-import { Tick } from './ui'
+import { Cross, Tick } from './ui'
+import CycleRing, { PHASE_DOT } from './CycleRing'
+import { ringModel } from '../lib/cycleRing'
 import {
   MAX_CYCLE,
   MIN_CYCLE,
@@ -25,27 +27,39 @@ import {
  * no share, no group view, no export, and no summary that could be read off a
  * shared screen over somebody's shoulder without them opening it. Migration 51
  * enforces that at the database and lists the well-meaning changes that would
- * break it; this file is the other half of the same promise.
+ * break it; this file is the other half of the same promise. The drawer now
+ * SAYS so, under its title, with a lock: a promise nobody can see is a promise
+ * nobody can trust.
  *
  * It is also off until it is switched on. The panel starts as a single line
  * offering to set it up, and somebody who never taps it never has a cycle
  * tracker in their calendar. A health feature that appears by default in an
  * app about goals is a health feature somebody did not consent to.
  *
- * IT IS A DRAWER NOW, AND THAT IS WHAT MADE EDITING POSSIBLE.
+ * IT LOOKED LIKE A FORM, AND THAT WAS THE COMPLAINT.
  *
- * It used to be a 20rem column beside the grid from xl up. Two things were
- * wrong with that and they were the same thing: 20rem is not enough room to
- * list the recorded dates with a control on each, so there was nowhere to put
- * the editing, and it was reported missing. A drawer is as tall as the window
- * and as wide as it needs to be, and it costs the grid nothing at any size.
+ *   "The menstruation tab... it looks cheap, it doesn't feel like I care
+ *    about women's health."
+ *
+ * She was right. The first thing on screen was a pill button, then a number
+ * in a tinted box, then a list of native <input type="date">, then a number
+ * field, then a checkbox: a settings page about a body. What changed:
+ *
+ *   - the cycle is drawn (CycleRing): one circle, the period in colour, the
+ *     fertile window and the run-up in the calendar's two colours and two
+ *     shapes, a dot that says "you are here", the day number in the middle;
+ *   - the recorded periods are READ as dates in words with the gap beside
+ *     them; the date input appears only when a row is tapped to correct it;
+ *   - the rhythm field is tucked under "Adjust my rhythm", because it is a
+ *     correction, not a thing to look at every time;
+ *   - the reminder keeps its place, as a card, because it is care.
  *
  * HOW MUCH IT CLAIMS.
  *
  * As little as the data supports. cycle.js returns a confidence with every
  * prediction and this shows it in words rather than drawing a confident line
- * from two numbers. Three recorded dates is not a distribution, and an app
- * that says "your period starts Tuesday" from that is making something up.
+ * from two numbers. The ring draws estimates DASHED and facts solid, and when
+ * periods look unrecorded it draws no windows at all (see cycleRing.js).
  *
  * It says, in the interface and not only here, that it is not contraception
  * and not a diagnosis.
@@ -67,14 +81,15 @@ const SETUP_DATES = [
   { key: 'd3', label: 'cycle.date_recent' },
 ]
 
-/* One per phase, matched to the four phaseOn returns. Not a colour: the marks
-   on the calendar already carry the phase in two colours and two shapes, and
-   this is a warmer restatement inside the drawer rather than a fifth signal. */
-const PHASE_EMOJI = {
-  period: '🌸',
-  predicted: '🌷',
-  pms: '🌿',
-  fertile: '✨',
+/* Le cadenas sous le titre. Dessine ici: c'est un trait de 1,8 a bouts ronds
+   comme les icones de la barre, et il n'existe nulle part ailleurs. */
+function Lock({ className = 'h-3.5 w-3.5' }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className={className} fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="5" y="10.5" width="14" height="10" rx="2.6" />
+      <path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" />
+    </svg>
+  )
 }
 
 export default function CyclePanel({ onChange, open = false, onClose }) {
@@ -91,6 +106,8 @@ export default function CyclePanel({ onChange, open = false, onClose }) {
   const [said, setSaid] = useState(null)
   const saidTimer = useRef(null)
   const panel = useRef(null)
+  /* La ligne de l'historique en cours de correction, s'il y en a une. */
+  const [editing, setEditing] = useState(null)
 
   /* A timer outliving the component would call setState on something that is
      gone. The drawer unmounts every time it is closed, so this is not a corner
@@ -141,6 +158,7 @@ export default function CyclePanel({ onChange, open = false, onClose }) {
     [starts, prefs],
   )
   const est = useMemo(() => estimate(starts, prefs?.stated_cycle ?? null), [starts, prefs])
+  const ring = useMemo(() => ringModel(starts, prediction), [starts, prediction])
 
   /* The parent draws the tiles, so it needs whatever this knows. Sent up on
      every change rather than lifted into a context: one page uses this and a
@@ -317,6 +335,12 @@ export default function CyclePanel({ onChange, open = false, onClose }) {
      grid can never say two different things about today. */
   const phase = phaseOn(new Date(), starts, prediction)
 
+  /* Une date en mots, courte: "lun. 5 sept." plutot que 2026-09-05. */
+  const fmtDay = (iso) => {
+    const d = fromKey(iso)
+    return d ? new Intl.DateTimeFormat(localeTag(locale), { weekday: 'short', day: 'numeric', month: 'short' }).format(d) : iso
+  }
+
   const body = (() => {
     /* --- not set up yet ------------------------------------------------- */
     if (!starts.length && !setup) {
@@ -326,12 +350,11 @@ export default function CyclePanel({ onChange, open = false, onClose }) {
           <button
             type="button"
             onClick={() => setSetup(true)}
-            className="goal-action press mt-4"
+            className="btn-primary press mt-5"
             data-hook="cycle-setup-open"
           >
             {t('cycle.setup')}
           </button>
-          <p className="mt-3 text-small text-muted">{t('cycle.private')}</p>
         </div>
       )
     }
@@ -396,6 +419,14 @@ export default function CyclePanel({ onChange, open = false, onClose }) {
     /* --- running --------------------------------------------------------- */
     return (
       <div data-hook="cycle-on" data-confidence={est.confidence}>
+        {/* L'anneau d'abord: c'est la reponse a "j'en suis ou", et c'est ce
+            qui fait que l'ecran parle d'un corps et pas d'un formulaire. */}
+        {ring ? (
+          <CycleRing model={ring} size={224} legend className="pt-1" />
+        ) : (
+          <p className="text-small text-muted">{t('cycle.need_more')}</p>
+        )}
+
         <button
           type="button"
           onClick={toggleToday}
@@ -403,7 +434,7 @@ export default function CyclePanel({ onChange, open = false, onClose }) {
           aria-pressed={Boolean(todayRow)}
           data-hook="cycle-log-today"
           data-on={Boolean(todayRow)}
-          className={`press inline-flex items-center gap-2 rounded-pill px-4 py-2 text-small font-semibold transition-all duration-200 ease-settle ${
+          className={`press mt-5 inline-flex w-full items-center justify-center gap-2 rounded-pill px-4 py-3 text-body font-semibold transition-all duration-200 ease-settle ${
             todayRow
               ? 'bg-accent text-on-accent shadow-[0_4px_12px_-2px_rgb(var(--c-accent)/0.45)]'
               : 'chip-accent'
@@ -419,7 +450,7 @@ export default function CyclePanel({ onChange, open = false, onClose }) {
             that the button above toggles. Only there when there is something
             to undo. */}
         {todayRow && (
-          <p className="mt-1.5 text-small text-muted" data-hook="cycle-undo-hint">
+          <p className="mt-1.5 text-center text-small text-muted" data-hook="cycle-undo-hint">
             {t('cycle.started_today_undo')}
           </p>
         )}
@@ -431,16 +462,8 @@ export default function CyclePanel({ onChange, open = false, onClose }) {
              *
              *   "Modify the my cycle UI."
              *
-             * C'etait deux phrases grises l'une sur l'autre, "Expected in 28
-             * days." puis la ligne de confiance, au milieu d'une pile de
-             * champs. La seule chose qu'on vient chercher ici etait ecrite de
-             * la meme taille que le reste, donc il fallait la lire pour la
-             * trouver.
-             *
              * Le nombre est en gros, l'unite a cote, et la DATE est dessous.
              * "Dans 28 jours" oblige a compter sur un calendrier; la date, non.
-             * Les deux, parce que le nombre se lit d'un coup d'oeil et que la
-             * date est ce qu'on note.
              *
              * ET LA LIGNE DE CONFIANCE RESTE COLLEE DESSOUS, dans la meme
              * boite. Les separer est comment quelqu'un finit par citer la date
@@ -452,14 +475,15 @@ export default function CyclePanel({ onChange, open = false, onClose }) {
              * absurde d'ecrire "c'est aujourd'hui".
              */}
             <div
-              className="mt-4 rounded-card bg-accent/[0.07] px-4 py-4"
+              className="mt-5 rounded-card bg-surface p-4 shadow-raised"
               data-hook="cycle-next"
               data-days={daysAway}
             >
+              <p className="eyebrow" data-hook="cycle-next-title">{t('cycle.next_title')}</p>
               {daysAway === 0 ? (
                 <p className="text-h2 font-semibold text-ink">{t('cycle.today_big')}</p>
               ) : (
-                <p className="flex items-baseline gap-2">
+                <p className="mt-1 flex items-baseline gap-2">
                   <span className="text-metric text-ink">{Math.abs(daysAway)}</span>
                   <span className="text-body font-semibold text-ink">
                     {daysAway > 0
@@ -486,21 +510,21 @@ export default function CyclePanel({ onChange, open = false, onClose }) {
             </div>
 
             {/**
-             * One line about where in the cycle today is, and one thing to do
+             * One card about where in the cycle today is, and one thing to do
              * about it.
              *
              * WHAT THIS IS CAREFUL NOT TO BE.
              *
-             * It is not a symptom log, a mood reading or anything the app
-             * infers about how somebody is doing. Migration 51 is explicit
-             * that a "who is having a rough week" signal is the thing these
-             * tables exist to make impossible, and a wellness note that grew
-             * inputs would be the first step towards one.
+             * It is not a log of how somebody feels or anything the app infers
+             * about how somebody is doing. Migration 51 is explicit that a
+             * "who is having a rough week" signal is the thing these tables
+             * exist to make impossible, and a wellness note that grew inputs
+             * would be the first step towards one.
              *
              * So it is a lookup on a phase this panel already computes and
-             * already draws on the calendar, saying nothing the person did not
-             * enter themselves. It is read, never written, and there is
-             * nowhere for it to send anything.
+             * already draws on the ring and the calendar, saying nothing the
+             * person did not enter themselves. It is read, never written, and
+             * there is nowhere for it to send anything.
              *
              * phaseOn's fourth argument is periodDays and defaults to 5. It is
              * left alone here: passing the estimate object into it, which was
@@ -508,61 +532,87 @@ export default function CyclePanel({ onChange, open = false, onClose }) {
              * period.
              */}
             {phase && (
-              <p
-                className="mt-3 rounded-inner bg-accent/[0.07] px-3 py-2.5 text-small text-ink"
+              <div
+                className="mt-3 flex gap-3 rounded-card bg-surface p-4 shadow-raised"
                 data-hook="cycle-care"
                 data-phase={phase}
               >
-                <span aria-hidden="true" className="mr-1.5">{PHASE_EMOJI[phase]}</span>
-                {t(`cycle.care_${phase}`)}
-              </p>
+                <span className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-pill ${PHASE_DOT[phase]}`} aria-hidden="true" />
+                <span className="min-w-0">
+                  <span className="block text-small font-semibold text-ink">{t(`cycle.phase_${phase}`)}</span>
+                  <span className="text-safe block text-small text-muted">{t(`cycle.care_${phase}`)}</span>
+                </span>
+              </div>
             )}
 
             {prediction.missed > 0 && (
-              <p className="mt-2 text-small text-negative">{t('cycle.stale', { n: prediction.missed })}</p>
+              <p className="mt-3 text-small text-negative" data-hook="cycle-stale">{t('cycle.stale', { n: prediction.missed })}</p>
             )}
 
             {/* The pre-period protocol, and only when it is nearly time. A
                 checklist shown on day nine of a cycle is a checklist people stop
                 reading by day twelve. */}
             {inPrep && (
-              <ul className="mt-4 space-y-1.5 border-t border-hairline pt-4" data-hook="cycle-prep">
+              <ul className="mt-3 space-y-1.5 rounded-card bg-surface p-4 shadow-raised" data-hook="cycle-prep">
                 {PREP.map((k) => (
-                  <li key={k} className="text-safe text-small text-ink">
+                  <li key={k} className="text-safe flex gap-2 text-small text-ink">
+                    <span aria-hidden="true" className="mt-2 h-1.5 w-1.5 shrink-0 rounded-pill bg-mark" />
                     {t(k)}
                   </li>
                 ))}
               </ul>
             )}
           </>
-        ) : (
-          <p className="mt-3 text-small text-muted">{t('cycle.need_more')}</p>
-        )}
+        ) : null}
 
-        {/* L'EAU N'EST PLUS ICI.
+        {/* --- reminders, as care, not as a setting ------------------------ */}
+        <div className="mt-3 rounded-card bg-surface p-4 shadow-raised" data-hook="cycle-remind-card">
+          <label className="flex items-start gap-3">
+            <input
+              type="checkbox"
+              checked={Boolean(prefs?.cycle_remind)}
+              onChange={(e) => setPref({ cycle_remind: e.target.checked })}
+              className="mt-0.5 h-5 w-5 shrink-0"
+              data-hook="cycle-remind"
+            />
+            <span className="min-w-0">
+              <span className="block text-small font-semibold text-ink">{t('cycle.remind')}</span>
+              <span className="block text-small text-muted">
+                {t('cycle.remind_help', { n: prefs?.cycle_remind_days ?? 2 })}
+              </span>
+            </span>
+          </label>
 
-            "Remove the water stuff since it's on the profile."
-
-            Elle etait a deux endroits: cette carte et celle de l'accueil, qui
-            compte la meme journee dans la meme table. Deux compteurs de la
-            meme chose sur deux ecrans, c'est deux endroits ou verifier ce
-            qu'on a bu et un ou le chiffre a l'air faux. Le reglage, lui, est
-            dans les reglages, avec l'unite et la cible.
-
-            Ce tiroir parle du cycle. Boire de l'eau n'est pas un fait du
-            cycle, c'est une habitude de tous les jours, et c'est la carte de
-            l'accueil qui la porte. */}
+          {prefs?.cycle_remind && (
+            <div className="mt-3 flex flex-wrap gap-2" data-hook="cycle-remind-days">
+              {[1, 2, 3].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => setPref({ cycle_remind_days: n })}
+                  aria-pressed={(prefs?.cycle_remind_days ?? 2) === n}
+                  className={`press rounded-pill px-3 py-1 text-small font-semibold transition-colors ${
+                    (prefs?.cycle_remind_days ?? 2) === n
+                      ? 'bg-accent text-on-accent'
+                      : 'bg-ink/[0.06] text-ink hover:bg-ink/[0.11]'
+                  }`}
+                >
+                  {t('cycle.days_before', { n })}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* --- the recorded dates ------------------------------------------
-            The part that was missing. Every start is editable in place and
-            deletable, because a tracker you cannot correct is one that goes
-            wrong permanently the first time somebody taps the wrong day, and
-            "started today" is one tap. Newest first: the recent ones are the
-            ones people come here to fix. */}
-        <div className="mt-4 border-t border-hairline pt-4">
-          <h3 className="text-label font-semibold uppercase tracking-[0.06em] text-muted">
-            {t('cycle.history')}
-          </h3>
+            Read as dates, with the gap beside each. The date input appears
+            only on the row being corrected: a list of five native date
+            fields was the thing that made this read as a settings page.
+            Newest first: the recent ones are the ones people come here to
+            fix. */}
+        <div className="mt-6">
+          <h3 className="eyebrow">{t('cycle.history')}</h3>
+          <p className="mt-1 text-small text-muted">{t('cycle.history_help')}</p>
 
           {/**
            * L'ECART AVEC LA PRECEDENTE, SUR CHAQUE LIGNE.
@@ -573,28 +623,45 @@ export default function CyclePanel({ onChange, open = false, onClose }) {
            * liste: 30, 29, 41. Les ecrire rend la phrase du haut verifiable
            * par la personne qui l'a produite, avec ses propres dates.
            *
-           * Sur la ligne et pas dessous: quatre lignes a deux etages font une
-           * liste deux fois plus haute pour une information de second plan.
            * La plus ancienne n'en a pas, parce qu'il n'y a rien avant elle.
            */}
-          <ul className="mt-2 space-y-1.5" data-hook="cycle-history">
+          <ul className="mt-3 divide-y divide-hairline rounded-card bg-surface px-4 shadow-raised" data-hook="cycle-history">
             {[...starts].reverse().map((row, i, list) => {
               const avant = list[i + 1]
               const ecart = avant
                 ? daysBetween(fromKey(avant.started_on), fromKey(row.started_on))
                 : null
+              const open = editing === row.id
               return (
-              <li key={row.id} className="flex items-center gap-2" data-hook="cycle-entry">
-                <input
-                  type="date"
-                  defaultValue={row.started_on}
-                  max={dayKey(new Date())}
-                  onChange={(e) => moveEntry(row.id, e.target.value)}
-                  aria-label={t('cycle.edit_date')}
-                  className="field min-w-0 flex-1"
-                />
-                {ecart != null && (
-                  <span className="shrink-0 text-small text-muted" data-hook="cycle-gap">
+              <li key={row.id} className="flex items-center gap-2 py-2.5" data-hook="cycle-entry" data-editing={open ? '1' : '0'}>
+                <span className={`h-2.5 w-2.5 shrink-0 rounded-pill ${PHASE_DOT.period}`} aria-hidden="true" />
+                {open ? (
+                  <input
+                    type="date"
+                    defaultValue={row.started_on}
+                    max={dayKey(new Date())}
+                    autoFocus
+                    onChange={(e) => moveEntry(row.id, e.target.value)}
+                    onBlur={() => setEditing(null)}
+                    aria-label={t('cycle.edit_date')}
+                    data-hook="cycle-entry-input"
+                    className="field min-w-0 flex-1"
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setEditing(row.id)}
+                    aria-label={`${fmtDay(row.started_on)}. ${t('cycle.edit_date')}`}
+                    data-hook="cycle-entry-date"
+                    className="press min-w-0 flex-1 rounded-inner px-1 py-1 text-left text-body font-semibold text-ink hover:bg-ink/[0.04]"
+                  >
+                    {fmtDay(row.started_on)}
+                  </button>
+                )}
+                {/* La pastille d'ecart s'efface pendant la correction: le
+                    champ date a besoin de la place, et l'ecart changera. */}
+                {ecart != null && !open && (
+                  <span className="shrink-0 rounded-pill bg-ink/[0.06] px-2.5 py-0.5 text-label font-semibold text-ink" data-hook="cycle-gap">
                     {t('cycle.gap', { n: ecart })}
                   </span>
                 )}
@@ -607,9 +674,9 @@ export default function CyclePanel({ onChange, open = false, onClose }) {
                   disabled={busy}
                   aria-label={t('cycle.delete_entry')}
                   data-hook="cycle-delete"
-                  className="press h-9 w-9 shrink-0 rounded-pill text-muted hover:bg-negative/10 hover:text-negative"
+                  className="press spin-hover grid h-9 w-9 shrink-0 place-items-center rounded-pill text-muted hover:bg-negative/10 hover:text-negative"
                 >
-                  &#215;
+                  <Cross className="h-3.5 w-3.5" strokeWidth={2.6} />
                 </button>
               </li>
               )
@@ -645,105 +712,71 @@ export default function CyclePanel({ onChange, open = false, onClose }) {
               onClick={() => setAdding(true)}
               disabled={busy}
               data-hook="cycle-add-past"
-              className="press mt-3 rounded-pill px-3 py-2 text-small font-semibold text-accent hover:bg-accent/[0.08] disabled:opacity-60"
+              className="goal-action press mt-3"
             >
               + {t('cycle.add_past')}
             </button>
           )}
 
           {/**
+           * Le rythme declare, range sous un pli.
+           *
            * Adjustable at any time, not only during setup. estimate() stops
-           * using it once there are three measured gaps, and it says so.
+           * using it once there are three measured gaps, and it says so. C'est
+           * une correction qu'on fait une fois: ouvert en permanence, c'etait
+           * un champ de plus dans la pile qui faisait lire ce tiroir comme un
+           * formulaire.
            *
            * AN OUT-OF-RANGE NUMBER IS REFUSED OUT LOUD.
            *
            * It cannot be sent: the check constraint is 21 to 45 and a 300 would
            * fail the whole upsert, taking the reminder settings with it, and
            * the error somebody would see is about a constraint rather than
-           * about a number. The first version simply did not send it, which a
-           * screenshot caught: 300 sitting in the field, nothing saved, and
-           * nothing on screen saying so. Silently discarding what somebody
-           * typed is worse than refusing it, because they have no way to tell
-           * the difference between that and a save.
-           *
-           * The typed text is state now so the hint can be shown, and the
-           * write still only fires inside the range.
+           * about a number. Silently discarding what somebody typed is worse
+           * than refusing it, because they have no way to tell the difference
+           * between that and a save.
            */}
-          <label className="mt-3 block">
-            <span className="text-label font-semibold uppercase tracking-[0.06em] text-muted">
-              {t('cycle.avg_manual')}
-            </span>
-            <input
-              type="number"
-              inputMode="numeric"
-              min={MIN_CYCLE}
-              max={MAX_CYCLE}
-              value={avgText}
-              placeholder="28"
-              data-hook="cycle-avg"
-              aria-invalid={avgBad}
-              aria-describedby="cycle-avg-help"
-              onChange={(e) => {
-                const raw = e.target.value
-                setAvgText(raw)
-                const n = Number.parseInt(raw, 10)
-                if (raw === '') setPref({ stated_cycle: null })
-                else if (Number.isFinite(n) && n >= MIN_CYCLE && n <= MAX_CYCLE) setPref({ stated_cycle: n })
-              }}
-              className="field mt-1 w-full"
-            />
-            <span id="cycle-avg-help" className="mt-1 block text-small">
-              {avgBad ? (
-                <span className="text-negative" data-hook="cycle-avg-bad">
-                  {t('cycle.avg_range', { min: MIN_CYCLE, max: MAX_CYCLE })}
-                </span>
-              ) : (
-                <span className="text-muted">{t('cycle.avg_help')}</span>
-              )}
-            </span>
-          </label>
-        </div>
-
-        {/* --- reminders ---------------------------------------------------- */}
-        <div className="mt-4 border-t border-hairline pt-4">
-          <label className="flex items-start gap-3">
-            <input
-              type="checkbox"
-              checked={Boolean(prefs?.cycle_remind)}
-              onChange={(e) => setPref({ cycle_remind: e.target.checked })}
-              className="mt-0.5 h-5 w-5 shrink-0 accent-[rgb(var(--c-accent))]"
-              data-hook="cycle-remind"
-            />
-            <span className="min-w-0">
-              <span className="block text-small font-semibold text-ink">{t('cycle.remind')}</span>
-              <span className="block text-small text-muted">
-                {t('cycle.remind_help', { n: prefs?.cycle_remind_days ?? 2 })}
+          <details className="mt-4 rounded-card bg-surface shadow-raised" data-hook="cycle-tune">
+            <summary className="press cursor-pointer list-none px-4 py-3 text-small font-semibold text-ink [&::-webkit-details-marker]:hidden">
+              {t('cycle.tune')}
+            </summary>
+            <label className="block px-4 pb-4">
+              <span className="text-label font-semibold uppercase tracking-[0.06em] text-muted">
+                {t('cycle.avg_manual')}
               </span>
-            </span>
-          </label>
-
-          {prefs?.cycle_remind && (
-            <div className="mt-3 flex flex-wrap gap-2" data-hook="cycle-remind-days">
-              {[1, 2, 3].map((n) => (
-                <button
-                  key={n}
-                  type="button"
-                  onClick={() => setPref({ cycle_remind_days: n })}
-                  aria-pressed={(prefs?.cycle_remind_days ?? 2) === n}
-                  className={`press rounded-pill px-3 py-1 text-small font-semibold transition-colors ${
-                    (prefs?.cycle_remind_days ?? 2) === n
-                      ? 'bg-accent text-on-accent'
-                      : 'bg-ink/[0.06] text-ink hover:bg-ink/[0.11]'
-                  }`}
-                >
-                  {t('cycle.days_before', { n })}
-                </button>
-              ))}
-            </div>
-          )}
+              <input
+                type="number"
+                inputMode="numeric"
+                min={MIN_CYCLE}
+                max={MAX_CYCLE}
+                value={avgText}
+                placeholder="28"
+                data-hook="cycle-avg"
+                aria-invalid={avgBad}
+                aria-describedby="cycle-avg-help"
+                onChange={(e) => {
+                  const raw = e.target.value
+                  setAvgText(raw)
+                  const n = Number.parseInt(raw, 10)
+                  if (raw === '') setPref({ stated_cycle: null })
+                  else if (Number.isFinite(n) && n >= MIN_CYCLE && n <= MAX_CYCLE) setPref({ stated_cycle: n })
+                }}
+                className="field mt-1 w-full"
+              />
+              <span id="cycle-avg-help" className="mt-1 block text-small">
+                {avgBad ? (
+                  <span className="text-negative" data-hook="cycle-avg-bad">
+                    {t('cycle.avg_range', { min: MIN_CYCLE, max: MAX_CYCLE })}
+                  </span>
+                ) : (
+                  <span className="text-muted">{t('cycle.avg_help')}</span>
+                )}
+              </span>
+            </label>
+          </details>
         </div>
 
-        <p className="mt-4 text-small text-muted">{t('cycle.disclaimer')}</p>
+        <p className="mt-5 text-small text-muted">{t('cycle.disclaimer')}</p>
       </div>
     )
   })()
@@ -780,20 +813,28 @@ export default function CyclePanel({ onChange, open = false, onClose }) {
            does not. */
         className="lg lg-modal cycle-warm relative m-2 flex w-[min(26rem,calc(100vw-1rem))] flex-col overflow-hidden rounded-card p-0 outline-none"
       >
-        <div className="flex items-start justify-between gap-3 border-b border-hairline px-5 py-4">
-          <h2 className="text-safe text-h2 font-semibold text-ink">{t('cycle.title')}</h2>
+        <div className="relative z-[2] flex items-start justify-between gap-3 px-5 pt-5">
+          <div className="min-w-0">
+            <h2 className="text-safe text-h2 font-semibold text-ink">{t('cycle.title')}</h2>
+            {/* La promesse, ecrite la ou on la lit: sous le titre, avec un
+                cadenas. Migration 51 la tient; cette ligne la dit. */}
+            <p className="mt-1 flex items-start gap-1.5 text-small text-muted" data-hook="cycle-lock">
+              <Lock className="mt-1 h-3.5 w-3.5 shrink-0" />
+              <span className="text-safe">{t('cycle.private_line')}</span>
+            </p>
+          </div>
           <button
             type="button"
             onClick={onClose}
             aria-label={t('cycle.close')}
             data-hook="cycle-close"
-            className="press -mr-1 h-9 w-9 shrink-0 rounded-pill text-muted hover:bg-ink/[0.06] hover:text-ink"
+            className="press spin-hover -mr-1 grid h-9 w-9 shrink-0 place-items-center rounded-pill text-muted hover:bg-ink/[0.06] hover:text-ink"
           >
-            &#215;
+            <Cross className="h-4 w-4" strokeWidth={2.4} />
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+        <div className="relative z-[2] min-h-0 flex-1 overflow-y-auto px-5 pb-5 pt-4">
           {failed && (
             <p className="mb-3 text-small text-negative" data-hook="cycle-failed">
               {t('cycle.save_failed')}
