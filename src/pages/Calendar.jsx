@@ -24,6 +24,7 @@ import { bookingEntries } from '../lib/bookings'
 import { feedEntries, staleFeeds, syncFeeds } from '../lib/feeds'
 import { stepEntries } from '../lib/steps'
 import { Lock, SegTabs } from '../components/ui'
+import { PHASE_DOT } from '../components/CycleRing'
 import CyclePanel from '../components/CyclePanel'
 import CycleStrip from '../components/CycleStrip'
 import TimetableWizard from '../components/TimetableWizard'
@@ -187,38 +188,23 @@ const SWATCH_BAR = {
   field: 'bg-field-deep', negative: 'bg-negative', quiet: 'bg-ink/30',
 }
 
-/**
- * The cycle marks. A dot, not a fill: a tinted tile competes with the event
- * blocks on it, and this has to be readable without being announced.
+/*
+ * The cycle marks on the month grid are PHASE_DOT, imported from the ring so
+ * that the drawer, the profile card, the calendar card and this grid say the
+ * same colour for the same phase. A dot, not a fill: a tinted tile competes
+ * with the event blocks on it, and this has to be readable without being
+ * announced.
  *
- * SOLID, AND NOT ONLY A COLOUR.
- *
- * The first version drew these at 45 to 60 per cent opacity, which put a 6px
- * graphic well under the 3:1 that WCAG 1.4.11 asks of anything carrying
- * meaning. Worse, the four states differed by hue alone, which 1.4.1 forbids
- * outright and which is useless to the roughly one person in twelve who
- * cannot separate these particular hues.
- *
- * TWO COLOURS AND TWO SHAPES, NOT FOUR HUES.
- *
- * The second attempt used cat-3 and cat-5 for the soft phases. Measured on the
- * painted pixels, cat-5 came out at 1.83:1 against the sun theme's white, well
- * under the 3:1 that 1.4.11 asks. tailwind.config.js already answers this: it
- * declares `mark` as "the one colour a small mark may be" and says explicitly
- * that there is one of these and not six.
- *
- * So there are two colours, both of which carry at that size, and the pairs
- * within each are told apart by SHAPE: a fact is filled, an estimate is a
- * ring. Four states, no hue doing work on its own, which is what 1.4.1 asks
- * and what survives a greyscale screenshot. The accessible name on every tile
- * carries the whole answer regardless.
+ * Two earlier palettes here failed on the painted pixels: 45 to 60 per cent
+ * opacity put a 6px graphic under the 3:1 that WCAG 1.4.11 asks, and cat-5
+ * measured 1.83:1 against the sun theme's white. The dots are now the deep
+ * tones of the phase pastels (examen-deep and travail-deep, both over 3:1 on
+ * white) and the brand mark for the period, which tailwind.config.js names
+ * as "the one colour a small mark may be". A recorded period is filled, an
+ * expected one is a ring of the same colour, so the fact and the estimate
+ * are told apart by SHAPE and not by hue (1.4.1). The accessible name on
+ * every tile carries the whole answer regardless.
  */
-const PHASE_DOT = {
-  period: 'bg-negative',
-  predicted: 'border-2 border-negative bg-transparent',
-  pms: 'bg-mark',
-  fertile: 'border-2 border-mark bg-transparent',
-}
 
 /* The layer toggle's dot, filled when the layer is on and a ring when it is
    off. Whole class strings, because Tailwind scans source text and
@@ -234,7 +220,7 @@ const LAYER_DOT = {
      bascule n'en avait pas et sa pastille etait vide, allumee ou pas. */
   reservations: 'bg-cat-4',
   externes: 'bg-ev-ext-deep',
-  cycle: 'bg-negative',
+  cycle: 'bg-mark',
 }
 const LAYER_RING = {
   scolaire: 'border-cat-1',
@@ -243,7 +229,7 @@ const LAYER_RING = {
   anniversaires: 'border-ev-anniv-deep',
   reservations: 'border-cat-4',
   externes: 'border-ev-ext-deep',
-  cycle: 'border-negative',
+  cycle: 'border-mark',
 }
 
 const VIEWS = ['month', 'week', 'day']
@@ -1236,7 +1222,7 @@ export default function Calendar() {
             </p>
           </div>
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            <span className="rounded-pill bg-negative/[0.10] px-3 py-1 text-small font-semibold text-ink" data-hook="cal-pick-count">
+            <span className="rounded-pill bg-mark/[0.12] px-3 py-1 text-small font-semibold text-ink" data-hook="cal-pick-count">
               {t(picked.size === 1 ? 'cal.pick_n_one' : 'cal.pick_n_other', { n: picked.size })}
             </span>
             <div className="ml-auto flex shrink-0 items-center gap-2">
@@ -1691,7 +1677,7 @@ function MonthGrid({ range, anchor, agenda, cycle, onPick, picking = false, pick
           const prevP = phase === 'period' && col > 0 && phaseOn(addDays(d, -1), cycle.starts, cycle.prediction) === 'period'
           const nextP = phase === 'period' && col < 6 && phaseOn(addDays(d, 1), cycle.starts, cycle.prediction) === 'period'
           const band = phase === 'period' && !picking
-            ? `bg-negative/[0.08] ${prevP ? 'rounded-l-none -ml-1' : ''} ${nextP ? 'rounded-r-none' : ''}`
+            ? `bg-mark/[0.10] ${prevP ? 'rounded-l-none -ml-1' : ''} ${nextP ? 'rounded-r-none' : ''}`
             : ''
           /**
            * EN MODE COCHE: LA TUILE EST LA CASE A COCHER.

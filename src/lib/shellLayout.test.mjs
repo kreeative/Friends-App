@@ -4943,9 +4943,16 @@ ok(
        && /md:max-h-\[min\(46rem,calc\(100dvh-3rem\)\)\] md:w-\[24rem\] md:rounded-card/.test(cp) && !/justify-end/.test(cp)
        && /\.cycle-sheet \{\s*animation: sheet-up/.test(css) && /\.cycle-sheet \{\s*animation: cycle-dialog-in/.test(css)
        && /prefers-reduced-motion: reduce\) \{\s*\.cycle-sheet \{\s*animation: none;/.test(css))
-  ok('the ring is an image with a name, in the calendar two colours, facts solid and estimates dashed',
-     /role="img" aria-label=\{aria\}/.test(ringC) && /--c-negative/.test(ringC) && /--c-mark/.test(ringC)
-       && /strokeDasharray=\{ESTIMATES\.has\(s\.kind\) \? '[\d. ]+' : undefined\}/.test(ringC))
+  ok('the ring is an image with a name, in the app colours (mark, lavender, apricot, yellow today), estimates thinner and solid, never dashed, never error red',
+     /role="img" aria-label=\{aria\}/.test(ringC) && /--c-mark/.test(ringC) && /--c-ev-examen/.test(ringC) && /--c-ev-travail/.test(ringC)
+       && /fill: 'rgb\(var\(--c-field\)\)'/.test(ringC) && !/strokeDasharray/.test(ringC) && !/--c-negative/.test(ringC)
+       && /strokeWidth=\{ESTIMATES\.has\(s\.kind\) \? W - 4 : W\}/.test(ringC))
+  ok('one phase palette for the whole app: the calendar imports the dots from the ring',
+     /import \{ PHASE_DOT \} from '\.\.\/components\/CycleRing'/.test(read('src/pages/Calendar.jsx')) && !/^const PHASE_DOT = \{/m.test(read('src/pages/Calendar.jsx'))
+       && /period: 'bg-mark'/.test(ringC) && /pms: 'bg-ev-travail-deep'/.test(ringC) && /fertile: 'bg-ev-examen-deep'/.test(ringC))
+  ok('the drawer cards are pastel and lean, with a sticker by the ring',
+     /tilt-l mt-5 rounded-card bg-ev-cours/.test(cp) && /tilt-r mt-3 rounded-card bg-ev-examen/.test(cp) && /\$\{PHASE_TINT\[phase\]\}/.test(cp)
+       && /sticker=\{cloudguy\}/.test(cp) && /data-hook="cycle-sticker"/.test(ringC))
   ok('colours reach the SVG through style, never an attribute, which does not resolve var()',
      !/stroke="rgb\(var/.test(ringC) && /style=\{\{ stroke: STROKE\[s\.kind\] \}\}/.test(ringC))
   ok('with periods unrecorded the ring invents no windows', /if \(!prediction\.missed\) \{/.test(ringL))
@@ -4994,7 +5001,7 @@ ok(
      /t\('cal\.pick_title'\)/.test(calSrc) && /data-hook="cal-pick-private"/.test(calSrc) && /<Lock className/.test(calSrc)
        && !/you bled|as saigné/.test(i18n))
   ok('recorded period days are washed on the month grid; estimates stay as dots',
-     /\$\{band\} \$\{on \? 'bg-pick' : ''\}/.test(calSrc) && /bg-negative\/\[0\.08\]/.test(calSrc))
+     /\$\{band\} \$\{on \? 'bg-pick' : ''\}/.test(calSrc) && /bg-mark\/\[0\.10\]/.test(calSrc) && !/bg-negative\/\[0\.0?8\]/.test(calSrc))
   ok('consecutive period days form one band: square inner corners, the follower bridges the 4px gap, never across a row end',
      /const prevP = phase === 'period' && col > 0 && phaseOn\(addDays\(d, -1\)/.test(calSrc)
        && /const nextP = phase === 'period' && col < 6 && phaseOn\(addDays\(d, 1\)/.test(calSrc)
