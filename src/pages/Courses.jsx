@@ -20,7 +20,7 @@ import { useT } from '../lib/i18n'
 import { termsFor } from '../lib/glossary'
 import { splitTerms } from '../lib/inlineTerms'
 import { usePageMeta } from '../lib/pageMeta'
-import { Screen, Section, TopBar } from '../components/ui'
+import { Cross, Screen, Section, Tick, TopBar } from '../components/ui'
 import CountryTabs from '../components/CountryTabs'
 
 /**
@@ -785,8 +785,8 @@ function Quiz({ items, t, locale }) {
               const ok = picked[qi] === it.answer
               return (
                 <li key={say(it.ask)} className="flex gap-3 py-3 text-small" data-hook="quiz-recap" data-ok={ok ? 'yes' : 'no'}>
-                  <span aria-hidden="true" className={`shrink-0 font-mono ${ok ? 'text-green' : 'text-negative'}`}>
-                    {ok ? '✓' : '✕'}
+                  <span aria-hidden="true" className={`mt-0.5 shrink-0 ${ok ? 'text-green' : 'text-negative'}`}>
+                    {ok ? <Tick className="h-4 w-4" /> : <Cross className="h-4 w-4" />}
                   </span>
                   <span className="min-w-0 flex-1 text-ink">{say(it.ask, locale)}</span>
                 </li>
@@ -830,7 +830,11 @@ function Quiz({ items, t, locale }) {
                   } disabled:cursor-default`}
                 >
                   <span aria-hidden="true" className="shrink-0 font-mono">
-                    {show ? (isRight ? '✓' : '✕') : String.fromCharCode(65 + oi)}
+                    {show ? (
+                      isRight ? <Tick className="mt-0.5 h-4 w-4" draw /> : <Cross className="mt-0.5 h-4 w-4" />
+                    ) : (
+                      String.fromCharCode(65 + oi)
+                    )}
                   </span>
                   <span className="min-w-0 flex-1">{say(opt, locale)}</span>
                 </button>

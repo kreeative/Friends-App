@@ -233,9 +233,10 @@ export default function GoalCard({
           aria-label={t('goal.actions')}
           title={t('goal.actions')}
           data-hook="goal-menu"
-          className="press absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-pill text-muted transition-colors hover:bg-ink/[0.06] hover:text-ink aria-expanded:bg-ink/[0.06] aria-expanded:text-ink"
+          className="press spin-hover absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-pill text-muted transition-colors hover:bg-ink/[0.06] hover:text-ink aria-expanded:bg-ink/[0.06] aria-expanded:text-ink"
         >
-          <span aria-hidden="true" className="text-h2 leading-none">&#8943;</span>
+          {/* Les trois points se mettent debout sous la souris: le menu dit qu'il s'ouvre. */}
+          <span aria-hidden="true" className="block text-h2 leading-none">&#8943;</span>
         </button>
       )}
       {/**
@@ -281,7 +282,7 @@ export default function GoalCard({
        */}
       {(owner || goal.kind === 'group') && (
         <div className="mb-3 flex items-start justify-between gap-3">
-          <span className="inline-flex min-w-0 items-center gap-2 rounded-pill bg-accent/[0.14] py-1 pl-1 pr-3">
+          <span className="tilt-r inline-flex min-w-0 items-center gap-2 rounded-pill bg-accent/[0.14] py-1 pl-1 pr-3">
             {owner ? (
               <Avatar profile={owner} size={20} />
             ) : (

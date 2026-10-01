@@ -79,7 +79,7 @@ function GroupRow({ membership, rows, t }) {
         alt=""
         aria-hidden="true"
         loading="lazy"
-        className="h-14 w-14 shrink-0 object-contain transition-transform duration-200 ease-settle group-hover:-rotate-6"
+        className="tilt-ll h-14 w-14 shrink-0 object-contain transition-transform duration-200 ease-settle group-hover:-rotate-6"
       />
 
       <div className="min-w-0 flex-1">

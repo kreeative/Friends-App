@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { localeTag, useT } from '../lib/i18n'
+import { Tick } from './ui'
 import {
   MAX_CYCLE,
   MIN_CYCLE,
@@ -410,7 +411,7 @@ export default function CyclePanel({ onChange, open = false, onClose }) {
         >
           {/* A tick when it is on. The fill says it too, and 1.4.1 asks that
               colour is never the only thing saying it. */}
-          <span aria-hidden="true">{todayRow ? '✓' : '🌸'}</span>
+          <span aria-hidden="true">{todayRow ? <Tick className="h-3.5 w-3.5" strokeWidth={3.2} draw /> : '🌸'}</span>
           {todayRow ? t('cycle.started_today_on') : t('cycle.started_today')}
         </button>
 
