@@ -4,8 +4,9 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { localeTag, useT } from '../lib/i18n'
 import { Cross, Lock, Tick } from './ui'
-import CycleRing, { PHASE_DOT } from './CycleRing'
+import CycleRing, { PHASE_DOT, PHASE_TINT } from './CycleRing'
 import { ringModel } from '../lib/cycleRing'
+import cloudguy from '../assets/stickers/cloudguy.png'
 import {
   MAX_CYCLE,
   MIN_CYCLE,
@@ -411,7 +412,7 @@ export default function CyclePanel({ onChange, open = false, onClose }) {
         {/* L'anneau d'abord: c'est la reponse a "j'en suis ou", et c'est ce
             qui fait que l'ecran parle d'un corps et pas d'un formulaire. */}
         {ring ? (
-          <CycleRing model={ring} size={200} legend className="pt-1" />
+          <CycleRing model={ring} size={200} legend sticker={cloudguy} className="pt-1" />
         ) : (
           <p className="text-small text-muted">{t('cycle.need_more')}</p>
         )}
@@ -463,12 +464,17 @@ export default function CyclePanel({ onChange, open = false, onClose }) {
              * Aujourd'hui n'a pas de nombre: "0 jour restant" est une facon
              * absurde d'ecrire "c'est aujourd'hui".
              */}
+            {/* Des cartes pastel, un peu penchees, comme les notices du reste
+                de l'application: rose pour les regles, lavande pour le rappel,
+                la teinte de la phase pour la phase. Le texte secondaire y est
+                de l'encre attenuee, pas le gris --c-muted qui est regle pour
+                le blanc. */}
             <div
-              className="mt-5 rounded-card bg-surface p-4 shadow-raised"
+              className="tilt-l mt-5 rounded-card bg-ev-cours p-4 shadow-raised"
               data-hook="cycle-next"
               data-days={daysAway}
             >
-              <p className="eyebrow" data-hook="cycle-next-title">{t('cycle.next_title')}</p>
+              <p className="text-label font-semibold uppercase tracking-[0.02em] text-ink/70" data-hook="cycle-next-title">{t('cycle.next_title')}</p>
               {daysAway === 0 ? (
                 <p className="text-h2 font-semibold text-ink">{t('cycle.today_big')}</p>
               ) : (
@@ -490,7 +496,7 @@ export default function CyclePanel({ onChange, open = false, onClose }) {
                 })}
               </p>
 
-              <p className="mt-2 text-small text-muted">
+              <p className="mt-2 text-small text-ink/75">
                 {t('cycle.cycle_len', { n: est.length })}
                 {' \xB7 '}
                 {t(`cycle.conf_${est.confidence}`)}
@@ -522,14 +528,14 @@ export default function CyclePanel({ onChange, open = false, onClose }) {
              */}
             {phase && (
               <div
-                className="mt-3 flex gap-3 rounded-card bg-surface p-4 shadow-raised"
+                className={`tilt-r mt-3 flex gap-3 rounded-card p-4 shadow-raised ${PHASE_TINT[phase]}`}
                 data-hook="cycle-care"
                 data-phase={phase}
               >
                 <span className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-pill ${PHASE_DOT[phase]}`} aria-hidden="true" />
                 <span className="min-w-0">
                   <span className="block text-small font-semibold text-ink">{t(`cycle.phase_${phase}`)}</span>
-                  <span className="text-safe block text-small text-muted">{t(`cycle.care_${phase}`)}</span>
+                  <span className="text-safe block text-small text-ink/75">{t(`cycle.care_${phase}`)}</span>
                 </span>
               </div>
             )}
@@ -542,10 +548,10 @@ export default function CyclePanel({ onChange, open = false, onClose }) {
                 checklist shown on day nine of a cycle is a checklist people stop
                 reading by day twelve. */}
             {inPrep && (
-              <ul className="mt-3 space-y-1.5 rounded-card bg-surface p-4 shadow-raised" data-hook="cycle-prep">
+              <ul className="tilt-l mt-3 space-y-1.5 rounded-card bg-ev-travail p-4 shadow-raised" data-hook="cycle-prep">
                 {PREP.map((k) => (
                   <li key={k} className="text-safe flex gap-2 text-small text-ink">
-                    <span aria-hidden="true" className="mt-2 h-1.5 w-1.5 shrink-0 rounded-pill bg-mark" />
+                    <span aria-hidden="true" className="mt-2 h-1.5 w-1.5 shrink-0 rounded-pill bg-ev-travail-deep" />
                     {t(k)}
                   </li>
                 ))}
@@ -555,7 +561,7 @@ export default function CyclePanel({ onChange, open = false, onClose }) {
         ) : null}
 
         {/* --- reminders, as care, not as a setting ------------------------ */}
-        <div className="mt-3 rounded-card bg-surface p-4 shadow-raised" data-hook="cycle-remind-card">
+        <div className="tilt-r mt-3 rounded-card bg-ev-examen p-4 shadow-raised" data-hook="cycle-remind-card">
           <label className="flex items-start gap-3">
             <input
               type="checkbox"
@@ -566,7 +572,7 @@ export default function CyclePanel({ onChange, open = false, onClose }) {
             />
             <span className="min-w-0">
               <span className="block text-small font-semibold text-ink">{t('cycle.remind')}</span>
-              <span className="block text-small text-muted">
+              <span className="block text-small text-ink/75">
                 {t('cycle.remind_help', { n: prefs?.cycle_remind_days ?? 2 })}
               </span>
             </span>
@@ -583,7 +589,7 @@ export default function CyclePanel({ onChange, open = false, onClose }) {
                   className={`press rounded-pill px-3 py-1 text-small font-semibold transition-colors ${
                     (prefs?.cycle_remind_days ?? 2) === n
                       ? 'bg-accent text-on-accent'
-                      : 'bg-ink/[0.06] text-ink hover:bg-ink/[0.11]'
+                      : 'bg-surface/70 text-ink hover:bg-surface'
                   }`}
                 >
                   {t('cycle.days_before', { n })}
@@ -614,7 +620,7 @@ export default function CyclePanel({ onChange, open = false, onClose }) {
            *
            * La plus ancienne n'en a pas, parce qu'il n'y a rien avant elle.
            */}
-          <ul className="mt-3 divide-y divide-hairline rounded-card bg-surface px-4 shadow-raised" data-hook="cycle-history">
+          <ul className="tilt-l mt-3 divide-y divide-hairline rounded-card bg-surface px-4 shadow-raised" data-hook="cycle-history">
             {[...starts].reverse().map((row, i, list) => {
               const avant = list[i + 1]
               const ecart = avant
@@ -642,10 +648,14 @@ export default function CyclePanel({ onChange, open = false, onClose }) {
                     onClick={() => setEditing(row.id)}
                     aria-label={`${fmtDay(row.started_on)}. ${t('cycle.edit_date')}`}
                     data-hook="cycle-entry-date"
-                    className="press min-w-0 flex-1 rounded-inner px-1 py-1 text-left text-body font-semibold text-ink hover:bg-ink/[0.04]"
+                    className="press inline-flex min-w-0 max-w-full items-center rounded-pill bg-ev-cours px-3 py-1 text-left text-small font-semibold text-ink hover:bg-ev-cours/70"
                   >
-                    {fmtDay(row.started_on)}
+                    <span className="truncate">{fmtDay(row.started_on)}</span>
                   </button>
+                )}
+                {!open && <span className="min-w-0 flex-1" aria-hidden="true" />}
+                {open && (
+                  <span className="hidden" aria-hidden="true" />
                 )}
                 {/* La pastille d'ecart s'efface pendant la correction: le
                     champ date a besoin de la place, et l'ecart changera. */}
