@@ -48,6 +48,10 @@ export default function CycleRing({ model, size = 220, compact = false, legend =
   const C = 100
   const R = 82
   const W = compact ? 11 : 13
+  /* Sous 96 px, le centre ne tient que le nombre: "DAY / 19 / of 29" sur
+     trois lignes deborderait d'un disque de 60 px. Le nom parle (aria)
+     porte la phrase entiere quelle que soit la taille. */
+  const tiny = size < 96
   const dot = polar(C, C, R, dayAngle(marker, length))
   const kinds = new Set(segments.map((s) => s.kind))
   const aria = t('cycle.ring_aria', { n: day, len: length })
@@ -80,13 +84,17 @@ export default function CycleRing({ model, size = 220, compact = false, legend =
           />
         </svg>
         <div className="absolute inset-0 grid place-items-center text-center" aria-hidden="true">
-          <div>
-            <span className={`block font-semibold uppercase tracking-[0.06em] text-muted ${compact ? 'text-label' : 'text-label'}`}>
-              {t('cycle.day_word')}
-            </span>
-            <span className={`block font-semibold leading-none text-ink ${compact ? 'text-h1' : 'text-metric'}`}>{day}</span>
-            <span className={`block text-muted ${compact ? 'text-label' : 'text-small'}`}>{t('cycle.of_len', { n: length })}</span>
-          </div>
+          {tiny ? (
+            <span className="block text-h2 font-semibold leading-none text-ink">{day}</span>
+          ) : (
+            <div>
+              <span className="block text-label font-semibold uppercase tracking-[0.06em] text-muted">
+                {t('cycle.day_word')}
+              </span>
+              <span className={`block font-semibold leading-none text-ink ${compact ? 'text-h1' : 'text-metric'}`}>{day}</span>
+              <span className={`block text-muted ${compact ? 'text-label' : 'text-small'}`}>{t('cycle.of_len', { n: length })}</span>
+            </div>
+          )}
         </div>
       </div>
 

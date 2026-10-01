@@ -37,14 +37,18 @@ export default function CycleStrip({ starts = [], prediction = null }) {
   const date = new Intl.DateTimeFormat(localeTag(locale), { weekday: 'long', day: 'numeric', month: 'long' }).format(prediction.nextStart)
 
   return (
-    <section className="lg flex items-center gap-4 p-4 sm:p-5" data-hook="cal-cycle-card" data-days={away} data-phase={phase ?? ''}>
-      <CycleRing model={ring} size={96} compact className="shrink-0" />
+    /* Une barre, pas une carte vide: l'anneau en 80, trois lignes, et le lien
+       a droite des qu'il y a la place. A 1180 la premiere version faisait
+       une carte pleine largeur avec trois lignes courtes et du vide.
+         "the pop up over the calendar could be less big" */
+    <section className="lg flex items-center gap-3 p-3 sm:gap-4 sm:p-4" data-hook="cal-cycle-card" data-days={away} data-phase={phase ?? ''}>
+      <CycleRing model={ring} size={80} compact className="shrink-0" />
       <div className="min-w-0 flex-1">
         <p className="eyebrow">{t('cycle.title')}</p>
-        <p className="text-safe mt-0.5 text-body font-semibold text-ink">{head}</p>
+        <p className="text-safe text-body font-semibold text-ink">{head}</p>
         <p className="text-safe text-small text-muted">{t('cycle.expected_on', { date })}</p>
         {phase && (
-          <p className="text-safe mt-1.5 flex items-start gap-2 text-small text-ink" data-hook="cal-cycle-care">
+          <p className="text-safe mt-1 flex items-start gap-2 text-small text-ink" data-hook="cal-cycle-care">
             <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-pill ${PHASE_DOT[phase]}`} aria-hidden="true" />
             <span>
               <span className="font-semibold">{t(`cycle.phase_${phase}`)}.</span> {t(`cycle.care_${phase}`)}
@@ -53,12 +57,19 @@ export default function CycleStrip({ starts = [], prediction = null }) {
         )}
         <Link
           to="/profile"
-          className="press mt-2 inline-block text-small font-semibold text-ink underline decoration-1 underline-offset-2"
+          className="press mt-1.5 inline-block text-small font-semibold text-ink underline decoration-1 underline-offset-2 sm:hidden"
           data-hook="cal-cycle-link"
         >
           {t('cycle.manage')}
         </Link>
       </div>
+      <Link
+        to="/profile"
+        className="goal-action press hidden shrink-0 sm:inline-flex"
+        data-hook="cal-cycle-link-wide"
+      >
+        {t('cycle.manage')}
+      </Link>
     </section>
   )
 }

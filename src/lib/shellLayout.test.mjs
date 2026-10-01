@@ -4937,7 +4937,12 @@ ok(
   const cpCode = cp.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '')
   const i18n = read('src/lib/i18n.jsx')
   ok('the cycle is drawn as a ring, first thing in the running state',
-     /<CycleRing model=\{ring\} size=\{224\} legend/.test(cp) && cp.indexOf('<CycleRing') < cp.indexOf('data-hook="cycle-log-today"'))
+     /<CycleRing model=\{ring\} size=\{200\} legend/.test(cp) && cp.indexOf('<CycleRing') < cp.indexOf('data-hook="cycle-log-today"'))
+  ok('the drawer is a bottom sheet on a phone and a centred, shorter box from md, never a full-height wall on the screen edge',
+     /flex items-end justify-center md:items-center md:p-6/.test(cp) && /max-h-\[88dvh\] w-full max-w-\[26rem\]/.test(cp)
+       && /md:max-h-\[min\(46rem,calc\(100dvh-3rem\)\)\] md:w-\[24rem\] md:rounded-card/.test(cp) && !/justify-end/.test(cp)
+       && /\.cycle-sheet \{\s*animation: sheet-up/.test(css) && /\.cycle-sheet \{\s*animation: cycle-dialog-in/.test(css)
+       && /prefers-reduced-motion: reduce\) \{\s*\.cycle-sheet \{\s*animation: none;/.test(css))
   ok('the ring is an image with a name, in the calendar two colours, facts solid and estimates dashed',
      /role="img" aria-label=\{aria\}/.test(ringC) && /--c-negative/.test(ringC) && /--c-mark/.test(ringC)
        && /strokeDasharray=\{ESTIMATES\.has\(s\.kind\) \? '[\d. ]+' : undefined\}/.test(ringC))
@@ -4979,7 +4984,9 @@ ok(
   const i18n = read('src/lib/i18n.jsx')
   ok('the calendar carries a cycle card with the small ring, above the grid, hidden while picking',
      /\{periodTracking && !picking && cycle\.prediction && \(\s*<CycleStrip starts=\{cycle\.starts\} prediction=\{cycle\.prediction\} \/>/.test(calSrc)
-       && /<CycleRing model=\{ring\} size=\{96\} compact/.test(strip) && /data-hook="cal-cycle-card"/.test(strip))
+       && /<CycleRing model=\{ring\} size=\{80\} compact/.test(strip) && /data-hook="cal-cycle-card"/.test(strip))
+  ok('the card is a bar: the ring under 96px shows only the number, and the link moves to the right from sm',
+     /const tiny = size < 96/.test(read('src/components/CycleRing.jsx')) && /data-hook="cal-cycle-link-wide"/.test(strip) && /sm:hidden/.test(strip))
   ok('the card says the next period in words, with its date, and names the phase with the calendar dot',
      /t\('cal\.cycle_in', \{ n: away \}\)/.test(strip) && /t\('cycle\.expected_on'/.test(strip) && /PHASE_DOT\[phase\]/.test(strip))
   ok('it links to the drawer rather than opening it here', /to="\/profile"/.test(strip) && !/cal-cycle-open|setDrawer/.test(calSrc))
@@ -4987,7 +4994,11 @@ ok(
      /t\('cal\.pick_title'\)/.test(calSrc) && /data-hook="cal-pick-private"/.test(calSrc) && /<Lock className/.test(calSrc)
        && !/you bled|as saigné/.test(i18n))
   ok('recorded period days are washed on the month grid; estimates stay as dots',
-     /\$\{phase === 'period' && !picking \? 'bg-negative\/\[0\.08\]' : ''\} \$\{on \? 'bg-pick' : ''\}/.test(calSrc))
+     /\$\{band\} \$\{on \? 'bg-pick' : ''\}/.test(calSrc) && /bg-negative\/\[0\.08\]/.test(calSrc))
+  ok('consecutive period days form one band: square inner corners, the follower bridges the 4px gap, never across a row end',
+     /const prevP = phase === 'period' && col > 0 && phaseOn\(addDays\(d, -1\)/.test(calSrc)
+       && /const nextP = phase === 'period' && col < 6 && phaseOn\(addDays\(d, 1\)/.test(calSrc)
+       && /prevP \? 'rounded-l-none -ml-1' : ''/.test(calSrc) && /nextP \? 'rounded-r-none' : ''/.test(calSrc))
   ok('the lock is one component, shared',
      /export function Lock\(/.test(read('src/components/ui.jsx')) && !/^function Lock\(/m.test(read('src/components/CyclePanel.jsx')))
   const missing = []
