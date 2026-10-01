@@ -23,8 +23,9 @@ import {
 import { bookingEntries } from '../lib/bookings'
 import { feedEntries, staleFeeds, syncFeeds } from '../lib/feeds'
 import { stepEntries } from '../lib/steps'
-import { SegTabs } from '../components/ui'
+import { Lock, SegTabs } from '../components/ui'
 import CyclePanel from '../components/CyclePanel'
+import CycleStrip from '../components/CycleStrip'
 import TimetableWizard from '../components/TimetableWizard'
 import SyllabusWizard from '../components/SyllabusWizard'
 
@@ -1220,9 +1221,22 @@ export default function Calendar() {
        */}
       {picking && (
         <div className="lg w-full p-4" data-hook="cal-pick-bar">
-          <p className="text-small font-semibold text-ink">{t('cal.pick_how')}</p>
+          {/* Un titre, la consigne en dessous, et le cadenas: la barre disait
+              "les jours ou tu as saigne" en une ligne grise, ce qui est exact
+              et froid. Le compte est une pastille dans la teinte des regles,
+              la meme que les jours enregistres sur la grille. */}
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-body font-semibold text-ink">{t('cal.pick_title')}</p>
+              <p className="text-safe mt-0.5 text-small text-muted">{t('cal.pick_how')}</p>
+            </div>
+            <p className="flex shrink-0 items-center gap-1.5 text-label text-muted" data-hook="cal-pick-private">
+              <Lock className="h-3.5 w-3.5" />
+              {t('cal.pick_private')}
+            </p>
+          </div>
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            <span className="text-small text-muted" data-hook="cal-pick-count">
+            <span className="rounded-pill bg-negative/[0.10] px-3 py-1 text-small font-semibold text-ink" data-hook="cal-pick-count">
               {t(picked.size === 1 ? 'cal.pick_n_one' : 'cal.pick_n_other', { n: picked.size })}
             </span>
             <div className="ml-auto flex shrink-0 items-center gap-2">
@@ -1245,6 +1259,13 @@ export default function Calendar() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* La carte du cycle, au-dessus de la grille: l'anneau en petit, les
+          prochaines regles en mots, la phase du jour. Cachee pendant le
+          pointage, ou la barre du dessus tient la place. */}
+      {periodTracking && !picking && cycle.prediction && (
+        <CycleStrip starts={cycle.starts} prediction={cycle.prediction} />
       )}
 
       {/**
@@ -1749,7 +1770,7 @@ function MonthGrid({ range, anchor, agenda, cycle, onPick, picking = false, pick
                 picking
                   ? 'min-h-[3.4rem] items-center justify-center p-1 md:min-h-[6.5rem] md:p-1.5'
                   : 'min-h-[3.4rem] flex-col items-stretch p-1 md:min-h-[6.5rem] md:p-1.5'
-              } ${on ? 'bg-pick' : ''} ${
+              } ${phase === 'period' && !picking ? 'bg-negative/[0.08]' : ''} ${on ? 'bg-pick' : ''} ${
                 on || future ? '' : 'hover:bg-ink/[0.04]'
               } ${outside ? 'opacity-40' : ''} ${
                 future ? 'cursor-not-allowed opacity-30' : ''
