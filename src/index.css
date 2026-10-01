@@ -4465,3 +4465,34 @@ nav a[aria-current='page'] > svg {
     animation: none;
   }
 }
+
+/* Le tiroir du cycle: feuille qui monte sur un telephone, boite qui se pose
+   a partir de md. Deux animations pour un element, selon la largeur, ce que
+   les utilitaires Tailwind ne savent pas dire pour une classe maison. */
+@media (max-width: 767.98px) {
+  .cycle-sheet {
+    animation: sheet-up 340ms cubic-bezier(0.32, 0.72, 0, 1) both;
+  }
+}
+@media (min-width: 768px) {
+  .cycle-sheet {
+    animation: cycle-dialog-in 300ms cubic-bezier(0.32, 0.72, 0, 1) both;
+  }
+}
+@keyframes cycle-dialog-in {
+  from {
+    opacity: 0;
+    translate: 0 10px;
+    scale: 0.98;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+    scale: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cycle-sheet {
+    animation: none;
+  }
+}

@@ -1669,11 +1669,30 @@ function MonthGrid({ range, anchor, agenda, cycle, onPick, picking = false, pick
           </div>
         ))}
 
-        {days.map((d) => {
+        {days.map((d, i) => {
           const k = dayKey(d)
           const list = agenda.get(k) ?? []
           const phase = phaseOn(d, cycle.starts, cycle.prediction)
           const outside = d.getMonth() !== anchor.getMonth()
+          /**
+           * LES JOURS DE REGLES ENREGISTRES FORMENT UNE BANDE.
+           *
+           *   "the UI is still a little bit ugly, the edges touch each other"
+           *
+           * Chaque jour lave etait une dalle arrondie a part: cinq dalles
+           * cote a cote, dont les coins se frolaient a 4 px, l'ecart de la
+           * grille. Ici un jour qui suit un jour de regles perd son arrondi
+           * gauche et avance de 4 px dans l'ecart (une marge negative sur
+           * un element de grille l'elargit d'autant), celui qui en precede
+           * un perd son arrondi droit: une seule bande, ronde aux deux bouts.
+           * Jamais d'une ligne a l'autre: le dimanche ne rejoint pas le lundi.
+           */
+          const col = i % 7
+          const prevP = phase === 'period' && col > 0 && phaseOn(addDays(d, -1), cycle.starts, cycle.prediction) === 'period'
+          const nextP = phase === 'period' && col < 6 && phaseOn(addDays(d, 1), cycle.starts, cycle.prediction) === 'period'
+          const band = phase === 'period' && !picking
+            ? `bg-negative/[0.08] ${prevP ? 'rounded-l-none -ml-1' : ''} ${nextP ? 'rounded-r-none' : ''}`
+            : ''
           /**
            * EN MODE COCHE: LA TUILE EST LA CASE A COCHER.
            *
@@ -1770,7 +1789,7 @@ function MonthGrid({ range, anchor, agenda, cycle, onPick, picking = false, pick
                 picking
                   ? 'min-h-[3.4rem] items-center justify-center p-1 md:min-h-[6.5rem] md:p-1.5'
                   : 'min-h-[3.4rem] flex-col items-stretch p-1 md:min-h-[6.5rem] md:p-1.5'
-              } ${phase === 'period' && !picking ? 'bg-negative/[0.08]' : ''} ${on ? 'bg-pick' : ''} ${
+              } ${band} ${on ? 'bg-pick' : ''} ${
                 on || future ? '' : 'hover:bg-ink/[0.04]'
               } ${outside ? 'opacity-40' : ''} ${
                 future ? 'cursor-not-allowed opacity-30' : ''

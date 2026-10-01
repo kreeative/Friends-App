@@ -411,7 +411,7 @@ export default function CyclePanel({ onChange, open = false, onClose }) {
         {/* L'anneau d'abord: c'est la reponse a "j'en suis ou", et c'est ce
             qui fait que l'ecran parle d'un corps et pas d'un formulaire. */}
         {ring ? (
-          <CycleRing model={ring} size={224} legend className="pt-1" />
+          <CycleRing model={ring} size={200} legend className="pt-1" />
         ) : (
           <p className="text-small text-muted">{t('cycle.need_more')}</p>
         )}
@@ -781,7 +781,11 @@ export default function CyclePanel({ onChange, open = false, onClose }) {
    * it outside both.
    */
   return createPortal(
-    <div className="fixed inset-0 z-[60] flex justify-end" data-hook="cycle-drawer">
+    /* Une feuille qui monte du bas sur un telephone, une boite centree et
+       PAS pleine hauteur a partir de md: le panneau collait au bord droit de
+       l'ecran sur toute sa hauteur, et sur un iPad c'etait un mur.
+         "the pop up over the calendar could be less big" */
+    <div className="fixed inset-0 z-[60] flex items-end justify-center md:items-center md:p-6" data-hook="cycle-drawer">
       {/* The scrim. A button rather than a div with onClick, so tapping outside
           is reachable from a keyboard and announced as what it does. */}
       <button
@@ -800,7 +804,7 @@ export default function CyclePanel({ onChange, open = false, onClose }) {
         /* cycle-warm is the one place in the app with a tinted sheet, and the
            note in index.css says why this drawer gets it and the event form
            does not. */
-        className="lg lg-modal cycle-warm relative m-2 flex w-[min(26rem,calc(100vw-1rem))] flex-col overflow-hidden rounded-card p-0 outline-none"
+        className="lg lg-modal cycle-warm cycle-sheet relative flex max-h-[88dvh] w-full max-w-[26rem] flex-col overflow-hidden rounded-t-card p-0 outline-none md:max-h-[min(46rem,calc(100dvh-3rem))] md:w-[24rem] md:rounded-card"
       >
         <div className="relative z-[2] flex items-start justify-between gap-3 px-5 pt-5">
           <div className="min-w-0">
