@@ -40,7 +40,9 @@ const {
   sessionRows,
   sessionsWanted,
   stepRows,
+  studyGoalPayload,
   studyRows,
+  studyStepRows,
   toBase64,
 } = await import('./syllabus.js')
 const { fromKey } = await import('./cycle.js')
@@ -350,6 +352,25 @@ eq('never more than six', sessionsWanted({ kind: 'project', weight: 90 }), 6)
   ok('every row names the goal', rows.every((r) => r.goal_id === 'g1'))
 }
 
+/* Le plan d'etude comme objectif recurrent, depuis la reponse a "quand peux-tu etudier ?". */
+{
+  const blocks = [{ starts_on: '2026-10-21', start_min: 1080, end_min: 1140, title: 'Examen intra' }, { starts_on: '2026-10-05', start_min: 1080, end_min: 1140, title: 'Devoir 2' }]
+  const g = studyGoalPayload({ userId: 'u1', title: 'Etude : PSY1001', availability: { weekdays: [5, 1, 3], start: '18:00', end: '21:00', minutes: 60, perWeek: 3 }, blocks, deadlines: [{ due_on: '2026-12-04' }], today: TODAY })
+  eq('a recurring personal goal, three a week, on the chosen days', [g.kind, g.owner_id, g.cadence, g.target_per_cycle, g.active_days], ['personal', 'u1', 'recurring', 3, [1, 3, 5]])
+  eq('with the reminder at the start of the study window', [g.remind, g.remind_at_min, g.remind_every_min], [true, 1080, null])
+  eq('starting today and ending on the last date, block or deadline', [g.starts_on, g.ends_on, g.due_on], [TODAY, '2026-12-04', null])
+  eq('nothing to prove: it is a habit', g.proof_type, 'none')
+  eq('every day of the week is stored as no restriction', studyGoalPayload({ userId: 'u', title: 'x', availability: { weekdays: [0, 1, 2, 3, 4, 5, 6], perWeek: 7 }, today: TODAY }).active_days, null)
+  eq('a silly cadence is clamped to the week', [studyGoalPayload({ userId: 'u', title: 'x', availability: { perWeek: 0 }, today: TODAY }).target_per_cycle, studyGoalPayload({ userId: 'u', title: 'x', availability: { perWeek: 12 }, today: TODAY }).target_per_cycle], [1, 7])
+  eq('no dates at all leaves no end', studyGoalPayload({ userId: 'u', title: 'x', today: TODAY }).ends_on, null)
+
+  const rows = studyStepRows(blocks, { goalId: 'g9', offset: 3, label: (s) => `Etude : ${s}` })
+  eq('study sessions become dated, timed steps in date order, numbered after the existing ones', rows, [
+    { goal_id: 'g9', title: 'Etude : Devoir 2', due_on: '2026-10-05', at_min: 1080, position: 3 },
+    { goal_id: 'g9', title: 'Etude : Examen intra', due_on: '2026-10-21', at_min: 1080, position: 4 },
+  ])
+}
+eq('a recurring goal is never taken for the course list, even with the same words', findGoal([{ id: 'r1', commitment: 'Etude : PSY1001 Intro psycho', status: 'active', cadence: 'recurring' }], 'PSY1001 Intro psycho : a faire'), null)
 eq('the course list is found under its title', findGoal([{ id: 'g1', commitment: 'PSY1001 : a faire', status: 'active' }], 'PSY1001 : a faire')?.id, 'g1')
 eq('a finished one is not reused', findGoal([{ id: 'g1', commitment: 'PSY1001 : a faire', status: 'done' }], 'PSY1001 : a faire'), null)
 eq('another course is not it', findGoal([{ id: 'g1', commitment: 'BCM1501 : a faire', status: 'active' }], 'PSY1001 : a faire'), null)

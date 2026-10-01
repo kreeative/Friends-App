@@ -17,7 +17,9 @@ import {
   planStudy,
   sessionRows,
   stepRows,
+  studyGoalPayload,
   studyRows,
+  studyStepRows,
 } from '../lib/syllabus'
 
 /**
@@ -132,6 +134,11 @@ export default function SyllabusWizard({ open, onClose, onSaved, events = [], ex
   const [take, setTake] = useState(() => new Set())
   const [av, setAv] = useState(DEFAULT_AVAILABILITY)
   const [study, setStudy] = useState(null)
+  /* Ce que le plan d'etude devient en plus des blocs: un objectif recurrent
+     (oui par defaut, c'est ce qui fait qu'on y va), et les seances en
+     etapes de la liste a cocher (sur demande). */
+  const [optGoal, setOptGoal] = useState(true)
+  const [optSteps, setOptSteps] = useState(false)
   const [note, setNote] = useState(null)
   /* Les objectifs actifs, pour retrouver la liste d'un cours deja importe
      et y ajouter plutot que d'en ouvrir une deuxieme. */
@@ -142,7 +149,7 @@ export default function SyllabusWizard({ open, onClose, onSaved, events = [], ex
     let alive = true
     supabase
       .from('goals')
-      .select('id, commitment, due_on, status')
+      .select('id, commitment, due_on, status, cadence')
       .eq('status', 'active')
       .then(({ data }) => {
         if (alive) setGoals(data ?? [])
@@ -202,6 +209,8 @@ export default function SyllabusWizard({ open, onClose, onSaved, events = [], ex
     setTake(new Set())
     setAv(DEFAULT_AVAILABILITY)
     setStudy(null)
+    setOptGoal(true)
+    setOptSteps(false)
     setNote(null)
   }
   const close = () => {
@@ -275,10 +284,15 @@ export default function SyllabusWizard({ open, onClose, onSaved, events = [], ex
   const save = async () => {
     setBusy(true)
     setError(null)
+    const blocks = study?.blocks ?? []
+    const studyLabel = (what) => t('syl.study_title', { what })
     const rows = [
       ...sessionRows(chosenSessions, { userId: user.id, term: termNow(), today }),
       ...exams,
-      ...studyRows(study?.blocks ?? [], { userId: user.id, label: (what) => t('syl.study_title', { what }) }),
+      /* Les seances vont sur la grille comme blocs, OU dans la liste comme
+         etapes datees (qui passent sur la grille par la liste): jamais les
+         deux, rien n'est ajoute deux fois. */
+      ...(optSteps ? [] : studyRows(blocks, { userId: user.id, label: studyLabel })),
     ]
     let written = 0
     if (rows.length) {
@@ -292,7 +306,8 @@ export default function SyllabusWizard({ open, onClose, onSaved, events = [], ex
     }
 
     let stepsWritten = 0
-    if (chosenDeadlines.length) {
+    let goalsWritten = 0
+    if (chosenDeadlines.length || (optSteps && blocks.length)) {
       let goal = findGoal(goals, goalTitle) ?? findGoal(goals, courseName)
       let offset = 0
       if (goal) {
@@ -309,19 +324,43 @@ export default function SyllabusWizard({ open, onClose, onSaved, events = [], ex
           return setError(err?.message ?? t('syl.err_db'))
         }
         goal = data
+        goalsWritten += 1
       }
-      const srows = stepRows(chosenDeadlines, { goalId: goal.id, offset })
-      const { error: err } = await supabase.from('goal_step').insert(srows)
-      if (err) {
-        setBusy(false)
-        return setError(err.message)
+      const dated = stepRows(chosenDeadlines, { goalId: goal.id, offset })
+      const sessions = optSteps ? studyStepRows(blocks, { goalId: goal.id, offset: offset + dated.length, label: studyLabel }) : []
+      const srows = [...dated, ...sessions]
+      if (srows.length) {
+        const { error: err } = await supabase.from('goal_step').insert(srows)
+        if (err) {
+          setBusy(false)
+          return setError(err.message)
+        }
+        stepsWritten = srows.length
       }
-      stepsWritten = srows.length
+    }
+
+    /* L'objectif d'etude: recurrent, aux jours et a la cadence dits, avec le
+       rappel a l'heure de la fenetre. Pas deux fois pour le meme cours: le
+       titre exact et la cadence le retrouvent, sans la tolerance de
+       sameTitle, qui prendrait la liste a cocher du cours pour lui. */
+    if (optGoal && blocks.length) {
+      const title = t('syl.study_goal', { course: courseName })
+      const already = goals.some((g) => g?.cadence === 'recurring' && g.commitment === title)
+      if (!already) {
+        const { error: err } = await supabase
+          .from('goals')
+          .insert(studyGoalPayload({ userId: user.id, title, availability: av, blocks, deadlines: chosenDeadlines, today }))
+        if (err) {
+          setBusy(false)
+          return setError(err.message)
+        }
+        goalsWritten += 1
+      }
     }
 
     setBusy(false)
     reset()
-    await onSaved({ events: written, steps: stepsWritten })
+    await onSaved({ events: written, steps: stepsWritten, goals: goalsWritten })
   }
 
   /* Les seances d'etude, par semaine, pour se lire comme un agenda. */
@@ -645,9 +684,32 @@ export default function SyllabusWizard({ open, onClose, onSaved, events = [], ex
                   </li>
                 )}
                 <li data-hook="syl-sum-study">
-                  {t(study.blocks.length === 1 ? 'syl.sum_study_one' : 'syl.sum_study_other', { n: study.blocks.length })}
+                  {optSteps
+                    ? t(study.blocks.length === 1 ? 'syl.sum_study_todo_one' : 'syl.sum_study_todo_other', { n: study.blocks.length })
+                    : t(study.blocks.length === 1 ? 'syl.sum_study_one' : 'syl.sum_study_other', { n: study.blocks.length })}
                 </li>
+                {optGoal && study.blocks.length > 0 && (
+                  <li data-hook="syl-sum-goal">{t('syl.sum_goal', { n: av.perWeek, days: dayNames(av.weekdays) })}</li>
+                )}
               </ul>
+
+              {/* Ce que le plan devient en plus des blocs. Un plan que personne
+                  ne voit est un plan qui glisse: l'objectif est coche par
+                  defaut, les seances dans la liste sont a la demande. */}
+              {study.blocks.length > 0 && (
+                <div className={`${rowClass} mt-3 grid gap-3`} data-hook="syl-options">
+                  <label className="flex items-start gap-3">
+                    <input type="checkbox" checked={optGoal} onChange={(e) => setOptGoal(e.target.checked)} data-hook="syl-opt-goal" className={boxClass} />
+                    <span className="text-safe min-w-0 flex-1 text-small text-ink">
+                      {t('syl.opt_goal', { n: av.perWeek, days: dayNames(av.weekdays), at: av.start })}
+                    </span>
+                  </label>
+                  <label className="flex items-start gap-3">
+                    <input type="checkbox" checked={optSteps} onChange={(e) => setOptSteps(e.target.checked)} data-hook="syl-opt-steps" className={boxClass} />
+                    <span className="text-safe min-w-0 flex-1 text-small text-ink">{t('syl.opt_steps')}</span>
+                  </label>
+                </div>
+              )}
 
               {weeks.map(([wk, list]) => (
                 <section key={wk} className="mt-4" data-hook="syl-week">
