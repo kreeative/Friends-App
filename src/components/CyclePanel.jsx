@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { localeTag, useT } from '../lib/i18n'
-import { Cross, Tick } from './ui'
+import { Cross, Lock, Tick } from './ui'
 import CycleRing, { PHASE_DOT } from './CycleRing'
 import { ringModel } from '../lib/cycleRing'
 import {
@@ -80,17 +80,6 @@ const SETUP_DATES = [
   { key: 'd2', label: 'cycle.date_prev' },
   { key: 'd3', label: 'cycle.date_recent' },
 ]
-
-/* Le cadenas sous le titre. Dessine ici: c'est un trait de 1,8 a bouts ronds
-   comme les icones de la barre, et il n'existe nulle part ailleurs. */
-function Lock({ className = 'h-3.5 w-3.5' }) {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className={className} fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="5" y="10.5" width="14" height="10" rx="2.6" />
-      <path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" />
-    </svg>
-  )
-}
 
 export default function CyclePanel({ onChange, open = false, onClose }) {
   const { user } = useAuth()

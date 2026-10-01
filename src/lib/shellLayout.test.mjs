@@ -4969,5 +4969,34 @@ ok(
   ok('cycleRing.test.mjs runs with the suite', /node src\/lib\/cycleRing\.test\.mjs/.test(read('package.json')))
 }
 
+/* --- the calendar side of the cycle ----------------------------------------
+   The drawer was redone; on the calendar the cycle was still a toolbar
+   button, a grey line saying "the days you bled" and 8px dots. */
+{
+  console.log('\ncalendar cycle')
+  const calSrc = read('src/pages/Calendar.jsx')
+  const strip = read('src/components/CycleStrip.jsx')
+  const i18n = read('src/lib/i18n.jsx')
+  ok('the calendar carries a cycle card with the small ring, above the grid, hidden while picking',
+     /\{periodTracking && !picking && cycle\.prediction && \(\s*<CycleStrip starts=\{cycle\.starts\} prediction=\{cycle\.prediction\} \/>/.test(calSrc)
+       && /<CycleRing model=\{ring\} size=\{96\} compact/.test(strip) && /data-hook="cal-cycle-card"/.test(strip))
+  ok('the card says the next period in words, with its date, and names the phase with the calendar dot',
+     /t\('cal\.cycle_in', \{ n: away \}\)/.test(strip) && /t\('cycle\.expected_on'/.test(strip) && /PHASE_DOT\[phase\]/.test(strip))
+  ok('it links to the drawer rather than opening it here', /to="\/profile"/.test(strip) && !/cal-cycle-open|setDrawer/.test(calSrc))
+  ok('the picker has a title, a gentler instruction and the lock',
+     /t\('cal\.pick_title'\)/.test(calSrc) && /data-hook="cal-pick-private"/.test(calSrc) && /<Lock className/.test(calSrc)
+       && !/you bled|as saigné/.test(i18n))
+  ok('recorded period days are washed on the month grid; estimates stay as dots',
+     /\$\{phase === 'period' && !picking \? 'bg-negative\/\[0\.08\]' : ''\} \$\{on \? 'bg-pick' : ''\}/.test(calSrc))
+  ok('the lock is one component, shared',
+     /export function Lock\(/.test(read('src/components/ui.jsx')) && !/^function Lock\(/m.test(read('src/components/CyclePanel.jsx')))
+  const missing = []
+  for (const k of ['cal.pick_title', 'cal.pick_private', 'cal.cycle_today', 'cal.cycle_in_one', 'cal.cycle_in_other', 'cal.cycle_late_one', 'cal.cycle_late_other']) {
+    const n = i18n.split(`'${k}'`).length - 1
+    if (n !== 2) missing.push(`${k}:${n}`)
+  }
+  ok('every new key is in both locales', missing.length === 0, missing.join(' '))
+}
+
 console.log(`\n  ${pass} passed, ${fail} failed\n`)
 process.exit(fail ? 1 : 0)

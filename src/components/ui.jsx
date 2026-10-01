@@ -741,6 +741,21 @@ export function Tick({ className = 'h-3.5 w-3.5', strokeWidth = 3, draw = false 
   )
 }
 
+/**
+ * Le cadenas, pour la ligne qui dit "toi seule vois ceci". Un trait de 1,9 a
+ * bouts ronds comme les icones de la barre. Partage entre le tiroir du cycle
+ * et la barre de pointage du calendrier: deux cadenas dessines de memoire
+ * finiraient par ne pas se ressembler.
+ */
+export function Lock({ className = 'h-3.5 w-3.5' }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className={className} fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="5" y="10.5" width="14" height="10" rx="2.6" />
+      <path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" />
+    </svg>
+  )
+}
+
 /** La croix soeur, memes bouts ronds, pour "faux" a cote de "juste". */
 export function Cross({ className = 'h-3.5 w-3.5', strokeWidth = 3 }) {
   return (
