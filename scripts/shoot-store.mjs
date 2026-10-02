@@ -30,6 +30,9 @@ import { existsSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 
 const OUT = process.env.SHOT_OUT ?? '.shots'
+/* 2x pour l'App Store. 4x quand les captures partent dans un visuel en 4K,
+   ou un telephone de 390 px est affiche a plus de 1500 px de large. */
+const DPR = Number(process.env.SHOT_DPR ?? 2)
 const PORT = 4188
 const WIDTH = 390
 const HEIGHT = 844
@@ -55,7 +58,9 @@ const GROUP = {
 }
 
 const PEOPLE = [
-  [ME, 'Anne-Kelly'], ['u2', 'Harrisso'], ['u3', 'Kristynne'], ['u4', 'Meliane'], ['u5', 'Milly'],
+  /* "C'est Harrisson": le prenom etait tronque dans la fixture, et il est
+     sorti tel quel sur une diapo du carrousel. Deux s, deux n. */
+  [ME, 'Anne-Kelly'], ['u2', 'Harrisson'], ['u3', 'Kristynne'], ['u4', 'Meliane'], ['u5', 'Milly'],
 ]
 const ROSTER = PEOPLE.map(([id, name], i) => ({
   user_id: id, group_id: GID, role: i === 0 ? 'creator' : 'member', nudge_order: i,
@@ -377,7 +382,7 @@ for (const loc of LOCALES) {
   for (const shot of SHOTS) {
     const page = await browser.newPage({
       viewport: { width: WIDTH, height: HEIGHT },
-      deviceScaleFactor: 2,
+      deviceScaleFactor: DPR,
       hasTouch: true,
       isMobile: true,
     })
