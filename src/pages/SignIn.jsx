@@ -7,6 +7,7 @@ import { stickerSrc } from '../lib/art'
 import { useT } from '../lib/i18n'
 import { Sparkle, Spot, Tape, cast } from '../components/StickerKit'
 import { headline, useLineEnd } from '../components/Headline'
+import { readJoin } from '../lib/pendingJoin'
 
 /**
  * EN COLLAGE, COMME L'ACCUEIL.
@@ -219,6 +220,17 @@ export default function SignIn() {
     setCooldown(0)
   }
 
+  /* Un lien d'invitation ou la page du defi a laisse quelque chose en
+     attente: le dire, pour que la personne sache que se connecter la mene au
+     groupe et pas a un accueil vide. */
+  const [pending] = useState(() => {
+    try {
+      return readJoin(window.localStorage)
+    } catch {
+      return null
+    }
+  })
+
   const title = useRef(null)
   const heading = t('signin.title')
   useLineEnd(title, heading)
@@ -300,6 +312,11 @@ export default function SignIn() {
             />
           </h1>
           <p className="lede mt-5 max-w-[34ch]">{t('signin.pitch')}</p>
+          {pending && (
+            <p data-hook="signin-pending" className="mt-4 max-w-[34ch] text-body font-semibold text-ink">
+              {pending.code ? t('signin.joining') : t('signin.challenge')}
+            </p>
+          )}
         </div>
 
         <div className="animate-rise mt-8 space-y-3">

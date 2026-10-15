@@ -83,6 +83,9 @@ const ALIAS = {
   /* Same pairing again: one page, two spellings, French canonical because it
      is the language the people being thanked were thanked in. */
   '/credits': '/merci',
+  /* Le defi 21 matins. /defi est l'adresse de la video, /challenge la meme
+     page pour un lien en anglais. */
+  '/challenge': '/defi',
 }
 
 /**
@@ -199,6 +202,9 @@ export function sitemapPaths(slugs = []) {
        while being perfectly indexable: a page nothing links to from outside
        and no sitemap names is a page Google has little reason to fetch. */
     '/aide',
+    /* La page du defi, celle du lien de la video: publique, et faite pour
+       etre trouvee par quelqu'un qui cherche le defi apres l'avoir vu. */
+    '/defi',
     '/legal/terms',
     '/legal/privacy',
     '/legal/notice',

@@ -17,6 +17,28 @@ import TodayObjective from '../components/TodayObjective'
 import GroupFeed from '../components/GroupFeed'
 import GoalCard from '../components/GoalCard'
 import { ShareSheet } from '../components/ShareChoices'
+import ChallengeStrip from '../components/ChallengeStrip'
+
+/* Voir loadCheckins. */
+const PAGE = 1000
+const ID_BATCH = 100
+
+/**
+ * Toutes les lignes d'une requete, page par page.
+ *
+ * `build` refait la requete a chaque page: un constructeur de requete
+ * Supabase ne se rejoue pas. Une erreur rend ce qui a ete lu jusque-la,
+ * comme avant ou une erreur rendait un tableau vide.
+ */
+async function everyRow(build) {
+  const out = []
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await build().range(from, from + PAGE - 1)
+    if (error || !data) return out
+    out.push(...data)
+    if (data.length < PAGE) return out
+  }
+}
 
 export default function Board() {
   const { user } = useAuth()
@@ -74,18 +96,41 @@ export default function Board() {
    */
   const seq = useRef(0)
 
+  /**
+   * PAR PAGES ET PAR PAQUETS, PARCE QU'UN GROUPE PEUT GRANDIR.
+   *
+   * Les lignes des points du jour etaient demandees en UNE requete, avec
+   * l'identifiant de chaque point dans l'adresse: .in('checkin_id', ids).
+   * Un identifiant fait 37 caracteres avec sa virgule. Dix personnes sur
+   * vingt-quatre jours, c'est 240 points et 9 Ko d'adresse; un groupe de defi
+   * venu d'une video en fait vite des milliers, bien au-dela de ce qu'un
+   * serveur accepte dans une adresse. La requete echouait, l'erreur n'etait
+   * pas lue, et le tableau montrait un groupe ou personne n'avait rien fait.
+   *
+   * Et Supabase rend au plus 1 000 lignes par requete: au-dela, la suite
+   * etait coupee sans rien dire.
+   *
+   * Donc les identifiants partent par paquets de 100 (moins de 4 Ko
+   * d'adresse), et chaque requete est lue page par page jusqu'a la derniere.
+   * Trie sur id pour que les pages ne se chevauchent pas.
+   */
   const loadCheckins = useCallback(async () => {
     if (wanted.length === 0) return
     const mine = ++seq.current
 
-    const { data: cks } = await supabase.from('checkins').select('*').in('cycle_id', wanted)
+    const cks = await everyRow(() => supabase.from('checkins').select('*').in('cycle_id', wanted).order('id'))
     if (mine !== seq.current) return
-    setCheckins(cks ?? [])
+    setCheckins(cks)
 
-    const ids = (cks ?? []).map((c) => c.id)
+    const ids = cks.map((c) => c.id)
     if (ids.length === 0) return setItems([])
-    const { data: its } = await supabase.from('checkin_items').select('*').in('checkin_id', ids)
-    if (mine === seq.current) setItems(its ?? [])
+    const its = []
+    for (let i = 0; i < ids.length; i += ID_BATCH) {
+      const part = ids.slice(i, i + ID_BATCH)
+      its.push(...(await everyRow(() => supabase.from('checkin_items').select('*').in('checkin_id', part).order('id'))))
+      if (mine !== seq.current) return
+    }
+    setItems(its)
   }, [wanted.join(',')])
 
   useEffect(() => {
@@ -241,6 +286,12 @@ export default function Board() {
        *
        * The form is still here, underneath, for the days that need it.
        */}
+      {/* Le defi 21 matins: ou j'en suis, au-dessus de ce qu'il me reste a
+          faire aujourd'hui. Rien pour un groupe ordinaire. */}
+      {group.challenge && (
+        <ChallengeStrip group={group} goals={goals} cycles={cycles} checkins={checkins} items={items} />
+      )}
+
       {phase === 'open' && !meAway && (
         <>
           <TodayObjective

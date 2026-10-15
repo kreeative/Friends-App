@@ -1,10 +1,11 @@
-import { useEffect } from 'react'
-import { BrowserRouter, Navigate, Route, Routes, useParams } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { BrowserRouter, Navigate, Route, Routes, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { GroupProvider, useGroup } from './context/GroupContext'
 import { I18nProvider, useT } from './lib/i18n'
 import { BRAND, ThemeProvider, useTheme } from './lib/theme'
-import { configured } from './lib/supabase'
+import { configured, supabase } from './lib/supabase'
+import { forgetJoin, joinTarget, readJoin, rememberJoin } from './lib/pendingJoin'
 import { landing, soloKeyFor } from './lib/onboarding'
 import ErrorNote from './components/ErrorNote'
 import AppShell from './components/AppShell'
@@ -43,6 +44,7 @@ import Reader from './pages/Reader'
 import VapidSetup from './pages/VapidSetup'
 import Notifications from './pages/Notifications'
 import Courses from './pages/Courses'
+import Challenge from './pages/public/Challenge'
 
 /** /lectures/:slug is the same page as /library/:slug, spelled in French. */
 function LecturesRedirect() {
@@ -107,6 +109,75 @@ function BrandSplash() {
       </p>
     </main>
   )
+}
+
+/** Le stockage du navigateur, ou rien (navigation privee, stockage bloque). */
+function browserStore() {
+  try {
+    return window.localStorage
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Un lien d'invitation ouvert par quelqu'un qui n'a pas encore fini d'entrer.
+ *
+ * /start?join=CODE n'existait que pour quelqu'un de connecte. Les autres, donc
+ * tous ceux qui arrivent d'une video, tombaient sur la route attrape-tout et
+ * le code etait perdu. Il est maintenant retenu (src/lib/pendingJoin.js), et
+ * AutoJoin le reprend une fois la connexion, les conditions et les cinq
+ * questions passees.
+ *
+ * Retenu dans l'initialiseur d'un etat, donc une seule fois et avant que
+ * Navigate ne parte: l'effet d'un enfant passe avant celui du parent, et un
+ * effet ici lirait une adresse deja changee.
+ */
+function JoinLater({ to = '/signin' }) {
+  const [params] = useSearchParams()
+  useState(() => rememberJoin(params.get('join'), browserStore()))
+  return <Navigate to={to} replace />
+}
+
+/**
+ * Le code retenu, rejoint tout seul.
+ *
+ * Oublie AVANT l'appel: un code refuse ne doit pas ramener ici a chaque
+ * chargement. Refuse (code faux, groupe supprime), il retombe sur le
+ * formulaire qui le montre, ou le message d'erreur dit pourquoi.
+ *
+ * Une seule fois, meme sous StrictMode qui joue les effets deux fois en
+ * developpement: la ref survit au double montage, et join_group est de toute
+ * facon sans effet sur un membre deja la (on conflict do nothing, migration
+ * 18).
+ */
+function AutoJoin({ pending }) {
+  const { reload } = useGroup()
+  const navigate = useNavigate()
+  const started = useRef(false)
+
+  useEffect(() => {
+    if (started.current) return
+    started.current = true
+    forgetJoin(browserStore())
+    const target = joinTarget(pending)
+    if (target) {
+      navigate(target, { replace: true })
+      return
+    }
+    ;(async () => {
+      const { data, error } = await supabase.rpc('join_group', { p_code: pending.code })
+      if (error) {
+        navigate(`/start?join=${encodeURIComponent(pending.code)}`, { replace: true })
+        return
+      }
+      const g = Array.isArray(data) ? data[0] : data
+      await reload()
+      navigate(g?.id ? `/g/${g.id}` : '/', { replace: true })
+    })()
+  }, [])
+
+  return <BrandSplash />
 }
 
 /** A dead end with a way out, rather than a splash that never resolves. */
@@ -176,6 +247,15 @@ const PUBLIC_ROUTES = (
     <Route path="aide" element={<Faq />} />
     <Route path="faq" element={<Faq />} />
     <Route path="help" element={<Faq />} />
+    {/**
+     * Le defi 21 matins, la page du lien de la video. /defi en francais,
+     * /challenge en anglais, une seule page (voir src/lib/seo.js).
+     */}
+    <Route path="defi" element={<Challenge />} />
+    <Route path="challenge" element={<Challenge />} />
+    {/* Un lien d'invitation, avant d'avoir un compte: le code est retenu et
+        la connexion s'ouvre. Voir JoinLater. */}
+    <Route path="start" element={<JoinLater />} />
     <Route path="*" element={<Navigate to="/" replace />} />
   </Route>
 )
@@ -313,6 +393,10 @@ function Gate() {
         {/* Les documents restent atteignables: on accepte apres avoir lu, donc
             le chemin vers la lecture ne peut pas etre coupe. */}
         <Route path="/legal/:doc" element={<Legal />} />
+        {/* Un lien d'invitation pendant l'accueil: retenu pour la fin. */}
+        <Route path="/start" element={<JoinLater to="/" />} />
+        <Route path="/defi" element={<JoinLater to="/" />} />
+        <Route path="/challenge" element={<JoinLater to="/" />} />
         <Route path="*" element={<Terms />} />
       </Routes>
     )
@@ -321,6 +405,9 @@ function Gate() {
   if (where === 'setup') {
     return (
       <Routes>
+        <Route path="/start" element={<JoinLater to="/" />} />
+        <Route path="/defi" element={<JoinLater to="/" />} />
+        <Route path="/challenge" element={<JoinLater to="/" />} />
         <Route path="*" element={<Setup />} />
       </Routes>
     )
@@ -331,10 +418,20 @@ function Gate() {
    * offering Goals, Budget and the library underneath it would be four ways
    * out of a screen whose entire job is to ask one question.
    */
+  /**
+   * Un lien d'invitation retenu avant la connexion: on entre dans le groupe,
+   * et c'est le tableau du groupe qui s'ouvre, avec sa question sur ce qu'on
+   * partage. Apres les conditions et les cinq questions, jamais avant.
+   */
+  const pending = readJoin(browserStore())
+  if (pending && (where === 'welcome' || where === 'app')) return <AutoJoin pending={pending} />
+
   if (where === 'welcome') {
     return (
       <Routes>
         <Route path="/start" element={<Start />} />
+        <Route path="/defi" element={<Challenge bare />} />
+        <Route path="/challenge" element={<Challenge bare />} />
         <Route path="*" element={<Welcome />} />
       </Routes>
     )
@@ -350,6 +447,10 @@ function Gate() {
    */
   return (
     <Routes>
+      {/* La page du defi, connecte: hors de l'AppShell, c'est une page a
+          lire et un bouton, pas un ecran de l'app. */}
+      <Route path="defi" element={<Challenge bare />} />
+      <Route path="challenge" element={<Challenge bare />} />
       <Route element={<AppShell />}>
         <Route index element={<Dashboard />} />
         <Route path="start" element={<Start />} />
