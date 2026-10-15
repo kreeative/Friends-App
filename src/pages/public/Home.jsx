@@ -5,7 +5,7 @@ import { useT } from '../../lib/i18n'
 import { usePageMeta } from '../../lib/pageMeta'
 import { Mark } from '../../components/Wordmark'
 import PreviewCard from '../../components/PreviewCard'
-import { Doodle, SpinBadge, Sparkle, Spot, Tape, cast } from '../../components/StickerKit'
+import { Doodle, Sparkle, Spot, Tape, cast } from '../../components/StickerKit'
 import { stickerSrc } from '../../lib/art'
 
 /**
@@ -237,10 +237,14 @@ export default function Home() {
        * longue ligne fait 7,2 em.
        */}
       <section data-hook="hero" className="relative mx-auto w-full max-w-6xl px-6 pb-16 pt-10 md:pb-24 md:pt-14">
-        {/* Les deux colonnes alignees par le BAS: le badge rond est au pied du
-            collage et la fleche qui part de lui doit tomber sur le bouton,
-            quelle que soit la hauteur du texte. Centrees, en anglais (quatre
-            lignes de titre au lieu de trois), elle pointait le paragraphe. */}
+        {/* Les deux colonnes alignees par le BAS, et a partir de lg le collage
+            garde 7 rem de vide sous la carte: la carte tombe a hauteur du
+            titre et du paragraphe, le jeton MONEY a hauteur des boutons. Ce
+            vide etait la place du badge rond qui tournait, retire ("Ca aussi
+            enlève je n'aime pas"); regarde a 1024, 1180 et 1440 dans les deux
+            langues, la composition tient sans lui. Plus bas que lg le collage
+            passe sous les boutons et n'en garde que 5 rem, ce qu'il faut au
+            jeton qui deborde de la carte de 3,4 rem. */}
         <div className="lg:grid lg:grid-cols-[minmax(0,1.12fr)_minmax(0,1fr)] lg:items-end lg:gap-10">
           <div className="stagger">
             {/* Plus de pastilles a mots au-dessus: "j'aime pas cette sorte de
@@ -327,7 +331,7 @@ export default function Home() {
            */}
           <div
             data-hook="hero-collage"
-            className="relative mx-auto mt-16 w-full max-w-[26rem] px-1 pb-28 pt-20 sm:max-w-[28rem] sm:px-9 sm:pt-16 lg:mt-0 lg:max-w-none lg:px-10"
+            className="relative mx-auto mt-16 w-full max-w-[26rem] px-1 pb-20 pt-20 sm:max-w-[28rem] sm:px-9 sm:pt-16 lg:mt-0 lg:max-w-none lg:px-10 lg:pb-28"
           >
             <div className="relative" style={{ transform: 'rotate(2.5deg)' }}>
               <Tape className="-top-2.5 left-8" tilt={-9} />
@@ -345,26 +349,17 @@ export default function Home() {
               />
               <Spot name={HERO_ART[2]} tilt={9} delay={940} className="absolute -bottom-[3.4rem] -right-2 z-[3] w-[6.25rem] sm:-right-5 sm:w-[7rem]" />
             </div>
-            <SpinBadge
-              text={fun.spin}
-              label={c.hero.cta}
-              tilt={-8}
-              delay={1000}
-              className="absolute bottom-0 left-1 z-[4] w-[7rem] sm:w-[7.75rem]"
-            />
             {/* Dans le vide au-dessus de la carte, pas contre un sticker: collee
                 au bord de la marguerite, l'etincelle rose se lisait comme un
                 defaut de decoupe. */}
             <Sparkle className="absolute left-[46%] top-7 w-6 text-[#FF007A]" />
-            <Sparkle className="absolute bottom-24 right-1 w-4 text-[#009DB9]" />
-            {/* Une fleche du badge vers le bouton principal, avec une boucle.
-                Elle n'a de sens que quand les deux sont cote a cote, donc a
-                partir de lg. */}
-            <Doodle
-              kind="loop"
-              className="absolute -left-[7.25rem] bottom-[4.5rem] hidden w-28 text-[#FF007A] lg:block"
-              style={{ transform: 'rotate(-4deg)' }}
-            />
+            {/* La bleue, dans le vide en bas a gauche sur un telephone: a droite
+                elle tombait contre le jeton MONEY, le meme defaut. */}
+            <Sparkle className="absolute bottom-10 left-10 w-4 text-[#009DB9] sm:bottom-16 sm:left-auto sm:right-1 lg:bottom-24" />
+            {/* Il y avait ici un badge rond jaune qui tournait, "START NOW ·
+                IT'S FREE", et une fleche a boucle qui allait de lui au bouton
+                principal. "Ca aussi enlève je n'aime pas": le badge est parti,
+                et la fleche avec, puisqu'elle ne partait plus de rien. */}
           </div>
         </div>
       </section>

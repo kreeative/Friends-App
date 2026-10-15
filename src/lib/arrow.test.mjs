@@ -39,10 +39,13 @@ function parse(path) {
   return { a: [n[0], n[1]], tip: [n[2], n[3]], b: [n[4], n[5]] }
 }
 
+/* The second and third cases were the hero's looping arrow and the arrow in
+   the spinning badge. Both left the page with the badge; their geometry stays
+   here as two more directions to check, arriving leftward and up-right. */
 const cases = [
   ['the arc on the reasons', [50, 7], [88, 15], 14, 32],
-  ['the loop in the hero', [30, 38], [12, 30], 13, 32],
-  ['the arrow in the round badge', [70, 130], [126, 74], 30, 40],
+  ['arriving leftward and slightly up', [30, 38], [12, 30], 13, 32],
+  ['a straight diagonal up-right, 40 degree barbs', [70, 130], [126, 74], 30, 40],
   ['straight down', [0, 0], [0, 10], 5, 30],
   ['straight left', [10, 0], [0, 0], 5, 45],
 ]

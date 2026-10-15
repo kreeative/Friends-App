@@ -4664,51 +4664,8 @@ nav a[aria-current='page'] > svg {
   box-shadow: none;
 }
 
-/**
- * Le badge rond. Un tour en arrivant, puis immobile; il tourne sous la souris
- * et au focus clavier, c'est-a-dire quand quelqu'un s'en occupe. Un objet qui
- * tourne sans fin a cote du texte est exactement ce que WCAG 2.2.2 demande de
- * pouvoir arreter, et le plus simple pour pouvoir l'arreter est qu'il ne
- * demarre pas seul.
- */
-.spin-badge {
-  display: block;
-  aspect-ratio: 1;
-  width: var(--w, 8rem);
-  border-radius: 999px;
-  filter: drop-shadow(0 8px 16px rgb(0 0 0 / 0.22));
-  transform: rotate(var(--tilt, 0deg));
-}
-.spin-badge.at {
-  width: var(--w, 8rem);
-}
-@media (min-width: 1024px) {
-  .spin-badge.at {
-    width: var(--lw, var(--w, 8rem));
-  }
-}
-.spin-ring {
-  transform-box: view-box;
-  transform-origin: 100px 100px;
-  animation: spin-in 2600ms cubic-bezier(0.2, 0.7, 0.2, 1) calc(var(--d, 0ms) + 200ms) backwards;
-}
-.spin-badge:hover .spin-ring,
-.spin-badge:focus-visible .spin-ring {
-  animation: spin-turn 9s linear infinite;
-}
-@keyframes spin-in {
-  from {
-    transform: rotate(-240deg);
-  }
-  to {
-    transform: rotate(0deg);
-  }
-}
-@keyframes spin-turn {
-  to {
-    transform: rotate(360deg);
-  }
-}
+/* Il y avait ici le badge rond qui tourne, "START NOW · IT'S FREE": retire,
+   "Ca aussi enlève je n'aime pas". Rien dans le collage ne tourne plus. */
 
 /* Les amis qui depassent du bas du panneau jaune. Le panneau coupe; au survol
    chacun sort un peu plus la tete. */
@@ -4731,10 +4688,7 @@ nav a[aria-current='page'] > svg {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .spot,
-  .spin-ring,
-  .spin-badge:hover .spin-ring,
-  .spin-badge:focus-visible .spin-ring {
+  .spot {
     animation: none;
   }
   .spot,

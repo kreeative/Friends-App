@@ -19,13 +19,13 @@ export const LANDING = {
     },
 
     /**
-     * The decorations that carry words: the round badge's ring and the two
-     * tapes. Every one of them repeats something the page already says in
-     * full, so nothing here is a claim of its own. The three word pills that
-     * sat above the title are gone, "écriture en mode bouton".
+     * The decoration that carries words: the two tapes. They repeat words the
+     * page already says in full, so nothing here is a claim of its own. The
+     * three word pills that sat above the title are gone ("écriture en mode
+     * bouton"), and so is the spinning START NOW badge ("Ca aussi enlève je
+     * n'aime pas").
      */
     fun: {
-      spin: 'Start now · it’s free · ',
       tape: ['Discipline', 'Friends', 'Freedom', 'Money', 'Habits'],
     },
 
@@ -280,13 +280,13 @@ export const LANDING = {
     },
 
     /**
-     * Le decor qui porte des mots: l'anneau du badge rond et les deux bandes
-     * de scotch. Chacun repete une chose que la page dit deja en entier, donc
-     * aucun n'est une promesse de plus. Les trois pastilles au-dessus du titre
-     * sont parties: "écriture en mode bouton".
+     * Le decor qui porte des mots: les deux bandes de scotch. Elles repetent
+     * des mots que la page dit deja en entier, donc rien ici n'est une
+     * promesse de plus. Les trois pastilles au-dessus du titre sont parties
+     * ("écriture en mode bouton"), et le badge rond qui tournait aussi ("Ca
+     * aussi enlève je n'aime pas").
      */
     fun: {
-      spin: 'Commence · c’est gratuit · ',
       tape: ['Discipline', 'Amis', 'Liberté', 'Argent', 'Habitudes'],
     },
 
