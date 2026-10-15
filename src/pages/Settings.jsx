@@ -201,7 +201,6 @@ export default function Settings() {
             key={`${activeId}-${mySharing?.answered_at ?? 'none'}`}
             groupId={activeId}
             current={mySharing}
-            alias={members.find((m) => m.user_id === user?.id)?.alias}
             onSaved={async () => {
               await reloadGroup()
               setSavedShare(true)

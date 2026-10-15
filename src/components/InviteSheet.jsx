@@ -26,17 +26,24 @@ import { invitePath } from '../lib/pendingJoin'
  * same button copies instead and says so, rather than being a button that does
  * nothing on half the machines it appears on.
  */
-export default function InviteSheet({ group, open, onClose }) {
+/**
+ * Le lien, le message et les deux gestes (partager, copier), une fois.
+ *
+ * Le tableau d'un groupe ou l'on est encore seul n'affichait que le code,
+ * avec "Envoie ce code a un ami": le lien n'existait que dans les reglages,
+ * et la personne invitee devait taper six caracteres a la main. "The link is
+ * not intelligent [...] you have to enter the code manually." Le tableau et
+ * cette feuille partagent maintenant le meme lien de la meme facon.
+ */
+export function useInvite(group) {
   const { t } = useT()
   const [copied, setCopied] = useState(null)
-
-  if (!group) return null
 
   /* /join/CODE, la page d'invitation, pour tous les groupes: elle nomme le
      groupe et n'a qu'un bouton (src/pages/Invite.jsx). Court, aussi, ce qui
      compte dans une bio. Les anciens liens, /start?join= et /defi?join=, y
      menent encore. */
-  const link = `${window.location.origin}${invitePath(group.invite_code) ?? '/'}`
+  const link = group ? `${window.location.origin}${invitePath(group.invite_code) ?? '/'}` : ''
 
   /**
    * One string, carrying the link exactly once.
@@ -57,7 +64,7 @@ export default function InviteSheet({ group, open, onClose }) {
    * The clipboard gets the identical string, so the message somebody pastes by
    * hand and the message the share sheet sends are the same message.
    */
-  const invite = t('settings.invite_share', { group: group.name, link })
+  const invite = group ? t('settings.invite_share', { group: group.name, link }) : ''
 
   async function copy(what, value) {
     try {
@@ -80,16 +87,39 @@ export default function InviteSheet({ group, open, onClose }) {
     copy('link', invite)
   }
 
+  const shareLabel =
+    copied === 'link' && !navigator.share
+      ? t('settings.copied')
+      : navigator.share
+        ? t('settings.share_link')
+        : t('settings.copy_link')
+
+  return { link, invite, copied, copy, share, shareLabel }
+}
+
+/** Le bouton seul, pour le tableau: un geste, le meme lien. */
+export function InviteButton({ group, className = '' }) {
+  const { share, shareLabel } = useInvite(group)
+  if (!group) return null
+  return (
+    <button type="button" onClick={share} className={`btn-primary press text-[1.1875rem] font-bold ${className}`} data-hook="invite-share">
+      {shareLabel}
+    </button>
+  )
+}
+
+export default function InviteSheet({ group, open, onClose }) {
+  const { t } = useT()
+  const { link, copied, copy, share, shareLabel } = useInvite(group)
+
+  if (!group) return null
+
   return (
     <Sheet open={open} onClose={onClose} title={t('settings.invite_title')}>
       <p className="text-body text-muted">{t('settings.invite_body')}</p>
 
-      <button onClick={share} className="btn-primary press mt-7">
-        {copied === 'link' && !navigator.share
-          ? t('settings.copied')
-          : navigator.share
-            ? t('settings.share_link')
-            : t('settings.copy_link')}
+      <button onClick={share} className="btn-primary press mt-7 text-[1.1875rem] font-bold">
+        {shareLabel}
       </button>
 
       <div className="mt-4 rounded-inner bg-ink/[0.04] p-4">
