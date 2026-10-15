@@ -62,6 +62,10 @@ export const PRIVATE_PREFIXES = [
   '/checkin',
   '/proofs',
   '/g/',
+  /* Les pages d'invitation: une par code, faites pour un lien envoye a
+     quelqu'un, pas pour un moteur de recherche. */
+  '/join/',
+  '/rejoindre/',
 ]
 
 /** Aliases, and the one URL they should all point at. */

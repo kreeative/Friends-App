@@ -8,6 +8,7 @@ import { useT } from '../lib/i18n'
 import { Sparkle, Spot, Tape, cast } from '../components/StickerKit'
 import { headline, useLineEnd } from '../components/Headline'
 import { readJoin } from '../lib/pendingJoin'
+import { currentInAppBrowser } from '../lib/inAppBrowser'
 
 /**
  * EN COLLAGE, COMME L'ACCUEIL.
@@ -125,6 +126,17 @@ export default function SignIn() {
   const [email, setEmail] = useState('')
   const [code, setCode] = useState('')
   const [sent, setSent] = useState(false)
+  /**
+   * DANS TIKTOK OU INSTAGRAM, L'E-MAIL D'ABORD.
+   *
+   * Un lien touche dans une bio s'ouvre dans le navigateur de l'application,
+   * ou Google refuse sa propre connexion (403 "disallowed_useragent"): le
+   * bouton "Continuer avec Google" y menait a une page d'erreur de Google.
+   * Le code par e-mail marche partout, donc il passe devant, et une phrase dit
+   * comment utiliser Google quand meme: ouvrir la page dans Safari ou Chrome.
+   * Voir src/lib/inAppBrowser.js.
+   */
+  const [inApp] = useState(() => currentInAppBrowser())
   const [showEmail, setShowEmail] = useState(false)
   const [busy, setBusy] = useState(null) // 'google' | 'email' | 'code' | null
   const [codeError, setCodeError] = useState(false)
@@ -314,7 +326,11 @@ export default function SignIn() {
           <p className="lede mt-5 max-w-[34ch]">{t('signin.pitch')}</p>
           {pending && (
             <p data-hook="signin-pending" className="mt-4 max-w-[34ch] text-body font-semibold text-ink">
-              {pending.code ? t('signin.joining') : t('signin.challenge')}
+              {pending.code
+                ? pending.name
+                  ? t('signin.joining_named', { group: pending.name })
+                  : t('signin.joining')
+                : t('signin.challenge')}
             </p>
           )}
         </div>
@@ -345,7 +361,7 @@ export default function SignIn() {
                 </p>
               )}
 
-              <button className="btn-primary press" disabled={busy !== null || code.length < OTP_MIN}>
+              <button className="btn-primary press text-[1.1875rem] font-bold" disabled={busy !== null || code.length < OTP_MIN}>
                 {busy === 'code' ? t('signin.verifying') : t('signin.verify')}
               </button>
 
@@ -362,9 +378,31 @@ export default function SignIn() {
                 {t('signin.wrong_email')}
               </button>
             </form>
+          ) : inApp ? (
+            <>
+              <form onSubmit={sendCode} className="space-y-5" data-hook="signin-email-first">
+                <Field label={t('signin.email')}>
+                  <input
+                    type="email"
+                    required
+                    autoComplete="email"
+                    className="field"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                  />
+                </Field>
+                <button className="btn-primary press text-[1.1875rem] font-bold" disabled={busy !== null}>
+                  {busy === 'email' ? t('signin.sending') : t('signin.send_code')}
+                </button>
+              </form>
+              <p className="pt-1 text-small text-muted" data-hook="signin-in-app">
+                {t('signin.in_app')}
+              </p>
+            </>
           ) : (
             <>
-              <button className="btn-primary press" onClick={google} disabled={busy !== null}>
+              <button className="btn-primary press text-[1.1875rem] font-bold" onClick={google} disabled={busy !== null}>
                 {busy === 'google' ? t('signin.sending') : t('signin.google')}
               </button>
 
