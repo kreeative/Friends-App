@@ -23,7 +23,9 @@ export default function PreviewCard({ className = '' }) {
               {initials}
             </span>
             <span className="flex-1 text-body text-ink">{name}</span>
-            <span className={chip}>{label}</span>
+            {/* Sur une ligne: "Pas encore" coupe en deux dans une carte de
+                270 px faisait une pastille de deux etages. */}
+            <span className={`${chip} shrink-0 whitespace-nowrap`}>{label}</span>
           </div>
         ))}
       </div>

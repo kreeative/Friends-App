@@ -13,6 +13,21 @@ export const LANDING = {
       cta: 'Start your transformation',
       secondary: 'How it works',
       note: 'Free, and your budget stays private',
+      /* The words the yellow marker goes behind. Has to be a substring of
+         `title`, or nothing is marked; see markParts in Home.jsx. */
+      mark: 'financial freedom.',
+    },
+
+    /**
+     * The stickers that carry words. Every one of them repeats something the
+     * page already says in full, so nothing here is a claim of its own: free
+     * is the hero note, with friends is the whole product, and a minute a day
+     * is the closing panel.
+     */
+    fun: {
+      badges: ['Free', 'With friends', '1 min a day'],
+      spin: 'Start now · it’s free · ',
+      tape: ['Discipline', 'Friends', 'Freedom', 'Money', 'Habits'],
     },
 
     /**
@@ -52,7 +67,7 @@ export const LANDING = {
           n: '03',
           title: 'Freedom & peace of mind',
           body: 'Put your money behind what you want: envelopes for the everyday, Big Budgets for the large things, and savings for what is left.',
-          tone: 'bg-[#FFF4AD]',
+          tone: 'bg-[#FFD60A]',
         },
       ],
     },
@@ -218,6 +233,7 @@ export const LANDING = {
 
     footer: {
       tagline: 'A daily check-in with a few people who know what you are working on.',
+      movement: 'The movement',
       product: 'Product',
       home: 'Home',
       menu: 'Menu',
@@ -250,6 +266,22 @@ export const LANDING = {
       cta: 'Commence ta transformation',
       secondary: 'Comment ça marche',
       note: 'Gratuit, et ton budget reste privé',
+      /* Les mots derriere lesquels passe le surligneur jaune. Doit etre un
+         morceau de `title`, sinon rien n'est surligne; voir markParts dans
+         Home.jsx. */
+      mark: 'liberté financière.',
+    },
+
+    /**
+     * Les stickers qui portent des mots. Chacun repete une chose que la page
+     * dit deja en entier, donc aucun n'est une promesse de plus: gratuit est
+     * la note du hero, entre amis est tout le produit, et une minute par
+     * jour le panneau de fin.
+     */
+    fun: {
+      badges: ['Gratuit', 'Entre amis', '1 min / jour'],
+      spin: 'Commence · c’est gratuit · ',
+      tape: ['Discipline', 'Amis', 'Liberté', 'Argent', 'Habitudes'],
     },
 
     /* Voir la note sur la version anglaise. Le nom seul ne dit rien a un
@@ -283,7 +315,7 @@ export const LANDING = {
           n: '03',
           title: 'Liberté & Sérénité',
           body: 'Mets ton argent au service de tes rêves : des enveloppes pour le quotidien, le Haut Budget pour les gros projets, et l’épargne pour ce qui reste.',
-          tone: 'bg-[#FFF4AD]',
+          tone: 'bg-[#FFD60A]',
         },
       ],
     },
@@ -475,6 +507,7 @@ export const LANDING = {
 
     footer: {
       tagline: 'Un point quotidien avec quelques personnes qui savent sur quoi tu travailles.',
+      movement: 'Le mouvement',
       product: 'Produit',
       links: {
         how: 'Comment ça marche',

@@ -5016,5 +5016,60 @@ ok(
   ok('every new key is in both locales', missing.length === 0, missing.join(' '))
 }
 
+/* --- la vitrine en collage ---------------------------------------------------
+   "The home page of rich and friends could look funnier and cooler with more
+   stickers and stuff like that same for the footer".
+
+   Mesure dans Chromium, en pixels peints: zero ligne de vrai texte touchee
+   par une decoration, sur l'accueil, Comment ca marche, A propos et une page
+   legale, a 320, 390, 820, 1180 et 1440 px, en francais avec soleil et en
+   anglais avec mer. La sonde a d'abord prouve qu'elle voit un recouvrement:
+   la marguerite poussee sur la carte et le scotch pousse sur un post-it sont
+   detectes. Ce fichier ne peut rien mesurer; il tient les regles dont ce
+   resultat depend. */
+{
+  console.log('\nhome collage')
+  const kit = read('src/components/StickerKit.jsx')
+  const home = read('src/pages/public/Home.jsx')
+  const foot = read('src/components/Footer.jsx')
+  const layout = read('src/pages/public/PublicLayout.jsx')
+  const style = read('src/index.css')
+  const lettering = read('src/components/Lettering.jsx')
+  const landingSrc = read('src/content/landing.js')
+
+  const collage = style.slice(style.indexOf('LE COLLAGE DE LA VITRINE'))
+  ok('the round badge turns once on arrival, and forever only under the pointer or the focus (WCAG 2.2.2)',
+     /\.spin-ring \{[\s\S]{0,140}animation: spin-in 2600ms/.test(collage)
+       && /\.spin-badge:hover \.spin-ring,\s*\.spin-badge:focus-visible \.spin-ring \{\s*animation: spin-turn 9s linear infinite;/.test(collage)
+       && (collage.match(/infinite/g) ?? []).length === 1,
+     'one infinite animation in the collage, behind :hover and :focus-visible')
+  ok('nothing in the collage moves under reduced motion',
+     /prefers-reduced-motion: reduce\) \{\s*\.spot,\s*\.badge,\s*\.spin-ring,\s*\.spin-badge:hover \.spin-ring,\s*\.spin-badge:focus-visible \.spin-ring \{\s*animation: none;/.test(style))
+  ok('the collage styles live in the components layer, so `hidden` on a badge wins',
+     /@layer components \{\s*\/\* Un element pose dans sa scene/.test(style))
+  ok('stickers and decorative badges are hidden from screen readers',
+     /alt=""\s*aria-hidden="true"/.test(kit) && /aria-hidden=\{decorative \? 'true' : undefined\}/.test(kit))
+  ok('the round badge is a real link with the main button\'s name',
+     /<SpinBadge[\s\S]{0,120}label=\{c\.hero\.cta\}/.test(home) && /aria-label=\{label\}/.test(kit))
+  ok('the giant lettering is decoration, painted by its parent',
+     /aria-hidden="true"/.test(lettering) && /fill="currentColor"/.test(lettering)
+       && /Genere par scripts\/lettering\.py/.test(read('src/content/lettering.js')) && existsSync(join(root, 'scripts/lettering.py')))
+  ok('the footer panel is the logo tile at scale: BRAND by theme, every word in literal ink',
+     /backgroundColor: BRAND\[theme\] \?\? BRAND\.sun/.test(foot) && /text-\[#111111\]/.test(foot) && !/text-white[^']*hover:underline/.test(foot))
+  ok('"proudly Ivorian" is shown once at every width: on the lettering from sm, in the small print below that',
+     /decorative=\{false\}/.test(foot) && /hidden text-\[clamp\(0\.75rem,1\.1vw,0\.9375rem\)\] sm:inline-flex/.test(foot)
+       && /text-small text-muted sm:hidden">\{c\.built\}/.test(foot))
+  ok('the home page places its own stickers, so the edge rail stays off it',
+     /\{pathname !== '\/' && <Stickers set="page" \/>\}/.test(layout))
+  ok('every sticker list on the home page and the footer goes through cast(), so renamed art never leaves a hole',
+     (code('src/pages/public/Home.jsx').match(/= cast\(\[/g) ?? []).length === 5 && /const ART = cast\(\[/.test(foot))
+  ok('the marked words are inside the title in both locales, or nothing would be marked',
+     [...landingSrc.matchAll(/title: '([^']*)',[\s\S]{0,1800}?mark: '([^']*)'/g)].length === 2
+       && [...landingSrc.matchAll(/title: '([^']*)',[\s\S]{0,1800}?mark: '([^']*)'/g)].every((m) => m[1].includes(m[2])))
+  ok('every word a sticker carries exists in both locales',
+     (landingSrc.match(/badges: \[/g) ?? []).length === 2 && (landingSrc.match(/spin: '/g) ?? []).length === 2
+       && (landingSrc.match(/tape: \[/g) ?? []).length === 2 && (landingSrc.match(/movement: '/g) ?? []).length === 2)
+}
+
 console.log(`\n  ${pass} passed, ${fail} failed\n`)
 process.exit(fail ? 1 : 0)
