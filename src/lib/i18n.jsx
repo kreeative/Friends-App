@@ -915,6 +915,8 @@ const STRINGS = {
     'nudge.busy': 'One moment',
 
     'signin.title': 'Get in with people who move.',
+    /* The words the yellow marker goes behind; must be inside signin.title. */
+    'signin.mark': 'people who move.',
     'signin.pitch':
       'One check-in a day, at the same time, with the same people. Sixty seconds. That’s the whole thing.',
     'signin.google': 'Continue with Google',
@@ -2804,6 +2806,8 @@ const STRINGS = {
     'nudge.busy': 'Un instant',
 
     'signin.title': 'Rejoins des gens qui avancent.',
+    /* Les mots sous le surligneur jaune; doivent etre dans signin.title. */
+    'signin.mark': 'gens qui avancent.',
     'signin.pitch':
       'Un point par jour, au même moment, avec les mêmes personnes. Une minute. C’est tout.',
     'signin.google': 'Continuer avec Google',

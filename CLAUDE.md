@@ -73,7 +73,8 @@ and the error points at the wrong thing.
 - **Stickers cover no running text, except the hero headline.** "Des
   stickers autour du texte, un peu sur le texte", as in the references, was
   asked for the title. There they hang on words (`headline()` in
-  `Home.jsx`), so they follow the line breaks, and they may take at most 30%
+  `src/components/Headline.jsx`, used by the home page and the sign-in
+  page), so they follow the line breaks, and they may take at most 30%
   of a letter's ink and 12% of a word's, measured on the painted page at
   every width in both languages. Everywhere else the cover probe must find
   nothing.

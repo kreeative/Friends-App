@@ -1735,8 +1735,8 @@ ok(
 
 const signin = read('src/pages/SignIn.jsx')
 ok(
-  'the sign-in centres from sm up rather than pinning top and bottom',
-  /sm:justify-center/.test(signin),
+  'the sign-in centres its column rather than pinning top and bottom',
+  /flex min-h-dvh w-full max-w-content flex-col justify-center/.test(signin) && !/justify-between/.test(code('src/pages/SignIn.jsx')),
   'justify-between on a laptop put the pitch and the button 900px apart',
 )
 ok(
@@ -4310,8 +4310,11 @@ ok(
      'art.js utilise import.meta.glob et ne se teste que par son texte')
   ok('et pickStickers accepte un minimum', /pickStickers = \(wanted, atLeast = 0\)/.test(art))
 
-  ok('la rangee de la connexion en demande six',
-     /'popsicle'\], 6\)/.test(signin),
+  /* La rangee de six est devenue un collage (voir SignIn.jsx), et chaque
+     liste passe par cast(), qui demande autant de stickers que de noms: la
+     meme garantie que le 6, liste par liste. */
+  ok('chaque liste de stickers de la connexion passe par cast()',
+     (signin.match(/= cast\(\[/g) ?? []).length === 4 && !/pickStickers\(/.test(signin),
      'sans le compte, un pack remplace laisse la page de connexion nue')
   const comptes = [...stk.matchAll(/pickStickers\(\[[^\]]*\], (\d+)\)/g)].map((m) => Number(m[1]))
   ok('et les trois jeux de Stickers.jsx aussi', comptes.length === 3, JSON.stringify(comptes))
@@ -5036,6 +5039,7 @@ ok(
   const style = read('src/index.css')
   const lettering = read('src/components/Lettering.jsx')
   const landingSrc = read('src/content/landing.js')
+  const heading = read('src/components/Headline.jsx')
 
   const collage = style.slice(style.indexOf('LE COLLAGE DE LA VITRINE'))
   /* "Ca aussi enlève je n'aime pas", on the yellow START NOW badge that
@@ -5139,19 +5143,30 @@ ok(
      measured on the painted page, per letter and per word; see the note in
      Home.jsx. */
   ok('the title\'s stickers hang on its first and last words, in em, so they follow every line break',
-     /function headline\(title, mark, pins\)/.test(home) && /className="pin"/.test(home)
+     /export function headline\(title, mark, pins\)/.test(heading) && /className="pin"/.test(heading)
+       && /import \{ headline, useLineEnd \} from '\.\.\/\.\.\/components\/Headline'/.test(home)
        && /\.pin \{\s*position: relative;\s*\}\s*\.pin > \.spot \{\s*position: absolute;/.test(collage)
        && /\{headline\(c\.hero\.title, c\.hero\.mark, \{/.test(home)
        && /name=\{TITLE_ART\[0\]\}/.test(home) && /name=\{TITLE_ART\[1\]\}/.test(home) && /name=\{TITLE_ART\[2\]\}/.test(home)
        && /const TITLE_ART = cast\(\['fire', 'thumb', 'chaching'\]\)/.test(home))
   ok('the thumb sits on the end of the first line, measured again on resize and when the font arrives',
-     /function useLineEnd\(ref, text\)/.test(home) && /new ResizeObserver\(measure\)/.test(home)
-       && /document\.fonts\?\.ready\.then\(measure\)/.test(home) && /el\.style\.setProperty\('--line-end'/.test(home)
+     /export function useLineEnd\(ref, text\)/.test(heading) && /new ResizeObserver\(measure\)/.test(heading)
+       && /document\.fonts\?\.ready\.then\(measure\)/.test(heading) && /el\.style\.setProperty\('--line-end'/.test(heading)
        && /left: 'calc\(var\(--line-end, 100%\) - 0\.35em\)'/.test(home))
   ok('the title is at most 13ch wide, so its last word never runs into the column edge with a sticker on it',
      /data-hook="hero-title"\s*className="relative mt-3 max-w-\[13ch\]/.test(home))
   ok('the inline sticker and the word pills that sat above the title are gone',
      !/spot-inline/.test(home + style) && !/markParts/.test(home))
+  /* "Pareil pour la page que les gens trouvent quand ils s'inscrivent":
+     the sign-in title carries its stickers the home page's way, and its
+     marked words have to be inside the title in both languages. */
+  const signinSrc = read('src/pages/SignIn.jsx')
+  const dict = read('src/lib/i18n.jsx')
+  const titles = [...dict.matchAll(/'signin\.title': '([^']*)',\n[^\n]*\n    'signin\.mark': '([^']*)'/g)]
+  ok('the sign-in title hangs its stickers on its words, with the marker inside the title in both locales',
+     /import \{ headline, useLineEnd \} from '\.\.\/components\/Headline'/.test(signinSrc)
+       && /headline\(heading, t\('signin\.mark'\)/.test(signinSrc)
+       && titles.length === 2 && titles.every((m) => m[1].includes(m[2])))
   ok('a Spot can take a style beside its placement', /\{ \.\.\.place\(at, lg, tilt, delay\), \.\.\.style \}/.test(kit))
   ok('the marked words are inside the title in both locales, or nothing would be marked',
      [...landingSrc.matchAll(/title: '([^']*)',[\s\S]{0,1800}?mark: '([^']*)'/g)].length === 2

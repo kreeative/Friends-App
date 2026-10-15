@@ -1,50 +1,43 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { Field } from '../components/ui'
 import ErrorNote from '../components/ErrorNote'
 import { LegalLinks } from './Legal'
-import { pickStickers, stickerSrc } from '../lib/art'
+import { stickerSrc } from '../lib/art'
 import { useT } from '../lib/i18n'
+import { Sparkle, Spot, Tape, cast } from '../components/StickerKit'
+import { headline, useLineEnd } from '../components/Headline'
 
 /**
- * Artwork, not the logo.
+ * EN COLLAGE, COMME L'ACCUEIL.
  *
- * A wordmark says who built the thing, which is the least interesting thing
- * to say on the one screen where somebody is deciding whether to bother. The
- * mark still exists, it lives in the app's top bar, where identification is
- * what is actually wanted.
+ *   "Pareil pour la page que les gens trouvent quand ils s'inscrivent, on
+ *    peut rendre ça plus amusant"
  *
- * Overlapped and alternately tilted so the row reads as a handful of stickers
- * thrown down rather than as a toolbar of icons.
+ * C'etait une carte blanche avec une rangee de six petits stickers serres au
+ * dessus du titre. C'est maintenant la grammaire de la page d'accueil: des
+ * stickers accroches aux mots du titre (headline(), le meme code et le meme
+ * plafond d'encre), le surligneur jaune derriere la fin de la phrase, du
+ * scotch sur la carte, des stickers colles a ses coins, et sur un grand ecran
+ * d'autres poses dans le vide autour d'elle. Sur un telephone, des amis qui
+ * depassent du bas de l'ecran, comme sous le panneau jaune de l'accueil.
+ *
+ * Que de vrais stickers, et rien qui se fasse passer pour un: pas de badge,
+ * pas de bord blanc dessine en code (CLAUDE.md). Rien ne couvre un mot hors du
+ * titre, et rien ne bouge seul apres son arrivee.
+ *
+ * Chaque liste passe par cast(), pour qu'un sticker renomme soit remplace au
+ * lieu de laisser un trou.
  */
-// Filtered against what is actually in src/assets/stickers, so renaming
-// or removing art degrades to a shorter row instead of broken images.
-/* Le 6 n'est pas decoratif: il garantit six stickers meme apres un
-   remplacement complet du dossier, ou aucun de ces noms n'existerait plus et
-   ou la rangee disparaitrait sans un mot. */
-const HERO_ART = pickStickers(['cloudguy', 'skullfire', 'bass', 'burger', 'bird', 'popsicle'], 6)
-
-function ArtRow() {
-  return (
-    <div className="flex items-end pl-2" aria-hidden="true">
-      {HERO_ART.map((name, i) => (
-        <img
-          key={name}
-          src={stickerSrc(name)}
-          alt=""
-          // Negative margin overlaps them; the z-order runs left to right so
-          // each one tucks behind the next.
-          className="-ml-4 h-[4.5rem] w-[4.5rem] animate-rise object-contain first:ml-0 drop-shadow-[0_4px_10px_rgba(0,0,0,0.18)]"
-          style={{
-            zIndex: HERO_ART.length - i,
-            transform: `rotate(${(i % 2 ? 1 : -1) * (4 + (i % 3) * 3)}deg) translateY(${i % 2 ? 5 : 0}px)`,
-            animationDelay: `${i * 60}ms`,
-          }}
-        />
-      ))}
-    </div>
-  )
-}
+/* Sur le titre: BRO sur le premier mot, l'oiseau qui dit "sup" au bout de la
+   premiere ligne, l'esquimau au bout de la phrase. */
+const TITLE_ART = cast(['bro', 'bird', 'popsicle'])
+/* Colles aux coins de la carte, a partir de sm. */
+const CARD_ART = cast(['cat', 'eyelips'])
+/* Dans le vide autour de la carte, a partir de lg. */
+const FIELD_ART = cast(['unicorn', 'deer', 'burger', 'hot'])
+/* Ceux qui depassent du bas de l'ecran, sur un telephone. */
+const PEEK_ART = cast(['homie', 'cat', 'eyelips'])
 
 /**
  * Six boxes, one input.
@@ -226,8 +219,23 @@ export default function SignIn() {
     setCooldown(0)
   }
 
+  const title = useRef(null)
+  const heading = t('signin.title')
+  useLineEnd(title, heading)
+
   return (
-    <div className="relative min-h-dvh bg-bg">
+    <div className="relative min-h-dvh overflow-hidden bg-bg" data-hook="signin">
+      {/* Dans le vide autour de la carte, sur un grand ecran seulement: a
+          1024 px il reste 288 px de chaque cote, assez pour un sticker sans
+          toucher la carte. */}
+      <div aria-hidden="true" data-hook="signin-field" className="pointer-events-none absolute inset-0 hidden lg:block">
+        <Spot name={FIELD_ART[0]} tilt={-10} delay={300} className="absolute left-[9%] top-[13%] w-36" />
+        <Spot name={FIELD_ART[1]} tilt={8} delay={420} className="absolute bottom-[11%] left-[14%] w-28" />
+        <Spot name={FIELD_ART[2]} tilt={9} delay={540} className="absolute right-[11%] top-[17%] w-28" />
+        <Spot name={FIELD_ART[3]} tilt={-7} delay={660} className="absolute bottom-[15%] right-[15%] w-16" />
+        <Sparkle className="absolute left-[25%] top-[34%] w-6 text-[#FF007A]" />
+        <Sparkle className="absolute bottom-[34%] right-[25%] w-5 text-[#009DB9]" />
+      </div>
       {/**
        * A card, centred, rather than a column pinned to the top and bottom of
        * the window.
@@ -242,14 +250,55 @@ export default function SignIn() {
        * INCLUDING the toolbars that overlap it, which puts the bottom of a
        * centred card under the address bar.
        */}
-      <main className="relative z-10 mx-auto flex min-h-dvh w-full max-w-content flex-col justify-between gap-12 px-6 py-14 sm:max-w-[28rem] sm:justify-center">
+      {/* pb-36 sur un telephone: la place des amis qui depassent du bas. */}
+      <main className="relative z-10 mx-auto flex min-h-dvh w-full max-w-content flex-col justify-center px-6 pb-36 pt-16 sm:max-w-[28rem] sm:pb-14 sm:pt-14">
         {/* The whole thing is one sheet at sm and up, and nothing at all below
             it: a card inside a 390px screen is a border drawn 16px from
             another border. */}
-        <div className="sm:lg sm:lg-frost sm:p-8">
+        {/* Le scotch et les stickers de la carte sont poses sur une enveloppe
+            de la meme taille, APRES la carte, et pas dedans: .lg met
+            `position: relative` a tous ses enfants directs, hors couche, et
+            ca l'emporte sur `absolute`. Dedans, ils tombaient dans le flux en
+            haut de la carte. Apres elle, ils sont peints par-dessus son bord. */}
+        <div className="relative">
+        <div className="sm:lg sm:lg-frost sm:p-8" data-hook="signin-card">
         <div>
-          <ArtRow />
-          <h1 className="mt-10 text-hero text-ink sm:mt-6">{t('signin.title')}</h1>
+          {/* Le titre de l'accueil, en plus petit: memes stickers accroches
+              aux mots, meme plafond d'encre. 44 px a 320, 56 px des 431. */}
+          <h1
+            ref={title}
+            data-hook="signin-title"
+            className="relative mt-6 text-[clamp(2.75rem,13vw,3.5rem)] font-semibold leading-[1.05] tracking-[-0.03em] text-ink sm:mt-8"
+          >
+            {headline(heading, t('signin.mark'), {
+              first: (
+                <Spot
+                  name={TITLE_ART[0]}
+                  tilt={-12}
+                  delay={240}
+                  eager
+                  style={{ left: '-0.25em', top: '-0.66em', width: '1.45em' }}
+                />
+              ),
+              last: (
+                <Spot
+                  name={TITLE_ART[2]}
+                  tilt={12}
+                  delay={480}
+                  eager
+                  style={{ left: 'calc(100% - 0.12em)', top: '0.1em', width: '0.78em' }}
+                />
+              ),
+            })}
+            <Spot
+              name={TITLE_ART[1]}
+              tilt={8}
+              delay={360}
+              eager
+              className="absolute"
+              style={{ left: 'calc(var(--line-end, 100%) - 0.32em)', top: '-0.98em', width: '1.1em' }}
+            />
+          </h1>
           <p className="lede mt-5 max-w-[34ch]">{t('signin.pitch')}</p>
         </div>
 
@@ -350,7 +399,38 @@ export default function SignIn() {
           </div>
         </div>
         </div>
+        {/* Avec la carte seulement, donc a partir de sm. */}
+        <div aria-hidden="true" data-hook="signin-card-art" className="pointer-events-none hidden sm:block">
+          <Tape className="-top-3 left-10" tilt={-7} />
+          <Tape className="-top-3 right-12" tilt={6} tone="255 0 122" />
+          <Spot name={CARD_ART[0]} tilt={-12} delay={520} className="absolute -bottom-14 -left-12 w-24" />
+          <Spot name={CARD_ART[1]} tilt={10} delay={640} className="absolute -right-11 top-[42%] w-[4.5rem]" />
+        </div>
+        </div>
       </main>
+
+      {/* Des amis qui depassent du bas de l'ecran, sur un telephone, comme
+          sous le panneau jaune de l'accueil. Sous le pb-36 de la colonne,
+          donc sous aucun mot. */}
+      <div
+        aria-hidden="true"
+        data-hook="peekers"
+        className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-center gap-[7%] sm:hidden"
+      >
+        {PEEK_ART.map((name, i) =>
+          stickerSrc(name) ? (
+            <img
+              key={name}
+              src={stickerSrc(name)}
+              alt=""
+              draggable="false"
+              data-sticker={name}
+              className="peek w-[24%] max-w-[7rem] drop-shadow-[0_-4px_10px_rgb(0_0_0/0.12)]"
+              style={{ '--tilt': `${[-7, 4, 8][i]}deg`, '--sink': `${[34, 26, 36][i]}%` }}
+            />
+          ) : null,
+        )}
+      </div>
     </div>
   )
 }
