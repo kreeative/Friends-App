@@ -48,14 +48,19 @@ over JPEG mush.
 Lowercase, no spaces: `skull.png`, `pizza.png`, `blue-cat.png`. The filename is
 the name the code uses.
 
-Two places name specific stickers rather than taking whatever exists:
+Four places name specific stickers rather than taking whatever exists:
 
 - `HERO_ART` in `src/pages/SignIn.jsx`, the row across the top of sign-in
 - the `SETS` in `src/components/Stickers.jsx`, where each one sits on a page
+- the lists at the top of `src/pages/public/Home.jsx`, the collage on the home
+  page: one sticker per spot, 23 of the folder, none repeated
+- `ART` in `src/components/Footer.jsx`, the stickers on the giant lettering
 
-Both are filtered against what actually exists, so a name that no longer
-matches a file is skipped rather than rendering a broken image. If you rename
-art, check those two lists so the intended one still appears.
+All of them are filtered against what actually exists, and the last two go
+through `cast()` in `src/components/StickerKit.jsx`, which swaps a missing name
+for one that exists, so renamed art never leaves a hole or a broken image. If
+you rename art, check those lists so the intended one still appears where it
+was meant to.
 
 ## One thing to know
 

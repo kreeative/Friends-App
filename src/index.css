@@ -4496,3 +4496,283 @@ nav a[aria-current='page'] > svg {
     animation: none;
   }
 }
+
+/* ===========================================================================
+ * LE COLLAGE DE LA VITRINE.
+ *
+ *   "The home page of rich and friends could look funnier and cooler with
+ *    more stickers and stuff like that same for the footer"
+ *
+ * Les pieces sont dans src/components/StickerKit.jsx, avec les trois regles
+ * qu'elles suivent: rien ne couvre un mot, tout est decoratif, rien ne bouge
+ * seul plus de cinq secondes. Ce qui suit est leur peinture.
+ *
+ * Dans @layer components, comme .sticker et .panel, et pour la meme raison:
+ * un utilitaire doit pouvoir gagner. Hors couche, ce bloc venait APRES les
+ * utilitaires dans la feuille compilee, donc `hidden` sur un badge perdait
+ * contre son `display: inline-flex` et le badge restait sur le telephone.
+ * ========================================================================= */
+
+@layer components {
+
+/* Un element pose dans sa scene, en pourcentages. `lg` change la composition
+   quand l'ecran a la place pour une autre forme; voir place() dans le kit. */
+.at {
+  position: absolute;
+  left: var(--x, 0%);
+  top: var(--y, 0%);
+}
+.spot.at {
+  width: var(--w, 20%);
+}
+@media (min-width: 1024px) {
+  .at {
+    left: var(--lx, var(--x, 0%));
+    top: var(--ly, var(--y, 0%));
+  }
+  .spot.at {
+    width: var(--lw, var(--w, 20%));
+  }
+}
+
+/**
+ * Un sticker. Le bord blanc decoupe est dans le dessin; l'ombre est ici, et
+ * elle est plus nette que celle du rail parce que ces stickers sont COLLES
+ * sur quelque chose (une carte, une bande, le lettrage) et pas en suspens.
+ *
+ * Il se colle une fois, avec un petit depassement, puis se tient tranquille.
+ * `backwards` et pas `both`: `both` garderait l'etat final de l'animation, qui
+ * l'emporte sur une declaration ordinaire, et le survol ne pourrait plus
+ * changer `transform` (meme piege que .stagger, la note y est).
+ */
+.spot {
+  max-width: none;
+  user-select: none;
+  -webkit-user-drag: none;
+  transform: rotate(var(--tilt, 0deg));
+  filter: drop-shadow(0 5px 10px rgb(0 0 0 / 0.2));
+  transition: transform 340ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: stick-on 520ms cubic-bezier(0.34, 1.56, 0.64, 1) var(--d, 0ms) backwards;
+}
+@keyframes stick-on {
+  from {
+    opacity: 0;
+    transform: rotate(var(--tilt, 0deg)) scale(0.35);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(var(--tilt, 0deg)) scale(1);
+  }
+}
+/* Sous la souris il se decolle un peu: il penche dans l'autre sens et grossit.
+   Seulement la ou il y a une souris; un doigt ne survole rien. */
+@media (hover: hover) {
+  .spot:hover {
+    transform: rotate(calc(var(--tilt, 0deg) * -1)) scale(1.08);
+  }
+}
+
+/* Les badges a mots: forme pleine, bord blanc decoupe, ombre. La taille du
+   texte suit la scene par --fs quand il est pose, sinon elle est fixe. */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid #fff;
+  font-size: var(--fs, 0.8125rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  box-shadow: 0 5px 12px rgb(0 0 0 / 0.16);
+  transform: rotate(var(--tilt, 0deg));
+  transition: transform 340ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: stick-on 520ms cubic-bezier(0.34, 1.56, 0.64, 1) var(--d, 0ms) backwards;
+}
+.badge-pill {
+  border-radius: 999px;
+  padding: 0.6em 1.05em 0.55em;
+}
+.badge-round {
+  border-radius: 999px;
+  aspect-ratio: 1;
+  padding: 0.75em;
+  text-align: center;
+  white-space: normal;
+  line-height: 1.05;
+}
+.badge-tag {
+  border-radius: 0.45em;
+  padding: 0.6em 0.9em 0.55em;
+}
+@media (hover: hover) {
+  .badge:hover {
+    transform: rotate(calc(var(--tilt, 0deg) * -1)) scale(1.06);
+  }
+}
+
+/* Les traits a la main et les etincelles. */
+.doodle {
+  overflow: visible;
+  pointer-events: none;
+}
+
+/* Le scotch: translucide, en dents de scie aux deux bouts. */
+.tape {
+  position: absolute;
+  z-index: 2;
+  width: 5.25rem;
+  height: 1.5rem;
+  background: rgb(var(--tape, 56 189 248) / 0.62);
+  transform: rotate(var(--tilt, -6deg));
+  clip-path: polygon(
+    0 0, 4% 17%, 0 33%, 4% 50%, 0 67%, 4% 83%, 0 100%,
+    100% 100%, 96% 83%, 100% 67%, 96% 50%, 100% 33%, 96% 17%, 100% 0
+  );
+  pointer-events: none;
+}
+
+/**
+ * Le surligneur derriere les mots du titre. Encre sur ce jaune: 13,4:1.
+ *
+ * Une BANDE et pas une boite. Le fond d'un mot couvre toute sa zone de
+ * contenu, 1,4 em chez Poppins, et les lignes du titre sont a 1,02 em: deux
+ * lignes surlignees se touchaient et faisaient un seul bloc jaune. La bande va
+ * du haut des capitales a juste sous la ligne de base, 0,87 em, donc il reste
+ * un jour entre deux lignes et les hampes depassent, comme au feutre.
+ * `clone` donne sa bande a chaque ligne quand les mots passent a la ligne.
+ */
+.marker {
+  background: linear-gradient(to bottom, transparent 23%, #ffd60a 23%, #ffd60a 85%, transparent 85%);
+  padding: 0 0.07em;
+  margin: 0 -0.02em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+/* Un sticker dans une ligne de texte: il passe a la ligne avec les mots, donc
+   il ne peut pas en couvrir un. */
+.spot-inline {
+  display: inline-block;
+  height: 0.86em;
+  width: auto;
+  vertical-align: -0.06em;
+  /* Assez loin du dernier mot pour que le coin tourne et l'ombre restent hors
+     de sa boite: a 0,14 em ils mordaient sur le point de "financiere.". */
+  margin-left: 0.32em;
+}
+
+/* La carte decoupee: un bord blanc epais et une ombre, penchee. Elle se
+   redresse sous la souris. */
+.diecut {
+  border: 6px solid #fff;
+  box-shadow: 0 12px 28px rgb(17 17 17 / 0.14);
+  transform: rotate(var(--tilt, 0deg));
+  transition: transform 360ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@media (hover: hover) {
+  .diecut:hover {
+    transform: rotate(0deg) translateY(-4px);
+  }
+}
+
+/* Les etiquettes de section, comme les pastilles de truus. */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  background: #fff;
+  color: #111111;
+  padding: 0.35rem 0.85rem 0.3rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.2;
+  box-shadow: inset 0 0 0 1.5px #111111;
+}
+.tag-flat {
+  box-shadow: none;
+}
+
+/**
+ * Le badge rond. Un tour en arrivant, puis immobile; il tourne sous la souris
+ * et au focus clavier, c'est-a-dire quand quelqu'un s'en occupe. Un objet qui
+ * tourne sans fin a cote du texte est exactement ce que WCAG 2.2.2 demande de
+ * pouvoir arreter, et le plus simple pour pouvoir l'arreter est qu'il ne
+ * demarre pas seul.
+ */
+.spin-badge {
+  display: block;
+  aspect-ratio: 1;
+  width: var(--w, 8rem);
+  border-radius: 999px;
+  filter: drop-shadow(0 8px 16px rgb(0 0 0 / 0.22));
+  transform: rotate(var(--tilt, 0deg));
+}
+.spin-badge.at {
+  width: var(--w, 8rem);
+}
+@media (min-width: 1024px) {
+  .spin-badge.at {
+    width: var(--lw, var(--w, 8rem));
+  }
+}
+.spin-ring {
+  transform-box: view-box;
+  transform-origin: 100px 100px;
+  animation: spin-in 2600ms cubic-bezier(0.2, 0.7, 0.2, 1) calc(var(--d, 0ms) + 200ms) backwards;
+}
+.spin-badge:hover .spin-ring,
+.spin-badge:focus-visible .spin-ring {
+  animation: spin-turn 9s linear infinite;
+}
+@keyframes spin-in {
+  from {
+    transform: rotate(-240deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
+@keyframes spin-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Les amis qui depassent du bas du panneau jaune. Le panneau coupe; au survol
+   chacun sort un peu plus la tete. */
+.peek {
+  transition: transform 360ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform: translateY(var(--sink, 28%)) rotate(var(--tilt, 0deg));
+}
+@media (hover: hover) {
+  .peek:hover {
+    transform: translateY(calc(var(--sink, 28%) - 14%)) rotate(var(--tilt, 0deg));
+  }
+}
+
+/* Le lettrage geant du pied de page, qui sort par le bas. */
+.footer-lettering {
+  display: block;
+  width: 100%;
+  height: auto;
+  color: #f8cb02;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spot,
+  .badge,
+  .spin-ring,
+  .spin-badge:hover .spin-ring,
+  .spin-badge:focus-visible .spin-ring {
+    animation: none;
+  }
+  .spot,
+  .badge,
+  .diecut,
+  .peek {
+    transition: none;
+  }
+}
+}

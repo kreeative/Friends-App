@@ -43,8 +43,10 @@ export default function PublicLayout() {
        theme, and why it is set on the element rather than fought for at the
        root. */
     <div data-surface="public" className="ground relative min-h-dvh">
-      {/* Every public page, not just the landing hero. */}
-      <Stickers set="page" />
+      {/* Every public page but the home page, which places its own: the rail
+          hangs off the column edges, and on the home page those edges now
+          carry a collage, two bands and a panel of stickers of their own. */}
+      {pathname !== '/' && <Stickers set="page" />}
 
       <div className="relative z-10">
         <header className="sticky top-0 z-30 px-4 pt-4">
