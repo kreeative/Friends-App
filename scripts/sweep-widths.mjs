@@ -137,6 +137,28 @@ async function launch() {
 }
 const browser = await launch()
 
+/**
+ * UN BALAYAGE QUI N'EST PAS CONNECTE MESURE LE SITE PUBLIC, ET PASSE.
+ *
+ * La session est posee sous sb-localhost-auth-token, la cle que supabase-js
+ * lit quand l'app parle a localhost. Un build fait sans les variables du stub
+ * (un simple `npm run build`) donne une app "non configuree" qui ne sert que
+ * les pages publiques, meme avec une session; un build qui pointe vers la
+ * vraie base ne lit pas cette cle. Dans les deux cas chaque route s'ouvrait
+ * sur la page d'accueil publique, les mesures etaient celles de cette page,
+ * et le balayage annoncait "0 failed" sur 65 captures de la mauvaise page.
+ * Vu le 15 octobre.
+ *
+ * Les pages connectees sont dans AppShell, qui porte data-hook="app-shell".
+ * Une route qui s'ouvre sans lui n'a pas ete mesuree: on s'arrete et on dit
+ * quoi faire, plutot que de compter des pages qui n'ont pas ete vues. Seul le
+ * lecteur (/library/<livre>) vit hors de la coquille, par choix.
+ */
+const UNSIGNED =
+  'not signed in, so this would measure the public site. Build against the stub first:\n' +
+  '    VITE_SUPABASE_URL=http://localhost:54321 VITE_SUPABASE_ANON_KEY=stub-anon npm run build'
+const READER = /^\/library\/[^/?]+/
+
 async function open(width) {
   const ctx = await browser.newContext({ viewport: { width, height: 1000 }, deviceScaleFactor: 1 })
   const page = await ctx.newPage()
@@ -190,6 +212,12 @@ for (const W of WIDTHS) {
     page.on('pageerror', onErr)
     await page.goto(`${base}${route}`, { waitUntil: 'networkidle' })
     await page.waitForTimeout(600)
+    if (!READER.test(route) && (await page.locator('[data-hook="app-shell"]').count()) === 0) {
+      console.log(`\n  ${W}px ${route}: ${UNSIGNED}\n`)
+      await browser.close()
+      stop()
+      process.exit(1)
+    }
 
     const r = await page.evaluate((w) => {
       const vis = (el) => {

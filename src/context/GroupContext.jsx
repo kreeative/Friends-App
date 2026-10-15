@@ -154,8 +154,11 @@ export function GroupProvider({ children }) {
         .from('group_members')
         /* birthday comes down with the roster because the banner needs a
            week's notice and the roster is already loaded. It is a month and a
-           day to the app; the year is never rendered. */
-        .select('user_id, role, nudge_order, profiles(id, display_name, avatar_url, birthday)')
+           day to the app; the year is never rendered.
+
+           joined_at, so the group's standing counts each person from the day
+           they arrived (memberRates in src/lib/completion.js). */
+        .select('user_id, role, nudge_order, joined_at, profiles(id, display_name, avatar_url, birthday)')
         .eq('group_id', activeId)
         .order('nudge_order'),
       supabase

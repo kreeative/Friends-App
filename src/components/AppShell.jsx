@@ -667,7 +667,7 @@ export default function AppShell() {
     {/* The same coloured ground as the public site. A dashboard of white rows
         on white is a filing cabinet; the theme carries the page and the
         content sits on it in glass. */}
-    <div className="ground relative min-h-dvh">
+    <div className="ground relative min-h-dvh" data-hook="app-shell">
       {/* Sparser than the public set, this is a tool, not a poster. */}
       <Stickers set="app" />
 

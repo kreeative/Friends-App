@@ -5250,5 +5250,19 @@ ok(
      keys.filter((k) => (dict.match(new RegExp(`'${k.replace('.', '\\.')}':`, 'g')) ?? []).length !== 2).join(' '))
 }
 
+/* LE BALAYAGE SAIT S'IL EST CONNECTE.
+   Un build sans les variables du stub ne sert que le site public, et le
+   balayage avait mesure la page d'accueil publique sous chaque route en
+   annoncant 0 echec. Il s'arrete maintenant s'il ne trouve pas la coquille
+   connectee; ce crochet-la ne doit pas disparaitre dans un restyle. */
+{
+  const shell = read('src/components/AppShell.jsx')
+  const sweep = read('scripts/sweep-widths.mjs')
+  ok('the signed-in shell carries data-hook="app-shell"', /<div className="ground relative min-h-dvh" data-hook="app-shell">/.test(shell))
+  ok('the sweep stops when it is not inside it', /\[data-hook="app-shell"\]/.test(sweep) && /process\.exit\(1\)/.test(sweep.slice(sweep.indexOf('app-shell"]'))))
+  ok('and says how to build against the stub', /VITE_SUPABASE_URL=http:\/\/localhost:54321 VITE_SUPABASE_ANON_KEY=stub-anon npm run build/.test(sweep))
+  ok('CLAUDE.md gives the same command', /VITE_SUPABASE_URL=http:\/\/localhost:54321 VITE_SUPABASE_ANON_KEY=stub-anon npm run build && npm run sweep/.test(read('CLAUDE.md')))
+}
+
 console.log(`\n  ${pass} passed, ${fail} failed\n`)
 process.exit(fail ? 1 : 0)

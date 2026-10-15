@@ -128,6 +128,21 @@ eq('monday and wednesday is two occurrences', memberRates({
 const shared = { ...daily, id: 'g3', kind: 'group', owner_id: 'a', target_per_cycle: 1 }
 eq('a group goal lands on everybody', memberRates({ ...base, goals: [shared] }).map((r) => r.target), [7, 7])
 
+/* The 21-morning challenge takes people in over weeks. Somebody who arrived
+   on Monday the 10th is on the hook from the 10th, not for the whole week. */
+const late = [{ ...members[0], joined_at: '2026-08-01T09:00:00+00:00' }, { ...members[1], joined_at: '2026-08-10T19:28:20+00:00' }]
+eq('a group goal counts from the day somebody joined', memberRates({ ...base, members: late, goals: [shared] }).map((r) => r.target), [7, 3])
+eq('joining before the goal existed changes nothing', memberRates({
+  ...base, members: late, goals: [{ ...shared, created_at: '2026-08-11' }],
+}).map((r) => r.target), [2, 2])
+eq('so a late joiner who did every day is at a hundred', memberRates({
+  ...base,
+  members: late,
+  goals: [shared],
+  checkins: cycles.slice(4).map((c, i) => ({ id: `kb${i}`, cycle_id: c.id, user_id: 'b' })),
+  items: [0, 1, 2].map((i) => ({ checkin_id: `kb${i}`, goal_id: 'g3', count_done: 1 })),
+}).find((r) => r.id === 'b').pct, 100)
+
 // A one-off with a far deadline is not yet asking to be ticked, so it is not
 // yet something anybody is behind on.
 eq('a distant one-off is scheduled nowhere', memberRates({

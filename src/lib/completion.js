@@ -163,20 +163,36 @@ export function memberRates({
   const goalById = new Map(live.map((g) => [g.id, g]))
 
   /* The denominator. Days the goal did not exist for yet are not days it was
-     missed on: a goal created on Thursday cannot be behind by Monday. */
+     missed on: a goal created on Thursday cannot be behind by Monday.
+
+     Nor are the days before somebody joined. A group goal is everybody's, but
+     only from the day they were there. The 21-morning challenge takes people
+     in from a video over weeks, and somebody who arrived on day 9 was ranked
+     against eight mornings they never had. joined_at comes down with the
+     roster; a member without it counts from the goal, as before. */
+  const joinedOf = new Map(members.map((m) => [m.user_id, dateKey(m.joined_at)]))
   const target = new Map(memberIds.map((id) => [id, 0]))
   for (const goal of live) {
     const born = dateKey(goal.created_at)
     const owners = ownersOf(goal, memberIds)
     if (owners.length === 0) continue
 
-    let n = 0
-    for (const day of days) {
-      if (born && key(day) < born) continue
-      if (isDueOn(goal, day)) n += targetFor(goal)
+    /* One count per start date, so a roster that joined together is counted
+       once rather than once a head. */
+    const counted = new Map()
+    for (const id of owners) {
+      const from = [born, joinedOf.get(id)].filter(Boolean).sort().pop() ?? null
+      if (!counted.has(from)) {
+        let n = 0
+        for (const day of days) {
+          if (from && key(day) < from) continue
+          if (isDueOn(goal, day)) n += targetFor(goal)
+        }
+        counted.set(from, n)
+      }
+      const n = counted.get(from)
+      if (n > 0) target.set(id, (target.get(id) ?? 0) + n)
     }
-    if (n === 0) continue
-    for (const id of owners) target.set(id, (target.get(id) ?? 0) + n)
   }
 
   /* The numerator. Filed against the day the check-in was for rather than the
