@@ -211,12 +211,13 @@ export default function Home() {
                 defaut de decoupe. */}
             <Sparkle className="absolute left-[46%] top-7 w-6 text-[#FF007A]" />
             <Sparkle className="absolute bottom-24 right-1 w-4 text-[#38BDF8]" />
-            {/* Une fleche du badge vers le bouton principal. Elle n'a de sens
-                que quand les deux sont cote a cote, donc a partir de lg. */}
+            {/* Une fleche du badge vers le bouton principal, avec une boucle.
+                Elle n'a de sens que quand les deux sont cote a cote, donc a
+                partir de lg. */}
             <Doodle
-              kind="swoop"
-              className="absolute -left-[6.5rem] bottom-[4.75rem] hidden w-24 text-[#FF007A] lg:block"
-              style={{ transform: 'scaleX(-1) rotate(8deg)' }}
+              kind="loop"
+              className="absolute -left-[7.25rem] bottom-[4.5rem] hidden w-28 text-[#FF007A] lg:block"
+              style={{ transform: 'rotate(-4deg)' }}
             />
           </div>
         </div>
