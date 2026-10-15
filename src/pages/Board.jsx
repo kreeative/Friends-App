@@ -7,7 +7,7 @@ import { cycleEnd, cyclePhase, untilLabel } from '../lib/time'
 import { groupGoalProgress } from '../lib/stats'
 import { dueOn } from '../lib/schedule'
 import { useT } from '../lib/i18n'
-import { Avatar, Empty, Screen, Section, Tick, TopBar } from '../components/ui'
+import { Avatar, Screen, Section, Tick, TopBar } from '../components/ui'
 import BirthdayBanner from '../components/BirthdayBanner'
 import CelebrationBanner from '../components/CelebrationBanner'
 import NudgeBanner from '../components/NudgeBanner'
@@ -17,6 +17,7 @@ import TodayObjective from '../components/TodayObjective'
 import GroupFeed from '../components/GroupFeed'
 import GoalCard from '../components/GoalCard'
 import { ShareSheet } from '../components/ShareChoices'
+import InviteSheet, { InviteButton } from '../components/InviteSheet'
 import ChallengeStrip from '../components/ChallengeStrip'
 
 /* Voir loadCheckins. */
@@ -58,6 +59,7 @@ export default function Board() {
     reloadGroup,
   } = useGroup()
   const [checkins, setCheckins] = useState([])
+  const [inviting, setInviting] = useState(false)
   const [items, setItems] = useState([])
 
   const phase = cyclePhase(currentCycle, cycles, cadence)
@@ -319,7 +321,21 @@ export default function Board() {
         </>
       )}
 
-      <Section title={t('board.this_week')}>
+      <Section
+        title={t('board.this_week')}
+        action={
+          members.length > 1 && (
+            <button
+              type="button"
+              onClick={() => setInviting(true)}
+              className="press text-small font-semibold text-ink underline-offset-4 hover:underline"
+              data-hook="board-invite-open"
+            >
+              {t('board.invite_short')}
+            </button>
+          )
+        }
+      >
         <Leaderboard
           members={members}
           checkins={now}
@@ -397,17 +413,21 @@ export default function Board() {
         </Section>
       )}
 
+      {/* Seul dans le groupe: le lien et un bouton pour l'envoyer. Ce
+          n'etait que le code, a taper a la main par la personne invitee;
+          il reste dessous, pour un appel ou un bout de papier. */}
       {members.length === 1 && (
         <Section title={t('board.invite')}>
-          <Empty
-            action={
-              <p className="font-display text-h1 tracking-[0.12em] text-ink">{group.invite_code}</p>
-            }
-          >
-            {t('board.invite_body')}
-          </Empty>
+          <div className="py-8 text-center" data-hook="board-invite">
+            <p className="lede mx-auto max-w-[30ch]">{t('board.invite_body')}</p>
+            <InviteButton group={group} className="mx-auto mt-6" />
+            <p className="mt-5 text-small text-muted">
+              {t('board.invite_code', { code: group.invite_code })}
+            </p>
+          </div>
         </Section>
       )}
+      <InviteSheet group={group} open={inviting} onClose={() => setInviting(false)} />
     </Screen>
   )
 }

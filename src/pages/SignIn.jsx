@@ -7,7 +7,7 @@ import { stickerSrc } from '../lib/art'
 import { useT } from '../lib/i18n'
 import { Sparkle, Spot, Tape, cast } from '../components/StickerKit'
 import { headline, useLineEnd } from '../components/Headline'
-import { readJoin } from '../lib/pendingJoin'
+import { cleanCode, readJoin, rememberJoin } from '../lib/pendingJoin'
 import { currentInAppBrowser } from '../lib/inAppBrowser'
 
 /**
@@ -237,7 +237,14 @@ export default function SignIn() {
      groupe et pas a un accueil vide. */
   const [pending] = useState(() => {
     try {
-      return readJoin(window.localStorage)
+      const store = window.localStorage
+      /* /signin?join=CODE: la page a pu etre rouverte dans un autre navigateur
+         (depuis TikTok, "ouvrir dans Safari"), ou rien n'est en attente. Le
+         code de l'adresse est retenu ici, et si c'est le meme que celui deja
+         retenu, celui-la garde le nom du groupe. */
+      const fromUrl = cleanCode(new URLSearchParams(window.location.search).get('join'))
+      if (fromUrl && readJoin(store)?.code !== fromUrl) rememberJoin(fromUrl, store)
+      return readJoin(store)
     } catch {
       return null
     }

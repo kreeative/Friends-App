@@ -13,6 +13,16 @@
       "destination": "/api/calendar?t=:token"
     },
     {
+      "source": "/join/:code",
+      "has": [{ "type": "header", "key": "user-agent", "value": ".*(facebookexternalhit|Facebot|Twitterbot|WhatsApp|TelegramBot|Slackbot|Discordbot|LinkedInBot|SkypeUriPreview|redditbot|Embedly|vkShare|Iframely|Mastodon|Bluesky|Applebot).*" }],
+      "destination": "/api/invite-preview?code=:code"
+    },
+    {
+      "source": "/rejoindre/:code",
+      "has": [{ "type": "header", "key": "user-agent", "value": ".*(facebookexternalhit|Facebot|Twitterbot|WhatsApp|TelegramBot|Slackbot|Discordbot|LinkedInBot|SkypeUriPreview|redditbot|Embedly|vkShare|Iframely|Mastodon|Bluesky|Applebot).*" }],
+      "destination": "/api/invite-preview?code=:code"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }

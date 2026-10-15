@@ -7,7 +7,7 @@ import { useT } from '../lib/i18n'
 import { errorText } from '../lib/dberr'
 import { usePageMeta } from '../lib/pageMeta'
 import { CHALLENGE_DAYS, challengeCopy } from '../content/challenge'
-import { cleanCode, rememberJoin } from '../lib/pendingJoin'
+import { cleanCode, rememberJoin, signinPath } from '../lib/pendingJoin'
 import { currentInAppBrowser } from '../lib/inAppBrowser'
 import { stickerSrc } from '../lib/art'
 import { LockupInline } from '../components/Wordmark'
@@ -122,7 +122,10 @@ export default function Invite() {
     setError(null)
     if (!user) {
       rememberJoin(code, browserStore(), Date.now(), name)
-      navigate('/signin')
+      /* Le code part aussi dans l'adresse: depuis TikTok ou Instagram, on
+         rouvre souvent la page dans Safari ou Chrome pour se connecter, et le
+         stockage du navigateur, lui, ne suit pas. */
+      navigate(signinPath(code))
       return
     }
     setBusy(true)

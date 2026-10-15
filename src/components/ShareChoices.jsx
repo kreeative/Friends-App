@@ -10,37 +10,47 @@ import { Spot } from './StickerKit'
 /**
  * CE QUE TU PARTAGES AVEC CE GROUPE.
  *
- *   "When someone join a group, let's add a feature that directly asks them
- *    whether they want to share their name, their pictures, email, or their
- *    mood with the group."
+ *   "If you don't want to share your picture, it's okay because it's
+ *    privacy. Well, we still need to have your name. [...] it doesn't share
+ *    your email anyways. [...] you can ask to not share your picture or your
+ *    mood."
  *
- * Quatre cases, posees une fois en arrivant (ShareSheet, sur le tableau du
- * groupe) et modifiables ensuite dans les reglages du groupe (ShareChoices
- * seul). Une seule ecriture, set_group_sharing(), qui enregistre les quatre
- * d'un coup.
+ * Posee une fois en arrivant (ShareSheet, sur le tableau du groupe) et
+ * modifiable ensuite dans les reglages du groupe (ShareChoices seul):
+ *
+ *   ton nom              toujours visible, donc une ligne et pas une case
+ *   ta photo de profil   une case (group_sharing.name, voir la 79)
+ *   tes photos de preuve une case, seulement si le groupe demande des photos
+ *                        en preuve; sinon elle suit la photo de profil
+ *   ton humeur           une case (mood_share)
+ *
+ * L'e-mail n'est plus demande: il n'est partage avec personne.
  *
  * CHAQUE "NON" EST TENU PAR LA BASE, PAS PAR CET ECRAN. Voir
- * supabase/75_group_sharing.sql: le profil n'est plus lisible a travers ce
- * groupe, la photo d'un point du jour y est retiree, l'e-mail n'y est donne
- * qu'a ceux qui ont dit oui, l'humeur passe par mood_share. Cacher une case
- * ici sans la base derriere serait une promesse que rien ne tient.
+ * supabase/75_group_sharing.sql et 79_name_always.sql: sans la photo, le
+ * groupe ne lit plus ta ligne de profil et te voit sous ton nom (alias, une
+ * copie tenue a jour); la photo d'un point du jour y est retiree; l'humeur
+ * passe par mood_share. set_group_sharing() ignore un pseudo ou un e-mail
+ * qu'on lui passerait quand meme.
  *
- * Les sous-titres montrent CE qui est partage (ton nom, ton adresse), pas un
- * mode d'emploi: "le bouton est beaucoup trop long et detaille" a deja ete dit
+ * Les sous-titres montrent CE qui est partage (ton nom), pas un mode
+ * d'emploi: "le bouton est beaucoup trop long et detaille" a deja ete dit
  * d'un interrupteur de cette page.
  */
-export default function ShareChoices({ groupId, current, alias: currentAlias, onSaved, submitLabel }) {
+export default function ShareChoices({ groupId, current, onSaved, submitLabel }) {
   const { user, profile } = useAuth()
+  const { goals } = useGroup()
   const { t } = useT()
 
-  /* Pas de reponse encore: nom et photos coches, e-mail et humeur non. Ce
-     sont des propositions; rien n'est partage tant que le bouton n'est pas
-     appuye (pas de ligne, pas de partage). */
-  const [name, setName] = useState(current ? current.name : true)
-  const [photos, setPhotos] = useState(current ? current.photos : true)
-  const [email, setEmail] = useState(current ? current.email : false)
+  /* Les photos de preuve ne se demandent que la ou elles servent. */
+  const asksProofs = (goals ?? []).some((g) => g.status === 'active' && g.proof_type === 'photo')
+
+  /* Pas de reponse encore: les photos cochees, l'humeur non. Ce sont des
+     propositions; rien n'est partage tant que le bouton n'est pas appuye
+     (pas de ligne, pas de photo). */
+  const [photo, setPhoto] = useState(current ? current.name : true)
+  const [proofs, setProofs] = useState(current ? current.photos : true)
   const [mood, setMood] = useState(false)
-  const [pseudo, setPseudo] = useState(currentAlias ?? '')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
 
@@ -66,72 +76,54 @@ export default function ShareChoices({ groupId, current, alias: currentAlias, on
   async function save(e) {
     e.preventDefault()
     setError(null)
-    if (!name && !pseudo.trim()) {
-      setError(t('share.alias_required'))
-      return
-    }
     setBusy(true)
     const { error: err } = await supabase.rpc('set_group_sharing', {
       p_group: groupId,
-      p_name: name,
-      p_alias: name ? null : pseudo.trim().slice(0, 30),
-      p_photos: photos,
-      p_email: email,
+      p_name: photo,
+      p_alias: null,
+      p_photos: asksProofs ? proofs : photo,
+      p_email: false,
       p_mood: mood,
     })
     setBusy(false)
     if (err) {
-      setError(/alias_required/.test(err.message ?? '') ? t('share.alias_required') : errorText(err))
+      setError(errorText(err))
       return
     }
     await onSaved?.()
   }
 
   const rows = [
-    ['name', name, setName, t('share.name'), profile?.display_name],
-    ['photos', photos, setPhotos, t('share.photos'), t('share.photos_sub')],
-    ['email', email, setEmail, t('share.email'), user?.email],
+    ['photo', photo, setPhoto, t('share.photo'), t('share.photo_sub')],
+    ...(asksProofs ? [['photos', proofs, setProofs, t('share.photos'), t('share.photos_sub')]] : []),
     ['mood', mood, setMood, t('share.mood'), t('share.mood_sub')],
   ]
 
   return (
     <form onSubmit={save} className="measure-form space-y-3" data-hook="share-choices">
+      {/* Le nom n'est pas une question: une ligne, sans case. */}
+      <div className="flex items-start gap-3 rounded-inner bg-ink/[0.035] p-4" data-hook="share-name">
+        <span className="min-w-0">
+          <span className="block text-body text-ink">{t('share.name')}</span>
+          <span className="mt-0.5 block break-words text-small text-muted">
+            {profile?.display_name ? t('share.name_sub', { name: profile.display_name }) : t('share.name_always')}
+          </span>
+        </span>
+      </div>
       {rows.map(([key, on, set, label, sub]) => (
-        <div key={key}>
-          <label className="press flex cursor-pointer items-start gap-3 rounded-inner bg-ink/[0.035] p-4">
-            <input
-              type="checkbox"
-              checked={on}
-              onChange={(e) => set(e.target.checked)}
-              data-hook={`share-${key}`}
-              className="mt-0.5 h-5 w-5 shrink-0 accent-[rgb(var(--c-accent))]"
-            />
-            <span className="min-w-0">
-              <span className="block text-body text-ink">{label}</span>
-              {sub && <span className="mt-0.5 block break-words text-small text-muted">{sub}</span>}
-            </span>
-          </label>
-          {/* Le pseudo n'existe que quand le nom est garde. */}
-          {key === 'name' && !name && (
-            <div className="mt-2 rounded-inner bg-ink/[0.035] p-4">
-              <label className="block text-small text-muted" htmlFor="share-alias">
-                {t('share.alias_label')}
-              </label>
-              <input
-                id="share-alias"
-                className="field mt-2"
-                value={pseudo}
-                maxLength={30}
-                onChange={(e) => {
-                  setPseudo(e.target.value)
-                  if (error) setError(null)
-                }}
-                placeholder={t('share.alias_ph')}
-                data-hook="share-alias"
-              />
-            </div>
-          )}
-        </div>
+        <label key={key} className="press flex cursor-pointer items-start gap-3 rounded-inner bg-ink/[0.035] p-4">
+          <input
+            type="checkbox"
+            checked={on}
+            onChange={(e) => set(e.target.checked)}
+            data-hook={`share-${key}`}
+            className="mt-0.5 h-5 w-5 shrink-0 accent-[rgb(var(--c-accent))]"
+          />
+          <span className="min-w-0">
+            <span className="block text-body text-ink">{label}</span>
+            {sub && <span className="mt-0.5 block break-words text-small text-muted">{sub}</span>}
+          </span>
+        </label>
       ))}
 
       {error && (
@@ -140,7 +132,7 @@ export default function ShareChoices({ groupId, current, alias: currentAlias, on
         </p>
       )}
 
-      <button className="btn-primary press mt-3" disabled={busy} data-hook="share-save">
+      <button className="btn-primary press mt-3 text-[1.1875rem] font-bold" disabled={busy} data-hook="share-save">
         {busy ? t('share.saving') : submitLabel ?? t('share.save')}
       </button>
     </form>
@@ -157,13 +149,11 @@ export default function ShareChoices({ groupId, current, alias: currentAlias, on
  * vaut undefined et rien ne s'ouvre.
  */
 export function ShareSheet() {
-  const { group, activeId, mySharing, members, reloadGroup } = useGroup()
-  const { user } = useAuth()
+  const { group, activeId, mySharing, reloadGroup } = useGroup()
   const { t } = useT()
   const [closed, setClosed] = useState(false)
 
   if (!group || mySharing !== null || closed) return null
-  const me = members.find((m) => m.user_id === user?.id)
 
   return (
     <Sheet open onClose={() => setClosed(true)} title={t('share.title', { group: group.name })}>
@@ -178,7 +168,6 @@ export function ShareSheet() {
         <ShareChoices
           groupId={activeId}
           current={null}
-          alias={me?.alias}
           submitLabel={t('share.go')}
           onSaved={async () => {
             await reloadGroup()

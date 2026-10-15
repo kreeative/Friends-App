@@ -7,7 +7,8 @@
  * video dans le groupe.
  */
 import { addDays, challengeDay, challengeTrack, completeMornings, dayKeyIn, daysBetween } from './challenge.js'
-import { JOIN_KEY, JOIN_TTL_MS, cleanCode, cleanGroupName, forgetJoin, invitePath, joinTarget, readJoin, rememberChallenge, rememberJoin } from './pendingJoin.js'
+import { JOIN_KEY, JOIN_TTL_MS, cleanCode, cleanGroupName, codeFromText, forgetJoin, invitePath, joinTarget, readJoin, rememberChallenge, rememberJoin, signinPath } from './pendingJoin.js'
+import { cleanCode as apiCleanCode, escapeHtml, previewHtml, previewLocale, previewText } from '../../api/invite-preview.js'
 import { inAppBrowser } from './inAppBrowser.js'
 import { CHALLENGE, CHALLENGE_DAYS, CHALLENGE_ID, challengeGoals } from '../content/challenge.js'
 import { readFileSync } from 'node:fs'
@@ -249,7 +250,7 @@ eq('null is no code', cleanCode(null), null)
   ok('the invitation reads the group through invite_preview', /rpc\('invite_preview', \{ p_code: code \}\)/.test(inv))
   ok('a challenge shows its real goals from invite_goals', /rpc\('invite_goals', \{ p_code: code \}\)/.test(inv))
   ok('before migration 77 the invitation still works, without details', /PGRST202/.test(inv))
-  ok('signed out, joining keeps the code and the group name, then signs in', /rememberJoin\(code, browserStore\(\), Date\.now\(\), name\)[\s\S]{0,60}navigate\('\/signin'\)/.test(inv))
+  ok('signed out, joining keeps the code and the group name, then signs in', /rememberJoin\(code, browserStore\(\), Date\.now\(\), name\)[\s\S]{0,60}navigate\(signinPath\(code\)\)/.test(inv))
   ok('signed in, joining joins and opens the board', /rpc\('join_group', \{ p_code: code \}\)[\s\S]{0,400}navigate\(g\?\.id \? `\/g\/\$\{g\.id\}`/.test(inv))
   ok('a member is told so and gets the board, not a join button', /group\.is_member \?/.test(inv) && /data-hook="invite-open"/.test(inv))
   ok('an unknown code says so', /data-hook="invite-missing"/.test(inv) && /setState\('missing'\)/.test(inv))
@@ -301,6 +302,96 @@ eq('null is no code', cleanCode(null), null)
   ok('the view keeps its columns and security_invoker', /with \(security_invoker = on\)/.test(sql78) && /end as status,\s+ci\.mood\s+from cycles c/.test(sql78))
   const ctx = code('../context/GroupContext.jsx')
   ok('the roster brings joined_at, for the standing', /select\('user_id, role, nudge_order, joined_at, profiles\(/.test(ctx))
+}
+
+/* --- un lien de groupe qui mene quelque part ---------------------------
+   "The link is not intelligent [...] you have to enter the code manually."
+   Le tableau n'affichait que le code, le champ du code coupait un lien colle
+   a six caracteres, et l'apercu dans une messagerie etait celui de l'accueil. */
+console.log('\nintelligent links')
+{
+  eq('a bare code is a code', codeFromText(' 530826 '), '530826')
+  eq('the invitation link gives its code', codeFromText('https://richandfriends.xyz/join/530826'), '530826')
+  eq('the French spelling too', codeFromText('richandfriends.xyz/rejoindre/ab12cd'), 'AB12CD')
+  eq('the old ?join= links too', codeFromText('https://richandfriends.xyz/defi?join=530826&utm=tt'), '530826')
+  eq('and the whole shared message', codeFromText('Rejoins mon groupe Défi 21 matins sur Rich & Friends : https://richandfriends.xyz/join/530826'), '530826')
+  eq('a code glued to more letters is not cut out of them', codeFromText('https://x.y/join/ABCDEFGHIJKLMNOP'), null)
+  eq('a sentence without a link is nothing', codeFromText('rejoins mon groupe'), null)
+  eq('nothing is nothing', codeFromText(null), null)
+  eq('sign-in carries the code', signinPath('530826'), '/signin?join=530826')
+  eq('and nothing when there is none', signinPath('??'), '/signin')
+
+  const read = (f) => readFileSync(new URL(f, import.meta.url), 'utf8')
+  const code = (f) => read(f).replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
+  const board = code('../pages/Board.jsx')
+  ok('alone in a group, the board shows the link button, not only the code', /<InviteButton group=\{group\}/.test(board) && /data-hook="board-invite"/.test(board) && /board\.invite_code/.test(board))
+  ok('with others, the board still has an invite action', /data-hook="board-invite-open"/.test(board) && /<InviteSheet group=\{group\} open=\{inviting\}/.test(board))
+  const sheet = code('../components/InviteSheet.jsx')
+  ok('the board button and the sheet share the same link the same way', /export function useInvite\(group\)/.test(sheet) && (sheet.match(/useInvite\(group\)/g) ?? []).length === 3)
+  ok('white on the pink is large text on both', (sheet.match(/btn-primary press[^"]*text-\[1\.1875rem\] font-bold/g) ?? []).length === 2)
+  const start = code('../pages/Start.jsx')
+  ok('the code field takes a pasted link', /onChange=\{\(e\) => setCode\(codeFromText\(e\.target\.value\)/.test(start) && !/maxLength=\{6\}/.test(start))
+  ok('and joins with the code inside it', /p_code: codeFromText\(code\) \?\? code\.trim\(\)/.test(start))
+  ok('the invitation sends people to sign in with the code in the address', /navigate\(signinPath\(code\)\)/.test(code('../pages/Invite.jsx')))
+  ok('sign-in remembers a code from its address', /new URLSearchParams\(window\.location\.search\)\.get\('join'\)/.test(code('../pages/SignIn.jsx')))
+
+  /* L'apercu des messageries. */
+  eq('the API cleans codes like the app', [apiCleanCode(' ab12cd '), apiCleanCode('a'), apiCleanCode('<x>')], ['AB12CD', null, null])
+  eq('French unless the robot asks for English first', [previewLocale('en-GB,en;q=0.9'), previewLocale('fr-CA'), previewLocale(undefined)], ['en', 'fr', 'fr'])
+  const fr = previewText({ name: 'Défi 21 matins', members: 2, challenge: 'morning21' }, ['Me lever à l’heure prévue', 'Boire un grand verre d’eau'], 'fr')
+  eq('a challenge preview names the group', fr.title, 'Rejoins « Défi 21 matins » sur Rich & Friends')
+  ok('and says who is in, for how long, and what is asked', /^2 personnes déjà dedans · un point par jour pendant 21 jours\. Chaque matin : Me lever/.test(fr.description), fr.description)
+  const priv = previewText({ name: null, members: 3, challenge: null }, [], 'fr')
+  eq('a private group is an invitation without its name', priv.title, 'Une invitation à rejoindre un groupe sur Rich & Friends')
+  ok('with the count and the idea', /^3 personnes déjà dedans\. Un point par jour/.test(priv.description))
+  eq('a dead code says so', previewText(null, [], 'en').title, 'This invitation link no longer works')
+  const long = previewText({ name: 'X', members: 9, challenge: 'morning21' }, Array.from({ length: 20 }, (_, i) => `Objectif numero ${i} assez long`), 'fr')
+  ok('a long list is cut to 300 characters', long.description.length <= 300 && long.description.endsWith('…'))
+  const html = previewHtml({ code: 'AB12CD', title: 'Rejoins « <script> » & co', description: 'a "b" \'c\'', locale: 'fr' })
+  ok('what comes from the database is escaped', html.includes('Rejoins « &lt;script&gt; » &amp; co') && !html.includes('<script> »') && html.includes('a &quot;b&quot; &#39;c&#39;'))
+  ok('the preview points at the invitation and is not indexed', html.includes('<meta property="og:url" content="https://richandfriends.xyz/join/AB12CD" />') && html.includes('<meta name="robots" content="noindex" />'))
+  ok('a person who lands on it is sent into the app', html.includes('location.replace("/start?join=AB12CD")'))
+  eq('escapeHtml covers the five', escapeHtml(`&<>"'`), '&amp;&lt;&gt;&quot;&#39;')
+
+  const vercel = JSON.parse(read('../../vercel.json'))
+  const rw = vercel.rewrites
+  const at = (src) => rw.findIndex((r) => r.source === src)
+  ok('robots on /join and /rejoindre go to the preview, before the app catches everything',
+     at('/join/:code') >= 0 && at('/rejoindre/:code') >= 0 && at('/join/:code') < at('/((?!api/).*)') && at('/rejoindre/:code') < at('/((?!api/).*)')
+       && rw[at('/join/:code')].destination === '/api/invite-preview?code=:code')
+  const bots = new RegExp(rw[at('/join/:code')].has[0].value)
+  const ua = {
+    imessage: 'facebookexternalhit/1.1 Facebot Twitterbot/1.0',
+    whatsapp: 'WhatsApp/2.23.20.0 A',
+    telegram: 'TelegramBot (like TwitterBot)',
+    discord: 'Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)',
+    safari: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1',
+    instagram: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Instagram 330.0.3.12.235',
+    tiktok: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 musical_ly_34.1.0 JsSdk/2.0',
+    facebookApp: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 [FBAN/FBIOS;FBAV/450.0.0.0]',
+    snapchat: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Snapchat/12.80.0.40',
+    chrome: 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Mobile Safari/537.36',
+  }
+  eq('preview robots are recognised', ['imessage', 'whatsapp', 'telegram', 'discord'].map((k) => bots.test(ua[k])), [true, true, true, true])
+  eq('people, in a browser or inside an app, are not', ['safari', 'instagram', 'tiktok', 'facebookApp', 'snapchat', 'chrome'].map((k) => bots.test(ua[k])), [false, false, false, false, false, false])
+
+  /* La question du partage, 79. */
+  const share = code('../components/ShareChoices.jsx')
+  ok('the name is a line, not a box', /data-hook="share-name"/.test(share) && !/data-hook="share-alias"/.test(share) && !/share-\$\{key\}[\s\S]*'name'/.test(share.slice(share.indexOf('const rows'))))
+  ok('photo and mood are asked; email is not', /\['photo', photo, setPhoto/.test(share) && /\['mood', mood, setMood/.test(share) && !/'email'/.test(share) && /p_email: false/.test(share))
+  ok('proof photos only where the group asks for photos', /g\.proof_type === 'photo'/.test(share) && /p_photos: asksProofs \? proofs : photo/.test(share))
+  ok('the save button is large text on the pink', /btn-primary press mt-3 text-\[1\.1875rem\] font-bold/.test(share))
+  const sql79 = read('../../supabase/79_name_always.sql')
+  const rules79 = sql79.replace(/--.*$/gm, '')
+  ok('migration 79 is ASCII', [...sql79].every((c) => c.charCodeAt(0) < 128))
+  ok('the name is set when you join and follows a rename', /before insert on group_members/.test(rules79) && /after update of display_name on profiles/.test(rules79))
+  ok('set_group_sharing ignores a pseudo and never shares an email', /set alias = real_name/.test(rules79) && /email\s+= false/.test(rules79) && !/pseudo/.test(rules79.slice(rules79.indexOf('function set_group_sharing'))))
+  ok('a name copy fits the 30 characters of 75', (rules79.match(/left\(trim\([a-z.]*display_name\), 30\)/g) ?? []).length >= 4)
+  const i18n = read('./i18n.jsx')
+  for (const k of ['share.name_sub', 'share.name_always', 'share.photo', 'share.photo_sub', 'board.invite_code', 'board.invite_short']) {
+    ok(`${k} in both languages`, (i18n.match(new RegExp(`'${k.replace('.', '\\.')}':`, 'g')) ?? []).length === 2)
+  }
+  ok('no pseudo or email strings left behind', !/'share\.(alias_label|alias_ph|alias_required|email)':/.test(i18n))
 }
 
 console.log(`\n  ${pass} passed, ${fail} failed\n`)

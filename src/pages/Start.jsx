@@ -8,7 +8,7 @@ import Wordmark from '../components/Wordmark'
 import { useT } from '../lib/i18n'
 import { errorText } from '../lib/dberr'
 import { CHALLENGE_DAYS, CHALLENGE_ID, challengeCopy, challengeGoals } from '../content/challenge'
-import { invitePath } from '../lib/pendingJoin'
+import { codeFromText, invitePath } from '../lib/pendingJoin'
 
 export default function Start() {
   const { reload } = useGroup()
@@ -105,7 +105,7 @@ export default function Start() {
     e.preventDefault()
     setBusy(true)
     setError(null)
-    const { data, error: err } = await supabase.rpc('join_group', { p_code: code.trim() })
+    const { data, error: err } = await supabase.rpc('join_group', { p_code: codeFromText(code) ?? code.trim() })
     setBusy(false)
     if (err) return setError(err.message)
     const g = Array.isArray(data) ? data[0] : data
@@ -213,9 +213,15 @@ export default function Start() {
               <input
                 className="field text-center text-h2 uppercase tracking-[0.3em]"
                 value={code}
-                onChange={(e) => setCode(e.target.value.toUpperCase())}
+                /* Un lien ou un message colle donne son code. Plus de
+                   maxLength={6}: le navigateur coupait le lien colle avant
+                   meme qu'on puisse le lire. */
+                onChange={(e) => setCode(codeFromText(e.target.value) ?? e.target.value.toUpperCase().slice(0, 200))}
                 placeholder="A1B2C3"
-                maxLength={6}
+                autoCapitalize="characters"
+                autoCorrect="off"
+                spellCheck={false}
+                data-hook="join-code"
               />
             </Field>
 

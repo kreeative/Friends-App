@@ -40,6 +40,28 @@ export function cleanCode(raw) {
   return /^[A-Z0-9]{4,12}$/.test(code) ? code : null
 }
 
+/**
+ * Le code d'un texte colle: le code lui-meme, le lien d'invitation, ou tout le
+ * message partage ("Rejoins mon groupe ... : https://.../join/530826").
+ *
+ * Le champ du code coupait a six caracteres: un lien colle y devenait
+ * "HTTPS:", et la personne invitee devait retaper le code a la main.
+ */
+export function codeFromText(raw) {
+  const text = String(raw ?? '').trim()
+  if (!text) return null
+  const direct = cleanCode(text)
+  if (direct) return direct
+  const m = text.match(/(?:\/(?:join|rejoindre)\/|[?&]join=)([A-Za-z0-9]{4,12})(?![A-Za-z0-9])/)
+  return m ? cleanCode(m[1]) : null
+}
+
+/** L'ecran de connexion pour un code: le code voyage dans l'adresse. */
+export function signinPath(code) {
+  const clean = cleanCode(code)
+  return clean ? `/signin?join=${encodeURIComponent(clean)}` : '/signin'
+}
+
 /** Le seul defi connu. La meme liste que le check de la migration 76. */
 const CHALLENGES = ['morning21']
 
