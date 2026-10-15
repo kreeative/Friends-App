@@ -49,10 +49,33 @@ and the error points at the wrong thing.
   passes.** "Le noir sur des couleurs sombres ou trop saturées ça donne mal
   aux yeux." Black on the brand pink `#FF007A` measures 4.98:1 and black on
   sky `#38BDF8` 8.81:1, and both were still called "très limite": the pair
-  vibrates. Text on pink or blue is white on the deep shades (`#D6006B`
-  5.16:1, `#0B6FAD` 5.40:1); black stays on white, pastels and yellow. The
-  saturated colours are for stickers, borders and marks, not for grounds
-  under words.
+  vibrates. Black stays on white, pastels and yellow.
+- **The blue is the logo turquoise, `#009DB9`, and no other.** "le bleu que
+  tu as pris et le bleu qui est sur le logo, c'est pas le même bleu." Two
+  blues were tried and refused: `#38BDF8` and `#0B6FAD`. The pink is the
+  logo pink `#FF007A` for the same reason; the deep `#D6006B` only ever
+  existed to carry small white text. Words on the brand pink or the
+  turquoise are white, and since white measures only 3.80:1 on `#FF007A`
+  and 3.22:1 on `#009DB9`, they must be large text (bold and at least
+  18.66px, the 3:1 bar; 19px in practice). Smaller text goes on white or a
+  pastel, in ink.
+
+## Design
+
+- **The white die-cut outline belongs to real stickers only**, the PNGs in
+  `src/assets/stickers`. "C'est pas vraiment des stickers, c'est des choses
+  que tu as craftées." Badges, cards, pills and anything else drawn in code
+  never wear a white sticker border to pass for one.
+- **Stickers cover no running text, except the hero headline.** "Des
+  stickers autour du texte, un peu sur le texte", as in the references, was
+  asked for the title. There they hang on words (`headline()` in
+  `Home.jsx`), so they follow the line breaks, and they may take at most 30%
+  of a letter's ink and 12% of a word's, measured on the painted page at
+  every width in both languages. Everywhere else the cover probe must find
+  nothing.
+- Look at sticker art on a dark or coloured ground before trusting it. A
+  white page hides a grey ghost outline and a stair-stepped cut; the pink
+  footer shows both. `python3 scripts/diecut.py --write` re-cuts every file.
 
 ## Writing
 

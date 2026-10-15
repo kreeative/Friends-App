@@ -19,13 +19,12 @@ export const LANDING = {
     },
 
     /**
-     * The stickers that carry words. Every one of them repeats something the
-     * page already says in full, so nothing here is a claim of its own: free
-     * is the hero note, with friends is the whole product, and a minute a day
-     * is the closing panel.
+     * The decorations that carry words: the round badge's ring and the two
+     * tapes. Every one of them repeats something the page already says in
+     * full, so nothing here is a claim of its own. The three word pills that
+     * sat above the title are gone, "écriture en mode bouton".
      */
     fun: {
-      badges: ['Free', 'With friends', '1 min a day'],
       spin: 'Start now · it’s free · ',
       tape: ['Discipline', 'Friends', 'Freedom', 'Money', 'Habits'],
     },
@@ -51,23 +50,31 @@ export const LANDING = {
       eyebrow: 'The three pillars',
       title: 'What you build here.',
       items: [
+        /* `head` is the coloured top of the card, which carries the number
+           and the title, white on the logo's pink and turquoise (large and
+           bold, see Home.jsx) and ink on the yellow. `ground` is the pastel
+           under the paragraph, in ink. Written out whole: Tailwind reads
+           source text and builds no class from a template. */
         {
           n: '01',
           title: 'Daily discipline',
           body: 'Build the daily habits that shape the better version of you. You say what you are going to do, your friends see it, and you tick it off every day.',
-          tone: 'bg-[#D6006B] text-white',
+          head: 'bg-[#FF007A] text-white',
+          ground: 'bg-[#FFE0EF]',
         },
         {
           n: '02',
           title: 'Plans & ambitions',
           body: 'Think bigger. Travel, a career change, independence: give your most ambitious plans a date and a number instead of keeping them in your head.',
-          tone: 'bg-[#0B6FAD] text-white',
+          head: 'bg-[#009DB9] text-white',
+          ground: 'bg-[#E0F3F7]',
         },
         {
           n: '03',
           title: 'Freedom & peace of mind',
           body: 'Put your money behind what you want: envelopes for the everyday, Big Budgets for the large things, and savings for what is left.',
-          tone: 'bg-[#FFD60A] text-[#111111]',
+          head: 'bg-[#FFD60A] text-[#111111]',
+          ground: 'bg-[#FFF7CE]',
         },
       ],
     },
@@ -273,13 +280,12 @@ export const LANDING = {
     },
 
     /**
-     * Les stickers qui portent des mots. Chacun repete une chose que la page
-     * dit deja en entier, donc aucun n'est une promesse de plus: gratuit est
-     * la note du hero, entre amis est tout le produit, et une minute par
-     * jour le panneau de fin.
+     * Le decor qui porte des mots: l'anneau du badge rond et les deux bandes
+     * de scotch. Chacun repete une chose que la page dit deja en entier, donc
+     * aucun n'est une promesse de plus. Les trois pastilles au-dessus du titre
+     * sont parties: "écriture en mode bouton".
      */
     fun: {
-      badges: ['Gratuit', 'Entre amis', '1 min / jour'],
       spin: 'Commence · c’est gratuit · ',
       tape: ['Discipline', 'Amis', 'Liberté', 'Argent', 'Habitudes'],
     },
@@ -299,23 +305,28 @@ export const LANDING = {
       eyebrow: 'Les trois piliers',
       title: 'Ce que tu construis ici.',
       items: [
+        /* Voir la note sur la version anglaise: `head` porte le numero et le
+           titre, `ground` le paragraphe. */
         {
           n: '01',
           title: 'Discipline au Quotidien',
           body: 'Construis les habitudes quotidiennes qui façonnent la meilleure version de toi-même. Tu dis ce que tu vas faire, tes amis le voient, et tu coches chaque jour.',
-          tone: 'bg-[#D6006B] text-white',
+          head: 'bg-[#FF007A] text-white',
+          ground: 'bg-[#FFE0EF]',
         },
         {
           n: '02',
           title: 'Projets & Ambitions',
           body: 'Pense grand. Voyages, reconversion, indépendance : donne une date et un montant à tes projets les plus ambitieux au lieu de les garder dans ta tête.',
-          tone: 'bg-[#0B6FAD] text-white',
+          head: 'bg-[#009DB9] text-white',
+          ground: 'bg-[#E0F3F7]',
         },
         {
           n: '03',
           title: 'Liberté & Sérénité',
           body: 'Mets ton argent au service de tes rêves : des enveloppes pour le quotidien, le Haut Budget pour les gros projets, et l’épargne pour ce qui reste.',
-          tone: 'bg-[#FFD60A] text-[#111111]',
+          head: 'bg-[#FFD60A] text-[#111111]',
+          ground: 'bg-[#FFF7CE]',
         },
       ],
     },

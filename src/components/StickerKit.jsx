@@ -26,12 +26,17 @@ import { head } from '../lib/arrow'
  *
  * TROIS REGLES, LES MEMES PARTOUT.
  *
- * 1. Rien ne couvre un mot. Un sticker se pose sur du vide, un bord, un coin
- *    de padding, ou sur le lettrage geant, qui est lui-meme une image. C'est
- *    mesure: le probe compare les boites de chaque sticker a celles de chaque
- *    ligne de texte peinte, a 320, 390, 820, 1180 et 1440 px.
+ * 1. Rien ne couvre une ligne de texte courant. Un sticker se pose sur du
+ *    vide, un bord, un coin de padding, ou sur le lettrage geant, qui est
+ *    lui-meme une image. C'est mesure: la sonde compare chaque ligne de texte
+ *    peinte avec et sans le decor, a 320, 390, 820, 1180 et 1440 px.
+ *    Une exception, demandee: le titre du hero. "Des stickers autour du
+ *    texte, un peu sur le texte", comme sur les references, donc la ils
+ *    mordent sur le coin d'une lettre. La sonde y mesure l'encre que le decor
+ *    prend a chaque mot et a chaque lettre, avec un plafond (voir Home.jsx).
  * 2. Tout est decoratif. aria-hidden, alt vide, rien qui depende de le voir:
- *    les mots portes par un badge sont deja ecrits en entier sur la page.
+ *    les mots du badge rond et des bandes de scotch sont deja ecrits en
+ *    entier sur la page.
  * 3. Rien ne bouge tout seul plus de cinq secondes (WCAG 2.2.2). Les stickers
  *    se collent une fois en arrivant; le badge rond fait un tour en arrivant
  *    et ne tourne ensuite que sous la souris ou le focus. Sous
@@ -73,10 +78,11 @@ function place(at, lg, tilt, delay) {
 /**
  * Un sticker du dossier, pose.
  *
- * Sans `at`, il reste dans le flux (une icone de ligne, un sticker dans un
- * titre) et sa taille vient de `className`.
+ * Sans `at`, il reste dans le flux (une icone de ligne) ou se place par
+ * `className`, et sa taille vient de `className`. `style` s'ajoute a la pose,
+ * pour une position qui ne s'ecrit pas en pourcentages de la scene.
  */
-export function Spot({ name, at, lg, tilt = 0, delay = 0, className = '', eager = false }) {
+export function Spot({ name, at, lg, tilt = 0, delay = 0, className = '', style, eager = false }) {
   const src = stickerSrc(name)
   if (!src) return null
   return (
@@ -88,56 +94,26 @@ export function Spot({ name, at, lg, tilt = 0, delay = 0, className = '', eager 
       loading={eager ? 'eager' : 'lazy'}
       data-sticker={name}
       className={`spot ${at ? 'at' : ''} ${className}`}
-      style={place(at, lg, tilt, delay)}
+      style={{ ...place(at, lg, tilt, delay), ...style }}
     />
   )
 }
 
-/**
- * Un sticker qui porte des mots: forme pleine, bord blanc decoupe, ombre.
+/*
+ * IL N'Y A PLUS DE BADGE A MOTS DANS CE KIT, ET C'EST VOULU.
  *
- * PAS DE NOIR SUR LE ROSE NI SUR LE BLEU.
+ *   "j'aime pas cette sorte de écriture en mode bouton. Et puis il y a un
+ *    contour blanc autour du bouton, genre tu veux créer l'effet sticker,
+ *    mais c'est pas vraiment des stickers, c'est des choses que tu as
+ *    craftées."
  *
- *   "Le noir sur des couleurs sombres ou trop saturées ça donne mal aux yeux"
- *
- * La premiere version mettait de l'encre sur #FF007A (4,98:1) et sur #38BDF8
- * (8,81:1). Les deux passaient le ratio et les deux vibraient: "très limite".
- * Le rose et le bleu qui portent des mots sont donc les tons PROFONDS, en
- * blanc: #D6006B 5,16:1, #0B6FAD 5,40:1. Le jaune garde l'encre (13,4:1), le
- * noir porte du blanc (18,9:1). La regle est dans CLAUDE.md.
- *
- * Classes ecrites en entier: Tailwind lit le texte source et ne construit pas
- * `bg-${tone}`.
+ * Il y en avait cinq: trois pastilles au-dessus du titre, une ronde dans le
+ * panneau jaune, une noire sur le lettrage du pied de page. Des formes de
+ * couleur en capitales, avec un bord blanc de 3 px pour se faire passer pour
+ * des stickers. Le bord blanc decoupe appartient aux vrais stickers, les PNG
+ * du dossier; rien de dessine en code ne le porte. La regle est dans
+ * CLAUDE.md.
  */
-const TONE = {
-  pink: 'bg-[#D6006B] text-white',
-  sky: 'bg-[#0B6FAD] text-white',
-  yellow: 'bg-[#FFD60A] text-[#111111]',
-  ink: 'bg-[#111111] text-white',
-  white: 'bg-white text-[#111111]',
-}
-
-/* En entier aussi: `badge-${shape}` ne serait pas trouve dans le texte, et la
-   regle serait retiree de la feuille a la compilation. */
-const SHAPE = { pill: 'badge-pill', round: 'badge-round', tag: 'badge-tag' }
-
-/**
- * `decorative` a false quand le badge est le seul endroit ou ses mots sont
- * ecrits a cette largeur: il est alors lu, comme n'importe quel texte.
- */
-export function Badge({ children, tone = 'pink', shape = 'pill', at, lg, tilt = 0, delay = 0, className = '', decorative = true }) {
-  return (
-    <span
-      aria-hidden={decorative ? 'true' : undefined}
-      data-badge={shape}
-      className={`badge ${SHAPE[shape] ?? SHAPE.pill} ${TONE[tone] ?? TONE.pink} ${at ? 'at' : ''} ${className}`}
-      style={place(at, lg, tilt, delay)}
-    >
-      {children}
-    </span>
-  )
-}
-
 /**
  * Les traits a la main, en currentColor, poses par leur parent.
  *
@@ -194,9 +170,11 @@ export function Sparkle({ className = '', style }) {
  * Un morceau de scotch. Translucide, bords en dents de scie.
  *
  * `tone` en canaux RGB, comme les jetons de index.css, pour que l'opacite se
- * regle en un seul endroit (.tape).
+ * regle en un seul endroit (.tape). Par defaut le turquoise du logo,
+ * #009DB9: "le bleu que tu as pris et le bleu qui est sur le logo, c'est pas
+ * le même bleu".
  */
-export function Tape({ className = '', tilt = -6, tone = '56 189 248' }) {
+export function Tape({ className = '', tilt = -6, tone = '0 157 185' }) {
   return (
     <span
       aria-hidden="true"
