@@ -55,13 +55,25 @@ alter table groups add constraint groups_challenge_check
 --
 -- Quotidien: cadence 1, ouvert de minuit a minuit dans le fuseau du groupe.
 --
+-- LA PREMIERE PERIODE EST AUJOURD'HUI.
+--
+-- ensure_cycles (migration 18) ancre la premiere periode sur le dernier
+-- checkin_dow. La premiere version passait 0, dimanche: le groupe defi cree
+-- en production un jeudi est ne avec quatre periodes deja passees (du
+-- dimanche au mercredi). tick() les ferme a son passage suivant, et deux
+-- periodes manquees de suite font une relance "tout va bien ?" contre la
+-- personne qui vient de creer le groupe, visible par tous ceux qui
+-- rejoignent. Le jour de controle est donc le jour meme, dans le fuseau du
+-- groupe: l'ancre tombe sur aujourd'hui a minuit, et rien n'est dans le passe.
+--
 -- POURQUOI 'paused' PUIS 'active'.
 --
 -- Le declencheur goals_notify_group (migrations 50 et 61) previent chaque
 -- membre a l'insertion d'un objectif de groupe actif. A la creation, le seul
 -- membre est la personne qui cree le groupe: elle recevrait huit
--- notifications pour huit objectifs qu'elle vient de poser elle-meme. Le declencheur ne regarde que
--- l'insertion, donc on insere en pause et on active juste apres.
+-- notifications pour huit objectifs qu'elle vient de poser elle-meme. Le
+-- declencheur ne regarde que l'insertion, donc on insere en pause et on
+-- active juste apres.
 --
 -- L'ordre est garde: created_at avance d'une milliseconde par objectif, et
 -- l'app trie sur created_at. Sans ca, huit lignes au meme instant sortent
@@ -81,6 +93,7 @@ as $$
 declare
   g     groups%rowtype;
   n     int;
+  tz    text;
   today date;
 begin
   if auth.uid() is null then
@@ -97,7 +110,8 @@ begin
     raise exception 'goals_count';
   end if;
 
-  g := create_group(p_name, coalesce(nullif(trim(p_timezone), ''), 'UTC'), 1, 0, 0, 24);
+  tz := coalesce(nullif(trim(p_timezone), ''), 'UTC');
+  g := create_group(p_name, tz, 1, extract(dow from (now() at time zone tz))::int, 0, 24);
 
   update groups set challenge = p_challenge where id = g.id
   returning * into g;

@@ -99,6 +99,12 @@ eq('twenty-one mornings', CHALLENGE_DAYS, 21)
   ok('create_challenge exists and anon cannot run it', /create or replace function create_challenge/.test(sql) && /from anon/.test(sql))
   ok('goals go in paused, then active: no notification for each one', /'paused'/.test(sql) && /set status = 'active'/.test(sql))
   ok('order is kept with created_at', /e\.ord \* interval '1 millisecond'/.test(sql))
+  /* Le jour de controle est aujourd'hui dans le fuseau du groupe. A 0
+     (dimanche), le groupe cree en production un jeudi est ne avec quatre
+     periodes passees, et tick() en tirait une relance contre sa createrice
+     (mesure sur Postgres 16: 2 groupes, 2 relances; corrige: 0). */
+  ok('the first period is today, not last Sunday', /create_group\(p_name, tz, 1, extract\(dow from \(now\(\) at time zone tz\)\)::int, 0, 24\)/.test(sql))
+  ok('no challenge is anchored on a fixed weekday any more', !/create_group\([^)]*, 1, 0, 0, 24\)/.test(sql))
 }
 for (const loc of ['en', 'fr']) {
   const goals = challengeGoals(loc)
