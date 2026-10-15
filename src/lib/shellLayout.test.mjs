@@ -5070,6 +5070,14 @@ ok(
        && (landingSrc.match(/tone: 'bg-\[#FFD60A\] text-\[#111111\]'/g) ?? []).length === 2)
   ok('the rule is written down where the next session reads it',
      /No black text on a dark or very saturated colour/.test(read('CLAUDE.md')))
+  /* "Tes flèches sont mal dessinées": every arrowhead is computed on its
+     curve by lib/arrow.js, which arrow.test.mjs measures. A head written by
+     hand is how the first one came out at 12 and 67 degrees. */
+  const kitCode = code('src/components/StickerKit.jsx')
+  ok('every arrowhead in the kit is computed on its curve, none is written by hand',
+     /import \{ head \} from '\.\.\/lib\/arrow'/.test(kitCode)
+       && (kitCode.match(/\$\{head\(/g) ?? []).length === 3
+       && !/M90 18l-15-9|M90 78h32v32/.test(kitCode))
   ok('"proudly Ivorian" is shown once at every width: on the lettering from sm, in the small print below that',
      /decorative=\{false\}/.test(foot) && /hidden text-\[clamp\(0\.75rem,1\.1vw,0\.9375rem\)\] sm:inline-flex/.test(foot)
        && /text-small text-muted sm:hidden">\{c\.built\}/.test(foot))

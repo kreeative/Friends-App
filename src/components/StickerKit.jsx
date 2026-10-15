@@ -1,6 +1,9 @@
 import { useId } from 'react'
 import { Link } from 'react-router-dom'
 import { pickStickers, stickerSrc } from '../lib/art'
+/* La pointe de chaque fleche, calculee sur sa courbe. Dans lib/ pour que node
+   la teste: "Tes flèches sont mal dessinées", voir arrow.js. */
+import { head } from '../lib/arrow'
 
 /**
  * LE KIT DE COLLAGE DE LA VITRINE.
@@ -136,22 +139,28 @@ export function Badge({ children, tone = 'pink', shape = 'pill', at, lg, tilt = 
 }
 
 /**
- * Les traits a la main. Dessines dans une boite de 100 de large, en
- * currentColor, et poses par leur parent.
+ * Les traits a la main, en currentColor, poses par leur parent.
  *
  * Aucun tiret: un bout de trait rond sur un tiret de longueur nulle peint un
  * point, et ces chemins sont tous continus.
  */
 const DOODLES = {
-  /* Une fleche courbe vers la droite. Retournee par son parent quand elle
-     doit pointer a gauche. */
+  /* Un arc vers la droite: une seule courbe, donc une seule direction
+     d'arrivee, et la pointe posee dessus. */
   swoop: {
     box: '0 0 100 50',
-    d: 'M6 40C24 14 56 6 90 18M90 18l-15-9M90 18l-12 13',
+    d: `M7 42C22 18 50 7 88 15${head([50, 7], [88, 15], 14)}`,
+  },
+  /* Une fleche qui fait une boucle avant de partir a gauche, comme celles de
+     Base Club. Elle arrive de la droite, tourne une fois, et finit sur sa
+     pointe en bas a gauche. */
+  loop: {
+    box: '0 0 124 56',
+    d: `M116 44C100 50 82 46 76 34C70 22 82 10 92 18C102 26 90 42 72 44C52 46 30 38 12 30${head([30, 38], [12, 30], 13)}`,
   },
 }
 
-export function Doodle({ kind, className = '', style, width = 3 }) {
+export function Doodle({ kind, className = '', style, width = 3.5 }) {
   const doodle = DOODLES[kind]
   if (!doodle) return null
   return (
@@ -232,9 +241,11 @@ export function SpinBadge({ text, label, to = '/signin', at, lg, tilt = 0, delay
             </textPath>
           </text>
         </g>
-        {/* La fleche, qui ne tourne pas: elle dit ou va le lien. */}
+        {/* La fleche, qui ne tourne pas: elle dit ou va le lien. Sa pointe
+            passe par head(), comme les autres: deux traits a 40 degres de la
+            tige, plutot qu'un angle droit pose sur son bout. */}
         <path
-          d="M78 122 122 78M90 78h32v32"
+          d={`M70 130L126 74${head([70, 130], [126, 74], 30, 40)}`}
           fill="none"
           stroke="#111111"
           strokeWidth="9"
