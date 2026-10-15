@@ -45,6 +45,14 @@ and the error points at the wrong thing.
   before measuring.
 - On a gradient there is no single background colour. Measure the **worst
   case**, not the commonest pixel.
+- **No black text on a dark or very saturated colour, even when the ratio
+  passes.** "Le noir sur des couleurs sombres ou trop saturées ça donne mal
+  aux yeux." Black on the brand pink `#FF007A` measures 4.98:1 and black on
+  sky `#38BDF8` 8.81:1, and both were still called "très limite": the pair
+  vibrates. Text on pink or blue is white on the deep shades (`#D6006B`
+  5.16:1, `#0B6FAD` 5.40:1); black stays on white, pastels and yellow. The
+  saturated colours are for stickers, borders and marks, not for grounds
+  under words.
 
 ## Writing
 

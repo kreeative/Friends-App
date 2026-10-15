@@ -1,203 +1,241 @@
 #!/usr/bin/env python3
 """
-Redessiner le liseré blanc des stickers, a distance constante du dessin.
+Redecouper les stickers: un liseré blanc rond, a distance constante du dessin.
 
   python3 scripts/diecut.py            # ce qui serait fait, sans rien ecrire
   python3 scripts/diecut.py --write    # ecrit dans src/assets/stickers
+
+Dependances, une fois par machine: pip install pillow numpy
 
 Meme arrangement que scripts/brand-icons.py: un generateur dont la sortie est
 commitee, parce que l'alternative est une etape de build qui demande Pillow sur
 chaque machine qui construit ce site.
 
-CE QUI A ETE RAPPORTE
+CE QUI A ETE RAPPORTE, DEUX FOIS
 
   "But the sticker you have, they are not properly outlined."
+  "Pourquoi ya des sticker qui sont toujours mal découper"
 
-Juste, et mesurable. Deux defauts, pas un.
+La premiere version de ce script a corrige le blanc (une seule valeur au lieu
+de soixante teintes de JPEG) mais elle ne touchait que les fichiers a alpha
+FRANC, et elle dilatait avec un filtre CARRE (MaxFilter). Sur un fond blanc
+rien ne se voyait. Sur le panneau rose du pied de page et sur les cartes de
+couleur, deux defauts se voyaient tres bien, mesures sur les 29 fichiers:
 
-1. LE BLANC N'EST PAS BLANC. Le liseré de bass.png porte 62 teintes claires
-   differentes et la plus frequente ne couvre que 4,1 % du liseré.
-   skullfire.png en porte 108, la plus frequente 2,4 %. C'est de la
-   compression JPEG cuite dans le fichier puis quantifiee en palette. A cote,
-   fox.png porte 9 teintes claires et 95,7 % du liseré tient sur UNE valeur,
-   (254, 254, 254). Voila a quoi ressemble un liseré propre.
+1. UN DEUXIEME CONTOUR. Une ligne grise fine courait dans le blanc, a quelques
+   pixels du dessin: la ligne de decoupe de l'image d'origine, restee dans le
+   liseré. 1516 pixels gris dans les liserés, loin du dessin, sur 12 stickers
+   (cloudguy 421, leaf 248, bird 231, burger 220...). Apres: 1.
 
-2. LE LISERÉ NE SUIT PAS LA FORME. Il a ete detoure a la main sur une image
-   deja compressee, donc sa largeur ondule: gras ici, mince la, avec des
-   bosses qui n'appartiennent a aucun trait du dessin. Un liseré de sticker
-   est un contour a distance constante. Celui-la n'en etait pas un.
+2. DES MARCHES D'ESCALIER. Un carre dilate un carre: chaque bosse du dessin
+   devenait un angle droit dans le liseré. Mesure: le perimetre de la
+   decoupe divise par celui de la meme forme lissee. 1,000 pour une courbe
+   propre. Avant: 1,033 en moyenne, 1,123 pour bird. Apres: 1,001 en
+   moyenne, 1,006 au pire.
 
-CE QUE FAIT CE SCRIPT
+CE QUE FAIT CE SCRIPT, SUR TOUS LES FICHIERS
 
-  a. Retire l'anneau clair qui entoure le dessin, trouve par DIFFUSION DEPUIS
-     LE VIDE et non par un seuil global. La face du crane de skullfire est
-     creme (247, 241, 202): un seuil sur la clarte la mangerait. La diffusion
-     s'arrete sur les flammes rouges, donc elle ne touche que l'anneau.
-  b. Dilate l'alpha du dessin d'un nombre CONSTANT de pixels.
-  c. Remplit de blanc franc, (255, 255, 255), une seule valeur.
-  d. Adoucit le bord exterieur, parce qu'il n'y en avait aucun: ces fichiers
-     ont 0,00 % de pixels semi-transparents, donc un escalier au lieu d'un
-     contour.
+  a. Retire l'ancien liseré, trouve par DIFFUSION DEPUIS LE VIDE a travers
+     les pixels clairs et sans couleur. Le seuil descend jusqu'au gris de la
+     ligne fantome (168), et le creme du crane de skullfire (247, 241, 202)
+     reste protege par l'ecart de teinte, comme avant.
+  b. Garde le dessin: son plus grand morceau, plus tout morceau ENFERME dans
+     son contour (une lettre dans la bulle) ou assez grand pour etre une
+     partie (la note au-dessus de l'oiseau, 35 % de l'oiseau). Les miettes
+     restees dans l'ancien liseré partent: le point au-dessus de la bulle
+     CHACHING etait l'une d'elles.
+  c. Remplit les trous: un sticker est une seule forme pleine. La bulle
+     CHACHING a une ouverture dans son trait, donc son interieur n'est ferme
+     que par le nouveau liseré; c'est la qu'il est rempli, avec les pixels
+     dessines d'origine (le blanc et les points de la bulle).
+  d. Dilate par un DISQUE, exactement (convolution par FFT), puis ferme par un
+     disque un peu plus petit: les encoches entre deux jambes ou deux lettres
+     se comblent, comme la ligne d'une vraie decoupe. Le tout a 4x, puis
+     reduit, ce qui donne au bord ses pixels doux.
+  e. Blanc franc dessous, le dessin d'origine dessus.
 
-QUELS FICHIERS IL TOUCHE, ET POURQUOI CE N'EST PAS UNE LISTE
-
-Ceux dont l'alpha est FRANC: aucun pixel entre 1 et 254. C'est la signature
-d'un detourage a l'emporte-piece. Les dix autres du dossier ont entre 11 % et
-28 % de pixels doux, donc un vrai contour anti-crenele, et on n'y touche pas:
-les redessiner changerait un dessin qui va bien.
-
-Une regle mesuree plutot qu'une liste de noms, pour la meme raison que
-src/lib/art.js globe le dossier au lieu de tenir un registre.
+Relance sur des fichiers deja traites, il redonne la meme decoupe: le liseré
+blanc est retire en (a) et redessine a la meme distance en (d).
 """
 import sys
-from collections import Counter, deque
+from collections import deque
 from pathlib import Path
 
 try:
+    import numpy as np
     from PIL import Image, ImageFilter
 except ImportError:
-    sys.exit("Pillow manquant:  pip install pillow")
+    sys.exit("Pillow ou numpy manquant:  pip install pillow numpy")
 
 DOSSIER = Path(__file__).resolve().parent.parent / 'src' / 'assets' / 'stickers'
 
-# Un pixel de liseré: clair et sans couleur. Le creme du crane (247,241,202)
-# a un ecart de 45 entre son maximum et son minimum, donc il passe au travers.
-CLAIR = 196
-ECART = 26
+# Un pixel de l'ancien liseré: clair et sans couleur. 168 attrape la ligne
+# grise fantome; l'ecart de 30 laisse passer le creme du crane (45).
+CLAIR = 168
+ECART = 30
 
-# La largeur du liseré, en proportion du grand cote, pour qu'un petit sticker
-# n'herite pas d'un contour de gros. 3,5 % donne 11 px sur 320, soit environ
-# 2,5 px a la taille ou ils s'affichent.
-LARGEUR = 0.035
-MINI = 6
+# La largeur du liseré, en proportion du grand cote: 3 %, soit 10 px sur 330
+# et environ 2,5 px a la taille ou ils s'affichent.
+LARGEUR = 0.030
+MINI = 7
+SUR = 4  # sur-echantillonnage du liseré
 
+# Une miette: moins de 24 px, ou moins de 0,4 % du dessin ET moins de 140 px.
+MIETTE = 24
+MIETTE_PART = 0.004
+MIETTE_PLAFOND = 140
 
-def alpha_franc(im):
-    """Aucun pixel entre 1 et 254: decoupe a l'emporte-piece."""
-    hist = im.convert('RGBA').getchannel('A').histogram()
-    return sum(hist[1:255]) == 0
-
-
-def sans_lisere(im):
-    """L'illustration seule, l'anneau clair retire par diffusion depuis le vide."""
-    im = im.convert('RGBA')
-    w, h = im.size
-    px = im.load()
-
-    def clair(p):
-        r, g, b, a = p
-        return a > 128 and min(r, g, b) >= CLAIR and (max(r, g, b) - min(r, g, b)) <= ECART
-
-    vu = [[False] * w for _ in range(h)]
-    q = deque()
-    for y in range(h):
-        for x in range(w):
-            if px[x, y][3] <= 128:
-                for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-                    i, j = x + dx, y + dy
-                    if 0 <= i < w and 0 <= j < h and not vu[j][i] and clair(px[i, j]):
-                        vu[j][i] = True
-                        q.append((i, j))
-    n = 0
-    while q:
-        x, y = q.popleft()
-        n += 1
-        for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-            i, j = x + dx, y + dy
-            if 0 <= i < w and 0 <= j < h and not vu[j][i] and clair(px[i, j]):
-                vu[j][i] = True
-                q.append((i, j))
-
-    art = im.copy()
-    ap = art.load()
-    for y in range(h):
-        for x in range(w):
-            if vu[y][x]:
-                ap[x, y] = (0, 0, 0, 0)
-    return art, n
+V4 = ((1, 0), (-1, 0), (0, 1), (0, -1))
 
 
-def lisere(art):
-    """Le contour, redessine a distance constante."""
-    w, h = art.size
-    anneau = max(MINI, round(max(w, h) * LARGEUR))
-    marge = anneau + 4
-    grand = Image.new('RGBA', (w + 2 * marge, h + 2 * marge), (0, 0, 0, 0))
-    grand.alpha_composite(art, (marge, marge))
+def inonder(depart, permis):
+    """Les pixels de `permis` atteignables depuis ceux de `depart`."""
+    h, w = permis.shape
+    vu = depart & permis
+    file = deque(zip(*np.nonzero(vu)))
+    while file:
+        y, x = file.popleft()
+        for dy, dx in V4:
+            j, i = y + dy, x + dx
+            if 0 <= j < h and 0 <= i < w and permis[j, i] and not vu[j, i]:
+                vu[j, i] = True
+                file.append((j, i))
+    return vu
 
-    masque = grand.getchannel('A').point(lambda v: 255 if v > 110 else 0)
-    reste = anneau
-    while reste > 0:
-        pas = min(reste, 7)  # MaxFilter veut un noyau impair et raisonnable
-        masque = masque.filter(ImageFilter.MaxFilter(pas * 2 + 1))
-        reste -= pas
-    # Arrondir les angles que la dilatation carree laisse, puis adoucir: c'est
-    # ce flou final qui donne les pixels semi-transparents qui manquaient.
-    masque = masque.filter(ImageFilter.GaussianBlur(0.7)).point(lambda v: 255 if v > 128 else 0)
-    masque = masque.filter(ImageFilter.GaussianBlur(0.6))
 
-    out = Image.new('RGBA', grand.size, (255, 255, 255, 0))
-    out.putalpha(masque)
-    out.alpha_composite(grand)
+def ancien_lisere(rgba):
+    a = rgba[:, :, 3]
+    rgb = rgba[:, :, :3].astype(int)
+    clair = (a > 100) & (rgb.min(axis=2) >= CLAIR) & ((rgb.max(axis=2) - rgb.min(axis=2)) <= ECART)
+    vide = np.pad(a <= 100, 1, constant_values=True)
+    graines = clair & (vide[:-2, 1:-1] | vide[2:, 1:-1] | vide[1:-1, :-2] | vide[1:-1, 2:])
+    return inonder(graines, clair)
+
+
+def boucher(masque):
+    """Le masque avec ses trous remplis."""
+    h, w = masque.shape
+    bord = np.zeros((h, w), bool)
+    bord[0, :] = bord[-1, :] = bord[:, 0] = bord[:, -1] = True
+    return ~inonder(bord & ~masque, ~masque)
+
+
+def morceaux(masque):
+    h, w = masque.shape
+    vu = np.zeros((h, w), bool)
+    liste = []
+    for y, x in zip(*np.nonzero(masque)):
+        if vu[y, x]:
+            continue
+        vu[y, x] = True
+        file = deque([(y, x)])
+        pts = []
+        while file:
+            cy, cx = file.popleft()
+            pts.append((cy, cx))
+            for dy, dx in V4:
+                j, i = cy + dy, cx + dx
+                if 0 <= j < h and 0 <= i < w and masque[j, i] and not vu[j, i]:
+                    vu[j, i] = True
+                    file.append((j, i))
+        liste.append(np.array(pts))
+    return liste
+
+
+def dessin(art):
+    """Le dessin: son grand morceau, ce qu'il enferme, ses vraies parties."""
+    liste = sorted(morceaux(art), key=len, reverse=True)
+    if not liste:
+        return art
+    grand = len(liste[0])
+    garde = np.zeros_like(art)
+    garde[liste[0][:, 0], liste[0][:, 1]] = True
+    dedans = boucher(garde)
+    for m in liste[1:]:
+        n = len(m)
+        enferme = dedans[m[:, 0], m[:, 1]].mean() > 0.5
+        miette = n < MIETTE or (n < MIETTE_PART * grand and n < MIETTE_PLAFOND)
+        if enferme or not miette:
+            garde[m[:, 0], m[:, 1]] = True
+    return garde
+
+
+def disque(r):
+    y, x = np.ogrid[-r:r + 1, -r:r + 1]
+    return (x * x + y * y <= r * r).astype(np.float32)
+
+
+def convoluer(masque, noyau):
+    h, w = masque.shape
+    kh, kw = noyau.shape
+    H, W = h + kh, w + kw
+    F = np.fft.rfft2(masque.astype(np.float32), s=(H, W)) * np.fft.rfft2(noyau, s=(H, W))
+    plein = np.fft.irfft2(F, s=(H, W))
+    return plein[kh // 2:kh // 2 + h, kw // 2:kw // 2 + w]
+
+
+def dilater(masque, r):
+    return convoluer(masque, disque(r)) > 0.5
+
+
+def eroder(masque, r):
+    k = disque(r)
+    return convoluer(masque, k) > k.sum() - 0.5
+
+
+def redecouper(im):
+    rgba = np.asarray(im.convert('RGBA')).copy()
+    art = (rgba[:, :, 3] > 100) & ~ancien_lisere(rgba)
+    silhouette = boucher(dessin(art))
+    h, w = silhouette.shape
+    r = max(MINI, round(max(w, h) * LARGEUR))
+    marge = r + 8
+    sil = np.pad(silhouette, marge)
+    src = np.pad(rgba, ((marge, marge), (marge, marge), (0, 0)))
+
+    grand = np.kron(sil, np.ones((SUR, SUR), bool))
+    lisere = dilater(grand, r * SUR)
+    f = round(r * 0.9) * SUR
+    lisere = eroder(dilater(lisere, f), f)
+    alpha = np.asarray(Image.fromarray(lisere.astype(np.uint8) * 255).resize(
+        (sil.shape[1], sil.shape[0]), Image.BOX)).copy()
+
+    # Ce que le nouveau liseré enferme et que le dessin ne fermait pas.
+    plein = alpha > 127
+    trous = boucher(plein) & ~plein
+    autour = np.asarray(Image.fromarray(trous.astype(np.uint8) * 255).filter(ImageFilter.MaxFilter(3))) > 0
+    alpha[trous | (autour & (alpha > 0))] = 255
+
+    fond = np.zeros_like(src)
+    fond[:, :, :3] = 255
+    fond[:, :, 3] = alpha
+    out = Image.fromarray(fond, 'RGBA')
+    # Le dessin, avec un pixel de plus pour emporter son bord adouci.
+    garde = np.asarray(Image.fromarray(sil.astype(np.uint8) * 255).filter(ImageFilter.MaxFilter(3))) > 0
+    dessus = src.copy()
+    dessus[:, :, 3] = np.where(garde | trous, src[:, :, 3], 0)
+    out.alpha_composite(Image.fromarray(dessus, 'RGBA'))
     return out.crop(out.getchannel('A').getbbox())
 
 
-def teintes_bord(im):
-    """Combien de valeurs differentes le LISERÉ porte, et la part de la plus
-    frequente.
+def escalier(im):
+    """Perimetre de la decoupe / perimetre de la meme forme lissee. 1 = courbe
+    propre; plus haut, des marches."""
+    op = np.asarray(im.convert('RGBA'))[:, :, 3] > 128
 
-    Mesure sur le bord, pas sur tous les pixels clairs de l'image. La premiere
-    version comptait partout, et rendait donc 102 teintes pour cloudguy apres
-    correction: ses chaussures et ses yeux sont blancs, et ils n'ont rien a
-    voir avec le liseré. Un chiffre qui repond a une autre question que celle
-    posee est pire qu'aucun chiffre.
+    def perimetre(m):
+        p = np.pad(m, 1)
+        return (m & ~(p[:-2, 1:-1] & p[2:, 1:-1] & p[1:-1, :-2] & p[1:-1, 2:])).sum()
 
-    Le bord, ici, c'est l'anneau opaque qui touche la transparence.
-    """
-    im = im.convert('RGBA')
-    w, h = im.size
-    px = im.load()
-    c = Counter()
-    for y in range(1, h - 1):
-        for x in range(1, w - 1):
-            r, g, b, a = px[x, y]
-            if a != 255:
-                continue
-            if min(px[x - 1, y][3], px[x + 1, y][3], px[x, y - 1][3], px[x, y + 1][3]) < 255:
-                c[(r, g, b)] += 1
-    tot = sum(c.values())
-    if not tot:
-        return 0, 0.0
-    return len(c), c.most_common(1)[0][1] / tot * 100
-
-
-def pct_doux(im):
-    """La part de pixels semi-transparents: un contour anti-crenele en a,
-    une decoupe a l'emporte-piece en a zero."""
-    im = im.convert('RGBA')
-    hist = im.getchannel('A').histogram()
-    return sum(hist[1:255]) / (im.width * im.height) * 100
+    lisse = np.asarray(Image.fromarray(op.astype(np.uint8) * 255).filter(ImageFilter.GaussianBlur(2.5))) > 127
+    return perimetre(op) / max(perimetre(lisse), 1)
 
 
 def enregistrer(im, chemin, cible_ko=40):
-    """En palette, pas en couleurs vraies.
-
-    La premiere version ecrivait du RGBA: liseré parfait, et des fichiers de
-    115 ko la ou le README du dossier en demande moins de 40. Trente fichiers
-    de decoration a ce prix, c'est trois megaoctets sur une page que quelqu'un
-    ouvre au telephone.
-
-    FASTOCTREE, et pas MEDIANCUT: seul le premier quantifie l'alpha en meme
-    temps que la couleur, ce qui est tout l'interet ici. Une palette PNG porte
-    la transparence par entree (chunk tRNS), donc le bord doux survit; c'est
-    exactement ce que font les dix stickers du dossier qui allaient deja bien,
-    avec leurs 96 couleurs.
-
-    On descend le nombre de couleurs jusqu'a tenir sous la cible. Un liseré
-    blanc et un aplat de dessin animé ne demandent pas 256 teintes.
-    """
+    """En palette, pas en couleurs vraies: FASTOCTREE quantifie l'alpha avec la
+    couleur, donc le bord doux survit, et 30 fichiers restent legers."""
     for n in (128, 96, 64, 48):
-        q = im.convert('RGBA').quantize(colors=n, method=Image.FASTOCTREE)
+        q = im.quantize(colors=n, method=Image.FASTOCTREE)
         q.save(chemin, optimize=True)
         if chemin.stat().st_size <= cible_ko * 1024:
             return n
@@ -206,29 +244,19 @@ def enregistrer(im, chemin, cible_ko=40):
 
 def main():
     ecrire = '--write' in sys.argv
-    fichiers = sorted(p for p in DOSSIER.glob('*.png'))
-    touches = 0
-    print(f"{'fichier':16} {'teintes du lisere':>18} {'dominante':>20} {'doux':>14} {'poids':>9}")
+    fichiers = sorted(DOSSIER.glob('*.png'))
+    print(f"{'fichier':14} {'escalier':>18} {'poids':>9}")
     for p in fichiers:
         im = Image.open(p)
-        if not alpha_franc(im):
-            continue
-        av_n, av_dom = teintes_bord(im)
-        av_doux = pct_doux(im)
-        art, _ = sans_lisere(im)
-        neuf = lisere(art)
-        ap_n, ap_dom = teintes_bord(neuf)
-        ap_doux = pct_doux(neuf)
+        neuf = redecouper(im)
+        av, ap = escalier(im), escalier(neuf)
         if ecrire:
             enregistrer(neuf, p)
             poids = f"{p.stat().st_size // 1024} ko"
         else:
             poids = "(essai)"
-        touches += 1
-        print(f"  {p.name:14} {av_n:>7} -> {ap_n:<7} {av_dom:>8.1f}% -> {ap_dom:<8.1f}%"
-              f" {av_doux:>5.1f}% -> {ap_doux:<5.1f}% {poids:>9}")
-    print(f"\n{touches} fichiers sur {len(fichiers)}."
-          f" Les autres ont deja un contour anti-crenele et sont laisses tels quels.")
+        print(f"  {p.name:14} {av:6.3f} -> {ap:6.3f}  {poids:>9}")
+    print(f"\n{len(fichiers)} fichiers.")
     if not ecrire:
         print("Rien n'a ete ecrit. Relancer avec --write.")
 

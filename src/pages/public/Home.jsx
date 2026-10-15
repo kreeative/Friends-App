@@ -49,7 +49,8 @@ const PILLAR_TILT = [-2.2, 1.6, -1.2]
 
 /**
  * Une bande de scotch qui repete des mots, plus large que l'ecran et penchee.
- * Decor: aria-hidden, les mots sont ceux de la page.
+ * Decor: aria-hidden, les mots sont ceux de la page. En blanc sur le rose et
+ * le bleu profonds: en noir sur les vifs, "ça donne mal aux yeux".
  */
 function WordTape({ words, tone, tilt }) {
   return (
@@ -58,7 +59,7 @@ function WordTape({ words, tone, tilt }) {
       className={`relative ml-[-8%] w-[116%] py-2.5 ${tone}`}
       style={{ transform: `rotate(${tilt}deg)` }}
     >
-      <div className="flex justify-center gap-5 whitespace-nowrap text-[clamp(0.95rem,1.8vw,1.25rem)] font-extrabold uppercase tracking-[0.05em] text-[#111111]">
+      <div className="flex justify-center gap-5 whitespace-nowrap text-[clamp(0.95rem,1.8vw,1.25rem)] font-extrabold uppercase tracking-[0.05em] text-white">
         {[0, 1, 2, 3].flatMap((k) => words.map((w) => <span key={`${k}${w}`}>{w} ✦</span>))}
       </div>
     </div>
@@ -205,7 +206,10 @@ export default function Home() {
               delay={1000}
               className="absolute bottom-0 left-1 z-[4] w-[7rem] sm:w-[7.75rem]"
             />
-            <Sparkle className="absolute right-3 top-6 w-6 text-[#FF007A]" />
+            {/* Dans le vide au-dessus de la carte, pas contre un sticker: collee
+                au bord de la marguerite, l'etincelle rose se lisait comme un
+                defaut de decoupe. */}
+            <Sparkle className="absolute left-[46%] top-7 w-6 text-[#FF007A]" />
             <Sparkle className="absolute bottom-24 right-1 w-4 text-[#38BDF8]" />
             {/* Une fleche du badge vers le bouton principal. Elle n'a de sens
                 que quand les deux sont cote a cote, donc a partir de lg. */}
@@ -240,7 +244,7 @@ export default function Home() {
        * seule precaution qui compte).
        */}
       <section data-hook="manifesto-band" className="relative overflow-hidden py-14 md:py-20">
-        <WordTape words={fun.tape} tone="bg-[#FF007A]" tilt={3} />
+        <WordTape words={fun.tape} tone="bg-[#D6006B]" tilt={3} />
         <div
           className="relative z-10 -my-2 ml-[-8%] w-[116%] bg-[#111111] px-[11%] py-11 md:py-14"
           style={{ transform: 'rotate(-2.5deg)' }}
@@ -265,7 +269,7 @@ export default function Home() {
             className="absolute -bottom-8 right-[12%] w-[3.5rem] md:w-[5.5rem]"
           />
         </div>
-        <WordTape words={[...fun.tape].reverse()} tone="bg-[#38BDF8]" tilt={2} />
+        <WordTape words={[...fun.tape].reverse()} tone="bg-[#0B6FAD]" tilt={2} />
       </section>
 
       {/**
@@ -284,10 +288,13 @@ export default function Home() {
        *
        * La note d'avant gardait la couleur dans une petite tuile, parce que
        * trois cartes de couleur pleine "font une page de blocs" et que le texte
-       * devait etre remesure sur trois fonds. Il l'a ete: tout le texte des
-       * cartes est en ENCRE, #111 sur #FF007A 4,98:1, sur #38BDF8 8,81:1, sur
-       * #FFD60A 13,4:1. Le gris secondaire n'y entre pas: #565656 sur ce rose
-       * tomberait a 1,9:1. Les blocs, c'est ce qui a ete demande.
+       * devait etre remesure sur trois fonds. Il l'a ete, deux fois. La
+       * premiere mettait de l'encre partout, #111 sur #FF007A 4,98:1 et sur
+       * #38BDF8 8,81:1: le ratio passait, et c'etait "très limite, ça donne mal
+       * aux yeux". Le rose et le bleu sont maintenant les tons profonds avec du
+       * blanc, #D6006B 5,16:1 et #0B6FAD 5,40:1; le jaune garde l'encre,
+       * 13,4:1. Chaque carte porte sa couleur de texte avec son fond (`tone`
+       * dans landing.js), pour que les deux ne se separent jamais.
        */}
       <section id="lifestyle" className="mx-auto w-full max-w-5xl px-6 pb-16 pt-4 md:pb-24">
         <p className="tag">{c.pillars.eyebrow}</p>
@@ -300,7 +307,7 @@ export default function Home() {
             <li
               key={item.n}
               data-pillar={item.n}
-              className={`diecut relative flex flex-col rounded-[1.75rem] p-6 pt-7 text-[#111111] ${item.tone}`}
+              className={`diecut relative flex flex-col rounded-[1.75rem] p-6 pt-7 ${item.tone}`}
               style={{ '--tilt': `${PILLAR_TILT[i]}deg` }}
             >
               {/* Au coin haut droit, au-dessus de la ligne du numero: le titre
@@ -313,11 +320,14 @@ export default function Home() {
               />
               <span
                 aria-hidden="true"
-                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-pill bg-white font-display text-body font-extrabold [font-variant-numeric:tabular-nums]"
+                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-pill bg-white font-display text-body font-extrabold text-[#111111] [font-variant-numeric:tabular-nums]"
               >
                 {item.n}
               </span>
-              <h3 className="mt-5 text-[1.125rem] font-bold leading-snug">{item.title}</h3>
+              {/* text-inherit: la base peint h1, h2 et h3 en encre, et sur le
+                  rose et le bleu profonds le titre restait noir a 3,66:1
+                  pendant que le reste de la carte passait en blanc. */}
+              <h3 className="mt-5 text-[1.125rem] font-bold leading-snug text-inherit">{item.title}</h3>
               <p className="mt-2.5 text-small leading-relaxed">{item.body}</p>
             </li>
           ))}

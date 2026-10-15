@@ -93,16 +93,22 @@ export function Spot({ name, at, lg, tilt = 0, delay = 0, className = '', eager 
 /**
  * Un sticker qui porte des mots: forme pleine, bord blanc decoupe, ombre.
  *
- * Toujours de l'encre sur la couleur, jamais du blanc: #111 tient 4,98:1 sur
- * le rose, 8,81 sur le bleu ciel et 13,4 sur le jaune, la ou le blanc sur ce
- * rose tombe a 3,80. Le noir porte du blanc (18,9:1).
+ * PAS DE NOIR SUR LE ROSE NI SUR LE BLEU.
+ *
+ *   "Le noir sur des couleurs sombres ou trop saturées ça donne mal aux yeux"
+ *
+ * La premiere version mettait de l'encre sur #FF007A (4,98:1) et sur #38BDF8
+ * (8,81:1). Les deux passaient le ratio et les deux vibraient: "très limite".
+ * Le rose et le bleu qui portent des mots sont donc les tons PROFONDS, en
+ * blanc: #D6006B 5,16:1, #0B6FAD 5,40:1. Le jaune garde l'encre (13,4:1), le
+ * noir porte du blanc (18,9:1). La regle est dans CLAUDE.md.
  *
  * Classes ecrites en entier: Tailwind lit le texte source et ne construit pas
  * `bg-${tone}`.
  */
 const TONE = {
-  pink: 'bg-[#FF007A] text-[#111111]',
-  sky: 'bg-[#38BDF8] text-[#111111]',
+  pink: 'bg-[#D6006B] text-white',
+  sky: 'bg-[#0B6FAD] text-white',
   yellow: 'bg-[#FFD60A] text-[#111111]',
   ink: 'bg-[#111111] text-white',
   white: 'bg-white text-[#111111]',

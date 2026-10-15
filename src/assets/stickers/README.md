@@ -27,14 +27,10 @@ python3 scripts/diecut.py            # what it would do, writes nothing
 python3 scripts/diecut.py --write
 ```
 
-It strips whatever pale ring surrounds the art and draws a new one at a
-constant distance, in one flat white, with a soft outer edge. Run it on any
-art that arrives without a die-cut border, or with a ragged one.
-
-It only touches files whose alpha is hard, meaning no pixel between 1 and 254,
-which is the signature of a cut-out made on an already-compressed image. Art
-with a real anti-aliased edge is left alone, because redrawing an outline that
-is already right can only make it worse.
+It strips whatever pale ring surrounds the art, grey ghost lines included,
+and draws a new one at a constant distance from the drawing: one flat white,
+round like a real die-cut line, with a soft outer edge. It runs on every file,
+and running it twice gives the same cut, so run it after adding any art.
 
 Why it was needed once already: 23 of the 33 files here carried a white ring
 made of dozens of near-white values rather than one. `bass.png` had 41 shades
@@ -42,6 +38,16 @@ along its outline with the commonest covering 9% of it; `fox.png`, exported
 properly, had one shade covering 100%. At a glance it read as a grey, dirty
 halo, and the outline wandered in width because it had been traced by hand
 over JPEG mush.
+
+And why it was needed a second time ("Pourquoi ya des sticker qui sont
+toujours mal découper"): the first version only touched files with a hard
+alpha, and it grew the ring with a square filter. On the white page nothing
+showed. On the pink footer and the coloured cards, two things did: a second,
+grey outline inside the white one (1516 grey pixels in the rings across 12
+files, now 1), and stair steps wherever the drawing had a bump (the ratio of
+the cut's perimeter to a smoothed one averaged 1.033 and reached 1.123 on
+`bird.png`; it is now 1.001, 1.006 at worst). Look at new art on a dark
+ground before trusting it: a white page hides exactly these defects.
 
 ## Naming
 

@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { LANDING } from '../content/landing'
 import { CONTACT_EMAIL, DOC_ORDER, LEGAL, OWNER } from '../legal/content'
 import { useT } from '../lib/i18n'
-import { BRAND, useTheme } from '../lib/theme'
+import { useTheme } from '../lib/theme'
 import Lettering from './Lettering'
 import ThemePicker from './ThemePicker'
 import { Badge, Spot, cast } from './StickerKit'
@@ -23,18 +23,26 @@ import { Badge, Spot, cast } from './StickerKit'
  * les titres de colonne, des liens en gras, et le nom de la marque en geant en
  * bas, coupe par le bord, avec des stickers colles sur les lettres.
  *
- * LE PANNEAU EST LA TUILE DU LOGO, EN GRAND. Rose et lettres jaunes en soleil,
- * bleu et lettres jaunes en mer: BRAND, la meme valeur que l'ecran
- * d'attente, prise sur le pixel du coin de l'artwork. Et le selecteur de theme
- * est DANS ce panneau, donc choisir Mer repeint le pied de page sous le doigt:
- * l'apercu du choix est l'endroit ou on le fait.
+ * LE PANNEAU EST LA TUILE DU LOGO, EN GRAND, UN TON PLUS PROFOND. Rose et
+ * lettres jaunes en soleil, bleu et lettres jaunes en mer. Et le selecteur de
+ * theme est DANS ce panneau, donc choisir Mer repeint le pied de page sous le
+ * doigt: l'apercu du choix est l'endroit ou on le fait.
  *
- * TOUT LE TEXTE DU PANNEAU EST EN ENCRE, #111. Sur le rose 4,98:1, sur le bleu
- * mer 5,86:1. Le blanc y tomberait a 3,80 et 3,22, sous les 4,5 d'un texte de
- * taille normale. La couleur est litterale et pas --c-ink parce que ce pied de
- * page sert aussi sous les pages legales, qui portent le theme de l'app, et
- * que l'encre du theme n'a pas ete mesuree sur ces fonds.
+ * TOUT LE TEXTE DU PANNEAU EST BLANC, ET C'EST POUR CA QUE LE TON EST PROFOND.
+ *
+ *   "il y a les écritures noires dans les couleurs rose foncé et bleu. C'est
+ *    très limite, ça donne mal aux yeux."
+ *
+ * La premiere version posait de l'encre sur les couleurs exactes de la tuile,
+ * #FF007A et #009DB9: 4,98:1 et 5,86:1, le ratio passait, et ca vibrait. Le
+ * blanc sur ces deux-la tomberait a 3,80 et 3,22, sous les 4,5 d'un texte de
+ * taille normale. Les tons profonds de la marque portent le blanc: #D6006B
+ * 5,16:1 (le rose appuye des boutons) et #0B6FAD 5,40:1 (l'accent de mer). Le
+ * jaune du lettrage y ressort mieux aussi: 3,33 et 3,48 contre 2,45 et 2,08.
+ * La couleur est litterale parce que ce pied de page sert aussi sous les
+ * pages legales, qui portent le theme de l'app. La regle est dans CLAUDE.md.
  */
+const GROUND = { sun: '#D6006B', sea: '#0B6FAD' }
 
 /* Colles sur les lettres, de gauche a droite. Positions en pourcentages du
    lettrage, donc chaque sticker reste sur la meme lettre a toutes les
@@ -51,8 +59,8 @@ const SPOTS = [
 
 /* Liens en gras sur le panneau. Le soulignement arrive au survol et au focus,
    en epaisseur 2, pour qu'un lien se reconnaisse autrement que par sa couleur
-   (1.4.1): ils sont tous de la meme encre. */
-const LINK = 'text-body font-semibold text-[#111111] underline-offset-4 decoration-2 hover:underline focus-visible:underline'
+   (1.4.1): ils sont tous du meme blanc. */
+const LINK = 'text-body font-semibold text-white underline-offset-4 decoration-2 hover:underline focus-visible:underline'
 
 export default function Footer() {
   const { locale, setLocale } = useT()
@@ -75,8 +83,8 @@ export default function Footer() {
     <footer className="mt-section px-2.5 pb-2 sm:px-4" data-hook="footer">
       <div
         data-hook="footer-panel"
-        className="relative overflow-hidden rounded-[2rem] text-[#111111] transition-colors duration-500"
-        style={{ backgroundColor: BRAND[theme] ?? BRAND.sun }}
+        className="relative overflow-hidden rounded-[2rem] text-white transition-colors duration-500"
+        style={{ backgroundColor: GROUND[theme] ?? GROUND.sun }}
       >
         <div className="relative z-10 mx-auto w-full max-w-5xl px-5 pt-12 sm:px-6 md:pt-16">
           <div className="grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-[1.35fr_1fr_1fr_1.2fr]">
@@ -117,7 +125,7 @@ export default function Footer() {
               <h2 className="tag tag-flat">{c.contact}</h2>
               <a
                 href={`mailto:${CONTACT_EMAIL}`}
-                className="mt-4 block break-words text-[1.125rem] font-bold leading-snug text-[#111111] underline-offset-4 decoration-2 hover:underline focus-visible:underline"
+                className="mt-4 block break-words text-[1.125rem] font-bold leading-snug text-white underline-offset-4 decoration-2 hover:underline focus-visible:underline"
               >
                 {CONTACT_EMAIL}
               </a>

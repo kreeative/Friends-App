@@ -5054,8 +5054,22 @@ ok(
   ok('the giant lettering is decoration, painted by its parent',
      /aria-hidden="true"/.test(lettering) && /fill="currentColor"/.test(lettering)
        && /Genere par scripts\/lettering\.py/.test(read('src/content/lettering.js')) && existsSync(join(root, 'scripts/lettering.py')))
-  ok('the footer panel is the logo tile at scale: BRAND by theme, every word in literal ink',
-     /backgroundColor: BRAND\[theme\] \?\? BRAND\.sun/.test(foot) && /text-\[#111111\]/.test(foot) && !/text-white[^']*hover:underline/.test(foot))
+  ok('the footer panel is the logo tile at scale, one shade deeper, with white words on it',
+     /const GROUND = \{ sun: '#D6006B', sea: '#0B6FAD' \}/.test(foot) && /backgroundColor: GROUND\[theme\] \?\? GROUND\.sun/.test(foot)
+       && /rounded-\[2rem\] text-white/.test(foot) && /const LINK = 'text-body font-semibold text-white/.test(foot))
+  /* "Le noir sur des couleurs sombres ou trop saturées ça donne mal aux
+     yeux": black on #FF007A measured 4.98:1 and on #38BDF8 8.81:1, and both
+     were "très limite". Words on pink or blue sit on the deep shades, in
+     white. The bright ones stay for stickers, sparkles and arrows. */
+  const words = ['src/pages/public/Home.jsx', 'src/components/StickerKit.jsx', 'src/components/Footer.jsx', 'src/content/landing.js']
+  const bright = words.filter((f) => /bg-\[#(FF007A|38BDF8|009DB9)\]/i.test(code(f)))
+  ok('no words sit on the bright pink or blue: those grounds are the deep shades, in white', bright.length === 0, bright.join(' '))
+  ok('every pillar card carries its text colour with its ground',
+     (landingSrc.match(/tone: 'bg-\[#D6006B\] text-white'/g) ?? []).length === 2
+       && (landingSrc.match(/tone: 'bg-\[#0B6FAD\] text-white'/g) ?? []).length === 2
+       && (landingSrc.match(/tone: 'bg-\[#FFD60A\] text-\[#111111\]'/g) ?? []).length === 2)
+  ok('the rule is written down where the next session reads it',
+     /No black text on a dark or very saturated colour/.test(read('CLAUDE.md')))
   ok('"proudly Ivorian" is shown once at every width: on the lettering from sm, in the small print below that',
      /decorative=\{false\}/.test(foot) && /hidden text-\[clamp\(0\.75rem,1\.1vw,0\.9375rem\)\] sm:inline-flex/.test(foot)
        && /text-small text-muted sm:hidden">\{c\.built\}/.test(foot))
