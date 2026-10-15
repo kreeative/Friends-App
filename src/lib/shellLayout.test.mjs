@@ -5064,6 +5064,19 @@ ok(
   const words = ['src/pages/public/Home.jsx', 'src/components/StickerKit.jsx', 'src/components/Footer.jsx', 'src/content/landing.js']
   const bright = words.filter((f) => /bg-\[#(FF007A|38BDF8|009DB9)\]/i.test(code(f)))
   ok('no words sit on the bright pink or blue: those grounds are the deep shades, in white', bright.length === 0, bright.join(' '))
+  /* "les titres sont toujours noirs": the base layer paints h1 to h3 in ink,
+     so a card's title has to inherit the card's colour explicitly. */
+  ok('the pillar titles take the card\'s colour, not the base ink',
+     /<h3 className="mt-5 text-\[1\.125rem\] font-bold leading-snug text-inherit">\{item\.title\}<\/h3>/.test(home))
+  /* "la bannière pour le thème de couleur, je trouve que c'est bizarre": the
+     footer's colour choice is the language toggle's shape, not a white card. */
+  const picker = read('src/components/ThemePicker.jsx')
+  ok('the footer picks the colour with chips under a pill label, in no white card',
+     /<ThemePicker variant="chips" className="mt-8" \/>/.test(foot) && !/rounded-\[1\.25rem\] bg-white p-4/.test(foot)
+       && /variant === 'chips'/.test(picker) && /role="group" aria-labelledby="theme-chips-label"/.test(picker)
+       && /aria-pressed=\{on\}/.test(picker))
+  ok('and the app\'s screens keep the swatches', /variant = 'swatches'/.test(picker)
+     && !/variant="chips"/.test(read('src/pages/Settings.jsx') + read('src/pages/MeDetails.jsx') + read('src/pages/Setup.jsx')))
   ok('every pillar card carries its text colour with its ground',
      (landingSrc.match(/tone: 'bg-\[#D6006B\] text-white'/g) ?? []).length === 2
        && (landingSrc.match(/tone: 'bg-\[#0B6FAD\] text-white'/g) ?? []).length === 2

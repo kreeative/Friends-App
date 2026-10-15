@@ -149,14 +149,12 @@ export default function Footer() {
                   </button>
                 ))}
               </div>
+              {/* La couleur, sous la langue et de la meme forme: une pastille
+                  pour titre, deux puces. C'etait une carte blanche a part,
+                  sous les colonnes, et "c'est bizarre par rapport au reste du
+                  design". Choisir Mer repeint toujours le panneau. */}
+              <ThemePicker variant="chips" className="mt-8" />
             </div>
-          </div>
-
-          {/* Sur une carte blanche: les pastilles du selecteur sont dessinees
-              pour un fond clair, et c'est ici qu'on regarde le panneau changer
-              de couleur. */}
-          <div className="mt-10 inline-block rounded-[1.25rem] bg-white p-4 pr-5">
-            <ThemePicker />
           </div>
         </div>
 
