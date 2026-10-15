@@ -105,12 +105,26 @@ export default async function handler(req, res) {
       if (!userId && email) {
         // listUsers is paginated and has no exact-email filter, so this asks
         // the database directly rather than walking every page.
-        const { data: match } = await admin
-          .from('profiles')
-          .select('id')
+        //
+        // account_emails since migration 75: profiles.email_lower was
+        // readable by every member of every group the buyer was in, so the
+        // address moved to a table only its owner (and this service role)
+        // can read. The old column is the fallback for a database where 75
+        // has not been run yet, and is always empty on one where it has.
+        const { data: owned, error: ownedErr } = await admin
+          .from('account_emails')
+          .select('user_id')
           .eq('email_lower', email)
           .maybeSingle()
-        userId = match?.id ?? null
+        if (!ownedErr) userId = owned?.user_id ?? null
+        if (!userId) {
+          const { data: match } = await admin
+            .from('profiles')
+            .select('id')
+            .eq('email_lower', email)
+            .maybeSingle()
+          userId = match?.id ?? null
+        }
       }
 
       if (!userId) {

@@ -16,6 +16,7 @@ import GroupAnalytics from '../components/GroupAnalytics'
 import TodayObjective from '../components/TodayObjective'
 import GroupFeed from '../components/GroupFeed'
 import GoalCard from '../components/GoalCard'
+import { ShareSheet } from '../components/ShareChoices'
 
 export default function Board() {
   const { user } = useAuth()
@@ -196,6 +197,10 @@ export default function Board() {
   return (
     <Screen>
       <TopBar title={group.name} sub={status} />
+
+      {/* La question de l'arrivee: ce qu'on partage avec ce groupe. Ne
+          s'ouvre que tant qu'il n'y a pas de reponse (migration 75). */}
+      <ShareSheet />
 
       {/* Above the nudge, because a nudge waits for whoever gets to it and a
           birthday does not wait at all. */}

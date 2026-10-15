@@ -5175,5 +5175,80 @@ ok(
      (landingSrc.match(/tape: \[/g) ?? []).length === 2 && (landingSrc.match(/movement: '/g) ?? []).length === 2)
 }
 
+/* ---------------------------------------------------------------------------
+   Ce qu'on partage avec un groupe, migration 75.
+
+   "When someone join a group, let's add a feature that directly asks them
+   whether they want to share their name, their pictures, email, or their
+   mood with the group."
+
+   The migration was run against a real Postgres 16 with Supabase-shaped
+   stubs (auth.users, auth.uid(), storage), after 01 to 74, with members
+   already in a group: before it a member read another member's email
+   through profiles; after it the column is empty for everybody, existing
+   members still see each other, a newcomer who has not answered is hidden,
+   a hidden name shows as the pseudo in the proofs view, a refused photo is
+   dropped on insert and on update, a stranger gets no emails, leaving
+   deletes the answer, and re-running both 14 and 75 changes none of that.
+   This file cannot run SQL; it holds the shape those results depend on. */
+{
+  console.log('\ngroup sharing')
+  const sql = read('supabase/75_group_sharing.sql')
+  const rules = sql.replace(/--[^\n]*/g, '')
+  ok('the email moves to a table only its owner reads, by trigger, so nothing that still writes the old column can expose it',
+     /create table if not exists account_emails/.test(rules)
+       && /create policy account_emails_own on account_emails\s+for select to authenticated\s+using \(user_id = auth\.uid\(\)\)/.test(rules)
+       && /before insert or update of email_lower on profiles/.test(rules)
+       && /new\.email_lower := null;/.test(rules)
+       && /update profiles set email_lower = email_lower where email_lower is not null;/.test(rules))
+  ok('answers are read by their author only, and the backfill runs once, never on a re-run',
+     /if to_regclass\('public\.group_sharing'\) is null then/.test(rules)
+       && /create policy group_sharing_own on group_sharing\s+for select to authenticated\s+using \(user_id = auth\.uid\(\)\)/.test(rules)
+       && /references group_members \(group_id, user_id\) on delete cascade/.test(rules))
+  ok('a profile is readable only through a group where its owner shares the name',
+     /create policy profiles_select on profiles for select to authenticated\s+using \(id = auth\.uid\(\) or profile_visible_to_me\(id\)\);/.test(rules)
+       && /and s\.name\s/.test(rules))
+  ok('a hidden name needs a pseudo, and one call writes all four answers',
+     /raise exception 'alias_required'/.test(rules) && /create or replace function set_group_sharing\(/.test(rules)
+       && /insert into mood_share/.test(rules) && /delete from mood_share/.test(rules))
+  ok('emails go only to members of the group, and only for people who said yes',
+     /create or replace function group_member_emails\(p_group uuid\)/.test(rules) && /and s\.email/.test(rules)
+       && /me\.user_id = auth\.uid\(\)/.test(rules))
+  ok('a photo posted in a group where photos are not shared is dropped by the database',
+     /before insert or update of photo_url on checkin_items/.test(rules) && /new\.photo_url := null;/.test(rules)
+       && /revoke all on function member_shares\(uuid, uuid, text\) from public, anon, authenticated;/.test(rules))
+  ok('the three views that carry a name keep the row and show the pseudo',
+     (rules.match(/left join profiles/g) ?? []).length === 4
+       && (rules.match(/coalesce\(\w\.display_name, \w+\.alias\)/g) ?? []).length === 4)
+  ok('the SQL is plain ASCII, for the clipboard', /^[\x00-\x7F]*$/.test(sql))
+
+  const ctx = read('src/context/GroupContext.jsx')
+  ok('the group context knows the answer, tolerates a database without 75, and names hidden members by pseudo',
+     /from\('group_sharing'\)/.test(ctx) && /setMySharing\(sh\?\.error \? undefined : sh\?\.data \?\? null\)/.test(ctx)
+       && /display_name: m\.alias \|\| t\('share\.new_member'\)/.test(ctx) && /avatar_url: null/.test(ctx))
+  const board = read('src/pages/Board.jsx')
+  const share = read('src/components/ShareChoices.jsx')
+  ok('the question opens on the board until it is answered, and settings can change it',
+     /<ShareSheet \/>/.test(board) && /if \(!group \|\| mySharing !== null \|\| closed\) return null/.test(share)
+       && /<ShareChoices/.test(read('src/pages/Settings.jsx')) && /supabase\.rpc\('set_group_sharing'/.test(share)
+       && /measure-form/.test(share))
+  ok('the photo picker is not offered where photos are not shared',
+     /type === 'photo' && activeId && mySharing\?\.photos === false/.test(read('src/components/ProofField.jsx')))
+  ok('a member email shows only from group_member_emails',
+     /rpc\('group_member_emails'/.test(read('src/pages/Settings.jsx')) && /data-hook="member-email"/.test(read('src/components/MemberSheet.jsx')))
+  ok('the Stripe webhook finds buyers in account_emails first',
+     /from\('account_emails'\)/.test(read('api/stripe-webhook.js')))
+  const notify = read('supabase/functions/notify/index.ts')
+  ok('push and email name people the way their group may see them',
+     /async function nameIn\(/.test(notify) && (notify.match(/nameIn\(/g) ?? []).length >= 5
+       && /if \(!showsName\(m\.user_id\)\) return false/.test(notify)
+       && !/\.from\('profiles'\)\s*\.select\('display_name'\)\s*\.eq\('id', caller\.id\)/.test(notify))
+  const dict = read('src/lib/i18n.jsx')
+  const keys = [...new Set([...dict.matchAll(/'(share\.[a-z_]+)':/g)].map((m) => m[1]))]
+  ok('every sharing string exists in both languages',
+     keys.length >= 18 && keys.every((k) => (dict.match(new RegExp(`'${k.replace('.', '\\.')}':`, 'g')) ?? []).length === 2),
+     keys.filter((k) => (dict.match(new RegExp(`'${k.replace('.', '\\.')}':`, 'g')) ?? []).length !== 2).join(' '))
+}
+
 console.log(`\n  ${pass} passed, ${fail} failed\n`)
 process.exit(fail ? 1 : 0)

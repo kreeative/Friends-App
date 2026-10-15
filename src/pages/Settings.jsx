@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
@@ -12,6 +12,7 @@ import MemberSheet from '../components/MemberSheet'
 import ThemePicker from '../components/ThemePicker'
 import LanguagePicker from '../components/LanguagePicker'
 import DangerZone from '../components/DangerZone'
+import ShareChoices from '../components/ShareChoices'
 import { LegalLinks } from './Legal'
 
 /** A row in the quick actions card. One line, one icon, one job. */
@@ -75,12 +76,33 @@ function LinkIcon() {
 
 export default function Settings() {
   const { user } = useAuth()
-  const { group, members, groups, activeId, myRole, reload } = useGroup()
+  const { group, members, groups, activeId, myRole, reload, mySharing, reloadGroup } = useGroup()
   const { t } = useT()
 
   const [inviting, setInviting] = useState(false)
   const [tapped, setTapped] = useState(null)
   const [error, setError] = useState(null)
+  const [savedShare, setSavedShare] = useState(false)
+  /**
+   * Les adresses que des membres ont choisi de partager AVEC CE GROUPE.
+   *
+   * Par group_member_emails() (migration 75), qui ne rend que celles-la et
+   * seulement a un membre. Une erreur (fichier pas encore passe) laisse la
+   * liste vide: aucune adresse n'est montree, ce qui est le bon defaut.
+   */
+  const [emails, setEmails] = useState({})
+  useEffect(() => {
+    let dead = false
+    ;(async () => {
+      if (!activeId) return
+      const { data, error: err } = await supabase.rpc('group_member_emails', { p_group: activeId })
+      if (dead || err) return
+      setEmails(Object.fromEntries((data ?? []).map((r) => [r.user_id, r.email])))
+    })()
+    return () => {
+      dead = true
+    }
+  }, [activeId, mySharing?.email])
 
   if (!group) return null
 
@@ -169,6 +191,29 @@ export default function Settings() {
       <Section title={t('gnotif.section')}>
         <GroupNotifyToggle groupId={activeId} />
       </Section>
+
+      {/* Ce qu'on partage avec CE groupe, la meme question qu'a l'arrivee.
+          Absente tant que la migration 75 n'est pas passee (mySharing
+          undefined): une case qui n'enregistre rien ne s'affiche pas. */}
+      {mySharing !== undefined && (
+        <Section title={t('share.section')}>
+          <ShareChoices
+            key={`${activeId}-${mySharing?.answered_at ?? 'none'}`}
+            groupId={activeId}
+            current={mySharing}
+            alias={members.find((m) => m.user_id === user?.id)?.alias}
+            onSaved={async () => {
+              await reloadGroup()
+              setSavedShare(true)
+            }}
+          />
+          {savedShare && (
+            <p className="mt-3 text-small text-muted" role="status" data-hook="share-saved">
+              {t('share.saved')}
+            </p>
+          )}
+        </Section>
+      )}
 
       {/**
        * The roster, as a contact list.
@@ -300,6 +345,7 @@ export default function Settings() {
           member={tapped}
           myRole={myRole}
           meId={user?.id}
+          email={emails[tapped.user_id]}
           onClose={() => setTapped(null)}
         />
       )}

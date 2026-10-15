@@ -1297,6 +1297,43 @@ async function mutedIn(userId: string, groupId: string | null | undefined): Prom
 }
 
 /**
+ * Le nom qu'un groupe a le droit de lire, migration 75.
+ *
+ * Cette fonction lit tout en service role, donc la politique des profils ne
+ * la protege de rien: c'est ici qu'il faut tenir la reponse de la personne.
+ * Quelqu'un qui garde son nom pour un groupe y est son pseudo, dans un
+ * message comme a l'ecran, et personne sans pseudo (pas encore repondu) n'est
+ * nomme du tout: chaque appelant a deja une version anonyme du message.
+ *
+ * Avant que la migration 75 soit passee, group_sharing n'existe pas et le nom
+ * est rendu comme avant.
+ */
+async function nameIn(
+  userId: string | null | undefined,
+  groupId: string | null | undefined,
+): Promise<string | null> {
+  if (!userId) return null
+  const { data: p } = await supabase.from('profiles').select('display_name').eq('id', userId).maybeSingle()
+  const real = (p as any)?.display_name?.trim() || null
+  if (!groupId) return real
+  const { data: s, error } = await supabase
+    .from('group_sharing')
+    .select('name')
+    .eq('group_id', groupId)
+    .eq('user_id', userId)
+    .maybeSingle()
+  if (error) return real
+  if ((s as any)?.name) return real
+  const { data: m } = await supabase
+    .from('group_members')
+    .select('alias')
+    .eq('group_id', groupId)
+    .eq('user_id', userId)
+    .maybeSingle()
+  return (m as any)?.alias?.trim() || null
+}
+
+/**
  * Les deux caches sont par EXECUTION, pas par instance.
  *
  * Une instance de fonction edge est reutilisee entre deux appels quand elle est
@@ -1554,14 +1591,7 @@ async function sendNudges() {
      * falls back to the unnamed version for the same reason.
      */
     let from: string | null = null
-    if (n.claimed_by) {
-      const { data: p } = await supabase
-        .from('profiles')
-        .select('display_name')
-        .eq('id', n.claimed_by)
-        .maybeSingle()
-      from = p?.display_name?.trim() || null
-    }
+    if (n.claimed_by) from = await nameIn(n.claimed_by, n.group_id)
 
     /* Deliberately the quiet one: no button colour shouting, no count of what
        was missed, no streak language. The whole design of this message is
@@ -1667,10 +1697,21 @@ async function sendBirthdays() {
       .select('user_id, profiles(display_name, birthday)')
       .eq('group_id', g.id)
 
+    /* Migration 75: un anniversaire fait partie du profil, et le profil n'est
+       montre qu'aux groupes ou la personne partage son nom. Sans
+       group_sharing (75 pas encore passee), tout le monde, comme avant. */
+    const { data: sharing, error: sharingErr } = await supabase
+      .from('group_sharing')
+      .select('user_id, name')
+      .eq('group_id', g.id)
+    const named = new Set((sharing ?? []).filter((r: any) => r.name).map((r: any) => String(r.user_id)))
+    const showsName = (uid: string) => Boolean(sharingErr) || named.has(String(uid))
+
     /* Whose birthday it is. A 29 February birthday only matches in a leap
        year, which is the same thing every calendar does with it and better
        than picking the 28th or the 1st on somebody's behalf. */
     const celebrating = (members ?? []).filter((m: any) => {
+      if (!showsName(m.user_id)) return false
       const b = m.profiles?.birthday
       if (!b) return false
       const md = monthDayOf(b)
@@ -1771,7 +1812,7 @@ async function sendGroupGoals() {
      notification was written takes the row with it by cascade. */
   const { data: pending } = await supabase
     .from('notification')
-    .select('id, user_id, group_id, created_at, goals(commitment, status), profiles!notification_actor_id_fkey(display_name), groups(name)')
+    .select('id, user_id, actor_id, group_id, created_at, goals(commitment, status), profiles!notification_actor_id_fkey(display_name), groups(name)')
     .eq('kind', 'group_goal')
     .is('emailed_at', null)
     .order('created_at', { ascending: true })
@@ -1851,7 +1892,8 @@ async function sendGroupGoals() {
     const c = COPY[who.loc]
 
     const group = (rows[0] as any).groups?.name ?? (who.loc === 'fr' ? 'ton groupe' : 'your group')
-    const names = live.map((r: any) => r.profiles?.display_name?.trim() || null)
+    /* Le nom que CE groupe peut lire (migration 75), pas celui du profil. */
+    const names = await Promise.all(live.map((r: any) => nameIn(r.actor_id, r.group_id)))
     const only = live.length === 1
 
     const outcome = await deliver(
@@ -2585,9 +2627,7 @@ async function deliverNudge(
     if (note.kind !== 'nudge') return json({ ok: false, error: 'not_a_nudge' }, 400)
     if (!note.actor_id) return json({ ok: false, error: 'nobody_to_answer' }, 400)
 
-    const { data: me } = await supabase
-      .from('profiles').select('display_name').eq('id', caller.id).maybeSingle()
-    const myName = me?.display_name?.trim()
+    const myName = (await nameIn(caller.id, note.group_id)) ?? undefined
 
     const to2 = await recipient(note.actor_id)
     const c2 = COPY[to2?.loc ?? 'fr']
@@ -2659,12 +2699,8 @@ async function deliverNudge(
   const to = await recipient(nudge.subject_id)
   const c = COPY[to?.loc ?? 'fr']
 
-  const { data: actor } = await supabase
-    .from('profiles')
-    .select('display_name')
-    .eq('id', caller.id)
-    .maybeSingle()
-  const from = actor?.display_name?.trim()
+  /* Le nom que ce groupe peut lire, migration 75. */
+  const from = (await nameIn(caller.id, nudge.group_id)) ?? undefined
 
   /* The inbox row first. If the push fails, is refused, or the phone is off,
      the message still exists somewhere they will find it. A push that is the
