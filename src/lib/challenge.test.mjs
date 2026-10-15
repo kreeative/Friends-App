@@ -7,7 +7,8 @@
  * video dans le groupe.
  */
 import { addDays, challengeDay, challengeTrack, completeMornings, dayKeyIn, daysBetween } from './challenge.js'
-import { JOIN_KEY, JOIN_TTL_MS, cleanCode, forgetJoin, joinTarget, readJoin, rememberChallenge, rememberJoin } from './pendingJoin.js'
+import { JOIN_KEY, JOIN_TTL_MS, cleanCode, cleanGroupName, forgetJoin, invitePath, joinTarget, readJoin, rememberChallenge, rememberJoin } from './pendingJoin.js'
+import { inAppBrowser } from './inAppBrowser.js'
 import { CHALLENGE, CHALLENGE_DAYS, CHALLENGE_ID, challengeGoals } from '../content/challenge.js'
 import { readFileSync } from 'node:fs'
 
@@ -162,14 +163,58 @@ eq('null is no code', cleanCode(null), null)
   ok('blocked storage: forgetting does not throw', true)
 }
 
+/* --- le nom du groupe et l'adresse de l'invitation ---------------------- */
+{
+  const s = mem()
+  const t0 = 1_800_000_000_000
+  rememberJoin('530826', s, t0, '21 Mornings Challenge')
+  eq('the group name travels with the code', readJoin(s, t0), { code: '530826', name: '21 Mornings Challenge' })
+  rememberJoin('530826', s, t0)
+  eq('no name, no name', readJoin(s, t0), { code: '530826' })
+  eq('control characters are dropped from a name', cleanGroupName('Groupe\u0007 du matin\n'), 'Groupe du matin')
+  eq('a name is cut at 60 characters, the column limit', cleanGroupName('x'.repeat(80)).length, 60)
+  eq('a name that is not text is nothing', cleanGroupName({ toString: () => 'x' }), null)
+  s.setItem(JOIN_KEY, JSON.stringify({ code: '530826', name: 42, at: t0 }))
+  eq('a stored name of the wrong type is dropped, the code kept', readJoin(s, t0), { code: '530826' })
+  eq('the invitation address', invitePath(' ab12cd '), '/join/AB12CD')
+  eq('no address for a bad code', invitePath('nope!'), null)
+}
+
+/* --- le navigateur integre d'une application --------------------------- */
+{
+  const UA = {
+    tiktokIos: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 musical_ly_34.1.0 JsSdk/2.0 NetType/WIFI Channel/App Store ByteLocale/en Region/CA',
+    tiktokAndroid: 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/120.0.0.0 Mobile Safari/537.36 trill_340103 BytedanceWebview/d8a21c6',
+    instagram: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Instagram 325.0.0.0.0 (iPhone15,2; iOS 17_4; fr_CA; fr; scale=3.00; 1179x2556)',
+    facebook: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 [FBAN/FBIOS;FBAV/450.0.0.0;FBBV/1;FBDV/iPhone15,2]',
+    safari: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1',
+    chrome: 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+  }
+  eq('TikTok on an iPhone', inAppBrowser(UA.tiktokIos), 'tiktok')
+  eq('TikTok on Android', inAppBrowser(UA.tiktokAndroid), 'tiktok')
+  eq('Instagram', inAppBrowser(UA.instagram), 'instagram')
+  eq('Facebook', inAppBrowser(UA.facebook), 'facebook')
+  eq('Safari is a real browser', inAppBrowser(UA.safari), null)
+  eq('Chrome is a real browser', inAppBrowser(UA.chrome), null)
+  eq('no user agent, no app', inAppBrowser(undefined), null)
+}
+
 /* --- le cablage --------------------------------------------------------- */
 {
   const read = (f) => readFileSync(new URL(f, import.meta.url), 'utf8')
   const code = (f) => read(f).replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
   const app = code('../App.jsx')
-  ok('signed out, /start keeps the code and opens sign-in', /path="start" element={<JoinLater \/>}/.test(app))
+  ok('signed out, an old /start?join link opens the invitation', /path="start" element={<StartSignedOut \/>}/.test(app) && /invitePath\(params\.get\('join'\)\) \?\? '\/signin'/.test(app))
   ok('signed out, /defi and /challenge show the page', /path="defi" element={<Challenge \/>}/.test(app) && /path="challenge" element={<Challenge \/>}/.test(app))
-  ok('during terms and setup, the link is kept for later', (app.match(/<JoinLater to="\/" \/>/g) ?? []).length === 6)
+  ok('during terms and setup, every invite link is kept for later', (app.match(/<JoinLater to="\/" \/>/g) ?? []).length === 10)
+  ok('the invitation page answers signed out, on the welcome deck and in the app', (app.match(/<Invite \/>/g) ?? []).length === 6)
+  {
+    const signedOut = app.slice(app.indexOf('if (!user) {'), app.indexOf('if (groupsLoading)'))
+    const publicRoutes = app.slice(app.indexOf('const PUBLIC_ROUTES'), app.indexOf('function Gate'))
+    ok('signed out, the invitation is its own screen, outside the site frame',
+      /path="\/join\/:code" element={<Invite \/>}/.test(signedOut) && !/join\/:code/.test(publicRoutes))
+  }
+  ok('a refused automatic join lands on the invitation, which says why', /navigate\(invitePath\(pending\.code\) \?\? '\/'/.test(app))
   ok('the auto join waits for terms and setup', app.indexOf("where === 'setup'") < app.indexOf('<AutoJoin pending'))
   ok('and only fires once the app or the welcome deck is next', /pending && \(where === 'welcome' \|\| where === 'app'\)/.test(app))
   ok('the code is forgotten before the call, so a refusal cannot loop', /forgetJoin\(browserStore\(\)\)[\s\S]{0,200}join_group/.test(app))
@@ -181,7 +226,7 @@ eq('null is no code', cleanCode(null), null)
   ok('arriving from the page ticks the box', /params\.get\('challenge'\) === CHALLENGE_ID/.test(start))
 
   const invite = code('../components/InviteSheet.jsx')
-  ok('a challenge group invites to its page', /group\.challenge \? '\/defi' : '\/start'/.test(invite))
+  ok('every group invites to its invitation page', /invitePath\(group\.invite_code\)/.test(invite) && !/\?join=/.test(invite))
 
   const board = code('../pages/Board.jsx')
   ok('the strip sits on the board of a challenge group only', /group\.challenge && \(\s*<ChallengeStrip/.test(board))
@@ -198,14 +243,41 @@ eq('null is no code', cleanCode(null), null)
   const page = code('../pages/public/Challenge.jsx')
   ok('the page hooks its title for the ink probe', /data-hook="challenge-title"/.test(page))
   ok('the page buttons are large text on the pink', /text-\[1\.1875rem\] font-bold/.test(page))
-  ok('signed out, the button keeps the code before sign-in', /rememberJoin\(code, browserStore\(\)\)[\s\S]{0,120}navigate\('\/signin'\)/.test(page))
+  ok('a code on the challenge page goes to the invitation', /if \(code\) return <Navigate to=\{invitePath\(code\)\} replace \/>/.test(page))
+
+  const inv = code('../pages/Invite.jsx')
+  ok('the invitation reads the group through invite_preview', /rpc\('invite_preview', \{ p_code: code \}\)/.test(inv))
+  ok('a challenge shows its real goals from invite_goals', /rpc\('invite_goals', \{ p_code: code \}\)/.test(inv))
+  ok('before migration 77 the invitation still works, without details', /PGRST202/.test(inv))
+  ok('signed out, joining keeps the code and the group name, then signs in', /rememberJoin\(code, browserStore\(\), Date\.now\(\), name\)[\s\S]{0,60}navigate\('\/signin'\)/.test(inv))
+  ok('signed in, joining joins and opens the board', /rpc\('join_group', \{ p_code: code \}\)[\s\S]{0,400}navigate\(g\?\.id \? `\/g\/\$\{g\.id\}`/.test(inv))
+  ok('a member is told so and gets the board, not a join button', /group\.is_member \?/.test(inv) && /data-hook="invite-open"/.test(inv))
+  ok('an unknown code says so', /data-hook="invite-missing"/.test(inv) && /setState\('missing'\)/.test(inv))
+  ok('the group name sits behind the yellow marker', /<span className="marker">\{name\}<\/span>/.test(inv))
+  ok('the button is large text on the pink', /data-hook="invite-join"[\s\S]{0,40}className="btn-primary press text-\[1\.1875rem\] font-bold"/.test(inv))
+  ok('inside TikTok or Instagram the invitation says how to sign in', /inApp && \(/.test(inv) && /invite\.in_app/.test(inv))
 
   const signin = code('../pages/SignIn.jsx')
   ok('sign-in says where the person is going', /data-hook="signin-pending"/.test(signin))
+  ok('and names the group when it is known', /signin\.joining_named', \{ group: pending\.name \}/.test(signin))
+  ok('the pink buttons on sign-in are large text, white on #FF007A is 3.80:1', (signin.match(/btn-primary press text-\[1\.1875rem\] font-bold/g) ?? []).length === 3 && !/className="btn-primary press"/.test(signin))
+  ok('inside TikTok or Instagram, sign-in leads with the email code', /inApp \? \(/.test(signin) && /data-hook="signin-email-first"/.test(signin) && /signin\.in_app/.test(signin))
+
+  ok('a signed-in /start?join link opens the invitation too', /if \(invitation\) return <Navigate to=\{invitation\} replace \/>/.test(start))
+
+  const seo = read('./seo.js')
+  ok('invitation pages are not for search engines', /'\/join\/'/.test(seo) && /'\/rejoindre\/'/.test(seo))
+
+  const sql77 = read('../../supabase/77_invite_preview.sql')
+  ok('migration 77 is ASCII, it travels through a clipboard', [...sql77].every((c) => c.charCodeAt(0) < 128))
+  ok('a private group name is shown only once signed in', /case when g\.challenge is not null or auth\.uid\(\) is not null then g\.name end/.test(sql77))
+  ok('the group id is only for someone signed in', /case when auth\.uid\(\) is not null then g\.id end/.test(sql77))
+  ok('goals are shown only for a challenge', /and g\.challenge is not null/.test(sql77))
+  ok('the code is read the way join_group reads it', (sql77.match(/upper\(trim\(coalesce\(p_code, ''\)\)\)/g) ?? []).length === 2)
 
   const i18n = read('../lib/i18n.jsx')
   const keys = [...new Set([...app, ...start, ...strip, ...page, ...signin].join('').match(/t\(['`](challenge|start\.challenge|start\.create_challenge|signin\.joining|signin\.challenge)[^'`]*/g) ?? [])]
-  for (const k of ['challenge.day', 'challenge.finished', 'challenge.complete', 'challenge.track_label', 'challenge.bad_code', 'challenge.back', 'start.challenge_title', 'start.challenge_body', 'start.create_challenge', 'start.challenge_missing', 'signin.joining', 'signin.challenge', ...['done', 'partial', 'missed', 'today', 'future'].map((st) => `challenge.state_${st}`)]) {
+  for (const k of ['signin.joining_named', 'signin.in_app', ...['eyebrow', 'eyebrow_private', 'private_title', 'private_note', 'members_one', 'members', 'challenge_facts', 'goals_title', 'join', 'joining', 'note', 'in_app', 'member', 'open', 'missing_title', 'missing_body', 'home', 'retry', 'what'].map((x) => `invite.${x}`), 'challenge.day', 'challenge.finished', 'challenge.complete', 'challenge.track_label', 'challenge.bad_code', 'challenge.back', 'start.challenge_title', 'start.challenge_body', 'start.create_challenge', 'start.challenge_missing', 'signin.joining', 'signin.challenge', ...['done', 'partial', 'missed', 'today', 'future'].map((st) => `challenge.state_${st}`)]) {
     ok(`${k} in both languages`, (i18n.match(new RegExp(`'${k.replace('.', '\\.')}':`, 'g')) ?? []).length === 2)
   }
   ok('every key the code asks for was checked', keys.length > 0)

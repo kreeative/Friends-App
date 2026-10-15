@@ -1,13 +1,10 @@
-import { useRef, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { useRef } from 'react'
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import { useGroup } from '../../context/GroupContext'
-import { supabase } from '../../lib/supabase'
 import { useT } from '../../lib/i18n'
 import { usePageMeta } from '../../lib/pageMeta'
-import { errorText } from '../../lib/dberr'
 import { CHALLENGE_DAYS, CHALLENGE_ID, challengeCopy } from '../../content/challenge'
-import { cleanCode, rememberChallenge, rememberJoin } from '../../lib/pendingJoin'
+import { cleanCode, invitePath, rememberChallenge } from '../../lib/pendingJoin'
 import { LockupInline } from '../../components/Wordmark'
 import { Sparkle, Spot, Tape, cast } from '../../components/StickerKit'
 import { headline, useLineEnd } from '../../components/Headline'
@@ -19,17 +16,13 @@ import { headline, useLineEnd } from '../../components/Headline'
  *    sometimes lack of discipline? Well, I create this app. Let's take a 21
  *    days challenge of Miracle Morning. Here's how you can join the group."
  *
- * /defi?join=CODE (ou /challenge?join=CODE): ce que le defi demande chaque
- * matin, comment ca marche, et un bouton. Le lien vient de la feuille
- * d'invitation d'un groupe defi, qui le fabrique avec son code.
+ * /defi (ou /challenge): ce que le defi demande chaque matin, comment ca
+ * marche, et "Lancer mon defi", qui ouvre le formulaire de creation deja
+ * regle sur le defi (apres la connexion, pour qui n'en a pas).
  *
- * LE BOUTON:
- *   pas connecte, avec un code   le code est retenu (pendingJoin.js), la
- *                                connexion s'ouvre, et la personne arrive
- *                                dans le groupe apres l'accueil
- *   connecte, avec un code       on rejoint tout de suite
- *   sans code                    lancer son propre defi: le formulaire de
- *                                creation, deja regle sur le defi
+ * Un lien AVEC un code (/defi?join=CODE, l'ancien format) n'est pas pour
+ * cette page: c'est une invitation, et il part vers /join/CODE, la page qui
+ * nomme le groupe (src/pages/Invite.jsx).
  *
  * `bare`: la page sans le cadre public (barre et pied de page), pour une
  * personne connectee, dont les liens du cadre menent a des pages qui
@@ -66,56 +59,46 @@ export default function Challenge({ bare = false }) {
   const copy = challengeCopy(locale)
   const c = copy.page
   const { user } = useAuth()
-  const { reload } = useGroup()
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const code = cleanCode(params.get('join'))
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState(null)
 
   usePageMeta({ title: `${c.eyebrow} · Rich & Friends`, description: c.body })
 
   const title = useRef(null)
   useLineEnd(title, c.title)
 
-  async function go() {
-    setError(null)
+  /**
+   * UN LIEN AVEC UN CODE EST UNE INVITATION, PAS UNE PRESENTATION.
+   *
+   * /defi?join=CODE ouvrait cette page: le style de l'accueil, un titre
+   * general, et "Rejoindre le defi" meme pour quelqu'un qui en faisait deja
+   * partie. "It doesn't send you to a page saying, hey, join this group."
+   * Le code va maintenant a la page d'invitation (src/pages/Invite.jsx), qui
+   * nomme le groupe. Ici ne reste que le defi lui-meme, et "Lancer mon defi".
+   */
+  if (code) return <Navigate to={invitePath(code)} replace />
+
+  function go() {
     if (!user) {
-      if (code) rememberJoin(code, browserStore())
-      else rememberChallenge(CHALLENGE_ID, browserStore())
+      rememberChallenge(CHALLENGE_ID, browserStore())
       navigate('/signin')
       return
     }
-    if (!code) {
-      navigate(`/start?challenge=${CHALLENGE_ID}`)
-      return
-    }
-    setBusy(true)
-    const { data, error: err } = await supabase.rpc('join_group', { p_code: code })
-    if (err) {
-      setBusy(false)
-      setError(/no group with that code/i.test(err.message ?? '') ? t('challenge.bad_code') : errorText(err))
-      return
-    }
-    const g = Array.isArray(data) ? data[0] : data
-    await reload()
-    navigate(g?.id ? `/g/${g.id}` : '/')
+    navigate(`/start?challenge=${CHALLENGE_ID}`)
   }
 
-  const cta = code ? c.join : c.start
-  /* "Tu crees ton compte" ne dit rien a quelqu'un de connecte, que le bouton
-     fait entrer tout de suite. */
-  const note = code ? (user ? null : c.note) : c.note_start
+  const cta = c.start
+  const note = c.note_start
 
   const button = (where) => (
     <button
       type="button"
       onClick={go}
-      disabled={busy}
       data-hook={`challenge-${where}`}
       className="btn-primary press w-auto px-9 text-[1.1875rem] font-bold"
     >
-      {busy ? t('start.joining') : cta}
+      {cta}
     </button>
   )
 
@@ -177,16 +160,9 @@ export default function Challenge({ bare = false }) {
             <div style={{ '--i': 3 }} className="mt-10 flex flex-wrap items-center gap-3">
               {button('top')}
             </div>
-            {note && (
-              <p style={{ '--i': 4 }} className="mt-5 max-w-[46ch] text-small text-muted">
-                {note}
-              </p>
-            )}
-            {error && (
-              <p role="alert" data-hook="challenge-error" className="mt-4 max-w-[46ch] text-small font-semibold text-negative">
-                {error}
-              </p>
-            )}
+            <p style={{ '--i': 4 }} className="mt-5 max-w-[46ch] text-small text-muted">
+              {note}
+            </p>
           </div>
 
           {/**
@@ -290,7 +266,7 @@ export default function Challenge({ bare = false }) {
             {c.title}
           </h2>
           <div className="mt-8 flex flex-wrap items-center gap-3">{button('bottom')}</div>
-          {note && <p className="mt-5 max-w-[52ch] text-small text-[#111111]">{note}</p>}
+          <p className="mt-5 max-w-[52ch] text-small text-[#111111]">{note}</p>
         </div>
         <p data-hook="challenge-credit" className="mt-6 max-w-[70ch] text-small text-muted">
           {c.credit}

@@ -53,12 +53,26 @@ function safe(fn, fallback = null) {
   }
 }
 
-/** Retient un code a rejoindre. Rend le code retenu, ou null. */
-export function rememberJoin(raw, store, now = Date.now()) {
+/**
+ * Le nom du groupe, tel que la page d'invitation l'a lu, pour que l'ecran de
+ * connexion dise "pour rejoindre 21 Mornings Challenge" plutot que "le
+ * groupe". Ce n'est que de l'affichage: le code reste la seule chose envoyee
+ * a la base. Coupe a 60 caracteres, la limite d'un nom de groupe, et sans
+ * caracteres de controle, puisque la valeur vient du stockage du navigateur.
+ */
+export function cleanGroupName(raw) {
+  if (typeof raw !== 'string') return null
+  const name = raw.replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, 60)
+  return name || null
+}
+
+/** Retient un code a rejoindre, et le nom du groupe s'il est connu. Rend le code retenu, ou null. */
+export function rememberJoin(raw, store, now = Date.now(), groupName = null) {
   const code = cleanCode(raw)
   if (!code || !store) return null
+  const name = cleanGroupName(groupName)
   return safe(() => {
-    store.setItem(JOIN_KEY, JSON.stringify({ code, at: now }))
+    store.setItem(JOIN_KEY, JSON.stringify(name ? { code, name, at: now } : { code, at: now }))
     return code
   })
 }
@@ -88,13 +102,22 @@ export function readJoin(store, now = Date.now()) {
   const at = Number(value.at)
   if (!Number.isFinite(at) || now - at > JOIN_TTL_MS || at - now > 60_000) return null
   const code = cleanCode(value.code)
-  if (code) return { code }
+  if (code) {
+    const name = cleanGroupName(value.name)
+    return name ? { code, name } : { code }
+  }
   if (CHALLENGES.includes(value.challenge)) return { challenge: value.challenge }
   return null
 }
 
 export function forgetJoin(store) {
   if (store) safe(() => store.removeItem(JOIN_KEY))
+}
+
+/** L'adresse de la page d'invitation d'un code. */
+export function invitePath(code) {
+  const clean = cleanCode(code)
+  return clean ? `/join/${encodeURIComponent(clean)}` : null
 }
 
 /**

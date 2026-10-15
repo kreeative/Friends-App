@@ -5,7 +5,7 @@ import { GroupProvider, useGroup } from './context/GroupContext'
 import { I18nProvider, useT } from './lib/i18n'
 import { BRAND, ThemeProvider, useTheme } from './lib/theme'
 import { configured, supabase } from './lib/supabase'
-import { forgetJoin, joinTarget, readJoin, rememberJoin } from './lib/pendingJoin'
+import { forgetJoin, invitePath, joinTarget, readJoin, rememberJoin } from './lib/pendingJoin'
 import { landing, soloKeyFor } from './lib/onboarding'
 import ErrorNote from './components/ErrorNote'
 import AppShell from './components/AppShell'
@@ -45,6 +45,7 @@ import VapidSetup from './pages/VapidSetup'
 import Notifications from './pages/Notifications'
 import Courses from './pages/Courses'
 import Challenge from './pages/public/Challenge'
+import Invite from './pages/Invite'
 
 /** /lectures/:slug is the same page as /library/:slug, spelled in French. */
 function LecturesRedirect() {
@@ -135,8 +136,21 @@ function browserStore() {
  */
 function JoinLater({ to = '/signin' }) {
   const [params] = useSearchParams()
-  useState(() => rememberJoin(params.get('join'), browserStore()))
+  const { code } = useParams()
+  useState(() => rememberJoin(code ?? params.get('join'), browserStore()))
   return <Navigate to={to} replace />
+}
+
+/**
+ * /start?join=CODE, l'ancien lien d'invitation, avant d'avoir un compte.
+ *
+ * Il ouvrait directement la connexion: la personne arrivait sur "Rejoins des
+ * gens qui avancent" sans savoir quel groupe l'attendait. Il mene maintenant
+ * a la page d'invitation, qui le dit. Sans code, c'est la connexion.
+ */
+function StartSignedOut() {
+  const [params] = useSearchParams()
+  return <Navigate to={invitePath(params.get('join')) ?? '/signin'} replace />
 }
 
 /**
@@ -168,7 +182,8 @@ function AutoJoin({ pending }) {
     ;(async () => {
       const { data, error } = await supabase.rpc('join_group', { p_code: pending.code })
       if (error) {
-        navigate(`/start?join=${encodeURIComponent(pending.code)}`, { replace: true })
+        /* La page d'invitation dit pourquoi: code inconnu, groupe parti. */
+        navigate(invitePath(pending.code) ?? '/', { replace: true })
         return
       }
       const g = Array.isArray(data) ? data[0] : data
@@ -253,9 +268,9 @@ const PUBLIC_ROUTES = (
      */}
     <Route path="defi" element={<Challenge />} />
     <Route path="challenge" element={<Challenge />} />
-    {/* Un lien d'invitation, avant d'avoir un compte: le code est retenu et
-        la connexion s'ouvre. Voir JoinLater. */}
-    <Route path="start" element={<JoinLater />} />
+    {/* L'ancien lien d'invitation, avant d'avoir un compte: vers la page
+        d'invitation. Voir StartSignedOut. */}
+    <Route path="start" element={<StartSignedOut />} />
     <Route path="*" element={<Navigate to="/" replace />} />
   </Route>
 )
@@ -330,6 +345,10 @@ function Gate() {
     return (
       <Routes>
         <Route path="/signin" element={<SignIn />} />
+        {/* La page d'un lien d'invitation, hors du cadre du site: un ecran a
+            une seule action. /rejoindre pour un lien ecrit en francais. */}
+        <Route path="/join/:code" element={<Invite />} />
+        <Route path="/rejoindre/:code" element={<Invite />} />
         {PUBLIC_ROUTES}
       </Routes>
     )
@@ -397,6 +416,8 @@ function Gate() {
         <Route path="/start" element={<JoinLater to="/" />} />
         <Route path="/defi" element={<JoinLater to="/" />} />
         <Route path="/challenge" element={<JoinLater to="/" />} />
+        <Route path="/join/:code" element={<JoinLater to="/" />} />
+        <Route path="/rejoindre/:code" element={<JoinLater to="/" />} />
         <Route path="*" element={<Terms />} />
       </Routes>
     )
@@ -408,6 +429,8 @@ function Gate() {
         <Route path="/start" element={<JoinLater to="/" />} />
         <Route path="/defi" element={<JoinLater to="/" />} />
         <Route path="/challenge" element={<JoinLater to="/" />} />
+        <Route path="/join/:code" element={<JoinLater to="/" />} />
+        <Route path="/rejoindre/:code" element={<JoinLater to="/" />} />
         <Route path="*" element={<Setup />} />
       </Routes>
     )
@@ -432,6 +455,8 @@ function Gate() {
         <Route path="/start" element={<Start />} />
         <Route path="/defi" element={<Challenge bare />} />
         <Route path="/challenge" element={<Challenge bare />} />
+        <Route path="/join/:code" element={<Invite />} />
+        <Route path="/rejoindre/:code" element={<Invite />} />
         <Route path="*" element={<Welcome />} />
       </Routes>
     )
@@ -451,6 +476,8 @@ function Gate() {
           lire et un bouton, pas un ecran de l'app. */}
       <Route path="defi" element={<Challenge bare />} />
       <Route path="challenge" element={<Challenge bare />} />
+      <Route path="join/:code" element={<Invite />} />
+      <Route path="rejoindre/:code" element={<Invite />} />
       <Route element={<AppShell />}>
         <Route index element={<Dashboard />} />
         <Route path="start" element={<Start />} />

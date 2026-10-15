@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useGroup } from '../context/GroupContext'
 import { DAYS, localTimezone } from '../lib/time'
@@ -8,6 +8,7 @@ import Wordmark from '../components/Wordmark'
 import { useT } from '../lib/i18n'
 import { errorText } from '../lib/dberr'
 import { CHALLENGE_DAYS, CHALLENGE_ID, challengeCopy, challengeGoals } from '../content/challenge'
+import { invitePath } from '../lib/pendingJoin'
 
 export default function Start() {
   const { reload } = useGroup()
@@ -40,6 +41,12 @@ export default function Start() {
   const [code, setCode] = useState(invited)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
+
+  /* Un lien d'invitation (/start?join=CODE) ouvre la page qui nomme le
+     groupe, avec un seul bouton, plutot qu'un formulaire ou recopier un
+     code. Le formulaire reste pour un code dicte ou recopie a la main. */
+  const invitation = invitePath(invited)
+  if (invitation) return <Navigate to={invitation} replace />
 
   const dayNames =
     locale === 'fr'

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useT } from '../lib/i18n'
 import { Sheet } from './ui'
+import { invitePath } from '../lib/pendingJoin'
 
 /**
  * How somebody else gets in.
@@ -11,11 +12,11 @@ import { Sheet } from './ui'
  * because the person you are inviting is usually one tap away in a messaging
  * app and what they want is something to press.
  *
- * So the link is the headline and the code is underneath it. The link carries
- * the code as a query parameter, /start?join=CODE, which the join screen reads
- * and fills in, so a friend who taps it lands on a form already holding the
- * answer. The code stays for the case the link cannot travel: read out over a
- * phone call, or written on the back of something.
+ * So the link is the headline and the code is underneath it. The link is
+ * /join/CODE, the invitation page, which names the group and has one button,
+ * so a friend who taps it knows what they are joining before anything else.
+ * The code stays for the case the link cannot travel: read out over a phone
+ * call, or written on the back of something.
  *
  * ONE BUTTON THAT DOES THE RIGHT THING PER DEVICE.
  *
@@ -31,12 +32,11 @@ export default function InviteSheet({ group, open, onClose }) {
 
   if (!group) return null
 
-  /* Un groupe defi envoie vers la page du defi (/defi?join=CODE): quelqu'un
-     qui arrive d'une video doit lire ce qu'on lui propose avant de creer un
-     compte. Le code fait le meme chemin dans les deux cas: retenu pendant
-     l'inscription, rejoint a la fin (src/lib/pendingJoin.js). */
-  const path = group.challenge ? '/defi' : '/start'
-  const link = `${window.location.origin}${path}?join=${encodeURIComponent(group.invite_code)}`
+  /* /join/CODE, la page d'invitation, pour tous les groupes: elle nomme le
+     groupe et n'a qu'un bouton (src/pages/Invite.jsx). Court, aussi, ce qui
+     compte dans une bio. Les anciens liens, /start?join= et /defi?join=, y
+     menent encore. */
+  const link = `${window.location.origin}${invitePath(group.invite_code) ?? '/'}`
 
   /**
    * One string, carrying the link exactly once.
