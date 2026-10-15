@@ -281,6 +281,14 @@ eq('null is no code', cleanCode(null), null)
     ok(`${k} in both languages`, (i18n.match(new RegExp(`'${k.replace('.', '\\.')}':`, 'g')) ?? []).length === 2)
   }
   ok('every key the code asks for was checked', keys.length > 0)
+
+  /* Dans TikTok, l'ecran de connexion s'ouvre sur le bouton du code par e-mail.
+     Il disait "Envoyez-moi un code", vouvoye sous "Connecte-toi pour
+     rejoindre": l'app tutoie partout, ce bouton compris. */
+  const fr = i18n.slice(i18n.indexOf('\n  fr: {'))
+  const vous = [...fr.matchAll(/'((?:signin|invite)\.[a-z_]+)': '([^']*)'/g)].filter(([, , v]) => /(^|[\s(])([A-Z\u00C0-\u00DD][a-z\u00E0-\u00FF]+ez\b|vous\b|votre\b|vos\b)/.test(v)).map(([, k]) => k)
+  ok(`the French sign-in and invitation say tu, not vous (${vous.join(', ') || 'none'})`, vous.length === 0)
+  ok('the sign-in code button says tu', /'signin\.send_code': 'Envoie-moi un code'/.test(fr))
 }
 
 console.log(`\n  ${pass} passed, ${fail} failed\n`)

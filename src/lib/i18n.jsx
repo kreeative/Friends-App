@@ -2872,7 +2872,7 @@ const STRINGS = {
     'signin.google': 'Continuer avec Google',
     'signin.use_email': 'Utiliser mon e-mail',
     'signin.email': 'E-mail',
-    'signin.send_code': 'Envoyez-moi un code',
+    'signin.send_code': 'Envoie-moi un code',
     'signin.sending': 'Envoi',
     'signin.code': 'Code de connexion',
     'signin.code_sent': 'Code envoyé à {email}. Il expire rapidement.',
