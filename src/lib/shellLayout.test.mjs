@@ -5044,30 +5044,55 @@ ok(
        && (collage.match(/infinite/g) ?? []).length === 1,
      'one infinite animation in the collage, behind :hover and :focus-visible')
   ok('nothing in the collage moves under reduced motion',
-     /prefers-reduced-motion: reduce\) \{\s*\.spot,\s*\.badge,\s*\.spin-ring,\s*\.spin-badge:hover \.spin-ring,\s*\.spin-badge:focus-visible \.spin-ring \{\s*animation: none;/.test(style))
-  ok('the collage styles live in the components layer, so `hidden` on a badge wins',
+     /prefers-reduced-motion: reduce\) \{\s*\.spot,\s*\.spin-ring,\s*\.spin-badge:hover \.spin-ring,\s*\.spin-badge:focus-visible \.spin-ring \{\s*animation: none;\s*\}\s*\.spot,\s*\.lean,\s*\.peek \{\s*transition: none;/.test(style))
+  ok('the collage styles live in the components layer, so a utility like `hidden` wins',
      /@layer components \{\s*\/\* Un element pose dans sa scene/.test(style))
-  ok('stickers and decorative badges are hidden from screen readers',
-     /alt=""\s*aria-hidden="true"/.test(kit) && /aria-hidden=\{decorative \? 'true' : undefined\}/.test(kit))
+  ok('stickers are hidden from screen readers', /alt=""\s*aria-hidden="true"/.test(kit))
+  /* "j'aime pas cette sorte de écriture en mode bouton ... il y a un contour
+     blanc autour du bouton, genre tu veux créer l'effet sticker, mais c'est
+     pas vraiment des stickers, c'est des choses que tu as craftées." */
+  const kitCode0 = code('src/components/StickerKit.jsx')
+  const collageRules = collage.replace(/\/\*[\s\S]*?\*\//g, '')
+  ok('no word badges: the pills above the title, the round one and the black one on the lettering are gone',
+     !/export function Badge/.test(kitCode0) && !/<Badge\b/.test(code('src/pages/public/Home.jsx') + code('src/components/Footer.jsx'))
+       && !/data-badge|\.badge\b|badge-(pill|round|tag)/.test(collageRules) && !/badges: \[/.test(landingSrc)
+       && !/hero-badges/.test(home))
+  ok('nothing drawn in code wears the white die-cut border of a real sticker',
+     !/\.diecut|border: \d+px solid #fff/.test(collageRules) && !/\bdiecut\b/.test(code('src/pages/public/Home.jsx'))
+       && /\.lean \{\s*box-shadow: [^;]+;\s*transform: rotate\(var\(--tilt, 0deg\)\);/.test(collage)
+       && /className=\{`lean relative flex flex-col rounded-\[1\.75rem\] \$\{item\.ground\}`\}/.test(home))
   ok('the round badge is a real link with the main button\'s name',
      /<SpinBadge[\s\S]{0,120}label=\{c\.hero\.cta\}/.test(home) && /aria-label=\{label\}/.test(kit))
   ok('the giant lettering is decoration, painted by its parent',
      /aria-hidden="true"/.test(lettering) && /fill="currentColor"/.test(lettering)
        && /Genere par scripts\/lettering\.py/.test(read('src/content/lettering.js')) && existsSync(join(root, 'scripts/lettering.py')))
-  ok('the footer panel is the logo tile at scale, one shade deeper, with white words on it',
-     /const GROUND = \{ sun: '#D6006B', sea: '#0B6FAD' \}/.test(foot) && /backgroundColor: GROUND\[theme\] \?\? GROUND\.sun/.test(foot)
-       && /rounded-\[2rem\] text-white/.test(foot) && /const LINK = 'text-body font-semibold text-white/.test(foot))
-  /* "Le noir sur des couleurs sombres ou trop saturées ça donne mal aux
-     yeux": black on #FF007A measured 4.98:1 and on #38BDF8 8.81:1, and both
-     were "très limite". Words on pink or blue sit on the deep shades, in
-     white. The bright ones stay for stickers, sparkles and arrows. */
+  ok('the footer panel is the logo tile at scale, in its exact colours, with white words on it',
+     /const GROUND = \{ sun: '#FF007A', sea: '#009DB9' \}/.test(foot) && /backgroundColor: GROUND\[theme\] \?\? GROUND\.sun/.test(foot)
+       && /rounded-\[2rem\] text-white/.test(foot) && /const LINK = 'text-\[1\.1875rem\] font-bold leading-snug text-white/.test(foot))
+  /* "le bleu que tu as pris et le bleu qui est sur le logo, c'est pas le même
+     bleu": #38BDF8 and then #0B6FAD were refused. The page's colours are the
+     logo's: #FF007A, #009DB9 and the yellow, and no other pink or blue. */
   const words = ['src/pages/public/Home.jsx', 'src/components/StickerKit.jsx', 'src/components/Footer.jsx', 'src/content/landing.js']
-  const bright = words.filter((f) => /bg-\[#(FF007A|38BDF8|009DB9)\]/i.test(code(f)))
-  ok('no words sit on the bright pink or blue: those grounds are the deep shades, in white', bright.length === 0, bright.join(' '))
+  const offBrand = words.filter((f) => /#(38BDF8|0B6FAD|D6006B)\b|56 189 248|11 111 173|214 0 107/i.test(code(f)))
+  ok('the only blue is the logo turquoise and the only pink the logo pink', offBrand.length === 0, offBrand.join(' '))
+  ok('and the public sky token is that turquoise', /--c-sky: 0 157 185;/.test(style) && /--tape, 0 157 185\)/.test(collage)
+     && /tone = '0 157 185'/.test(kit))
+  /* White is only 3.80:1 on #FF007A and 3.22:1 on #009DB9: it passes the 3:1
+     of large text and nothing smaller. So every word set straight on those
+     two grounds is bold and at least 19px (large text is 18.66px bold), and
+     smaller words sit on white or a pastel, in ink. Black on them is not the
+     fix: "Le noir sur des couleurs sombres ou trop saturées ça donne mal aux
+     yeux". */
+  ok('words on the logo pink or turquoise are large text: bold, 19px or more',
+     /text-\[clamp\(1\.1875rem,2vw,1\.375rem\)\] font-extrabold uppercase tracking-\[0\.05em\] text-white/.test(home)
+       && /<WordTape words=\{fun\.tape\} tone="bg-\[#FF007A\]"/.test(home) && /tone="bg-\[#009DB9\]"/.test(home)
+       && /mt-4 block break-words text-\[1\.1875rem\] font-bold/.test(foot)
+       && /max-w-\[22ch\] text-\[1\.375rem\] font-bold/.test(foot))
   /* "les titres sont toujours noirs": the base layer paints h1 to h3 in ink,
      so a card's title has to inherit the card's colour explicitly. */
-  ok('the pillar titles take the card\'s colour, not the base ink',
-     /<h3 className="mt-5 text-\[1\.125rem\] font-bold leading-snug text-inherit">\{item\.title\}<\/h3>/.test(home))
+  ok('the pillar titles take the colour of the card\'s head, not the base ink, at 21px bold',
+     /<h3 className="mt-4 text-\[1\.3125rem\] font-bold leading-snug text-inherit">\{item\.title\}<\/h3>/.test(home)
+       && /<div className=\{`rounded-t-\[1\.75rem\] px-6 pb-5 pt-7 \$\{item\.head\}`\}>/.test(home))
   /* "la bannière pour le thème de couleur, je trouve que c'est bizarre": the
      footer's colour choice is the language toggle's shape, not a white card. */
   const picker = read('src/components/ThemePicker.jsx')
@@ -5077,12 +5102,18 @@ ok(
        && /aria-pressed=\{on\}/.test(picker))
   ok('and the app\'s screens keep the swatches', /variant = 'swatches'/.test(picker)
      && !/variant="chips"/.test(read('src/pages/Settings.jsx') + read('src/pages/MeDetails.jsx') + read('src/pages/Setup.jsx')))
-  ok('every pillar card carries its text colour with its ground',
-     (landingSrc.match(/tone: 'bg-\[#D6006B\] text-white'/g) ?? []).length === 2
-       && (landingSrc.match(/tone: 'bg-\[#0B6FAD\] text-white'/g) ?? []).length === 2
-       && (landingSrc.match(/tone: 'bg-\[#FFD60A\] text-\[#111111\]'/g) ?? []).length === 2)
-  ok('the rule is written down where the next session reads it',
-     /No black text on a dark or very saturated colour/.test(read('CLAUDE.md')))
+  ok('every pillar card carries its colours with its words: a logo-coloured head, a pastel ground in ink',
+     (landingSrc.match(/head: 'bg-\[#FF007A\] text-white',\s*ground: 'bg-\[#FFE0EF\]'/g) ?? []).length === 2
+       && (landingSrc.match(/head: 'bg-\[#009DB9\] text-white',\s*ground: 'bg-\[#E0F3F7\]'/g) ?? []).length === 2
+       && (landingSrc.match(/head: 'bg-\[#FFD60A\] text-\[#111111\]',\s*ground: 'bg-\[#FFF7CE\]'/g) ?? []).length === 2
+       && /<p className="px-6 pb-7 pt-5 text-small leading-relaxed text-\[#111111\]">\{item\.body\}<\/p>/.test(home)
+       && !/\btone: 'bg-/.test(landingSrc))
+  const claude = read('CLAUDE.md')
+  ok('the rules are written down where the next session reads them',
+     /No black text on a dark or very saturated colour/.test(claude)
+       && /The blue is the logo turquoise, `#009DB9`, and no other/.test(claude)
+       && /The white die-cut outline belongs to real stickers only/.test(claude)
+       && /hero headline/.test(claude))
   /* "Tes flèches sont mal dessinées": every arrowhead is computed on its
      curve by lib/arrow.js, which arrow.test.mjs measures. A head written by
      hand is how the first one came out at 12 and 67 degrees. */
@@ -5091,18 +5122,39 @@ ok(
      /import \{ head \} from '\.\.\/lib\/arrow'/.test(kitCode)
        && (kitCode.match(/\$\{head\(/g) ?? []).length === 3
        && !/M90 18l-15-9|M90 78h32v32/.test(kitCode))
-  ok('"proudly Ivorian" is shown once at every width: on the lettering from sm, in the small print below that',
-     /decorative=\{false\}/.test(foot) && /hidden text-\[clamp\(0\.75rem,1\.1vw,0\.9375rem\)\] sm:inline-flex/.test(foot)
-       && /text-small text-muted sm:hidden">\{c\.built\}/.test(foot))
+  ok('"proudly Ivorian" is in the small print at every width, once',
+     /<p className="text-small text-muted">\{c\.built\}<\/p>/.test(foot) && (foot.match(/\{c\.built\}/g) ?? []).length === 1)
   ok('the home page places its own stickers, so the edge rail stays off it',
      /\{pathname !== '\/' && <Stickers set="page" \/>\}/.test(layout))
   ok('every sticker list on the home page and the footer goes through cast(), so renamed art never leaves a hole',
-     (code('src/pages/public/Home.jsx').match(/= cast\(\[/g) ?? []).length === 5 && /const ART = cast\(\[/.test(foot))
+     (code('src/pages/public/Home.jsx').match(/= cast\(\[/g) ?? []).length === 6 && /const ART = cast\(\[/.test(foot))
+  /* "à la place, t'ajoutes des stickers autour du texte, un peu sur le
+     texte, etc. Comme ce que j'avais montré." The title wraps differently at
+     every width and in each language (three to five lines), so its stickers
+     hang on WORDS rather than on the page, and the thumb is placed on the
+     end of the first line by measuring it. How much ink they take is
+     measured on the painted page, per letter and per word; see the note in
+     Home.jsx. */
+  ok('the title\'s stickers hang on its first and last words, in em, so they follow every line break',
+     /function headline\(title, mark, pins\)/.test(home) && /className="pin"/.test(home)
+       && /\.pin \{\s*position: relative;\s*\}\s*\.pin > \.spot \{\s*position: absolute;/.test(collage)
+       && /\{headline\(c\.hero\.title, c\.hero\.mark, \{/.test(home)
+       && /name=\{TITLE_ART\[0\]\}/.test(home) && /name=\{TITLE_ART\[1\]\}/.test(home) && /name=\{TITLE_ART\[2\]\}/.test(home)
+       && /const TITLE_ART = cast\(\['fire', 'thumb', 'chaching'\]\)/.test(home))
+  ok('the thumb sits on the end of the first line, measured again on resize and when the font arrives',
+     /function useLineEnd\(ref, text\)/.test(home) && /new ResizeObserver\(measure\)/.test(home)
+       && /document\.fonts\?\.ready\.then\(measure\)/.test(home) && /el\.style\.setProperty\('--line-end'/.test(home)
+       && /left: 'calc\(var\(--line-end, 100%\) - 0\.35em\)'/.test(home))
+  ok('the title is at most 13ch wide, so its last word never runs into the column edge with a sticker on it',
+     /data-hook="hero-title"\s*className="relative mt-3 max-w-\[13ch\]/.test(home))
+  ok('the inline sticker and the word pills that sat above the title are gone',
+     !/spot-inline/.test(home + style) && !/markParts/.test(home))
+  ok('a Spot can take a style beside its placement', /\{ \.\.\.place\(at, lg, tilt, delay\), \.\.\.style \}/.test(kit))
   ok('the marked words are inside the title in both locales, or nothing would be marked',
      [...landingSrc.matchAll(/title: '([^']*)',[\s\S]{0,1800}?mark: '([^']*)'/g)].length === 2
        && [...landingSrc.matchAll(/title: '([^']*)',[\s\S]{0,1800}?mark: '([^']*)'/g)].every((m) => m[1].includes(m[2])))
-  ok('every word a sticker carries exists in both locales',
-     (landingSrc.match(/badges: \[/g) ?? []).length === 2 && (landingSrc.match(/spin: '/g) ?? []).length === 2
+  ok('every word the decoration carries exists in both locales',
+     (landingSrc.match(/spin: '/g) ?? []).length === 2
        && (landingSrc.match(/tape: \[/g) ?? []).length === 2 && (landingSrc.match(/movement: '/g) ?? []).length === 2)
 }
 

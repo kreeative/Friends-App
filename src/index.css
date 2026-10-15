@@ -945,8 +945,11 @@
     --c-mark: 255 0 122;
 
     /* The third touch. The app has no blue in sun and no pink in sea; the
-       public shell is the one surface that gets all three at once. */
-    --c-sky: 56 189 248;       /* #38BDF8, carries #111111 at 8.81:1 */
+       public shell is the one surface that gets all three at once. It is the
+       logo's turquoise and no other blue: #38BDF8 was here, and "le bleu que
+       tu as pris et le bleu qui est sur le logo, c'est pas le même bleu".
+       White on it is 3.22:1, so words on it are large and bold, or absent. */
+    --c-sky: 0 157 185;        /* #009DB9, the logo tile */
 
     --c-progress: 230 0 112;
     --c-over: 17 17 17;
@@ -4509,8 +4512,9 @@ nav a[aria-current='page'] > svg {
  *
  * Dans @layer components, comme .sticker et .panel, et pour la meme raison:
  * un utilitaire doit pouvoir gagner. Hors couche, ce bloc venait APRES les
- * utilitaires dans la feuille compilee, donc `hidden` sur un badge perdait
- * contre son `display: inline-flex` et le badge restait sur le telephone.
+ * utilitaires dans la feuille compilee, donc `hidden` perdait contre un
+ * `display` pose ici: un badge a mots (retire depuis) restait sur le
+ * telephone.
  * ========================================================================= */
 
 @layer components {
@@ -4572,44 +4576,17 @@ nav a[aria-current='page'] > svg {
   }
 }
 
-/* Les badges a mots: forme pleine, bord blanc decoupe, ombre. La taille du
-   texte suit la scene par --fs quand il est pose, sinon elle est fixe. */
-.badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 3px solid #fff;
-  font-size: var(--fs, 0.8125rem);
-  font-weight: 800;
-  line-height: 1;
-  letter-spacing: 0.01em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  box-shadow: 0 5px 12px rgb(0 0 0 / 0.16);
-  transform: rotate(var(--tilt, 0deg));
-  transition: transform 340ms cubic-bezier(0.34, 1.56, 0.64, 1);
-  animation: stick-on 520ms cubic-bezier(0.34, 1.56, 0.64, 1) var(--d, 0ms) backwards;
+/**
+ * Un mot du titre qui porte un sticker. En ligne, donc le titre passe a la
+ * ligne exactement comme sans lui; relatif, donc le sticker se pose par
+ * rapport au MOT, en em, et le suit a toutes les largeurs et dans les deux
+ * langues. Voir headline() dans Home.jsx.
+ */
+.pin {
+  position: relative;
 }
-.badge-pill {
-  border-radius: 999px;
-  padding: 0.6em 1.05em 0.55em;
-}
-.badge-round {
-  border-radius: 999px;
-  aspect-ratio: 1;
-  padding: 0.75em;
-  text-align: center;
-  white-space: normal;
-  line-height: 1.05;
-}
-.badge-tag {
-  border-radius: 0.45em;
-  padding: 0.6em 0.9em 0.55em;
-}
-@media (hover: hover) {
-  .badge:hover {
-    transform: rotate(calc(var(--tilt, 0deg) * -1)) scale(1.06);
-  }
+.pin > .spot {
+  position: absolute;
 }
 
 /* Les traits a la main et les etincelles. */
@@ -4624,7 +4601,7 @@ nav a[aria-current='page'] > svg {
   z-index: 2;
   width: 5.25rem;
   height: 1.5rem;
-  background: rgb(var(--tape, 56 189 248) / 0.62);
+  background: rgb(var(--tape, 0 157 185) / 0.62);
   transform: rotate(var(--tilt, -6deg));
   clip-path: polygon(
     0 0, 4% 17%, 0 33%, 4% 50%, 0 67%, 4% 83%, 0 100%,
@@ -4651,28 +4628,21 @@ nav a[aria-current='page'] > svg {
   box-decoration-break: clone;
 }
 
-/* Un sticker dans une ligne de texte: il passe a la ligne avec les mots, donc
-   il ne peut pas en couvrir un. */
-.spot-inline {
-  display: inline-block;
-  height: 0.86em;
-  width: auto;
-  vertical-align: -0.06em;
-  /* Assez loin du dernier mot pour que le coin tourne et l'ombre restent hors
-     de sa boite: a 0,14 em ils mordaient sur le point de "financiere.". */
-  margin-left: 0.32em;
-}
-
-/* La carte decoupee: un bord blanc epais et une ombre, penchee. Elle se
-   redresse sous la souris. */
-.diecut {
-  border: 6px solid #fff;
+/**
+ * Une carte posee de travers, avec son ombre, qui se redresse sous la souris.
+ *
+ * Elle s'appelait .diecut et portait un bord blanc de 6 px, pour faire
+ * sticker. "C'est pas vraiment des stickers, c'est des choses que tu as
+ * craftées": le bord decoupe est celui des vrais stickers, et une carte
+ * dessinee en code n'en a pas.
+ */
+.lean {
   box-shadow: 0 12px 28px rgb(17 17 17 / 0.14);
   transform: rotate(var(--tilt, 0deg));
   transition: transform 360ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 @media (hover: hover) {
-  .diecut:hover {
+  .lean:hover {
     transform: rotate(0deg) translateY(-4px);
   }
 }
@@ -4762,15 +4732,13 @@ nav a[aria-current='page'] > svg {
 
 @media (prefers-reduced-motion: reduce) {
   .spot,
-  .badge,
   .spin-ring,
   .spin-badge:hover .spin-ring,
   .spin-badge:focus-visible .spin-ring {
     animation: none;
   }
   .spot,
-  .badge,
-  .diecut,
+  .lean,
   .peek {
     transition: none;
   }

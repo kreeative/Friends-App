@@ -1,10 +1,11 @@
+import { Fragment, useLayoutEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { LANDING } from '../../content/landing'
 import { useT } from '../../lib/i18n'
 import { usePageMeta } from '../../lib/pageMeta'
 import { Mark } from '../../components/Wordmark'
 import PreviewCard from '../../components/PreviewCard'
-import { Badge, Doodle, SpinBadge, Sparkle, Spot, Tape, cast } from '../../components/StickerKit'
+import { Doodle, SpinBadge, Sparkle, Spot, Tape, cast } from '../../components/StickerKit'
 import { stickerSrc } from '../../lib/art'
 
 /**
@@ -18,10 +19,18 @@ import { stickerSrc } from '../../lib/art'
  * La page etait blanche, du texte noir et trois touches de couleur, et a
  * 1440 px elle n'avait AUCUN sticker: le rail est reserve au telephone depuis
  * qu'il tombait sur les titres (la note est dans Stickers.jsx). Les stickers
- * sont maintenant dans la composition elle-meme: dans le titre, colles aux
+ * sont maintenant dans la composition elle-meme: autour du titre, colles aux
  * coins de la carte, au bout des bandes du manifeste, au coin de chaque
  * pilier, devant chaque raison, et des amis qui depassent du panneau jaune.
  * Les regles de pose sont en tete de src/components/StickerKit.jsx.
+ *
+ * Les couleurs sont celles du logo et aucune autre: le rose #FF007A, le
+ * turquoise #009DB9, le jaune. Le bleu a ete #38BDF8 puis #0B6FAD, et "le
+ * bleu que tu as pris et le bleu qui est sur le logo, c'est pas le même
+ * bleu". Le blanc n'y fait que 3,80:1 et 3,22:1, donc tout mot pose sur ces
+ * deux fonds est un grand texte, en gras et a 19 px au moins (le seuil de 3:1
+ * des grands textes, 18,66 px en gras). Un texte plus petit va sur du blanc
+ * ou un pastel, a l'encre.
  *
  * Chaque mot de la page est le meme qu'avant. Seule la mise en page change.
  */
@@ -29,10 +38,14 @@ import { stickerSrc } from '../../lib/art'
 /**
  * Qui va ou. Une seule liste par scene, passee par cast() pour qu'un sticker
  * renomme soit remplace plutot que de laisser un trou. Aucun ne se repete sur
- * la page: vingt-trois des vingt-neuf du dossier, chacun a un seul endroit.
+ * la page: vingt-cinq des vingt-neuf du dossier, avec le pied de page, chacun
+ * a un seul endroit.
  */
-const HERO_ART = cast(['chaching', 'thumb', 'coin', 'daisy'])
-const BAND_ART = cast(['fire', 'lips'])
+/* Autour du titre: FIRE sur le premier mot, le pouce au coin, CHACHING au
+   bout de la phrase. */
+const TITLE_ART = cast(['fire', 'thumb', 'chaching'])
+const HERO_ART = cast(['daisy', 'pickle', 'coin'])
+const BAND_ART = cast(['bass', 'lips'])
 /* Discipline: celui qui s'entraine. Ambitions: la licorne. Serenite: la carpe
    koi, le poisson des bassins calmes. */
 const PILLAR_ART = cast(['baller', 'unicorn', 'koi'])
@@ -50,7 +63,8 @@ const PILLAR_TILT = [-2.2, 1.6, -1.2]
 /**
  * Une bande de scotch qui repete des mots, plus large que l'ecran et penchee.
  * Decor: aria-hidden, les mots sont ceux de la page. En blanc sur le rose et
- * le bleu profonds: en noir sur les vifs, "ça donne mal aux yeux".
+ * le turquoise du logo (en noir, "ça donne mal aux yeux"), et assez gros pour
+ * le seuil des grands textes: 19 px en extra-gras au plus petit.
  */
 function WordTape({ words, tone, tilt }) {
   return (
@@ -59,7 +73,7 @@ function WordTape({ words, tone, tilt }) {
       className={`relative ml-[-8%] w-[116%] py-2.5 ${tone}`}
       style={{ transform: `rotate(${tilt}deg)` }}
     >
-      <div className="flex justify-center gap-5 whitespace-nowrap text-[clamp(0.95rem,1.8vw,1.25rem)] font-extrabold uppercase tracking-[0.05em] text-white">
+      <div className="flex justify-center gap-5 whitespace-nowrap text-[clamp(1.1875rem,2vw,1.375rem)] font-extrabold uppercase tracking-[0.05em] text-white">
         {[0, 1, 2, 3].flatMap((k) => words.map((w) => <span key={`${k}${w}`}>{w} ✦</span>))}
       </div>
     </div>
@@ -67,20 +81,112 @@ function WordTape({ words, tone, tilt }) {
 }
 
 /**
- * The words the marker goes behind, if they are in the title. A translation
- * that rewords the title without updating `mark` loses the highlight and
- * nothing else.
+ * LE TITRE, AVEC SES STICKERS ACCROCHES AUX MOTS.
+ *
+ *   "à la place, t'ajoutes des stickers autour du texte, un peu sur le
+ *    texte, etc. Comme ce que j'avais montré."
+ *
+ * Les references posent une couronne de stickers autour du titre, et
+ * certains mordent sur les lettres. Ici aussi, et c'est la seule exception a
+ * la regle "rien ne couvre un mot" du kit.
+ *
+ * ACCROCHES A UN MOT, PAS A LA PAGE. Le titre ne tombe pas pareil d'une
+ * largeur a l'autre: mesure, il fait trois a cinq lignes et ses coupures
+ * changent avec la langue ("Change your" / "Change your life." / "Change"
+ * seul a 320 px). Un sticker pose en pourcentages de la colonne finissait
+ * sur un mot ou un autre selon la largeur. Accroche au mot, il le suit:
+ * `pins.first` au premier mot, `pins.last` au dernier, en em, donc a la
+ * taille du titre a toutes les largeurs. Le mot accroche est un <span> en
+ * ligne (.pin dans index.css), donc le titre passe a la ligne exactement
+ * comme sans lui.
+ *
+ * "UN PEU" SUR LE TEXTE, MESURE. Le plafond a ete fixe avant de poser quoi
+ * que ce soit: 30 % de l'encre d'une lettre, 12 % de celle d'un mot, sur la
+ * page peinte avec et sans le decor. Mesure de 320 a 1440 px, dans les deux
+ * langues: le FIRE prend 13 a 15 % du C, le pouce au plus 24 % de la
+ * derniere lettre de la premiere ligne, CHACHING au plus 8 % du point, et
+ * aucun mot ne perd plus de 4 %.
+ *
+ * Les mots derriere lesquels passe le surligneur sont `mark`, s'ils sont dans
+ * le titre. Une traduction qui change le titre sans changer `mark` perd le
+ * surlignage et rien d'autre.
  */
-function markParts(title, mark) {
-  const i = mark ? title.indexOf(mark) : -1
-  if (i < 0) return title
-  return (
-    <>
-      {title.slice(0, i)}
-      <span className="marker">{mark}</span>
-      {title.slice(i + mark.length)}
-    </>
-  )
+function headline(title, mark, pins) {
+  const at = mark ? title.indexOf(mark) : -1
+  const runs = at < 0
+    ? [[title, false]]
+    : [[title.slice(0, at), false], [mark, true], [title.slice(at + mark.length), false]]
+  const words = runs.flatMap(([text]) => text.split(/\s+/).filter(Boolean))
+  const pinFor = { 0: pins.first, [words.length - 1]: pins.last }
+  let k = 0
+  return runs.map(([text, marked], r) => {
+    const parts = text.split(/(\s+)/).map((part, j) => {
+      if (!part || /^\s+$/.test(part)) return part
+      const pin = pinFor[k++]
+      return pin ? (
+        <span key={j} className="pin">
+          {part}
+          {pin}
+        </span>
+      ) : (
+        part
+      )
+    })
+    return marked ? (
+      <span key={r} className="marker">
+        {parts}
+      </span>
+    ) : (
+      <Fragment key={r}>{parts}</Fragment>
+    )
+  })
+}
+
+/**
+ * Ou finit la premiere ligne du titre, en variable CSS sur le titre.
+ *
+ * Le pouce se colle au bout de la premiere ligne, et ce bout n'est jamais le
+ * meme mot: "Change" seul a 320 px en anglais, "Change your" a 390, "Change
+ * your life." a 414, "Change de vie." en francais. CSS ne sait pas ou une
+ * ligne finit, donc on le mesure, mot par mot (les espaces de fin de ligne
+ * n'ont pas d'encre), a chaque changement de taille et quand la police est
+ * chargee. Divise par l'echelle du titre, parce que son entree joue un
+ * scale(0.994) et que la mesure peut tomber pendant.
+ *
+ * Avant la premiere mesure, le pouce est au coin droit du bloc: juste aussi,
+ * moins precis.
+ */
+function useLineEnd(ref, text) {
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el || typeof ResizeObserver === 'undefined') return undefined
+    const measure = () => {
+      const box = el.getBoundingClientRect()
+      if (!box.width) return
+      const range = document.createRange()
+      const walk = document.createTreeWalker(el, NodeFilter.SHOW_TEXT)
+      let top = Infinity
+      let end = 0
+      for (let n = walk.nextNode(); n; n = walk.nextNode()) {
+        for (const m of n.textContent.matchAll(/\S+/g)) {
+          range.setStart(n, m.index)
+          range.setEnd(n, m.index + m[0].length)
+          for (const r of range.getClientRects()) {
+            if (r.top < top - 2) {
+              top = r.top
+              end = r.right
+            } else if (r.top <= top + 2) end = Math.max(end, r.right)
+          }
+        }
+      }
+      if (end) el.style.setProperty('--line-end', `${((end - box.left) * el.offsetWidth) / box.width}px`)
+    }
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    document.fonts?.ready.then(measure)
+    return () => ro.disconnect()
+  }, [ref, text])
 }
 
 export default function Home() {
@@ -104,6 +210,9 @@ export default function Home() {
    */
   usePageMeta({ title: `Rich & Friends · ${c.tagline}`, description: c.hero.body })
 
+  const title = useRef(null)
+  useLineEnd(title, c.hero.title)
+
   return (
     <>
       {/**
@@ -119,6 +228,13 @@ export default function Home() {
        * Le titre perd un peu de taille a partir de lg (76 px au lieu de 92)
        * pour tenir en trois lignes dans sa colonne. Mesure a 1024, 1180 et
        * 1440: "Change de vie." est la ligne la plus longue et tient partout.
+       *
+       * 13ch de large au plus, et plus 14. A 14, "financial freedom." tenait
+       * sur une ligne entre 436 et 470 px, contre le bord de la colonne, et le
+       * CHACHING accroche au dernier mot sortait de l'ecran de 27 px: mesure
+       * de 10 en 10 px, de 320 a 1440. A 13 (8,4 em), "freedom." est seul sur
+       * sa ligne a toutes les largeurs, et le francais ne bouge pas: sa plus
+       * longue ligne fait 7,2 em.
        */}
       <section data-hook="hero" className="relative mx-auto w-full max-w-6xl px-6 pb-16 pt-10 md:pb-24 md:pt-14">
         {/* Les deux colonnes alignees par le BAS: le badge rond est au pied du
@@ -127,33 +243,63 @@ export default function Home() {
             lignes de titre au lieu de trois), elle pointait le paragraphe. */}
         <div className="lg:grid lg:grid-cols-[minmax(0,1.12fr)_minmax(0,1fr)] lg:items-end lg:gap-10">
           <div className="stagger">
-            {/* Des stickers a mots a la place d'un chapeau gris. Chacun repete
-                une chose que la page dit deja; voir `fun` dans landing.js. */}
-            <div style={{ '--i': 0 }} className="flex flex-wrap items-center gap-2.5" data-hook="hero-badges">
-              <Badge tone="pink" tilt={-5} delay={120}>{fun.badges[0]}</Badge>
-              <Badge tone="sky" tilt={3} delay={220}>{fun.badges[1]}</Badge>
-              <Badge tone="yellow" tilt={-2} delay={320}>{fun.badges[2]}</Badge>
-            </div>
-
+            {/* Plus de pastilles a mots au-dessus: "j'aime pas cette sorte de
+                écriture en mode bouton". Le titre ouvre la page, et ses
+                stickers prennent la place qu'elles avaient: le haut du pouce
+                monte a 0,95 em au-dessus du titre, d'ou mt-3 et md:mt-8. */}
             <h1
-              style={{ '--i': 1 }}
-              className="mt-7 max-w-[14ch] text-[clamp(2.75rem,9vw,5rem)] font-semibold leading-[1.02] tracking-[-0.03em] text-ink
-                         lg:text-[clamp(3.5rem,6.2vw,4.75rem)]"
+              ref={title}
+              style={{ '--i': 0 }}
+              data-hook="hero-title"
+              className="relative mt-3 max-w-[13ch] text-[clamp(2.75rem,9vw,5rem)] font-semibold leading-[1.02] tracking-[-0.03em] text-ink
+                         md:mt-8 lg:text-[clamp(3.5rem,6.2vw,4.75rem)]"
             >
-              {markParts(c.hero.title, c.hero.mark)}
-              {/* Dans la ligne, pas pose dessus: il passe a la ligne avec les
-                  mots, donc il ne peut en couvrir aucun, a aucune largeur. */}
-              <Spot name={HERO_ART[0]} tilt={-9} delay={500} eager className="spot-inline" />
+              {headline(c.hero.title, c.hero.mark, {
+                /* FIRE, colle sur le haut du C. Pas plus a gauche que 0,2 em:
+                    avec sa pente il deborde de 0,29 em, soit 23 px quand le
+                    titre fait 80 px, et la page n'a que 24 px de marge. A
+                    -0,5 em il etait coupe par le bord de l'ecran a 820. */
+                first: (
+                  <Spot
+                    name={TITLE_ART[0]}
+                    tilt={-12}
+                    delay={380}
+                    eager
+                    style={{ left: '-0.2em', top: '-0.58em', width: '1.55em' }}
+                  />
+                ),
+                /* CHACHING, au bout de la phrase, sur le point. */
+                last: (
+                  <Spot
+                    name={TITLE_ART[2]}
+                    tilt={-8}
+                    delay={640}
+                    eager
+                    style={{ left: 'calc(100% - 0.3em)', top: '0.22em', width: '1.5em' }}
+                  />
+                ),
+              })}
+              {/* Le pouce, sur le bout de la premiere ligne, quelle qu'elle
+                  soit (voir useLineEnd). Au-dessus de la premiere ligne il n'y
+                  a que la marge, donc il ne prend que le haut des lettres. */}
+              <Spot
+                name={TITLE_ART[1]}
+                tilt={14}
+                delay={510}
+                eager
+                className="absolute"
+                style={{ left: 'calc(var(--line-end, 100%) - 0.35em)', top: '-0.84em', width: '0.75em' }}
+              />
             </h1>
 
             <p
-              style={{ '--i': 2 }}
+              style={{ '--i': 1 }}
               className="mt-8 max-w-[46ch] text-[clamp(1.0625rem,1.6vw,1.25rem)] leading-[1.55] text-muted"
             >
               {c.hero.body}
             </p>
 
-            <div style={{ '--i': 3 }} className="mt-10 flex flex-wrap items-center gap-3">
+            <div style={{ '--i': 2 }} className="mt-10 flex flex-wrap items-center gap-3">
               {/* The accent is the theme's other colour: yellow when the type is
                   blue, pink when the type is yellow-adjacent. Either way the
                   button is never the colour it is sitting on. */}
@@ -164,7 +310,7 @@ export default function Home() {
                 {c.hero.secondary}
               </Link>
             </div>
-            <p style={{ '--i': 4 }} className="mt-6 text-small text-muted">
+            <p style={{ '--i': 3 }} className="mt-6 text-small text-muted">
               {c.hero.note}
             </p>
           </div>
@@ -187,15 +333,15 @@ export default function Home() {
               <Tape className="-top-2.5 left-8" tilt={-9} />
               <Tape className="-top-2.5 right-10" tilt={7} tone="255 0 122" />
               <PreviewCard className="relative" />
-              <Spot name={HERO_ART[3]} tilt={10} delay={700} className="absolute -right-2 -top-[4.75rem] z-[3] w-[4.5rem] sm:-right-6 sm:w-[5.25rem]" />
+              <Spot name={HERO_ART[0]} tilt={10} delay={700} className="absolute -right-2 -top-[4.75rem] z-[3] w-[4.5rem] sm:-right-6 sm:w-[5.25rem]" />
               {/* Sur un telephone la carte prend toute la largeur pour que ses
                   pastilles tiennent sur une ligne, donc il n'y a plus de bord
-                  gauche ou coller le pouce: il passe au-dessus du coin. */}
+                  gauche ou coller le cornichon: il passe au-dessus du coin. */}
               <Spot
                 name={HERO_ART[1]}
                 tilt={-14}
                 delay={820}
-                className="absolute -top-[5.1rem] left-2 z-[3] w-[3.1rem] sm:-left-[3.1rem] sm:top-[34%] sm:w-[3.6rem]"
+                className="absolute -top-[5.1rem] left-2 z-[3] w-[2.9rem] sm:-left-[3.1rem] sm:top-[34%] sm:w-[3.4rem]"
               />
               <Spot name={HERO_ART[2]} tilt={9} delay={940} className="absolute -bottom-[3.4rem] -right-2 z-[3] w-[6.25rem] sm:-right-5 sm:w-[7rem]" />
             </div>
@@ -210,7 +356,7 @@ export default function Home() {
                 au bord de la marguerite, l'etincelle rose se lisait comme un
                 defaut de decoupe. */}
             <Sparkle className="absolute left-[46%] top-7 w-6 text-[#FF007A]" />
-            <Sparkle className="absolute bottom-24 right-1 w-4 text-[#38BDF8]" />
+            <Sparkle className="absolute bottom-24 right-1 w-4 text-[#009DB9]" />
             {/* Une fleche du badge vers le bouton principal, avec une boucle.
                 Elle n'a de sens que quand les deux sont cote a cote, donc a
                 partir de lg. */}
@@ -245,7 +391,7 @@ export default function Home() {
        * seule precaution qui compte).
        */}
       <section data-hook="manifesto-band" className="relative overflow-hidden py-14 md:py-20">
-        <WordTape words={fun.tape} tone="bg-[#D6006B]" tilt={3} />
+        <WordTape words={fun.tape} tone="bg-[#FF007A]" tilt={3} />
         <div
           className="relative z-10 -my-2 ml-[-8%] w-[116%] bg-[#111111] px-[11%] py-11 md:py-14"
           style={{ transform: 'rotate(-2.5deg)' }}
@@ -270,7 +416,7 @@ export default function Home() {
             className="absolute -bottom-8 right-[12%] w-[3.5rem] md:w-[5.5rem]"
           />
         </div>
-        <WordTape words={[...fun.tape].reverse()} tone="bg-[#0B6FAD]" tilt={2} />
+        <WordTape words={[...fun.tape].reverse()} tone="bg-[#009DB9]" tilt={2} />
       </section>
 
       {/**
@@ -285,17 +431,25 @@ export default function Home() {
        * that does not resolve to a screen is a slogan, and this page has one
        * of those already, on purpose, at the top.
        *
-       * EN CARTES DECOUPEES, PLEINES DE COULEUR.
+       * EN CARTES DE DEUX TONS: LA TETE AUX COULEURS DU LOGO, LE CORPS EN
+       * PASTEL.
        *
-       * La note d'avant gardait la couleur dans une petite tuile, parce que
-       * trois cartes de couleur pleine "font une page de blocs" et que le texte
-       * devait etre remesure sur trois fonds. Il l'a ete, deux fois. La
-       * premiere mettait de l'encre partout, #111 sur #FF007A 4,98:1 et sur
-       * #38BDF8 8,81:1: le ratio passait, et c'etait "très limite, ça donne mal
-       * aux yeux". Le rose et le bleu sont maintenant les tons profonds avec du
-       * blanc, #D6006B 5,16:1 et #0B6FAD 5,40:1; le jaune garde l'encre,
-       * 13,4:1. Chaque carte porte sa couleur de texte avec son fond (`tone`
-       * dans landing.js), pour que les deux ne se separent jamais.
+       * Elles ont ete pleines de couleur, mesurees trois fois. #111 sur #FF007A
+       * 4,98:1 et sur #38BDF8 8,81:1: le ratio passait, et c'etait "très
+       * limite, ça donne mal aux yeux". Puis les tons profonds en blanc,
+       * #D6006B et #0B6FAD: ce bleu-la n'etait pas celui du logo. Le blanc ne
+       * fait que 3,80:1 sur le rose du logo et 3,22:1 sur son turquoise, assez
+       * pour un grand titre en gras, pas pour un paragraphe en 14 px. Donc la
+       * couleur du logo porte le numero et le titre, a 21 px en gras, et le
+       * paragraphe est a l'encre sur le pastel de la meme couleur (plus de
+       * 15:1). Chaque carte porte ses couleurs avec ses mots (`head` et
+       * `ground` dans landing.js), pour que fond et texte ne se separent
+       * jamais.
+       *
+       * Plus de bord blanc autour: c'etait l'effet sticker sur une chose
+       * dessinee en code, et "c'est pas vraiment des stickers". La carte est
+       * posee de travers avec son ombre (.lean), et le vrai sticker est celui
+       * colle a son coin.
        */}
       <section id="lifestyle" className="mx-auto w-full max-w-5xl px-6 pb-16 pt-4 md:pb-24">
         <p className="tag">{c.pillars.eyebrow}</p>
@@ -308,28 +462,33 @@ export default function Home() {
             <li
               key={item.n}
               data-pillar={item.n}
-              className={`diecut relative flex flex-col rounded-[1.75rem] p-6 pt-7 ${item.tone}`}
+              className={`lean relative flex flex-col rounded-[1.75rem] ${item.ground}`}
               style={{ '--tilt': `${PILLAR_TILT[i]}deg` }}
             >
+              <div className={`rounded-t-[1.75rem] px-6 pb-5 pt-7 ${item.head}`}>
+                <span
+                  aria-hidden="true"
+                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-pill bg-white font-display text-body font-extrabold text-[#111111] [font-variant-numeric:tabular-nums]"
+                >
+                  {item.n}
+                </span>
+                {/* text-inherit: la base peint h1, h2 et h3 en encre, et sur le
+                    rose et le turquoise le titre resterait noir pendant que la
+                    tete de la carte est en blanc. */}
+                <h3 className="mt-4 text-[1.3125rem] font-bold leading-snug text-inherit">{item.title}</h3>
+              </div>
+              <p className="px-6 pb-7 pt-5 text-small leading-relaxed text-[#111111]">{item.body}</p>
               {/* Au coin haut droit, au-dessus de la ligne du numero: le titre
-                  commence 100 px plus bas que le haut de la carte, le sticker
-                  s'arrete avant. */}
+                  commence 88 px sous le haut de la carte, le sticker s'arrete
+                  avant. Il deborde de 8 px a droite. Avec le bord blanc de
+                  6 px, -right-4 faisait 10; sans lui, -right-4 le poussait
+                  hors de l'ecran a 320 px, et -right-2.5 encore d'un pixel en
+                  francais, la ou la premiere carte est la plus haute. */}
               <Spot
                 name={PILLAR_ART[i]}
                 tilt={i % 2 ? -9 : 9}
-                className="absolute -right-4 -top-12 w-[4.75rem]"
+                className="absolute -right-2 -top-[2.625rem] w-[4.75rem]"
               />
-              <span
-                aria-hidden="true"
-                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-pill bg-white font-display text-body font-extrabold text-[#111111] [font-variant-numeric:tabular-nums]"
-              >
-                {item.n}
-              </span>
-              {/* text-inherit: la base peint h1, h2 et h3 en encre, et sur le
-                  rose et le bleu profonds le titre restait noir a 3,66:1
-                  pendant que le reste de la carte passait en blanc. */}
-              <h3 className="mt-5 text-[1.125rem] font-bold leading-snug text-inherit">{item.title}</h3>
-              <p className="mt-2.5 text-small leading-relaxed">{item.body}</p>
             </li>
           ))}
         </ol>
@@ -360,9 +519,10 @@ export default function Home() {
               {c.problem.title}
             </h2>
             <div className="relative mt-10 hidden h-32 md:block" aria-hidden="true">
-              {/* Le monogramme, decoupe comme un sticker: le bord blanc est sur
-                  l'enveloppe, parce que la tuile pose deja son propre style. */}
-              <span className="diecut absolute left-1 top-0 inline-flex rounded-[1.75rem] bg-white" style={{ '--tilt': '-8deg' }}>
+              {/* Le monogramme, penche, avec l'ombre de sa propre tuile. Il
+                  portait un bord blanc de 6 px pour faire sticker; c'est le
+                  logo, pas un sticker, et le bord est parti avec les badges. */}
+              <span className="absolute left-1 top-0 inline-flex" style={{ transform: 'rotate(-8deg)' }}>
                 <Mark size={84} />
               </span>
               <Doodle kind="swoop" className="absolute left-[7.5rem] top-4 w-28 text-[#FF007A]" />
@@ -388,7 +548,7 @@ export default function Home() {
                     {/* Le scotch mord sur la marge du haut du post-it et s'arrete
                         avant la premiere ligne: mesure, il touchait la boite de
                         la ligne quand la marge etait de 16 px. */}
-                    <Tape className="-top-3.5 left-6" tilt={-4} tone={i % 2 ? '56 189 248' : '255 0 122'} />
+                    <Tape className="-top-3.5 left-6" tilt={-4} tone={i % 2 ? '0 157 185' : '255 0 122'} />
                     <p className="rounded-inner bg-[#FFF4AD] px-4 pb-3 pt-6 text-small leading-relaxed text-[#111111] shadow-[0_6px_16px_rgb(17_17_17/0.08)]">
                       {r.fix}
                     </p>
@@ -440,9 +600,6 @@ export default function Home() {
        */}
       <section id="mouvement" className="relative mx-auto w-full max-w-5xl px-6 pb-6">
         <div className="relative overflow-hidden rounded-[2rem] bg-field px-6 pb-[clamp(8.5rem,21vw,12rem)] pt-16 text-center md:pt-20">
-          <Badge tone="pink" shape="round" tilt={-12} className="absolute left-4 top-4 hidden w-[5.5rem] text-[0.75rem] sm:flex md:left-6 md:top-6">
-            {fun.badges[1]}
-          </Badge>
           {/* Dans la marge du haut (64 px), au-dessus de la premiere ligne du
               titre: a 390 px, plus bas, la grande etoile mordait sur "Une". */}
           <Sparkle className="absolute right-[9%] top-5 w-7 text-[#FF007A]" />
