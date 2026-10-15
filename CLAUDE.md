@@ -27,7 +27,12 @@ and the error points at the wrong thing.
   computed styles. Reading `backgroundColor` and dropping its alpha has
   already produced a probe that passed a real contrast failure.
 - **iPad and laptop are first-class, and nobody should have to ask.** After
-  any UI change: `npm run build && npm run sweep`. It renders every signed-in
+  any UI change:
+  `VITE_SUPABASE_URL=http://localhost:54321 VITE_SUPABASE_ANON_KEY=stub-anon npm run build && npm run sweep`.
+  The build must talk to the stub: a plain `npm run build` is "not
+  configured" and serves only the public site; the sweep then measured that
+  page under every route and reported 0 failed (seen 15 October). It now
+  stops when it does not find `data-hook="app-shell"`. It renders every signed-in
   route at 390, 820 (iPad portrait), 1180 (iPad landscape) and 1440, and
   fails on a sideways scroll, a wrapping paragraph wider than 800px, an input
   wider than 40rem, or cards stacked full width above md. Look at the

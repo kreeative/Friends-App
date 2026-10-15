@@ -289,6 +289,18 @@ eq('null is no code', cleanCode(null), null)
   const vous = [...fr.matchAll(/'((?:signin|invite)\.[a-z_]+)': '([^']*)'/g)].filter(([, , v]) => /(^|[\s(])([A-Z\u00C0-\u00DD][a-z\u00E0-\u00FF]+ez\b|vous\b|votre\b|vos\b)/.test(v)).map(([, k]) => k)
   ok(`the French sign-in and invitation say tu, not vous (${vous.join(', ') || 'none'})`, vous.length === 0)
   ok('the sign-in code button says tu', /'signin\.send_code': 'Envoie-moi un code'/.test(fr))
+
+  /* Migration 78. Le groupe du defi avait des periodes finies avant que
+     quiconque y entre: la personne arrivee le 15 avait 4 jours rates des son
+     premier jour, et tick() l'aurait relancee a minuit. */
+  const sql78 = read('../../supabase/78_late_joiners.sql')
+  ok('migration 78 is ASCII, it travels through a clipboard', [...sql78].every((c) => c.charCodeAt(0) < 128))
+  ok('migration 78 drops nothing and writes no row', !/\b(drop|delete|update|insert|truncate|revoke)\b/i.test(sql78.replace(/--.*$/gm, '')))
+  ok('a period that closed before you joined is not one you missed', /gm\.joined_at < c\.closes_at/.test(sql78.slice(sql78.indexOf('function missed_cycle'), sql78.indexOf('create or replace view'))))
+  ok('nor a row of your history, unless you checked in on it', /where gm\.joined_at < c\.closes_at\s+or ci\.id is not null;/.test(sql78))
+  ok('the view keeps its columns and security_invoker', /with \(security_invoker = on\)/.test(sql78) && /end as status,\s+ci\.mood\s+from cycles c/.test(sql78))
+  const ctx = code('../context/GroupContext.jsx')
+  ok('the roster brings joined_at, for the standing', /select\('user_id, role, nudge_order, joined_at, profiles\(/.test(ctx))
 }
 
 console.log(`\n  ${pass} passed, ${fail} failed\n`)
