@@ -31,7 +31,12 @@ export default function InviteSheet({ group, open, onClose }) {
 
   if (!group) return null
 
-  const link = `${window.location.origin}/start?join=${encodeURIComponent(group.invite_code)}`
+  /* Un groupe defi envoie vers la page du defi (/defi?join=CODE): quelqu'un
+     qui arrive d'une video doit lire ce qu'on lui propose avant de creer un
+     compte. Le code fait le meme chemin dans les deux cas: retenu pendant
+     l'inscription, rejoint a la fin (src/lib/pendingJoin.js). */
+  const path = group.challenge ? '/defi' : '/start'
+  const link = `${window.location.origin}${path}?join=${encodeURIComponent(group.invite_code)}`
 
   /**
    * One string, carrying the link exactly once.
