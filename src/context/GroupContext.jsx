@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from './AuthContext'
+import { useT } from '../lib/i18n'
 import { cyclePhase, lastClosed, soonestUpcoming } from '../lib/time'
 import { dayKey, indexDays, since } from '../lib/streak'
 import { openHides } from '../lib/nudgeHidden'
@@ -34,7 +35,16 @@ export function GroupProvider({ children }) {
 
   const [memberships, setMemberships] = useState([])
   const [group, setGroup] = useState(null)
-  const [members, setMembers] = useState([])
+  const [rawMembers, setMembers] = useState([])
+  /**
+   * Ce que la personne connectee partage avec le groupe ouvert (migration 75).
+   *
+   *   undefined  la table n'existe pas encore, ou la lecture a echoue: rien a
+   *              demander, l'app se comporte comme avant
+   *   null       pas de reponse: la question s'ouvre sur le tableau du groupe
+   *   un objet   { name, photos, email, answered_at }
+   */
+  const [mySharing, setMySharing] = useState(undefined)
   const [cycles, setCycles] = useState([])
   const [goals, setGoals] = useState([])
   const [soloGoals, setSoloGoals] = useState([])
@@ -138,7 +148,7 @@ export function GroupProvider({ children }) {
     }
 
     try {
-      const [g, m, c, gl, st, nd, hid] = await Promise.all([
+      const [g, m, c, gl, st, nd, hid, sh, al] = await Promise.all([
       supabase.from('groups').select('*').eq('id', activeId).maybeSingle(),
       supabase
         .from('group_members')
@@ -172,10 +182,23 @@ export function GroupProvider({ children }) {
        * hidden_at comes down because a cross expires. See HIDE_DAYS.
        */
       supabase.from('nudge_hidden').select('nudge_id, hidden_at'),
+      /* Migration 75. Deux requetes a part, pour la raison de nudge_hidden
+         juste au-dessus: avant que le fichier soit passe, la table et la
+         colonne n'existent pas, et ni l'une ni l'autre ne doit faire tomber
+         le groupe. group_sharing ne rend que nos propres lignes (RLS). */
+      supabase
+        .from('group_sharing')
+        .select('name, photos, email, answered_at')
+        .eq('group_id', activeId)
+        .eq('user_id', user.id)
+        .maybeSingle(),
+      supabase.from('group_members').select('user_id, alias').eq('group_id', activeId),
       ])
 
       setGroup(g.data ?? null)
-      setMembers((m.data ?? []).map((r) => ({ ...r, profile: r.profiles })))
+      const alias = new Map((al?.error ? [] : al?.data ?? []).map((r) => [r.user_id, r.alias]))
+      setMembers((m.data ?? []).map((r) => ({ ...r, alias: alias.get(r.user_id) ?? null, profile: r.profiles })))
+      setMySharing(sh?.error ? undefined : sh?.data ?? null)
       setCycles(c.data ?? [])
       setGoals(gl.data ?? [])
       setStatuses(st.data ?? [])
@@ -210,6 +233,35 @@ export function GroupProvider({ children }) {
   useEffect(() => {
     loadGroup()
   }, [loadGroup])
+
+  /**
+   * UN MEMBRE DONT LE GROUPE NE PEUT PAS LIRE LE PROFIL.
+   *
+   * Depuis la migration 75, quelqu'un qui garde son nom pour lui (ou qui n'a
+   * pas encore repondu) n'a plus de profil lisible pour les autres: l'embed
+   * `profiles(...)` arrive a null. Chaque ecran lit `m.profile.display_name`,
+   * donc le repli est construit ici, une fois: le pseudo du groupe, sinon
+   * "Nouveau membre", et pas de photo. L'avatar affiche alors des initiales.
+   */
+  const { t } = useT()
+  const members = useMemo(
+    () =>
+      rawMembers.map((m) =>
+        m.profile
+          ? m
+          : {
+              ...m,
+              profile: {
+                id: m.user_id,
+                display_name: m.alias || t('share.new_member'),
+                avatar_url: null,
+                birthday: null,
+                hidden: true,
+              },
+            },
+      ),
+    [rawMembers, t],
+  )
 
   /* Every phase question in the app goes through the same two arguments, so
      that a period ends when the next one starts rather than thirty hours in.
@@ -471,6 +523,7 @@ export function GroupProvider({ children }) {
     group,
     activeId,
     members,
+    mySharing,
     cycles,
     cadence,
     currentCycle,

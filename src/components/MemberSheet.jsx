@@ -28,7 +28,7 @@ import { Avatar, Sheet } from './ui'
  * the app, the person has to be re-invited and their history in this group
  * goes with them, and a confirm step is cheap against that.
  */
-export default function MemberSheet({ member, myRole, meId, onClose }) {
+export default function MemberSheet({ member, myRole, meId, onClose, email }) {
   const { activeId, reload } = useGroup()
   const { t } = useT()
 
@@ -106,6 +106,17 @@ export default function MemberSheet({ member, myRole, meId, onClose }) {
               .filter(Boolean)
               .join(' · ')}
           </p>
+          {/* L'adresse, seulement si cette personne a choisi de la partager
+              avec ce groupe (group_member_emails, migration 75). */}
+          {email && (
+            <a
+              href={`mailto:${email}`}
+              data-hook="member-email"
+              className="mt-1 block break-all text-small text-ink underline underline-offset-4"
+            >
+              {email}
+            </a>
+          )}
         </div>
       </div>
 

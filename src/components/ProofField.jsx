@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { useGroup } from '../context/GroupContext'
 import { useT } from '../lib/i18n'
 import { isMissingProofs, uploadProof } from '../lib/proofs'
 import { NOTE_MAX, isValidLink, linkHost } from '../lib/proofKinds'
@@ -41,8 +42,26 @@ export default function ProofField({ type, value, onChange, goalTitle, onRemoveP
   const { t } = useT()
   const [busy, setBusy] = useState(false)
   const [failed, setFailed] = useState(null)
+  const { activeId, mySharing } = useGroup() ?? {}
 
   if (type === 'none') return null
+
+  /**
+   * PAS DE PHOTO DANS UN GROUPE OU ON A DIT NON.
+   *
+   * "Mes photos de preuve" decoche dans ce groupe (migration 75): le point du
+   * jour se fait sans photo, et la base retirerait de toute facon une photo
+   * envoyee ici. Proposer le bouton serait proposer quelque chose qui
+   * disparait a l'enregistrement. activeId vient de l'adresse (/g/:id), donc
+   * un objectif perso, hors groupe, garde son bouton.
+   */
+  if (type === 'photo' && activeId && mySharing?.photos === false) {
+    return (
+      <p className="mt-4 text-small text-muted" data-hook="proof-photos-off">
+        {t('share.photos_off')}
+      </p>
+    )
+  }
 
   async function pick(file) {
     if (!file || !user) return
