@@ -12,8 +12,7 @@
  * direction de son dernier point de controle vers ce bout; un segment droit,
  * dans la direction de son debut vers son bout. Les deux traits repartent en
  * arriere de chaque cote de cette direction, a angle egal et de meme longueur.
- * Toutes les fleches du site passent par ici (src/components/StickerKit.jsx),
- * celle du badge rond comprise.
+ * Toutes les fleches du site passent par ici (src/components/StickerKit.jsx).
  *
  * Pur et sans import, pour que node le teste pour de vrai: StickerKit importe
  * art.js, qui ne se charge que dans un bundler.

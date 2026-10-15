@@ -5038,13 +5038,15 @@ ok(
   const landingSrc = read('src/content/landing.js')
 
   const collage = style.slice(style.indexOf('LE COLLAGE DE LA VITRINE'))
-  ok('the round badge turns once on arrival, and forever only under the pointer or the focus (WCAG 2.2.2)',
-     /\.spin-ring \{[\s\S]{0,140}animation: spin-in 2600ms/.test(collage)
-       && /\.spin-badge:hover \.spin-ring,\s*\.spin-badge:focus-visible \.spin-ring \{\s*animation: spin-turn 9s linear infinite;/.test(collage)
-       && (collage.match(/infinite/g) ?? []).length === 1,
-     'one infinite animation in the collage, behind :hover and :focus-visible')
+  /* "Ca aussi enlève je n'aime pas", on the yellow START NOW badge that
+     spun. It was the collage's one looping animation; with it gone nothing
+     in the collage loops at all (WCAG 2.2.2 has nothing left to stop). */
+  ok('the spinning START NOW badge is gone, and nothing in the collage loops',
+     !/SpinBadge/.test(code('src/components/StickerKit.jsx') + code('src/pages/public/Home.jsx'))
+       && !/spin-badge|spin-ring|spin-in|spin-turn/.test(collage.replace(/\/\*[\s\S]*?\*\//g, ''))
+       && !/\bspin: '/.test(landingSrc) && !/infinite/.test(collage))
   ok('nothing in the collage moves under reduced motion',
-     /prefers-reduced-motion: reduce\) \{\s*\.spot,\s*\.spin-ring,\s*\.spin-badge:hover \.spin-ring,\s*\.spin-badge:focus-visible \.spin-ring \{\s*animation: none;\s*\}\s*\.spot,\s*\.lean,\s*\.peek \{\s*transition: none;/.test(style))
+     /prefers-reduced-motion: reduce\) \{\s*\.spot \{\s*animation: none;\s*\}\s*\.spot,\s*\.lean,\s*\.peek \{\s*transition: none;/.test(style))
   ok('the collage styles live in the components layer, so a utility like `hidden` wins',
      /@layer components \{\s*\/\* Un element pose dans sa scene/.test(style))
   ok('stickers are hidden from screen readers', /alt=""\s*aria-hidden="true"/.test(kit))
@@ -5061,8 +5063,8 @@ ok(
      !/\.diecut|border: \d+px solid #fff/.test(collageRules) && !/\bdiecut\b/.test(code('src/pages/public/Home.jsx'))
        && /\.lean \{\s*box-shadow: [^;]+;\s*transform: rotate\(var\(--tilt, 0deg\)\);/.test(collage)
        && /className=\{`lean relative flex flex-col rounded-\[1\.75rem\] \$\{item\.ground\}`\}/.test(home))
-  ok('the round badge is a real link with the main button\'s name',
-     /<SpinBadge[\s\S]{0,120}label=\{c\.hero\.cta\}/.test(home) && /aria-label=\{label\}/.test(kit))
+  ok('and the looping arrow that ran from the badge to the button went with it',
+     !/kind="loop"/.test(home) && !/\bloop: \{/.test(code('src/components/StickerKit.jsx')))
   ok('the giant lettering is decoration, painted by its parent',
      /aria-hidden="true"/.test(lettering) && /fill="currentColor"/.test(lettering)
        && /Genere par scripts\/lettering\.py/.test(read('src/content/lettering.js')) && existsSync(join(root, 'scripts/lettering.py')))
@@ -5120,7 +5122,8 @@ ok(
   const kitCode = code('src/components/StickerKit.jsx')
   ok('every arrowhead in the kit is computed on its curve, none is written by hand',
      /import \{ head \} from '\.\.\/lib\/arrow'/.test(kitCode)
-       && (kitCode.match(/\$\{head\(/g) ?? []).length === 3
+       && (kitCode.match(/\$\{head\(/g) ?? []).length === (kitCode.match(/^\s+d: `M/gm) ?? []).length
+       && (kitCode.match(/\$\{head\(/g) ?? []).length >= 1
        && !/M90 18l-15-9|M90 78h32v32/.test(kitCode))
   ok('"proudly Ivorian" is in the small print at every width, once',
      /<p className="text-small text-muted">\{c\.built\}<\/p>/.test(foot) && (foot.match(/\{c\.built\}/g) ?? []).length === 1)
@@ -5154,8 +5157,7 @@ ok(
      [...landingSrc.matchAll(/title: '([^']*)',[\s\S]{0,1800}?mark: '([^']*)'/g)].length === 2
        && [...landingSrc.matchAll(/title: '([^']*)',[\s\S]{0,1800}?mark: '([^']*)'/g)].every((m) => m[1].includes(m[2])))
   ok('every word the decoration carries exists in both locales',
-     (landingSrc.match(/spin: '/g) ?? []).length === 2
-       && (landingSrc.match(/tape: \[/g) ?? []).length === 2 && (landingSrc.match(/movement: '/g) ?? []).length === 2)
+     (landingSrc.match(/tape: \[/g) ?? []).length === 2 && (landingSrc.match(/movement: '/g) ?? []).length === 2)
 }
 
 console.log(`\n  ${pass} passed, ${fail} failed\n`)

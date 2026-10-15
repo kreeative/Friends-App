@@ -66,6 +66,10 @@ and the error points at the wrong thing.
   `src/assets/stickers`. "C'est pas vraiment des stickers, c'est des choses
   que tu as craftées." Badges, cards, pills and anything else drawn in code
   never wear a white sticker border to pass for one.
+- **No code-drawn badges as decoration.** They were refused twice: the
+  word pills, then the yellow spinning "START NOW" badge ("Ca aussi enlève
+  je n'aime pas"). The decoration on the public pages is the real sticker
+  art, plus tape, the yellow marker and the odd hand-drawn arrow.
 - **Stickers cover no running text, except the hero headline.** "Des
   stickers autour du texte, un peu sur le texte", as in the references, was
   asked for the title. There they hang on words (`headline()` in

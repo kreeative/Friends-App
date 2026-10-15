@@ -1,5 +1,3 @@
-import { useId } from 'react'
-import { Link } from 'react-router-dom'
 import { pickStickers, stickerSrc } from '../lib/art'
 /* La pointe de chaque fleche, calculee sur sa courbe. Dans lib/ pour que node
    la teste: "Tes flèches sont mal dessinées", voir arrow.js. */
@@ -14,8 +12,13 @@ import { head } from '../lib/arrow'
  * Avec quatre references: le pied de page de truus (le nom en geant, des
  * stickers poses dessus, des pastilles blanches pour les titres), For Purpose
  * Co. (une couronne de stickers autour du titre), Base Club (des fleches
- * dessinees a la main et un badge rond qui tourne) et un ecran d'accueil en
- * collage (des photos scotchees, un mot surligne).
+ * dessinees a la main) et un ecran d'accueil en collage (des photos
+ * scotchees, un mot surligne).
+ *
+ * Base Club avait aussi un badge rond qui tourne. Il a ete fait, jaune,
+ * "START NOW · IT'S FREE" autour d'une fleche, et retire: "Ca aussi enlève je
+ * n'aime pas". C'etait une chose dessinee en code de plus, comme les badges a
+ * mots plus bas.
  *
  * Le rail de Stickers.jsx ne pouvait pas faire ca. Sa regle est de poser le
  * decor A COTE du texte, dans la marge, et il n'existe que sur un telephone
@@ -35,12 +38,10 @@ import { head } from '../lib/arrow'
  *    mordent sur le coin d'une lettre. La sonde y mesure l'encre que le decor
  *    prend a chaque mot et a chaque lettre, avec un plafond (voir Home.jsx).
  * 2. Tout est decoratif. aria-hidden, alt vide, rien qui depende de le voir:
- *    les mots du badge rond et des bandes de scotch sont deja ecrits en
- *    entier sur la page.
+ *    les mots des bandes de scotch sont deja ecrits en entier sur la page.
  * 3. Rien ne bouge tout seul plus de cinq secondes (WCAG 2.2.2). Les stickers
- *    se collent une fois en arrivant; le badge rond fait un tour en arrivant
- *    et ne tourne ensuite que sous la souris ou le focus. Sous
- *    prefers-reduced-motion, rien du tout.
+ *    se collent une fois en arrivant, puis ne bougent que sous la souris.
+ *    Sous prefers-reduced-motion, rien du tout.
  */
 
 /**
@@ -127,13 +128,9 @@ const DOODLES = {
     box: '0 0 100 50',
     d: `M7 42C22 18 50 7 88 15${head([50, 7], [88, 15], 14)}`,
   },
-  /* Une fleche qui fait une boucle avant de partir a gauche, comme celles de
-     Base Club. Elle arrive de la droite, tourne une fois, et finit sur sa
-     pointe en bas a gauche. */
-  loop: {
-    box: '0 0 124 56',
-    d: `M116 44C100 50 82 46 76 34C70 22 82 10 92 18C102 26 90 42 72 44C52 46 30 38 12 30${head([30, 38], [12, 30], 13)}`,
-  },
+  /* Il y avait aussi `loop`, une fleche a boucle qui allait du badge rond au
+     bouton principal. Elle est partie avec le badge: elle ne partait plus de
+     rien. */
 }
 
 export function Doodle({ kind, className = '', style, width = 3.5 }) {
@@ -181,56 +178,5 @@ export function Tape({ className = '', tilt = -6, tone = '0 157 185' }) {
       className={`tape ${className}`}
       style={{ '--tilt': `${tilt}deg`, '--tape': tone }}
     />
-  )
-}
-
-/**
- * Le badge rond qui tourne, comme celui de Base Club. C'est un vrai lien.
- *
- * Son nom accessible est `label`, le meme que le bouton principal: le texte
- * en cercle est repete pour remplir le tour et ne se lit pas a voix haute. Le
- * cercle de texte tourne une fois en arrivant, puis seulement sous la souris
- * ou au focus clavier (voir la regle 3 en haut du fichier).
- *
- * textLength force le texte a faire exactement le tour, quelle que soit la
- * langue: "Commence · c'est gratuit" et "Start now · it's free" n'ont pas la
- * meme longueur et aucun des deux ne doit laisser de trou ni se chevaucher.
- */
-export function SpinBadge({ text, label, to = '/signin', at, lg, tilt = 0, delay = 0, className = '' }) {
-  const id = `spin${useId().replace(/[^a-zA-Z0-9]/g, '')}`
-  const R = 70
-  return (
-    <Link
-      to={to}
-      aria-label={label}
-      data-hook="spin-badge"
-      className={`spin-badge press ${at ? 'at' : ''} ${className}`}
-      style={place(at, lg, tilt, delay)}
-    >
-      <svg viewBox="0 0 200 200" aria-hidden="true" focusable="false" className="block h-full w-full">
-        <defs>
-          <path id={id} d={`M100 ${100 - R}a${R} ${R} 0 1 1 0 ${2 * R}a${R} ${R} 0 1 1 0 ${-2 * R}`} />
-        </defs>
-        <circle cx="100" cy="100" r="96" fill="#FFD60A" stroke="#111111" strokeWidth="4" />
-        <g className="spin-ring">
-          <text fontSize="19" fontWeight="800" fill="#111111" letterSpacing="1" style={{ textTransform: 'uppercase' }}>
-            <textPath href={`#${id}`} textLength={Math.floor(2 * Math.PI * R) - 4} lengthAdjust="spacing">
-              {text}
-            </textPath>
-          </text>
-        </g>
-        {/* La fleche, qui ne tourne pas: elle dit ou va le lien. Sa pointe
-            passe par head(), comme les autres: deux traits a 40 degres de la
-            tige, plutot qu'un angle droit pose sur son bout. */}
-        <path
-          d={`M70 130L126 74${head([70, 130], [126, 74], 30, 40)}`}
-          fill="none"
-          stroke="#111111"
-          strokeWidth="9"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    </Link>
   )
 }
