@@ -32,6 +32,9 @@ import {
   loadSentInvites,
 } from '../lib/projectData'
 import BudgetIntro from '../components/BudgetIntro'
+import BudgetCourses from '../components/BudgetCourses'
+import { headline } from '../components/Headline'
+import { Spot } from '../components/StickerKit'
 import TransactionSheet from '../components/TransactionSheet'
 import PlanVsActual from '../components/PlanVsActual'
 import { SpendableBar } from '../components/Envelopes'
@@ -270,48 +273,61 @@ function Step({ icon, title, body }) {
 }
 
 /**
- * Nothing set up yet, as one card.
+ * Nothing set up yet: the courses first, then the plan.
  *
- * This screen used to be a page heading, a centred paragraph of six lines and
- * a button, all of it floating on the ground with no container. Centred prose
- * of that length is the hardest arrangement to read there is, every line
- * starts in a different place, and a screen whose only job is to get somebody
- * to press one button should not open with a paragraph.
+ *   "After the introduction, the first thing you should see is: 'Never done
+ *    a budget before? Take these courses.'"
  *
- * So the whole thing is one glass card, the heading included, everything left
- * aligned against a single edge, and the paragraph is broken into the three
- * questions the plan form actually asks. Reading the three tells you what the
- * next two minutes involve, which is the only thing the paragraph was for.
+ * This screen was one card, "Budget", three steps and "Configurer". It is
+ * where the intro lands now (the intro no longer opens the plan form), so it
+ * opens on the question and the courses, Budget 101 first, and the plan
+ * comes after them for somebody who already knows what to type.
  *
- * The card is capped and centred rather than filling the column: at the shell
- * width the lines would run past a comfortable measure and the button would
- * be a stripe across the whole screen.
+ * The three steps stay on the setup card. They are what the next two minutes
+ * involve, which is the only thing a paragraph there would be for.
+ *
+ * A column page: one sequence, capped and centred above md, so the setup card
+ * is not a stripe across a laptop and its button stops at 26rem.
  */
-function BudgetEmpty({ onStart }) {
+function BudgetStart({ onStart }) {
   const { t } = useT()
 
   return (
-    <div className="mx-auto w-full max-w-md pt-10">
-      <div className="lg p-6 sm:p-8">
-        <h1 className="text-h1 text-ink">{t('money.title')}</h1>
-        <p className="mt-1.5 text-body font-semibold text-ink">{t('money.sub_new')}</p>
-        <p className="mt-4 text-small text-muted">{t('money.pitch')}</p>
+    <div data-hook="budget-start">
+      <header className="relative pr-24 pt-10 sm:pr-36">
+        <h1 className="text-[clamp(2.4rem,10vw,3.6rem)] font-semibold leading-[1.05] tracking-[-0.03em] text-ink">
+          {headline(t('bstart.title'), t('bstart.mark'), {})}
+        </h1>
+        <p className="lede mt-4 max-w-[40ch]">{t('bstart.lede')}</p>
+        {/* Beside the title, never on it: the hero headline of the public
+            pages is the one place a sticker may touch a word. */}
+        <Spot name="cloudguy" tilt={10} eager className="absolute right-0 top-9 w-20 sm:w-28" />
+      </header>
 
-        <ul className="mt-7 space-y-5">
-          <Step icon="in" title={t('money.step_in')} body={t('money.step_in_body')} />
-          <Step
-            icon="promised"
-            title={t('money.step_promised')}
-            body={t('money.step_promised_body')}
-          />
-          <Step icon="keep" title={t('money.step_keep')} body={t('money.step_keep_body')} />
-        </ul>
+      <Section>
+        <BudgetCourses />
+      </Section>
 
-        {/* Full width, because it is the only thing on the card you can do. */}
-        <button className="btn-primary press mt-8" onClick={onStart}>
-          {t('money.set_up')}
-        </button>
-      </div>
+      <Section>
+        <div className="lg p-6 sm:p-8" data-hook="budget-setup">
+          <h2 className="text-h2 text-ink">{t('bstart.setup_title')}</h2>
+          <p className="mt-2 text-small text-muted">{t('money.pitch')}</p>
+
+          <ul className="mt-7 space-y-5">
+            <Step icon="in" title={t('money.step_in')} body={t('money.step_in_body')} />
+            <Step
+              icon="promised"
+              title={t('money.step_promised')}
+              body={t('money.step_promised_body')}
+            />
+            <Step icon="keep" title={t('money.step_keep')} body={t('money.step_keep_body')} />
+          </ul>
+
+          <button className="btn-primary press mt-8 text-[1.1875rem] font-bold" onClick={onStart} data-hook="budget-setup-go">
+            {t('bstart.setup')}
+          </button>
+        </div>
+      </Section>
     </div>
   )
 }
@@ -793,15 +809,19 @@ export default function Money() {
    *
    * Held until loading finishes so the carousel does not flash over a screen
    * that was about to render anyway.
+   *
+   * Both ways out land on the budget's own page, and no longer on the plan
+   * form: with no plan yet, that page opens on "Jamais fait de budget ?" and
+   * the courses (BudgetStart). "After the introduction, the first thing you
+   * should see is: Never done a budget before? Take these courses."
    */
   const seen = profile?.has_seen_budget_intro
   if (!loading && !missing && seen === false && !introDone) {
-    const finish = async (start) => {
+    const finish = () => {
       setIntroDone(true)
       updateProfile?.({ has_seen_budget_intro: true })
-      if (start) setEditing(true)
     }
-    return <BudgetIntro onDone={() => finish(true)} onSkip={() => finish(false)} />
+    return <BudgetIntro onDone={finish} onSkip={finish} />
   }
 
   if (missing) {
@@ -851,8 +871,8 @@ export default function Money() {
      the same word. */
   if (!s.ready) {
     return (
-      <Screen>
-        <BudgetEmpty onStart={() => setEditing(true)} />
+      <Screen className="column-page">
+        <BudgetStart onStart={() => setEditing(true)} />
       </Screen>
     )
   }
@@ -1072,8 +1092,11 @@ export default function Money() {
            * was the only thing missing to make that reachable from here.
            */}
           <Section title={t('feat.title')}>
+            {/* The course is Budget 101 itself, not the shelf it sits on:
+                "Suivre la formation" used to open Lectures and leave the
+                choosing to you. */}
             <FeatureCards
-              onOpen={(id) => (id === 'formation' ? navigate('/library') : openPane('months'))}
+              onOpen={(id) => (id === 'formation' ? navigate('/cours/budget-101') : openPane('months'))}
             />
           </Section>
         </>
