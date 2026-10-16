@@ -66,6 +66,18 @@ export const PRIVATE_PREFIXES = [
      quelqu'un, pas pour un moteur de recherche. */
   '/join/',
   '/rejoindre/',
+  /* Beauty & Brain: the app behind the sign-in. Its landing page and its
+     pricing (/bb, /bb/tarifs) are public and in the sitemap. */
+  '/bb/app',
+  '/bb/cours',
+  '/bb/coach',
+  '/bb/plan',
+  '/bb/profil',
+  '/bb/profile',
+  '/bb/start',
+  '/bb/session/',
+  '/bb/connexion',
+  '/bb/signin',
 ]
 
 /** Aliases, and the one URL they should all point at. */
@@ -90,6 +102,8 @@ const ALIAS = {
   /* Le defi 21 matins. /defi est l'adresse de la video, /challenge la meme
      page pour un lien en anglais. */
   '/challenge': '/defi',
+  /* Les tarifs de Beauty & Brain, meme regle: le francais est canonique. */
+  '/bb/pricing': '/bb/tarifs',
 }
 
 /**
@@ -209,6 +223,9 @@ export function sitemapPaths(slugs = []) {
     /* La page du defi, celle du lien de la video: publique, et faite pour
        etre trouvee par quelqu'un qui cherche le defi apres l'avoir vu. */
     '/defi',
+    /* Beauty & Brain: sa page et ses tarifs, publics. */
+    '/bb',
+    '/bb/tarifs',
     '/legal/terms',
     '/legal/privacy',
     '/legal/notice',

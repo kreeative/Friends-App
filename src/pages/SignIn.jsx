@@ -120,7 +120,14 @@ function CodeBoxes({ value, onChange, label, length = OTP_MIN }) {
   )
 }
 
-export default function SignIn() {
+/**
+ * The sign-in itself: Google, or a six-digit code by email, with the email
+ * first inside TikTok and Instagram. Exported so Beauty & Brain signs in
+ * with exactly the same form on its own page (one account for both):
+ * `beforeGoogle` runs just before leaving for Google, to remember where to
+ * come back to, since the OAuth return lands on the site root.
+ */
+export function AuthForm({ beforeGoogle } = {}) {
   const { signInWithGoogle, signInWithEmail, verifyEmailCode, authError, clearAuthError } = useAuth()
   const { t } = useT()
   const [email, setEmail] = useState('')
@@ -162,6 +169,7 @@ export default function SignIn() {
   async function google() {
     clearAuthError()
     setBusy('google')
+    beforeGoogle?.()
     const { error } = await signInWithGoogle()
     // On success the browser leaves the page, so only a failure lands here.
     if (error) setBusy(null)
@@ -231,6 +239,131 @@ export default function SignIn() {
     setCode('')
     setCooldown(0)
   }
+
+  return (
+    <>
+      {/* Previously a failed sign-in showed nothing at all, so a disabled
+          provider or an unlisted redirect URL looked like a dead button. */}
+      <ErrorNote error={authError} />
+
+      {sent ? (
+        <form onSubmit={submitCode} className="space-y-5">
+          <p className="text-body text-muted">{t('signin.code_sent', { email })}</p>
+
+          <Field label={t('signin.code')}>
+            <CodeBoxes
+              value={code}
+              onChange={(v) => {
+                if (codeError) setCodeError(false)
+                setCode(v)
+              }}
+              label={t('signin.code')}
+            />
+          </Field>
+
+          {codeError && (
+            <p className="field-note !text-negative" role="alert">
+              {t('signin.code_invalid')}
+            </p>
+          )}
+
+          <button className="btn-primary press text-[1.1875rem] font-bold" disabled={busy !== null || code.length < OTP_MIN}>
+            {busy === 'code' ? t('signin.verifying') : t('signin.verify')}
+          </button>
+
+          <button
+            type="button"
+            className="btn-ghost press"
+            onClick={resend}
+            disabled={cooldown > 0 || busy !== null}
+          >
+            {cooldown > 0 ? t('signin.resend_in', { s: cooldown }) : t('signin.resend')}
+          </button>
+
+          <button type="button" className="btn-ghost press" onClick={startOver}>
+            {t('signin.wrong_email')}
+          </button>
+        </form>
+      ) : inApp ? (
+        <>
+          <form onSubmit={sendCode} className="space-y-5" data-hook="signin-email-first">
+            <Field label={t('signin.email')}>
+              <input
+                type="email"
+                required
+                autoComplete="email"
+                className="field"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+              />
+            </Field>
+            <button className="btn-primary press text-[1.1875rem] font-bold" disabled={busy !== null}>
+              {busy === 'email' ? t('signin.sending') : t('signin.send_code')}
+            </button>
+          </form>
+          <p className="pt-1 text-small text-muted" data-hook="signin-in-app">
+            {t('signin.in_app')}
+          </p>
+        </>
+      ) : (
+        <>
+          <button className="btn-primary press text-[1.1875rem] font-bold" onClick={google} disabled={busy !== null}>
+            {busy === 'google' ? t('signin.sending') : t('signin.google')}
+          </button>
+
+          {/**
+            * Sign in with Apple sat here and has been taken out.
+            *
+            * Guideline 4.8 obliges an app offering any third-party
+            * sign-in to offer Apple's beside it, so it goes back the day
+            * this app goes to the App Store. It is out for now because
+            * the provider needs a paid Apple Developer account to
+            * configure, and an unconfigured provider is worse than no
+            * button: it looks like a way in, and it answers with an
+            * error nobody signing up can do anything about.
+            *
+            * signInWithApple is still in AuthContext, working and
+            * unused, so restoring this is putting a button back rather
+            * than writing the thing again.
+            */}
+
+          {showEmail ? (
+            <form onSubmit={sendCode} className="space-y-5 pt-4">
+              <Field label={t('signin.email')}>
+                <input
+                  type="email"
+                  required
+                  autoComplete="email"
+                  className="field"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                />
+              </Field>
+              <button className="btn-ghost press" disabled={busy !== null}>
+                {busy === 'email' ? t('signin.sending') : t('signin.send_code')}
+              </button>
+            </form>
+          ) : (
+            <button className="btn-ghost press" onClick={() => setShowEmail(true)}>
+              {t('signin.use_email')}
+            </button>
+          )}
+        </>
+      )}
+
+      {/* Reachable before signing up, not after. You cannot agree to terms
+          you were not allowed to read. */}
+      <div className="pt-6">
+        <LegalLinks />
+      </div>
+    </>
+  )
+}
+
+export default function SignIn() {
+  const { t } = useT()
 
   /* Un lien d'invitation ou la page du defi a laisse quelque chose en
      attente: le dire, pour que la personne sache que se connecter la mene au
@@ -343,122 +476,7 @@ export default function SignIn() {
         </div>
 
         <div className="animate-rise mt-8 space-y-3">
-          {/* Previously a failed sign-in showed nothing at all, so a disabled
-              provider or an unlisted redirect URL looked like a dead button. */}
-          <ErrorNote error={authError} />
-
-          {sent ? (
-            <form onSubmit={submitCode} className="space-y-5">
-              <p className="text-body text-muted">{t('signin.code_sent', { email })}</p>
-
-              <Field label={t('signin.code')}>
-                <CodeBoxes
-                  value={code}
-                  onChange={(v) => {
-                    if (codeError) setCodeError(false)
-                    setCode(v)
-                  }}
-                  label={t('signin.code')}
-                />
-              </Field>
-
-              {codeError && (
-                <p className="field-note !text-negative" role="alert">
-                  {t('signin.code_invalid')}
-                </p>
-              )}
-
-              <button className="btn-primary press text-[1.1875rem] font-bold" disabled={busy !== null || code.length < OTP_MIN}>
-                {busy === 'code' ? t('signin.verifying') : t('signin.verify')}
-              </button>
-
-              <button
-                type="button"
-                className="btn-ghost press"
-                onClick={resend}
-                disabled={cooldown > 0 || busy !== null}
-              >
-                {cooldown > 0 ? t('signin.resend_in', { s: cooldown }) : t('signin.resend')}
-              </button>
-
-              <button type="button" className="btn-ghost press" onClick={startOver}>
-                {t('signin.wrong_email')}
-              </button>
-            </form>
-          ) : inApp ? (
-            <>
-              <form onSubmit={sendCode} className="space-y-5" data-hook="signin-email-first">
-                <Field label={t('signin.email')}>
-                  <input
-                    type="email"
-                    required
-                    autoComplete="email"
-                    className="field"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@example.com"
-                  />
-                </Field>
-                <button className="btn-primary press text-[1.1875rem] font-bold" disabled={busy !== null}>
-                  {busy === 'email' ? t('signin.sending') : t('signin.send_code')}
-                </button>
-              </form>
-              <p className="pt-1 text-small text-muted" data-hook="signin-in-app">
-                {t('signin.in_app')}
-              </p>
-            </>
-          ) : (
-            <>
-              <button className="btn-primary press text-[1.1875rem] font-bold" onClick={google} disabled={busy !== null}>
-                {busy === 'google' ? t('signin.sending') : t('signin.google')}
-              </button>
-
-              {/**
-                * Sign in with Apple sat here and has been taken out.
-                *
-                * Guideline 4.8 obliges an app offering any third-party
-                * sign-in to offer Apple's beside it, so it goes back the day
-                * this app goes to the App Store. It is out for now because
-                * the provider needs a paid Apple Developer account to
-                * configure, and an unconfigured provider is worse than no
-                * button: it looks like a way in, and it answers with an
-                * error nobody signing up can do anything about.
-                *
-                * signInWithApple is still in AuthContext, working and
-                * unused, so restoring this is putting a button back rather
-                * than writing the thing again.
-                */}
-
-              {showEmail ? (
-                <form onSubmit={sendCode} className="space-y-5 pt-4">
-                  <Field label={t('signin.email')}>
-                    <input
-                      type="email"
-                      required
-                      autoComplete="email"
-                      className="field"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="you@example.com"
-                    />
-                  </Field>
-                  <button className="btn-ghost press" disabled={busy !== null}>
-                    {busy === 'email' ? t('signin.sending') : t('signin.send_code')}
-                  </button>
-                </form>
-              ) : (
-                <button className="btn-ghost press" onClick={() => setShowEmail(true)}>
-                  {t('signin.use_email')}
-                </button>
-              )}
-            </>
-          )}
-
-          {/* Reachable before signing up, not after. You cannot agree to terms
-              you were not allowed to read. */}
-          <div className="pt-6">
-            <LegalLinks />
-          </div>
+          <AuthForm />
         </div>
         </div>
         {/* Avec la carte seulement, donc a partir de sm. */}
