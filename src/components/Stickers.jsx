@@ -98,6 +98,17 @@ const SETS = {
    * The same rail rule as everywhere else, so it reads as the same product
    * rather than as a splash screen somebody else designed.
    */
+  /* Beauty & Brain: the lips and the daisy for Beauty, the cloud head and
+     the koi (the calm pond) for Brain. Same sparse rail as the app's. */
+  bb: {
+    column: '46rem',
+    items: rail(pickStickers(['lips', 'cloudguy', 'daisy', 'koi'], 4), {
+      from: 14,
+      to: 84,
+      size: 60,
+    }),
+  },
+
   welcome: {
     column: '34rem',
     items: rail(pickStickers(['fire', 'coin', 'unicorn', 'cloudguy', 'chaching', 'daisy'], 6), {

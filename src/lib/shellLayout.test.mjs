@@ -4317,9 +4317,11 @@ ok(
      (signin.match(/= cast\(\[/g) ?? []).length === 4 && !/pickStickers\(/.test(signin),
      'sans le compte, un pack remplace laisse la page de connexion nue')
   const comptes = [...stk.matchAll(/pickStickers\(\[[^\]]*\], (\d+)\)/g)].map((m) => Number(m[1]))
-  ok('et les trois jeux de Stickers.jsx aussi', comptes.length === 3, JSON.stringify(comptes))
+  /* Quatre depuis Beauty & Brain: le jeu `bb`, quatre noms et quatre au
+     minimum, comme celui de l'app. */
+  ok('et les quatre jeux de Stickers.jsx aussi', comptes.length === 4, JSON.stringify(comptes))
   ok('chacun avec autant de stickers que de noms voulus',
-     comptes.join(',') === '6,4,6', JSON.stringify(comptes))
+     comptes.join(',') === '6,4,4,6', JSON.stringify(comptes))
 }
 
 /**

@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
-import { BrowserRouter, Navigate, Route, Routes, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { Suspense, lazy, useEffect, useRef, useState } from 'react'
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { GroupProvider, useGroup } from './context/GroupContext'
 import { I18nProvider, useT } from './lib/i18n'
@@ -46,6 +46,47 @@ import Notifications from './pages/Notifications'
 import Courses from './pages/Courses'
 import Challenge from './pages/public/Challenge'
 import Invite from './pages/Invite'
+
+/**
+ * Beauty & Brain, the study platform at /bb (src/bb/BBApp.jsx).
+ *
+ * Its own chunk: somebody opening Rich & Friends never downloads it, and a
+ * student opening /bb downloads only what B&B needs on top of the shared
+ * kit. Mounted next to the Rich & Friends gate rather than inside it, so a
+ * student meets the B&B onboarding and never the R&F welcome deck.
+ */
+const BBApp = lazy(() => import('./bb/BBApp'))
+
+/** The pink of the B&B splash while its chunk loads. */
+function BBLoading() {
+  return <main className="min-h-dvh bg-[#FF007A]" aria-busy="true" />
+}
+
+/**
+ * Back from Google to the page a B&B student signed in from.
+ *
+ * The OAuth return lands on the site root, the one redirect the provider is
+ * sure to accept. The B&B sign-in page leaves `bb.return` before leaving;
+ * here, once the session exists and the root is showing, the student is
+ * sent on and the note is removed, so it fires once.
+ */
+function BBReturn() {
+  const { user } = useAuth()
+  const { pathname } = useLocation()
+  const navigate = useNavigate()
+  useEffect(() => {
+    if (!user || pathname !== '/') return
+    let to = null
+    try {
+      to = localStorage.getItem('bb.return')
+      if (to) localStorage.removeItem('bb.return')
+    } catch {
+      to = null
+    }
+    if (to && to.startsWith('/bb')) navigate(to, { replace: true })
+  }, [user, pathname, navigate])
+  return null
+}
 
 /** /lectures/:slug is the same page as /library/:slug, spelled in French. */
 function LecturesRedirect() {
@@ -640,8 +681,17 @@ export default function App() {
                * to accept terms they are not allowed to read until after
                * signing up.
                */}
+              <BBReturn />
               <Routes>
                 <Route path="/legal/:slug" element={<Legal />} />
+                <Route
+                  path="/bb/*"
+                  element={
+                    <Suspense fallback={<BBLoading />}>
+                      <BBApp />
+                    </Suspense>
+                  }
+                />
                 <Route path="*" element={<Gate />} />
               </Routes>
             </GroupProvider>

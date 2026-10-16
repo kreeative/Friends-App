@@ -157,6 +157,25 @@ export default function Me() {
         </span>
       </Link>
 
+      {/* L'autre produit, meme compte: Beauty & Brain, l'etude (src/bb/). Un
+          lien et rien d'autre, aucune donnee B&B n'est lue ici. */}
+      <Link
+        to="/bb/app"
+        data-hook="to-bb"
+        className="press mt-3 flex w-full items-center gap-3 rounded-card border border-hairline bg-[rgb(var(--glass-tint))] p-3 text-left shadow-raised"
+      >
+        <img src="/brand/bb-icon-192.png" alt="" width="44" height="44" className="h-11 w-11 shrink-0 rounded-inner" />
+        <span className="min-w-0 flex-1">
+          <span className="block text-body font-semibold text-ink">Beauty &amp; Brain</span>
+          <span className="block text-small text-muted">{t('bb.switch.body')}</span>
+        </span>
+        <span aria-hidden="true" className="shrink-0 text-muted">
+          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 18l6-6-6-6" />
+          </svg>
+        </span>
+      </Link>
+
       {/**
        * LE CYCLE, JUSTE SOUS LE RECTANGLE.
        *

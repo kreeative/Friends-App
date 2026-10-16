@@ -2,6 +2,7 @@ import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
 import { env } from './_env.js'
 import { rawBody } from './_rawbody.js'
+import { writeSubscription } from './_bb/billing.js'
 
 /**
  * The only thing in the system that grants entitlement.
@@ -67,6 +68,14 @@ export default async function handler(req, res) {
   }
 
   try {
+    /* Beauty & Brain Plus is a subscription, not a book, and it says so in
+       its metadata (api/_bb/billing.js puts product: 'bb' on the session and
+       on the subscription). Handled before the book branch, whose first test
+       would skip a session without a book_id. */
+    if (event.data?.object?.metadata?.product === 'bb') {
+      return res.status(200).json(await bbEvent(event))
+    }
+
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object
 
@@ -173,6 +182,32 @@ export default async function handler(req, res) {
     console.error('webhook handler failed', err)
     return res.status(500).json({ error: 'Handler failed' })
   }
+}
+
+/**
+ * Beauty & Brain: write bb_subscriptions from the subscription itself.
+ *
+ * The session only says "this student subscribed"; the subscription carries
+ * the plan, the status and the end of the paid period, so it is fetched and
+ * written through the same writeSubscription() as /api/bb/sync. Updates and
+ * deletions arrive as the subscription object directly. A failed write throws,
+ * the handler answers 500, and Stripe retries.
+ */
+async function bbEvent(event) {
+  const obj = event.data.object
+  const userId = obj.metadata?.user_id
+  if (!userId) return { received: true, skipped: 'bb: no user' }
+  if (event.type === 'checkout.session.completed') {
+    if (obj.mode !== 'subscription' || !obj.subscription) return { received: true, skipped: 'bb: not a subscription' }
+    const id = typeof obj.subscription === 'string' ? obj.subscription : obj.subscription.id
+    await writeSubscription(admin, userId, await stripe.subscriptions.retrieve(id))
+    return { received: true, bb: 'subscribed' }
+  }
+  if (event.type.startsWith('customer.subscription.')) {
+    await writeSubscription(admin, userId, obj)
+    return { received: true, bb: obj.status }
+  }
+  return { received: true, skipped: `bb: ${event.type}` }
 }
 
 /* Reexporte depuis ./_rawbody.js, ou il vit maintenant: Cal.com a besoin de

@@ -57,7 +57,9 @@ const OUT = process.env.SWEEP_OUT ?? '.sweep'
 const WIDTHS = (process.env.SWEEP_WIDTHS ?? '320,390,820,1180,1440').split(',').map(Number)
 const ROUTES = (
   process.env.SWEEP_ROUTES ??
-  '/,/goals,/goals/new,/money,/library,/library?shelf=articles,/calendar,/settings,/profile,/notifications,/cours,/cours/investir-101,/cours/carte-de-credit/c2.2'
+  '/,/goals,/goals/new,/money,/library,/library?shelf=articles,/calendar,/settings,/profile,/notifications,/cours,/cours/investir-101,/cours/carte-de-credit/c2.2' +
+    /* Beauty & Brain: its public page and pricing, then the app. */
+    ',/bb,/bb/tarifs,/bb/app,/bb/cours,/bb/cours/nouveau,/bb/cours/bbc00001-0000-4000-8000-000000000000,/bb/cours/bbc00001-0000-4000-8000-000000000000/fiches,/bb/cours/bbc00001-0000-4000-8000-000000000000/banque,/bb/session/bbc00001-0000-4000-8000-000000000000,/bb/coach/bbc00001-0000-4000-8000-000000000000,/bb/plan,/bb/profil'
 ).split(',')
 const PORT = 4187
 
@@ -81,6 +83,39 @@ const EVENTS = [
   { id: 'e1', user_id: ME, title: 'Biochimie', category: 'cours', location: 'B-204', starts_on: '2026-09-01', start_min: 600, end_min: 720, weekdays: [2, 4], until_on: null, colour: null, excluded_on: [], remind_min: null },
 ]
 const PROFILE = { id: ME, display_name: 'Ann', locale: 'fr', email: 'ann@example.test', currency: 'CAD', timezone: 'UTC', setup_done_at: '2026-01-01T00:00:00Z', solo_mode: true }
+
+/* Beauty & Brain: one course, two chapters, a few questions, enough for every
+   page to lay itself out (the full fixture lives with the probes). */
+const BB = (() => {
+  const id = (p, n) => `${p}${String(n).padStart(5, '0')}-0000-4000-8000-000000000000`
+  const C = id('bbc', 1)
+  const A = (n) => id('bba', n)
+  const K = (n) => id('bbk', n)
+  const CH = (n) => id('bbh', n)
+  const M = id('bbm', 1)
+  const anchors = ['diapo 6', 'diapo 9', '14:32', '22:40'].map((label, i) => ({ id: A(i + 1), user_id: ME, course_id: C, material_id: M, label, excerpt: `Extrait ${i + 1} du cours, mot pour mot, assez long pour passer a la ligne sur un telephone.`, created_at: '2026-09-01T00:00:00Z' }))
+  const concepts = ['Membrane plasmique', 'Osmose', 'Diffusion facilitee', 'Transport actif'].map((name, i) => ({ id: K(i + 1), user_id: ME, course_id: C, chapter_id: CH(i < 1 ? 1 : 2), name, definition: `La definition de ${name} dans les mots de la prof.`, definition_anchor: A(i + 1), kind: 'definition', anchor_ids: [A(i + 1)], weight: i === 1 ? 3 : 1, position: i }))
+  const flash = concepts.map((c, i) => ({ id: id('bbi', i + 1), user_id: ME, course_id: C, chapter_id: c.chapter_id, concept_id: c.id, type: 'flash', bloom: 1, stem: c.name, options: [], answer: { text: c.definition }, anchor_ids: [c.definition_anchor], outside: false, quality: 'pass', source: 'concept' }))
+  const mcq = [1, 2].map((n) => ({ id: id('bbq', n), user_id: ME, course_id: C, chapter_id: CH(2), concept_id: K(4), type: 'mcq', bloom: 3, stem: 'Une cellule fait entrer du glucose contre son gradient, et tout s arrete quand on bloque la production d ATP. De quel mecanisme s agit-il?', options: ['Diffusion simple', 'Diffusion facilitee', 'Transport actif', 'Osmose'].map((text, i) => ({ text, why: i === 2 ? 'Contre le gradient, avec de l ATP.' : 'Ce mecanisme suit le gradient.', anchor: A(4), outside: false })), answer: { index: 2 }, explanation: 'Deux indices.', anchor_ids: [A(4)], outside: false, quality: n === 2 ? 'revised' : 'pass', revision_note: n === 2 ? 'Un distracteur corrige.' : null, source: 'ai' }))
+  return {
+    bb_profiles: [{ user_id: ME, first_name: 'Ann', school: 'Universite de Montreal', level: 'uni_2', program: 'Biologie', language: 'fr', weekly_hours: 8, goal: 'a', onboarded_at: '2026-08-01T00:00:00Z' }],
+    bb_courses: [{ id: C, user_id: ME, name: 'Biologie cellulaire', code: 'BIO 1101', professor: 'Pr Tremblay', language: 'fr', exam_at: '2026-09-14T13:00:00Z', exam_format: {}, stats: {}, created_at: '2026-09-01T00:00:00Z' }],
+    bb_chapters: [{ id: CH(1), user_id: ME, course_id: C, position: 0, title: 'La membrane plasmique', summary: 'Structure et proteines.', items_ready: true }, { id: CH(2), user_id: ME, course_id: C, position: 1, title: 'Le transport membranaire', summary: null, items_ready: false }],
+    bb_materials: [{ id: M, user_id: ME, course_id: C, kind: 'slides', file_name: 'Cours 3 - La membrane.pdf', status: 'ready', pages: 42, created_at: '2026-09-01T00:00:00Z' }],
+    bb_anchors: anchors,
+    bb_concepts: concepts,
+    bb_twins: [{ id: id('bbt', 1), user_id: ME, course_id: C, a_concept: K(3), b_concept: K(4), separator: 'La seule question: est-ce qu on va contre le gradient?', anchor_ids: [A(4)] }],
+    bb_signals: [{ id: id('bbs', 1), user_id: ME, course_id: C, concept_id: K(2), quote: 'Ca, je le demande a chaque examen.', anchor_id: A(3), strength: 3 }],
+    bb_items: [...flash, ...mcq],
+    bb_schedule: [{ user_id: ME, item_id: flash[1].id, course_id: C, stability: 2, difficulty: 5, due: '2026-09-02T09:00:00Z', reps: 2, lapses: 0, state: 'review', last_review: '2026-08-30T09:00:00Z' }],
+    bb_mistakes: [{ id: id('bbx', 1), user_id: ME, course_id: C, item_id: mcq[0].id, concept_id: K(4), misconception: 'Ce mecanisme suit le gradient.', confident: true, right_streak: 1, last_right_on: '2026-09-02', resolved_at: null, created_at: '2026-09-01T00:00:00Z' }],
+    bb_reviews: [{ item_id: mcq[0].id, concept_id: K(4), rating: 1, confidence: 'sure', correct: false, bloom: 3, mode: 'due', created_at: '2026-09-01T10:00:00Z' }],
+    bb_sessions: [{ id: id('bbz', 1), user_id: ME, course_id: C, minutes: 15, started_at: '2026-09-02T10:00:00Z', answered: 10, correct: 7 }],
+    bb_coach_messages: [{ role: 'user', content: 'C est quoi la difference entre diffusion facilitee et transport actif?', created_at: '2026-09-02T10:00:00Z' }, { role: 'assistant', content: `A ton avis, lequel des deux va contre le gradient? Ta prof le dit [${A(4).replace(/-/g, '').slice(0, 8)}].`, created_at: '2026-09-02T10:01:00Z' }],
+    bb_blueprints: [],
+  }
+})()
+const BB_STATUS = { tier: 'free', plan: 'free', status: null, current_period_end: null, cancel_at_period_end: false, limits: { courses: 1, chapters: 3, ingest: 6, generate: 6, coach: 10, grade: 15 }, used: { ingest: 1, generate: 2, coach: 3, grade: 0 }, resetsAt: '2026-09-04T00:00:00Z', courses: 1, prepared: 1, ready: { model: true, billing: true }, cost: null }
 
 /* A preview server, unless one is offered. */
 let server = null
@@ -158,6 +193,8 @@ const UNSIGNED =
   'not signed in, so this would measure the public site. Build against the stub first:\n' +
   '    VITE_SUPABASE_URL=http://localhost:54321 VITE_SUPABASE_ANON_KEY=stub-anon npm run build'
 const READER = /^\/library\/[^/?]+/
+/* The public pages of Beauty & Brain: measured like the rest, but outside any app shell. */
+const BB_PUBLIC = /^\/bb(\/tarifs|\/pricing)?$/
 
 async function open(width) {
   const ctx = await browser.newContext({ viewport: { width, height: 1000 }, deviceScaleFactor: 1 })
@@ -181,12 +218,17 @@ async function open(width) {
   await page.route('**/auth/v1/**', (r) =>
     r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ access_token: 'x', user: { id: ME, email: 'ann@example.test' } }) }))
   await page.route('**/functions/v1/**', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: '{}' }))
+  await page.route('**/api/bb/**', (r) =>
+    r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(r.request().url().includes('/api/bb/status') ? BB_STATUS : { done: true, added: 0, rejected: 0 }) }))
   await page.route('**/rest/v1/**', (route) => {
     const req = route.request()
     if (req.method() !== 'GET') return route.fulfill({ status: 200, contentType: 'application/json', body: '[]' })
     const url = req.url()
     const one = (req.headers().accept ?? '').includes('object')
+    const table = url.split('/rest/v1/')[1]?.split('?')[0] ?? ''
     const rows = url.includes('/rpc/') ? []
+      /* Before `profiles`: bb_profiles contains the word. */
+      : table.startsWith('bb_') ? BB[table] ?? []
       : url.includes('profiles') ? [PROFILE]
       : url.includes('goals') ? GOALS
       : url.includes('calendar_event') ? EVENTS
@@ -212,7 +254,7 @@ for (const W of WIDTHS) {
     page.on('pageerror', onErr)
     await page.goto(`${base}${route}`, { waitUntil: 'networkidle' })
     await page.waitForTimeout(600)
-    if (!READER.test(route) && (await page.locator('[data-hook="app-shell"]').count()) === 0) {
+    if (!READER.test(route) && !BB_PUBLIC.test(route) && (await page.locator('[data-hook="app-shell"]').count()) === 0) {
       console.log(`\n  ${W}px ${route}: ${UNSIGNED}\n`)
       await browser.close()
       stop()

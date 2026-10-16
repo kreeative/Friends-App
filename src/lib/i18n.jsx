@@ -1,4 +1,5 @@
 import { createContext, useContext, useMemo, useState } from 'react'
+import { BB_STRINGS } from '../bb/strings.js'
 
 /**
  * Two locales, one flat dictionary, no dependency.
@@ -3962,6 +3963,11 @@ const STRINGS = {
     'ui.save': 'Enregistrer',
   },
 }
+
+/* Beauty & Brain: its own file, the same dictionary, so the language follows
+   the account on both products. See src/bb/strings.js. */
+Object.assign(STRINGS.en, BB_STRINGS.en)
+Object.assign(STRINGS.fr, BB_STRINGS.fr)
 
 const STORE_KEY = 'friends.locale'
 

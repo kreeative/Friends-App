@@ -5,7 +5,8 @@
   "framework": "vite",
   "fluid": true,
   "functions": {
-    "api/syllabus.js": { "maxDuration": 300 }
+    "api/syllabus.js": { "maxDuration": 300 },
+    "api/bb/[action].js": { "maxDuration": 300 }
   },
   "rewrites": [
     {
@@ -21,6 +22,16 @@
       "source": "/rejoindre/:code",
       "has": [{ "type": "header", "key": "user-agent", "value": ".*(facebookexternalhit|Facebot|Twitterbot|WhatsApp|TelegramBot|Slackbot|Discordbot|LinkedInBot|SkypeUriPreview|redditbot|Embedly|vkShare|Iframely|Mastodon|Bluesky|Applebot).*" }],
       "destination": "/api/invite-preview?code=:code"
+    },
+    {
+      "source": "/bb",
+      "has": [{ "type": "header", "key": "user-agent", "value": ".*(facebookexternalhit|Facebot|Twitterbot|WhatsApp|TelegramBot|Slackbot|Discordbot|LinkedInBot|SkypeUriPreview|redditbot|Embedly|vkShare|Iframely|Mastodon|Bluesky|Applebot).*" }],
+      "destination": "/api/bb/preview"
+    },
+    {
+      "source": "/bb/tarifs",
+      "has": [{ "type": "header", "key": "user-agent", "value": ".*(facebookexternalhit|Facebot|Twitterbot|WhatsApp|TelegramBot|Slackbot|Discordbot|LinkedInBot|SkypeUriPreview|redditbot|Embedly|vkShare|Iframely|Mastodon|Bluesky|Applebot).*" }],
+      "destination": "/api/bb/preview?p=tarifs"
     },
     {
       "source": "/((?!api/).*)",
