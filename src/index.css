@@ -4620,8 +4620,10 @@ nav a[aria-current='page'] > svg {
  * un jour entre deux lignes et les hampes depassent, comme au feutre.
  * `clone` donne sa bande a chaque ligne quand les mots passent a la ligne.
  */
+/* --mk change la couleur de la bande la ou le jaune ne se verrait pas: sur
+   l'ecran jaune de l'intro du budget, elle est blanche. */
 .marker {
-  background: linear-gradient(to bottom, transparent 23%, #ffd60a 23%, #ffd60a 85%, transparent 85%);
+  background: linear-gradient(to bottom, transparent 23%, var(--mk, #ffd60a) 23%, var(--mk, #ffd60a) 85%, transparent 85%);
   padding: 0 0.07em;
   margin: 0 -0.02em;
   -webkit-box-decoration-break: clone;

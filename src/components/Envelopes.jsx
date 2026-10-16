@@ -10,6 +10,9 @@ import { errorText } from '../lib/dberr'
    Shared rather than copied: two spellings of "this table is not installed"
    is one spelling too many. */
 import { isMissingTable } from '../lib/moodStore'
+import { Spot } from './StickerKit'
+/* Which sticker the spendable card wears. See the file for why. */
+import { spendMood } from '../lib/spendMood'
 import { allocationsFor, envelopes, toAllocate, totalAllocated } from '../lib/envelope'
 import { heroClass } from '../lib/amount'
 
@@ -622,13 +625,23 @@ export function SpendableBar({ bar, currency, locale }) {
         />
       </div>
 
-      <p data-hook="note" className="mt-2.5 max-w-[26ch] text-small leading-relaxed text-muted">
+      <p data-hook="note" className="mt-2.5 max-w-[min(26ch,calc(100%_-_4rem))] text-small leading-relaxed text-muted sm:max-w-[min(26ch,calc(100%_-_6rem))]">
         {!bar.funded
           ? t('env.no_income_bar')
           : bar.over > 0
             ? t('env.bar_over', { over: fmt(bar.over), earned: fmt(bar.earned) })
             : t('env.bar_of', { spent: fmt(bar.spent), earned: fmt(bar.earned) })}
       </p>
+      {/* Under the bar and right of the note. The note stops 4rem (6rem from
+          sm) short of the edge as well as at 26ch: at 320px 26ch reached the
+          corner and the wallet covered 221px of the sentence. Keyed on the
+          mood so it sticks on again when the month changes state. */}
+      <Spot
+        key={spendMood(bar)}
+        name={spendMood(bar)}
+        tilt={-8}
+        className="pointer-events-none absolute bottom-3 right-3 w-14 sm:bottom-4 sm:right-5 sm:w-20"
+      />
     </div>
   )
 }
