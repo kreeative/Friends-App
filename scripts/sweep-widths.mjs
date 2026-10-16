@@ -59,7 +59,9 @@ const ROUTES = (
   process.env.SWEEP_ROUTES ??
   '/,/goals,/goals/new,/money,/library,/library?shelf=articles,/calendar,/settings,/profile,/notifications,/cours,/cours/investir-101,/cours/carte-de-credit/c2.2' +
     /* Beauty & Brain: its public page and pricing, then the app. */
-    ',/bb,/bb/tarifs,/bb/app,/bb/cours,/bb/cours/nouveau,/bb/cours/bbc00001-0000-4000-8000-000000000000,/bb/cours/bbc00001-0000-4000-8000-000000000000/fiches,/bb/cours/bbc00001-0000-4000-8000-000000000000/banque,/bb/session/bbc00001-0000-4000-8000-000000000000,/bb/coach/bbc00001-0000-4000-8000-000000000000,/bb/plan,/bb/profil'
+    ',/bb,/bb/tarifs,/bb/app,/bb/cours,/bb/cours/nouveau,/bb/cours/bbc00001-0000-4000-8000-000000000000,/bb/cours/bbc00001-0000-4000-8000-000000000000/fiches,/bb/cours/bbc00001-0000-4000-8000-000000000000/banque,/bb/session/bbc00001-0000-4000-8000-000000000000,/bb/coach/bbc00001-0000-4000-8000-000000000000,/bb/plan,/bb/profil' +
+    /* Phase 2: the mock exam, the case lab, the visuals, and the TikTok page. */
+    ',/bb/examen/bbc00001-0000-4000-8000-000000000000,/bb/cours/bbc00001-0000-4000-8000-000000000000/examen,/bb/cours/bbc00001-0000-4000-8000-000000000000/cas,/bb/cours/bbc00001-0000-4000-8000-000000000000/schemas,/bb/go'
 ).split(',')
 const PORT = 4187
 
@@ -113,8 +115,23 @@ const BB = (() => {
     bb_sessions: [{ id: id('bbz', 1), user_id: ME, course_id: C, minutes: 15, started_at: '2026-09-02T10:00:00Z', answered: 10, correct: 7 }],
     bb_coach_messages: [{ role: 'user', content: 'C est quoi la difference entre diffusion facilitee et transport actif?', created_at: '2026-09-02T10:00:00Z' }, { role: 'assistant', content: `A ton avis, lequel des deux va contre le gradient? Ta prof le dit [${A(4).replace(/-/g, '').slice(0, 8)}].`, created_at: '2026-09-02T10:01:00Z' }],
     bb_blueprints: [],
+    bb_exams: [{ id: id('bbe', 1), user_id: ME, course_id: C, minutes: 30, item_ids: mcq.map((q) => q.id), answers: { [mcq[0].id]: 2, [mcq[1].id]: 0 }, score: 1, total: 2, by_chapter: [{ chapter_id: CH(2), title: 'Le transport membranaire', right: 1, total: 2, pct: 50 }], by_bloom: [{ bloom: 3, right: 1, total: 2, pct: 50 }], started_at: '2026-09-02T18:00:00Z', ended_at: '2026-09-02T18:24:00Z' }],
+    bb_cases: [{ id: id('bbk', 90), user_id: ME, course_id: C, chapter_ids: [CH(1), CH(2)], title: 'Le laboratoire qui manque d ATP', body: 'Une biologiste observe des cellules dont la production d ATP chute apres un traitement. Le glucose continue d entrer pendant quelques minutes, puis tout s arrete.\n\nSon equipe hesite: certaines y voient une diffusion facilitee, d autres un transport actif. Le budget ne permet qu une seule experience de controle.', exhibits: [{ title: 'Entree du glucose', columns: ['Minute', 'Glucose entre (u)', 'ATP (%)'], rows: [['0', '120', '100'], ['5', '60', '40'], ['10', '0', '5']] }], questions: [{ prompt: 'Quel mecanisme explique les donnees, et quelle experience recommandes-tu?', points: 10 }], rubric: [{ criterion: 'Notions nommees', points: 3, looks_for: 'Transport actif et gradient', anchor_ids: [A(4)] }, { criterion: 'Preuves tirees du cas', points: 3, looks_for: 'Les chiffres du tableau', anchor_ids: [A(3)] }, { criterion: 'Recommandation justifiee', points: 4, looks_for: 'Une experience qui tranche', anchor_ids: [A(4)] }], model_answer: `Le glucose cesse d entrer quand l ATP tombe [${A(4).replace(/-/g, '').slice(0, 8)}], donc transport actif.`, anchor_ids: [A(3), A(4)], outside_note: 'Le laboratoire est invente.', created_at: '2026-09-02T12:00:00Z' }],
+    bb_case_attempts: [],
+    bb_visuals: [
+      { id: id('bbv', 1), user_id: ME, course_id: C, chapter_id: CH(2), kind: 'steps', title: 'Le transport actif, pas a pas', data: { columns: [], nodes: [{ label: 'La proteine fixe le glucose', detail: 'Du cote pauvre en glucose', anchor: A(4) }, { label: 'L ATP change sa forme', detail: '', anchor: A(4) }, { label: 'Le glucose passe de l autre cote', detail: 'Contre le gradient', anchor: A(3) }] }, anchor_ids: [A(3), A(4)], created_at: '2026-09-02T12:00:00Z' },
+      { id: id('bbv', 2), user_id: ME, course_id: C, chapter_id: CH(2), kind: 'table', title: 'Diffusion facilitee ou transport actif', data: { columns: ['', 'Gradient', 'Energie'], nodes: [{ label: 'Diffusion facilitee', detail: '', cells: ['Le suit', 'Aucune'], anchor: A(3) }, { label: 'Transport actif', detail: '', cells: ['Le remonte', 'ATP'], anchor: A(4) }] }, anchor_ids: [A(3), A(4)], created_at: '2026-09-02T12:00:00Z' },
+      { id: id('bbv', 3), user_id: ME, course_id: C, chapter_id: CH(1), kind: 'matrix', title: 'Ce qui traverse la membrane', data: { columns: ['Petit', 'Gros', 'Apolaire', 'Polaire'], nodes: [{ label: 'O2', detail: 'Passe seul', x: 0, y: 0, anchor: A(1) }, { label: 'Glucose', detail: 'Il lui faut une proteine', x: 1, y: 1, anchor: A(2) }] }, anchor_ids: [A(1), A(2)], created_at: '2026-09-02T12:00:00Z' },
+      { id: id('bbv', 4), user_id: ME, course_id: C, chapter_id: CH(1), kind: 'tree', title: 'Les proteines membranaires', data: { columns: [], nodes: [{ label: 'Proteines membranaires', detail: '', parent: null, anchor: A(1) }, { label: 'Integrees', detail: 'Traversent la bicouche', parent: 0, anchor: A(1) }, { label: 'Peripheriques', detail: 'Posees a la surface', parent: 0, anchor: A(2) }] }, anchor_ids: [A(1), A(2)], created_at: '2026-09-02T12:00:00Z' },
+    ],
+    bb_plan_days: [{ id: id('bbp', 1), user_id: ME, course_id: C, on_date: '2026-09-01', kind: 'study', minutes: 40, event_id: null, done_at: null }],
+    bb_squad_share: [{ group_id: 'grp1', user_id: ME, shared: true }],
   }
 })()
+const BB_SQUAD = [
+  { user_id: 'u2', name: 'Maya', minutes_week: 140, sessions_week: 9, streak: 5, me: false },
+  { user_id: ME, name: 'Ann', minutes_week: 95, sessions_week: 6, streak: 3, me: true },
+]
 const BB_STATUS = { tier: 'free', plan: 'free', status: null, current_period_end: null, cancel_at_period_end: false, limits: { courses: 1, chapters: 3, ingest: 6, generate: 6, coach: 10, grade: 15 }, used: { ingest: 1, generate: 2, coach: 3, grade: 0 }, resetsAt: '2026-09-04T00:00:00Z', courses: 1, prepared: 1, ready: { model: true, billing: true }, cost: null }
 
 /* A preview server, unless one is offered. */
@@ -194,7 +211,7 @@ const UNSIGNED =
   '    VITE_SUPABASE_URL=http://localhost:54321 VITE_SUPABASE_ANON_KEY=stub-anon npm run build'
 const READER = /^\/library\/[^/?]+/
 /* The public pages of Beauty & Brain: measured like the rest, but outside any app shell. */
-const BB_PUBLIC = /^\/bb(\/tarifs|\/pricing)?$/
+const BB_PUBLIC = /^\/bb(\/tarifs|\/pricing|\/go)?$/
 
 async function open(width) {
   const ctx = await browser.newContext({ viewport: { width, height: 1000 }, deviceScaleFactor: 1 })
@@ -222,6 +239,8 @@ async function open(width) {
     r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(r.request().url().includes('/api/bb/status') ? BB_STATUS : { done: true, added: 0, rejected: 0 }) }))
   await page.route('**/rest/v1/**', (route) => {
     const req = route.request()
+    /* supabase.rpc() posts. */
+    if (req.url().includes('/rpc/bb_squad_effort')) return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(BB_SQUAD) })
     if (req.method() !== 'GET') return route.fulfill({ status: 200, contentType: 'application/json', body: '[]' })
     const url = req.url()
     const one = (req.headers().accept ?? '').includes('object')
@@ -230,6 +249,7 @@ async function open(width) {
       /* Before `profiles`: bb_profiles contains the word. */
       : table.startsWith('bb_') ? BB[table] ?? []
       : url.includes('profiles') ? [PROFILE]
+      : table === 'group_members' ? [{ group_id: 'grp1', role: 'member', groups: { id: 'grp1', name: 'Les etudes du jeudi' } }]
       : url.includes('goals') ? GOALS
       : url.includes('calendar_event') ? EVENTS
       : []

@@ -1,19 +1,23 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { useT } from '../../lib/i18n'
+import { localeTag, useT } from '../../lib/i18n'
 import { usePageMeta } from '../../lib/pageMeta'
 import { SegTabs } from '../../components/ui'
 import { calibration, chapterMastery } from '../../lib/bb/mastery'
-import { loadCourse, loadStudy, reloadMaterials, updateCourse } from '../data'
+import { calibrationByChapter, weeklyLine } from '../../lib/bb/calib'
+import { MARKED, MIN_EXAM } from '../../lib/bb/exam'
+import { loadCourse, loadExams, loadStudy, reloadMaterials, updateCourse } from '../data'
 import { useBB } from '../BBApp'
 import { Page, PageHead } from '../BBShell'
-import { Bar, ExamChip, Note, anchorMaps } from '../kit'
+import { Bar, ExamChip, Note, anchorMaps, weekText } from '../kit'
 import { errorMessage } from '../errors'
 import { useProcessing } from '../course/useProcessing'
 import Processing, { Spinner } from '../course/Processing'
 import Sheet from '../course/Sheet'
 import Blueprint from '../course/Blueprint'
 import { Bank, Files, Mistakes, Twins } from '../course/Views'
+import Cases from '../course/Cases'
+import Visuals from '../course/Visuals'
 import { PRESETS } from './Today'
 
 /**
@@ -21,16 +25,20 @@ import { PRESETS } from './Today'
  * due today, mastery per chapter with its number beside the bar, the "sure
  * and wrong" count, and one main button, "Start today's 15 minutes".
  *
- * Under it, the course's own tabs: chapters, the cheat sheet, the twin
- * table, the question bank, the mistake log, the files. The address carries
+ * Under it, the course's own tabs: chapters (with the calibration of each),
+ * the cheat sheet, the visuals, the twin table, the question bank, the
+ * mistake log, the mock exam, the case lab, the files. The address carries
  * the tab (/bb/cours/:id/fiches), so back works and a tab can be linked.
  */
 const TABS = [
   ['chapitres', 'chapters'],
   ['fiches', 'sheet'],
+  ['schemas', 'visuals'],
   ['jumeaux', 'twins'],
   ['banque', 'bank'],
   ['erreurs', 'mistakes'],
+  ['examen', 'mock'],
+  ['cas', 'cases'],
   ['fichiers', 'files'],
 ]
 
@@ -98,7 +106,10 @@ export default function Course() {
       }
     })
     const sureWrong = study.mistakes.filter((m) => m.confident && !m.resolved_at).length
-    return { due, all, chapters, sureWrong, calib: calibration(study.reviews) }
+    const calibrated = calibrationByChapter(study.reviews, data.concepts)
+    for (const ch of chapters) ch.calib = calibrated.get(ch.id) ?? null
+    const week = weeklyLine({ reviews: study.reviews, concepts: data.concepts, chapters: data.chapters, twins: data.twins })
+    return { due, all, chapters, sureWrong, calib: calibration(study.reviews), week }
   }, [data, study])
 
   if (missing) {
@@ -182,6 +193,11 @@ export default function Course() {
             <dd className="text-[1.75rem] font-bold tabular-nums text-ink">{view.sureWrong}</dd>
           </div>
         </dl>
+        {view.week && (
+          <p className="mt-4 text-small text-ink" data-hook="bb-week-line">
+            ⚑ {weekText(t, view.week)}
+          </p>
+        )}
         {hasItems && (
           <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
             <Link to={`/bb/session/${course.id}?m=${minutes}`} className="btn press bg-[#FF007A] text-[1.1875rem] font-bold text-white hover:opacity-90 sm:w-auto sm:px-8" data-hook="bb-course-start">
@@ -194,7 +210,10 @@ export default function Course() {
 
       <Blueprint course={course} blueprint={data.blueprint} onSaved={reload} />
 
-      <nav className="-mx-1 mt-8 flex gap-1 overflow-x-auto px-1 pb-1" aria-label={t('bb.course.tabs')} data-hook="bb-course-tabs">
+      {/* Nine tabs wrap onto two or three rows rather than scroll sideways:
+          on a phone a strip that scrolls hides "Cas" off the edge, and a tab
+          sliding past the edge passes under the margin stickers. */}
+      <nav className="mt-8 flex flex-wrap gap-1.5" aria-label={t('bb.course.tabs')} data-hook="bb-course-tabs">
         {TABS.map(([slug, k]) => (
           <Link
             key={slug}
@@ -224,6 +243,13 @@ export default function Course() {
                       {t('bb.courses.items', { n: ch.items + ch.cards })}
                       {ch.signals > 0 && ` · ${t('bb.course.signals', { n: ch.signals })}`}
                     </p>
+                    {ch.calib?.pct != null && (
+                      <p className="mt-1 text-small text-ink" data-hook="bb-chapter-calib">
+                        {ch.calib.pct < 70 ? '⚑ ' : ''}
+                        {t('bb.calib.chapter', { pct: ch.calib.pct, right: ch.calib.right, sure: ch.calib.sure })}
+                        {ch.calib.pct < 70 ? ` ${t('bb.calib.low')}` : ''}
+                      </p>
+                    )}
                     {!ch.items_ready && (
                       <div className="mt-3">
                         {proc.generating === ch.id ? (
@@ -249,6 +275,9 @@ export default function Course() {
           )}
         </div>
       )}
+      {key === 'visuals' && <Visuals chapters={data.chapters} maps={maps} />}
+      {key === 'mock' && <MockTab courseId={course.id} available={study.items.filter((i) => MARKED.has(i.type) && !i.variant_of).length >= MIN_EXAM} />}
+      {key === 'cases' && <Cases course={course} chapters={data.chapters.filter((ch) => data.concepts.some((c) => c.chapter_id === ch.id))} anchors={data.anchors} maps={maps} />}
       {key === 'sheet' && <Sheet chapters={data.chapters} concepts={data.concepts} signals={data.signals} twins={data.twins} maps={maps} />}
       {key === 'twins' && <Twins twins={data.twins} concepts={data.concepts} maps={maps} />}
       {key === 'bank' && <Bank items={study.items} chapters={data.chapters} concepts={data.concepts} signals={data.signals} mistakes={study.mistakes} maps={maps} />}
@@ -266,5 +295,58 @@ export default function Course() {
         />
       )}
     </Page>
+  )
+}
+
+/** The mock exams of the course: the last scores, and the way in. */
+function MockTab({ courseId, available }) {
+  const { t, locale } = useT()
+  const [exams, setExams] = useState(null)
+  useEffect(() => {
+    let live = true
+    loadExams(courseId)
+      .then((rows) => live && setExams(rows))
+      .catch(() => live && setExams([]))
+    return () => {
+      live = false
+    }
+  }, [courseId])
+  const done = (exams ?? []).filter((e) => e.ended_at && e.total)
+  return (
+    <div className="mt-6 space-y-6" data-hook="bb-mock-tab">
+      <section className="lg p-5 sm:p-6">
+        <h2 className="text-h2 text-ink">{t('bb.mock.title')}</h2>
+        <p className="mt-2 text-body text-ink">{t('bb.mock.lede')}</p>
+        {available ? (
+          <Link to={`/bb/examen/${courseId}`} className="btn press mt-5 bg-[#FF007A] text-[1.1875rem] font-bold text-white hover:opacity-90 sm:w-auto sm:px-8" data-hook="bb-mock-open">
+            {t('bb.mock.open')}
+          </Link>
+        ) : (
+          <Note className="mt-5">{t('bb.mock.too_few')}</Note>
+        )}
+      </section>
+      {done.length > 0 && (
+        <section>
+          <h2 className="eyebrow">{t('bb.mock.history')}</h2>
+          <ul className="mt-3 space-y-2">
+            {done.map((e) => {
+              const pct = Math.round((e.score / Math.max(1, e.total)) * 100)
+              const weakest = [...(e.by_chapter ?? [])].sort((a, b) => a.pct - b.pct)[0]
+              return (
+                <li key={e.id} className="rounded-inner bg-surface px-4 py-3 text-small text-ink">
+                  <div className="flex items-baseline justify-between gap-4">
+                    <span>{new Date(e.started_at).toLocaleDateString(localeTag(locale), { day: 'numeric', month: 'long' })}</span>
+                    <span className="font-bold tabular-nums">
+                      {e.score} / {e.total} · {pct}%
+                    </span>
+                  </div>
+                  {weakest && weakest.pct < 100 && <p className="mt-1 text-muted">{t('bb.mock.weakest', { chapter: weakest.title, n: weakest.pct })}</p>}
+                </li>
+              )
+            })}
+          </ul>
+        </section>
+      )}
+    </div>
   )
 }

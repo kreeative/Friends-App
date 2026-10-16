@@ -32,7 +32,7 @@ const secondsOf = (item) => SECONDS[item?.type] ?? 45
  * @param chapters  [{ id, position }]
  * @param now       Date
  */
-export function buildSession({ minutes = 15, items = [], schedule = [], mistakes = [], concepts = [], chapters = [], now = new Date() } = {}) {
+export function buildSession({ minutes = 15, items = [], schedule = [], mistakes = [], concepts = [], chapters = [], now = new Date(), targets = null } = {}) {
   const budget = Math.max(5, Number(minutes) || 15) * 60
   const usable = items.filter((i) => i.quality === 'pass' || i.quality === 'revised' || i.quality == null)
   const byId = new Map(usable.map((i) => [i.id, i]))
@@ -53,8 +53,18 @@ export function buildSession({ minutes = 15, items = [], schedule = [], mistakes
     return true
   }
 
+  /* A mistake comes back as a variation when there is one not seen yet:
+     another scenario, the same skill (section 6). The original otherwise. */
+  const variants = new Map()
+  for (const i of usable) {
+    if (!i.variant_of || sched.has(i.id)) continue
+    if (!variants.has(i.variant_of)) variants.set(i.variant_of, [])
+    variants.get(i.variant_of).push(i)
+  }
+  const asked = (m) => variants.get(m.item_id)?.[0] ?? byId.get(m.item_id)
+
   // 1. Confident but wrong.
-  for (const m of open.filter((m) => m.confident)) take(byId.get(m.item_id), 'confident_wrong')
+  for (const m of open.filter((m) => m.confident)) take(asked(m), 'confident_wrong')
 
   // 2. Due reviews.
   const due = usable
@@ -64,7 +74,7 @@ export function buildSession({ minutes = 15, items = [], schedule = [], mistakes
   for (const { i } of due) take(i, 'due')
 
   // 3. Other open mistakes.
-  for (const m of open.filter((m) => !m.confident)) take(byId.get(m.item_id), 'mistake')
+  for (const m of open.filter((m) => !m.confident)) take(asked(m), 'mistake')
 
   // 4. Pretest of the next chapter: the first chapter, by position, that has
   //    items and none of them seen yet. On a brand-new course that is
@@ -74,7 +84,7 @@ export function buildSession({ minutes = 15, items = [], schedule = [], mistakes
   const next = order.find((c) => !seenChapter.has(c.id) && usable.some((i) => i.chapter_id === c.id))
   const pretest = []
   if (next) {
-    const pool = usable.filter((i) => i.chapter_id === next.id && !sched.has(i.id) && i.type !== 'flash')
+    const pool = usable.filter((i) => i.chapter_id === next.id && !sched.has(i.id) && i.type !== 'flash' && !i.variant_of)
     for (const i of spreadByConcept(pool).slice(0, PRETEST_SIZE)) if (take(i, 'pretest')) pretest.push(i.id)
   }
 
@@ -82,9 +92,12 @@ export function buildSession({ minutes = 15, items = [], schedule = [], mistakes
   //    across concepts and weighted by signal.
   const cap = NEW_PER_SESSION[minutes] ?? Math.round(minutes / 2)
   const chapterRank = new Map(order.map((c, n) => [c.id, n]))
+  /* Desirable difficulty: within a concept, the item nearest the level the
+     concept has reached comes first (src/lib/bb/difficulty.js). */
+  const gap = (i) => (targets && i.type !== 'flash' ? Math.abs((i.bloom ?? 3) - (targets.get(i.concept_id) ?? 3)) : 0)
   const fresh = usable
-    .filter((i) => !sched.has(i.id) && !taken.has(i.id))
-    .sort((a, b) => (chapterRank.get(a.chapter_id) ?? 99) - (chapterRank.get(b.chapter_id) ?? 99) || (weight.get(b.concept_id) ?? 1) - (weight.get(a.concept_id) ?? 1))
+    .filter((i) => !sched.has(i.id) && !taken.has(i.id) && !i.variant_of)
+    .sort((a, b) => (chapterRank.get(a.chapter_id) ?? 99) - (chapterRank.get(b.chapter_id) ?? 99) || (weight.get(b.concept_id) ?? 1) - (weight.get(a.concept_id) ?? 1) || gap(a) - gap(b))
   let added = 0
   for (const i of spreadByConcept(fresh)) {
     if (added >= cap) break

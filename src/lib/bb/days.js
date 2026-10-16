@@ -1,5 +1,6 @@
 /**
- * Days: the exam countdown, the study streak, and the week's plan.
+ * Days: the exam countdown and the study streak. The plan itself is
+ * src/lib/bb/planner.js.
  *
  * Local calendar days throughout, because "exam in 3 days" is read on the
  * student's own calendar, not in UTC. Pure, tested in bb.test.mjs.
@@ -50,53 +51,4 @@ export function studyStreak(sessions, now = new Date()) {
 export function sessionsToday(sessions, now = new Date()) {
   const today = dayKey(now)
   return (sessions ?? []).filter((s) => (s.answered ?? 0) > 0 && dayKey(s.started_at) === today).length
-}
-
-const round5 = (n) => Math.max(10, Math.round(n / 5) * 5)
-
-/**
- * The next `days` days: which courses to study and for how long.
- *
- *   - weekly hours (default 5) spread over six study days; one rest day a
- *     week, Sunday, unless an exam falls on the Monday after it;
- *   - each day's minutes shared between the courses whose exam is still
- *     ahead, the closer exam getting more;
- *   - the eve of an exam is a light review of that course only ("sleep
- *     before the exam", section 1);
- *   - the last 10 days before an exam are marked `final`.
- *
- * courses: [{ id, name, exam_at }]. Returns [{ date, rest, eve, items: [{ course_id, minutes, final }] }].
- */
-export function weekPlan({ courses = [], weeklyHours = 5, now = new Date(), days = 7 } = {}) {
-  const perDay = (Math.min(80, Math.max(1, Number(weeklyHours) || 5)) * 60) / 6
-  const out = []
-  for (let k = 0; k < days; k += 1) {
-    const date = midnight(now)
-    date.setDate(date.getDate() + k)
-    const ahead = courses
-      .map((c) => ({ c, until: daysUntil(c.exam_at, date) }))
-      .filter((x) => x.until == null || x.until >= 1)
-    const eve = ahead.find((x) => x.until === 1)
-    const monday = new Date(date)
-    monday.setDate(monday.getDate() + 1)
-    const examMonday = courses.some((c) => c.exam_at && dayKey(c.exam_at) === dayKey(monday))
-    const rest = date.getDay() === 0 && !eve && !examMonday
-    if (rest || !ahead.length) {
-      out.push({ date: dayKey(date), rest: rest || !ahead.length, eve: false, items: [] })
-      continue
-    }
-    if (eve) {
-      out.push({ date: dayKey(date), rest: false, eve: true, items: [{ course_id: eve.c.id, minutes: round5(Math.min(perDay, 20)), final: true }] })
-      continue
-    }
-    const weights = ahead.map((x) => (x.until == null ? 0.5 : 1 / Math.max(1, x.until) + 0.1))
-    const total = weights.reduce((a, b) => a + b, 0)
-    out.push({
-      date: dayKey(date),
-      rest: false,
-      eve: false,
-      items: ahead.map((x, i) => ({ course_id: x.c.id, minutes: round5((perDay * weights[i]) / total), final: x.until != null && x.until <= 10 })),
-    })
-  }
-  return out
 }

@@ -1,7 +1,9 @@
+import { Fragment } from 'react'
 import { BB_LOGO } from './logo'
 import { useT } from '../lib/i18n'
 import { anchorChip } from '../lib/bb/quality'
 import { examLabel } from '../lib/bb/days'
+import { citeOf, splitRich } from '../lib/bb/cite'
 
 /**
  * The few pieces every Beauty & Brain screen shares. Everything else comes
@@ -80,9 +82,15 @@ export function Bar({ pct, label, hint, className = '' }) {
   )
 }
 
-/** Where a fact comes from: "Cours 7 · diapo 6". Opens the excerpt on tap. */
-export function Anchor({ anchor, fileName }) {
+/**
+ * Where a fact comes from: "Cours 7 · diapo 6". Opens the excerpt on tap.
+ * `compact` shows the place alone ("diapo 6") where a narrow box would cut
+ * the chip before the part that matters; the file name stays in its title
+ * and in the opened excerpt.
+ */
+export function Anchor({ anchor, fileName, compact = false }) {
   if (!anchor) return null
+  const full = anchorChip(anchor, fileName)
   return (
     <details className="group inline-block max-w-full align-top" data-hook="anchor">
       <summary className="inline-flex max-w-full cursor-pointer list-none items-center gap-1 rounded-pill border border-[#009DB9]/50 bg-[#E6F6F9] px-2.5 py-0.5 text-[0.8125rem] font-semibold text-ink [&::-webkit-details-marker]:hidden">
@@ -90,9 +98,12 @@ export function Anchor({ anchor, fileName }) {
           <path d="M4 2h6l3 3v9H4z" />
           <path d="M10 2v3h3" />
         </svg>
-        <span className="truncate">{anchorChip(anchor, fileName)}</span>
+        <span className="truncate" title={compact ? full : undefined}>
+          {compact ? anchor.label || full : full}
+        </span>
       </summary>
       <blockquote className="mt-2 max-w-[60ch] rounded-inner border-l-4 border-[#009DB9] bg-surface px-3 py-2 text-small text-ink">
+        {compact && fileName && <span className="mb-1 block text-[0.8125rem] font-semibold">{full}</span>}
         «&#8239;{anchor.excerpt}&#8239;»
       </blockquote>
     </details>
@@ -151,4 +162,62 @@ export function anchorMaps(anchors, materials) {
     anchors: new Map((anchors ?? []).map((a) => [a.id, a])),
     files: new Map((materials ?? []).map((m) => [m.id, m.file_name])),
   }
+}
+
+/** Text with [id] citations turned into chips, **bold** kept, lines kept. */
+export function Rich({ text, byShort, files }) {
+  const paras = String(text).split(/\n{2,}/)
+  return paras.map((p, i) => {
+    const lines = p.split('\n')
+    const list = lines.every((l) => /^\s*[-*•]\s+/.test(l))
+    const inline = (line, key) =>
+      splitRich(line).map((part, j) => {
+        const cite = citeOf(part)
+        if (cite && byShort.has(cite)) {
+          const a = byShort.get(cite)
+          return (
+            <span key={`${key}-${j}`} className="mx-0.5 inline-block align-baseline">
+              <Anchor anchor={a} fileName={files.get(a.material_id)} />
+            </span>
+          )
+        }
+        if (/^\*\*[^*]+\*\*$/.test(part)) return <strong key={`${key}-${j}`}>{part.slice(2, -2)}</strong>
+        return <Fragment key={`${key}-${j}`}>{part}</Fragment>
+      })
+    if (list) {
+      return (
+        <ul key={i} className="ml-5 list-disc space-y-1">
+          {lines.map((l, k) => (
+            <li key={k}>{inline(l.replace(/^\s*[-*•]\s+/, ''), `${i}-${k}`)}</li>
+          ))}
+        </ul>
+      )
+    }
+    /* A div, not a p: a chip is a <details>, which a paragraph may not hold. */
+    return (
+      <div key={i}>
+        {lines.map((l, k) => (
+          <Fragment key={k}>
+            {k > 0 && <br />}
+            {inline(l, `${i}-${k}`)}
+          </Fragment>
+        ))}
+      </div>
+    )
+  })
+}
+
+/**
+ * The week's calibration line: "Sure and wrong 3 times this week in
+ * Chapter 5, all on Osmosis / Diffusion. 4 times in all, across your
+ * courses." The flag and the words carry it, never a colour.
+ */
+export function weekText(t, week) {
+  const head =
+    week.chapter && week.pair?.length === 2
+      ? t('bb.calib.week_pair', { n: week.n, chapter: week.chapter, a: week.pair[0], b: week.pair[1] })
+      : week.chapter
+        ? t('bb.calib.week_in', { n: week.n, chapter: week.chapter })
+        : t('bb.calib.week', { n: week.total })
+  return week.chapter && week.total > week.n ? `${head} ${t('bb.calib.week_total', { n: week.total })}` : head
 }

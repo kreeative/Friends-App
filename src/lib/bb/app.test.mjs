@@ -7,7 +7,8 @@
  * coach's citations are read back, and the two languages of the interface.
  */
 import { answerRows, RESOLVE_STREAK } from './answer.js'
-import { daysUntil, examLabel, studyStreak, sessionsToday, weekPlan, dayKey } from './days.js'
+import { daysUntil, examLabel, studyStreak, sessionsToday, dayKey } from './days.js'
+import { planDays } from './planner.js'
 import { MAX_BYTES, formatOf, kindFor, refuse } from './formats.js'
 import { SHORT, citeOf, citedIds, hasCites, shortId, shortMap, splitRich, stripCites } from './cite.js'
 import { BB_STRINGS } from '../../bb/strings.js'
@@ -116,19 +117,18 @@ eq('and counts otherwise', examLabel(later(9), NOW), { key: 'bb.exam.in', n: 9 }
     { id: 'a', exam_at: later(4).toISOString() },
     { id: 'b', exam_at: later(20).toISOString() },
   ]
-  const plan = weekPlan({ courses, weeklyHours: 6, now: NOW, days: 7 })
+  const plan = planDays({ courses, weeklyHours: 6, now: NOW, days: 7 })
   eq('seven days', plan.length, 7)
   const sundays = plan.filter((d) => new Date(`${d.date}T12:00:00`).getDay() === 0)
   ok('one rest day a week, on Sunday', sundays.length === 1 && sundays[0].rest)
-  const eve = plan.find((d) => d.eve)
+  const eve = plan.find((d) => d.items.some((i) => i.kind === 'eve'))
   ok('the eve of an exam is a light review of that course only', eve && eve.items.length === 1 && eve.items[0].course_id === 'a' && eve.items[0].minutes <= 20)
   const day1 = plan[0]
   ok('the closer exam gets more of the day', day1.items.find((i) => i.course_id === 'a').minutes > day1.items.find((i) => i.course_id === 'b').minutes)
-  ok('the last ten days are marked', day1.items.find((i) => i.course_id === 'a').final === true && day1.items.find((i) => i.course_id === 'b').final === false)
   const after = plan.filter((d) => d.date > dayKey(later(4)))
   ok('a course whose exam has passed is no longer planned', after.every((d) => d.items.every((i) => i.course_id !== 'a')))
-  const monday = weekPlan({ courses: [{ id: 'm', exam_at: later(3).toISOString() }], now: NOW, days: 7 })
-  ok('no rest on the Sunday before a Monday exam: it is the eve', monday.filter((d) => new Date(`${d.date}T12:00:00`).getDay() === 0).every((d) => !d.rest && d.eve))
+  const monday = planDays({ courses: [{ id: 'm', exam_at: later(3).toISOString() }], now: NOW, days: 7 })
+  ok('no rest on the Sunday before a Monday exam: it is the eve', monday.filter((d) => new Date(`${d.date}T12:00:00`).getDay() === 0).every((d) => !d.rest && d.items[0]?.kind === 'eve'))
   ok('minutes are rounded to 5, at least 10', plan.flatMap((d) => d.items).every((i) => i.minutes % 5 === 0 && i.minutes >= 10))
 }
 

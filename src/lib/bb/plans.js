@@ -33,7 +33,7 @@ export const LIMITS = {
 }
 
 /** Which allowance a route spends. */
-export const ROUTE_BUCKET = { ingest: 'ingest', enrich: 'ingest', generate: 'generate', coach: 'coach', grade: 'grade', report: 'grade', elaborate: 'grade' }
+export const ROUTE_BUCKET = { ingest: 'ingest', enrich: 'ingest', generate: 'generate', vary: 'generate', case: 'generate', visual: 'generate', coach: 'coach', grade: 'grade', report: 'grade', elaborate: 'grade' }
 
 /** The plan in force for a subscription row, now. */
 export function tierOf(sub, now = new Date()) {

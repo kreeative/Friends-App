@@ -1,7 +1,9 @@
-import { client, fail, gate, heavyModel, keyMap, logUsage, model, ownCourse, profileOf, start, structured } from './common.js'
-import { ITEMS_SCHEMA, PROMPTS_VERSION, VERIFIER_SYSTEM, VERIFY_SCHEMA, generatorSystem } from './prompts.js'
-import { checkItem } from '../../src/lib/bb/quality.js'
+import { client, fail, gate, keyMap, logUsage, model, ownCourse, profileOf, start, structured } from './common.js'
+import { ITEMS_SCHEMA, PROMPTS_VERSION, generatorSystem } from './prompts.js'
+import { excerptText, itemRow, vet } from './pipeline.js'
 import { canPrepareChapter } from '../../src/lib/bb/plans.js'
+
+export { shape } from './pipeline.js'
 
 /**
  * POST /api/bb/generate { course_id, chapter_id }
@@ -18,6 +20,9 @@ import { canPrepareChapter } from '../../src/lib/bb/plans.js'
  *                answer to be the key ("never pass an item you had to guess");
  *   4. REVISE    a fixed item goes through the code checks again and is kept
  *                as "revised" with what changed; anything else is rejected.
+ *
+ * Steps 2 to 4 are api/_bb/pipeline.js, shared with the variations of a
+ * mistake (api/_bb/vary.js).
  *
  * Called repeatedly by the app until it answers { done: true }: each call
  * stays well inside the function's five minutes. The rejection rate is
@@ -80,7 +85,7 @@ export default async function generate(req, res) {
     ...batch.map((c) => `${conceptKeys.toKey.get(c.id)}: ${c.name}${c.definition ? ` - definition: "${c.definition}"` : ''} (anchors ${(c.anchor_ids ?? []).map((a) => anchors.toKey.get(a)).filter(Boolean).join(', ')})`),
     '',
     'EXCERPTS:',
-    ...(anchorRows ?? []).map((a) => `[${anchors.toKey.get(a.id)}] (${a.label}) "${a.excerpt}"`),
+    excerptText(anchorRows, anchors),
     '',
     'TWINS AND MISCONCEPTIONS TO BUILD DISTRACTORS FROM:',
     ...(twinRows.length ? twinRows.map((t) => `- ${allConcepts.get(t.a_concept)?.name ?? '?'} vs ${allConcepts.get(t.b_concept)?.name ?? '?'}: ${t.separator}`) : ['- none listed; use plausible misreadings of the excerpts']),
@@ -103,72 +108,17 @@ export default async function generate(req, res) {
   if (gen.usage) await logUsage(db, user.id, 'generate', gen.model, gen.usage)
   if (gen.error) return res.status(502).json({ error: gen.error, detail: gen.detail ?? null })
 
-  // Code checks first: an item that fails here costs no verification.
-  const anchorKeys = new Set(anchors.toId.keys())
-  const existingStems = live.map((i) => i.stem)
-  const candidates = []
-  let rejected = 0
-  for (const it of Array.isArray(gen.data?.items) ? gen.data.items : []) {
-    const shaped = shape(it)
-    const verdict = checkItem(shaped, { anchors: anchorKeys, existing: [...existingStems, ...candidates.map((c) => c.stem)] })
-    if (!verdict.ok || !conceptKeys.toId.has(it.concept)) {
-      rejected += 1
-      continue
-    }
-    candidates.push(shaped)
+  // Code checks, then the verification on the excerpts only (pipeline.js).
+  let vetted
+  try {
+    vetted = await vet(cl, { raw: gen.data?.items, anchors, anchorRows, concepts: new Set(conceptKeys.toId.keys()), existing: live.map((i) => i.stem) })
+  } catch (err) {
+    return fail(res, err, 'verify')
   }
+  if (vetted.ver?.usage) await logUsage(db, user.id, 'generate', vetted.ver.model, vetted.ver.usage)
+  const { kept, rejected } = vetted
 
-  // Verification, on the excerpts only.
-  const kept = []
-  if (candidates.length) {
-    let ver
-    try {
-      ver = await structured(cl, {
-        system: VERIFIER_SYSTEM,
-        content: [{ type: 'text', text: `EXCERPTS:\n${(anchorRows ?? []).map((a) => `[${anchors.toKey.get(a.id)}] (${a.label}) "${a.excerpt}"`).join('\n')}\n\nITEMS:\n${JSON.stringify(candidates.map((c, index) => ({ index, ...c })), null, 1)}` }],
-        schema: VERIFY_SCHEMA,
-        effort: 'medium',
-        maxTokens: 16000,
-        model: heavyModel(),
-      })
-    } catch (err) {
-      return fail(res, err, 'verify')
-    }
-    if (ver.usage) await logUsage(db, user.id, 'generate', ver.model, ver.usage)
-    const verdicts = new Map((Array.isArray(ver.data?.verdicts) ? ver.data.verdicts : []).map((v) => [v.index, v]))
-    candidates.forEach((item, index) => {
-      const v = verdicts.get(index)
-      if (!v) return void (rejected += 1)
-      if (v.verdict === 'pass' && Number(v.solved) === item.key) return void kept.push({ item, quality: 'pass', note: null })
-      if (v.verdict === 'fix' && v.fixed) {
-        const fixed = shape(v.fixed)
-        const again = checkItem(fixed, { anchors: anchorKeys, existing: existingStems })
-        if (again.ok && conceptKeys.toId.has(fixed.concept)) return void kept.push({ item: fixed, quality: 'revised', note: clip(v.reasons, 300) })
-      }
-      rejected += 1
-    })
-  }
-
-  const rows = kept.map(({ item, quality, note }) => {
-    const conceptId = conceptKeys.toId.get(item.concept)
-    return {
-      user_id: user.id,
-      course_id: course.id,
-      chapter_id: chapter.id,
-      concept_id: conceptId,
-      type: item.type,
-      bloom: item.bloom,
-      stem: item.stem,
-      options: item.options.map((o) => ({ text: o.text, why: o.why, anchor: o.anchor ? anchors.toId.get(o.anchor) ?? null : null, outside: Boolean(o.outside) })),
-      answer: { index: item.key },
-      explanation: item.explanation || null,
-      anchor_ids: item.anchors.map((k) => anchors.toId.get(k)).filter(Boolean),
-      outside: false,
-      quality,
-      revision_note: note,
-      source: 'ai',
-    }
-  })
+  const rows = kept.map((k) => itemRow(k, { userId: user.id, courseId: course.id, chapterId: chapter.id, conceptId: conceptKeys.toId.get(k.item.concept), anchors }))
   if (rows.length) {
     const { error } = await db.from('bb_items').insert(rows)
     if (error) return res.status(500).json({ error: 'write', detail: error.message })
@@ -192,19 +142,4 @@ export default async function generate(req, res) {
   const remaining = pending.length - batch.length
   if (remaining <= 0) await db.from('bb_chapters').update({ items_ready: true }).eq('id', chapter.id)
   return res.status(200).json({ done: remaining <= 0, added: rows.length, rejected, remaining, gaps: (gen.data?.gaps ?? []).slice(0, 3) })
-}
-
-/** An item as the code checks expect it, whatever the model returned. */
-export function shape(it) {
-  const type = it?.type === 'tf' ? 'tf' : 'mcq'
-  return {
-    concept: String(it?.concept ?? ''),
-    type,
-    bloom: Math.min(6, Math.max(1, Math.round(Number(it?.bloom) || 3))),
-    stem: clip(it?.stem, 2000),
-    options: (Array.isArray(it?.options) ? it.options : []).map((o) => ({ text: clip(o?.text, 400), why: clip(o?.why, 600), anchor: o?.anchor ?? null, outside: Boolean(o?.outside) })),
-    key: Number.isInteger(it?.key) ? it.key : Number(it?.key),
-    explanation: clip(it?.explanation, 800),
-    anchors: (Array.isArray(it?.anchors) ? it.anchors : []).map(String),
-  }
 }

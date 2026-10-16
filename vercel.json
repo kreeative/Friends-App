@@ -34,6 +34,11 @@
       "destination": "/api/bb/preview?p=tarifs"
     },
     {
+      "source": "/bb/go",
+      "has": [{ "type": "header", "key": "user-agent", "value": ".*(facebookexternalhit|Facebot|Twitterbot|WhatsApp|TelegramBot|Slackbot|Discordbot|LinkedInBot|SkypeUriPreview|redditbot|Embedly|vkShare|Iframely|Mastodon|Bluesky|Applebot).*" }],
+      "destination": "/api/bb/preview?p=go"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }

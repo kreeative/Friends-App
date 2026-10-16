@@ -67,6 +67,19 @@ export function forgetStability(d, s, r, w = W) {
 /** A second look on the same day moves stability a little, not a whole step. */
 export const shortTermStability = (s, g, w = W) => s * Math.exp(w[17] * (g - 3 + w[18]))
 
+/**
+ * The last ten days before the exam (section 3.2): the concepts the
+ * professor flagged (weight 3, which an explicit "this is on the exam" sets
+ * when the course is read) are scheduled for 95% recall instead of 90%, so
+ * they come back sooner while there is still time to fix them.
+ */
+export const FINAL_DAYS = 10
+export const BOOSTED_RETENTION = 0.95
+
+export function retentionFor({ weight, daysLeft } = {}) {
+  return Number(weight) >= 3 && daysLeft != null && daysLeft >= 0 && daysLeft <= FINAL_DAYS ? BOOSTED_RETENTION : RETENTION
+}
+
 /** Days until recall falls to `retention`. At 0.9 this is the stability itself. */
 export function intervalDays(s, retention = RETENTION) {
   const i = (s / FACTOR) * (Math.pow(retention, 1 / DECAY) - 1)

@@ -2,10 +2,13 @@ import coach from '../_bb/coach.js'
 import generate from '../_bb/generate.js'
 import ingest from '../_bb/ingest.js'
 import preview from '../_bb/preview.js'
-import remove from '../_bb/remove.js'
+import remove, { purge } from '../_bb/remove.js'
 import status from '../_bb/status.js'
+import vary from '../_bb/vary.js'
+import visual from '../_bb/visual.js'
 import { elaborate, report } from '../_bb/check.js'
 import { cancel, checkout, portal, resume, sync } from '../_bb/billing.js'
+import { grade, makeCase } from '../_bb/cases.js'
 
 /**
  * Every Beauty & Brain route, in ONE function.
@@ -23,7 +26,7 @@ import { cancel, checkout, portal, resume, sync } from '../_bb/billing.js'
  * An unknown action answers 404 in JSON, so the app reads an API answer and
  * not Vercel's HTML page.
  */
-const ROUTES = { cancel, checkout, coach, elaborate, generate, ingest, portal, preview, remove, report, resume, status, sync }
+const ROUTES = { cancel, case: makeCase, checkout, coach, elaborate, generate, grade, ingest, portal, preview, purge, remove, report, resume, status, sync, vary, visual }
 
 export default async function handler(req, res) {
   const route = ROUTES[String(req.query?.action ?? '')]

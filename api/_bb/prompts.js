@@ -8,7 +8,7 @@ import { nullable } from './common.js'
  * In English because that is where the model reads instructions best; every
  * prompt says to answer in the course's language.
  */
-export const PROMPTS_VERSION = '2026-10-16.1'
+export const PROMPTS_VERSION = '2026-10-17.1'
 
 const LEVELS = {
   high_school: 'high school',
@@ -320,4 +320,186 @@ export const COACH_MODES = {
   socratic: 'Mode: Socratic. Do not explain first. Lead with questions, one at a time, until the student reaches the idea.',
   check: 'Mode: check my answer. The student pastes an answer; mark it against the material, name what is right and what is missing, and suggest the corrected version.',
   quiz: 'Mode: quiz me. Ask one exam-level question at a time on the chapter the student names (or the most exam-relevant one), wait for the answer, then give feedback.',
+}
+
+/* --- Variations of a mistake (section 6, Mistake log) ------------------------- */
+
+export function variationBrief({ item, concept, trap, excerpts, existing = [] }) {
+  return [
+    'A student got this question wrong. Write 2 NEW questions that test the SAME skill on the SAME concept, at the same Bloom level, in a different scenario.',
+    'Do not reuse the stem, the situation, the names or the numbers. The trap the student fell into should still be a tempting distractor.',
+    '',
+    `CONCEPT K1: ${concept.name}${concept.definition ? ` - definition: "${concept.definition}"` : ''}`,
+    `THE QUESTION (${item.type === 'tf' ? 'true/false' : 'multiple choice'}, Bloom ${item.bloom ?? 3}): ${item.stem}`,
+    `ITS KEY: ${(item.options ?? [])[item.answer?.index]?.text ?? ''}`,
+    `THE TRAP THE STUDENT FELL FOR: ${trap || 'not recorded'}`,
+    '',
+    'EXCERPTS:',
+    excerpts,
+    '',
+    'EXISTING STEMS (do not reuse or paraphrase):',
+    ...existing.map((s) => `- ${s}`),
+  ].join('\n')
+}
+
+/* --- 8.4 and the case lab ----------------------------------------------------- */
+
+export const CASE_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['title', 'body', 'exhibits', 'questions', 'rubric', 'model_answer', 'anchors', 'outside_note'],
+  properties: {
+    title: { type: 'string', description: 'A short title for the case' },
+    body: { type: 'string', description: 'The case: 3 to 6 paragraphs, a realistic situation with competing stakeholders and trade-offs, in the course language' },
+    exhibits: {
+      type: 'array',
+      description: 'Data tables the case refers to, only when the course works with data. At most 2.',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['title', 'columns', 'rows'],
+        properties: {
+          title: { type: 'string' },
+          columns: { type: 'array', items: { type: 'string' } },
+          rows: { type: 'array', items: { type: 'array', items: { type: 'string' } } },
+        },
+      },
+    },
+    questions: {
+      type: 'array',
+      description: 'What the student must answer, 1 to 3 questions',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['prompt', 'points'],
+        properties: { prompt: { type: 'string' }, points: { type: 'integer' } },
+      },
+    },
+    rubric: {
+      type: 'array',
+      description: 'The marking checklist: concepts named correctly, evidence from the case, links between chapters, justified recommendation, structure. 4 to 7 lines.',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['criterion', 'points', 'looks_for', 'anchors'],
+        properties: {
+          criterion: { type: 'string' },
+          points: { type: 'integer' },
+          looks_for: { type: 'string', description: 'What earns the points, in one or two sentences' },
+          anchors: { type: 'array', items: { type: 'string' }, description: 'Anchor keys of the course material this line rests on' },
+        },
+      },
+    },
+    model_answer: { type: 'string', description: 'A model answer that would earn full marks, citing anchor keys in square brackets like [A3]' },
+    anchors: { type: 'array', items: { type: 'string' }, description: 'Every anchor key the case uses' },
+    outside_note: nullable('string', 'What in the case is invented (names, companies, figures), or null'),
+  },
+}
+
+export function caseSystem({ course, profile, language, format }) {
+  const lang = language === 'en' ? 'English' : 'French'
+  return [
+    `You write a case study for the exam of ${course.name}, for a ${levelText(profile.level)} student${profile.program ? ` in ${profile.program}` : ''}. Write in ${lang}.`,
+    '- The case is a realistic, new situation; the concepts it tests come ONLY from the excerpts given, and every rubric line cites the anchor keys it rests on.',
+    '- Names, companies and figures in the scenario may be invented: say so in outside_note. Definitions, theories and rules may not: they are the professor\'s.',
+    '- Use the professor\'s case format when the excerpts describe one. Mirror the exam: the level of a top university program, never above what the real exam asks.',
+    '- The rubric marks: concepts named correctly, evidence taken from the case, links between chapters, a justified recommendation, structure.',
+    ...(formatLine(format) ? [formatLine(format)] : []),
+  ].join('\n')
+}
+
+export const GRADE_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['criteria', 'improvements', 'summary'],
+  properties: {
+    criteria: {
+      type: 'array',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['index', 'points', 'quote', 'why'],
+        properties: {
+          index: { type: 'integer', description: 'Index of the rubric line' },
+          points: { type: 'number', description: 'Points awarded, from 0 to the line\'s points' },
+          quote: { type: 'string', description: 'A short exact quote from the student\'s answer that earned or missed the points, or empty' },
+          why: { type: 'string', description: 'One or two sentences' },
+        },
+      },
+    },
+    improvements: {
+      type: 'array',
+      description: '2 or 3 specific improvements',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['rubric_index', 'text', 'anchor'],
+        properties: {
+          rubric_index: { type: 'integer' },
+          text: { type: 'string' },
+          anchor: nullable('string', 'Anchor key of the material that shows how'),
+        },
+      },
+    },
+    summary: { type: 'string', description: 'One encouraging, exact sentence' },
+  },
+}
+
+export const GRADER_SYSTEM = [
+  "Grade the student's answer against the rubric below, using only the case text and the cited excerpts.",
+  "- For each criterion: points awarded out of the rubric's points, a short quote from the student's answer that earned or missed them, and why.",
+  '- Then 2 or 3 specific improvements, each tied to a rubric line and an anchor.',
+  '- Be exact and fair, as the professor would be. Do not reveal the model answer. Reply in the language of the student\'s answer; in French, use "tu".',
+].join('\n')
+
+/* --- Dual coding: the chapter's visuals (section 3, technique 6) ---------------- */
+
+export const VISUAL_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['visuals'],
+  properties: {
+    visuals: {
+      type: 'array',
+      description: 'At most 3 visuals, only where the chapter has a process, a sequence, a comparison, a 2x2 or a hierarchy',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['kind', 'title', 'columns', 'nodes'],
+        properties: {
+          kind: { type: 'string', description: 'steps, table, timeline, matrix or tree' },
+          title: { type: 'string' },
+          columns: { type: 'array', items: { type: 'string' }, description: 'table: the header row. matrix: [x low, x high, y low, y high]. Otherwise empty.' },
+          nodes: {
+            type: 'array',
+            items: {
+              type: 'object',
+              additionalProperties: false,
+              required: ['label', 'detail', 'cells', 'when', 'parent', 'x', 'y', 'anchor'],
+              properties: {
+                label: { type: 'string' },
+                detail: { type: 'string', description: 'One short line, may be empty' },
+                cells: { type: 'array', items: { type: 'string' }, description: 'table only: the cells after the first column' },
+                when: nullable('string', 'timeline only: the date or moment'),
+                parent: nullable('integer', 'tree only: index of the parent node, null for the root'),
+                x: nullable('integer', 'matrix only: 0 or 1'),
+                y: nullable('integer', 'matrix only: 0 or 1'),
+                anchor: nullable('string', 'Anchor key this node rests on'),
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+}
+
+export function visualSystem({ course, language }) {
+  const lang = language === 'en' ? 'English' : 'French'
+  return [
+    `You turn a chapter of ${course.name} into simple visuals a student can redraw from memory. Write in ${lang}.`,
+    '- Only what the excerpts say: every node cites the anchor key it rests on. No invented steps, dates or categories.',
+    '- steps: a process in order. table: a comparison, one row per thing compared. timeline: dated events in order. matrix: a 2x2 with its two axes. tree: a hierarchy, at most 3 levels.',
+    '- Short labels (a few words). Return fewer visuals rather than a forced one.',
+  ].join('\n')
 }

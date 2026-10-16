@@ -16,6 +16,7 @@ export function errorMessage(t, locale, data) {
   if (error === 'no_key' || error === 'key_format' || error === 'no_workspace' || error === 'setup') return t('bb.err.no_key')
   if (error === 'offline') return t('bb.err.offline')
   if (error === 'busy') return t('bb.proc.err.busy')
+  if (error === 'no_anchor' || error === 'no_chapters' || error === 'not_marked') return t('bb.err.no_source')
   const file = ['download', 'too_big', 'not_pdf', 'pptx_images', 'heic', 'legacy', 'unknown_format', 'empty', 'refused', 'too_long']
   if (file.includes(error)) return t(`bb.proc.err.${error}`)
   if (error === 'model_failed' || error === 'model') return t('bb.proc.err.model')

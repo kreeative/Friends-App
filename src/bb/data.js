@@ -9,7 +9,7 @@ import { supabase } from '../lib/supabase'
  * plan go through /api/bb/* (src/bb/api.js); everything a student does to
  * her own data without Claude happens here, directly.
  */
-const ITEM_COLUMNS = 'id, course_id, chapter_id, concept_id, type, bloom, stem, options, answer, explanation, anchor_ids, outside, quality, revision_note, source, created_at'
+const ITEM_COLUMNS = 'id, course_id, chapter_id, concept_id, type, bloom, stem, options, answer, explanation, anchor_ids, outside, quality, revision_note, source, variant_of, created_at'
 
 const must = ({ data, error }) => {
   if (error) throw error
@@ -240,4 +240,53 @@ export async function keepAsCard({ courseId, chapterId, conceptId, stem, answer,
       .select('id')
       .single(),
   )
+}
+
+/* --- mock exams, cases, visuals, the plan (migration 81) ------------------ */
+
+export async function loadExams(courseId) {
+  const { data, error } = await supabase.from('bb_exams').select('*').eq('course_id', courseId).order('started_at', { ascending: false }).limit(20)
+  if (error) throw error
+  return data ?? []
+}
+
+export async function startExam({ courseId, minutes, itemIds }) {
+  return must(await supabase.from('bb_exams').insert({ course_id: courseId, minutes, item_ids: itemIds }).select('*').single())
+}
+
+export async function saveExamAnswers(id, answers) {
+  await supabase.from('bb_exams').update({ answers }).eq('id', id)
+}
+
+export async function endExam(id, patch) {
+  return must(await supabase.from('bb_exams').update({ ...patch, ended_at: new Date().toISOString() }).eq('id', id).select('*').single())
+}
+
+export async function loadCases(courseId) {
+  const [cases, attempts] = await Promise.all([
+    supabase.from('bb_cases').select('*').eq('course_id', courseId).order('created_at', { ascending: false }),
+    supabase.from('bb_case_attempts').select('*').eq('course_id', courseId).order('created_at'),
+  ])
+  if (cases.error) throw cases.error
+  return { cases: cases.data ?? [], attempts: attempts.data ?? [] }
+}
+
+export async function loadVisuals(courseId) {
+  const { data, error } = await supabase.from('bb_visuals').select('*').eq('course_id', courseId).order('created_at')
+  if (error) throw error
+  return data ?? []
+}
+
+/** The sure-and-wrong answers of the last seven days, with what names them. */
+export async function loadWeek(now = new Date()) {
+  const since = new Date(now.getTime() - 7 * 86400000).toISOString()
+  const { data: reviews } = await supabase.from('bb_reviews').select('course_id, concept_id, confidence, correct, mode, created_at').eq('confidence', 'sure').eq('correct', false).gte('created_at', since)
+  const courseIds = [...new Set((reviews ?? []).map((r) => r.course_id))]
+  if (!courseIds.length) return { reviews: [], concepts: [], chapters: [], twins: [] }
+  const [concepts, chapters, twins] = await Promise.all([
+    supabase.from('bb_concepts').select('id, chapter_id, name').in('course_id', courseIds),
+    supabase.from('bb_chapters').select('id, course_id, title').in('course_id', courseIds),
+    supabase.from('bb_twins').select('a_concept, b_concept').in('course_id', courseIds),
+  ])
+  return { reviews: reviews ?? [], concepts: concepts.data ?? [], chapters: chapters.data ?? [], twins: twins.data ?? [] }
 }

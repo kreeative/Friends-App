@@ -3,11 +3,16 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useT } from '../../lib/i18n'
 import { usePageMeta } from '../../lib/pageMeta'
+import { supabase } from '../../lib/supabase'
 import { buildSession } from '../../lib/bb/sampler'
 import { answerRows } from '../../lib/bb/answer'
 import { typedMatch } from '../../lib/bb/quality'
-import { dayKey } from '../../lib/bb/days'
+import { dayKey, daysUntil } from '../../lib/bb/days'
+import { retentionFor } from '../../lib/bb/fsrs'
+import { capFromFormat, targetsByConcept } from '../../lib/bb/difficulty'
+import { sessionCounts, tickRow } from '../../lib/bb/checkin'
 import { call } from '../api'
+import { useBB } from '../BBApp'
 import { endSession, loadCourse, loadStudy, saveAnswer, startSession } from '../data'
 import { errorMessage } from '../errors'
 import { Anchors, BigButton, Note, Outside, anchorMaps } from '../kit'
@@ -35,6 +40,16 @@ import { Spinner } from '../course/Processing'
  *
  * Again puts the item back later in the same session, once.
  *
+ * DIFFICULTY AND RETENTION. New questions come nearest the Bloom level each
+ * concept has reached (src/lib/bb/difficulty.js), capped by the exam's own
+ * format; in the last ten days before the exam, what the professor flagged
+ * is scheduled for 95% recall instead of 90% (retentionFor in fsrs.js).
+ *
+ * THE END. A finished session ticks the student's Rich & Friends study goal
+ * when she switched it on (src/lib/bb/checkin.js), and the questions she
+ * missed are sent for variations, another scenario on the same skill, ready
+ * for the next session (api/_bb/vary.js): one on the free plan, three on Plus.
+ *
  * KEYBOARD (section 11): A to D answer, S U G confidence, Space or Enter
  * checks and moves on, Space reveals a card, 1 to 4 rate it.
  *
@@ -52,6 +67,7 @@ export default function Session() {
   const minutes = MINUTES.includes(Number(params.get('m'))) ? Number(params.get('m')) : 15
   const { t, locale } = useT()
   const { user } = useAuth()
+  const { bb, status } = useBB()
   usePageMeta({ title: 'Beauty & Brain' })
 
   const [data, setData] = useState(null)
@@ -69,6 +85,8 @@ export default function Session() {
   const [error, setError] = useState(null)
   const [why, setWhy] = useState({ text: '', busy: false, result: null, error: null })
   const [report, setReport] = useState({ open: false, reason: '', busy: false, result: null })
+  const [ticked, setTicked] = useState(null)
+  const [variants, setVariants] = useState(null)
   const startedAt = useRef(Date.now())
   const shownAt = useRef(Date.now())
   const requeued = useRef(new Set())
@@ -90,7 +108,9 @@ export default function Session() {
         if (!course.course) return setError('missing')
         schedule.current = new Map(study.schedule.map((s) => [s.item_id, s]))
         mistakes.current = new Map(study.mistakes.map((m) => [m.item_id, m]))
-        const plan = buildSession({ minutes, items: study.items, schedule: study.schedule, mistakes: study.mistakes, concepts: course.concepts, chapters: course.chapters })
+        const format = { ...(course.course.exam_format ?? {}), ...(course.blueprint?.data ?? {}) }
+        const targets = targetsByConcept(study.reviews, { cap: capFromFormat(format) })
+        const plan = buildSession({ minutes, items: study.items, schedule: study.schedule, mistakes: study.mistakes, concepts: course.concepts, chapters: course.chapters, targets })
         setData({ ...course, ...study, byId: new Map(study.items.map((i) => [i.id, i])), maps: anchorMaps(course.anchors, course.materials) })
         setQueue(plan.items)
         if (plan.items.length) setSessionId(await startSession(id, minutes))
@@ -126,16 +146,48 @@ export default function Session() {
     shownAt.current = Date.now()
   }
 
+  /* The missed questions, sure-and-wrong first, sent for variations one at a
+     time; the server answers at once, for free, when a question has its two. */
+  const vary = useCallback(
+    async (list) => {
+      const max = status?.tier === 'free' || !status?.tier ? 1 : 3
+      const seen = new Set()
+      const missed = [...list.filter((a) => a.sureWrong), ...list.filter((a) => !a.correct)]
+        .filter((a) => a.mode !== 'pretest' && a.marked)
+        .map((a) => a.origin)
+        .filter((o) => (seen.has(o) ? false : seen.add(o)))
+        .slice(0, max)
+      if (!missed.length) return
+      setVariants({ busy: true, added: 0, of: missed.length })
+      let added = 0
+      for (const itemId of missed) {
+        const r = await call('vary', { item_id: itemId })
+        if (r.ok) added += r.data.added ?? 0
+        if (!r.ok && (r.status === 429 || r.status === 503)) break
+      }
+      setVariants({ busy: false, added, of: missed.length })
+    },
+    [status?.tier],
+  )
+
   const finish = useCallback(
     async (list = answered) => {
       setDone(true)
       await endSession(sessionId, { answered: list.length, correct: list.filter((a) => a.correct && a.mode !== 'pretest').length })
+      if (bb?.rf_goal_id && user?.id && sessionCounts(list)) {
+        const { error: tickError } = await supabase.from('goal_days').upsert(tickRow({ goalId: bb.rf_goal_id, userId: user.id }), { onConflict: 'goal_id,user_id,on_date', ignoreDuplicates: true })
+        setTicked(tickError ? 'failed' : 'ok')
+      }
+      vary(list)
     },
-    [answered, sessionId],
+    [answered, sessionId, bb?.rf_goal_id, user?.id, vary],
   )
 
   const record = useCallback(
     async ({ rating = null, correct = null }) => {
+      /* A variation answers for the original's mistake: one log row, keyed
+         on the original (answerRows writes it there too). */
+      const origin = item.variant_of ?? item.id
       const rows = answerRows({
         item,
         card: schedule.current.get(item.id) ?? null,
@@ -143,14 +195,15 @@ export default function Session() {
         rating,
         correct,
         confidence,
-        mistake: mistakes.current.get(item.id) ?? null,
+        mistake: mistakes.current.get(origin) ?? null,
         ms: Date.now() - shownAt.current,
         mode: entry.reason,
         sessionId,
+        retention: retentionFor({ weight: concept?.weight, daysLeft: daysUntil(data?.course?.exam_at) }),
       })
       schedule.current.set(item.id, { ...rows.schedule })
-      if (rows.mistake) mistakes.current.set(item.id, { ...(mistakes.current.get(item.id) ?? {}), ...rows.mistake })
-      setAnswered((a) => [...a, { id: item.id, correct: rows.correct, sureWrong: rows.sureWrong, mode: entry.reason }])
+      if (rows.mistake) mistakes.current.set(origin, { ...(mistakes.current.get(origin) ?? {}), ...rows.mistake })
+      setAnswered((a) => [...a, { id: item.id, origin, marked, correct: rows.correct, sureWrong: rows.sureWrong, mode: entry.reason }])
       /* Again: back in the queue a few cards later, once. */
       if (rows.rating === 1 && !requeued.current.has(item.id)) {
         requeued.current.add(item.id)
@@ -168,7 +221,7 @@ export default function Session() {
       }
       return rows
     },
-    [item, choice, confidence, entry, sessionId, index, user?.id],
+    [item, choice, confidence, entry, sessionId, index, user?.id, concept, marked, data?.course?.exam_at],
   )
 
   const next = useCallback(() => {
@@ -355,6 +408,26 @@ export default function Session() {
           </div>
           {sureWrong > 0 && <p className="mt-4 text-body text-ink">⚑ {t('bb.ses.done_sure_wrong', { n: sureWrong })}</p>}
           <p className="mt-4 text-body font-semibold text-ink">{dueTomorrow ? t('bb.ses.tomorrow', { n: dueTomorrow }) : t('bb.ses.tomorrow_none')}</p>
+          {ticked === 'ok' && (
+            <p className="mt-3 text-body text-ink" data-hook="bb-done-ticked">
+              ✓ {t('bb.ses.ticked')}
+            </p>
+          )}
+          {ticked === 'failed' && <Note tone="error" className="mt-3">{t('bb.ses.tick_failed')}</Note>}
+          {variants && (
+            <p className="mt-3 flex items-center gap-2 text-small text-ink" data-hook="bb-done-variants" aria-live="polite">
+              {variants.busy ? (
+                <>
+                  <Spinner />
+                  {t('bb.ses.varying', { n: variants.of })}
+                </>
+              ) : variants.added ? (
+                `✓ ${t('bb.ses.varied', { n: variants.added })}`
+              ) : (
+                t('bb.ses.varied_none')
+              )}
+            </p>
+          )}
           {offline && <Note className="mt-4">{t('bb.ses.offline')}</Note>}
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
             <Link to={`/bb/cours/${id}`} className="btn press bg-[#FF007A] text-[1.1875rem] font-bold text-white hover:opacity-90 sm:w-auto sm:px-8" data-hook="bb-done-back">
@@ -380,6 +453,7 @@ export default function Session() {
         {concept ? ` · ${concept.name}` : ''}
       </p>
       {entry.reason === 'pretest' && <Note className="mt-3">{t('bb.ses.pretest')}</Note>}
+      {item.variant_of && <p className="mt-2 text-small font-semibold text-ink" data-hook="bb-variant">↻ {t('bb.ses.variant')}</p>}
 
       {marked ? (
         <>
