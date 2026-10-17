@@ -5266,5 +5266,20 @@ ok(
   ok('CLAUDE.md gives the same command', /VITE_SUPABASE_URL=http:\/\/localhost:54321 VITE_SUPABASE_ANON_KEY=stub-anon npm run build && npm run sweep/.test(read('CLAUDE.md')))
 }
 
+/* "Est-ce que je peux avoir un raccourci dans Rich and Friends qui me renvoie
+   sur Hakkilo ?" (Kee). The study app's icon beside the bell, in the top bar
+   on a phone and at the foot of the rail above md: measured in Chromium, one
+   link on screen at 320, 390, 820, 1180 and 1440, 36px or more, no sideways
+   scroll, and a tap lands on /hakkilo/app. */
+{
+  const shell = code('src/components/AppShell.jsx')
+  const top = shell.slice(shell.indexOf('function TopNav'), shell.indexOf('const activeIndex'))
+  const rail = shell.slice(shell.indexOf('function SideRail'), shell.indexOf('function TabBar'))
+  ok('the top bar has the Hakkilo shortcut, beside the bell', /<HakkiloLink \/>\s*<NotificationBell \/>/.test(top))
+  ok('and so does the rail, above its bell', /<HakkiloLink placement="rail" \/>\s*<NotificationBell placement="rail" \/>/.test(rail))
+  ok('it goes to Hakkilo and is named for it', /to="\/hakkilo\/app"\s*aria-label="Hakkilo"/.test(shell) && /data-hook="to-hakkilo"/.test(shell))
+  ok('a link and nothing else: the shell imports nothing from src/bb', !/from '\.\.\/bb\//.test(shell))
+}
+
 console.log(`\n  ${pass} passed, ${fail} failed\n`)
 process.exit(fail ? 1 : 0)
