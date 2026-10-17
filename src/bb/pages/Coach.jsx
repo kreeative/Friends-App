@@ -200,7 +200,12 @@ export default function Coach() {
 
       {error && <Note tone="error" className="mt-4">{error}</Note>}
 
-      <div className="sticky bottom-28 z-20 mt-6 md:bottom-4">
+      {/* The page's ground under the box, down to the tab bar and the
+          screen's edge, with a short fade above it: the answers scrolled
+          through the gap between the box and the bar ("Le transport actif
+          consomme" under "Pose ta question"), the same fault as around the
+          bars (src/bb/BBShell.jsx). */}
+      <div className="sticky bottom-28 z-20 mt-6 before:pointer-events-none before:absolute before:-inset-x-4 before:-bottom-28 before:top-1/2 before:-z-10 before:bg-bg after:pointer-events-none after:absolute after:-inset-x-4 after:bottom-full after:h-6 after:bg-gradient-to-t after:from-bg after:to-bg/0 md:bottom-4">
         <Composer
           value={draft}
           onChange={setDraft}

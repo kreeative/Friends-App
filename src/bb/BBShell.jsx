@@ -73,11 +73,31 @@ const ICONS = { today: IconToday, courses: IconCourses, coach: IconCoach, plan: 
 
 const activeIndex = (pathname) => TABS.findIndex((tab) => pathname === tab.to || pathname.startsWith(`${tab.to}/`))
 
+/**
+ * THE GROUND AROUND THE FLOATING BARS.
+ *
+ * "Quelques problemes d'agencement" (Kee, two screenshots of the plan on an
+ * iPhone): the bars float, and what scrolled past them showed in the gaps.
+ * Above the top bar the list ran under the clock ("9:24" over "Thu 29 Oct"),
+ * and under the tab bar the next card showed between the bar and Safari's
+ * buttons. Measured at 390px: 305 and 514 pixels of text above the bar,
+ * 239 under the tab bar. The page draws under the status bar and the
+ * browser's controls (viewport-fit=cover), so the gaps reach the screen's
+ * edges.
+ *
+ * So the gaps are the page's own ground, white, out to and past the edge:
+ * the top bar's strip continues upward, the tab bar's down past the
+ * viewport, where iOS still draws the page. The bars still float, and what
+ * scrolls goes behind them and nowhere else.
+ */
 function TopBar() {
   const { profile } = useAuth()
   const { t } = useT()
   return (
-    <header className="sticky top-0 z-40 px-4 pt-4 md:hidden" data-hook="bb-topbar">
+    <header
+      className="sticky top-0 z-40 bg-bg px-4 pt-[max(1rem,env(safe-area-inset-top))] before:pointer-events-none before:absolute before:inset-x-0 before:bottom-full before:h-[50vh] before:bg-bg md:hidden"
+      data-hook="bb-topbar"
+    >
       <nav className="lg lg-chrome mx-auto w-full max-w-content" aria-label={t('bb.nav.primary')}>
         <div className="flex items-center gap-2.5 px-3 py-2.5">
           <Link to="/hakkilo/app" aria-label={t('bb.nav.home')} className="press flex shrink-0 items-center gap-2" data-hook="bb-home">
@@ -148,28 +168,38 @@ function TabBar() {
   const active = activeIndex(pathname)
   const { ref, box } = useSlider(TABS[active]?.to ?? null)
   return (
-    <nav className="fixed inset-x-4 bottom-4 z-30 mx-auto max-w-content md:hidden" data-hook="tab-bar" aria-label={t('bb.nav.primary')} style={{ marginBottom: 'env(safe-area-inset-bottom)' }}>
-      <div className="lg lg-chrome">
-        <div ref={ref} className="relative flex gap-0.5 p-1.5">
-          <Slider box={box} className="lg-pill" />
-          {TABS.slice(0, 4).map((tab, i) => {
-            const Icon = ICONS[tab.icon]
-            return (
-              <NavLink
-                key={tab.to}
-                to={tab.to}
-                aria-label={t(tab.key)}
-                data-active={i === active}
-                className={() => `press relative z-10 flex min-w-0 items-center justify-center gap-1.5 rounded-pill px-2 py-3 transition-[flex-grow,color] duration-300 ease-settle ${i === active ? 'flex-none px-3.5 text-ink' : 'flex-1 text-ink/70'}`}
-              >
-                <Icon className="h-5 w-5 shrink-0" />
-                {i === active && <span className="whitespace-nowrap text-[0.8125rem] leading-none">{t(tab.key)}</span>}
-              </NavLink>
-            )
-          })}
+    <>
+      {/* The ground under the bar, from its middle to past the bottom of the
+          screen (see TopBar): the bar is 56px tall and sits 16px up. */}
+      <div
+        aria-hidden="true"
+        data-hook="bb-tab-ground"
+        className="pointer-events-none fixed inset-x-0 z-20 bg-bg md:hidden"
+        style={{ bottom: '-6rem', height: 'calc(6rem + 2.75rem + env(safe-area-inset-bottom))' }}
+      />
+      <nav className="fixed inset-x-4 bottom-4 z-30 mx-auto max-w-content md:hidden" data-hook="tab-bar" aria-label={t('bb.nav.primary')} style={{ marginBottom: 'env(safe-area-inset-bottom)' }}>
+        <div className="lg lg-chrome">
+          <div ref={ref} className="relative flex gap-0.5 p-1.5">
+            <Slider box={box} className="lg-pill" />
+            {TABS.slice(0, 4).map((tab, i) => {
+              const Icon = ICONS[tab.icon]
+              return (
+                <NavLink
+                  key={tab.to}
+                  to={tab.to}
+                  aria-label={t(tab.key)}
+                  data-active={i === active}
+                  className={() => `press relative z-10 flex min-w-0 items-center justify-center gap-1.5 rounded-pill px-2 py-3 transition-[flex-grow,color] duration-300 ease-settle ${i === active ? 'flex-none px-3.5 text-ink' : 'flex-1 text-ink/70'}`}
+                >
+                  <Icon className="h-5 w-5 shrink-0" />
+                  {i === active && <span className="whitespace-nowrap text-[0.8125rem] leading-none">{t(tab.key)}</span>}
+                </NavLink>
+              )
+            })}
+          </div>
         </div>
-      </div>
-    </nav>
+      </nav>
+    </>
   )
 }
 
@@ -219,16 +249,20 @@ function AppFooter() {
   )
 }
 
-/** The title of a page, with the line under it. */
+/**
+ * The title of a page, with the line under it. What sits on its right goes
+ * under it when both do not fit: beside "+ New course" at 390px, "Your
+ * courses" broke into two lines of title.
+ */
 export function PageHead({ eyebrow, title, sub, right }) {
   return (
-    <header className="flex items-start justify-between gap-4 pb-2 pt-8 md:pt-12">
+    <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 pb-2 pt-8 md:pt-12">
       <div className="min-w-0">
         {eyebrow && <p className="eyebrow">{eyebrow}</p>}
         <h1 className="mt-1 text-h1 text-ink">{title}</h1>
         {sub && <p className="lede mt-2 max-w-[56ch]">{sub}</p>}
       </div>
-      {right && <div className="shrink-0 pt-1">{right}</div>}
+      {right && <div className="shrink-0">{right}</div>}
     </header>
   )
 }

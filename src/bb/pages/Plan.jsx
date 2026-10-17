@@ -219,7 +219,7 @@ export default function Plan() {
         <ul className="card-grid mt-6" data-hook="bb-plan-exams">
           {exams.map(({ course: c, exam: e }) => (
             <li key={`${c.id}:${e.id}`} className="lg p-5" data-hook="bb-plan-exam">
-              <div className="flex items-start justify-between gap-3">
+              <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
                 <Link to={`/hakkilo/cours/${c.id}`} className="text-body font-bold text-ink underline-offset-4 hover:underline">
                   {c.name}
                 </Link>
@@ -244,9 +244,13 @@ export default function Plan() {
               const at = slots.get(d.date) ?? []
               const none = missing.get(d.date) ?? []
               return (
-                <li key={d.date} className={`flex flex-wrap items-baseline gap-x-4 gap-y-1 rounded-inner px-4 py-3 ${i === 0 ? 'bg-[#F4F4F5]' : 'bg-surface'}`} data-hook="bb-plan-day">
-                  <span className="w-28 shrink-0 text-small font-bold capitalize text-ink">{i === 0 ? t('bb.plan.today') : date.toLocaleDateString(localeTag(locale), { weekday: 'short', day: 'numeric', month: 'short' })}</span>
-                  <span className="min-w-0 flex-1 space-y-0.5 text-small text-ink">
+                /* On a phone the day sits above its line and the line has the
+                   whole width: beside a 7rem date column it had 182px at
+                   390, and every study day ran to three lines next to an
+                   empty column. Two columns from sm, where there is room. */
+                <li key={d.date} className={`grid gap-y-0.5 rounded-inner px-4 py-3 sm:grid-cols-[7rem_minmax(0,1fr)] sm:gap-x-4 ${i === 0 ? 'bg-[#F4F4F5]' : 'bg-surface'}`} data-hook="bb-plan-day">
+                  <span className="text-small font-bold capitalize text-ink">{i === 0 ? t('bb.plan.today') : date.toLocaleDateString(localeTag(locale), { weekday: 'short', day: 'numeric', month: 'short' })}</span>
+                  <span className="min-w-0 space-y-0.5 text-small text-ink">
                     {(d.exams ?? []).map((ex) => (
                       <span key={`${ex.course_id}:${ex.kind}:${ex.n}`} className="block font-bold">
                         {t('bb.plan.exam_day', { exam: examName(t, ex), name: name.get(ex.course_id) ?? '' })}
@@ -260,9 +264,19 @@ export default function Plan() {
                         return (
                           <span key={k} className="block">
                             {it.kind === 'mock' ? '⏱ ' : ''}
-                            {kindText(it.kind)}
-                            {it.exam ? ` · ${examName(t, it.exam)}` : ''} · {name.get(it.course_id)} · {t('bb.plan.minutes', { n: it.minutes })}
-                            {slot ? ` · ${t('bb.plan.span', { a: timeOf(slot.start_min), b: timeOf(slot.end_min) })}` : ''}
+                            {/* Each dot keeps to the word before it (a no-break
+                                space), so a line ends on "80 min ·" instead of
+                                the next one starting with "·"; and "35 min"
+                                stays whole. */}
+                            {[
+                              kindText(it.kind),
+                              it.exam ? examName(t, it.exam) : null,
+                              name.get(it.course_id),
+                              t('bb.plan.minutes', { n: it.minutes }).replace(/ /g, ' '),
+                              slot ? t('bb.plan.span', { a: timeOf(slot.start_min), b: timeOf(slot.end_min) }) : null,
+                            ]
+                              .filter(Boolean)
+                              .join(' · ')}
                           </span>
                         )
                       })
@@ -280,15 +294,19 @@ export default function Plan() {
         <section className="lg mt-8 p-5 sm:p-6" data-hook="bb-plan-calendar">
           <h2 className="text-h2 text-ink">{t('bb.plan.cal_title')}</h2>
           <p className="mt-2 text-body text-ink">{t('bb.plan.cal_lede')}</p>
-          <div className="mt-4 flex flex-wrap items-end gap-3">
-            <label className="text-small font-semibold text-ink">
+          {/* One sentence, "I study from 6:00 PM to 10:00 PM". On a phone it
+              does not fit on a line, and wrapping it put "to" and its field
+              under the first one, out of line: a stair. So below sm the two
+              fields stand one under the other, each word against its own. */}
+          <div className="mt-4 grid w-max grid-cols-[auto_auto] items-center gap-x-3 gap-y-2 sm:flex sm:w-auto sm:flex-wrap">
+            <label htmlFor="bb-plan-from" className="text-right text-small font-semibold text-ink">
               {t('bb.plan.from')}
-              <input type="time" className="field mt-1 w-auto" value={from ?? ''} step={900} onChange={(e) => setFrom(e.target.value)} data-hook="bb-plan-from" />
             </label>
-            <label className="text-small font-semibold text-ink">
+            <input id="bb-plan-from" type="time" className="field w-auto" value={from ?? ''} step={900} onChange={(e) => setFrom(e.target.value)} data-hook="bb-plan-from" />
+            <label htmlFor="bb-plan-to" className="text-right text-small font-semibold text-ink">
               {t('bb.plan.to')}
-              <input type="time" className="field mt-1 w-auto" value={to ?? ''} step={900} onChange={(e) => setTo(e.target.value)} data-hook="bb-plan-to" />
             </label>
+            <input id="bb-plan-to" type="time" className="field w-auto" value={to ?? ''} step={900} onChange={(e) => setTo(e.target.value)} data-hook="bb-plan-to" />
           </div>
           {!roomy && <Note tone="error" className="mt-3">{t('bb.plan.window_short')}</Note>}
           {placement && (

@@ -152,16 +152,19 @@ export default function Course() {
       <Processing proc={proc} materials={data.materials} chapters={data.chapters} statusReady={status?.ready?.model} />
 
       <section className="lg mt-6 p-5" data-hook="bb-course-main">
+        {/* The three numbers sit on one line at the foot of their columns:
+            "Sure but wrong" takes two lines at 390, and its number used to
+            drop a line below the other two. */}
         <dl className="grid grid-cols-3 gap-3">
-          <div>
+          <div className="flex flex-col justify-between">
             <dt className="text-small text-muted">{t('bb.course.due')}</dt>
             <dd className="text-[1.75rem] font-bold tabular-nums text-ink">{view.due}</dd>
           </div>
-          <div>
+          <div className="flex flex-col justify-between">
             <dt className="text-small text-muted">{t('bb.course.mastery')}</dt>
             <dd className="text-[1.75rem] font-bold tabular-nums text-ink">{view.all.pct}%</dd>
           </div>
-          <div>
+          <div className="flex flex-col justify-between">
             <dt className="text-small text-muted">⚑ {t('bb.course.sure_wrong')}</dt>
             <dd className="text-[1.75rem] font-bold tabular-nums text-ink">{view.sureWrong}</dd>
           </div>

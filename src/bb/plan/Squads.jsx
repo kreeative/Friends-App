@@ -91,8 +91,11 @@ export default function Squads() {
                 </label>
                 {on && board && !board.error && (
                   <ol className="mt-4 space-y-2" data-hook="bb-squad-board" aria-label={t('bb.squad.board', { name: g.name })}>
+                    {/* On a phone every row is the name over its numbers: left
+                        to wrap on their own, two rows broke and the third
+                        did not ("Ines  40 min" beside "Maya" over hers). */}
                     {board.map((m, i) => (
-                      <li key={m.user_id} className={`flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 rounded-inner px-3 py-2 text-small text-ink ${m.me ? 'bg-[#E4E4E7]' : 'bg-[#F4F4F5]'}`}>
+                      <li key={m.user_id} className={`grid gap-y-0.5 rounded-inner px-3 py-2 text-small text-ink sm:flex sm:flex-wrap sm:items-baseline sm:justify-between sm:gap-x-3 ${m.me ? 'bg-[#E4E4E7]' : 'bg-[#F4F4F5]'}`}>
                         <span className="font-semibold">
                           {i + 1}. {m.name}
                           {m.me ? ` (${t('bb.squad.you')})` : ''}

@@ -118,6 +118,19 @@ and the error points at the wrong thing.
   `.btn`, `.btn-primary`, `.btn-ghost`, `.btn-outline` and the
   `.goal-action-*` pills; a button outside those families says it with
   `disabled:bg-[#E4E4E7] disabled:text-[#52525B]`.
+- **Nothing shows in the gaps around Hakkilo's floating bars.** "Quelques
+  problemes d'agencement" (Kee, the plan on an iPhone): the days ran under
+  the clock above the top bar, and between the tab bar and Safari's
+  buttons. The page draws under both (`viewport-fit=cover`), so the bars
+  sit on the page's own ground out to and past the screen's edge
+  (`src/bb/BBShell.jsx`), and the coach's box carries it down to the tab
+  bar. Measured on every Hakkilo page: 0 pixels of content in either gap.
+- **On a phone a line keeps the width.** A label column beside text (a day
+  of the plan, a squad's row) puts the label over its line below `sm`, two
+  columns from `sm`; a 7rem column left a study day 182px and three lines
+  at 390. A chip never breaks onto two lines: the row around it wraps the
+  chip under the name instead. A title and its button: the button goes
+  under, not the title onto two lines.
 - **Hakkilo is black and white, and colour arrives with an event.**
   "Instead of blue or pink theme can we go for a more straightforward theme
   like black and white", then "just black and white background" and "keep
