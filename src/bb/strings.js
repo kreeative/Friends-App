@@ -1,5 +1,6 @@
 /**
- * Every Beauty & Brain string, in both languages.
+ * Every Nerd string, in both languages (the app was Beauty & Brain, so the
+ * keys still start with bb.).
  *
  * Merged into the app's dictionary by src/lib/i18n.jsx, so t('bb.today.title')
  * works everywhere and the language follows the account, like the rest of
@@ -13,8 +14,8 @@
 const N = ' '
 
 const fr = {
-  'bb.name': 'Beauty & Brain',
-  'bb.line': `Pas besoin de choisir.`,
+  'bb.name': 'Nerd',
+  'bb.line': 'Révise comme une nerd.',
   'bb.by': 'Par l’équipe Rich & Friends',
   'bb.loading': 'Chargement',
   'bb.switch.body': 'Ton coach d’étude, avec le même compte.',
@@ -25,10 +26,10 @@ const fr = {
   'bb.nav.coach': 'Coach',
   'bb.nav.plan': 'Plan',
   'bb.nav.profile': 'Profil',
-  'bb.nav.primary': 'Navigation Beauty & Brain',
+  'bb.nav.primary': 'Navigation Nerd',
   'bb.nav.switch': 'Aller sur Rich & Friends',
   'bb.nav.switch_short': 'R&F',
-  'bb.nav.home': 'Accueil Beauty & Brain',
+  'bb.nav.home': 'Accueil Nerd',
 
   /* Public pages */
   'bb.pub.pricing': 'Tarifs',
@@ -36,8 +37,8 @@ const fr = {
   'bb.pub.open': 'Ouvrir l’app',
   'bb.pub.start_free': 'Commencer gratuitement',
   'bb.pub.see_pricing': 'Voir les tarifs',
-  'bb.land.title': 'Pas besoin de choisir.',
-  'bb.land.mark': 'choisir',
+  'bb.land.title': 'Révise comme une nerd.',
+  'bb.land.mark': 'nerd',
   'bb.land.lede': 'Ton coach d’étude transforme TES diapos, TES notes et TES anciens examens en questions de niveau examen. Puis il te fait pratiquer un peu chaque jour, jusqu’au jour\u00a0J.',
   'bb.land.note': 'Gratuit pour un cours. Sans carte.',
   'bb.land.how_title': 'Comment ça marche',
@@ -64,7 +65,7 @@ const fr = {
   'bb.land.grounded_title': 'Ton cours. Pas Internet.',
   'bb.land.grounded_body': `Ce que ta prof dit fait foi pour ton examen. Chaque définition, chaque question et chaque correction pointe vers l’endroit exact de ta matière. Ce qui n’y est pas est marqué «${N}Pas dans ton cours${N}».`,
   'bb.land.grounded_chip': 'Cours 7 · diapo 6',
-  'bb.land.beauty_title': 'Le côté Beauty',
+  'bb.land.beauty_title': 'Le côté bien-être',
   'bb.land.beauty_body': `Des plans réalistes, des pauses, et dormir avant l’examen. La confiance qui vient des preuves: «${N}juste 3 fois, 3 jours différents${N}». Jamais de honte.`,
   'bb.land.close_title': 'Ton prochain examen commence aujourd’hui.',
   'bb.land.close_body': 'Un compte Rich & Friends marche ici aussi. Pas besoin de t’inscrire deux fois.',
@@ -106,7 +107,7 @@ const fr = {
 
   /* Sign in */
   'bb.signin.title': 'Connecte-toi',
-  'bb.signin.body': 'Un seul compte pour Beauty & Brain et Rich & Friends.',
+  'bb.signin.body': 'Un seul compte pour Nerd et Rich & Friends.',
 
   /* Onboarding */
   'bb.onb.step': 'Étape {n} sur {total}',
@@ -116,7 +117,7 @@ const fr = {
   'bb.onb.skip': 'Passer',
   'bb.onb.saving': 'J’enregistre',
   'bb.onb.terms_title': 'Avant de commencer',
-  'bb.onb.terms_body': 'Beauty & Brain utilise ton compte Rich & Friends et ses conditions. Tes fichiers restent privés: personne d’autre ne les lit, même pas nous.',
+  'bb.onb.terms_body': 'Nerd utilise ton compte Rich & Friends et ses conditions. Tes fichiers restent privés: personne d’autre ne les lit, même pas nous.',
   'bb.onb.terms_accept': 'J’accepte les conditions',
   'bb.onb.name_title': `Comment tu t’appelles${N}?`,
   'bb.onb.name_label': 'Ton prénom',
@@ -683,16 +684,16 @@ const fr = {
   'bb.prof.rf': 'Avec Rich & Friends',
   'bb.prof.checkin': 'Mes séances cochent mon objectif Rich & Friends',
   'bb.prof.checkin_sub': `Chaque séance terminée coche «${N}{goal}${N}» pour la journée, du lundi au samedi. Le dimanche, c’est repos.`,
-  'bb.prof.checkin_goal': 'Étudier avec Beauty & Brain',
+  'bb.prof.checkin_goal': 'Étudier avec Nerd',
   'bb.prof.checkin_failed': 'Le lien avec ton objectif n’a pas marché. Réessaie.',
   'bb.err.no_source': 'Ce cours n’a pas encore assez de matière lue pour ça. Ajoute un fichier ou relis-le.',
 
-  /* The TikTok page, /bb/go */
+  /* The TikTok page, /nerd/go */
   'bb.go.hi': `Tu as vu la vidéo${N}?`,
   'bb.go.hi_tiktok': `Salut TikTok${N}!`,
   'bb.go.hi_instagram': `Salut Instagram${N}!`,
   'bb.go.title': 'Révise avec TES diapos.',
-  'bb.go.lede': `Dépose ton cours. Beauty & Brain en fait des questions d’examen vérifiées, 15 minutes par jour au bon moment, et un coach qui cite ta prof. Pas internet${N}: ta prof.`,
+  'bb.go.lede': `Dépose ton cours. Nerd en fait des questions d’examen vérifiées, 15 minutes par jour au bon moment, et un coach qui cite ta prof. Pas internet${N}: ta prof.`,
   'bb.go.free': 'Gratuit pour un cours, sans carte.',
   'bb.go.r1_t': 'Tes fichiers deviennent des questions',
   'bb.go.r1_b': `PDF, PowerPoint, notes, photos du tableau${N}: on en tire des questions de niveau examen, vérifiées une par une.`,
@@ -710,12 +711,12 @@ const fr = {
   'bb.go.demo_o4': 'Le sel entre à sa place',
   'bb.go.demo_chip': 'Cours 3 · diapo 12',
   'bb.go.close': 'Ton prochain examen, mais prête.',
-  'bb.go.more': 'Tout savoir sur Beauty & Brain',
+  'bb.go.more': 'Tout savoir sur Nerd',
 }
 
 const en = {
-  'bb.name': 'Beauty & Brain',
-  'bb.line': 'You don’t have to pick.',
+  'bb.name': 'Nerd',
+  'bb.line': 'Study like a nerd.',
   'bb.by': 'By the Rich & Friends team',
   'bb.loading': 'Loading',
   'bb.switch.body': 'Your study coach, same account.',
@@ -725,18 +726,18 @@ const en = {
   'bb.nav.coach': 'Coach',
   'bb.nav.plan': 'Plan',
   'bb.nav.profile': 'Profile',
-  'bb.nav.primary': 'Beauty & Brain navigation',
+  'bb.nav.primary': 'Nerd navigation',
   'bb.nav.switch': 'Go to Rich & Friends',
   'bb.nav.switch_short': 'R&F',
-  'bb.nav.home': 'Beauty & Brain home',
+  'bb.nav.home': 'Nerd home',
 
   'bb.pub.pricing': 'Pricing',
   'bb.pub.signin': 'Sign in',
   'bb.pub.open': 'Open the app',
   'bb.pub.start_free': 'Start for free',
   'bb.pub.see_pricing': 'See pricing',
-  'bb.land.title': 'You don’t have to pick.',
-  'bb.land.mark': 'pick',
+  'bb.land.title': 'Study like a nerd.',
+  'bb.land.mark': 'nerd',
   'bb.land.lede': 'Your study coach turns YOUR slides, YOUR notes and YOUR past exams into exam-level questions. Then it has you practise a little every day, all the way to exam day.',
   'bb.land.note': 'Free for one course. No card.',
   'bb.land.how_title': 'How it works',
@@ -763,7 +764,7 @@ const en = {
   'bb.land.grounded_title': 'Your course. Not the internet.',
   'bb.land.grounded_body': 'What your professor says is the truth for your exam. Every definition, question and correction points to the exact place in your material. Anything that isn’t there is marked “Not in your slides”.',
   'bb.land.grounded_chip': 'Lecture 7 · slide 6',
-  'bb.land.beauty_title': 'The Beauty side',
+  'bb.land.beauty_title': 'The wellbeing side',
   'bb.land.beauty_body': 'Realistic plans, breaks, and sleep before the exam. Confidence built on evidence: “right 3 times, on 3 different days”. Never shame.',
   'bb.land.close_title': 'Your next exam starts today.',
   'bb.land.close_body': 'A Rich & Friends account works here too. No need to sign up twice.',
@@ -803,7 +804,7 @@ const en = {
   'bb.price.cancelled': 'Payment cancelled. Nothing was charged.',
 
   'bb.signin.title': 'Sign in',
-  'bb.signin.body': 'One account for Beauty & Brain and Rich & Friends.',
+  'bb.signin.body': 'One account for Nerd and Rich & Friends.',
 
   'bb.onb.step': 'Step {n} of {total}',
   'bb.onb.next': 'Continue',
@@ -812,7 +813,7 @@ const en = {
   'bb.onb.skip': 'Skip',
   'bb.onb.saving': 'Saving',
   'bb.onb.terms_title': 'Before we start',
-  'bb.onb.terms_body': 'Beauty & Brain uses your Rich & Friends account and its terms. Your files stay private: nobody else reads them, not even us.',
+  'bb.onb.terms_body': 'Nerd uses your Rich & Friends account and its terms. Your files stay private: nobody else reads them, not even us.',
   'bb.onb.terms_accept': 'I accept the terms',
   'bb.onb.name_title': 'What’s your name?',
   'bb.onb.name_label': 'Your first name',
@@ -1363,16 +1364,16 @@ const en = {
   'bb.prof.rf': 'With Rich & Friends',
   'bb.prof.checkin': 'My sessions tick my Rich & Friends goal',
   'bb.prof.checkin_sub': 'Each finished session ticks “{goal}” for the day, Monday to Saturday. Sunday is a rest day.',
-  'bb.prof.checkin_goal': 'Study with Beauty & Brain',
+  'bb.prof.checkin_goal': 'Study with Nerd',
   'bb.prof.checkin_failed': 'Linking your goal didn’t work. Try again.',
   'bb.err.no_source': 'This course does not have enough material read for that yet. Add a file or read it again.',
 
-  /* The TikTok page, /bb/go */
+  /* The TikTok page, /nerd/go */
   'bb.go.hi': 'Saw the video?',
   'bb.go.hi_tiktok': 'Hi TikTok!',
   'bb.go.hi_instagram': 'Hi Instagram!',
   'bb.go.title': 'Study from YOUR slides.',
-  'bb.go.lede': 'Drop in your course. Beauty & Brain turns it into checked, exam-level questions, 15 minutes a day at the right moment, and a coach that quotes your professor. Not the internet: your professor.',
+  'bb.go.lede': 'Drop in your course. Nerd turns it into checked, exam-level questions, 15 minutes a day at the right moment, and a coach that quotes your professor. Not the internet: your professor.',
   'bb.go.free': 'Free for one course, no card.',
   'bb.go.r1_t': 'Your files become questions',
   'bb.go.r1_b': 'PDFs, PowerPoints, notes, photos of the board: they become exam-level questions, each one checked.',
@@ -1390,7 +1391,7 @@ const en = {
   'bb.go.demo_o4': 'The salt moves in instead',
   'bb.go.demo_chip': 'Lecture 3 · slide 12',
   'bb.go.close': 'Your next exam, but ready.',
-  'bb.go.more': 'Everything about Beauty & Brain',
+  'bb.go.more': 'Everything about Nerd',
 }
 
 export const BB_STRINGS = { fr, en }

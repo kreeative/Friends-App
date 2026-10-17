@@ -12,7 +12,7 @@ import { ExamChip, weekText } from '../kit'
 import { AskBar } from '../Composer'
 
 /**
- * /bb/app: today. "Due today" is the main button (section 3.2): one per
+ * /nerd/app: today. "Due today" is the main button (section 3.2): one per
  * course, nearest exam first, with the session length picked once above.
  *
  * The Beauty line comes first and is about the person, not the score: the
@@ -35,7 +35,7 @@ export default function Today() {
   const [minutes, setMinutes] = useState(15)
   const [due, setDue] = useState(null)
   const [week, setWeek] = useState(null)
-  usePageMeta({ title: `${t('bb.today.title')} · Beauty & Brain` })
+  usePageMeta({ title: `${t('bb.today.title')} · Nerd` })
 
   useEffect(() => {
     let live = true
@@ -98,7 +98,7 @@ export default function Today() {
             {week.course_id && (
               <>
                 {' '}
-                <Link to={`/bb/cours/${week.course_id}/erreurs`} className="font-semibold underline underline-offset-4">
+                <Link to={`/nerd/cours/${week.course_id}/erreurs`} className="font-semibold underline underline-offset-4">
                   {t('bb.calib.week_go')}
                 </Link>
               </>
@@ -111,7 +111,7 @@ export default function Today() {
         <section className="lg mt-6 p-6" data-hook="bb-empty">
           <h2 className="text-h2 text-ink">{t('bb.today.empty_title')}</h2>
           <p className="mt-2 text-body text-muted">{t('bb.today.empty_body')}</p>
-          <Link to="/bb/cours/nouveau" className="btn press mt-6 w-auto bg-ink px-8 font-bold text-white hover:opacity-90" data-hook="bb-add-first">
+          <Link to="/nerd/cours/nouveau" className="btn press mt-6 w-auto bg-ink px-8 font-bold text-white hover:opacity-90" data-hook="bb-add-first">
             {t('bb.today.add_course')}
           </Link>
         </section>
@@ -127,7 +127,7 @@ export default function Today() {
               const items = due?.items.get(c.id) ?? 0
               return (
                 <li key={c.id} className="lg flex flex-col p-5" data-card="bb-course">
-                  <Link to={`/bb/cours/${c.id}`} className="break-words text-body font-bold text-ink underline-offset-4 hover:underline">
+                  <Link to={`/nerd/cours/${c.id}`} className="break-words text-body font-bold text-ink underline-offset-4 hover:underline">
                     {c.name}
                   </Link>
                   {c.code && <p className="text-small text-muted">{c.code}</p>}
@@ -137,14 +137,14 @@ export default function Today() {
                   </p>
                   {items > 0 ? (
                     <Link
-                      to={`/bb/session/${c.id}?m=${minutes}`}
+                      to={`/nerd/session/${c.id}?m=${minutes}`}
                       data-hook="bb-start"
                       className={`btn press mt-4 text-center font-bold ${i === 0 ? 'bg-ink text-white hover:opacity-90' : 'btn-ghost'}`}
                     >
                       {t('bb.today.start', { n: minutes })}
                     </Link>
                   ) : (
-                    <Link to={`/bb/cours/${c.id}`} className="btn-ghost press mt-4">
+                    <Link to={`/nerd/cours/${c.id}`} className="btn-ghost press mt-4">
                       {t('bb.proc.title')}
                     </Link>
                   )}

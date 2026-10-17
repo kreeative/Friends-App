@@ -1,38 +1,39 @@
 import { escapeHtml, previewLocale } from '../invite-preview.js'
 
 /**
- * GET /api/bb/preview?p=  the link preview of Beauty & Brain.
+ * GET /api/bb/preview?p=  the link preview of Nerd (Beauty & Brain before
+ * the rename; the route keeps its bb name).
  *
  * Every path is served the same index.html, whose tags describe Rich &
- * Friends; a crawler runs no JavaScript, so a /bb link pasted in a message
+ * Friends; a crawler runs no JavaScript, so a /nerd link pasted in a message
  * showed the R&F card. vercel.json sends the crawlers' user agents here for
- * /bb, /bb/tarifs and /bb/go, the link in a TikTok or Instagram bio (like
+ * /nerd, /nerd/tarifs and /nerd/go, the link in a TikTok or Instagram bio (like
  * /join/:code to api/invite-preview.js); a person who lands here anyway is
  * sent on to the page.
  */
 const ORIGIN = 'https://richandfriends.xyz'
-const IMAGE = `${ORIGIN}/brand/bb-og.png`
+const IMAGE = `${ORIGIN}/brand/nerd-og.png`
 
 const COPY = {
   fr: {
-    title: 'Beauty & Brain · Pas besoin de choisir.',
-    pricing: 'Beauty & Brain · Les tarifs',
-    go: 'Beauty & Brain · Révise avec TES diapos',
+    title: 'Nerd · Révise comme une nerd.',
+    pricing: 'Nerd · Les tarifs',
+    go: 'Nerd · Révise avec TES diapos',
     description: 'Ton coach d’étude transforme tes diapos, tes notes et tes anciens examens en questions de niveau examen. Puis 15 minutes par jour jusqu’au jour J. Gratuit pour un cours.',
-    open: 'Ouvrir Beauty & Brain',
+    open: 'Ouvrir Nerd',
   },
   en: {
-    title: 'Beauty & Brain · You don’t have to pick.',
-    pricing: 'Beauty & Brain · Pricing',
-    go: 'Beauty & Brain · Study from YOUR slides',
+    title: 'Nerd · Study like a nerd.',
+    pricing: 'Nerd · Pricing',
+    go: 'Nerd · Study from YOUR slides',
     description: 'Your study coach turns your slides, notes and past exams into exam-level questions. Then 15 minutes a day until exam day. Free for one course.',
-    open: 'Open Beauty & Brain',
+    open: 'Open Nerd',
   },
 }
 
 export function bbPreviewHtml({ page = '', locale = 'fr' }) {
   const c = COPY[locale] ?? COPY.fr
-  const path = page === 'tarifs' ? '/bb/tarifs' : page === 'go' ? '/bb/go' : '/bb'
+  const path = page === 'tarifs' ? '/nerd/tarifs' : page === 'go' ? '/nerd/go' : '/nerd'
   const url = `${ORIGIN}${path}`
   const t = escapeHtml(page === 'tarifs' ? c.pricing : page === 'go' ? c.go : c.title)
   const d = escapeHtml(c.description)
@@ -45,14 +46,14 @@ export function bbPreviewHtml({ page = '', locale = 'fr' }) {
 <meta name="description" content="${d}" />
 <link rel="canonical" href="${url}" />
 <meta property="og:type" content="website" />
-<meta property="og:site_name" content="Beauty &amp; Brain" />
+<meta property="og:site_name" content="Nerd" />
 <meta property="og:title" content="${t}" />
 <meta property="og:description" content="${d}" />
 <meta property="og:url" content="${url}" />
 <meta property="og:image" content="${IMAGE}" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
-<meta property="og:image:alt" content="Beauty &amp; Brain" />
+<meta property="og:image:alt" content="Nerd" />
 <meta property="og:locale" content="${locale === 'en' ? 'en_GB' : 'fr_FR'}" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="${t}" />

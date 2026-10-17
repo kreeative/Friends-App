@@ -13,7 +13,7 @@ import { BigButton, Note } from '../kit'
 import { Choice } from './Onboarding'
 
 /**
- * /bb/cours/nouveau: one course, in the order of section 9.
+ * /nerd/cours/nouveau: one course, in the order of section 9.
  *
  *   1. which course: name, code, professor, language;
  *   2. when the exam is (or "I don't know yet");
@@ -37,7 +37,7 @@ export default function NewCourse() {
   const { courses, setCourses, status } = useBB()
   const navigate = useNavigate()
   const picker = useRef(null)
-  usePageMeta({ title: `${t('bb.new.title')} · Beauty & Brain` })
+  usePageMeta({ title: `${t('bb.new.title')} · Nerd` })
 
   const [step, setStep] = useState(0)
   const [form, setForm] = useState({ name: '', code: '', professor: '', language: locale === 'en' ? 'en' : 'fr', date: '', time: '09:00', unknown: false, types: [], count: '', minutes: '' })
@@ -105,7 +105,7 @@ export default function NewCourse() {
         /* the course exists; the text can be pasted again from the course */
       }
     }
-    navigate(`/bb/cours/${course.id}`, { replace: true })
+    navigate(`/nerd/cours/${course.id}`, { replace: true })
   }
 
   const steps = ['course', 'exam', 'format', 'files']
@@ -117,7 +117,7 @@ export default function NewCourse() {
         <PageHead title={t('bb.new.title')} />
         <Note className="mt-4">
           {t('bb.courses.limit')}{' '}
-          <Link to="/bb/tarifs" className="font-semibold underline underline-offset-4">
+          <Link to="/nerd/tarifs" className="font-semibold underline underline-offset-4">
             {t('bb.courses.upgrade')}
           </Link>
         </Note>

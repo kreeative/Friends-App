@@ -119,7 +119,7 @@ function OnboardingForm() {
         onboarded_at: bb?.onboarded_at ?? new Date().toISOString(),
       })
       setBB(row)
-      navigate(courses?.length ? '/bb/app' : '/bb/cours/nouveau', { replace: true })
+      navigate(courses?.length ? '/nerd/app' : '/nerd/cours/nouveau', { replace: true })
     } catch {
       setBusy(false)
       setError(t('bb.err.generic'))
@@ -132,7 +132,7 @@ function OnboardingForm() {
     <div className="ground relative min-h-dvh overflow-hidden" data-hook="app-shell" data-page="bb-onboarding">
       <main className="relative z-10 mx-auto flex min-h-dvh w-full max-w-[38rem] flex-col px-6 pb-14 pt-8">
         <div className="flex items-center justify-between gap-3">
-          <BBLogo layout="mono" className="h-10 w-auto" pad={0.2} />
+          <BBLogo layout="line" className="h-10 w-auto" pad={0.2} />
           <p className="text-small font-semibold text-muted" data-hook="onb-step">
             {t('bb.onb.step', { n: at + 1, total: steps.length })}
           </p>

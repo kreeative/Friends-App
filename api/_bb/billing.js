@@ -4,7 +4,8 @@ import { start, subscriptionOf } from './common.js'
 import { PAID, PRICES, tierOf } from '../../src/lib/bb/plans.js'
 
 /**
- * Beauty & Brain Plus, through Stripe Billing (section 13).
+ * Nerd Plus (Beauty & Brain Plus before the rename), through Stripe Billing
+ * (section 13).
  *
  *   POST /api/bb/checkout { plan, locale }  a Checkout session, subscription mode
  *   POST /api/bb/sync     { session_id? }   read the truth back from Stripe
@@ -91,12 +92,25 @@ export async function refreshFromStripe(db, userId, subscriptionId, stripe = str
   return writeSubscription(db, userId, subscription)
 }
 
+/* The name on the checkout page and on receipts. The product was made as
+   "Beauty & Brain Plus" before the app was renamed Nerd: the first checkout
+   after the rename renames it, and a failure there never blocks a payment. */
+const PRODUCT_NAME = 'Nerd Plus'
+
 async function product(stripe) {
   try {
-    return (await stripe.products.retrieve(PRODUCT_ID)).id
+    const found = await stripe.products.retrieve(PRODUCT_ID)
+    if (found.name !== PRODUCT_NAME) {
+      try {
+        await stripe.products.update(PRODUCT_ID, { name: PRODUCT_NAME })
+      } catch {
+        /* the old name on a receipt is not worth a failed checkout */
+      }
+    }
+    return found.id
   } catch (err) {
     if (err?.code !== 'resource_missing') throw err
-    const made = await stripe.products.create({ id: PRODUCT_ID, name: 'Beauty & Brain Plus', metadata: { product: 'bb' } })
+    const made = await stripe.products.create({ id: PRODUCT_ID, name: PRODUCT_NAME, metadata: { product: 'bb' } })
     return made.id
   }
 }

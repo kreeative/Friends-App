@@ -157,16 +157,16 @@ export default function Me() {
         </span>
       </Link>
 
-      {/* L'autre produit, meme compte: Beauty & Brain, l'etude (src/bb/). Un
-          lien et rien d'autre, aucune donnee B&B n'est lue ici. */}
+      {/* L'autre produit, meme compte: Nerd, l'etude (src/bb/, l'ancien Beauty &
+          Brain). Un lien et rien d'autre, aucune donnee de Nerd n'est lue ici. */}
       <Link
-        to="/bb/app"
+        to="/nerd/app"
         data-hook="to-bb"
         className="press mt-3 flex w-full items-center gap-3 rounded-card border border-hairline bg-[rgb(var(--glass-tint))] p-3 text-left shadow-raised"
       >
-        <img src="/brand/bb-icon-192.png" alt="" width="44" height="44" className="h-11 w-11 shrink-0 rounded-inner" />
+        <img src="/brand/nerd-icon-192.png" alt="" width="44" height="44" className="h-11 w-11 shrink-0 rounded-inner" />
         <span className="min-w-0 flex-1">
-          <span className="block text-body font-semibold text-ink">Beauty &amp; Brain</span>
+          <span className="block text-body font-semibold text-ink">Nerd</span>
           <span className="block text-small text-muted">{t('bb.switch.body')}</span>
         </span>
         <span aria-hidden="true" className="shrink-0 text-muted">

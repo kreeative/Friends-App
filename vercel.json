@@ -8,6 +8,11 @@
     "api/syllabus.js": { "maxDuration": 300 },
     "api/bb/[action].js": { "maxDuration": 300 }
   },
+  "redirects": [
+    { "source": "/bb", "destination": "/nerd", "permanent": true },
+    { "source": "/bb/:path*", "destination": "/nerd/:path*", "permanent": true },
+    { "source": "/bb.webmanifest", "destination": "/nerd.webmanifest", "permanent": true }
+  ],
   "rewrites": [
     {
       "source": "/cal/:token.ics",
@@ -24,17 +29,17 @@
       "destination": "/api/invite-preview?code=:code"
     },
     {
-      "source": "/bb",
+      "source": "/nerd",
       "has": [{ "type": "header", "key": "user-agent", "value": ".*(facebookexternalhit|Facebot|Twitterbot|WhatsApp|TelegramBot|Slackbot|Discordbot|LinkedInBot|SkypeUriPreview|redditbot|Embedly|vkShare|Iframely|Mastodon|Bluesky|Applebot).*" }],
       "destination": "/api/bb/preview"
     },
     {
-      "source": "/bb/tarifs",
+      "source": "/nerd/tarifs",
       "has": [{ "type": "header", "key": "user-agent", "value": ".*(facebookexternalhit|Facebot|Twitterbot|WhatsApp|TelegramBot|Slackbot|Discordbot|LinkedInBot|SkypeUriPreview|redditbot|Embedly|vkShare|Iframely|Mastodon|Bluesky|Applebot).*" }],
       "destination": "/api/bb/preview?p=tarifs"
     },
     {
-      "source": "/bb/go",
+      "source": "/nerd/go",
       "has": [{ "type": "header", "key": "user-agent", "value": ".*(facebookexternalhit|Facebot|Twitterbot|WhatsApp|TelegramBot|Slackbot|Discordbot|LinkedInBot|SkypeUriPreview|redditbot|Embedly|vkShare|Iframely|Mastodon|Bluesky|Applebot).*" }],
       "destination": "/api/bb/preview?p=go"
     },
