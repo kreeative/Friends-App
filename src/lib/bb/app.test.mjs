@@ -427,6 +427,38 @@ eq('the constant says so', SHORT, 8)
   ok('under the ask box, in the page\'s one column, at every width', /<Page>\s*<PageHead[^\n]*\/>\s*<AskBar courses=\{ordered\} className="mt-5" \/>\s*<section className="mt-4" aria-labelledby="bb-calendar-title" data-hook="bb-calendar">/.test(today) && !/lg:sticky|<Page wide/.test(today) && !/\.today-grid/.test(read('index.css')))
 }
 
+/* --- the Pomodoro ------------------------------------------------------------------- */
+{
+  /* "Un timer pomodoro sur la page d'accueil, qui peut te suivre sur toutes
+     tes pages comme une petite icone ... tout l'ecran devient violet ...
+     pendant la pause l'ecran devient jaune" (Kee), then "quand tu commences
+     une session, ca compte aussi comme un pomodoro". The arithmetic is in
+     pomodoro.test.mjs; this checks where it is wired. */
+  const read = (path) => readFileSync(new URL(`../../${path}`, import.meta.url), 'utf8')
+  const today = read('bb/pages/Today.jsx')
+  const shell = read('bb/BBShell.jsx')
+  const app = read('bb/BBApp.jsx')
+  const session = read('bb/pages/Session.jsx')
+  const exam = read('bb/pages/Exam.jsx')
+  const pomo = read('bb/Pomodoro.jsx')
+  const timer = read('bb/timer.js')
+  const sql = read('../supabase/83_bb_focus.sql')
+  ok('the card is on Today, under the calendar', /data-hook="bb-calendar">[\s\S]*?<\/section>\s*\{\/\*[\s\S]*?\*\/\}\s*<PomodoroCard className="mt-4" \/>/.test(today))
+  ok('the little clock follows: the top bar, the rail and a session\'s bar', /<PomodoroBadge \/>\s*<Link to="\/hakkilo\/profil"/.test(shell) && /<PomodoroBadge rail \/>/.test(shell) && /<PomodoroBadge\s+fallback=/.test(session))
+  ok('the screens are over every page of the app', /\{el\}\s*<PomodoroScreens \/>/.test(app) && /timerUser\(user\?\.id \?\? null\)/.test(app) && /focusUser\(user\?\.id \?\? null\)/.test(app))
+  ok('lilac when a block ends, the logo yellow for the break, never a saturated violet', /<Screen ground=\{LILAC\} phase="focusDone"/.test(pomo) && /ground=\{LOGO_YELLOW\}\s+phase="break"/.test(pomo) && /<Screen ground=\{LOGO_YELLOW\} phase="breakDone"/.test(pomo) && !/#[0-9A-F]{6}/i.test(pomo.replace(/#F8CB02|#CFC2FF/gi, '')))
+  ok('with the three buttons at the end of a block', ['bb-pomo-take-break', 'bb-pomo-more', 'bb-pomo-end'].every((h) => pomo.includes(`data-hook="${h}"`)))
+  ok('nobody walks into a mock exam: the screens wait while its page is open', /if \(pathname\.startsWith\('\/hakkilo\/examen\/'\)\) return null/.test(pomo))
+  ok('the screen keeps its keys from the session under it', /window\.addEventListener\('keydown', onKey, true\)/.test(pomo) && /e\.stopPropagation\(\)/.test(pomo))
+  ok('a session starts a block by itself', /if \(plan\.items\.length\) pomodoro\.session\(minutes\)/.test(session))
+  ok('a mock exam is its own block, ended when it is handed in', /pomodoro\.exam\(\{ minutes: exam\.minutes, endsAt: examEnd \}\)/.test(exam) && /handedIn\.current = true[\s\S]{0,120}pomodoro\.examDone\(\)/.test(exam))
+  ok('the sounds can be switched off, and the bells ask for it', /if \(prefs\.sound && now - \(before\.endsAt \?\? now\) < RING_LATE_MS\) play\(/.test(timer) && /pomodoro\.setPrefs\(\{ sound: !on \}\)/.test(pomo))
+  ok('nothing underlined in it', !/\bunderline\b/.test(pomo))
+  ok('the study time is the student\'s own, keyed by its start', /primary key \(user_id, started_at\)/.test(sql) && /create policy bb_focus_own on public\.bb_focus for all to authenticated\s+using \(user_id = auth\.uid\(\)\) with check \(user_id = auth\.uid\(\)\)/.test(sql) && /revoke all on public\.bb_focus from anon/.test(sql) && /security invoker/.test(sql))
+  ok('and the migration travels through a clipboard', !/[^\x00-\x7F]/.test(sql))
+  ok('the privacy page says it is kept', /your study time \(when each block of focus began/.test(read('legal/content.js')) && /votre temps d’étude \(le début et la durée/.test(read('legal/content.js')))
+}
+
 /* --- the two languages ------------------------------------------------------------------- */
 {
   const fr = BB_STRINGS.fr

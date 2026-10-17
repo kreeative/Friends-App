@@ -6,6 +6,7 @@ import { Mark } from '../components/Wordmark'
 import Stickers from '../components/Stickers'
 import { Slider, useSlider } from '../components/Segmented'
 import { BBLogo } from './kit'
+import { PomodoroBadge } from './Pomodoro'
 
 /**
  * The Hakkilo app around every signed-in page: its own navigation,
@@ -119,6 +120,8 @@ function TopBar() {
             <BBLogo layout="line" className="h-9 w-auto" pad={0.2} />
           </Link>
           <div className="ml-auto flex shrink-0 items-center gap-1.5">
+            {/* The Pomodoro that follows: "comme une petite icone" (Kee). */}
+            <PomodoroBadge />
             <Link to="/hakkilo/profil" aria-label={t('bb.nav.profile')} className="press block shrink-0 rounded-pill">
               <Avatar profile={profile} size={32} />
             </Link>
@@ -160,6 +163,7 @@ function Rail() {
         })}
       </div>
       <div className="mt-6 flex shrink-0 flex-col gap-3 border-t border-hairline/60 pt-6">
+        <PomodoroBadge rail />
         <NavLink
           to="/hakkilo/profil"
           aria-label={t('bb.nav.profile')}

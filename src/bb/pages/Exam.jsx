@@ -12,6 +12,7 @@ import { endExam, loadCourse, loadExams, loadStudy, saveAnswer, saveExamAnswers,
 import { Anchors, Bar, BigButton, Note, Outside, PILL, anchorMaps, examName } from '../kit'
 import { coversText } from '../course/Exams'
 import { Spinner } from '../course/Processing'
+import { pomodoro } from '../timer'
 
 /**
  * /hakkilo/examen/:id, the timed mock exam (section 6, phase 2).
@@ -112,6 +113,15 @@ export default function Exam() {
     return () => clearInterval(tick)
   }, [running])
 
+  /* The exam counts as a Pomodoro (src/bb/timer.js): its block runs from now
+     to the exam's own end, and whatever ran before is banked, so no purple
+     screen comes in the middle of the paper. It ends when the paper is
+     handed in; its screen waits until the student leaves this page. */
+  const examEnd = exam ? Date.parse(exam.started_at) + exam.minutes * 60000 : null
+  useEffect(() => {
+    if (running && examEnd && examEnd > Date.now()) pomodoro.exam({ minutes: exam.minutes, endsAt: examEnd })
+  }, [running, examEnd, exam?.minutes])
+
   /* Every pick saved to the exam row, a moment after the last one. */
   useEffect(() => {
     if (!running) return undefined
@@ -125,6 +135,7 @@ export default function Exam() {
     handedIn.current = true
     clearTimeout(pending.current)
     setConfirm(false)
+    pomodoro.examDone()
     const scored = scoreExam({ items, answers, chapters: data.chapters })
     setResult(scored)
     const given = items.filter((i) => answers[i.id] != null)

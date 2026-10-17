@@ -12,6 +12,7 @@ import { useBB } from '../BBApp'
 import { Page, PageHead } from '../BBShell'
 import { ExamChip, PILL, examName, useExamsOnCalendar, weekText } from '../kit'
 import { AskBar } from '../Composer'
+import { PomodoroCard } from '../Pomodoro'
 
 /**
  * /hakkilo/app: today. "Due today" is the main button (section 3.2): one per
@@ -39,6 +40,10 @@ import { AskBar } from '../Composer'
  * release, and Kee asked for the iPad as it was before ("arrete de
  * travailler sur la vue d'iPad, keep-le comme avant"). The same strip, on
  * the month, is the whole of the Calendar tab (pages/Calendar.jsx).
+ *
+ * Under it, the Pomodoro ("un timer pomodoro sur la page d'accueil", Kee):
+ * the card with its lengths and its start, and the study time the timer,
+ * the sessions and the mock exams have counted (src/bb/Pomodoro.jsx).
  */
 export const PRESETS = [10, 15, 25]
 
@@ -99,6 +104,10 @@ export default function Today() {
         </h2>
         <WeekStrip study extra={examsOnCalendar} />
       </section>
+
+      {/* "Un timer pomodoro sur la page d'accueil" (Kee): its lengths, its
+          start and the study time counted (src/bb/Pomodoro.jsx). */}
+      <PomodoroCard className="mt-4" />
 
       <section className={`mt-4 rounded-card px-5 py-4 ${doneToday > 0 ? 'bg-[#FFF4C2]' : 'bg-[#F4F4F5]'}`} data-hook="bb-beauty-line" aria-live="polite">
         <p className="text-body font-semibold text-ink">
