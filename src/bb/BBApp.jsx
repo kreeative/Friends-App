@@ -6,6 +6,9 @@ import { needsTerms } from '../lib/setup'
 import { useT } from '../lib/i18n'
 import { call } from './api'
 import { flushAnswers, loadCourses, loadProfile } from './data'
+import { focusUser } from './focus'
+import { timerUser } from './timer'
+import { PomodoroScreens } from './Pomodoro'
 import { Splash } from './boot'
 import BBShell from './BBShell'
 import Landing from './pages/Landing'
@@ -82,6 +85,14 @@ function Provider({ children }) {
     reloadCourses()
     if (user?.id) flushAnswers(user.id).catch(() => {})
   }, [user?.id, reloadProfile, reloadStatus, reloadCourses])
+
+  /* The Pomodoro and the study time are the account's (src/bb/timer.js,
+     src/bb/focus.js): a block that ended while the app was closed is
+     counted now, and what waited offline is sent. */
+  useEffect(() => {
+    timerUser(user?.id ?? null)
+    focusUser(user?.id ?? null)
+  }, [user?.id])
 
   /* Answers queued offline go as soon as the network is back. */
   useEffect(() => {
@@ -170,9 +181,13 @@ function useInstallable() {
 
 export default function BBApp() {
   useInstallable()
+  /* Every page of the app, and over it the Pomodoro's screens (src/bb/Pomodoro.jsx). */
   const app = (el) => (
     <RequireUser>
-      <Ready>{el}</Ready>
+      <Ready>
+        {el}
+        <PomodoroScreens />
+      </Ready>
     </RequireUser>
   )
   if (!configured) {

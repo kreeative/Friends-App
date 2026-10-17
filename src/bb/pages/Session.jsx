@@ -18,6 +18,8 @@ import { endSession, loadCourse, loadStudy, saveAnswer, startSession } from '../
 import { errorMessage } from '../errors'
 import { Anchors, BigButton, Note, Outside, PILL, anchorMaps } from '../kit'
 import { Spinner } from '../course/Processing'
+import { pomodoro } from '../timer'
+import { PomodoroBadge } from '../Pomodoro'
 
 /**
  * Today's session (sections 3 and 6): due reviews, the mistake log, a pretest
@@ -123,6 +125,10 @@ export default function Session() {
         const plan = buildSession({ minutes, items: study.items, schedule: study.schedule, mistakes: study.mistakes, concepts: course.concepts, chapters: course.chapters, targets, focus })
         setData({ ...course, ...study, byId: new Map(study.items.map((i) => [i.id, i])), maps: anchorMaps(course.anchors, course.materials) })
         setQueue(plan.items)
+        /* "Quand tu commences une session, ca compte aussi comme un
+           pomodoro" (Kee): a block of the session's length, unless one is
+           already under way (src/lib/bb/pomodoro.js, auto). */
+        if (plan.items.length) pomodoro.session(minutes)
         if (plan.items.length) setSessionId(await startSession(id, minutes))
       } catch {
         if (live) setError('load')
@@ -352,8 +358,17 @@ export default function Session() {
           </div>
         </div>
         <p className="shrink-0 text-small font-semibold tabular-nums text-ink" data-hook="bb-progress">
-          {queue?.length ? t('bb.ses.progress', { n: Math.min(index + 1, queue.length), total: queue.length }) : ''} · {t('bb.ses.time_left', { n: left })}
+          {queue?.length ? t('bb.ses.progress', { n: Math.min(index + 1, queue.length), total: queue.length }) : ''}
         </p>
+        {/* One clock on screen: the Pomodoro's while a block runs, which the
+            session started, else the session's own minutes. */}
+        <PomodoroBadge
+          fallback={
+            <p className="shrink-0 text-small font-semibold tabular-nums text-ink" data-hook="bb-time-left">
+              {t('bb.ses.time_left', { n: left })}
+            </p>
+          }
+        />
       </div>
     </header>
   )

@@ -218,6 +218,27 @@ and the error points at the wrong thing.
   friends' birthdays, the checklists or the bookings, and no syllabus
   wizard. The same exams as Today (`useExamsOnCalendar` in
   `src/bb/kit.jsx`) open on their course page with their form.
+- **The Pomodoro is one timer for the whole of Hakkilo.** "Un timer
+  pomodoro sur la page d'accueil, qui te suit sur toutes tes pages comme une
+  petite icone ... tout l'ecran devient violet avec un message prends une
+  pause ... pendant la pause l'ecran devient jaune et decompte" (Kee). Its
+  card is on Today under the calendar. A running block is a badge in the
+  top bar, in the rail (a 44px row like the others) and in a session's bar,
+  and tapping it opens the controls. The end of a block is the whole screen
+  lilac `#CFC2FF` with "Prends une pause" and its three buttons; the break
+  is the whole screen the logo yellow, counting down, and can be tucked
+  away into a yellow badge. The bells are Web Audio, with a sound switch.
+  The screen takes the focus itself, never its first button (Space moves on
+  in a session and would start the break unread), and keeps the keys from
+  the page under it. "Quand tu commences une session, ca compte aussi comme
+  un pomodoro": a session starts a block of its length unless one is
+  running; a mock exam is its own block, banking what ran, and its page
+  holds the screens until the student leaves it. Every block of work is a
+  row of `bb_focus` (migration 83), keyed by its start so two tabs log it
+  once, and kept in the browser until it is sent; the totals come from
+  `bb_focus_totals(tz)`. Times are instants, never counted ticks
+  (`src/lib/bb/pomodoro.js`, `src/bb/timer.js`, `src/bb/focus.js`,
+  `src/bb/Pomodoro.jsx`).
 - **On the iPad, Hakkilo stays the one column it was.** "Arrete de
   travailler sur la vue d'iPad, keep-le comme avant" (Kee, 17 October,
   after "a lot of void space on the left and on the right"). For one
