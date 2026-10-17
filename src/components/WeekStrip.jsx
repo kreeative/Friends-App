@@ -403,11 +403,8 @@ function useSnapTrack(initial, active = true) {
  *
  * Its colours are Hakkilo's (DayCell and STUDY_MARK_STYLE above), and with no
  * recap card to grow, a hold does nothing.
- *
- * `month` opens it on the month rather than the week: Hakkilo does, where the
- * calendar has a column of its own beside the day.
  */
-export default function WeekStrip({ goals = [], statuses = [], study = false, extra = null, month = false }) {
+export default function WeekStrip({ goals = [], statuses = [], study = false, extra = null }) {
   const { user, profile } = useAuth()
   const { t, locale } = useT()
 
@@ -468,8 +465,8 @@ export default function WeekStrip({ goals = [], statuses = [], study = false, ex
    * collapsing again keeps what was already fetched rather than throwing it
    * away and refetching on the next tap.
    */
-  const [expanded, setExpanded] = useState(month)
-  const [wide, setWide] = useState(month)
+  const [expanded, setExpanded] = useState(false)
+  const [wide, setWide] = useState(false)
 
   /* The recap, and the square it grows out of. The rectangle is measured at
      the moment of the press rather than looked up later, because by the time

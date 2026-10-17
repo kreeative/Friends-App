@@ -331,6 +331,9 @@ eq('the constant says so', SHORT, 8)
   ok('four places in the tab bar, no profile', /TABS\.slice\(0, 4\)/.test(bar) && !/Avatar/.test(bar))
   const bars = shell.slice(shell.indexOf('function TopBar'), shell.indexOf('export default function BBShell'))
   ok('no Rich & Friends mark in the bars', !/<Mark\b/.test(bars))
+  /* "Le logo a gauche est pas bien dispose dans la grille": the rail's H was
+     a 44 by 51 tile under rows of 44 by 44. */
+  ok('the rail\'s H is a square tile, one more row of its column', /<BBLogo layout="mono" square className="h-11 w-11"/.test(shell) && /square \? \(side \* 13\) \/ 44/.test(read('bb/kit.jsx')))
   ok('Rich & Friends is in the footer of the pages', /data-hook="bb-footer"[\s\S]{0,300}<Mark\b[\s\S]{0,80}bb\.by/.test(shell))
   /* "Quelques problemes d'agencement": what scrolled showed above the top bar,
      under the clock, and under the tab bar, beside Safari's buttons. Measured
@@ -376,7 +379,7 @@ eq('the constant says so', SHORT, 8)
      today. You can just copy the Rich and Friend calendar with the Hakilo
      color" (Kee): Rich & Friends' own strip, in its Hakkilo copy. */
   const today = read('bb/pages/Today.jsx')
-  ok('Today draws the shared calendar, in its Hakkilo copy, with the exams', /<WeekStrip study month=\{roomy\} extra=\{examsOnCalendar\} \/>/.test(today) && /examEvents\(courses, /.test(today))
+  ok('Today draws the shared calendar, in its Hakkilo copy, with the exams', /<WeekStrip study extra=\{examsOnCalendar\} \/>/.test(today) && /examEvents\(courses, /.test(today))
   const strip = read('components/WeekStrip.jsx')
   const run = strip.slice(strip.indexOf('const run = async () => {'), strip.indexOf("document.addEventListener('visibilitychange'"))
   const stop = run.indexOf('if (study) return')
@@ -385,8 +388,10 @@ eq('the constant says so', SHORT, 8)
   ok('and never reads the cycle', /const periodTracking = !study && cycleOn\(profile\)/.test(strip) && run.indexOf("from('cycle_log')") > run.indexOf('if (!periodTracking) return'))
   ok('no recap card in it, and so no hold', /\{!study && \(\s*<DayRecap/.test(strip) && /onOpen=\{study \? undefined/.test(strip) && /enabled: Boolean\(onOpen\)/.test(strip))
   ok('its colours: today in ink, the day picked lilac with an ink ring, the marks in ink', /study\s*\?\s*isToday\s*\?\s*'bg-ink text-white font-semibold'/.test(strip) && /bg-\[#CFC2FF\] text-ink font-semibold ring-\[1\.5px\] ring-inset ring-ink/.test(strip) && /const STUDY_MARK_STYLE = \{[^}]*bg-ink/.test(strip))
-  const css = read('index.css')
-  ok('under the ask box on a phone, beside the day from lg', /\.today-grid \{[\s\S]{0,80}grid-template-areas: 'ask' 'cal' 'rest'/.test(css) && /'ask cal'\s*'rest cal'/.test(css) && /lg:sticky/.test(today))
+  /* It sat beside the day from lg for one release; "arrete de travailler sur
+     la vue d'iPad, keep-le comme avant" (Kee): one column at every width,
+     the calendar under the ask box. */
+  ok('under the ask box, in the page\'s one column, at every width', /<Page>\s*<PageHead[^\n]*\/>\s*<AskBar courses=\{ordered\} className="mt-5" \/>\s*<section className="mt-4" aria-labelledby="bb-calendar-title" data-hook="bb-calendar">/.test(today) && !/lg:sticky|<Page wide/.test(today) && !/\.today-grid/.test(read('index.css')))
 }
 
 /* --- the two languages ------------------------------------------------------------------- */
