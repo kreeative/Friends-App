@@ -317,6 +317,18 @@ eq('the constant says so', SHORT, 8)
   const bars = shell.slice(shell.indexOf('function TopBar'), shell.indexOf('export default function BBShell'))
   ok('no Rich & Friends mark in the bars', !/<Mark\b/.test(bars))
   ok('Rich & Friends is in the footer of the pages', /data-hook="bb-footer"[\s\S]{0,300}<Mark\b[\s\S]{0,80}bb\.by/.test(shell))
+  /* "Quelques problemes d'agencement": what scrolled showed above the top bar,
+     under the clock, and under the tab bar, beside Safari's buttons. Measured
+     in Chromium too (0 pixels of content in either gap on every page); this
+     keeps the ground in place. */
+  const top = shell.slice(shell.indexOf('function TopBar'), shell.indexOf('const RAIL_ROW'))
+  ok('the top bar sits on the ground, up past the screen edge', /bg-bg/.test(top) && /before:bottom-full/.test(top) && /before:bg-bg/.test(top) && /safe-area-inset-top/.test(top))
+  ok('and so does the tab bar, down past it', /data-hook="bb-tab-ground"/.test(bar) && /bg-bg/.test(bar) && /bottom: '-6rem'/.test(bar))
+  ok('the coach box too, down to the tab bar', /sticky bottom-28[^"]*before:bg-bg/.test(read('bb/pages/Coach.jsx')))
+  ok('an exam chip never breaks onto two lines', /const look = `[^`]*whitespace-nowrap/.test(read('bb/kit.jsx')))
+  const plan = read('bb/pages/Plan.jsx')
+  ok('on a phone a day of the plan is its date over its line', /data-hook="bb-plan-day"/.test(plan) && /sm:grid-cols-\[7rem_minmax\(0,1fr\)\]/.test(plan) && !/w-28 shrink-0/.test(plan))
+  ok('and the plan card lets the chip go under a long name', /flex flex-wrap items-center justify-between gap-x-3 gap-y-2/.test(plan))
 }
 
 /* --- the two languages ------------------------------------------------------------------- */

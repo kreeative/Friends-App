@@ -105,7 +105,10 @@ export function ExamChip({ course, exam: one = null, onEdit = null, link = false
   const { key, n, exam } = one ? chipFor(one) : examChip(course)
   const soon = n != null && n <= 7
   const text = exam ? t(key, { name: examName(t, exam), n }) : t(key)
-  const look = `inline-flex items-center gap-1.5 rounded-pill border bg-surface px-3 py-1 text-small font-semibold text-ink ${soon ? 'border-ink' : 'border-ink/15'} ${className}`
+  /* One line, always: beside a long course name at 390px it broke into
+     "Exam in / 46 days" (Kee's screenshot of the plan). Where both do not
+     fit, the row around it wraps the chip under the name instead. */
+  const look = `inline-flex items-center gap-1.5 whitespace-nowrap rounded-pill border bg-surface px-3 py-1 text-small font-semibold text-ink ${soon ? 'border-ink' : 'border-ink/15'} ${className}`
   const calendar = (
     <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 shrink-0" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
       <rect x="2" y="3" width="12" height="11" rx="2" />
