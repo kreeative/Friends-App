@@ -57,6 +57,16 @@ for (const [app, b] of Object.entries(CHECKOUT_BRANDING)) {
 }
 ok('Rich & Friends uses the deep pink for its button, not the logo pink (3.80:1)', CHECKOUT_BRANDING.rf.button_color === '#D6006B' && ratio('#FFFFFF', '#FF007A') < 4.5)
 ok('Hakkilo uses its H', /hakkilo-icon/.test(CHECKOUT_BRANDING.hakkilo.icon.url))
+/* "You just add the logo, what about our colors?" (Kee): white and a blush at
+   98% white read as Stripe's own page. Each ground is the app's colour now,
+   and still pale enough for the dark words Stripe sets on it. */
+ok('Hakkilo\'s ground is its soft lilac', CHECKOUT_BRANDING.hakkilo.background_color === '#E6DFFF')
+ok('Rich & Friends\' ground is its rose pastel', CHECKOUT_BRANDING.rf.background_color === '#FFCDE2')
+for (const [app, b] of Object.entries(CHECKOUT_BRANDING)) {
+  const ink = ratio('#111111', b.background_color)
+  ok(`${app}: dark words on the ground pass 4.5:1 (${ink.toFixed(2)})`, ink >= 4.5)
+  ok(`${app}: and the ground is not white`, ratio('#FFFFFF', b.background_color) > 1.15)
+}
 
 const bb = read('api/_bb/billing.js')
 ok('the Hakkilo Plus session carries Hakkilo branding', /branding_settings: CHECKOUT_BRANDING\.hakkilo/.test(bb))
