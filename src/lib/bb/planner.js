@@ -1,12 +1,13 @@
 import { busyOn } from '../syllabus.js'
 import { CATEGORY_COLOUR } from '../agenda.js'
 import { daysUntil, dayKey } from './days.js'
+import { examFormat, examsOf, stillAhead } from './exams.js'
 
 /**
  * The study plan, written into the Rich & Friends calendar (section 6,
  * phase 2).
  *
- *   Built from the exam date, blueprint, mastery and the student's available
+ *   Built from the exam dates, blueprint, mastery and the student's available
  *   hours. Every day mixes new material, due reviews and mock exams: at least
  *   two, the last 3 to 5 days before. One rest day a week. Re-plans when a
  *   day is missed. Written into the calendar, reusing planStudy and
@@ -45,52 +46,69 @@ export function mockDays(examAt, today) {
 }
 
 /**
- * courses: [{ id, name, code, exam_at, exam_format }]
- * Returns [{ date, items: [{ kind: 'study'|'mock'|'eve', course_id, minutes }], rest, exams }]:
- * `exams` names the courses whose exam is that day, so the day says so
- * instead of reading "rest".
+ * courses: [{ id, name, code, exams, exam_at, exam_format }]
+ * Returns [{ date, items: [{ kind: 'study'|'mock'|'eve', course_id, minutes, exam }], rest, exams }].
+ *
+ * Every exam of a course counts, the midterm as much as the final
+ * (src/lib/bb/exams.js): two mock exams before each, the eve before each,
+ * and on any day the course is weighted by its NEXT exam, so the days before
+ * the midterm lean on it and the final takes over once it is past. `exams`
+ * lists the exams held that day ({ course_id, kind, n }), so the day says
+ * which one instead of reading "rest"; a mock exam and an eve carry the exam
+ * they prepare in `exam`.
  */
 export function planDays({ courses = [], weeklyHours = 5, now = new Date(), days = HORIZON } = {}) {
   const perDay = (Math.min(80, Math.max(1, Number(weeklyHours) || 5)) * 60) / 6
   const today = midnight(now)
+  const dated = new Map(courses.map((c) => [c.id, examsOf(c).filter((e) => e.at)]))
+  /* The exam a course works towards on a date: its first one that day or after. */
+  const nextOn = (c, date) => dated.get(c.id).find((e) => daysUntil(e.at, date) >= 0) ?? null
+  const tag = (e) => ({ kind: e.kind, n: e.n })
   const mocks = new Map()
   for (const c of courses) {
-    if (!c.exam_at || daysUntil(c.exam_at, today) < 1) continue
-    for (const d of mockDays(c.exam_at, today)) {
-      if (!mocks.has(d)) mocks.set(d, [])
-      mocks.get(d).push(c)
+    for (const e of dated.get(c.id)) {
+      if (daysUntil(e.at, today) < 1) continue
+      for (const d of mockDays(e.at, today)) {
+        if (!mocks.has(d)) mocks.set(d, [])
+        mocks.get(d).push({ course: c, exam: e })
+      }
     }
   }
   const out = []
   for (let k = 0; k < days; k += 1) {
     const date = addDays(today, k)
     const key = dayKey(date)
+    const tomorrow = dayKey(addDays(date, 1))
     const ahead = courses.filter((c) => {
-      const n = daysUntil(c.exam_at, date)
-      return n == null || n >= 1
+      const e = nextOn(c, date)
+      return e ? daysUntil(e.at, date) >= 1 : stillAhead(c, date)
     })
-    const eve = ahead.find((c) => daysUntil(c.exam_at, date) === 1)
+    const eveOf = (c) => {
+      const e = nextOn(c, date)
+      return e && daysUntil(e.at, date) === 1 ? e : null
+    }
+    const eve = ahead.find((c) => eveOf(c))
     const mockToday = mocks.get(key) ?? []
-    const mondayExam = courses.some((c) => c.exam_at && dayKey(c.exam_at) === dayKey(addDays(date, 1)))
-    const exams = courses.filter((c) => c.exam_at && dayKey(c.exam_at) === key).map((c) => c.id)
+    const mondayExam = courses.some((c) => dated.get(c.id).some((e) => dayKey(e.at) === tomorrow))
+    const exams = courses.flatMap((c) => dated.get(c.id).filter((e) => dayKey(e.at) === key).map((e) => ({ course_id: c.id, ...tag(e) })))
     if (!ahead.length) {
       out.push({ date: key, items: [], rest: true, exams })
       continue
     }
     if (eve) {
-      out.push({ date: key, items: [{ kind: 'eve', course_id: eve.id, minutes: round5(Math.min(perDay, 20)) }], rest: false, exams })
+      out.push({ date: key, items: [{ kind: 'eve', course_id: eve.id, minutes: round5(Math.min(perDay, 20)), exam: tag(eveOf(eve)) }], rest: false, exams })
       continue
     }
     if (date.getDay() === 0 && !mockToday.length && !mondayExam) {
       out.push({ date: key, items: [], rest: true, exams })
       continue
     }
-    const items = mockToday.map((c) => ({ kind: 'mock', course_id: c.id, minutes: Math.min(180, Number(c.exam_format?.minutes) || MOCK_MINUTES) }))
-    const study = ahead.filter((c) => !mockToday.some((m) => m.id === c.id))
+    const items = mockToday.map(({ course, exam }) => ({ kind: 'mock', course_id: course.id, minutes: Math.min(180, Number(examFormat(course, null, exam).minutes) || MOCK_MINUTES), exam: tag(exam) }))
+    const study = ahead.filter((c) => !mockToday.some((m) => m.course.id === c.id))
     if (study.length) {
       const weights = study.map((c) => {
-        const n = daysUntil(c.exam_at, date)
-        return n == null ? 0.5 : 1 / Math.max(1, n) + 0.1
+        const e = nextOn(c, date)
+        return e ? 1 / Math.max(1, daysUntil(e.at, date)) + 0.1 : 0.5
       })
       const total = weights.reduce((a, b) => a + b, 0)
       const budget = mockToday.length ? perDay / 2 : perDay

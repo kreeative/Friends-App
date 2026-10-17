@@ -54,7 +54,7 @@ export default function Courses() {
               <Link to={`/hakkilo/cours/${c.id}`} className="lg press flex h-full flex-col p-5" data-card="bb-course">
                 <span className="text-body font-bold text-ink">{c.name}</span>
                 <span className="text-small text-muted">{[c.code, c.professor].filter(Boolean).join(' · ') || ' '}</span>
-                <ExamChip examAt={c.exam_at} className="mt-4 self-start" />
+                <ExamChip course={c} className="mt-4 self-start" />
               </Link>
             </li>
           ))}

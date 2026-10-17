@@ -4513,6 +4513,20 @@
   scale: 1;
   animation: tick-pop 420ms cubic-bezier(0.32, 0.72, 0, 1);
 }
+/* Hakkilo: a box switched on is the logo yellow with an ink tick, the
+   colour of "switched on" (src/bb/kit.jsx). Its accent is the ink, and the
+   tick is drawn in currentColor, which Tailwind's preflight sets back to
+   `inherit` (an element selector outranks the :where() above): a ticked box
+   was a black square with a black tick, measured 17,17,17 on 17,17,17 on
+   the profile and the study squads. The colours are set here, on the
+   surface, where they outrank both. */
+[data-surface='bb'] input[type='checkbox'] {
+  color: rgb(var(--c-ink));
+}
+[data-surface='bb'] input[type='checkbox']:checked {
+  background: #f8cb02;
+  border-color: rgb(var(--c-ink));
+}
 :where(input[type='checkbox'], input[type='radio']):focus-visible {
   outline: none;
   box-shadow:

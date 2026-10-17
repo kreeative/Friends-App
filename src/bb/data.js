@@ -32,8 +32,19 @@ export async function saveProfile(userId, patch) {
   )
 }
 
+/*
+ * Migration 82 adds bb_courses.exams (the midterm and the final). Until it
+ * has run, a read that names the column fails (42703) and a write that
+ * carries it is refused (PGRST204): the app then reads and writes without
+ * it, the one exam_at as before, instead of losing the course list.
+ */
+const noExams = (error) => Boolean(error) && (error.code === '42703' || error.code === 'PGRST204') && /exams/.test(error.message ?? '')
+const COURSE_COLUMNS = 'id, name, code, professor, language, exam_at, exam_format, stats, created_at'
+
 export async function loadCourses() {
-  return must(await supabase.from('bb_courses').select('id, name, code, professor, language, exam_at, exam_format, stats, created_at').order('created_at')) ?? []
+  const first = await supabase.from('bb_courses').select(`${COURSE_COLUMNS}, exams`).order('created_at')
+  if (noExams(first.error)) return must(await supabase.from('bb_courses').select(COURSE_COLUMNS).order('created_at')) ?? []
+  return must(first) ?? []
 }
 
 /** Everything a course page shows, in one round of parallel reads. */
@@ -93,11 +104,17 @@ export async function loadDue(now = new Date()) {
 }
 
 export async function createCourse(fields) {
-  return must(await supabase.from('bb_courses').insert(fields).select('*').single())
+  const first = await supabase.from('bb_courses').insert(fields).select('*').single()
+  if (!noExams(first.error)) return must(first)
+  const { exams: _, ...rest } = fields
+  return must(await supabase.from('bb_courses').insert(rest).select('*').single())
 }
 
 export async function updateCourse(id, patch) {
-  return must(await supabase.from('bb_courses').update(patch).eq('id', id).select('*').single())
+  const first = await supabase.from('bb_courses').update(patch).eq('id', id).select('*').single()
+  if (!noExams(first.error)) return must(first)
+  const { exams: _, ...rest } = patch
+  return must(await supabase.from('bb_courses').update(rest).eq('id', id).select('*').single())
 }
 
 const safeName = (name) =>

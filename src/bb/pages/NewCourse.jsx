@@ -6,6 +6,7 @@ import { usePageMeta } from '../../lib/pageMeta'
 import { Field } from '../../components/ui'
 import { ACCEPT, kindFor, refuse } from '../../lib/bb/formats'
 import { canAddCourse } from '../../lib/bb/plans'
+import { examColumns, newExam } from '../../lib/bb/exams'
 import { addPasted, createCourse, uploadMaterial } from '../data'
 import { useBB } from '../BBApp'
 import { Page, PageHead } from '../BBShell'
@@ -16,10 +17,18 @@ import { Choice } from './Onboarding'
  * /hakkilo/cours/nouveau: one course, in the order of section 9.
  *
  *   1. which course: name, code, professor, language;
- *   2. when the exam is (or "I don't know yet");
- *   3. what it looks like: types, count, length, a case or not. A past exam
- *      among the files will propose its own format later, for confirmation;
+ *   2. when the exams are: the midterm and the final, each with its date or
+ *      "I don't know yet", either one taken off when the course has none,
+ *      a second midterm added when it has one, and whether the final
+ *      covers the whole course or only what came after the midterm ("ya le
+ *      final exam mais ya aussi le mid term", src/lib/bb/exams.js);
+ *   3. what they look like: the types for the course, the number of
+ *      questions and the length for each exam. A past exam among the files
+ *      will propose its own format later, for confirmation;
  *   4. the material: several files, a kind for each, or pasted text.
+ *
+ * Which chapters the midterm covers is asked on the course page, once the
+ * files are read and there are chapters to pick (Exams.jsx).
  *
  * Creating it writes the course, then sends each file to the private bucket
  * with its own status line, then opens the course, where the reading starts
@@ -30,6 +39,7 @@ import { Choice } from './Onboarding'
  */
 export const KINDS = ['slides', 'guide', 'exam', 'transcript', 'notes', 'photo']
 const TYPES = ['mcq', 'tf', 'short', 'calc', 'case']
+const draft = (kind) => ({ ...newExam(kind), date: '', time: '09:00', unknown: false, count: '', minutes: '' })
 
 export default function NewCourse() {
   const { t, locale } = useT()
@@ -40,13 +50,25 @@ export default function NewCourse() {
   usePageMeta({ title: `${t('bb.new.title')} · Hakkilo` })
 
   const [step, setStep] = useState(0)
-  const [form, setForm] = useState({ name: '', code: '', professor: '', language: locale === 'en' ? 'en' : 'fr', date: '', time: '09:00', unknown: false, types: [], count: '', minutes: '' })
+  const [form, setForm] = useState({ name: '', code: '', professor: '', language: locale === 'en' ? 'en' : 'fr', types: [], count: '', minutes: '' })
+  const [exams, setExams] = useState(() => [draft('midterm'), { ...draft('final'), scope: 'all' }])
   const [files, setFiles] = useState([])
   const [paste, setPaste] = useState(null)
   const [refused, setRefused] = useState([])
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
   const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v }))
+  const setExam = (id, patch) => setExams((list) => list.map((e) => (e.id === id ? { ...e, ...patch } : e)))
+  const midterms = exams.filter((e) => e.kind === 'midterm')
+  const hasFinal = exams.some((e) => e.kind === 'final')
+  const nameOf = (e) => (e.kind === 'final' ? t('bb.ex.final') : midterms.length > 1 ? t('bb.ex.midterm_n', { n: midterms.indexOf(e) + 1 }) : t('bb.ex.midterm'))
+  function addMidterm() {
+    setExams((list) => {
+      const at = list.findIndex((e) => e.kind === 'final')
+      const next = draft('midterm')
+      return at < 0 ? [...list, next] : [...list.slice(0, at), next, ...list.slice(at)]
+    })
+  }
 
   const sub = status ? { plan: status.plan, status: status.status, current_period_end: status.current_period_end } : null
   const room = status?.tier === 'owner' || status?.tier === 'plus' ? true : canAddCourse(sub, (courses ?? []).length)
@@ -68,17 +90,26 @@ export default function NewCourse() {
     setError(null)
     let course
     try {
-      const examAt = !form.unknown && form.date ? new Date(`${form.date}T${form.time || '09:00'}`).toISOString() : null
+      const list = exams.map((e) => ({
+        id: e.id,
+        kind: e.kind,
+        at: !e.unknown && e.date ? new Date(`${e.date}T${e.time || '09:00'}`).toISOString() : null,
+        scope: e.kind === 'final' ? (midterms.length && e.scope === 'since' ? 'since' : 'all') : null,
+        format: { count: e.count, minutes: e.minutes },
+      }))
+      const cols = examColumns(list)
+      /* The course's own length, for what reads one exam: the one shown first. */
+      const lead = cols.exams.find((e) => e.at && e.at === cols.exam_at) ?? cols.exams.at(-1)
       course = await createCourse({
         name: form.name.trim().slice(0, 120),
         code: form.code.trim().slice(0, 40) || null,
         professor: form.professor.trim().slice(0, 120) || null,
         language: form.language,
-        exam_at: examAt,
+        ...cols,
         exam_format: {
           types: form.types,
-          count: Number(form.count) || null,
-          minutes: Number(form.minutes) || null,
+          count: lead?.format.count ?? (Number(form.count) || null),
+          minutes: lead?.format.minutes ?? (Number(form.minutes) || null),
           has_case: form.types.includes('case'),
           source: 'student',
         },
@@ -173,18 +204,55 @@ export default function NewCourse() {
 
         {step === 1 && (
           <div className="space-y-5">
-            <h2 className="text-h2 text-ink">{t('bb.new.step_exam')}</h2>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label={t('bb.new.exam_date')}>
-                <input type="date" className="field" value={form.date} disabled={form.unknown} onChange={(e) => set('date')(e.target.value)} data-hook="new-date" />
-              </Field>
-              <Field label={t('bb.new.exam_time')}>
-                <input type="time" className="field" value={form.time} disabled={form.unknown} onChange={(e) => set('time')(e.target.value)} />
-              </Field>
+            <div>
+              <h2 className="text-h2 text-ink">{t('bb.new.step_exam')}</h2>
+              <p className="mt-2 text-body text-muted">{t('bb.new.exams_hint')}</p>
             </div>
-            <Choice on={form.unknown} onClick={() => set('unknown')(!form.unknown)}>
-              {t('bb.new.exam_unknown')}
-            </Choice>
+            {exams.map((e) => (
+              <fieldset key={e.id} className="rounded-card border border-ink/15 p-4 sm:p-5" data-hook={`new-exam-${e.kind}`}>
+                <legend className="px-1 text-body font-bold text-ink">{e.kind === 'midterm' && midterms.length === 1 ? t('bb.new.midterm_title') : nameOf(e)}</legend>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label={t('bb.new.exam_date')}>
+                    <input type="date" className="field" value={e.date} disabled={e.unknown} onChange={(ev) => setExam(e.id, { date: ev.target.value })} data-hook={`new-date-${e.kind}`} />
+                  </Field>
+                  <Field label={t('bb.new.exam_time')}>
+                    <input type="time" className="field" value={e.time} disabled={e.unknown} onChange={(ev) => setExam(e.id, { time: ev.target.value })} />
+                  </Field>
+                </div>
+                <div className="mt-3">
+                  <Choice on={e.unknown} onClick={() => setExam(e.id, { unknown: !e.unknown })}>
+                    {t('bb.new.exam_unknown')}
+                  </Choice>
+                </div>
+                {e.kind === 'final' && midterms.length > 0 && (
+                  <fieldset className="mt-5">
+                    <legend className="text-small font-semibold text-ink">{t('bb.ex.scope')}</legend>
+                    <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                      {['all', 'since'].map((k) => (
+                        <Choice key={k} on={(e.scope ?? 'all') === k} onClick={() => setExam(e.id, { scope: k })} hook={`new-final-${k}`}>
+                          {t(`bb.ex.scope.${k}`)}
+                        </Choice>
+                      ))}
+                    </div>
+                  </fieldset>
+                )}
+                <button type="button" className="press mt-4 text-small font-semibold text-ink underline underline-offset-4" onClick={() => setExams((list) => list.filter((x) => x.id !== e.id))} data-hook={`new-drop-${e.kind}`}>
+                  {e.kind === 'final' ? t('bb.new.no_final') : t('bb.new.no_midterm')}
+                </button>
+              </fieldset>
+            ))}
+            <div className="flex flex-wrap gap-3">
+              {midterms.length < 3 && (
+                <button type="button" className="btn-ghost press w-auto px-6" onClick={addMidterm} data-hook="new-add-midterm">
+                  + {t('bb.ex.add_midterm')}
+                </button>
+              )}
+              {!hasFinal && (
+                <button type="button" className="btn-ghost press w-auto px-6" onClick={() => setExams((list) => [...list, { ...draft('final'), scope: 'all' }])} data-hook="new-add-final">
+                  + {t('bb.ex.add_final')}
+                </button>
+              )}
+            </div>
           </div>
         )}
 
@@ -202,14 +270,32 @@ export default function NewCourse() {
                 ))}
               </div>
             </fieldset>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label={t('bb.new.count')}>
-                <input type="number" inputMode="numeric" min={1} max={300} className="field" value={form.count} onChange={(e) => set('count')(e.target.value)} />
-              </Field>
-              <Field label={t('bb.new.minutes')}>
-                <input type="number" inputMode="numeric" min={5} max={600} className="field" value={form.minutes} onChange={(e) => set('minutes')(e.target.value)} />
-              </Field>
-            </div>
+            {/* The length for each exam: a final is often longer than the
+                midterm. With no exam named, one length for the course. */}
+            {exams.length ? (
+              exams.map((e) => (
+                <fieldset key={e.id} data-hook={`new-length-${e.kind}`}>
+                  <legend className="text-small font-semibold text-ink">{nameOf(e)}</legend>
+                  <div className="mt-2 grid gap-4 sm:grid-cols-2">
+                    <Field label={t('bb.new.count')}>
+                      <input type="number" inputMode="numeric" min={1} max={300} className="field" value={e.count} onChange={(ev) => setExam(e.id, { count: ev.target.value })} />
+                    </Field>
+                    <Field label={t('bb.new.minutes')}>
+                      <input type="number" inputMode="numeric" min={5} max={600} className="field" value={e.minutes} onChange={(ev) => setExam(e.id, { minutes: ev.target.value })} />
+                    </Field>
+                  </div>
+                </fieldset>
+              ))
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label={t('bb.new.count')}>
+                  <input type="number" inputMode="numeric" min={1} max={300} className="field" value={form.count} onChange={(e) => set('count')(e.target.value)} />
+                </Field>
+                <Field label={t('bb.new.minutes')}>
+                  <input type="number" inputMode="numeric" min={5} max={600} className="field" value={form.minutes} onChange={(e) => set('minutes')(e.target.value)} />
+                </Field>
+              </div>
+            )}
           </div>
         )}
 

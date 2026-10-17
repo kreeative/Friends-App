@@ -7,9 +7,10 @@ import { supabase } from '../../lib/supabase'
 import { buildSession } from '../../lib/bb/sampler'
 import { answerRows } from '../../lib/bb/answer'
 import { typedMatch } from '../../lib/bb/quality'
-import { dayKey, daysUntil } from '../../lib/bb/days'
+import { dayKey } from '../../lib/bb/days'
 import { retentionFor } from '../../lib/bb/fsrs'
 import { capFromFormat, targetsByConcept } from '../../lib/bb/difficulty'
+import { daysToExamOf, examFormat, nextExam, scopeOf } from '../../lib/bb/exams'
 import { sessionCounts, tickRow } from '../../lib/bb/checkin'
 import { call } from '../api'
 import { useBB } from '../BBApp'
@@ -44,6 +45,11 @@ import { Spinner } from '../course/Processing'
  * concept has reached (src/lib/bb/difficulty.js), capped by the exam's own
  * format; in the last ten days before the exam, what the professor flagged
  * is scheduled for 95% recall instead of 90% (retentionFor in fsrs.js).
+ *
+ * THE NEXT EXAM LEADS (src/lib/bb/exams.js). Before the midterm its
+ * chapters come first, and each answer is scheduled against the exam that
+ * covers its chapter: the midterm for the first chapters, the final for the
+ * others.
  *
  * THE END. A finished session ticks the student's Rich & Friends study goal
  * when she switched it on (src/lib/bb/checkin.js), and the questions she
@@ -108,9 +114,13 @@ export default function Session() {
         if (!course.course) return setError('missing')
         schedule.current = new Map(study.schedule.map((s) => [s.item_id, s]))
         mistakes.current = new Map(study.mistakes.map((m) => [m.item_id, m]))
-        const format = { ...(course.course.exam_format ?? {}), ...(course.blueprint?.data ?? {}) }
+        /* The next exam leads: its format caps the level, its chapters come
+           first (the midterm's before the midterm, src/lib/bb/exams.js). */
+        const next = nextExam(course.course)
+        const format = examFormat(course.course, course.blueprint, next)
+        const focus = next ? scopeOf(next, course.course, course.chapters) : null
         const targets = targetsByConcept(study.reviews, { cap: capFromFormat(format) })
-        const plan = buildSession({ minutes, items: study.items, schedule: study.schedule, mistakes: study.mistakes, concepts: course.concepts, chapters: course.chapters, targets })
+        const plan = buildSession({ minutes, items: study.items, schedule: study.schedule, mistakes: study.mistakes, concepts: course.concepts, chapters: course.chapters, targets, focus })
         setData({ ...course, ...study, byId: new Map(study.items.map((i) => [i.id, i])), maps: anchorMaps(course.anchors, course.materials) })
         setQueue(plan.items)
         if (plan.items.length) setSessionId(await startSession(id, minutes))
@@ -199,7 +209,7 @@ export default function Session() {
         ms: Date.now() - shownAt.current,
         mode: entry.reason,
         sessionId,
-        retention: retentionFor({ weight: concept?.weight, daysLeft: daysUntil(data?.course?.exam_at) }),
+        retention: retentionFor({ weight: concept?.weight, daysLeft: daysToExamOf(data?.course, item.chapter_id, data?.chapters) }),
       })
       schedule.current.set(item.id, { ...rows.schedule })
       if (rows.mistake) mistakes.current.set(origin, { ...(mistakes.current.get(origin) ?? {}), ...rows.mistake })
@@ -221,7 +231,7 @@ export default function Session() {
       }
       return rows
     },
-    [item, choice, confidence, entry, sessionId, index, user?.id, concept, marked, data?.course?.exam_at],
+    [item, choice, confidence, entry, sessionId, index, user?.id, concept, marked, data?.course, data?.chapters],
   )
 
   const next = useCallback(() => {

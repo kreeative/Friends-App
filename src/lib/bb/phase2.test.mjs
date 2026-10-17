@@ -158,7 +158,7 @@ const iso = (d, h = 12) => {
   const sunday = wed.find((d) => d.date === '2026-10-25')
   ok('a Sunday that holds a mock exam is not a rest day', !sunday.rest && sunday.items.some((i) => i.kind === 'mock'))
   ok('nothing after the exam', plan.filter((d) => d.date >= '2026-10-29').every((d) => !d.items.length))
-  eq('the exam day says so', plan.find((d) => d.date === '2026-10-29').exams, ['bio'])
+  eq('the exam day says so, and which exam', plan.find((d) => d.date === '2026-10-29').exams, [{ course_id: 'bio', kind: 'exam', n: null }])
   ok('and no other day does', plan.filter((d) => d.date !== '2026-10-29').every((d) => !d.exams.length))
 
   const busy = [

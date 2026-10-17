@@ -83,7 +83,7 @@ export default function Squads() {
               <li key={g.id} className="lg p-5" data-hook="bb-squad">
                 <p className="text-body font-bold text-ink">{g.name}</p>
                 <label className="press mt-3 flex cursor-pointer items-start gap-3 rounded-inner bg-ink/[0.035] p-3">
-                  <input type="checkbox" checked={on} disabled={busy === g.id} onChange={(e) => toggle(g.id, e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-[#F8CB02]" data-hook="bb-squad-share" />
+                  <input type="checkbox" checked={on} disabled={busy === g.id} onChange={(e) => toggle(g.id, e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0" data-hook="bb-squad-share" />
                   <span className="min-w-0">
                     <span className="block text-small font-semibold text-ink">{t('bb.squad.share')}</span>
                     <span className="mt-0.5 block text-small text-muted">{t('bb.squad.share_sub')}</span>

@@ -6,12 +6,13 @@ import { usePageMeta } from '../../lib/pageMeta'
 import { fromHm, toHm } from '../../lib/reminders'
 import { dayKey, daysUntil } from '../../lib/bb/days'
 import { chapterMastery } from '../../lib/bb/mastery'
+import { examsOf, scopeOf } from '../../lib/bb/exams'
 import { HORIZON, eventRows, missed, placeDays, planDays } from '../../lib/bb/planner'
 import { supabase } from '../../lib/supabase'
 import { saveProfile } from '../data'
 import { useBB } from '../BBApp'
 import { Page, PageHead } from '../BBShell'
-import { Bar, BigButton, ExamChip, Note } from '../kit'
+import { Bar, BigButton, ExamChip, Note, examName } from '../kit'
 import Squads from '../plan/Squads'
 
 /**
@@ -65,15 +66,25 @@ export default function Plan() {
   useEffect(() => {
     let live = true
     ;(async () => {
-      const [{ data: concepts }, { data: reviews }] = await Promise.all([
-        supabase.from('bb_concepts').select('id, course_id, weight'),
+      const [{ data: concepts }, { data: reviews }, { data: chapters }] = await Promise.all([
+        supabase.from('bb_concepts').select('id, course_id, chapter_id, weight'),
         supabase.from('bb_reviews').select('concept_id, correct, bloom, confidence, created_at').gte('created_at', new Date(Date.now() - 120 * 86400000).toISOString()),
+        supabase.from('bb_chapters').select('id, course_id, title, position'),
       ])
       if (!live) return
       const byConcept = {}
       for (const r of reviews ?? []) if (r.concept_id) (byConcept[r.concept_id] ??= []).push(r)
+      /* Ready for each exam: over the chapters it covers, so "ready for the
+         midterm" does not count the chapters only the final asks. */
       const out = {}
-      for (const c of courses ?? []) out[c.id] = chapterMastery((concepts ?? []).filter((x) => x.course_id === c.id), byConcept).pct
+      for (const c of courses ?? []) {
+        const own = (concepts ?? []).filter((x) => x.course_id === c.id)
+        const mine = (chapters ?? []).filter((x) => x.course_id === c.id)
+        for (const e of examsOf(c)) {
+          const scope = scopeOf(e, c, mine)
+          out[`${c.id}:${e.id}`] = chapterMastery(scope ? own.filter((x) => scope.has(x.chapter_id)) : own, byConcept).pct
+        }
+      }
       setReady(out)
     })().catch(() => {})
     return () => {
@@ -106,7 +117,10 @@ export default function Plan() {
   const hours = bb?.weekly_hours ?? 5
   const today = dayKey(new Date())
   const name = new Map((courses ?? []).map((c) => [c.id, c.name]))
-  const exams = (courses ?? []).filter((c) => (daysUntil(c.exam_at) ?? -1) >= 0).sort((a, b) => daysUntil(a.exam_at) - daysUntil(b.exam_at))
+  /* Every exam to come, midterms and finals of every course, soonest first. */
+  const exams = (courses ?? [])
+    .flatMap((c) => examsOf(c).filter((e) => e.at && daysUntil(e.at) >= 0).map((e) => ({ course: c, exam: e })))
+    .sort((a, b) => daysUntil(a.exam.at) - daysUntil(b.exam.at))
   const perDay = Math.round((Math.min(80, Math.max(1, hours)) * 60) / 6)
   const startMin = fromHm(from ?? '', DEFAULT_FROM)
   const endMin = fromHm(to ?? '', DEFAULT_TO)
@@ -124,7 +138,7 @@ export default function Plan() {
   const writtenBefore = cal?.plan.some((r) => r.on_date >= today) ?? false
 
   const kindText = (kind) => t(`bb.plan.kind.${kind}`)
-  const titleOf = (p) => `${kindText(p.kind)} · ${name.get(p.course_id) ?? 'Hakkilo'}`
+  const titleOf = (p) => [kindText(p.kind), p.exam ? examName(t, p.exam) : null, name.get(p.course_id) ?? 'Hakkilo'].filter(Boolean).join(' · ')
 
   async function write() {
     if (!placement || !user?.id) return
@@ -203,17 +217,17 @@ export default function Plan() {
 
       {exams.length > 0 && (
         <ul className="card-grid mt-6" data-hook="bb-plan-exams">
-          {exams.map((c) => (
-            <li key={c.id} className="lg p-5">
+          {exams.map(({ course: c, exam: e }) => (
+            <li key={`${c.id}:${e.id}`} className="lg p-5" data-hook="bb-plan-exam">
               <div className="flex items-start justify-between gap-3">
                 <Link to={`/hakkilo/cours/${c.id}`} className="text-body font-bold text-ink underline-offset-4 hover:underline">
                   {c.name}
                 </Link>
-                <ExamChip examAt={c.exam_at} />
+                <ExamChip exam={e} />
               </div>
-              <Bar className="mt-4" pct={ready[c.id] ?? 0} label={t('bb.plan.ready', { n: ready[c.id] ?? 0 })} />
-              {daysUntil(c.exam_at) <= 10 && <p className="mt-3 text-small text-ink">{t('bb.plan.final')}</p>}
-              <Link to={`/hakkilo/examen/${c.id}`} className="mt-3 inline-block text-small font-semibold text-ink underline underline-offset-4">
+              <Bar className="mt-4" pct={ready[`${c.id}:${e.id}`] ?? 0} label={t('bb.plan.ready', { n: ready[`${c.id}:${e.id}`] ?? 0 })} />
+              {daysUntil(e.at) <= 10 && <p className="mt-3 text-small text-ink">{t('bb.plan.final')}</p>}
+              <Link to={`/hakkilo/examen/${c.id}?e=${e.id}`} className="mt-3 inline-block text-small font-semibold text-ink underline underline-offset-4">
                 {t('bb.mock.open')}
               </Link>
             </li>
@@ -233,20 +247,21 @@ export default function Plan() {
                 <li key={d.date} className={`flex flex-wrap items-baseline gap-x-4 gap-y-1 rounded-inner px-4 py-3 ${i === 0 ? 'bg-[#F4F4F5]' : 'bg-surface'}`} data-hook="bb-plan-day">
                   <span className="w-28 shrink-0 text-small font-bold capitalize text-ink">{i === 0 ? t('bb.plan.today') : date.toLocaleDateString(localeTag(locale), { weekday: 'short', day: 'numeric', month: 'short' })}</span>
                   <span className="min-w-0 flex-1 space-y-0.5 text-small text-ink">
-                    {(d.exams ?? []).map((cid) => (
-                      <span key={cid} className="block font-bold">
-                        {t('bb.plan.exam_day', { name: name.get(cid) ?? '' })}
+                    {(d.exams ?? []).map((ex) => (
+                      <span key={`${ex.course_id}:${ex.kind}:${ex.n}`} className="block font-bold">
+                        {t('bb.plan.exam_day', { exam: examName(t, ex), name: name.get(ex.course_id) ?? '' })}
                       </span>
                     ))}
                     {d.rest ? (
                       <span className="block">{t('bb.plan.rest')}</span>
                     ) : (
                       d.items.map((it, k) => {
-                        const slot = at.find((p) => p.course_id === it.course_id && p.kind === it.kind)
+                        const slot = at.find((p) => p.course_id === it.course_id && p.kind === it.kind && p.exam?.kind === it.exam?.kind && p.exam?.n === it.exam?.n)
                         return (
                           <span key={k} className="block">
                             {it.kind === 'mock' ? '⏱ ' : ''}
-                            {kindText(it.kind)} · {name.get(it.course_id)} · {t('bb.plan.minutes', { n: it.minutes })}
+                            {kindText(it.kind)}
+                            {it.exam ? ` · ${examName(t, it.exam)}` : ''} · {name.get(it.course_id)} · {t('bb.plan.minutes', { n: it.minutes })}
                             {slot ? ` · ${t('bb.plan.span', { a: timeOf(slot.start_min), b: timeOf(slot.end_min) })}` : ''}
                           </span>
                         )
