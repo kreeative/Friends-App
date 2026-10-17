@@ -370,6 +370,14 @@ eq('the constant says so', SHORT, 8)
   /* "✓ Au hasard" needs 84px and a third of the row is 77 at 320: a button
      takes the width its words need, and the row wraps before a word does. */
   ok('the "how sure" buttons never break a word', /min-w-max flex-1 whitespace-nowrap/.test(read('bb/pages/Session.jsx')))
+  /* "Le truc de 10, 15 minutes, il est la, faire quoi ?" (Kee): the lengths
+     sat unnamed at the end of a row. They answer a written question now, and
+     on the course page they come before the button that starts a session of
+     that length, as it is done. */
+  const named = (src) => /data-hook="bb-how-long"[^>]*>\s*<p[^>]*>\{t\('bb\.today\.how_long'\)\}<\/p>\s*(?:<div[^>]*>\s*)?<SegTabs/.test(src)
+  ok('the session lengths are named by a question, on Today and on the course page', named(read('bb/pages/Today.jsx')) && named(read('bb/pages/Course.jsx')))
+  const coursePage = read('bb/pages/Course.jsx')
+  ok('and on the course page they come before the start button', coursePage.indexOf('hook="bb-course-minutes"') > 0 && coursePage.indexOf('hook="bb-course-minutes"') < coursePage.indexOf('data-hook="bb-course-start"'))
 }
 
 /* --- the calendar on Today ------------------------------------------------------------------- */
