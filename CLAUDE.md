@@ -185,6 +185,25 @@ and the error points at the wrong thing.
   "Hak / kilo" lettering was refused (`HakkiloLink` in
   `src/components/AppShell.jsx`, `data-hook="to-hakkilo"`). A link and
   nothing else; the card on /me stays.
+- **Hakkilo's Today carries the shared calendar.** "Hakilo should have the
+  home page with the calendar and the things to do today. You can just copy
+  the Rich and Friend calendar with the Hakilo color." One account, one
+  `calendar_event`: it is Rich & Friends' `WeekStrip` with `study`, never a
+  second calendar. That copy reads the timetable and the goals with a
+  deadline and stops; check-ins, moods, money, solo ticks and the cycle are
+  never fetched there. Hakkilo's colours: today ink with a white number, the
+  day picked lilac with an ink ring (lilac alone is 1.64:1 on white), marks
+  in ink, told apart by shape. The exams are drawn from the courses
+  (`examEvents` in `src/lib/bb/exams.js`), never written to the calendar,
+  and left out when the calendar already has that exam (an 'examen' row
+  that day at the same hour or naming the course). It looks 8 weeks and 4
+  months ahead, where the exams are. No recap card, so no hold. On a phone
+  it sits under the ask box and opens on the week; from lg it has its own
+  column, 22rem or more, beside a day of at most 42rem (`.today-grid` in
+  `index.css`; wider, the ask box was a 670px input), sticky, and opens on
+  the month: that is the answer to "a lot of void space on the left and on
+  the right" on the iPad. The Rich & Friends dashboard stays one
+  column: the bento was refused there three times.
 - **Nothing is underlined in Hakkilo.** "J'aime pas quand c'est souligne.
   Ca peut etre en gras, ca peut etre a l'interieur d'un petit rond ou d'un
   petit bouton." A small action is a pill (`PILL` in `src/bb/kit.jsx`,
@@ -302,3 +321,9 @@ at the top of this file.
   padding on the element.
 - `backdrop-filter` blurs what is behind an element. Over a flat ground it
   returns that same flat colour, so glass needs a ground to be worth anything.
+- A full-page Playwright screenshot scrolls a horizontal snap track: the
+  week strip read 1848/308 (this week) before the capture and 976/308
+  (September) after it, while real resizes and an iPad turned both ways kept
+  it on this week. When the strip is what is being looked at, set the
+  viewport to the page's height and take a plain screenshot. The sweep's
+  full-page shots show the wrong week for that reason, not because of a bug.

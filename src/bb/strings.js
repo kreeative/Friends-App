@@ -159,6 +159,9 @@ const fr = {
   'bb.today.hi': 'Salut {name}',
   'bb.today.hi_anon': 'Salut',
   'bb.today.title': 'Aujourd’hui',
+  /* Le calendrier de Rich & Friends, le meme compte: nomme pour les
+     lecteurs d'ecran, le mois ecrit dans la carte suffit a l'oeil. */
+  'bb.today.calendar': 'Ton calendrier',
   'bb.today.empty_title': 'Ajoute ton premier cours',
   'bb.today.empty_body': 'Tes diapos, ton guide, tes anciens examens. On en fait des questions de niveau examen.',
   'bb.today.add_course': 'Ajouter un cours',
@@ -905,6 +908,7 @@ const en = {
   'bb.today.hi': 'Hi {name}',
   'bb.today.hi_anon': 'Hi',
   'bb.today.title': 'Today',
+  'bb.today.calendar': 'Your calendar',
   'bb.today.empty_title': 'Add your first course',
   'bb.today.empty_body': 'Your slides, your guide, your past exams. We turn them into exam-level questions.',
   'bb.today.add_course': 'Add a course',

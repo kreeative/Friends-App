@@ -61,12 +61,15 @@ export function itemsFor(day, { agenda, goalsByDay = {}, phaseOf, logged } = {})
       kind: e.goalId ? 'goal' : 'event',
       id: e.occurrenceId ?? e.id,
       title: e.title,
-      /* A range, or null for an all-day entry. clockOf already returns null
-         for a null minute, so this is one branch rather than three. */
+      /* A range, or null for an all-day entry. The start alone when there is
+         no end: a Hakkilo exam whose length was never given still has its
+         hour. */
       detail:
-        e.start_min != null && e.end_min != null
-          ? `${clockOf(e.start_min)} - ${clockOf(e.end_min)}`
-          : null,
+        e.start_min == null
+          ? null
+          : e.end_min == null
+            ? clockOf(e.start_min)
+            : `${clockOf(e.start_min)} - ${clockOf(e.end_min)}`,
       location: e.location ?? null,
     })
   }

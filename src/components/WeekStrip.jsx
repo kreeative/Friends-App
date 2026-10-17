@@ -18,6 +18,8 @@ import { rectOf } from '../lib/gesture'
 import { useLongPress } from '../lib/useLongPress'
 import {
   CURRENT_MONTH,
+  MONTHS_BACK,
+  MONTHS_FORWARD,
   calendarRange,
   monthGrid,
   monthsAround,
@@ -77,6 +79,23 @@ const MARK_STYLE = {
   logged: 'h-1.5 w-1.5 rounded-pill bg-green',
 }
 
+/**
+ * The same four shapes in ink, for Hakkilo's copy of this strip (`study`
+ * below). Hakkilo is black and white and its colour arrives with an event
+ * (CLAUDE.md), so at rest a mark is ink, which also clears 3:1 on white
+ * many times over. The shapes still tell the kinds apart, as above.
+ */
+const STUDY_MARK_STYLE = {
+  event: 'h-1.5 w-3 rounded-pill bg-ink',
+  goal: 'h-1.5 w-1.5 rounded-[2px] bg-ink',
+  cycle: 'h-1.5 w-1.5 rounded-pill border-[1.5px] border-ink',
+  logged: 'h-1.5 w-1.5 rounded-pill bg-ink',
+}
+
+/* One empty list for every strip that has nothing extra to draw, so the
+   agenda is not rebuilt on each render for a new [] from a default. */
+const NONE = []
+
 const OUTCOME_TONE = {
   done: 'chip-green',
   partial: 'chip-accent',
@@ -98,6 +117,15 @@ const OUTCOME_TONE = {
 const WEEKS_BACK = 6
 const WEEKS_FORWARD = 1
 const CURRENT = WEEKS_BACK
+
+/**
+ * Hakkilo's copy looks ahead instead: a term's exams are weeks and months
+ * away, and a study calendar that stops at next week cannot show the midterm
+ * nine days off, let alone the final. The same weeks back, so CURRENT and
+ * CURRENT_MONTH still say where today is.
+ */
+const STUDY_WEEKS_FORWARD = 8
+const STUDY_MONTHS_FORWARD = 4
 
 /** Drawn, one path, so it inherits the ink colour and the type's weight. */
 function Chevron({ dir }) {
@@ -145,14 +173,20 @@ function DayCell({
   marks = [],
   label,
   weekday = false,
+  study = false,
   onSelect,
   onOpen,
 }) {
   /* The element is passed through, not dropped. It is the rectangle the card
      grows out of, and `() => onOpen?.()` silently discards it: the card then
      appears from nowhere, which looks exactly like a transition that was never
-     applied and is nothing of the sort. */
-  const { holding, handlers, consumedClick } = useLongPress((el) => onOpen?.(el))
+     applied and is nothing of the sort.
+
+     No hold without something to open. Hakkilo's strip has no recap card, and
+     a ring that fills under the finger and then opens nothing reads as a
+     control that is broken. The hook hands back no consumedClick when it is
+     off, hence the ?. below. */
+  const { holding, handlers, consumedClick } = useLongPress((el) => onOpen?.(el), { enabled: Boolean(onOpen) })
 
   /* The letter above the number is formatted here rather than by the caller so
      no call site can forget to pass the language. It used to format with
@@ -179,15 +213,37 @@ function DayCell({
    * en soleil et le blanc en mer, parce que le rose et le bleu ne portent pas
    * le meme dessus. Les deux mesures sont dans index.css.
    */
-  const circle = isToday
-    ? 'bg-accent text-on-accent-small font-semibold'
-    : isSelected
+  /**
+   * Hakkilo's colours, in its copy of the strip (`study`).
+   *
+   * Today is ink with a white number: a fact about the calendar, so black and
+   * white, like the rest of Hakkilo at rest. The day you picked is the light
+   * purple Hakkilo keeps for where you are, with an ink ring, because the
+   * lilac alone is 1.64:1 on white and a state needs 3:1 to be seen; picked on
+   * today itself, the lilac goes round the ink instead (below). Ink on the
+   * lilac is 11.5:1. The days to come are not greyed as they are here: in Rich
+   * & Friends they are days not lived yet, in Hakkilo they are where the exams
+   * are. The days of the months on either side are #71717A, 4.83:1: lighter
+   * than the month's own and still readable, because they can be picked.
+   */
+  const circle = study
+    ? isToday
       ? 'bg-ink text-white font-semibold'
-      : outside
-        ? 'text-muted/40'
-        : isFuture
-          ? 'text-muted/60'
+      : isSelected
+        ? 'bg-[#CFC2FF] text-ink font-semibold ring-[1.5px] ring-inset ring-ink'
+        : outside
+          ? 'text-[#71717A]'
           : 'text-ink'
+    : isToday
+      ? 'bg-accent text-on-accent-small font-semibold'
+      : isSelected
+        ? 'bg-ink text-white font-semibold'
+        : outside
+          ? 'text-muted/40'
+          : isFuture
+            ? 'text-muted/60'
+            : 'text-ink'
+  const shapeOf = study ? STUDY_MARK_STYLE : MARK_STYLE
 
   return (
     <button
@@ -197,7 +253,7 @@ function DayCell({
         /* The hold already opened the card. Letting the click through as well
            would move the selection to whatever the finger was over, so the
            sheet would be about one day while the strip highlighted another. */
-        if (consumedClick()) return
+        if (consumedClick?.()) return
         onSelect?.()
       }}
       aria-pressed={isSelected}
@@ -230,7 +286,7 @@ function DayCell({
             /* The accent, not the ink. This ring said "today, and selected" in a
                pale tint of the ink; the ink is a near-black now, so it came out
                as a silver band round a pink dot and read as a disabled state. */
-            isSelected && isToday ? 'ring-2 ring-accent/30 ring-offset-2 ring-offset-transparent' : ''
+            isSelected && isToday ? (study ? 'ring-[3px] ring-[#CFC2FF]' : 'ring-2 ring-accent/30 ring-offset-2 ring-offset-transparent') : ''
           }`}
           style={{ transitionProperty: 'transform, background-color, color' }}
         >
@@ -249,7 +305,7 @@ function DayCell({
        */}
       <span aria-hidden="true" className="flex h-1.5 items-center justify-center gap-[3px]">
         {marks.map((kind) => (
-          <span key={kind} className={MARK_STYLE[kind]} />
+          <span key={kind} className={shapeOf[kind]} />
         ))}
       </span>
     </button>
@@ -324,7 +380,34 @@ function useSnapTrack(initial, active = true) {
   return { ref, page, shown, onScroll, goTo, step }
 }
 
-export default function WeekStrip({ goals = [], statuses = [] }) {
+/**
+ * `study`: Hakkilo's copy of this strip, on its Today page.
+ *
+ *   "Hakilo should have the home page with the calendar and the things to do
+ *    today. You can just copy the Rich and Friend calendar with the Hakilo
+ *    color, just so you have a view of your calendar even when you are on
+ *    Hakilo (because you share the same calendar as Rich and Friend, right?)"
+ *
+ * Right: one account, one calendar_event table, and Hakkilo's plan already
+ * writes its study sessions into it. So the copy is this component and not a
+ * second one, and it reads the calendar's own sources only, the timetable and
+ * the goals with a deadline. The check-ins, the moods, the money and the solo
+ * ticks are Rich & Friends' days and are never fetched there. Nor is the
+ * cycle: Hakkilo is a study app, and a period on its home page would be that
+ * data shown somewhere its owner never put it.
+ *
+ * `extra(events)` returns rows in calendar_event's shape that live elsewhere
+ * and are drawn, never written: Hakkilo's exams, from their courses, less the
+ * ones these events already hold (examEvents in src/lib/bb/exams.js). A
+ * function of the rows read here, because only this component reads them.
+ *
+ * Its colours are Hakkilo's (DayCell and STUDY_MARK_STYLE above), and with no
+ * recap card to grow, a hold does nothing.
+ *
+ * `month` opens it on the month rather than the week: Hakkilo does, where the
+ * calendar has a column of its own beside the day.
+ */
+export default function WeekStrip({ goals = [], statuses = [], study = false, extra = null, month = false }) {
   const { user, profile } = useAuth()
   const { t, locale } = useT()
 
@@ -335,8 +418,11 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
    * file already uses that word for the check-in cycles a group runs on and
    * they are two unrelated things three lines apart. cyclesByDay below is
    * groups; this is the calendar overlay.
+   *
+   * Never in Hakkilo's copy, whatever the profile says. See `study` above.
    */
-  const periodTracking = cycleOn(profile)
+  const periodTracking = !study && cycleOn(profile)
+  const shapeOf = study ? STUDY_MARK_STYLE : MARK_STYLE
 
   /**
    * Eight weeks, one per slide, oldest first.
@@ -347,12 +433,12 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
    */
   const weeks = useMemo(() => {
     const base = weekOf(new Date())[0]
-    return Array.from({ length: WEEKS_BACK + 1 + WEEKS_FORWARD }, (_, i) =>
+    return Array.from({ length: WEEKS_BACK + 1 + (study ? STUDY_WEEKS_FORWARD : WEEKS_FORWARD) }, (_, i) =>
       weekOf(
         new Date(base.getFullYear(), base.getMonth(), base.getDate() + (i - CURRENT) * 7),
       ),
     )
-  }, [])
+  }, [study])
 
   /**
    * The months, for when the card is opened out.
@@ -363,7 +449,10 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
    * a single month grid can only page by month. Two tracks keeps the gesture
    * that already works and adds the one the month view wants.
    */
-  const months = useMemo(() => monthsAround(new Date()), [])
+  const months = useMemo(
+    () => monthsAround(new Date(), MONTHS_BACK, study ? STUDY_MONTHS_FORWARD : MONTHS_FORWARD),
+    [study],
+  )
 
   const week = weeks[CURRENT]
   const todayKey = dayKey()
@@ -379,8 +468,8 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
    * collapsing again keeps what was already fetched rather than throwing it
    * away and refetching on the next tap.
    */
-  const [expanded, setExpanded] = useState(false)
-  const [wide, setWide] = useState(false)
+  const [expanded, setExpanded] = useState(month)
+  const [wide, setWide] = useState(month)
 
   /* The recap, and the square it grows out of. The rectangle is measured at
      the moment of the press rather than looked up later, because by the time
@@ -483,6 +572,44 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
         .lt('submitted_at', new Date(to.getFullYear(), to.getMonth(), to.getDate() + 1).toISOString())
 
     const run = async () => {
+      /**
+       * The calendar and the goals with a deadline, then the rest of the day,
+       * then the cycle.
+       *
+       * Every one of these is wrapped on its own and none of them can take the
+       * others down. They are tables added at different times, and a database
+       * that has not run migration 51 has none of the calendar's: a select
+       * naming a missing table is an error for that select and nothing else,
+       * so the strip degrades to what it drew before rather than going blank.
+       *
+       * No date filter on calendar_event, deliberately. A row is a RULE, not
+       * an occurrence: "Tuesdays and Thursdays until December" has one
+       * starts_on and would fall outside almost every window asked for, so
+       * filtering by date here would hide exactly the recurring classes this
+       * is for. occurrencesOf does the bounding, in agendaFor below.
+       */
+      try {
+        const { data, error } = await supabase.from('calendar_event').select('*')
+        if (!dead && !error) setEvents(data ?? [])
+      } catch {
+        /* No calendar yet. */
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('goals')
+          .select('id, commitment, due_on')
+          .eq('owner_id', user.id)
+          .eq('status', 'active')
+          .not('due_on', 'is', null)
+        if (!dead && !error) setDueGoals(data ?? [])
+      } catch {
+        /* No goals with a deadline. */
+      }
+
+      /* Hakkilo's copy stops here: the calendar is all it draws. */
+      if (study) return
+
       try {
         let { data, error } = await readCheckins(proofShape.current ?? FULL)
 
@@ -578,40 +705,6 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
         /* Offline. The rest of the panel still draws. */
       }
 
-      /**
-       * The calendar, the goals with a deadline, and the cycle.
-       *
-       * Every one of these is wrapped on its own and none of them can take the
-       * others down. They are three tables added at three different times, and
-       * a database that has not run migration 51 has none of them: a select
-       * naming a missing table is an error for that select and nothing else,
-       * so the strip degrades to what it drew before rather than going blank.
-       *
-       * No date filter on calendar_event, deliberately. A row is a RULE, not
-       * an occurrence: "Tuesdays and Thursdays until December" has one
-       * starts_on and would fall outside almost every window asked for, so
-       * filtering by date here would hide exactly the recurring classes this
-       * is for. occurrencesOf does the bounding, in agendaFor below.
-       */
-      try {
-        const { data, error } = await supabase.from('calendar_event').select('*')
-        if (!dead && !error) setEvents(data ?? [])
-      } catch {
-        /* No calendar yet. */
-      }
-
-      try {
-        const { data, error } = await supabase
-          .from('goals')
-          .select('id, commitment, due_on')
-          .eq('owner_id', user.id)
-          .eq('status', 'active')
-          .not('due_on', 'is', null)
-        if (!dead && !error) setDueGoals(data ?? [])
-      } catch {
-        /* No goals with a deadline. */
-      }
-
       /* The cycle, read the same way CyclePanel reads it. The prediction is
          derived here rather than stored, for the reason migration 51 gives:
          a stored prediction goes stale the moment a real date is recorded and
@@ -653,7 +746,7 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
       dead = true
       document.removeEventListener('visibilitychange', onShow)
     }
-  }, [user?.id, from.getTime(), to.getTime(), periodTracking])
+  }, [user?.id, from.getTime(), to.getTime(), periodTracking, study])
 
   /* Which cycles belong to which day. statuses carries every group at once, so
      a day can have more than one, and all of them count as that day. */
@@ -752,7 +845,11 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
    * month view draws six weeks at once and a per-slide expansion would rebuild
    * the map on every swipe.
    */
-  const agenda = useMemo(() => agendaFor(events, from, to), [events, from, to])
+  const extraRows = useMemo(() => (extra ? extra(events) : NONE), [extra, events])
+  const agenda = useMemo(
+    () => agendaFor(extraRows.length ? [...events, ...extraRows] : events, from, to),
+    [events, extraRows, from, to],
+  )
 
   const goalsByDay = useMemo(() => {
     const map = {}
@@ -829,10 +926,13 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
    *
    * marksFor is untouched, so a deadline still puts a dot under its date. That
    * is the half a person scanning the strip needs; the detail is below.
+   *
+   * Hakkilo's copy keeps them: it has no list of goals below, so a deadline
+   * is named here or nowhere.
    */
   const dayItems = useMemo(
-    () => itemsFor(selectedDate, dayCtx).filter((i) => i.kind !== 'goal' && i.kind !== 'logged'),
-    [selectedDate, dayCtx],
+    () => itemsFor(selectedDate, dayCtx).filter((i) => i.kind !== 'logged' && (study || i.kind !== 'goal')),
+    [selectedDate, dayCtx, study],
   )
 
   /* "Nothing on this day" has to account for the calendar too, or a day with
@@ -985,8 +1085,9 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
                       outside={!sameMonth(m, d)}
                       marks={marksFor(d, dayCtx)}
                       label={dayLabelFull(d)}
+                      study={study}
                       onSelect={() => setSelected(k)}
-                      onOpen={(el) => openDay(k, el)}
+                      onOpen={study ? undefined : (el) => openDay(k, el)}
                     />
                   )
                 })}
@@ -1018,8 +1119,9 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
                     isFuture={k > todayKey}
                     marks={marksFor(d, dayCtx)}
                     label={dayLabelFull(d)}
+                    study={study}
                     onSelect={() => setSelected(k)}
-                    onOpen={(el) => openDay(k, el)}
+                    onOpen={study ? undefined : (el) => openDay(k, el)}
                   />
                 )
               })}
@@ -1071,7 +1173,10 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
          * the tint plus the tracking still say "pink badge" without the type
          * having to be the thing carrying the colour.
          */
-        className="press mt-1 flex w-full items-center justify-center rounded-pill bg-accent/[0.10] py-2 transition-colors hover:bg-accent/[0.16]"
+        /* In Hakkilo, its grey well, and the lilac while it is pressed. */
+        className={`press mt-1 flex w-full items-center justify-center rounded-pill py-2 transition-colors ${
+          study ? 'bg-raised hover:bg-ink/[0.08] active:bg-[#CFC2FF]' : 'bg-accent/[0.10] hover:bg-accent/[0.16]'
+        }`}
       >
         <span className="text-label font-semibold uppercase tracking-[0.12em] text-ink">
           {expanded ? t('week.week') : t('week.month')}
@@ -1114,8 +1219,11 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
            * shows a button leading to "nothing was recorded on this day" is a
            * card that teaches people the button is not worth pressing, and
            * they stop pressing it on the days it would have paid off.
+           *
+           * Not in Hakkilo's copy, which has no card to open: the list below
+           * is the whole of its day.
            */}
-          {!nothing && (
+          {!nothing && !study && (
             <button
               type="button"
               /* The same card the hold opens, grown out of this button when it
@@ -1152,7 +1260,7 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
                   <li key={item.id} className="flex items-start gap-2">
                     <span
                       aria-hidden="true"
-                      className={`mt-1.5 shrink-0 ${MARK_STYLE[item.kind]}`}
+                      className={`mt-1.5 shrink-0 ${shapeOf[item.kind]}`}
                     />
                     <span className="min-w-0">
                       <span className="text-safe block text-small font-semibold text-ink">
@@ -1283,6 +1391,7 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
         )}
       </div>
 
+      {!study && (
       <DayRecap
         open={recap}
         origin={origin}
@@ -1301,6 +1410,7 @@ export default function WeekStrip({ goals = [], statuses = [] }) {
         currency={currency}
         onClose={() => setRecap(false)}
       />
+      )}
     </div>
 
     {/* The card under the calendar, and only for somebody whose app has the

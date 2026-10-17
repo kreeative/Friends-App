@@ -12,7 +12,7 @@ import { planDays } from './planner.js'
 import { MAX_BYTES, formatOf, kindFor, refuse } from './formats.js'
 import { SHORT, citeOf, citedIds, hasCites, shortId, shortMap, splitRich, stripCites } from './cite.js'
 import { dictationNote, dictationSupport, heard, speechLang, withSpeech } from './dictation.js'
-import { EXAM_KINDS, SCOPES, comingExams, daysToExamOf, examChip, examColumns, examFormat, examToAsk, examsLine, examsOf, nextExam, scopeOf, stillAhead } from './exams.js'
+import { EXAM_KINDS, SCOPES, comingExams, daysToExamOf, examChip, examColumns, examEvents, examFormat, examToAsk, examsLine, examsOf, nextExam, scopeOf, stillAhead } from './exams.js'
 import { buildSession } from './sampler.js'
 import { BB_STRINGS } from '../../bb/strings.js'
 import { readdirSync, readFileSync } from 'node:fs'
@@ -236,6 +236,21 @@ eq('the constant says so', SHORT, 8)
   eq('each exam day says which exam', plan.filter((d) => d.exams.length).map((d) => d.exams[0].kind), ['midterm', 'final'])
   ok('the course is studied again the day after the midterm', plan.find((d) => d.date === dayKey(later(5))).items.some((i) => i.kind === 'study'))
 
+  /* On the calendar of Today (WeekStrip with `study`): drawn, never written. */
+  const named = { ...course, name: 'Chimie organique', code: 'CHM-101' }
+  const cal = examEvents([named], { title: (c, e) => `${e.kind} · ${c.name}` })
+  eq('every dated exam is on the calendar, on its day and at its hour', cal.map((r) => [r.title, r.starts_on, r.start_min]), [['midterm · Chimie organique', dayKey(later(9)), 14 * 60], ['final · Chimie organique', dayKey(later(60)), 14 * 60]])
+  eq('for its own length, else the course one', cal.map((r) => r.end_min), [14 * 60 + 90, 14 * 60 + 180])
+  eq('else its hour alone', examEvents([{ id: 'n', exams: [{ id: 'f', kind: 'final', at: at(3) }] }])[0].end_min, null)
+  eq('as an exam, once', cal.map((r) => [r.category, r.weekdays.length, r.until_on]), [['examen', 0, null], ['examen', 0, null]])
+  eq('an exam without a date is not on it', examEvents([{ id: 'u', exams: [{ id: 'f', kind: 'final', at: null }] }]).length, 0)
+  const imported = { id: 'x', category: 'examen', title: 'Examen intra CHM-101', starts_on: dayKey(later(9)), start_min: 9 * 60 }
+  eq('one the syllabus import already wrote is left out: it names the course', examEvents([named], { events: [imported] }).map((r) => r.starts_on), [dayKey(later(60))])
+  eq('or it is at the same hour that day', examEvents([named], { events: [{ ...imported, title: 'Partiel', start_min: 14 * 60 }] }).length, 1)
+  eq('a class that day is not an exam', examEvents([named], { events: [{ ...imported, category: 'cours', start_min: 14 * 60 }] }).length, 2)
+  eq('the code is matched as a word: CHM-1010 is another course', examEvents([named], { events: [{ ...imported, title: 'Examen CHM-1010' }] }).length, 2)
+  eq('and accents do not hide the name', examEvents([{ id: 'e', name: 'Économie générale', exams: [{ id: 'f', kind: 'final', at: at(3) }] }], { events: [{ ...imported, title: 'Examen final - Economie generale', starts_on: dayKey(later(3)) }] }).length, 0)
+
   /* A session before the midterm: its chapters first. */
   const items = [
     { id: 'old6', type: 'mcq', concept_id: 'k6', chapter_id: 'ch6', quality: 'pass' },
@@ -352,6 +367,26 @@ eq('the constant says so', SHORT, 8)
   /* "✓ Au hasard" needs 84px and a third of the row is 77 at 320: a button
      takes the width its words need, and the row wraps before a word does. */
   ok('the "how sure" buttons never break a word', /min-w-max flex-1 whitespace-nowrap/.test(read('bb/pages/Session.jsx')))
+}
+
+/* --- the calendar on Today ------------------------------------------------------------------- */
+{
+  const read = (path) => readFileSync(new URL(`../../${path}`, import.meta.url), 'utf8')
+  /* "Hakilo should have the home page with the calendar and the things to do
+     today. You can just copy the Rich and Friend calendar with the Hakilo
+     color" (Kee): Rich & Friends' own strip, in its Hakkilo copy. */
+  const today = read('bb/pages/Today.jsx')
+  ok('Today draws the shared calendar, in its Hakkilo copy, with the exams', /<WeekStrip study month=\{roomy\} extra=\{examsOnCalendar\} \/>/.test(today) && /examEvents\(courses, /.test(today))
+  const strip = read('components/WeekStrip.jsx')
+  const run = strip.slice(strip.indexOf('const run = async () => {'), strip.indexOf("document.addEventListener('visibilitychange'"))
+  const stop = run.indexOf('if (study) return')
+  ok('the copy reads the calendar and the deadlines, then stops', stop > run.indexOf("from('calendar_event')") && stop > run.indexOf(".from('goals')") && run.indexOf("from('calendar_event')") > 0)
+  ok('before the check-ins, the solo ticks, the money and the moods', ['readCheckins(', ".from('goal_days')", 'loadBudget(', ".from('daily_mood')"].every((s) => run.indexOf(s) > stop))
+  ok('and never reads the cycle', /const periodTracking = !study && cycleOn\(profile\)/.test(strip) && run.indexOf("from('cycle_log')") > run.indexOf('if (!periodTracking) return'))
+  ok('no recap card in it, and so no hold', /\{!study && \(\s*<DayRecap/.test(strip) && /onOpen=\{study \? undefined/.test(strip) && /enabled: Boolean\(onOpen\)/.test(strip))
+  ok('its colours: today in ink, the day picked lilac with an ink ring, the marks in ink', /study\s*\?\s*isToday\s*\?\s*'bg-ink text-white font-semibold'/.test(strip) && /bg-\[#CFC2FF\] text-ink font-semibold ring-\[1\.5px\] ring-inset ring-ink/.test(strip) && /const STUDY_MARK_STYLE = \{[^}]*bg-ink/.test(strip))
+  const css = read('index.css')
+  ok('under the ask box on a phone, beside the day from lg', /\.today-grid \{[\s\S]{0,80}grid-template-areas: 'ask' 'cal' 'rest'/.test(css) && /'ask cal'\s*'rest cal'/.test(css) && /lg:sticky/.test(today))
 }
 
 /* --- the two languages ------------------------------------------------------------------- */

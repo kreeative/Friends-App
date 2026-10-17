@@ -52,6 +52,7 @@ eq('then the 10:00', items[2].title, 'Cours de Finance')
 
 eq('a timed entry carries its range', items[2].detail, '10:00 - 12:00')
 eq('an all-day one carries none', items[0].detail, null)
+eq('one with a start and no end carries its start', itemsFor(THU, { agenda: agendaFor([{ ...exam, end_min: null }], THU, THU) })[0].detail, '08:00')
 eq('and the room comes through', itemsFor(THU, { agenda: agendaFor([{ ...course, location: 'B-204' }], THU, THU) })[0].location, 'B-204')
 
 /* --- the dots ------------------------------------------------------------ */
