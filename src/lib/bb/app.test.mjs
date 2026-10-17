@@ -328,7 +328,12 @@ eq('the constant says so', SHORT, 8)
   ok('the mic is drawn only where dictation works', /voice\.ready && \(/.test(box) && /dictationSupport\(\)/.test(box))
   const shell = read('bb/BBShell.jsx')
   const bar = shell.slice(shell.indexOf('function TabBar'), shell.indexOf('export default function BBShell'))
-  ok('four places in the tab bar, no profile', /TABS\.slice\(0, 4\)/.test(bar) && !/Avatar/.test(bar))
+  /* "Well then also add the calendar tab to hakkilo" (Kee): a fifth place,
+     after the four that were there, so none of them moved. */
+  const tabs = shell.slice(shell.indexOf('const TABS = ['), shell.indexOf(']', shell.indexOf('const TABS = [')))
+  ok('five places in the tab bar, the calendar last, no profile', /TABS\.slice\(0, 5\)/.test(bar) && !/Avatar/.test(bar) && ['/hakkilo/app', '/hakkilo/cours', '/hakkilo/coach', '/hakkilo/plan', '/hakkilo/calendrier', '/hakkilo/profil'].every((to, i, all) => i === 0 || tabs.indexOf(`'${to}'`) > tabs.indexOf(`'${all[i - 1]}'`)))
+  const rail = shell.slice(shell.indexOf('function Rail'), shell.indexOf('function TabBar'))
+  ok('and the same five in the rail', /TABS\.slice\(0, 5\)/.test(rail) && /calendar: IconCalendar/.test(shell))
   const bars = shell.slice(shell.indexOf('function TopBar'), shell.indexOf('export default function BBShell'))
   ok('no Rich & Friends mark in the bars', !/<Mark\b/.test(bars))
   /* "Le logo a gauche est pas bien dispose dans la grille": the rail's H was
@@ -387,13 +392,19 @@ eq('the constant says so', SHORT, 8)
      today. You can just copy the Rich and Friend calendar with the Hakilo
      color" (Kee): Rich & Friends' own strip, in its Hakkilo copy. */
   const today = read('bb/pages/Today.jsx')
-  ok('Today draws the shared calendar, in its Hakkilo copy, with the exams', /<WeekStrip study extra=\{examsOnCalendar\} \/>/.test(today) && /examEvents\(courses, /.test(today))
+  const kit = read('bb/kit.jsx')
+  ok('Today draws the shared calendar, in its Hakkilo copy, with the exams', /<WeekStrip study extra=\{examsOnCalendar\} \/>/.test(today) && /const examsOnCalendar = useExamsOnCalendar\(courses\)/.test(today) && /export function useExamsOnCalendar\(courses\)[\s\S]{0,200}examEvents\(courses, /.test(kit))
+  /* The Calendar tab: the same strip, the same exams, opened on the month. */
+  const calendar = read('bb/pages/Calendar.jsx')
+  ok('the Calendar tab is the same strip with the same exams, on the month', /<WeekStrip study month extra=\{examsOnCalendar\} \/>/.test(calendar) && /const examsOnCalendar = useExamsOnCalendar\(courses\)/.test(calendar) && /<Route path="calendrier" element=\{<Calendar \/>\} \/>/.test(read('bb/BBApp.jsx')))
+  ok('one column like every Hakkilo page', /<Page>/.test(calendar) && !/<Page wide/.test(calendar))
   const strip = read('components/WeekStrip.jsx')
   const run = strip.slice(strip.indexOf('const run = async () => {'), strip.indexOf("document.addEventListener('visibilitychange'"))
   const stop = run.indexOf('if (study) return')
   ok('the copy reads the calendar and the deadlines, then stops', stop > run.indexOf("from('calendar_event')") && stop > run.indexOf(".from('goals')") && run.indexOf("from('calendar_event')") > 0)
   ok('before the check-ins, the solo ticks, the money and the moods', ['readCheckins(', ".from('goal_days')", 'loadBudget(', ".from('daily_mood')"].every((s) => run.indexOf(s) > stop))
   ok('and never reads the cycle', /const periodTracking = !study && cycleOn\(profile\)/.test(strip) && run.indexOf("from('cycle_log')") > run.indexOf('if (!periodTracking) return'))
+  ok('`month` opens it on the month, and reads the months from the start', /const \[expanded, setExpanded\] = useState\(month\)/.test(strip) && /const \[wide, setWide\] = useState\(month\)/.test(strip))
   ok('no recap card in it, and so no hold', /\{!study && \(\s*<DayRecap/.test(strip) && /onOpen=\{study \? undefined/.test(strip) && /enabled: Boolean\(onOpen\)/.test(strip))
   ok('its colours: today in ink, the day picked lilac with an ink ring, the marks in ink', /study\s*\?\s*isToday\s*\?\s*'bg-ink text-white font-semibold'/.test(strip) && /bg-\[#CFC2FF\] text-ink font-semibold ring-\[1\.5px\] ring-inset ring-ink/.test(strip) && /const STUDY_MARK_STYLE = \{[^}]*bg-ink/.test(strip))
   /* It sat beside the day from lg for one release; "arrete de travailler sur

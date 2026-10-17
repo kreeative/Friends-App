@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useT, localeTag } from '../../lib/i18n'
 import { usePageMeta } from '../../lib/pageMeta'
@@ -6,11 +6,11 @@ import { SegTabs } from '../../components/ui'
 import WeekStrip from '../../components/WeekStrip'
 import { daysUntil, sessionsToday, studyStreak } from '../../lib/bb/days'
 import { weeklyLine } from '../../lib/bb/calib'
-import { examEvents, nextExam } from '../../lib/bb/exams'
+import { nextExam } from '../../lib/bb/exams'
 import { loadDue, loadWeek } from '../data'
 import { useBB } from '../BBApp'
 import { Page, PageHead } from '../BBShell'
-import { ExamChip, PILL, examName, weekText } from '../kit'
+import { ExamChip, PILL, examName, useExamsOnCalendar, weekText } from '../kit'
 import { AskBar } from '../Composer'
 
 /**
@@ -37,7 +37,8 @@ import { AskBar } from '../Composer'
  * deadlines, and the exams drawn from the courses. Under the ask bar, in the
  * page's one column, at every width: it sat beside the day from lg for one
  * release, and Kee asked for the iPad as it was before ("arrete de
- * travailler sur la vue d'iPad, keep-le comme avant").
+ * travailler sur la vue d'iPad, keep-le comme avant"). The same strip, on
+ * the month, is the whole of the Calendar tab (pages/Calendar.jsx).
  */
 export const PRESETS = [10, 15, 25]
 
@@ -73,12 +74,7 @@ export default function Today() {
     [courses],
   )
 
-  /* The exams on the calendar, named as the chips name them ("Intra ·
-     Chimie"), less the ones the calendar already has. */
-  const examsOnCalendar = useCallback(
-    (events) => examEvents(courses, { title: (c, e) => `${examName(t, e)} · ${c.name}`, events }),
-    [courses, t],
-  )
+  const examsOnCalendar = useExamsOnCalendar(courses)
 
   const sessions = due?.sessions ?? []
   const streak = studyStreak(sessions)

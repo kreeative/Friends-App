@@ -21,6 +21,7 @@ import Session from './pages/Session'
 import Exam from './pages/Exam'
 import Coach from './pages/Coach'
 import Plan from './pages/Plan'
+import Calendar from './pages/Calendar'
 import Profile from './pages/Profile'
 
 /**
@@ -212,6 +213,8 @@ export default function BBApp() {
           <Route path="coach" element={<Coach />} />
           <Route path="coach/:id" element={<Coach />} />
           <Route path="plan" element={<Plan />} />
+          <Route path="calendrier" element={<Calendar />} />
+          <Route path="calendar" element={<Navigate to="/hakkilo/calendrier" replace />} />
           <Route path="profil" element={<Profile />} />
           <Route path="profile" element={<Navigate to="/hakkilo/profil" replace />} />
           <Route path="courses" element={<Navigate to="/hakkilo/cours" replace />} />

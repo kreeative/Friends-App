@@ -59,7 +59,7 @@ const ROUTES = (
   process.env.SWEEP_ROUTES ??
   '/,/goals,/goals/new,/money,/library,/library?shelf=articles,/calendar,/settings,/profile,/notifications,/cours,/cours/investir-101,/cours/carte-de-credit/c2.2' +
     /* Hakkilo: its public page and pricing, then the app. */
-    ',/hakkilo,/hakkilo/tarifs,/hakkilo/app,/hakkilo/cours,/hakkilo/cours/nouveau,/hakkilo/cours/bbc00001-0000-4000-8000-000000000000,/hakkilo/cours/bbc00001-0000-4000-8000-000000000000/fiches,/hakkilo/cours/bbc00001-0000-4000-8000-000000000000/banque,/hakkilo/session/bbc00001-0000-4000-8000-000000000000,/hakkilo/coach/bbc00001-0000-4000-8000-000000000000,/hakkilo/plan,/hakkilo/profil' +
+    ',/hakkilo,/hakkilo/tarifs,/hakkilo/app,/hakkilo/cours,/hakkilo/cours/nouveau,/hakkilo/cours/bbc00001-0000-4000-8000-000000000000,/hakkilo/cours/bbc00001-0000-4000-8000-000000000000/fiches,/hakkilo/cours/bbc00001-0000-4000-8000-000000000000/banque,/hakkilo/session/bbc00001-0000-4000-8000-000000000000,/hakkilo/coach/bbc00001-0000-4000-8000-000000000000,/hakkilo/plan,/hakkilo/calendrier,/hakkilo/profil' +
     /* Phase 2: the mock exam, the case lab, the visuals, and the TikTok page. */
     ',/hakkilo/examen/bbc00001-0000-4000-8000-000000000000,/hakkilo/cours/bbc00001-0000-4000-8000-000000000000/examen,/hakkilo/cours/bbc00001-0000-4000-8000-000000000000/cas,/hakkilo/cours/bbc00001-0000-4000-8000-000000000000/schemas,/hakkilo/go'
 ).split(',')

@@ -1,9 +1,9 @@
-import { Fragment } from 'react'
+import { Fragment, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { BB_LOGO } from './logo'
 import { useT } from '../lib/i18n'
 import { anchorChip } from '../lib/bb/quality'
-import { chipFor, examChip } from '../lib/bb/exams'
+import { chipFor, examChip, examEvents } from '../lib/bb/exams'
 import { citeOf, splitRich } from '../lib/bb/cite'
 
 /**
@@ -106,6 +106,17 @@ export function BBLogo({ layout = 'stacked', tile = 'lilac', className = '', pad
 export function examName(t, exam) {
   if (exam?.kind === 'midterm') return exam.n ? t('bb.ex.midterm_n', { n: exam.n }) : t('bb.ex.midterm')
   return exam?.kind === 'final' ? t('bb.ex.final') : t('bb.ex.exam')
+}
+
+/**
+ * The exams on the shared calendar, named as the chips name them ("Intra ·
+ * Chimie"), less the ones the calendar already has (examEvents in
+ * src/lib/bb/exams.js): the `extra` of the strip on Today and on the
+ * Calendar tab, so both draw the same exams.
+ */
+export function useExamsOnCalendar(courses) {
+  const { t } = useT()
+  return useCallback((events) => examEvents(courses, { title: (c, e) => `${examName(t, e)} · ${c.name}`, events }), [courses, t])
 }
 
 /**

@@ -26,6 +26,7 @@ const fr = {
   'bb.nav.courses': 'Cours',
   'bb.nav.coach': 'Coach',
   'bb.nav.plan': 'Plan',
+  'bb.nav.calendar': 'Calendrier',
   'bb.nav.profile': 'Profil',
   'bb.nav.primary': 'Navigation Hakkilo',
   'bb.nav.switch': 'Aller sur Rich & Friends',
@@ -162,6 +163,8 @@ const fr = {
   /* Le calendrier de Rich & Friends, le meme compte: nomme pour les
      lecteurs d'ecran, le mois ecrit dans la carte suffit a l'oeil. */
   'bb.today.calendar': 'Ton calendrier',
+  /* Sous le titre de l'onglet Calendrier, le meme calendrier sur le mois. */
+  'bb.calendar.lede': 'Tes cours, tes séances et tes examens, au même endroit.',
   /* Devant les durees d'une seance: "Le truc de 10, 15 minutes, il est la,
      faire quoi ?" (Kee). La question dit a quoi elles servent. */
   'bb.today.how_long': `Tu as combien de temps${N}?`,
@@ -783,6 +786,7 @@ const en = {
   'bb.nav.courses': 'Courses',
   'bb.nav.coach': 'Coach',
   'bb.nav.plan': 'Plan',
+  'bb.nav.calendar': 'Calendar',
   'bb.nav.profile': 'Profile',
   'bb.nav.primary': 'Hakkilo navigation',
   'bb.nav.switch': 'Go to Rich & Friends',
@@ -912,6 +916,7 @@ const en = {
   'bb.today.hi_anon': 'Hi',
   'bb.today.title': 'Today',
   'bb.today.calendar': 'Your calendar',
+  'bb.calendar.lede': 'Your classes, study sessions and exams, in one place.',
   'bb.today.how_long': 'How much time do you have?',
   'bb.today.empty_title': 'Add your first course',
   'bb.today.empty_body': 'Your slides, your guide, your past exams. We turn them into exam-level questions.',
