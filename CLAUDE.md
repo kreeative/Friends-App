@@ -178,10 +178,13 @@ and the error points at the wrong thing.
   named at the end of each page, with its mark and the way back
   (`AppFooter` in `src/bb/BBShell.jsx`, `data-hook="bb-footer"`). The other
   way is one tap from every Rich & Friends screen: "un raccourci dans Rich
-  and Friends qui me renvoie sur Hakkilo" put Hakkilo's icon beside the bell,
-  in the top bar on a phone and at the foot of the rail above md
-  (`HakkiloLink` in `src/components/AppShell.jsx`, `data-hook="to-hakkilo"`).
-  A link and nothing else; the card on /me stays.
+  and Friends qui me renvoie sur Hakkilo". Hakkilo's H sits right after the
+  Rich & Friends logo, its twin (same tile, size, shadow and corners), in
+  the top bar on a phone and under it at the top of the rail: "just the H,
+  it should be close to the other logo, not the opposite side", and the
+  "Hak / kilo" lettering was refused (`HakkiloLink` in
+  `src/components/AppShell.jsx`, `data-hook="to-hakkilo"`). A link and
+  nothing else; the card on /me stays.
 - **Nothing is underlined in Hakkilo.** "J'aime pas quand c'est souligne.
   Ca peut etre en gras, ca peut etre a l'interieur d'un petit rond ou d'un
   petit bouton." A small action is a pill (`PILL` in `src/bb/kit.jsx`,
