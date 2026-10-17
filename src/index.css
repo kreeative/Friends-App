@@ -1952,23 +1952,9 @@
     box-shadow: none;
   }
 
-  /**
-   * A button that cannot be pressed yet is solid grey, not the live button
-   * at 40%. Faded, the violet "Valider" measured 1.29:1 and the black
-   * "Envoyer" 1.55:1 while they waited for an answer: white words on a
-   * see-through colour, on the one button the screen is about. #52525B on
-   * #E4E4E7 is 6.09:1, and still plainly not a button that works.
-   * One rule for every .btn in /bb, so a new page cannot forget it.
-   */
-  [data-surface='bb'] .btn:disabled {
-    opacity: 1;
-    background: rgb(228 228 231);
-    color: rgb(82 82 91);
-    border-color: transparent;
-    box-shadow: none;
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
+  /* A button that cannot be pressed is grey: the rule is app-wide now, out
+     of @layer at the end of this file ("si rien n'a change, le bouton
+     enregistrer reste grise, partout dans l'app"). */
 
 
   /* Motion is decoration here, and decoration is opt-out. */
@@ -4526,6 +4512,27 @@
 [data-surface='bb'] input[type='checkbox']:checked {
   background: #f8cb02;
   border-color: rgb(var(--c-ink));
+}
+
+/* A BUTTON THAT CANNOT BE PRESSED IS GREY, EVERYWHERE.
+   "Si rien n'a change, le bouton enregistrer reste grise, partout dans
+   l'app" (Kee). It was the live colour at 40% on .btn (faded pink, the
+   violet "Valider" of Hakkilo measured 1.29:1 that way), 50% on a few, and
+   on the small action pills no change at all: a pink "Enregistrer" that did
+   nothing. #52525B on #E4E4E7 is 6.09:1 and plainly not a button that
+   works. :root raises it over the disabled:opacity-* and hover utilities a
+   few buttons still carry; unlayered so Tailwind keeps it whatever it sees. */
+:root :is(.btn, .btn-primary, .btn-ghost, .btn-outline, .goal-action-done, .goal-action-soft, .goal-action-fill):disabled {
+  opacity: 1;
+  background: rgb(228 228 231);
+  color: rgb(82 82 91);
+  border-color: transparent;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  translate: none;
+  transform: none;
+  cursor: default;
 }
 :where(input[type='checkbox'], input[type='radio']):focus-visible {
   outline: none;

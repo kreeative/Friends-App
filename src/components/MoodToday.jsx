@@ -8,6 +8,7 @@ import { isMissingColumn } from '../lib/dberr'
 import { cleanMoods, primaryMood } from '../lib/moods'
 import MoodBoard, { MoodBadges } from './MoodBoard'
 import { useMoodAudience } from './MoodShare'
+import { changed } from '../lib/dirty'
 
 /**
  * How you are today, on the dashboard.
@@ -287,10 +288,14 @@ export default function MoodToday() {
                 ))}
 
               <div className="mt-7 flex flex-col gap-3 sm:flex-row-reverse">
+                {/* Grey while the faces picked are the ones already saved:
+                    "si rien n'a change, le bouton enregistrer reste grise"
+                    (src/lib/dirty.js). */}
                 <button
                   onClick={save}
-                  disabled={saving}
+                  disabled={saving || !changed(moods, draft)}
                   className="btn-primary press sm:w-auto sm:px-9"
+                  data-hook="mood-save"
                 >
                   {saving ? '…' : t('ui.save')}
                 </button>

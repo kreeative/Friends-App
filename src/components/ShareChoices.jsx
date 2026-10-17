@@ -6,6 +6,7 @@ import { useT } from '../lib/i18n'
 import { errorText } from '../lib/dberr'
 import { Sheet } from './ui'
 import { Spot } from './StickerKit'
+import { changed } from '../lib/dirty'
 
 /**
  * CE QUE TU PARTAGES AVEC CE GROUPE.
@@ -51,6 +52,11 @@ export default function ShareChoices({ groupId, current, onSaved, submitLabel })
   const [photo, setPhoto] = useState(current ? current.name : true)
   const [proofs, setProofs] = useState(current ? current.photos : true)
   const [mood, setMood] = useState(false)
+  /* L'humeur telle qu'elle est enregistree: avec le nom et les photos de
+     `current`, ce a quoi le bouton se compare. Rien de change, il reste gris
+     ("si rien n'a change, le bouton enregistrer reste grise", src/lib/dirty.js).
+     Une premiere reponse (current null) se valide telle quelle. */
+  const [moodSaved, setMoodSaved] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
 
@@ -66,7 +72,10 @@ export default function ShareChoices({ groupId, current, onSaved, submitLabel })
         .eq('user_id', user.id)
         .eq('group_id', groupId)
         .maybeSingle()
-      if (!dead && data) setMood(true)
+      if (!dead && data) {
+        setMood(true)
+        setMoodSaved(true)
+      }
     })()
     return () => {
       dead = true
@@ -132,7 +141,7 @@ export default function ShareChoices({ groupId, current, onSaved, submitLabel })
         </p>
       )}
 
-      <button className="btn-primary press mt-3 text-[1.1875rem] font-bold" disabled={busy} data-hook="share-save">
+      <button className="btn-primary press mt-3 text-[1.1875rem] font-bold" disabled={busy || (current != null && !changed({ photo: current.name, proofs: current.photos, mood: moodSaved }, { photo, proofs, mood }))} data-hook="share-save">
         {busy ? t('share.saving') : submitLabel ?? t('share.save')}
       </button>
     </form>

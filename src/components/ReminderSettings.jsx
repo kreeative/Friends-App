@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useT } from '../lib/i18n'
 import { DEFAULTS, LEAD_CHOICES, fromHm, isMuted, toHm } from '../lib/reminders'
 import { MAX_TARGET, MIN_TARGET, everyLabel } from '../lib/water'
@@ -39,6 +39,12 @@ export default function ReminderSettings() {
 
   const servingRef = useRef(null)
   const [savedServing, setSavedServing] = useState(false)
+  /* Ce qui est tape dans la contenance, tant que ce n'est pas enregistre: le
+     bouton reste gris tant que la valeur gardee ne changerait pas ("si rien
+     n'a change, le bouton enregistrer reste grise"). Remis a zero quand la
+     base renvoie une contenance ou une unite, comme le champ (sa key). */
+  const [typed, setTyped] = useState(null)
+  useEffect(() => setTyped(null), [pref?.water_glass_ml, pref?.water_unit])
 
   /**
    * Enregistrer la contenance, bornee.
@@ -88,6 +94,9 @@ export default function ReminderSettings() {
   }
 
   if (loading) return <p className="text-small text-muted">{t('err.loading')}</p>
+
+  const typedMl = typed == null || !pref ? null : parseAmount(typed, pref.water_unit)
+  const servingChanged = Boolean(typedMl) && safeServing(typedMl, pref.water_glass_ml) !== pref.water_glass_ml
 
   if (pending) {
     return (
@@ -252,6 +261,7 @@ export default function ReminderSettings() {
                     className="field w-28 shrink-0"
                     defaultValue={toUnit(pref.water_glass_ml, pref.water_unit)}
                     key={`${pref.water_unit}-${pref.water_glass_ml}`}
+                    onChange={(e) => setTyped(e.target.value)}
                     onBlur={(e) => commitServing(e.target.value)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
@@ -287,8 +297,9 @@ export default function ReminderSettings() {
                      */
                     onPointerDown={(e) => e.preventDefault()}
                     onClick={() => commitServing(servingRef.current?.value)}
+                    disabled={!servingChanged}
                     data-hook="water-serving-save"
-                    className="press shrink-0 rounded-pill bg-ink/[0.06] px-4 py-2 text-small font-semibold text-ink hover:bg-ink/[0.12]"
+                    className="press shrink-0 rounded-pill bg-ink/[0.06] px-4 py-2 text-small font-semibold text-ink hover:bg-ink/[0.12] disabled:cursor-default disabled:bg-[#E4E4E7] disabled:text-[#52525B]"
                   >
                     {savedServing ? t('remind.saved') : t('remind.save')}
                   </button>

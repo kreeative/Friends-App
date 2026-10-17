@@ -92,6 +92,32 @@ and the error points at the wrong thing.
   coach is told both. `exam_at` stays, holding the next exam, for an app
   opened before and for the database until 82 has run; `src/bb/data.js`
   reads and writes without `exams` while the column is missing.
+- **The exam chip is the way to change an exam.** "Au lieu de mettre ce
+  grand phrase 'changer la date', quand on clique sur 'exam in 46' on
+  puisse changer et enregistrer" (Kee). On the course page the chip is a
+  button with a pencil and opens that exam's form in its row; on Today and
+  on the plan the same chip is a link to the course page with the form
+  already open (`?examen=<id>`, read once by `src/bb/course/Exams.jsx`).
+  No "change the date" line beside a chip, ever again.
+- **Save waits for a change, everywhere.** "Si rien a changer le bouton
+  enregistrer ou save rester griser partout pour l'app" (Kee). A form that
+  edits something already saved compares itself with it (`changed()` in
+  `src/lib/dirty.js`, read as a person reads a form: "6" is the 6 saved,
+  spaces and an empty field are nothing, a set ticked in another order is
+  the same set; amounts compare in cents through the app's own `toCents`,
+  so "12,5" over a saved 12.50 is no change). Its Save is grey until they
+  differ, and grey again once the change is undone or saved. Something new
+  (an exam being added, a first answer) is itself the change. A form whose
+  Save can be grey needs a way out that is not Save: Cancel or close.
+  `src/lib/dirty.test.mjs` finds every such Save in the source by its
+  data-hook and fails when one loses its gate; a new edit form joins that
+  list.
+- **A button that cannot be pressed is solid grey, everywhere**: `#52525B`
+  on `#E4E4E7` (6.09:1), never the live colour faded (faded, the violet
+  "Valider" measured 1.29:1). One rule at the end of `index.css` covers
+  `.btn`, `.btn-primary`, `.btn-ghost`, `.btn-outline` and the
+  `.goal-action-*` pills; a button outside those families says it with
+  `disabled:bg-[#E4E4E7] disabled:text-[#52525B]`.
 - **Hakkilo is black and white, and colour arrives with an event.**
   "Instead of blue or pink theme can we go for a more straightforward theme
   like black and white", then "just black and white background" and "keep
@@ -128,9 +154,8 @@ and the error points at the wrong thing.
   chip, then the mic and the send arrow. Never a row of icons squeezed
   together again. Its floating bars are
   solid white, never glass: over a flat ground a translucent bar is a
-  window onto whatever scrolls under it. A button that cannot be pressed
-  yet is solid grey (`#52525B` on `#E4E4E7`, 6.09:1), never faded. The pink
-  and turquoise rules below still hold for Rich & Friends.
+  window onto whatever scrolls under it. The pink and turquoise rules
+  above still hold for Rich & Friends.
 - **The Hakkilo bars carry Hakkilo only.** "Enleve le logo RF dans la
   barre, ca peut etre mentionne dans le footer plutot": Rich & Friends is
   named at the end of each page, with its mark and the way back

@@ -187,7 +187,7 @@ const fr = {
   'bb.ex.final': 'Final',
   'bb.ex.exam': 'Examen',
   'bb.ex.title': 'Tes examens',
-  'bb.ex.edit': 'Modifier',
+  'bb.ex.edit_named': 'Modifier · {name}',
   'bb.ex.cancel': 'Annuler',
   'bb.ex.remove': 'Retirer cet examen',
   'bb.ex.undated': 'Date à ajouter',
@@ -299,7 +299,6 @@ const fr = {
   'bb.course.delete': 'Supprimer ce cours',
   'bb.course.delete_confirm': `Supprimer «${N}{name}${N}», ses fichiers, ses questions et ta progression${N}? C’est définitif.`,
   'bb.course.deleting': 'Suppression',
-  'bb.course.exam_set': 'Modifier les examens',
   'bb.course.save': 'Enregistrer',
 
   'bb.bp.title': 'Voici à quoi ressemble ton examen',
@@ -926,7 +925,7 @@ const en = {
   'bb.ex.final': 'Final',
   'bb.ex.exam': 'Exam',
   'bb.ex.title': 'Your exams',
-  'bb.ex.edit': 'Edit',
+  'bb.ex.edit_named': 'Edit · {name}',
   'bb.ex.cancel': 'Cancel',
   'bb.ex.remove': 'Remove this exam',
   'bb.ex.undated': 'Date to add',
@@ -1035,7 +1034,6 @@ const en = {
   'bb.course.delete': 'Delete this course',
   'bb.course.delete_confirm': 'Delete “{name}”, its files, its questions and your progress? This is permanent.',
   'bb.course.deleting': 'Deleting',
-  'bb.course.exam_set': 'Edit the exams',
   'bb.course.save': 'Save',
 
   'bb.bp.title': 'Here is what your exam looks like',

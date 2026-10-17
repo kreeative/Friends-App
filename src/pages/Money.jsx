@@ -41,6 +41,7 @@ import { SpendableBar } from '../components/Envelopes'
 import CatDisc from '../components/CatDisc'
 import { ENVELOPE_CATEGORIES, allocationsFor, spendable, toAllocate, totalAllocated } from '../lib/envelope'
 import FixedCharges from '../components/FixedCharges'
+import { changed } from '../lib/dirty'
 
 /**
  * The money screen.
@@ -1355,6 +1356,16 @@ function PlanForm({ plan, fixed, userId, currency, onCancel, onSaved }) {
   const dirty = JSON.stringify(current) !== JSON.stringify(asFields())
   useDraft(draftKey, dirty ? current : null)
 
+  /* The form in cents, read the way save() reads it, without the rows added
+     and left empty that save() drops: what the Save button compares. */
+  const asCents = (f) => ({
+    income: toCents(f.income),
+    savings: toCents(f.savings),
+    rows: f.rows
+      .filter((r) => r.id || r.label.trim() || String(r.amount ?? '').trim())
+      .map((r) => ({ id: r.id, label: r.label.trim(), amount: toCents(r.amount), active: r.active })),
+  })
+
   /** Throw the draft away and go back to what the server has. */
   function discardDraft() {
     restored.current = false
@@ -1681,7 +1692,17 @@ function PlanForm({ plan, fixed, userId, currency, onCancel, onSaved }) {
           )}
         </Section>
 
-        <button className="btn-primary press mt-8" onClick={save} disabled={busy}>
+        {/* Grey while the form is the saved plan ("si rien n'a change, le
+            bouton enregistrer reste grise", src/lib/dirty.js). Amounts are
+            compared in cents, read by the toCents the save uses, so "1200"
+            or "1200,00" typed over a saved 1200.00 is not a change. A row
+            added and left empty is not one either: save drops it. */}
+        <button
+          className="btn-primary press mt-8"
+          onClick={save}
+          disabled={busy || !changed(asCents(asFields()), asCents(current))}
+          data-hook="plan-save"
+        >
           {busy ? t('money.saving') : t('money.save')}
         </button>
       </div>

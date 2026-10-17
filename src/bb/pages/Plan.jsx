@@ -223,7 +223,7 @@ export default function Plan() {
                 <Link to={`/hakkilo/cours/${c.id}`} className="text-body font-bold text-ink underline-offset-4 hover:underline">
                   {c.name}
                 </Link>
-                <ExamChip exam={e} />
+                <ExamChip exam={e} course={c} link />
               </div>
               <Bar className="mt-4" pct={ready[`${c.id}:${e.id}`] ?? 0} label={t('bb.plan.ready', { n: ready[`${c.id}:${e.id}`] ?? 0 })} />
               {daysUntil(e.at) <= 10 && <p className="mt-3 text-small text-ink">{t('bb.plan.final')}</p>}

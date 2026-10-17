@@ -11,6 +11,7 @@ import { draftOf, stepsOf } from '../lib/steps'
 import { channelKey, toHm } from '../lib/reminders'
 import { Field, HINT_ANCHOR, Hint, PickerField } from './ui'
 import { Slider, useSlider } from './Segmented'
+import { changed } from '../lib/dirty'
 
 /**
  * Rough signals that someone has written an outcome ("hit 10k followers")
@@ -425,6 +426,64 @@ export default function GoalForm({ onDone, onCancel, initial = null, groupId = n
    */
   const canSave = commitment.trim().length > 2
 
+  /**
+   * NOTHING CHANGED, NOTHING TO SAVE.
+   *
+   * "Si rien n'a change, le bouton enregistrer reste grise" (Kee). Editing a
+   * goal, the form is compared with the goal as it opened, built the way the
+   * fields above were seeded (steps included, once they have arrived), and
+   * "Enregistrer les modifications" waits for a real difference
+   * (src/lib/dirty.js). A new goal is gated by canSave alone.
+   */
+  const opened = useMemo(
+    () =>
+      initial
+        ? {
+            kind: initial.kind ?? 'personal',
+            commitment: initial.commitment ?? '',
+            mode: existingSteps.length ? 'todo' : initial.cadence,
+            drafts: existingSteps.map((s) => draftOf(s)),
+            target: initial.target_per_cycle ?? 3,
+            days: Array.isArray(initial.active_days) && initial.active_days.length ? initial.active_days : [0, 1, 2, 3, 4, 5, 6],
+            dueOn: initial.due_on ?? '',
+            endsOn: initial.ends_on ?? '',
+            startsOn: initial.starts_on ?? '',
+            when: initial.trigger_when ?? '',
+            where: initial.trigger_where ?? '',
+            evidence: initial.evidence_def ?? '',
+            proofType: proofTypeOf(initial),
+            stake: initial.stake_text ?? '',
+            remind: initial.remind ?? true,
+            remindAt: initial.remind_at_min != null ? toHm(initial.remind_at_min) : '',
+            remindEvery: initial.remind_every_min != null ? String(initial.remind_every_min) : '',
+            goalType: initial.goal_type ?? 'process',
+          }
+        : null,
+    [initial, existingSteps],
+  )
+  const untouched =
+    opened != null &&
+    !changed(opened, {
+      kind,
+      commitment,
+      mode,
+      drafts: drafts.map(({ _k, ...d }) => d),
+      target,
+      days,
+      dueOn,
+      endsOn,
+      startsOn,
+      when,
+      where,
+      evidence,
+      proofType,
+      stake,
+      remind,
+      remindAt,
+      remindEvery,
+      goalType,
+    })
+
   async function save(e) {
     e.preventDefault()
     if (!canSave || saving) return
@@ -562,6 +621,7 @@ export default function GoalForm({ onDone, onCancel, initial = null, groupId = n
         <Field label={t('form.commitment')}>
           <input
             className="field"
+            data-hook="goal-commitment"
             value={commitment}
             onChange={(e) => setCommitment(e.target.value)}
             placeholder={t('form.commitment_ph')}
@@ -837,7 +897,7 @@ export default function GoalForm({ onDone, onCancel, initial = null, groupId = n
       {error && <p className="card text-small text-negative">{error}</p>}
 
       <div className="flex flex-col gap-3 border-t border-hairline pt-7 sm:flex-row-reverse">
-        <button data-hook="goal-save" className="btn-primary press sm:w-auto sm:px-10" disabled={!canSave || saving}>
+        <button data-hook="goal-save" className="btn-primary press sm:w-auto sm:px-10" disabled={!canSave || saving || untouched}>
           {saving ? t('form.saving') : initial ? t('form.save_changes') : t('form.add_goal')}
         </button>
         {onCancel && (
