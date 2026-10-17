@@ -163,9 +163,11 @@ and the error points at the wrong thing.
   tab ("pas la peine que ton profil soit dans la barre en bas"). In the ask
   box the course and the four ways to answer sit in the menu of a "+"
   ("au lieu que toutes les icones soient serrees ensemble, regroupe-les
-  dans un bouton en forme de plus"), what was chosen shows beside it as a
-  chip, then the mic and the send arrow. Never a row of icons squeezed
-  together again. Its floating bars are
+  dans un bouton en forme de plus"). What was chosen shows as chips just
+  above the box, outside it, as in Claude Code ("les icones sont juste en
+  haut du rectangle ... c'est pas a l'interieur"); inside the box are only
+  the words, the "+", the mic and the send arrow. Never a row of icons
+  squeezed together again. Its floating bars are
   solid white, never glass: over a flat ground a translucent bar is a
   window onto whatever scrolls under it. The pink and turquoise rules
   above still hold for Rich & Friends.
@@ -173,6 +175,16 @@ and the error points at the wrong thing.
   barre, ca peut etre mentionne dans le footer plutot": Rich & Friends is
   named at the end of each page, with its mark and the way back
   (`AppFooter` in `src/bb/BBShell.jsx`, `data-hook="bb-footer"`).
+- **Nothing is underlined in Hakkilo.** "J'aime pas quand c'est souligne.
+  Ca peut etre en gras, ca peut etre a l'interieur d'un petit rond ou d'un
+  petit bouton." A small action is a pill (`PILL` in `src/bb/kit.jsx`,
+  `PILL_DANGER` for what deletes, `PILL_ROUND` for a cross alone). A link
+  that ended a sentence leaves it and becomes a pill under it. Links in
+  small print are bold ink (`<AuthForm plainLinks>` on the sign-in page).
+  Beside a 54px button a pill needs `items-center` on its row, or the flex
+  row stretches it to 54px ("Corriger" did). `app.test.mjs` fails on any
+  `underline` utility under `src/bb`. Rich & Friends keeps its underlines
+  until Kee asks.
 - **Dictation is the browser's own speech recognition** (the Web Speech
   API, `src/lib/bb/dictation.js`). The mic is not drawn where it cannot
   work: Firefox, the browsers inside TikTok and Instagram, and an app on an

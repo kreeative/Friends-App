@@ -3,7 +3,7 @@ import { useAuth } from '../../context/AuthContext'
 import { useT } from '../../lib/i18n'
 import { usePageMeta } from '../../lib/pageMeta'
 import { Spot, Tape, cast } from '../../components/StickerKit'
-import { BBLogo } from '../kit'
+import { BBLogo, PILL } from '../kit'
 import PublicFrame from './PublicFrame'
 
 /**
@@ -108,11 +108,9 @@ export default function Go() {
           <Link to={start} className="btn press mt-7 bg-ink font-bold text-white hover:opacity-90 sm:w-auto sm:px-10" data-hook="bb-go-cta-2">
             {user ? t('bb.pub.open') : t('bb.pub.start_free')}
           </Link>
-          <p className="mt-4 text-body font-bold text-ink">
-            <Link to="/hakkilo" className="underline underline-offset-4">
-              {t('bb.go.more')}
-            </Link>
-          </p>
+          <Link to="/hakkilo" className={`${PILL} mt-4`} data-hook="bb-go-more">
+            {t('bb.go.more')}
+          </Link>
         </div>
       </section>
     </PublicFrame>

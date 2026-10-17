@@ -15,7 +15,7 @@ import { dictationNote, dictationSupport, heard, speechLang, withSpeech } from '
 import { EXAM_KINDS, SCOPES, comingExams, daysToExamOf, examChip, examColumns, examFormat, examToAsk, examsLine, examsOf, nextExam, scopeOf, stillAhead } from './exams.js'
 import { buildSession } from './sampler.js'
 import { BB_STRINGS } from '../../bb/strings.js'
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 
 let pass = 0
 let fail = 0
@@ -329,6 +329,22 @@ eq('the constant says so', SHORT, 8)
   const plan = read('bb/pages/Plan.jsx')
   ok('on a phone a day of the plan is its date over its line', /data-hook="bb-plan-day"/.test(plan) && /sm:grid-cols-\[7rem_minmax\(0,1fr\)\]/.test(plan) && !/w-28 shrink-0/.test(plan))
   ok('and the plan card lets the chip go under a long name', /flex flex-wrap items-center justify-between gap-x-3 gap-y-2/.test(plan))
+  /* "Les icones sont juste en haut du rectangle ... c'est pas a l'interieur":
+     what was picked is a row of chips above the box, outside the form. */
+  const chips = box.indexOf('data-hook="bb-compose-chips"')
+  const form = box.indexOf('<form')
+  const above = (h) => box.indexOf(`data-hook="${h}"`) > chips && box.indexOf(`data-hook="${h}"`) < form
+  ok('what was picked sits above the box, not in it', chips > 0 && chips < form && above('bb-compose-course-chip') && above('bb-compose-mode'))
+  /* "J'aime pas quand c'est souligne": a small action is a pill (PILL in
+     kit.jsx) and a link in small print is bold. No underline utility left,
+     hover and focus included; on the painted pages a probe found none on 23
+     routes at 390 and 1180 px. */
+  const walk = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((d) => (d.isDirectory() ? walk(new URL(`${d.name}/`, dir)) : /\.jsx?$/.test(d.name) ? [new URL(d.name, dir)] : []))
+  const underlined = walk(new URL('../../bb/', import.meta.url))
+    .filter((f) => /(?<![\w-])(?:[a-z0-9-]+:)*underline(?:-[\w/]+)?(?![\w-])/.test(readFileSync(f, 'utf8')))
+    .map((f) => f.pathname.split('/src/')[1])
+  eq('nothing is underlined in Hakkilo', underlined, [])
+  ok('the sign-in sets its legal links in bold, not underlined', /<AuthForm\b[^\n]*\bplainLinks\b/.test(read('bb/pages/SignIn.jsx')) && /plain \? 'font-bold text-ink'/.test(read('pages/Legal.jsx')))
 }
 
 /* --- the two languages ------------------------------------------------------------------- */

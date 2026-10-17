@@ -4,7 +4,7 @@ import { shortMap } from '../../lib/bb/cite'
 import { call } from '../api'
 import { loadCases } from '../data'
 import { errorMessage } from '../errors'
-import { Anchor, Anchors, Bar, BigButton, Note, Outside, Rich } from '../kit'
+import { Anchor, Anchors, Bar, BigButton, Note, Outside, PILL, Rich } from '../kit'
 import { Spinner } from './Processing'
 
 /**
@@ -97,7 +97,7 @@ export default function Cases({ course, chapters, anchors, maps }) {
     const marked = last?.grade ?? null
     return (
       <div className="mt-6 space-y-4" data-hook="bb-case">
-        <button type="button" className="press text-small font-semibold text-ink underline underline-offset-4" onClick={() => setOpenId(null)}>
+        <button type="button" className={PILL} onClick={() => setOpenId(null)}>
           ← {t('bb.case.all')}
         </button>
         <article className="lg p-5 sm:p-6">

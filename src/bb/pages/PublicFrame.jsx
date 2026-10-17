@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useT } from '../../lib/i18n'
 import { Mark } from '../../components/Wordmark'
-import { BBLogo } from '../kit'
+import { BBLogo, PILL } from '../kit'
 
 /**
  * The frame of the public Hakkilo pages (landing, pricing): its own
@@ -41,33 +41,36 @@ export default function PublicFrame({ children }) {
       <main className="relative z-10">{children}</main>
 
       <footer className="relative z-10 border-t border-hairline bg-surface/60 px-6 py-10">
-        <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-3">
+        {/* Side by side from lg only, the row of pills on one line: as
+            pills it is wider than the underlined words were, and at 820 and
+            1440 it broke with "English" alone on a second line. */}
+        <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex min-w-0 items-center gap-3">
             <BBLogo layout="line" className="h-11 w-auto shrink-0" pad={0.2} />
             <div>
               <p className="text-small text-ink">{t('bb.line')}</p>
               <p className="text-small text-muted">{t('bb.meaning')}</p>
             </div>
           </div>
-          <ul className="flex flex-wrap items-center gap-x-5 gap-y-2 text-small font-semibold text-ink">
+          <ul className="flex flex-wrap items-center gap-x-3 gap-y-2 text-small font-semibold text-ink lg:shrink-0 lg:flex-nowrap">
             <li>
-              <Link to="/" className="press inline-flex items-center gap-2" data-hook="bb-to-rf">
+              <Link to="/" className="press flex items-center gap-2" data-hook="bb-to-rf">
                 <Mark size={24} />
                 {t('bb.by')}
               </Link>
             </li>
             <li>
-              <Link to="/legal/terms" className="underline decoration-ink/30 underline-offset-4">
+              <Link to="/legal/terms" className={PILL}>
                 {locale === 'fr' ? 'Conditions' : 'Terms'}
               </Link>
             </li>
             <li>
-              <Link to="/legal/privacy" className="underline decoration-ink/30 underline-offset-4">
+              <Link to="/legal/privacy" className={PILL}>
                 {locale === 'fr' ? 'Confidentialité' : 'Privacy'}
               </Link>
             </li>
             <li>
-              <button type="button" className="underline decoration-ink/30 underline-offset-4" onClick={() => setLocale(locale === 'fr' ? 'en' : 'fr')} data-hook="bb-lang">
+              <button type="button" className={PILL} onClick={() => setLocale(locale === 'fr' ? 'en' : 'fr')} data-hook="bb-lang">
                 {locale === 'fr' ? 'English' : 'Français'}
               </button>
             </li>

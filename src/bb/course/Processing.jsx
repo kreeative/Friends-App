@@ -1,6 +1,6 @@
 import { useT } from '../../lib/i18n'
 import { errorMessage, materialError } from '../errors'
-import { Note } from '../kit'
+import { Note, PILL } from '../kit'
 import { isWaiting } from './useProcessing'
 
 /**
@@ -36,7 +36,7 @@ export default function Processing({ proc, materials, chapters, statusReady }) {
                 {failed && !reading && (
                   <>
                     <p className="w-full text-small text-ink">{proc.errors[m.id] ? errorMessage(t, locale, proc.errors[m.id]) : materialError(t, m.error)}</p>
-                    <button type="button" className="press text-small font-semibold text-ink underline underline-offset-4" onClick={() => proc.retry(m)} disabled={proc.running}>
+                    <button type="button" className={PILL} onClick={() => proc.retry(m)} disabled={proc.running}>
                       {t('bb.proc.retry')}
                     </button>
                   </>

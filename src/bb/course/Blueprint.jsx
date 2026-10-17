@@ -3,6 +3,7 @@ import { useT } from '../../lib/i18n'
 import { supabase } from '../../lib/supabase'
 import { Choice } from '../pages/Onboarding'
 import { changed } from '../../lib/dirty'
+import { PILL } from '../kit'
 
 /**
  * "Here is what your exam looks like. Fix anything that's off." (section 2.5)
@@ -59,11 +60,11 @@ export default function Blueprint({ course, blueprint, onSaved }) {
             {minutes && <li className="rounded-pill bg-ink/[0.06] px-3 py-1">{t('bb.bp.minutes', { n: minutes })}</li>}
             {hasCase && !types.includes('case') && <li className="rounded-pill bg-ink/[0.06] px-3 py-1">{t('bb.new.type.case')}</li>}
           </ul>
-          <div className="mt-4 flex flex-wrap gap-3">
+          <div className="mt-4 flex flex-wrap items-center gap-3">
             <button type="button" className="btn-ghost press w-auto px-6" onClick={() => save({ types, count, minutes, has_case: hasCase })} disabled={busy} data-hook="bb-bp-ok">
               ✓ {t('bb.bp.ok')}
             </button>
-            <button type="button" className="press text-small font-semibold text-ink underline underline-offset-4" onClick={() => setEdit(true)} data-hook="bb-bp-fix">
+            <button type="button" className={PILL} onClick={() => setEdit(true)} data-hook="bb-bp-fix">
               {t('bb.bp.fix')}
             </button>
           </div>
@@ -99,7 +100,7 @@ export default function Blueprint({ course, blueprint, onSaved }) {
             </button>
             <button
               type="button"
-              className="press px-2 text-small font-semibold text-ink underline underline-offset-4"
+              className={PILL}
               onClick={() => {
                 setForm({ types, count: count ?? '', minutes: minutes ?? '' })
                 setEdit(false)

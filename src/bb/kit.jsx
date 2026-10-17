@@ -35,6 +35,22 @@ export const LOGO_YELLOW = '#F8CB02'
 export const GREEN = '#1E7B34'
 
 /**
+ * A SMALL ACTION IS A PILL, NEVER AN UNDERLINED WORD.
+ *
+ * "J'aime pas trop quand les trucs sont soulignes. Ca peut etre en gras, ca
+ * peut etre a l'interieur d'un petit rond ou d'un petit bouton" (Kee). Every
+ * action that is not the page's big button: a pill with a hairline edge,
+ * lilac while it is pressed like every press here, solid grey when it
+ * cannot be pressed (#52525B on #E4E4E7). A link that ended a sentence
+ * leaves the sentence and becomes one under it. PILL_ROUND is the same for
+ * a cross alone; PILL_DANGER for what deletes.
+ */
+const PILL_SHAPE = 'press inline-flex min-h-[2.25rem] items-center justify-center gap-1.5 rounded-pill border bg-surface px-3.5 py-1 text-small font-semibold transition-colors active:bg-[#CFC2FF] disabled:border-transparent disabled:bg-[#E4E4E7] disabled:text-[#52525B]'
+export const PILL = `${PILL_SHAPE} border-ink/15 text-ink hover:border-ink`
+export const PILL_DANGER = `${PILL_SHAPE} border-negative/40 text-negative hover:border-negative`
+export const PILL_ROUND = 'press inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-pill border border-ink/15 bg-surface text-body text-ink transition-colors hover:border-ink active:bg-[#CFC2FF] disabled:border-transparent disabled:bg-[#E4E4E7] disabled:text-[#52525B]'
+
+/**
  * The wordmark, as artwork: "Hakkilo" in Crosner outlines, one path per
  * letter, bouncing like the Beauty & Brain and Nerd wordmarks before it.
  * Hakkilo is intelligence, the mind, wisdom, in Fulfulde. Kee chose the look

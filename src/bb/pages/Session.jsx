@@ -16,7 +16,7 @@ import { call } from '../api'
 import { useBB } from '../BBApp'
 import { endSession, loadCourse, loadStudy, saveAnswer, startSession } from '../data'
 import { errorMessage } from '../errors'
-import { Anchors, BigButton, Note, Outside, anchorMaps } from '../kit'
+import { Anchors, BigButton, Note, Outside, PILL, anchorMaps } from '../kit'
 import { Spinner } from '../course/Processing'
 
 /**
@@ -594,7 +594,7 @@ export default function Session() {
         {item.source === 'ai' && (
           <div className="mt-5 border-t border-hairline pt-3">
             {!report.open && !report.result && (
-              <button type="button" className="press text-small font-semibold text-muted underline underline-offset-4" onClick={() => setReport((r) => ({ ...r, open: true }))} data-hook="bb-report">
+              <button type="button" className={PILL} onClick={() => setReport((r) => ({ ...r, open: true }))} data-hook="bb-report">
                 ⚐ {t('bb.ses.report')}
               </button>
             )}

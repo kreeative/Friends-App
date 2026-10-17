@@ -9,7 +9,7 @@ import { nextExam } from '../../lib/bb/exams'
 import { loadDue, loadWeek } from '../data'
 import { useBB } from '../BBApp'
 import { Page, PageHead } from '../BBShell'
-import { ExamChip, examName, weekText } from '../kit'
+import { ExamChip, PILL, examName, weekText } from '../kit'
 import { AskBar } from '../Composer'
 
 /**
@@ -97,17 +97,12 @@ export default function Today() {
       {week && (
         <section className="mt-3 rounded-card bg-[#F4F4F5] px-5 py-4" data-hook="bb-week-line">
           <p className="text-small font-bold uppercase tracking-[0.02em] text-ink">⚑ {t('bb.calib.week_title')}</p>
-          <p className="mt-1 text-body text-ink">
-            {weekText(t, week)}
-            {week.course_id && (
-              <>
-                {' '}
-                <Link to={`/hakkilo/cours/${week.course_id}/erreurs`} className="font-semibold underline underline-offset-4">
-                  {t('bb.calib.week_go')}
-                </Link>
-              </>
-            )}
-          </p>
+          <p className="mt-1 text-body text-ink">{weekText(t, week)}</p>
+          {week.course_id && (
+            <Link to={`/hakkilo/cours/${week.course_id}/erreurs`} className={`${PILL} mt-3`} data-hook="bb-week-go">
+              {t('bb.calib.week_go')}
+            </Link>
+          )}
         </section>
       )}
 
@@ -131,7 +126,7 @@ export default function Today() {
               const items = due?.items.get(c.id) ?? 0
               return (
                 <li key={c.id} className="lg flex flex-col p-5" data-card="bb-course">
-                  <Link to={`/hakkilo/cours/${c.id}`} className="break-words text-body font-bold text-ink underline-offset-4 hover:underline">
+                  <Link to={`/hakkilo/cours/${c.id}`} className="break-words text-body font-bold text-ink">
                     {c.name}
                   </Link>
                   {c.code && <p className="text-small text-muted">{c.code}</p>}

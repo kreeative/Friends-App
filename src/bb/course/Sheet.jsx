@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useT } from '../../lib/i18n'
-import { Anchors } from '../kit'
+import { Anchors, PILL } from '../kit'
 
 /**
  * The cheat sheet of each chapter (section 6), in COVER MODE by default:
@@ -46,7 +46,7 @@ export default function Sheet({ chapters, concepts, signals, twins, maps }) {
             </button>
           ))}
         </div>
-        <button type="button" className="press text-small font-semibold text-ink underline underline-offset-4" onClick={() => window.print()}>
+        <button type="button" className={PILL} onClick={() => window.print()}>
           {t('bb.sheet.print')}
         </button>
       </div>

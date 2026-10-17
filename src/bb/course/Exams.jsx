@@ -5,7 +5,7 @@ import { Field } from '../../components/ui'
 import { examColumns, examToAsk, examsOf, newExam, scopeOf } from '../../lib/bb/exams'
 import { changed } from '../../lib/dirty'
 import { updateCourse } from '../data'
-import { ExamChip, Note, examName } from '../kit'
+import { ExamChip, Note, PILL, examName } from '../kit'
 import { Choice } from '../pages/Onboarding'
 
 /**
@@ -215,7 +215,7 @@ export default function Exams({ course, chapters = [], onSaved }) {
           {t('bb.ex.cancel')}
         </button>
         {real.some((e) => e.id === draft.id) && (
-          <button type="button" className="press ml-auto text-small font-semibold text-ink underline underline-offset-4" disabled={busy} onClick={() => write(real.filter((e) => e.id !== draft.id))} data-hook="bb-exam-remove">
+          <button type="button" className={`${PILL} ml-auto`} disabled={busy} onClick={() => write(real.filter((e) => e.id !== draft.id))} data-hook="bb-exam-remove">
             {t('bb.ex.remove')}
           </button>
         )}
@@ -254,7 +254,7 @@ export default function Exams({ course, chapters = [], onSaved }) {
             <button type="button" className="btn-ghost press w-auto px-5" onClick={() => open(ask, { scope: 'chapters' })} data-hook="bb-exams-ask-pick">
               {t('bb.ex.pick')}
             </button>
-            <button type="button" className="press px-2 text-small font-semibold text-ink underline underline-offset-4" disabled={busy} onClick={() => write(real.map((e) => (e.id === ask.id ? { ...e, scope: 'all' } : e)))} data-hook="bb-exams-ask-all">
+            <button type="button" className={PILL} disabled={busy} onClick={() => write(real.map((e) => (e.id === ask.id ? { ...e, scope: 'all' } : e)))} data-hook="bb-exams-ask-all">
               {t('bb.ex.scope.all')}
             </button>
           </span>
@@ -283,14 +283,14 @@ export default function Exams({ course, chapters = [], onSaved }) {
       {draft && !real.some((e) => e.id === draft.id) && <div className="mt-2">{form}</div>}
 
       {!legacy && !draft && (
-        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+        <div className="mt-3 flex flex-wrap gap-2">
           {real.filter((e) => e.kind === 'midterm').length < 3 && (
-            <button type="button" className="press py-1 text-small font-semibold text-ink underline underline-offset-4" onClick={() => open(newExam('midterm'))} data-hook="bb-exams-add-midterm">
+            <button type="button" className={PILL} onClick={() => open(newExam('midterm'))} data-hook="bb-exams-add-midterm">
               + {t('bb.ex.add_midterm')}
             </button>
           )}
           {!real.some((e) => e.kind === 'final') && (
-            <button type="button" className="press py-1 text-small font-semibold text-ink underline underline-offset-4" onClick={() => open(newExam('final'))} data-hook="bb-exams-add-final">
+            <button type="button" className={PILL} onClick={() => open(newExam('final'))} data-hook="bb-exams-add-final">
               + {t('bb.ex.add_final')}
             </button>
           )}
