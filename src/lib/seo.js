@@ -66,20 +66,20 @@ export const PRIVATE_PREFIXES = [
      quelqu'un, pas pour un moteur de recherche. */
   '/join/',
   '/rejoindre/',
-  /* Nerd (formerly Beauty & Brain): the app behind the sign-in. Its landing page, its
-     pricing and the TikTok page (/nerd, /nerd/tarifs, /nerd/go) are public and in
+  /* Hakkilo (formerly Beauty & Brain): the app behind the sign-in. Its landing page, its
+     pricing and the TikTok page (/hakkilo, /hakkilo/tarifs, /hakkilo/go) are public and in
      the sitemap. */
-  '/nerd/app',
-  '/nerd/cours',
-  '/nerd/coach',
-  '/nerd/plan',
-  '/nerd/profil',
-  '/nerd/profile',
-  '/nerd/start',
-  '/nerd/session/',
-  '/nerd/examen/',
-  '/nerd/connexion',
-  '/nerd/signin',
+  '/hakkilo/app',
+  '/hakkilo/cours',
+  '/hakkilo/coach',
+  '/hakkilo/plan',
+  '/hakkilo/profil',
+  '/hakkilo/profile',
+  '/hakkilo/start',
+  '/hakkilo/session/',
+  '/hakkilo/examen/',
+  '/hakkilo/connexion',
+  '/hakkilo/signin',
 ]
 
 /** Aliases, and the one URL they should all point at. */
@@ -104,8 +104,8 @@ const ALIAS = {
   /* Le defi 21 matins. /defi est l'adresse de la video, /challenge la meme
      page pour un lien en anglais. */
   '/challenge': '/defi',
-  /* Les tarifs de Nerd, meme regle: le francais est canonique. */
-  '/nerd/pricing': '/nerd/tarifs',
+  /* Les tarifs de Hakkilo, meme regle: le francais est canonique. */
+  '/hakkilo/pricing': '/hakkilo/tarifs',
 }
 
 /**
@@ -225,10 +225,10 @@ export function sitemapPaths(slugs = []) {
     /* La page du defi, celle du lien de la video: publique, et faite pour
        etre trouvee par quelqu'un qui cherche le defi apres l'avoir vu. */
     '/defi',
-    /* Nerd: sa page, ses tarifs et la page du lien TikTok, publics. */
-    '/nerd',
-    '/nerd/tarifs',
-    '/nerd/go',
+    /* Hakkilo: sa page, ses tarifs et la page du lien TikTok, publics. */
+    '/hakkilo',
+    '/hakkilo/tarifs',
+    '/hakkilo/go',
     '/legal/terms',
     '/legal/privacy',
     '/legal/notice',

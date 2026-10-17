@@ -22,14 +22,14 @@ import { PRESETS } from './Today'
 import { AskBar } from '../Composer'
 
 /**
- * /nerd/cours/:id, the course home (section 6): the exam countdown, what is
+ * /hakkilo/cours/:id, the course home (section 6): the exam countdown, what is
  * due today, mastery per chapter with its number beside the bar, the "sure
  * and wrong" count, and one main button, "Start today's 15 minutes".
  *
  * Under it, the course's own tabs: chapters (with the calibration of each),
  * the cheat sheet, the visuals, the twin table, the question bank, the
  * mistake log, the mock exam, the case lab, the files. The address carries
- * the tab (/nerd/cours/:id/fiches), so back works and a tab can be linked.
+ * the tab (/hakkilo/cours/:id/fiches), so back works and a tab can be linked.
  */
 const TABS = [
   ['chapitres', 'chapters'],
@@ -83,7 +83,7 @@ export default function Course() {
   }, [data, id, reload])
 
   const proc = useProcessing({ courseId: id, materials: data?.materials ?? null, chapters: data?.chapters ?? null, onChange: reload })
-  usePageMeta({ title: data?.course ? `${data.course.name} · Nerd` : 'Nerd' })
+  usePageMeta({ title: data?.course ? `${data.course.name} · Hakkilo` : 'Hakkilo' })
 
   const maps = useMemo(() => anchorMaps(data?.anchors, data?.materials), [data])
   const view = useMemo(() => {
@@ -117,7 +117,7 @@ export default function Course() {
     return (
       <Page>
         <PageHead title={t('bb.course.not_found')} />
-        <Link to="/nerd/cours" className="btn-ghost press mt-6 w-auto px-6">
+        <Link to="/hakkilo/cours" className="btn-ghost press mt-6 w-auto px-6">
           {t('bb.course.back')}
         </Link>
       </Page>
@@ -201,7 +201,7 @@ export default function Course() {
         )}
         {hasItems && (
           <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
-            <Link to={`/nerd/session/${course.id}?m=${minutes}`} className="btn press bg-ink font-bold text-white hover:opacity-90 sm:w-auto sm:px-8" data-hook="bb-course-start">
+            <Link to={`/hakkilo/session/${course.id}?m=${minutes}`} className="btn press bg-ink font-bold text-white hover:opacity-90 sm:w-auto sm:px-8" data-hook="bb-course-start">
               {t('bb.course.start', { n: minutes })}
             </Link>
             <SegTabs value={minutes} options={PRESETS} onChange={setMinutes} label={t('bb.course.minutes', { n: minutes })} hook="bb-course-minutes" labelOf={(n) => t('bb.course.minutes', { n })} />
@@ -220,7 +220,7 @@ export default function Course() {
         {TABS.map(([slug, k]) => (
           <Link
             key={slug}
-            to={slug === 'chapitres' ? `/nerd/cours/${course.id}` : `/nerd/cours/${course.id}/${slug}`}
+            to={slug === 'chapitres' ? `/hakkilo/cours/${course.id}` : `/hakkilo/cours/${course.id}/${slug}`}
             aria-current={tab === slug ? 'page' : undefined}
             className={`press shrink-0 rounded-pill px-4 py-2 text-small font-semibold ${tab === slug ? 'bg-[#CFC2FF] text-ink' : 'bg-ink/[0.06] text-ink'}`}
           >
@@ -293,7 +293,7 @@ export default function Course() {
           onChange={reload}
           onDeleted={() => {
             setCourses((list) => (list ?? []).filter((c) => c.id !== course.id))
-            navigate('/nerd/cours', { replace: true })
+            navigate('/hakkilo/cours', { replace: true })
           }}
         />
       )}
@@ -321,7 +321,7 @@ function MockTab({ courseId, available }) {
         <h2 className="text-h2 text-ink">{t('bb.mock.title')}</h2>
         <p className="mt-2 text-body text-ink">{t('bb.mock.lede')}</p>
         {available ? (
-          <Link to={`/nerd/examen/${courseId}`} className="btn press mt-5 bg-ink font-bold text-white hover:opacity-90 sm:w-auto sm:px-8" data-hook="bb-mock-open">
+          <Link to={`/hakkilo/examen/${courseId}`} className="btn press mt-5 bg-ink font-bold text-white hover:opacity-90 sm:w-auto sm:px-8" data-hook="bb-mock-open">
             {t('bb.mock.open')}
           </Link>
         ) : (

@@ -9,9 +9,12 @@
     "api/bb/[action].js": { "maxDuration": 300 }
   },
   "redirects": [
-    { "source": "/bb", "destination": "/nerd", "permanent": true },
-    { "source": "/bb/:path*", "destination": "/nerd/:path*", "permanent": true },
-    { "source": "/bb.webmanifest", "destination": "/nerd.webmanifest", "permanent": true }
+    { "source": "/bb", "destination": "/hakkilo", "permanent": true },
+    { "source": "/bb/:path*", "destination": "/hakkilo/:path*", "permanent": true },
+    { "source": "/bb.webmanifest", "destination": "/hakkilo.webmanifest", "permanent": true },
+    { "source": "/nerd", "destination": "/hakkilo", "permanent": true },
+    { "source": "/nerd/:path*", "destination": "/hakkilo/:path*", "permanent": true },
+    { "source": "/nerd.webmanifest", "destination": "/hakkilo.webmanifest", "permanent": true }
   ],
   "rewrites": [
     {
@@ -29,17 +32,17 @@
       "destination": "/api/invite-preview?code=:code"
     },
     {
-      "source": "/nerd",
+      "source": "/hakkilo",
       "has": [{ "type": "header", "key": "user-agent", "value": ".*(facebookexternalhit|Facebot|Twitterbot|WhatsApp|TelegramBot|Slackbot|Discordbot|LinkedInBot|SkypeUriPreview|redditbot|Embedly|vkShare|Iframely|Mastodon|Bluesky|Applebot).*" }],
       "destination": "/api/bb/preview"
     },
     {
-      "source": "/nerd/tarifs",
+      "source": "/hakkilo/tarifs",
       "has": [{ "type": "header", "key": "user-agent", "value": ".*(facebookexternalhit|Facebot|Twitterbot|WhatsApp|TelegramBot|Slackbot|Discordbot|LinkedInBot|SkypeUriPreview|redditbot|Embedly|vkShare|Iframely|Mastodon|Bluesky|Applebot).*" }],
       "destination": "/api/bb/preview?p=tarifs"
     },
     {
-      "source": "/nerd/go",
+      "source": "/hakkilo/go",
       "has": [{ "type": "header", "key": "user-agent", "value": ".*(facebookexternalhit|Facebot|Twitterbot|WhatsApp|TelegramBot|Slackbot|Discordbot|LinkedInBot|SkypeUriPreview|redditbot|Embedly|vkShare|Iframely|Mastodon|Bluesky|Applebot).*" }],
       "destination": "/api/bb/preview?p=go"
     },

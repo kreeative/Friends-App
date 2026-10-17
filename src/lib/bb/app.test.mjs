@@ -11,7 +11,9 @@ import { daysUntil, examLabel, studyStreak, sessionsToday, dayKey } from './days
 import { planDays } from './planner.js'
 import { MAX_BYTES, formatOf, kindFor, refuse } from './formats.js'
 import { SHORT, citeOf, citedIds, hasCites, shortId, shortMap, splitRich, stripCites } from './cite.js'
+import { dictationNote, dictationSupport, heard, speechLang, withSpeech } from './dictation.js'
 import { BB_STRINGS } from '../../bb/strings.js'
+import { readFileSync } from 'node:fs'
 
 let pass = 0
 let fail = 0
@@ -161,6 +163,68 @@ eq('the constant says so', SHORT, 8)
   eq('a card keeps the words, not the ids', stripCites(text), 'Contre le gradient, avec ATP et encore. Inconnu.')
   eq('a line is cut around ids and bold', splitRich('Le **transport** [aaaaaaaa] actif'), ['Le ', '**transport**', ' ', '[aaaaaaaa]', ' actif'])
   eq('one id is read back, a six-digit one is not', [citeOf('[aaaaaaaa]'), citeOf('[aaaaaa]')], ['aaaaaaaa', null])
+}
+
+/* --- dictation ------------------------------------------------------------------- */
+{
+  class Rec {}
+  const UA = {
+    chrome: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36',
+    android: 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Mobile Safari/537.36',
+    iphone: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1',
+    ipad: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15',
+    tiktok: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 musical_ly_41.2.0 JsSdk/2.0 NetType/WIFI',
+  }
+  const win = ({ ua, api = 'webkitSpeechRecognition', standalone = false, platform = '', touch = 0 }) => ({
+    ...(api ? { [api]: Rec } : {}),
+    navigator: { userAgent: ua, standalone: standalone || undefined, platform, maxTouchPoints: touch },
+    matchMedia: () => ({ matches: standalone }),
+  })
+  eq('no speech API, no mic (Firefox)', dictationSupport(win({ ua: UA.chrome, api: null })), null)
+  eq('no window, no mic', dictationSupport(undefined), null)
+  const desk = dictationSupport(win({ ua: UA.chrome }))
+  ok('Chrome on a computer listens until the second tap', desk?.Recognition === Rec && desk.continuous === true)
+  ok('the unprefixed API is taken too', dictationSupport(win({ ua: UA.chrome, api: 'SpeechRecognition' }))?.Recognition === Rec)
+  eq('Chrome on Android, one sentence at a time (it repeats words otherwise)', dictationSupport(win({ ua: UA.android }))?.continuous, false)
+  eq('Safari on an iPhone, one sentence at a time', dictationSupport(win({ ua: UA.iphone }))?.continuous, false)
+  eq('an app on the iPhone home screen has the API and nothing happens: no mic', dictationSupport(win({ ua: UA.iphone, standalone: true })), null)
+  eq('nor on an iPad home screen, which says it is a Mac', dictationSupport(win({ ua: UA.ipad, standalone: true, platform: 'MacIntel', touch: 5 })), null)
+  ok('a real Mac is not taken for an iPad', dictationSupport(win({ ua: UA.ipad, platform: 'MacIntel', touch: 0 }))?.continuous === true)
+  eq('nor inside TikTok', dictationSupport(win({ ua: UA.tiktok })), null)
+
+  eq('the phone variant of the app language', speechLang('fr', 'fr-CA'), 'fr-CA')
+  eq('an unknown variant listens in fr-FR', speechLang('fr', 'fr-SN'), 'fr-FR')
+  eq('the app language wins over the phone', speechLang('en', 'fr-FR'), 'en-US')
+  eq('and in English', speechLang('en', 'en-GB'), 'en-GB')
+  eq('no phone language at all', speechLang('fr', undefined), 'fr-FR')
+
+  const said = (...parts) => parts.map((p) => [{ transcript: p }])
+  eq('what was heard, finished and still coming', heard(said('Pourquoi', ' la demande baisse')), 'Pourquoi la demande baisse')
+  eq('nothing heard yet', heard(said()), '')
+  eq('a question that opens with the voice takes a capital', withSpeech('', 'pourquoi la demande baisse'), 'Pourquoi la demande baisse')
+  eq('said after what was typed, one space between', withSpeech('Dans le chapitre 2,', 'pourquoi'), 'Dans le chapitre 2, pourquoi')
+  eq('never two spaces', withSpeech('Dans le chapitre 2, ', 'pourquoi'), 'Dans le chapitre 2, pourquoi')
+  eq('silence leaves the box as it was', withSpeech('Ma question', '  '), 'Ma question')
+  eq('a blocked mic says how to allow it', dictationNote('not-allowed'), 'denied')
+  eq('no network, says so', dictationNote('network'), 'offline')
+  eq('a service that refuses points to the keyboard mic', dictationNote('service-not-allowed'), 'off')
+  eq('silence and a cancel say nothing', [dictationNote('no-speech'), dictationNote('aborted')], [null, null])
+}
+
+/* --- the ask box and the bars ------------------------------------------------------------------- */
+{
+  const read = (path) => readFileSync(new URL(`../../${path}`, import.meta.url), 'utf8')
+  const box = read('bb/Composer.jsx')
+  ok('the course and the ways to answer are in the menu of the "+"', /aria-haspopup="menu"/.test(box) && /role="menuitemradio"/.test(box) && /data-hook="bb-compose-more"/.test(box))
+  ok('no row of four mode icons left beside the box', !/role="group" aria-label=\{t\('bb\.coach\.modes'\)\}/.test(box))
+  ok('the way picked is a chip with a cross', /data-hook="bb-compose-mode"/.test(box) && /bb\.compose\.clear_mode/.test(box))
+  ok('the mic is drawn only where dictation works', /voice\.ready && \(/.test(box) && /dictationSupport\(\)/.test(box))
+  const shell = read('bb/BBShell.jsx')
+  const bar = shell.slice(shell.indexOf('function TabBar'), shell.indexOf('export default function BBShell'))
+  ok('four places in the tab bar, no profile', /TABS\.slice\(0, 4\)/.test(bar) && !/Avatar/.test(bar))
+  const bars = shell.slice(shell.indexOf('function TopBar'), shell.indexOf('export default function BBShell'))
+  ok('no Rich & Friends mark in the bars', !/<Mark\b/.test(bars))
+  ok('Rich & Friends is in the footer of the pages', /data-hook="bb-footer"[\s\S]{0,300}<Mark\b[\s\S]{0,80}bb\.by/.test(shell))
 }
 
 /* --- the two languages ------------------------------------------------------------------- */

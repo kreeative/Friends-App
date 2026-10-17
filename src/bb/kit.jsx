@@ -6,9 +6,9 @@ import { examLabel } from '../lib/bb/days'
 import { citeOf, splitRich } from '../lib/bb/cite'
 
 /**
- * The few pieces every Nerd screen shares. Everything else comes from the
- * Rich & Friends kit (ui.jsx, StickerKit, the .lg cards). The app was called
- * Beauty & Brain; its code, its tables and its API keep the bb name.
+ * The few pieces every Hakkilo screen shares. Everything else comes from
+ * the Rich & Friends kit (ui.jsx, StickerKit, the .lg cards). The app was
+ * Beauty & Brain, then Nerd; its code, tables and API keep the bb name.
  *
  * COLOURS: BLACK AND WHITE AT REST, COLOUR WHEN SOMETHING HAPPENS. "Let's
  * keep the color for a specific event like when you select or click or
@@ -34,8 +34,9 @@ export const LOGO_YELLOW = '#F8CB02'
 export const GREEN = '#1E7B34'
 
 /**
- * The wordmark, as artwork: "Nerd" in Crosner outlines, one path per letter,
- * bouncing like the Beauty & Brain wordmark it replaces. Kee chose the look
+ * The wordmark, as artwork: "Hakkilo" in Crosner outlines, one path per
+ * letter, bouncing like the Beauty & Brain and Nerd wordmarks before it.
+ * Hakkilo is intelligence, the mind, wisdom, in Fulfulde. Kee chose the look
  * out of four: the logo yellow, outlined in ink, on a lilac tile ("le jaune
  * sur le noir j'aime pas, le violet pastel et le jaune est plus chill").
  * Yellow on lilac alone measures 1.06:1 and only its hue tells the two
@@ -44,19 +45,22 @@ export const GREEN = '#1E7B34'
  * the letters keep their own width. Drawn small, the line is thicker in
  * letter units.
  * `tile="none"` draws the letters in ink, with no tile and no line.
- * `layout`: stacked and line are the word ("Nerd" is short enough for one
- * line everywhere), mono is the "N" alone, for the rail and the app icon,
- * where four letters would be too small to read.
+ * `layout`: stacked and line are the word, mono is the "H" alone, for the
+ * rail and the app icon, where seven letters would be too small to read.
+ *
+ * The margin follows the word's height more than its width: a seven-letter
+ * word padded by its width floated in a tall lilac block, letters filling
+ * under half of it.
  */
 const OUTLINE = { stacked: 6, line: 8, mono: 8 }
 
 export function BBLogo({ layout = 'stacked', tile = 'lilac', className = '', pad = 0.16, title }) {
   const art = BB_LOGO[layout] ?? BB_LOGO.stacked
-  const p = Math.round(Math.max(art.w, art.h) * pad)
+  const p = Math.round(Math.max(art.w * 0.6, art.h) * pad)
   const w = art.w + p * 2
   const h = art.h + p * 2
   const tiled = tile !== 'none'
-  const label = title ?? 'Nerd'
+  const label = title ?? 'Hakkilo'
   return (
     <svg viewBox={`0 0 ${w} ${h}`} role="img" aria-label={label} className={className} data-hook="bb-logo">
       {tiled && <rect width={w} height={h} rx={Math.round(Math.min(w, h) * 0.14)} fill={LILAC} />}
@@ -172,7 +176,7 @@ export function Outside({ children }) {
  * The big filled button: black with white words at rest. Pressed it turns
  * lilac, disabled it is solid grey, and its words are 14px in a button that
  * kept its size: all three in `[data-surface='bb'] .btn` in index.css, so
- * every button in /nerd does the same.
+ * every button in /hakkilo does the same.
  */
 export function BigButton({ className = '', children, ...rest }) {
   return (

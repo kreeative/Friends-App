@@ -68,7 +68,7 @@ export default function Session() {
   const { t, locale } = useT()
   const { user } = useAuth()
   const { bb, status } = useBB()
-  usePageMeta({ title: 'Nerd' })
+  usePageMeta({ title: 'Hakkilo' })
 
   const [data, setData] = useState(null)
   const [queue, setQueue] = useState(null)
@@ -331,7 +331,7 @@ export default function Session() {
   const top = (
     <header className="sticky top-0 z-30 px-4 pt-4">
       <div className="lg lg-chrome mx-auto flex w-full max-w-[72rem] items-center gap-3 px-3 py-2.5">
-        <Link to={`/nerd/cours/${id}`} className="press flex h-10 w-10 shrink-0 items-center justify-center rounded-pill text-ink" aria-label={t('bb.ses.quit')} data-hook="bb-quit">
+        <Link to={`/hakkilo/cours/${id}`} className="press flex h-10 w-10 shrink-0 items-center justify-center rounded-pill text-ink" aria-label={t('bb.ses.quit')} data-hook="bb-quit">
           <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
             <path d="M6 6l12 12M18 6 6 18" />
           </svg>
@@ -371,7 +371,7 @@ export default function Session() {
         <section className="lg mx-auto max-w-[40rem] p-6 text-center" data-hook="bb-session-empty">
           <h1 className="text-h1 text-ink">{t('bb.ses.empty_title')}</h1>
           <p className="mt-3 text-body text-muted">{t('bb.ses.empty_body')}</p>
-          <Link to={`/nerd/cours/${id}`} className="btn-ghost press mt-6 w-auto px-8">
+          <Link to={`/hakkilo/cours/${id}`} className="btn-ghost press mt-6 w-auto px-8">
             {t('bb.ses.back')}
           </Link>
         </section>
@@ -430,10 +430,10 @@ export default function Session() {
           )}
           {offline && <Note className="mt-4">{t('bb.ses.offline')}</Note>}
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-            <Link to={`/nerd/cours/${id}`} className="btn press bg-ink font-bold text-white hover:opacity-90 sm:w-auto sm:px-8" data-hook="bb-done-back">
+            <Link to={`/hakkilo/cours/${id}`} className="btn press bg-ink font-bold text-white hover:opacity-90 sm:w-auto sm:px-8" data-hook="bb-done-back">
               {t('bb.ses.back')}
             </Link>
-            <button type="button" className="btn-ghost press sm:w-auto sm:px-8" onClick={() => navigate(`/nerd/session/${id}?m=10&r=${Date.now()}`, { replace: true })}>
+            <button type="button" className="btn-ghost press sm:w-auto sm:px-8" onClick={() => navigate(`/hakkilo/session/${id}?m=10&r=${Date.now()}`, { replace: true })}>
               {t('bb.ses.again')}
             </button>
           </div>
