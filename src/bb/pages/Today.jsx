@@ -135,7 +135,7 @@ export default function Today() {
                     {c.name}
                   </Link>
                   {c.code && <p className="text-small text-muted">{c.code}</p>}
-                  <ExamChip course={c} className="mt-3 self-start" />
+                  <ExamChip course={c} link className="mt-3 self-start" />
                   <p className="mt-3 text-small font-semibold text-ink">
                     {items === 0 ? t('bb.today.preparing') : n > 0 ? t('bb.today.due', { n }) : t('bb.today.due_none')}
                   </p>

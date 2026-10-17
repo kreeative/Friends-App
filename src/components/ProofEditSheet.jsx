@@ -4,6 +4,7 @@ import { updateProof } from '../lib/proofs'
 import { proofFields, proofFilled, proofOf } from '../lib/proofKinds'
 import { Sheet } from './ui'
 import ProofField from './ProofField'
+import { changed } from '../lib/dirty'
 
 /**
  * Changing a proof after it went out.
@@ -131,6 +132,16 @@ export default function ProofEditSheet({ proof, onClose, onSaved }) {
    */
   const willBeEmpty = !proofFilled(value, kind)
 
+  /* The proof as it is stored: the same three fields and kind the form opens
+     with. Save stays grey until the form differs from it ("si rien n'a
+     change, le bouton enregistrer reste grise", src/lib/dirty.js). */
+  const untouched =
+    Boolean(proof) &&
+    !changed(
+      { photo_url: proof.photo_url ?? null, link_url: proof.link_url ?? '', evidence: proof.evidence ?? '', kind: proofOf(proof)?.kind ?? 'text' },
+      { ...value, kind },
+    )
+
   async function save() {
     if (busy || !proof) return
     setBusy(true)
@@ -222,8 +233,9 @@ export default function ProofEditSheet({ proof, onClose, onSaved }) {
           <>
             <button
               onClick={save}
-              disabled={busy}
-              className="btn-primary press w-full disabled:opacity-50"
+              disabled={busy || untouched}
+              className="btn-primary press w-full"
+              data-hook="proof-edit-save"
             >
               {busy ? '…' : t('ui.save')}
             </button>

@@ -262,7 +262,15 @@ export default function TimetableWizard({ open, onClose, onSaved, startsOn }) {
           </div>
 
           <div className="flex flex-wrap items-center gap-2 border-t border-hairline px-5 py-4">
-            <button type="submit" disabled={busy} className="goal-action-done press" data-hook="wiz-save">
+            {/* Grey until a row has a name: a row without one is skipped, so
+                the three blank rows the wizard opens with have nothing to add
+                ("si rien n'a change, le bouton enregistrer reste grise"). */}
+            <button
+              type="submit"
+              disabled={busy || !rows.some((r) => r.title.trim())}
+              className="goal-action-done press"
+              data-hook="wiz-save"
+            >
               {busy ? t('cycle.saving') : t('wiz.save')}
             </button>
             <button type="button" onClick={onClose} className="goal-action-soft press">

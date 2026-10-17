@@ -11,6 +11,7 @@ import { call } from '../api'
 import { saveProfile } from '../data'
 import { errorMessage } from '../errors'
 import { useBB } from '../BBApp'
+import { changed } from '../../lib/dirty'
 import { Page, PageHead } from '../BBShell'
 import { BigButton, Note } from '../kit'
 import { Choice, GOALS, LANGS, LEVELS } from './Onboarding'
@@ -44,21 +45,24 @@ export default function Profile() {
   const [busy, setBusy] = useState(null)
   const [note, setNote] = useState(null)
 
+  /* The form as the saved profile fills it: what Save compares with, so it
+     stays grey until something differs (src/lib/dirty.js), and goes grey
+     again once the change is saved. */
+  const fromProfile = (p) => ({
+    first_name: p.first_name ?? '',
+    school: p.school ?? '',
+    country: p.country ?? '',
+    level: p.level ?? null,
+    program: p.program ?? '',
+    language: p.language ?? null,
+    term_start: p.term_start ?? '',
+    term_end: p.term_end ?? '',
+    weekly_hours: p.weekly_hours ?? 6,
+    goal: p.goal ?? null,
+  })
+
   useEffect(() => {
-    if (bb && !form) {
-      setForm({
-        first_name: bb.first_name ?? '',
-        school: bb.school ?? '',
-        country: bb.country ?? '',
-        level: bb.level ?? null,
-        program: bb.program ?? '',
-        language: bb.language ?? null,
-        term_start: bb.term_start ?? '',
-        term_end: bb.term_end ?? '',
-        weekly_hours: bb.weekly_hours ?? 6,
-        goal: bb.goal ?? null,
-      })
-    }
+    if (bb && !form) setForm(fromProfile(bb))
   }, [bb, form])
 
   /* Back from Stripe Checkout. */
@@ -271,7 +275,7 @@ export default function Profile() {
             </div>
           </fieldset>
           <div className="flex flex-wrap items-center gap-3">
-            <button className="btn-ghost press w-auto px-8" disabled={busy !== null}>
+            <button className="btn-ghost press w-auto px-8" disabled={busy !== null || !bb || !changed(fromProfile(bb), form)} data-hook="bb-prof-save">
               {t('bb.prof.save')}
             </button>
             {saved && <span className="text-small font-semibold text-ink" role="status">✓ {t('bb.prof.saved')}</span>}

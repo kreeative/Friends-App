@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useT } from '../../lib/i18n'
 import { supabase } from '../../lib/supabase'
 import { Choice } from '../pages/Onboarding'
+import { changed } from '../../lib/dirty'
 
 /**
  * "Here is what your exam looks like. Fix anything that's off." (section 2.5)
@@ -9,7 +10,10 @@ import { Choice } from '../pages/Onboarding'
  * What the files said about the exam (bb_blueprints, written by the reader,
  * never confirmed by itself) over what the student typed when creating the
  * course. Shown until she confirms it, and editable: the types, how many
- * questions, how long.
+ * questions, how long. In the form, Save stays grey until a value differs
+ * from what was shown (src/lib/dirty.js), and Cancel goes back to the
+ * summary, where "C'est bon" confirms it as it is: a grey Save alone would
+ * leave no way out of a form opened to find nothing wrong.
  */
 const TYPES = ['mcq', 'tf', 'short', 'calc', 'case']
 const norm = (x) => (x === 'calculation' ? 'calc' : x)
@@ -59,7 +63,7 @@ export default function Blueprint({ course, blueprint, onSaved }) {
             <button type="button" className="btn-ghost press w-auto px-6" onClick={() => save({ types, count, minutes, has_case: hasCase })} disabled={busy} data-hook="bb-bp-ok">
               ✓ {t('bb.bp.ok')}
             </button>
-            <button type="button" className="press text-small font-semibold text-ink underline underline-offset-4" onClick={() => setEdit(true)}>
+            <button type="button" className="press text-small font-semibold text-ink underline underline-offset-4" onClick={() => setEdit(true)} data-hook="bb-bp-fix">
               {t('bb.bp.fix')}
             </button>
           </div>
@@ -89,9 +93,22 @@ export default function Blueprint({ course, blueprint, onSaved }) {
               <input type="number" inputMode="numeric" min={5} max={600} className="field mt-1" value={form.minutes} onChange={(e) => setForm((f) => ({ ...f, minutes: e.target.value }))} />
             </label>
           </div>
-          <button className="btn-ghost press w-auto px-6" disabled={busy}>
-            {t('bb.course.save')}
-          </button>
+          <div className="flex flex-wrap items-center gap-3">
+            <button className="btn-ghost press w-auto px-6" disabled={busy || !changed({ types, count: count ?? '', minutes: minutes ?? '' }, form)} data-hook="bb-bp-save">
+              {t('bb.course.save')}
+            </button>
+            <button
+              type="button"
+              className="press px-2 text-small font-semibold text-ink underline underline-offset-4"
+              onClick={() => {
+                setForm({ types, count: count ?? '', minutes: minutes ?? '' })
+                setEdit(false)
+              }}
+              data-hook="bb-bp-cancel"
+            >
+              {t('bb.ex.cancel')}
+            </button>
+          </div>
         </form>
       )}
     </section>

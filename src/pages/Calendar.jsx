@@ -29,6 +29,7 @@ import CyclePanel from '../components/CyclePanel'
 import CycleStrip from '../components/CycleStrip'
 import TimetableWizard from '../components/TimetableWizard'
 import SyllabusWizard from '../components/SyllabusWizard'
+import { changed } from '../lib/dirty'
 
 /**
  * The whole timetable, on one screen.
@@ -1226,9 +1227,17 @@ export default function Calendar() {
               {t(picked.size === 1 ? 'cal.pick_n_one' : 'cal.pick_n_other', { n: picked.size })}
             </span>
             <div className="ml-auto flex shrink-0 items-center gap-2">
+              {/* Grey while the days picked are the days already logged:
+                  savePeriod would only close the picker, which "Annuler"
+                  beside it does ("si rien n'a change, le bouton enregistrer
+                  reste grise"). */}
               <button
                 type="button"
                 onClick={savePeriod}
+                disabled={(() => {
+                  const { add, remove } = reconcile({ rows: cycle.starts, selected: picked, touched: touchedDays })
+                  return !add.length && !remove.length
+                })()}
                 className="goal-action-done press"
                 data-hook="cal-period-save"
               >
@@ -2187,7 +2196,7 @@ function EventForm({ initial, onClose, onSaved, onDelete }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
 
-  const [f, setF] = useState({
+  const formOf = () => ({
     title: initial.title ?? '',
     category: initial.category ?? 'cours',
     location: initial.location ?? '',
@@ -2216,6 +2225,11 @@ function EventForm({ initial, onClose, onSaved, onDelete }) {
      */
     remind_min: initial.remind_min ?? '',
   })
+  const [f, setF] = useState(formOf)
+  /* The form as it opened, an event or a new one: Save stays grey until the
+     form differs from it ("si rien n'a change, le bouton enregistrer reste
+     grise", src/lib/dirty.js). */
+  const [opened] = useState(formOf)
 
   const toggleDay = (n) =>
     setF((s) => ({
@@ -2559,7 +2573,7 @@ function EventForm({ initial, onClose, onSaved, onDelete }) {
          * pouvait etre hors de l'ecran au moment ou elle apparaissait.
          */}
         <div className="flex flex-wrap items-center gap-2 border-t border-hairline px-5 py-4">
-          <button type="submit" disabled={busy} className="goal-action-done press">
+          <button type="submit" disabled={busy || !changed(opened, f)} className="goal-action-done press" data-hook="event-save">
             {busy ? t('cal.saving') : t('cal.save')}
           </button>
           <button type="button" onClick={onClose} className="goal-action press">

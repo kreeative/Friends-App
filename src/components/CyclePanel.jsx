@@ -7,6 +7,7 @@ import { Cross, Lock, Tick } from './ui'
 import CycleRing, { PHASE_DOT, PHASE_TINT } from './CycleRing'
 import { ringModel } from '../lib/cycleRing'
 import cloudguy from '../assets/stickers/cloudguy.png'
+import { changed } from '../lib/dirty'
 import {
   MAX_CYCLE,
   MIN_CYCLE,
@@ -392,7 +393,10 @@ export default function CyclePanel({ onChange, open = false, onClose }) {
             </label>
 
             <div className="flex flex-wrap items-center gap-2 pt-1">
-              <button type="submit" disabled={busy} className="goal-action-done press">
+              {/* Grey while the form is as it opened, empty: nothing to save
+                  ("si rien n'a change, le bouton enregistrer reste grise",
+                  src/lib/dirty.js). */}
+              <button type="submit" disabled={busy || !changed({ d1: '', d2: '', d3: '', avg: '' }, form)} className="goal-action-done press" data-hook="cycle-setup-save">
                 {busy ? t('cycle.saving') : t('cycle.save')}
               </button>
               {Boolean(starts.length) && (

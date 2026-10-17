@@ -1,4 +1,5 @@
 import { Fragment } from 'react'
+import { Link } from 'react-router-dom'
 import { BB_LOGO } from './logo'
 import { useT } from '../lib/i18n'
 import { anchorChip } from '../lib/bb/quality'
@@ -88,22 +89,60 @@ export function examName(t, exam) {
  * next exam by its name (src/lib/bb/exams.js), or one exam given as `exam`.
  * Within a week the line round it turns from grey to ink: a deadline is
  * not an event, so it gets weight rather than a colour.
+ *
+ * With `onEdit` the chip is the way to change the exam: "au lieu de mettre
+ * cette grande phrase 'changer la date', quand on clique sur 'exam in 46'
+ * on peut changer et enregistrer" (Kee). A pencil at its end says it opens,
+ * lilac while it is pressed; its name says which exam it changes.
+ *
+ * With `link` (and the course), on a page that cannot edit it, Today or the
+ * plan, it is the same chip as a link: the course page, that exam's form
+ * already open (?examen=, read by src/bb/course/Exams.jsx). Not inside a
+ * card that is itself a link: the courses list leaves it a label.
  */
-export function ExamChip({ course, exam: one = null, className = '' }) {
+export function ExamChip({ course, exam: one = null, onEdit = null, link = false, className = '', hook = 'exam-chip' }) {
   const { t } = useT()
   const { key, n, exam } = one ? chipFor(one) : examChip(course)
   const soon = n != null && n <= 7
-  return (
-    <span
-      data-hook="exam-chip"
-      className={`inline-flex items-center gap-1.5 rounded-pill border bg-surface px-3 py-1 text-small font-semibold text-ink ${soon ? 'border-ink' : 'border-ink/15'} ${className}`}
-    >
-      <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 shrink-0" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-        <rect x="2" y="3" width="12" height="11" rx="2" />
-        <path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3" />
+  const text = exam ? t(key, { name: examName(t, exam), n }) : t(key)
+  const look = `inline-flex items-center gap-1.5 rounded-pill border bg-surface px-3 py-1 text-small font-semibold text-ink ${soon ? 'border-ink' : 'border-ink/15'} ${className}`
+  const calendar = (
+    <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 shrink-0" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+      <rect x="2" y="3" width="12" height="11" rx="2" />
+      <path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3" />
+    </svg>
+  )
+  if (!onEdit && !(link && course?.id)) {
+    return (
+      <span data-hook={hook} className={look}>
+        {calendar}
+        {text}
+      </span>
+    )
+  }
+  const named = exam ? t('bb.ex.edit_named', { name: text }) : text
+  const inside = (
+    <>
+      {calendar}
+      {text}
+      <svg viewBox="0 0 16 16" className="ml-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M10.6 2.9a1.6 1.6 0 0 1 2.3 2.3L5.6 12.5 2.5 13.4l.9-3.1z" />
+        <path d="m9.4 4.1 2.3 2.3" />
       </svg>
-      {exam ? t(key, { name: examName(t, exam), n }) : t(key)}
-    </span>
+    </>
+  )
+  const live = `${look} press min-h-[2.25rem] transition-colors hover:border-ink active:bg-[#CFC2FF]`
+  if (!onEdit) {
+    return (
+      <Link to={`/hakkilo/cours/${course.id}${exam ? `?examen=${encodeURIComponent(exam.id)}` : ''}`} aria-label={named} title={named} data-hook={hook} className={live}>
+        {inside}
+      </Link>
+    )
+  }
+  return (
+    <button type="button" onClick={onEdit} aria-label={named} title={named} data-hook={hook} className={live}>
+      {inside}
+    </button>
   )
 }
 

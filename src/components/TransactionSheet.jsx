@@ -5,6 +5,7 @@ import { CATEGORIES } from '../lib/budget'
 import { currencySymbol, minorDigits } from '../lib/currency'
 import { KINDS, NOTE_MAX, blankTxn, localISO, toCents, txnFromRow, txnValid } from '../lib/txn'
 import { lockScroll } from '../lib/scrollLock'
+import { changed } from '../lib/dirty'
 
 /**
  * One transaction, as a sheet you pull up.
@@ -137,6 +138,13 @@ export default function TransactionSheet({
   const amountRef = useRef(null)
 
   const editing = Boolean(row?.id)
+  /* An existing transaction, as the form opened with it: Save stays grey until
+     the form differs ("si rien n'a change, le bouton enregistrer reste grise",
+     src/lib/dirty.js). The amount is compared in cents, read by the same
+     toCents as the write, so "12,5" over a saved 12.50 is not a change. A new
+     one is gated by `valid` alone. */
+  const untouched = useMemo(() => (editing ? txnFromRow(row, digits) : null), [editing, row, digits])
+  const inCents = (f) => ({ ...f, amount: toCents(f.amount) })
 
   /* Seeded from the row every time the sheet opens, and reset when it closes,
      so yesterday's amount is never sitting in the field the next time somebody
@@ -511,8 +519,9 @@ export default function TransactionSheet({
             <button
               type="button"
               onClick={() => onSave?.(form)}
-              disabled={!valid || busy}
+              disabled={!valid || busy || (untouched != null && !changed(inCents(untouched), inCents(form)))}
               className="btn-primary press w-full"
+              data-hook="txn-save"
             >
               {busy ? t('txn.saving') : t('txn.save')}
             </button>
