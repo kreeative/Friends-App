@@ -163,9 +163,13 @@ and the error points at the wrong thing.
   ("au lieu de gros boutons avec les noms, juste des icones"): the tab bar
   (the page you are on opens into a lilac pill with its name) and the
   Claude-style ask box in `src/bb/Composer.jsx`, each named in aria-label
-  and title. The tab bar has four places, Today, Courses, Coach, Plan: the
-  profile is the avatar in the top bar and at the foot of the rail, never a
-  tab ("pas la peine que ton profil soit dans la barre en bas"). In the ask
+  and title. The tab bar has five places, Today, Courses, Coach, Plan,
+  Calendar (the fifth since 17 October, "add the calendar tab to hakkilo",
+  last so the four did not move; measured at 320, 360 and 390 in both
+  languages with each one open: one line, no icon cut, 17px between icons
+  at the tightest). The profile is the avatar in the top bar and at the
+  foot of the rail, never a tab ("pas la peine que ton profil soit dans la
+  barre en bas"). In the ask
   box the course and the four ways to answer sit in the menu of a "+"
   ("au lieu que toutes les icones soient serrees ensemble, regroupe-les
   dans un bouton en forme de plus"). What was chosen shows as chips just
@@ -202,7 +206,10 @@ and the error points at the wrong thing.
   that day at the same hour or naming the course). It looks 8 weeks and 4
   months ahead, where the exams are. No recap card, so no hold. It sits
   under the ask box, in the page's one column, and opens on the week, at
-  every width.
+  every width. The Calendar tab (`/hakkilo/calendrier`,
+  `src/bb/pages/Calendar.jsx`) is that same strip with the same exams
+  (`useExamsOnCalendar` in `src/bb/kit.jsx`), opened on the month
+  (`month`), in the same one column; the week is its toggle.
 - **On the iPad, Hakkilo stays the one column it was.** "Arrete de
   travailler sur la vue d'iPad, keep-le comme avant" (Kee, 17 October,
   after "a lot of void space on the left and on the right"). For one

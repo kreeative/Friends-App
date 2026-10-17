@@ -13,10 +13,12 @@ import { BBLogo } from './kit'
  *
  * The same two shapes as the Rich & Friends shell, because the same person
  * uses both: a floating tab bar on a phone, a rail on the left from md, so
- * an iPad and a laptop get the width. Four places in the bar: Practice
- * lives inside Today and each course, where the session button already is,
- * and the profile is the avatar in the top bar and at the foot of the rail,
- * not a tab ("pas la peine que ton profil soit dans la barre en bas").
+ * an iPad and a laptop get the width. Five places in the bar, the calendar
+ * the last of them ("add the calendar tab to hakkilo"), after the four that
+ * were there so none of them moved. Practice lives inside Today and each
+ * course, where the session button already is, and the profile is the
+ * avatar in the top bar and at the foot of the rail, not a tab ("pas la
+ * peine que ton profil soit dans la barre en bas").
  *
  * Rich & Friends is named in a footer at the end of the pages, with its
  * mark and the way back ("enleve le logo RF dans la barre, ca peut etre
@@ -35,6 +37,7 @@ const TABS = [
   { to: '/hakkilo/cours', key: 'bb.nav.courses', icon: 'courses' },
   { to: '/hakkilo/coach', key: 'bb.nav.coach', icon: 'coach' },
   { to: '/hakkilo/plan', key: 'bb.nav.plan', icon: 'plan' },
+  { to: '/hakkilo/calendrier', key: 'bb.nav.calendar', icon: 'calendar' },
   { to: '/hakkilo/profil', key: 'bb.nav.profile', icon: 'profile' },
 ]
 
@@ -69,7 +72,19 @@ const IconPlan = (p) => (
     <path d="M8 6h7.5a3 3 0 010 6h-7a3 3 0 000 6H16" />
   </svg>
 )
-const ICONS = { today: IconToday, courses: IconCourses, coach: IconCoach, plan: IconPlan }
+/* A page of the calendar on its two rings, with days marked. */
+const IconCalendar = (p) => (
+  <svg {...S} {...p}>
+    <rect x="3.5" y="5" width="17" height="15.5" rx="2.5" />
+    <path d="M3.5 10h17M8 3v3.6M16 3v3.6" />
+    <circle cx="8.5" cy="14" r="1.1" fill="currentColor" stroke="none" />
+    <circle cx="12" cy="14" r="1.1" fill="currentColor" stroke="none" />
+    <circle cx="15.5" cy="14" r="1.1" fill="currentColor" stroke="none" />
+    <circle cx="8.5" cy="17.3" r="1.1" fill="currentColor" stroke="none" />
+    <circle cx="12" cy="17.3" r="1.1" fill="currentColor" stroke="none" />
+  </svg>
+)
+const ICONS = { today: IconToday, courses: IconCourses, coach: IconCoach, plan: IconPlan, calendar: IconCalendar }
 
 const activeIndex = (pathname) => TABS.findIndex((tab) => pathname === tab.to || pathname.startsWith(`${tab.to}/`))
 
@@ -128,7 +143,7 @@ function Rail() {
       </Link>
       <span aria-hidden="true" className="mx-1 mb-8 mt-4 h-px shrink-0 bg-hairline/60" />
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
-        {TABS.slice(0, 4).map((tab, i) => {
+        {TABS.slice(0, 5).map((tab, i) => {
           const Icon = ICONS[tab.icon]
           return (
             <NavLink
@@ -181,7 +196,7 @@ function TabBar() {
         <div className="lg lg-chrome">
           <div ref={ref} className="relative flex gap-0.5 p-1.5">
             <Slider box={box} className="lg-pill" />
-            {TABS.slice(0, 4).map((tab, i) => {
+            {TABS.slice(0, 5).map((tab, i) => {
               const Icon = ICONS[tab.icon]
               return (
                 <NavLink
