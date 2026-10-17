@@ -1,14 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useT, localeTag } from '../../lib/i18n'
 import { usePageMeta } from '../../lib/pageMeta'
 import { MARKED, MIN_EXAM, clock, examShape, pickExam, scoreExam, secondsLeft } from '../../lib/bb/exam'
 import { answerRows } from '../../lib/bb/answer'
 import { retentionFor } from '../../lib/bb/fsrs'
-import { daysUntil } from '../../lib/bb/days'
+import { comingExams, daysToExamOf, examFormat, scopeOf } from '../../lib/bb/exams'
+import { SegTabs } from '../../components/ui'
 import { endExam, loadCourse, loadExams, loadStudy, saveAnswer, saveExamAnswers, startExam } from '../data'
-import { Anchors, Bar, BigButton, Note, Outside, anchorMaps } from '../kit'
+import { Anchors, Bar, BigButton, Note, Outside, anchorMaps, examName } from '../kit'
+import { coversText } from '../course/Exams'
 import { Spinner } from '../course/Processing'
 
 /**
@@ -48,6 +50,8 @@ export default function Exam() {
   const [data, setData] = useState(null)
   const [error, setError] = useState(null)
   const [size, setSize] = useState('full')
+  const [params] = useSearchParams()
+  const [target, setTarget] = useState(params.get('e'))
   const [exam, setExam] = useState(null)
   const [answers, setAnswers] = useState({})
   const [flags, setFlags] = useState(() => new Set())
@@ -82,8 +86,16 @@ export default function Exam() {
     load()
   }, [load])
 
-  const format = useMemo(() => ({ ...(data?.course?.exam_format ?? {}), ...(data?.blueprint?.data ?? {}) }), [data])
-  const available = useMemo(() => (data ? data.items.filter((i) => MARKED.has(i.type) && !i.variant_of).length : 0), [data])
+  /* Which exam this mock prepares: the one asked for (?e=, from the plan),
+     else the next. Its own length, and only the chapters it covers. */
+  const coming = useMemo(() => (data ? comingExams(data.course) : []), [data])
+  const aim = coming.find((e) => e.id === target) ?? coming[0] ?? null
+  /* A course from before has one unnamed exam: the page stays as it was. */
+  const named = Boolean(aim && !aim.legacy)
+  const scope = useMemo(() => (data && aim ? scopeOf(aim, data.course, data.chapters) : null), [data, aim])
+  const pool = useMemo(() => (data ? (scope ? data.items.filter((i) => scope.has(i.chapter_id)) : data.items) : []), [data, scope])
+  const format = useMemo(() => examFormat(data?.course, data?.blueprint, aim), [data, aim])
+  const available = useMemo(() => pool.filter((i) => MARKED.has(i.type) && !i.variant_of).length, [pool])
   const shapes = useMemo(() => {
     const full = examShape(format, available)
     const n = Math.min(10, full.count)
@@ -120,7 +132,6 @@ export default function Exam() {
     const schedule = new Map(data.schedule.map((s) => [s.item_id, s]))
     const mistakes = new Map(data.mistakes.map((m) => [m.item_id, m]))
     const weight = new Map(data.concepts.map((c) => [c.id, c.weight]))
-    const daysLeft = daysUntil(data.course.exam_at)
     let done = 0
     for (const item of given) {
       const rows = answerRows({
@@ -129,7 +140,7 @@ export default function Exam() {
         choice: answers[item.id],
         mistake: mistakes.get(item.id) ?? null,
         mode: 'mock',
-        retention: retentionFor({ weight: weight.get(item.concept_id), daysLeft }),
+        retention: retentionFor({ weight: weight.get(item.concept_id), daysLeft: daysToExamOf(data.course, item.chapter_id, data.chapters) }),
       })
       try {
         await saveAnswer(user.id, { schedule: rows.schedule, answer: rows.answer, mistake: rows.mistake })
@@ -161,7 +172,7 @@ export default function Exam() {
 
   async function begin() {
     const shape = shapes[size]
-    const picked = pickExam({ items: data.items, concepts: data.concepts, chapters: data.chapters, count: shape.count, seed: Date.now(), lastSeen: data.lastSeen })
+    const picked = pickExam({ items: pool, concepts: data.concepts, chapters: scope ? data.chapters.filter((c) => scope.has(c.id)) : data.chapters, count: shape.count, seed: Date.now(), lastSeen: data.lastSeen })
     if (!picked.length) return
     try {
       const row = await startExam({ courseId: id, minutes: shape.minutes, itemIds: picked.map((i) => i.id) })
@@ -344,8 +355,21 @@ export default function Exam() {
     return (
       <Shell top={top}>
         <section className="lg mx-auto max-w-[40rem] p-6" data-hook="bb-exam-setup">
-          <h1 className="text-h1 text-ink">{t('bb.mock.title')}</h1>
+          {/* The exam it prepares above the title: "Examen blanc · Intra"
+              broke after the dot at 390px. */}
+          {named && <p className="eyebrow">{examName(t, aim)}</p>}
+          <h1 className={`text-h1 text-ink ${named ? 'mt-1' : ''}`}>{t('bb.mock.title')}</h1>
           <p className="mt-2 text-body text-ink">{t('bb.mock.lede')}</p>
+          {coming.length > 1 && (
+            <div className="mt-5">
+              <SegTabs value={aim.id} options={coming.map((e) => e.id)} onChange={setTarget} label={t('bb.mock.for')} hook="bb-exam-for" labelOf={(id) => examName(t, coming.find((e) => e.id === id))} />
+            </div>
+          )}
+          {named && (
+            <p className="mt-3 text-small text-muted" data-hook="bb-exam-covers">
+              {coversText(t, aim, data.course, data.chapters)}
+            </p>
+          )}
           {available < MIN_EXAM ? (
             <Note className="mt-5">{t('bb.mock.too_few')}</Note>
           ) : (

@@ -13,6 +13,12 @@
  * concept applies (section 3, technique 3). Blocked practice only for the
  * pretest of a brand-new chapter, which stays together.
  *
+ * FOCUS. With the midterm next, its chapters come first (`focus`, the
+ * chapters the next exam covers, src/lib/bb/exams.js): due reviews from
+ * them before the others, the pretest and the new items taken from them
+ * while they have any. The other chapters' reviews still come, after: the
+ * final will ask them too.
+ *
  * Pure: everything comes in as plain rows, a list of { id, reason } goes out.
  */
 
@@ -31,14 +37,16 @@ const secondsOf = (item) => SECONDS[item?.type] ?? 45
  * @param concepts  [{ id, weight }]
  * @param chapters  [{ id, position }]
  * @param now       Date
+ * @param focus     Set of chapter ids the next exam covers, or null for all
  */
-export function buildSession({ minutes = 15, items = [], schedule = [], mistakes = [], concepts = [], chapters = [], now = new Date(), targets = null } = {}) {
+export function buildSession({ minutes = 15, items = [], schedule = [], mistakes = [], concepts = [], chapters = [], now = new Date(), targets = null, focus = null } = {}) {
   const budget = Math.max(5, Number(minutes) || 15) * 60
   const usable = items.filter((i) => i.quality === 'pass' || i.quality === 'revised' || i.quality == null)
   const byId = new Map(usable.map((i) => [i.id, i]))
   const weight = new Map(concepts.map((c) => [c.id, Math.min(3, Math.max(1, Number(c.weight) || 1))]))
   const sched = new Map(schedule.map((s) => [s.item_id, s]))
   const open = mistakes.filter((m) => !m.resolved_at && byId.has(m.item_id))
+  const inFocus = (i) => !focus || focus.has(i.chapter_id)
 
   const picked = []
   const taken = new Set()
@@ -69,8 +77,8 @@ export function buildSession({ minutes = 15, items = [], schedule = [], mistakes
   // 2. Due reviews.
   const due = usable
     .filter((i) => sched.has(i.id) && new Date(sched.get(i.id).due) <= now)
-    .map((i) => ({ i, overdue: (now - new Date(sched.get(i.id).due)) / 86400000, w: weight.get(i.concept_id) ?? 1 }))
-    .sort((a, b) => b.overdue * (1 + b.w) - a.overdue * (1 + a.w))
+    .map((i) => ({ i, overdue: (now - new Date(sched.get(i.id).due)) / 86400000, w: weight.get(i.concept_id) ?? 1, f: inFocus(i) ? 0 : 1 }))
+    .sort((a, b) => a.f - b.f || b.overdue * (1 + b.w) - a.overdue * (1 + a.w))
   for (const { i } of due) take(i, 'due')
 
   // 3. Other open mistakes.
@@ -81,7 +89,8 @@ export function buildSession({ minutes = 15, items = [], schedule = [], mistakes
   //    chapter 1, which is what the first session opens with (section 9).
   const seenChapter = new Set(usable.filter((i) => sched.has(i.id)).map((i) => i.chapter_id))
   const order = [...chapters].sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
-  const next = order.find((c) => !seenChapter.has(c.id) && usable.some((i) => i.chapter_id === c.id))
+  const unseen = (c) => !seenChapter.has(c.id) && usable.some((i) => i.chapter_id === c.id)
+  const next = order.find((c) => unseen(c) && (!focus || focus.has(c.id))) ?? order.find(unseen)
   const pretest = []
   if (next) {
     const pool = usable.filter((i) => i.chapter_id === next.id && !sched.has(i.id) && i.type !== 'flash' && !i.variant_of)
@@ -91,7 +100,7 @@ export function buildSession({ minutes = 15, items = [], schedule = [], mistakes
   // 5. New items: the earliest chapters first, a few per session, spread
   //    across concepts and weighted by signal.
   const cap = NEW_PER_SESSION[minutes] ?? Math.round(minutes / 2)
-  const chapterRank = new Map(order.map((c, n) => [c.id, n]))
+  const chapterRank = new Map(order.map((c, n) => [c.id, (focus && !focus.has(c.id) ? 1000 : 0) + n]))
   /* Desirable difficulty: within a concept, the item nearest the level the
      concept has reached comes first (src/lib/bb/difficulty.js). */
   const gap = (i) => (targets && i.type !== 'flash' ? Math.abs((i.bloom ?? 3) - (targets.get(i.concept_id) ?? 3)) : 0)

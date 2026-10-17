@@ -1,5 +1,6 @@
 import { client, gate, logUsage, model, ownCourse, profileOf, start } from './common.js'
 import { COACH_MODES, coachSystem } from './prompts.js'
+import { examsLine } from '../../src/lib/bb/exams.js'
 import { apiMessage } from '../syllabus.js'
 import { shortId, shortMap } from '../../src/lib/bb/cite.js'
 
@@ -73,9 +74,11 @@ export default async function coach(req, res) {
 
   const profile = await profileOf(db, user.id)
   const outline = await courseContext(db, user.id, course.id)
-  const examDate = course.exam_at ? new Date(course.exam_at).toISOString().slice(0, 10) : null
+  /* Both exams, the midterm and the final, with the chapters each covers. */
+  const { data: chapters } = await db.from('bb_chapters').select('id, title, position').eq('course_id', course.id).eq('user_id', user.id).order('position')
+  const exams = examsLine(course, chapters ?? [])
   const system = [
-    { type: 'text', text: coachSystem({ profile, course, language: course.language ?? profile.locale, examDate }) },
+    { type: 'text', text: coachSystem({ profile, course, language: course.language ?? profile.locale, exams }) },
     { type: 'text', text: outline, cache_control: { type: 'ephemeral' } },
     ...(COACH_MODES[body.mode] ? [{ type: 'text', text: COACH_MODES[body.mode] }] : []),
   ]

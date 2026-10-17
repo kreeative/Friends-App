@@ -5,10 +5,11 @@ import { usePageMeta } from '../../lib/pageMeta'
 import { SegTabs } from '../../components/ui'
 import { daysUntil, sessionsToday, studyStreak } from '../../lib/bb/days'
 import { weeklyLine } from '../../lib/bb/calib'
+import { nextExam } from '../../lib/bb/exams'
 import { loadDue, loadWeek } from '../data'
 import { useBB } from '../BBApp'
 import { Page, PageHead } from '../BBShell'
-import { ExamChip, weekText } from '../kit'
+import { ExamChip, examName, weekText } from '../kit'
 import { AskBar } from '../Composer'
 
 /**
@@ -53,11 +54,10 @@ export default function Today() {
   const ordered = useMemo(
     () =>
       [...(courses ?? [])].sort((a, b) => {
-        const da = daysUntil(a.exam_at)
-        const db = daysUntil(b.exam_at)
-        const ka = da == null || da < 0 ? 9999 : da
-        const kb = db == null || db < 0 ? 9999 : db
-        return ka - kb
+        /* By the next exam, midterm or final (src/lib/bb/exams.js). */
+        const da = nextExam(a)
+        const db = nextExam(b)
+        return (da ? daysUntil(da.at) : 9999) - (db ? daysUntil(db.at) : 9999)
       }),
     [courses],
   )
@@ -65,7 +65,11 @@ export default function Today() {
   const sessions = due?.sessions ?? []
   const streak = studyStreak(sessions)
   const doneToday = sessionsToday(sessions)
-  const eve = ordered.find((c) => daysUntil(c.exam_at) === 1)
+  const eveExam = (c) => {
+    const e = nextExam(c)
+    return e && daysUntil(e.at) === 1 ? e : null
+  }
+  const eve = ordered.find((c) => eveExam(c))
   const date = new Date().toLocaleDateString(localeTag(locale), { weekday: 'long', day: 'numeric', month: 'long' })
   const coachLeft = status?.limits?.coach == null ? null : Math.max(0, status.limits.coach - (status.used?.coach ?? 0))
 
@@ -78,7 +82,7 @@ export default function Today() {
       <section className={`mt-4 rounded-card px-5 py-4 ${doneToday > 0 ? 'bg-[#FFF4C2]' : 'bg-[#F4F4F5]'}`} data-hook="bb-beauty-line" aria-live="polite">
         <p className="text-body font-semibold text-ink">
           {eve
-            ? t('bb.today.sleep')
+            ? t('bb.today.sleep', { name: examName(t, eveExam(eve)) })
             : doneToday >= 3
               ? t('bb.today.break', { n: doneToday })
               : doneToday > 0
@@ -131,7 +135,7 @@ export default function Today() {
                     {c.name}
                   </Link>
                   {c.code && <p className="text-small text-muted">{c.code}</p>}
-                  <ExamChip examAt={c.exam_at} className="mt-3 self-start" />
+                  <ExamChip course={c} className="mt-3 self-start" />
                   <p className="mt-3 text-small font-semibold text-ink">
                     {items === 0 ? t('bb.today.preparing') : n > 0 ? t('bb.today.due', { n }) : t('bb.today.due_none')}
                   </p>

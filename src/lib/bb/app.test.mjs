@@ -12,6 +12,8 @@ import { planDays } from './planner.js'
 import { MAX_BYTES, formatOf, kindFor, refuse } from './formats.js'
 import { SHORT, citeOf, citedIds, hasCites, shortId, shortMap, splitRich, stripCites } from './cite.js'
 import { dictationNote, dictationSupport, heard, speechLang, withSpeech } from './dictation.js'
+import { EXAM_KINDS, SCOPES, comingExams, daysToExamOf, examChip, examColumns, examFormat, examToAsk, examsLine, examsOf, nextExam, scopeOf, stillAhead } from './exams.js'
+import { buildSession } from './sampler.js'
 import { BB_STRINGS } from '../../bb/strings.js'
 import { readFileSync } from 'node:fs'
 
@@ -165,6 +167,96 @@ eq('the constant says so', SHORT, 8)
   eq('one id is read back, a six-digit one is not', [citeOf('[aaaaaaaa]'), citeOf('[aaaaaa]')], ['aaaaaaaa', null])
 }
 
+/* --- the midterm and the final ------------------------------------------------------------------- */
+{
+  const at = (d) => later(d).toISOString()
+  const chapters = [1, 2, 3, 4, 5, 6].map((n) => ({ id: `ch${n}`, title: `Chapitre ${n}`, position: n }))
+  const course = {
+    id: 'bio',
+    exam_at: at(9),
+    exam_format: { types: ['mcq'], count: 40, minutes: 90 },
+    exams: [
+      { id: 'f', kind: 'final', at: at(60), scope: 'since', format: { count: 80, minutes: 180 } },
+      { id: 'm', kind: 'midterm', at: at(9), scope: 'chapters', chapters: ['ch1', 'ch2', 'ch3'] },
+    ],
+  }
+  const list = examsOf(course)
+  eq('the exams in date order, the midterm first', list.map((e) => e.kind), ['midterm', 'final'])
+  eq('the next one is the midterm', nextExam(course, NOW)?.id, 'm')
+  eq('and the day after it, the final', nextExam(course, later(10))?.id, 'f')
+  eq('the countdown names it', [examChip(course, NOW).key, examChip(course, NOW).n, examChip(course, NOW).exam.kind], ['bb.exam.in', 9, 'midterm'])
+  eq('on the day', examChip(course, later(9)).key, 'bb.exam.today')
+  eq('once both are past, the last one, passed', [examChip(course, later(61)).key, examChip(course, later(61)).exam.kind], ['bb.exam.past', 'final'])
+  const undated = { exams: [{ id: 'm', kind: 'midterm', at: at(-2) }, { id: 'f', kind: 'final', at: null }] }
+  eq('a final without a date wins over a midterm that is past', [examChip(undated, NOW).key, examChip(undated, NOW).exam.kind], ['bb.exam.undated', 'final'])
+  ok('and the course is still worked on', stillAhead(undated, NOW))
+  ok('a course whose only exam has passed is not', !stillAhead({ exams: [{ id: 'm', kind: 'final', at: at(-2) }] }, NOW))
+  ok('a course with no exam at all still is', stillAhead({}, NOW))
+
+  eq('a course from before: one exam, as it showed', examsOf({ exam_at: at(5) }).map((e) => [e.kind, e.legacy]), [['exam', true]])
+  eq('no date at all, no exam', examsOf({}), [])
+  eq('two midterms are numbered', examsOf({ exams: [{ id: 'b', kind: 'midterm', at: at(30) }, { id: 'a', kind: 'midterm', at: at(10) }] }).map((e) => [e.id, e.n]), [['a', 1], ['b', 2]])
+  eq('one midterm is not', examsOf(course)[0].n, null)
+  eq('a stray kind is dropped', examsOf({ exams: [{ id: 'x', kind: 'quiz', at: at(3) }] }), [])
+
+  eq('the midterm covers its chapters', [...scopeOf(list[0], course, chapters)], ['ch1', 'ch2', 'ch3'])
+  eq('the final "after the midterm" covers the rest', [...scopeOf(list[1], course, chapters)], ['ch4', 'ch5', 'ch6'])
+  const cumulative = { exams: [{ id: 'm', kind: 'midterm', at: at(9), scope: 'chapters', chapters: ['ch1'] }, { id: 'f', kind: 'final', at: at(60), scope: 'all' }] }
+  eq('a cumulative final covers everything', scopeOf(examsOf(cumulative)[1], cumulative, chapters), null)
+  const blind = { exams: [{ id: 'm', kind: 'midterm', at: at(9) }, { id: 'f', kind: 'final', at: at(60), scope: 'since' }] }
+  eq('"after the midterm" with the midterm chapters not said yet: everything, rather than nothing', scopeOf(examsOf(blind)[1], blind, chapters), null)
+  eq('a chapter deleted since is ignored', [...scopeOf(examsOf({ exams: [{ id: 'm', kind: 'midterm', scope: 'chapters', chapters: ['ch1', 'gone'] }] })[0], course, chapters)], ['ch1'])
+  eq('the course page asks for the midterm chapters until they are said', [examToAsk(blind, NOW)?.id, examToAsk(course, NOW), examToAsk(cumulative, NOW)], ['m', null, null])
+  eq('and not once the midterm has passed', examToAsk(blind, later(10)), null)
+  eq('the exams to come: dated ahead, or without a date', comingExams(undated, NOW).map((e) => e.id), ['f'])
+  eq('"after the midterm" is for a final only', examsOf({ exams: [{ id: 'm', kind: 'midterm', scope: 'since' }] })[0].scope, null)
+  eq('"chapters" with none picked is not said yet', examsOf({ exams: [{ id: 'm', kind: 'midterm', scope: 'chapters', chapters: [] }] })[0].scope, null)
+
+  eq('recall is aimed at the midterm for a midterm chapter', daysToExamOf(course, 'ch2', chapters, NOW), 9)
+  eq('and at the final for a later one', daysToExamOf(course, 'ch5', chapters, NOW), 60)
+  eq('after the midterm, at the final for every chapter it covers', daysToExamOf(course, 'ch5', chapters, later(20)), 40)
+
+  eq('each exam its own length, the course its types', [examFormat(course, null, list[0]), examFormat(course, null, list[1])].map((f) => [f.types, f.count, f.minutes]), [[['mcq'], 40, 90], [['mcq'], 80, 180]])
+  eq('the files still say the types', examFormat(course, { data: { types: ['mcq', 'short'] } }, list[1]).types, ['mcq', 'short'])
+
+  const cols = examColumns(course.exams, NOW)
+  eq('written: the list, and exam_at for what reads one date (the next exam)', [cols.exams.length, cols.exam_at], [2, at(9)])
+  eq('a midterm cannot be "after the midterm"', examColumns([{ id: 'm', kind: 'midterm', scope: 'since' }], NOW).exams[0].scope, null)
+  eq('lengths are whole numbers or nothing', examColumns([{ id: 'm', kind: 'midterm', format: { count: '40', minutes: 'x' } }], NOW).exams[0].format, { count: 40, minutes: null })
+
+  const line = examsLine(course, chapters, NOW)
+  ok('the coach is told both exams, with their chapters', /midterm on .*covers: Chapitre 1; Chapitre 2; Chapitre 3/.test(line) && /final exam on .*covers: Chapitre 4; Chapitre 5; Chapitre 6/.test(line), line)
+
+  /* The plan: a mock exam and an eve before each exam. */
+  const plan = planDays({ courses: [{ ...course, exams: [{ id: 'm', kind: 'midterm', at: at(4) }, { id: 'f', kind: 'final', at: at(11), format: { minutes: 180 } }] }], weeklyHours: 6, now: NOW, days: 14 })
+  const eves = plan.filter((d) => d.items.some((i) => i.kind === 'eve')).map((d) => d.items[0].exam.kind)
+  eq('an eve before the midterm and one before the final', eves, ['midterm', 'final'])
+  const mocks = plan.flatMap((d) => d.items.filter((i) => i.kind === 'mock'))
+  ok('mock exams for both, each as long as its own exam', mocks.some((m) => m.exam.kind === 'midterm' && m.minutes === 90) && mocks.some((m) => m.exam.kind === 'final' && m.minutes === 180), JSON.stringify(mocks))
+  eq('each exam day says which exam', plan.filter((d) => d.exams.length).map((d) => d.exams[0].kind), ['midterm', 'final'])
+  ok('the course is studied again the day after the midterm', plan.find((d) => d.date === dayKey(later(5))).items.some((i) => i.kind === 'study'))
+
+  /* A session before the midterm: its chapters first. */
+  const items = [
+    { id: 'old6', type: 'mcq', concept_id: 'k6', chapter_id: 'ch6', quality: 'pass' },
+    { id: 'old2', type: 'mcq', concept_id: 'k2', chapter_id: 'ch2', quality: 'pass' },
+    { id: 'new1', type: 'mcq', concept_id: 'k1', chapter_id: 'ch1', quality: 'pass' },
+    { id: 'new5', type: 'mcq', concept_id: 'k5', chapter_id: 'ch5', quality: 'pass' },
+  ]
+  const schedule = [
+    { item_id: 'old6', due: later(-5).toISOString(), state: 'review' },
+    { item_id: 'old2', due: later(-1).toISOString(), state: 'review' },
+  ]
+  const plain = buildSession({ minutes: 15, items, schedule, chapters, now: NOW })
+  const focused = buildSession({ minutes: 15, items, schedule, chapters, now: NOW, focus: new Set(['ch1', 'ch2', 'ch3']) })
+  const firstDue = (s) => s.items.filter((x) => x.reason === 'due').map((x) => x.id)[0]
+  eq('without a scope, the most overdue review first', firstDue(plain), 'old6')
+  eq('before the midterm, its review first', firstDue(focused), 'old2')
+  ok('and the other chapter is still reviewed', focused.items.some((x) => x.id === 'old6'))
+  const firstNew = (s) => s.items.filter((x) => x.reason === 'new' || x.reason === 'pretest').map((x) => x.id)
+  ok('new questions from the midterm chapters come first', firstNew(focused)[0] === 'new1', JSON.stringify(firstNew(focused)))
+}
+
 /* --- dictation ------------------------------------------------------------------- */
 {
   class Rec {}
@@ -243,6 +335,9 @@ eq('the constant says so', SHORT, 8)
   const straight = Object.entries(fr).filter(([, v]) => /[A-Za-zÀ-ÿ]'[A-Za-zÀ-ÿ]/.test(v)).map(([k]) => k)
   eq('and curly apostrophes', straight, [])
   ok('every plural has its two forms', Object.keys(fr).filter((k) => k.endsWith('_one')).every((k) => `${k.slice(0, -4)}_other` in fr))
+  /* Keys built from a value, which the same-keys check cannot see: a missing one shows as "bb.ex.scope.chapters". */
+  eq('a name for every scope of an exam', SCOPES.filter((k) => !(`bb.ex.scope.${k}` in fr) || !(`bb.ex.scope.${k}` in en)), [])
+  eq('and for every kind', [...EXAM_KINDS, 'exam'].filter((k) => !(`bb.ex.${k}` in fr) || !(`bb.ex.${k}` in en)), [])
 }
 
 console.log(`  ${pass} passed, ${fail} failed`)

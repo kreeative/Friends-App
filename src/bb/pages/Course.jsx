@@ -6,15 +6,16 @@ import { SegTabs } from '../../components/ui'
 import { calibration, chapterMastery } from '../../lib/bb/mastery'
 import { calibrationByChapter, weeklyLine } from '../../lib/bb/calib'
 import { MARKED, MIN_EXAM } from '../../lib/bb/exam'
-import { loadCourse, loadExams, loadStudy, reloadMaterials, updateCourse } from '../data'
+import { loadCourse, loadExams, loadStudy, reloadMaterials } from '../data'
 import { useBB } from '../BBApp'
 import { Page, PageHead } from '../BBShell'
-import { Bar, ExamChip, Note, anchorMaps, weekText } from '../kit'
+import { Bar, Note, anchorMaps, weekText } from '../kit'
 import { errorMessage } from '../errors'
 import { useProcessing } from '../course/useProcessing'
 import Processing, { Spinner } from '../course/Processing'
 import Sheet from '../course/Sheet'
 import Blueprint from '../course/Blueprint'
+import Exams from '../course/Exams'
 import { Bank, Files, Mistakes, Twins } from '../course/Views'
 import Cases from '../course/Cases'
 import Visuals from '../course/Visuals'
@@ -52,7 +53,6 @@ export default function Course() {
   const [study, setStudy] = useState(null)
   const [missing, setMissing] = useState(false)
   const [minutes, setMinutes] = useState(15)
-  const [editExam, setEditExam] = useState(false)
 
   const reload = useCallback(async () => {
     try {
@@ -137,45 +137,17 @@ export default function Course() {
   const hasItems = study.items.length > 0
   const key = TABS.find(([slug]) => slug === tab)?.[1] ?? 'chapters'
 
-  async function saveExam(e) {
-    e.preventDefault()
-    const f = new FormData(e.currentTarget)
-    const date = f.get('date')
-    const time = f.get('time') || '09:00'
-    const exam_at = date ? new Date(`${date}T${time}`).toISOString() : null
-    const row = await updateCourse(course.id, { exam_at }).catch(() => null)
-    if (row) {
-      setData((d) => ({ ...d, course: row }))
-      setCourses((list) => (list ?? []).map((c) => (c.id === row.id ? { ...c, exam_at: row.exam_at } : c)))
-    }
-    setEditExam(false)
-  }
-
-  const examDate = course.exam_at ? new Date(course.exam_at) : null
-  const pad = (n) => String(n).padStart(2, '0')
-
   return (
     <Page>
       <PageHead eyebrow={[course.code, course.professor].filter(Boolean).join(' · ') || t('bb.nav.courses')} title={course.name} />
-      <div className="mt-2 flex flex-wrap items-center gap-2">
-        <ExamChip examAt={course.exam_at} />
-        <button type="button" className="press text-small font-semibold text-ink underline underline-offset-4" onClick={() => setEditExam(!editExam)} aria-expanded={editExam}>
-          {t('bb.course.exam_set')}
-        </button>
-      </div>
-      {editExam && (
-        <form onSubmit={saveExam} className="mt-3 flex flex-wrap items-end gap-3">
-          <label className="text-small font-semibold text-ink">
-            {t('bb.new.exam_date')}
-            <input type="date" name="date" className="field mt-1 w-auto" defaultValue={examDate ? `${examDate.getFullYear()}-${pad(examDate.getMonth() + 1)}-${pad(examDate.getDate())}` : ''} />
-          </label>
-          <label className="text-small font-semibold text-ink">
-            {t('bb.new.exam_time')}
-            <input type="time" name="time" className="field mt-1 w-auto" defaultValue={examDate ? `${pad(examDate.getHours())}:${pad(examDate.getMinutes())}` : '09:00'} />
-          </label>
-          <button className="btn-ghost press w-auto px-6">{t('bb.course.save')}</button>
-        </form>
-      )}
+      <Exams
+        course={course}
+        chapters={data.chapters}
+        onSaved={(row) => {
+          setData((d) => ({ ...d, course: row }))
+          setCourses((list) => (list ?? []).map((c) => (c.id === row.id ? { ...c, ...row } : c)))
+        }}
+      />
 
       <Processing proc={proc} materials={data.materials} chapters={data.chapters} statusReady={status?.ready?.model} />
 

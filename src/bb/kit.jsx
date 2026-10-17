@@ -2,7 +2,7 @@ import { Fragment } from 'react'
 import { BB_LOGO } from './logo'
 import { useT } from '../lib/i18n'
 import { anchorChip } from '../lib/bb/quality'
-import { examLabel } from '../lib/bb/days'
+import { chipFor, examChip } from '../lib/bb/exams'
 import { citeOf, splitRich } from '../lib/bb/cite'
 
 /**
@@ -77,14 +77,21 @@ export function BBLogo({ layout = 'stacked', tile = 'lilac', className = '', pad
   )
 }
 
+/** "Intra", "Intra 2", "Final", or "Examen" for a course from before the midterm and the final. */
+export function examName(t, exam) {
+  if (exam?.kind === 'midterm') return exam.n ? t('bb.ex.midterm_n', { n: exam.n }) : t('bb.ex.midterm')
+  return exam?.kind === 'final' ? t('bb.ex.final') : t('bb.ex.exam')
+}
+
 /**
- * "Examen dans 12 jours", with the word, never a colour alone. Within a
- * week the line round it turns from grey to ink: a deadline is not an
- * event, so it gets weight rather than a colour.
+ * "Intra dans 12 jours", with the word, never a colour alone: the course's
+ * next exam by its name (src/lib/bb/exams.js), or one exam given as `exam`.
+ * Within a week the line round it turns from grey to ink: a deadline is
+ * not an event, so it gets weight rather than a colour.
  */
-export function ExamChip({ examAt, className = '' }) {
+export function ExamChip({ course, exam: one = null, className = '' }) {
   const { t } = useT()
-  const { key, n } = examLabel(examAt)
+  const { key, n, exam } = one ? chipFor(one) : examChip(course)
   const soon = n != null && n <= 7
   return (
     <span
@@ -95,7 +102,7 @@ export function ExamChip({ examAt, className = '' }) {
         <rect x="2" y="3" width="12" height="11" rx="2" />
         <path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3" />
       </svg>
-      {n == null ? t(key) : t(key, { n })}
+      {exam ? t(key, { name: examName(t, exam), n }) : t(key)}
     </span>
   )
 }

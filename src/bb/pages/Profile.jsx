@@ -283,7 +283,7 @@ export default function Profile() {
       <section className="lg mt-6 p-5" data-hook="bb-checkin">
         <h2 className="eyebrow">{t('bb.prof.rf')}</h2>
         <label className="press mt-3 flex cursor-pointer items-start gap-3 rounded-inner bg-ink/[0.035] p-4">
-          <input type="checkbox" checked={Boolean(bb?.rf_goal_id)} disabled={busy !== null || !bb} onChange={(e) => linkGoal(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-[#F8CB02]" data-hook="bb-checkin-toggle" />
+          <input type="checkbox" checked={Boolean(bb?.rf_goal_id)} disabled={busy !== null || !bb} onChange={(e) => linkGoal(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0" data-hook="bb-checkin-toggle" />
           <span className="min-w-0">
             <span className="block text-body text-ink">{t('bb.prof.checkin')}</span>
             <span className="mt-0.5 block text-small text-muted">{t('bb.prof.checkin_sub', { goal: t('bb.prof.checkin_goal') })}</span>

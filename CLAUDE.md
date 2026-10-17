@@ -78,6 +78,20 @@ and the error points at the wrong thing.
   installed apps still land. Never link /bb or /nerd. The manifest keeps
   `"id": "/bb/app"` so installed apps keep their identity. Slogan: "Révise
   comme une nerd." / "Study like a nerd."
+- **A course has its exams, not one date.** "Ya le final exam mais ya
+  aussi le mid term" (Kee). `bb_courses.exams` (migration 82,
+  `src/lib/bb/exams.js`) holds the midterm (or two) and the final, each
+  with its date, what it covers (the whole course, the chapters picked, or
+  for a final only what came after the midterm) and its own length. The
+  new-course flow asks both; the course page asks which chapters the
+  midterm covers once there are chapters, and asks a course from before
+  whether its one date was the midterm or the final. Whatever counted down
+  to one date works towards the NEXT exam: the chip names it ("Intra dans 9
+  jours"), the plan puts mock exams and an eve before each, sessions take
+  its chapters first, the mock exam follows its chapters and length, the
+  coach is told both. `exam_at` stays, holding the next exam, for an app
+  opened before and for the database until 82 has run; `src/bb/data.js`
+  reads and writes without `exams` while the column is missing.
 - **Hakkilo is black and white, and colour arrives with an event.**
   "Instead of blue or pink theme can we go for a more straightforward theme
   like black and white", then "just black and white background" and "keep
@@ -206,5 +220,11 @@ at the top of this file.
   rollback look broken when it is the instrument that is wrong.
 - Never chain two `npx vite build` calls in one command. They race and both
   report a bogus rolldown error.
+- Checkboxes are drawn by `index.css` (`appearance: none`, the tick a mask
+  in `currentColor`), so `accent-color` does nothing on them, and Tailwind's
+  preflight `color: inherit` outranks the `:where()` rule that colours the
+  tick. On the Hakkilo surface a ticked box was a black square with a black
+  tick until `[data-surface='bb'] input[type='checkbox']` set the colours:
+  yellow when on, ink tick and outline.
 - `backdrop-filter` blurs what is behind an element. Over a flat ground it
   returns that same flat colour, so glass needs a ground to be worth anything.
