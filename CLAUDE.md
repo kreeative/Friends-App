@@ -176,7 +176,12 @@ and the error points at the wrong thing.
 - **The Hakkilo bars carry Hakkilo only.** "Enleve le logo RF dans la
   barre, ca peut etre mentionne dans le footer plutot": Rich & Friends is
   named at the end of each page, with its mark and the way back
-  (`AppFooter` in `src/bb/BBShell.jsx`, `data-hook="bb-footer"`).
+  (`AppFooter` in `src/bb/BBShell.jsx`, `data-hook="bb-footer"`). The other
+  way is one tap from every Rich & Friends screen: "un raccourci dans Rich
+  and Friends qui me renvoie sur Hakkilo" put Hakkilo's icon beside the bell,
+  in the top bar on a phone and at the foot of the rail above md
+  (`HakkiloLink` in `src/components/AppShell.jsx`, `data-hook="to-hakkilo"`).
+  A link and nothing else; the card on /me stays.
 - **Nothing is underlined in Hakkilo.** "J'aime pas quand c'est souligne.
   Ca peut etre en gras, ca peut etre a l'interieur d'un petit rond ou d'un
   petit bouton." A small action is a pill (`PILL` in `src/bb/kit.jsx`,
