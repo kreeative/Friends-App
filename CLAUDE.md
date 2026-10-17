@@ -67,11 +67,19 @@ and the error points at the wrong thing.
 
 ## Design
 
-- **Beauty & Brain is black and white, and colour arrives with an event.**
+- **The study app is called Nerd and lives at /nerd.** "Je veux que l'app
+  s'appelle Nerd et non plus Beauty and Brain." It was Beauty & Brain at /bb
+  until 17 October; its code, tables, API and i18n keys keep the bb name,
+  but nothing a student reads says Beauty & Brain. /bb and /bb/* answer 308
+  to /nerd (vercel.json) and `OldNerdPath` in `App.jsx` catches in-app
+  links, so old TikTok links and installed apps still land. Never link /bb.
+  The manifest keeps `"id": "/bb/app"` so installed apps keep their identity.
+  Slogan: "Révise comme une nerd." / "Study like a nerd."
+- **Nerd is black and white, and colour arrives with an event.**
   "Instead of blue or pink theme can we go for a more straightforward theme
   like black and white", then "just black and white background" and "keep
   the color for a specific event like when you select or click or switch
-  something in, and keep the regular color" (Kee). Inside /bb
+  something in, and keep the regular color" (Kee). Inside /nerd
   (`[data-surface='bb']` in `index.css`) the page is white, wells are
   `#F4F4F5`, text is ink, primary buttons are black with white words. A
   colour appears because the student did something: light purple `#CFC2FF`
@@ -80,15 +88,17 @@ and the error points at the wrong thing.
   highlighter, green `#1E7B34` only for right once checked. No resting
   pastel cards, no saturated violet ("ca donne deja vu"), no yellow on
   black. The values and their jobs are in `src/bb/kit.jsx`.
-- **The Beauty & Brain logo is logo B**, chosen out of four: the logo yellow
-  outlined in ink on a lilac tile (`BBLogo` in `src/bb/kit.jsx`). Yellow on
-  lilac alone is 1.06:1; the ink line is what makes it readable.
-- **Beauty & Brain type is two weights lighter than Rich & Friends** ("deux
+- **The Nerd logo is logo B**, chosen out of four: the logo yellow
+  outlined in ink on a lilac tile (`BBLogo` in `src/bb/kit.jsx`). The word
+  is in Crosner outlines (the font stays out of the repo), the "N" alone
+  where the word would be too small to read. Yellow on lilac alone is
+  1.06:1; the ink line is what makes it readable.
+- **Nerd type is two weights lighter than Rich & Friends** ("deux
   niveaux moins bold, c'est trop epais"): the 'Poppins BB' family in
   `index.css` maps 500 and 600 to Regular, 700 to Medium, 800 to SemiBold,
   from the same files. Button words are 14px in a button that keeps its
   54px: "Valider" at half its size would be 9.5px, too small to read.
-- **Beauty & Brain uses icons where a button would only repeat a name**
+- **Nerd uses icons where a button would only repeat a name**
   ("au lieu de gros boutons avec les noms, juste des icones"): the tab bar
   (the page you are on opens into a lilac pill with its name), and the
   Claude-style ask box in `src/bb/Composer.jsx` (course, ways to answer,

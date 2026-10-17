@@ -8,7 +8,7 @@ import { Slider, useSlider } from '../components/Segmented'
 import { BBLogo } from './kit'
 
 /**
- * The Beauty & Brain app around every signed-in page: its own navigation,
+ * The Nerd app around every signed-in page: its own navigation,
  * its own logo, the Rich & Friends ground and glass (section 11).
  *
  * The same two shapes as the Rich & Friends shell, because the same person
@@ -28,11 +28,11 @@ import { BBLogo } from './kit'
  * data-hook="app-shell" so the width sweep measures these pages too.
  */
 const TABS = [
-  { to: '/bb/app', key: 'bb.nav.today', icon: 'today' },
-  { to: '/bb/cours', key: 'bb.nav.courses', icon: 'courses' },
-  { to: '/bb/coach', key: 'bb.nav.coach', icon: 'coach' },
-  { to: '/bb/plan', key: 'bb.nav.plan', icon: 'plan' },
-  { to: '/bb/profil', key: 'bb.nav.profile', icon: 'profile' },
+  { to: '/nerd/app', key: 'bb.nav.today', icon: 'today' },
+  { to: '/nerd/cours', key: 'bb.nav.courses', icon: 'courses' },
+  { to: '/nerd/coach', key: 'bb.nav.coach', icon: 'coach' },
+  { to: '/nerd/plan', key: 'bb.nav.plan', icon: 'plan' },
+  { to: '/nerd/profil', key: 'bb.nav.profile', icon: 'profile' },
 ]
 
 const S = { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': 'true' }
@@ -77,15 +77,14 @@ function TopBar() {
     <header className="sticky top-0 z-40 px-4 pt-4 md:hidden">
       <nav className="lg lg-chrome mx-auto w-full max-w-content" aria-label={t('bb.nav.primary')}>
         <div className="flex items-center gap-2.5 px-3 py-2.5">
-          <Link to="/bb/app" aria-label={t('bb.nav.home')} className="press flex shrink-0 items-center gap-2" data-hook="bb-home">
-            <BBLogo layout="mono" className="h-9 w-auto" pad={0.2} />
-            <span className="text-small font-bold tracking-tight text-ink">Beauty &amp; Brain</span>
+          <Link to="/nerd/app" aria-label={t('bb.nav.home')} className="press flex shrink-0 items-center gap-2" data-hook="bb-home">
+            <BBLogo layout="line" className="h-9 w-auto" pad={0.2} />
           </Link>
           <div className="ml-auto flex shrink-0 items-center gap-1.5">
             <Link to="/" className="press flex h-10 w-10 items-center justify-center rounded-pill" aria-label={t('bb.nav.switch')} title={t('bb.nav.switch')} data-hook="bb-switch">
               <Mark size={30} />
             </Link>
-            <Link to="/bb/profil" aria-label={t('bb.nav.profile')} className="press block shrink-0 rounded-pill">
+            <Link to="/nerd/profil" aria-label={t('bb.nav.profile')} className="press block shrink-0 rounded-pill">
               <Avatar profile={profile} size={32} />
             </Link>
           </div>
@@ -104,7 +103,7 @@ function Rail() {
   const active = activeIndex(pathname)
   return (
     <nav className="lg lg-rail fixed bottom-4 left-4 top-4 z-30 hidden w-[3.5rem] flex-col p-1.5 md:flex" aria-label={t('bb.nav.primary')} data-hook="bb-rail">
-      <Link to="/bb/app" aria-label={t('bb.nav.home')} className="press block shrink-0 self-center rounded-inner">
+      <Link to="/nerd/app" aria-label={t('bb.nav.home')} className="press block shrink-0 self-center rounded-inner">
         <BBLogo layout="mono" className="h-auto w-11" pad={0.2} />
       </Link>
       <span aria-hidden="true" className="mx-1 mb-8 mt-4 h-px shrink-0 bg-hairline/60" />
@@ -130,7 +129,7 @@ function Rail() {
           <Mark size={26} />
         </Link>
         <NavLink
-          to="/bb/profil"
+          to="/nerd/profil"
           aria-label={t('bb.nav.profile')}
           title={t('bb.nav.profile')}
           className={({ isActive }) => `${RAIL_ROW} ${isActive ? 'lg-pill text-ink' : 'text-ink/70 hover:bg-ink/[0.06] hover:text-ink'}`}

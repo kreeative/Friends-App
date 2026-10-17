@@ -48,10 +48,10 @@ import Challenge from './pages/public/Challenge'
 import Invite from './pages/Invite'
 
 /**
- * Beauty & Brain, the study platform at /bb (src/bb/BBApp.jsx).
+ * Nerd (formerly Beauty & Brain), the study platform at /nerd (src/bb/BBApp.jsx).
  *
  * Its own chunk: somebody opening Rich & Friends never downloads it, and a
- * student opening /bb downloads only what B&B needs on top of the shared
+ * student opening /nerd downloads only what B&B needs on top of the shared
  * kit. Mounted next to the Rich & Friends gate rather than inside it, so a
  * student meets the B&B onboarding and never the R&F welcome deck.
  */
@@ -83,9 +83,20 @@ function BBReturn() {
     } catch {
       to = null
     }
-    if (to && to.startsWith('/bb')) navigate(to, { replace: true })
+    /* A return saved before the move from /bb still lands, at its new address. */
+    if (to && /^\/(nerd|bb)(\/|$)/.test(to)) navigate(to.replace(/^\/bb/, '/nerd'), { replace: true })
   }, [user, pathname, navigate])
   return null
+}
+
+/**
+ * Nerd lived at /bb when it was called Beauty & Brain. A page load of an
+ * old address is redirected by vercel.json (308); this catches the ones
+ * that never reach the server: a link inside an open tab, a saved return.
+ */
+function OldNerdPath() {
+  const { pathname, search, hash } = useLocation()
+  return <Navigate to={`${pathname.replace(/^\/bb/, '/nerd')}${search}${hash}`} replace />
 }
 
 /** /lectures/:slug is the same page as /library/:slug, spelled in French. */
@@ -685,13 +696,14 @@ export default function App() {
               <Routes>
                 <Route path="/legal/:slug" element={<Legal />} />
                 <Route
-                  path="/bb/*"
+                  path="/nerd/*"
                   element={
                     <Suspense fallback={<BBLoading />}>
                       <BBApp />
                     </Suspense>
                   }
                 />
+                <Route path="/bb/*" element={<OldNerdPath />} />
                 <Route path="*" element={<Gate />} />
               </Routes>
             </GroupProvider>

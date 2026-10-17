@@ -8,7 +8,7 @@ import { BBLogo } from '../kit'
 import { rememberReturn, Splash } from '../boot'
 
 /**
- * /bb/connexion: the Rich & Friends sign-in form, under the Beauty & Brain
+ * /nerd/connexion: the Rich & Friends sign-in form, under the Beauty & Brain
  * logo. One account for both products (section 1.1), so it is literally the
  * same form (AuthForm in src/pages/SignIn.jsx): Google, or a code by email,
  * with the email first inside TikTok and Instagram, where Google refuses its
@@ -21,8 +21,8 @@ export default function SignInPage() {
   const { t } = useT()
   const { user, loading } = useAuth()
   const [params] = useSearchParams()
-  const next = params.get('next')?.startsWith('/bb') ? params.get('next') : '/bb/app'
-  usePageMeta({ title: `${t('bb.signin.title')} · Beauty & Brain`, description: t('bb.signin.body') })
+  const next = params.get('next')?.startsWith('/nerd') ? params.get('next') : '/nerd/app'
+  usePageMeta({ title: `${t('bb.signin.title')} · Nerd`, description: t('bb.signin.body') })
 
   if (loading) return <Splash />
   if (user) return <Navigate to={next} replace />

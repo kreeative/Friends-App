@@ -10,7 +10,7 @@ import { BBLogo } from '../kit'
 import PublicFrame from './PublicFrame'
 
 /**
- * richandfriends.xyz/bb: the public page of Beauty & Brain.
+ * richandfriends.xyz/nerd: the public page of Nerd (formerly Beauty & Brain).
  *
  * What it promises, in the order a student asks: what is it (the line and
  * the logo), how it works (three steps), why it works (the six techniques of
@@ -28,11 +28,11 @@ const CLOSE_ART = cast(['koi', 'unicorn'])
 export default function Landing() {
   const { t, locale } = useT()
   const { user } = useAuth()
-  usePageMeta({ title: `Beauty & Brain · ${t('bb.line')}`, description: t('bb.land.lede') })
+  usePageMeta({ title: `Nerd · ${t('bb.line')}`, description: t('bb.land.lede') })
   const title = useRef(null)
   const heading = t('bb.land.title')
   useLineEnd(title, heading)
-  const start = user ? '/bb/app' : '/bb/connexion?next=/bb/start'
+  const start = user ? '/nerd/app' : '/nerd/connexion?next=/nerd/start'
 
   const steps = [1, 2, 3].map((n) => ({ n, title: t(`bb.land.how_${n}_t`), body: t(`bb.land.how_${n}_b`) }))
   const science = [1, 2, 3, 4, 5, 6].map((n) => ({ n, title: t(`bb.land.sci_${n}_t`), body: t(`bb.land.sci_${n}_b`) }))
@@ -49,7 +49,7 @@ export default function Landing() {
               className="relative mt-6 max-w-[12ch] text-[clamp(2.75rem,10vw,5rem)] font-semibold leading-[1.02] tracking-[-0.03em] text-ink md:mt-10"
             >
               {headline(heading, t('bb.land.mark'), {
-                /* Les levres au-dessus du P, sur la marge du haut, la
+                /* Les levres au-dessus du R, sur la marge du haut, la
                    plus grande partie hors de l'encre. */
                 first: <Spot name={TITLE_ART[0]} tilt={-12} delay={300} eager style={{ left: '-0.34em', top: '-1.02em', width: '1em' }} />,
                 /* La tete dans les nuages APRES le point final, sur la meme
@@ -64,7 +64,7 @@ export default function Landing() {
               <Link to={start} className="btn press w-auto bg-ink px-8 font-bold text-white hover:opacity-90" data-hook="bb-cta">
                 {user ? t('bb.pub.open') : t('bb.pub.start_free')}
               </Link>
-              <Link to="/bb/tarifs" className="btn-outline press w-auto px-8">
+              <Link to="/nerd/tarifs" className="btn-outline press w-auto px-8">
                 {t('bb.pub.see_pricing')}
               </Link>
             </div>
@@ -160,7 +160,7 @@ export default function Landing() {
             <p className="mt-2 text-small text-muted">{t('bb.price.pick')}</p>
           </div>
         </div>
-        <Link to="/bb/tarifs" className="btn-outline press mt-6 w-auto px-8">
+        <Link to="/nerd/tarifs" className="btn-outline press mt-6 w-auto px-8">
           {t('bb.pub.see_pricing')}
         </Link>
       </section>

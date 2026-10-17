@@ -23,7 +23,7 @@ export const OWNER = 'Anne-Kelly Kouyaté'
  */
 export const CONTACT_EMAIL = 'contact@richandfriends.xyz'
 export const APP_NAME = 'Rich & Friends'
-export const LAST_UPDATED = '2026-10-16'
+export const LAST_UPDATED = '2026-10-17'
 
 const PLACEHOLDER = {
   email: '[contact@yourdomain]',
@@ -184,9 +184,9 @@ export const LEGAL = {
           ],
         },
         {
-          h: 'Beauty & Brain, the study coach',
+          h: 'Nerd, the study coach',
           p: [
-            'If you use Beauty & Brain (richandfriends.xyz/bb), it also stores: your study profile (first name, school, country, level, program, language, term dates, weekly study hours and goal); the course files and notes you add, and what is drawn from them (chapters, concepts, short quoted excerpts, questions, chapter visuals, case studies); your answers with the confidence you chose, their review schedule and your mistake log; your mock exam results, your written case answers and their marking; your coach conversations; your study plan; your plan and its payment status; and a count of the AI calls made for you, to apply the daily limits.',
+            'If you use Nerd (richandfriends.xyz/nerd, formerly Beauty & Brain), it also stores: your study profile (first name, school, country, level, program, language, term dates, weekly study hours and goal); the course files and notes you add, and what is drawn from them (chapters, concepts, short quoted excerpts, questions, chapter visuals, case studies); your answers with the confidence you chose, their review schedule and your mistake log; your mock exam results, your written case answers and their marking; your coach conversations; your study plan; your plan and its payment status; and a count of the AI calls made for you, to apply the daily limits.',
             'Your files are kept in private storage that only your account can read. Nobody else sees your courses, answers, marks or mistakes: not your groups, not other students.',
             'To read your material, write and check questions, answer you in the coach and mark a case, the files and excerpts concerned are sent to Anthropic (the Claude API), acting as a processor. Under Anthropic’s commercial terms, this content is not used to train its models.',
             'Plus is paid through Stripe, which processes your card details. This application never sees or stores them; it keeps the plan, its status and its renewal date.',
@@ -209,7 +209,7 @@ export const LEGAL = {
           p: [
             'Members of your group see your display name, your check-in status, and the content of your check-ins once the window closes. That visibility is the purpose of the application.',
             'Your email address is never shown to other members.',
-            'Processors acting on the publisher’s instructions: Supabase (database, authentication, storage), Vercel (hosting of the interface and its server functions), Anthropic (the Claude API, which reads a syllabus you upload and runs Beauty & Brain), Stripe (payment of Beauty & Brain Plus), Plaid (only if you connect a bank account to the budget), the configured transactional email provider, and your chosen sign-in provider. Each is bound by a data processing agreement.',
+            'Processors acting on the publisher’s instructions: Supabase (database, authentication, storage), Vercel (hosting of the interface and its server functions), Anthropic (the Claude API, which reads a syllabus you upload and runs Nerd), Stripe (payment of Nerd Plus), Plaid (only if you connect a bank account to the budget), the configured transactional email provider, and your chosen sign-in provider. Each is bound by a data processing agreement.',
             'Some of these providers operate outside the European Union. Transfers rely on the European Commission’s standard contractual clauses or an adequacy decision.',
             'Your data is never sold, rented, or shared for advertising.',
           ],
@@ -406,9 +406,9 @@ export const LEGAL = {
           ],
         },
         {
-          h: 'Beauty & Brain, le coach d’étude',
+          h: 'Nerd, le coach d’étude',
           p: [
-            'Si vous utilisez Beauty & Brain (richandfriends.xyz/bb), l’application enregistre aussi : votre profil d’étude (prénom, établissement, pays, niveau, programme, langue, dates de session, heures d’étude par semaine et objectif) ; les fichiers et notes de cours que vous ajoutez, et ce qui en est tiré (chapitres, notions, courts extraits cités, questions, schémas de chapitre, études de cas) ; vos réponses avec le degré de certitude choisi, leur calendrier de révision et votre carnet d’erreurs ; vos résultats d’examens blancs, vos réponses écrites aux cas et leur correction ; vos échanges avec le coach ; votre plan d’étude ; votre forfait et l’état de son paiement ; et le décompte des appels à l’IA faits pour vous, pour appliquer les limites quotidiennes.',
+            'Si vous utilisez Nerd (richandfriends.xyz/nerd, anciennement Beauty & Brain), l’application enregistre aussi : votre profil d’étude (prénom, établissement, pays, niveau, programme, langue, dates de session, heures d’étude par semaine et objectif) ; les fichiers et notes de cours que vous ajoutez, et ce qui en est tiré (chapitres, notions, courts extraits cités, questions, schémas de chapitre, études de cas) ; vos réponses avec le degré de certitude choisi, leur calendrier de révision et votre carnet d’erreurs ; vos résultats d’examens blancs, vos réponses écrites aux cas et leur correction ; vos échanges avec le coach ; votre plan d’étude ; votre forfait et l’état de son paiement ; et le décompte des appels à l’IA faits pour vous, pour appliquer les limites quotidiennes.',
             'Vos fichiers sont conservés dans un stockage privé que seul votre compte peut lire. Personne d’autre ne voit vos cours, vos réponses, vos notes ou vos erreurs : ni vos groupes, ni les autres étudiantes et étudiants.',
             'Pour lire votre matériel, rédiger et vérifier les questions, vous répondre dans le coach et corriger un cas, les fichiers et extraits concernés sont transmis à Anthropic (l’API Claude), en qualité de sous-traitant. Selon les conditions commerciales d’Anthropic, ce contenu ne sert pas à entraîner ses modèles.',
             'Plus est payé par l’intermédiaire de Stripe, qui traite les données de votre carte. Cette application ne les voit ni ne les conserve ; elle garde le forfait, son statut et sa date de renouvellement.',
@@ -431,7 +431,7 @@ export const LEGAL = {
           p: [
             'Les membres de votre groupe voient votre nom d’affichage, votre statut, et le contenu de vos points une fois la fenêtre close. Cette visibilité est la raison d’être de l’application.',
             'Votre adresse électronique n’est jamais montrée aux autres membres.',
-            'Sous-traitants agissant sur instruction de l’éditrice : Supabase (base de données, authentification, stockage), Vercel (hébergement de l’interface et de ses fonctions serveur), Anthropic (l’API Claude, qui lit un plan de cours que vous déposez et fait fonctionner Beauty & Brain), Stripe (paiement de Beauty & Brain Plus), Plaid (seulement si vous connectez un compte bancaire au budget), le prestataire d’envoi de courriels configuré, et votre fournisseur de connexion. Chacun est lié par un accord de sous-traitance.',
+            'Sous-traitants agissant sur instruction de l’éditrice : Supabase (base de données, authentification, stockage), Vercel (hébergement de l’interface et de ses fonctions serveur), Anthropic (l’API Claude, qui lit un plan de cours que vous déposez et fait fonctionner Nerd), Stripe (paiement de Nerd Plus), Plaid (seulement si vous connectez un compte bancaire au budget), le prestataire d’envoi de courriels configuré, et votre fournisseur de connexion. Chacun est lié par un accord de sous-traitance.',
             'Certains de ces prestataires opèrent hors de l’Union européenne. Les transferts reposent sur les clauses contractuelles types de la Commission européenne ou sur une décision d’adéquation.',
             'Vos données ne sont ni vendues, ni louées, ni partagées à des fins publicitaires.',
           ],

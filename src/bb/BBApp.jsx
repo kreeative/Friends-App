@@ -24,7 +24,7 @@ import Plan from './pages/Plan'
 import Profile from './pages/Profile'
 
 /**
- * Beauty & Brain, at /bb (section 1.1): its own landing page, pricing,
+ * Nerd (formerly Beauty & Brain), at /nerd (section 1.1): its own landing page, pricing,
  * sign-in, onboarding and app, on the Rich & Friends account.
  *
  * Mounted ABOVE the Rich & Friends gate in App.jsx, so a student never
@@ -100,7 +100,7 @@ function RequireUser({ children }) {
   const { user, loading } = useAuth()
   const { pathname, search } = useLocation()
   if (loading) return <Splash />
-  if (!user) return <Navigate to={`/bb/connexion?next=${encodeURIComponent(pathname + search)}`} replace />
+  if (!user) return <Navigate to={`/nerd/connexion?next=${encodeURIComponent(pathname + search)}`} replace />
   return children
 }
 
@@ -127,19 +127,23 @@ function Ready({ children }) {
   const { bb } = useBB()
   const settled = useProfileSettled()
   if (bb === undefined || !settled) return <Splash />
-  if (!bb?.onboarded_at || needsTerms(profile)) return <Navigate to="/bb/start" replace />
+  if (!bb?.onboarded_at || needsTerms(profile)) return <Navigate to="/nerd/start" replace />
   return children
 }
 
-/* The ground of Beauty & Brain, black and white (src/index.css,
+/* The ground of Nerd, black and white (src/index.css,
    [data-surface='bb']), and the grounds Rich & Friends goes back to. */
 export const BB_GROUND = '#FFFFFF'
 const RF_GROUND = { sun: '#FFF5F7', sea: '#F0F9FF' }
 
 /**
- * While on /bb: the manifest, the browser chrome colour and the colour
- * scope of Beauty & Brain, on <html> so the body, portals and sheets take
- * it too. Leaving for Rich & Friends gives them all back.
+ * While on /nerd: the manifest, the browser chrome colour and the colour
+ * scope of Nerd, on <html> so the body, portals and sheets take it too.
+ * Leaving for Rich & Friends gives them all back.
+ *
+ * The manifest keeps "id": "/bb/app" from when the app was Beauty & Brain
+ * at /bb. The id is what an installed app is known by; a new one would make
+ * a phone that installed it treat Nerd as a second app.
  */
 function useInstallable() {
   useEffect(() => {
@@ -149,9 +153,9 @@ function useInstallable() {
     const apple = document.querySelector('link[rel="apple-touch-icon"]')
     const before = { manifest: link?.getAttribute('href'), apple: apple?.getAttribute('href') }
     root.setAttribute('data-surface', 'bb')
-    link?.setAttribute('href', '/bb.webmanifest')
+    link?.setAttribute('href', '/nerd.webmanifest')
     theme?.setAttribute('content', BB_GROUND)
-    apple?.setAttribute('href', '/brand/bb-apple-touch-180.png')
+    apple?.setAttribute('href', '/brand/nerd-apple-touch-180.png')
     return () => {
       root.removeAttribute('data-surface')
       if (before.manifest) link?.setAttribute('href', before.manifest)
@@ -208,10 +212,10 @@ export default function BBApp() {
           <Route path="coach/:id" element={<Coach />} />
           <Route path="plan" element={<Plan />} />
           <Route path="profil" element={<Profile />} />
-          <Route path="profile" element={<Navigate to="/bb/profil" replace />} />
-          <Route path="courses" element={<Navigate to="/bb/cours" replace />} />
+          <Route path="profile" element={<Navigate to="/nerd/profil" replace />} />
+          <Route path="courses" element={<Navigate to="/nerd/cours" replace />} />
         </Route>
-        <Route path="*" element={<Navigate to="/bb" replace />} />
+        <Route path="*" element={<Navigate to="/nerd" replace />} />
       </Routes>
     </Provider>
   )

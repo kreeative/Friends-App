@@ -10,7 +10,7 @@ import { Note } from '../kit'
 import PublicFrame from './PublicFrame'
 
 /**
- * /bb/tarifs: the plans of section 13, with fair use written out.
+ * /nerd/tarifs: the plans of section 13, with fair use written out.
  *
  * The amounts come from PRICES (src/lib/bb/plans.js), the same table the
  * server charges from, so the page cannot advertise one price and Stripe
@@ -29,11 +29,11 @@ export default function Pricing() {
   const [params] = useSearchParams()
   const [busy, setBusy] = useState(null)
   const [error, setError] = useState(null)
-  usePageMeta({ title: `${t('bb.price.title')} · Beauty & Brain`, description: t('bb.price.lede') })
+  usePageMeta({ title: `${t('bb.price.title')} · Nerd`, description: t('bb.price.lede') })
 
   async function choose(plan) {
     setError(null)
-    if (!user) return navigate(`/bb/connexion?next=${encodeURIComponent('/bb/tarifs')}`)
+    if (!user) return navigate(`/nerd/connexion?next=${encodeURIComponent('/nerd/tarifs')}`)
     setBusy(plan)
     const r = await call('checkout', { plan, locale })
     if (r.ok && r.data.url) {
@@ -42,7 +42,7 @@ export default function Pricing() {
     }
     setBusy(null)
     if (r.data.error === 'owner') setError('owner')
-    else if (r.data.error === 'already') navigate('/bb/profil')
+    else if (r.data.error === 'already') navigate('/nerd/profil')
     else if (r.data.error === 'no_billing') setError('no_billing')
     else setError('error')
   }
@@ -78,7 +78,7 @@ export default function Pricing() {
                 </li>
               ))}
             </ul>
-            <Link to={user ? '/bb/app' : '/bb/connexion?next=/bb/start'} className="btn-outline press mt-6">
+            <Link to={user ? '/nerd/app' : '/nerd/connexion?next=/nerd/start'} className="btn-outline press mt-6">
               {user ? t('bb.pub.open') : t('bb.price.free_cta')}
             </Link>
           </article>

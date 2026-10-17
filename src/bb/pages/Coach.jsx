@@ -13,7 +13,7 @@ import { Spinner } from '../course/Processing'
 import { Composer } from '../Composer'
 
 /**
- * /bb/coach/:id, the coach of section 6, grounded in one course.
+ * /nerd/coach/:id, the coach of section 6, grounded in one course.
  *
  * The answer streams in as it is written. The model cites an excerpt by its
  * short id in square brackets ([3f9c1d2a], src/lib/bb/cite.js); here each id
@@ -34,7 +34,7 @@ export default function Coach() {
   const { t, locale } = useT()
   const navigate = useNavigate()
   const { courses, reloadStatus } = useBB()
-  usePageMeta({ title: `${t('bb.coach.title')} · Beauty & Brain` })
+  usePageMeta({ title: `${t('bb.coach.title')} · Nerd` })
   const [course, setCourse] = useState(null)
   const [messages, setMessages] = useState([])
   const [mode, setMode] = useState(null)
@@ -48,7 +48,7 @@ export default function Coach() {
 
   /* No course in the address: the first one, so the coach opens ready. */
   useEffect(() => {
-    if (!id && courses?.length) navigate(`/bb/coach/${courses[0].id}`, { replace: true })
+    if (!id && courses?.length) navigate(`/nerd/coach/${courses[0].id}`, { replace: true })
   }, [id, courses, navigate])
 
   useEffect(() => {
@@ -150,7 +150,7 @@ export default function Coach() {
       <Page>
         <PageHead title={t('bb.coach.title')} sub={t('bb.coach.lede')} />
         <Note className="mt-4">{t('bb.coach.no_courses')}</Note>
-        <Link to="/bb/cours/nouveau" className="btn-ghost press mt-6 w-auto px-6">
+        <Link to="/nerd/cours/nouveau" className="btn-ghost press mt-6 w-auto px-6">
           {t('bb.today.add_course')}
         </Link>
       </Page>
@@ -203,7 +203,7 @@ export default function Coach() {
           disabled={!course}
           courses={courses?.length > 1 ? courses : null}
           courseId={id}
-          onCourse={(next) => next !== id && navigate(`/bb/coach/${next}`)}
+          onCourse={(next) => next !== id && navigate(`/nerd/coach/${next}`)}
           mode={mode}
           onMode={setMode}
           hook="bb-coach-form"

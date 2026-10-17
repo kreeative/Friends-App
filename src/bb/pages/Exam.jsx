@@ -12,7 +12,7 @@ import { Anchors, Bar, BigButton, Note, Outside, anchorMaps } from '../kit'
 import { Spinner } from '../course/Processing'
 
 /**
- * /bb/examen/:id, the timed mock exam (section 6, phase 2).
+ * /nerd/examen/:id, the timed mock exam (section 6, phase 2).
  *
  *   Follows the blueprint: counts, time limit, chapter weights. Results by
  *   chapter and by Bloom level, and a review of every miss. Feeds the
@@ -43,7 +43,7 @@ export default function Exam() {
   const { id } = useParams()
   const { t, locale } = useT()
   const { user } = useAuth()
-  usePageMeta({ title: `${t('bb.mock.title')} · Beauty & Brain` })
+  usePageMeta({ title: `${t('bb.mock.title')} · Nerd` })
 
   const [data, setData] = useState(null)
   const [error, setError] = useState(null)
@@ -220,7 +220,7 @@ export default function Exam() {
   const top = (
     <header className="sticky top-0 z-30 px-4 pt-4">
       <div className="lg lg-chrome mx-auto flex w-full max-w-[72rem] items-center gap-3 px-3 py-2.5">
-        <Link to={`/bb/cours/${id}/examen`} className="press flex h-10 w-10 shrink-0 items-center justify-center rounded-pill text-ink" aria-label={t('bb.mock.leave')} data-hook="bb-exam-leave">
+        <Link to={`/nerd/cours/${id}/examen`} className="press flex h-10 w-10 shrink-0 items-center justify-center rounded-pill text-ink" aria-label={t('bb.mock.leave')} data-hook="bb-exam-leave">
           <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
             <path d="M6 6l12 12M18 6 6 18" />
           </svg>
@@ -327,10 +327,10 @@ export default function Exam() {
         )}
 
         <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-          <Link to={`/bb/session/${id}?m=15`} className="btn press bg-ink font-bold text-white hover:opacity-90 sm:w-auto sm:px-8" data-hook="bb-exam-practise">
+          <Link to={`/nerd/session/${id}?m=15`} className="btn press bg-ink font-bold text-white hover:opacity-90 sm:w-auto sm:px-8" data-hook="bb-exam-practise">
             {t('bb.mock.practise')}
           </Link>
-          <Link to={`/bb/cours/${id}/examen`} className="btn-ghost press sm:w-auto sm:px-8">
+          <Link to={`/nerd/cours/${id}/examen`} className="btn-ghost press sm:w-auto sm:px-8">
             {t('bb.mock.back')}
           </Link>
         </div>

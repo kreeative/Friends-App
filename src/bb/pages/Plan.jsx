@@ -15,7 +15,7 @@ import { Bar, BigButton, ExamChip, Note } from '../kit'
 import Squads from '../plan/Squads'
 
 /**
- * /bb/plan, the study plan (section 6, phase 2).
+ * /nerd/plan, the study plan (section 6, phase 2).
  *
  *   Built from the exam date, blueprint, mastery and the student's available
  *   hours. Every day mixes new material, due reviews and mock exams: at
@@ -46,7 +46,7 @@ export default function Plan() {
   const { t, locale } = useT()
   const { user } = useAuth()
   const { bb, setBB, courses } = useBB()
-  usePageMeta({ title: `${t('bb.plan.title')} · Beauty & Brain` })
+  usePageMeta({ title: `${t('bb.plan.title')} · Nerd` })
   const [ready, setReady] = useState({})
   const [cal, setCal] = useState(null)
   const [from, setFrom] = useState(null)
@@ -124,7 +124,7 @@ export default function Plan() {
   const writtenBefore = cal?.plan.some((r) => r.on_date >= today) ?? false
 
   const kindText = (kind) => t(`bb.plan.kind.${kind}`)
-  const titleOf = (p) => `${kindText(p.kind)} · ${name.get(p.course_id) ?? 'Beauty & Brain'}`
+  const titleOf = (p) => `${kindText(p.kind)} · ${name.get(p.course_id) ?? 'Nerd'}`
 
   async function write() {
     if (!placement || !user?.id) return
@@ -186,7 +186,7 @@ export default function Plan() {
       <PageHead title={t('bb.plan.title')} sub={t('bb.plan.lede')} />
       <p className="mt-2 text-small text-muted">
         {t('bb.plan.weekly', { n: hours, m: perDay })}{' '}
-        <Link to="/bb/profil" className="font-semibold text-ink underline underline-offset-4">
+        <Link to="/nerd/profil" className="font-semibold text-ink underline underline-offset-4">
           {t('bb.plan.set_hours')}
         </Link>
       </p>
@@ -206,14 +206,14 @@ export default function Plan() {
           {exams.map((c) => (
             <li key={c.id} className="lg p-5">
               <div className="flex items-start justify-between gap-3">
-                <Link to={`/bb/cours/${c.id}`} className="text-body font-bold text-ink underline-offset-4 hover:underline">
+                <Link to={`/nerd/cours/${c.id}`} className="text-body font-bold text-ink underline-offset-4 hover:underline">
                   {c.name}
                 </Link>
                 <ExamChip examAt={c.exam_at} />
               </div>
               <Bar className="mt-4" pct={ready[c.id] ?? 0} label={t('bb.plan.ready', { n: ready[c.id] ?? 0 })} />
               {daysUntil(c.exam_at) <= 10 && <p className="mt-3 text-small text-ink">{t('bb.plan.final')}</p>}
-              <Link to={`/bb/examen/${c.id}`} className="mt-3 inline-block text-small font-semibold text-ink underline underline-offset-4">
+              <Link to={`/nerd/examen/${c.id}`} className="mt-3 inline-block text-small font-semibold text-ink underline underline-offset-4">
                 {t('bb.mock.open')}
               </Link>
             </li>

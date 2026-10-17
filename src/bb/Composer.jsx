@@ -183,7 +183,7 @@ export function AskBar({ courses, label, className = '' }) {
       <Composer
         value={text}
         onChange={setText}
-        onSubmit={() => navigate(`/bb/coach/${id}?q=${encodeURIComponent(text.trim())}`)}
+        onSubmit={() => navigate(`/nerd/coach/${id}?q=${encodeURIComponent(text.trim())}`)}
         courses={courses.length > 1 ? courses : null}
         courseId={id}
         onCourse={setCourseId}
