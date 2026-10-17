@@ -394,17 +394,31 @@ eq('the constant says so', SHORT, 8)
   const today = read('bb/pages/Today.jsx')
   const kit = read('bb/kit.jsx')
   ok('Today draws the shared calendar, in its Hakkilo copy, with the exams', /<WeekStrip study extra=\{examsOnCalendar\} \/>/.test(today) && /const examsOnCalendar = useExamsOnCalendar\(courses\)/.test(today) && /export function useExamsOnCalendar\(courses\)[\s\S]{0,200}examEvents\(courses, /.test(kit))
-  /* The Calendar tab: the same strip, the same exams, opened on the month. */
+  /* The Calendar tab: "le calendrier devrait etre comme sur Rich and Friend
+     avec toutes les views" (Kee). Rich & Friends' own page, in its Hakkilo
+     copy, with the same exams as Today. */
   const calendar = read('bb/pages/Calendar.jsx')
-  ok('the Calendar tab is the same strip with the same exams, on the month', /<WeekStrip study month extra=\{examsOnCalendar\} \/>/.test(calendar) && /const examsOnCalendar = useExamsOnCalendar\(courses\)/.test(calendar) && /<Route path="calendrier" element=\{<Calendar \/>\} \/>/.test(read('bb/BBApp.jsx')))
-  ok('one column like every Hakkilo page', /<Page>/.test(calendar) && !/<Page wide/.test(calendar))
+  const full = read('pages/Calendar.jsx')
+  ok('the Calendar tab is Rich & Friends\' calendar page, with the exams', /<FullCalendar study extra=\{examsOnCalendar\} onOpenExtra=\{openExam\} \/>/.test(calendar) && /import FullCalendar from '\.\.\/\.\.\/pages\/Calendar'/.test(calendar) && /const examsOnCalendar = useExamsOnCalendar\(courses\)/.test(calendar) && /<Route path="calendrier" element=\{<Calendar \/>\} \/>/.test(read('bb/BBApp.jsx')))
+  ok('all its views, opening on the month', /const VIEWS = \['month', 'week', 'day'\]/.test(full) && /useState\(study \? 'month' : 'week'\)/.test(full))
+  ok('an exam opens on its course page, with its form', /navigate\(`\/hakkilo\/cours\/\$\{course\}\$\{exam\.length \? `\?examen=/.test(calendar) && /if \(entry\?\.extraOf\) \{\s*onOpenExtra\?\.\(entry\)/.test(full))
+  const loadFn = full.slice(full.indexOf('const load = useCallback'), full.indexOf('useEffect(() => {\n    load()'))
+  /* A read inside an `if (!study) {` block that has not closed before it. */
+  const guarded = (q) => {
+    const i = loadFn.indexOf(q)
+    const j = loadFn.lastIndexOf('if (!study) {', i)
+    return i > 0 && j > 0 && !loadFn.slice(j, i).includes('\n    }\n')
+  }
+  ok('its copy never reads the cycle, the friends or the bookings', /const periodTracking = !study && cycleOn\(profile\)/.test(full) && /\{periodTracking && <CyclePanel/.test(full) && ["from('group_members')", "from('goal_step')", "from('booking')"].every(guarded))
+  ok('and offers only its own layers', /const STUDY_LAYERS = \['scolaire', 'perso', 'objectifs', 'externes'\]/.test(full) && /\(!study \|\| STUDY_LAYERS\.includes\(l\)\)/.test(full))
+  ok('in Hakkilo\'s colours: the well, the lilac, the yellow, white', /cours: 'bg-\[#F4F4F5\] text-ink/.test(full) && /etude: 'bg-\[#E6DFFF\] text-ink/.test(full) && /examen: 'bg-\[#F8CB02\] text-ink/.test(full) && /other: 'bg-white text-ink/.test(full))
+  ok('in its one column, and nothing underlined', /className=\{study \? 'mt-5 space-y-4' :/.test(full) && /<Page>/.test(calendar) && !/<Page wide/.test(calendar) && /className=\{DISMISS \?\? 'press underline/.test(full))
   const strip = read('components/WeekStrip.jsx')
   const run = strip.slice(strip.indexOf('const run = async () => {'), strip.indexOf("document.addEventListener('visibilitychange'"))
   const stop = run.indexOf('if (study) return')
   ok('the copy reads the calendar and the deadlines, then stops', stop > run.indexOf("from('calendar_event')") && stop > run.indexOf(".from('goals')") && run.indexOf("from('calendar_event')") > 0)
   ok('before the check-ins, the solo ticks, the money and the moods', ['readCheckins(', ".from('goal_days')", 'loadBudget(', ".from('daily_mood')"].every((s) => run.indexOf(s) > stop))
   ok('and never reads the cycle', /const periodTracking = !study && cycleOn\(profile\)/.test(strip) && run.indexOf("from('cycle_log')") > run.indexOf('if (!periodTracking) return'))
-  ok('`month` opens it on the month, and reads the months from the start', /const \[expanded, setExpanded\] = useState\(month\)/.test(strip) && /const \[wide, setWide\] = useState\(month\)/.test(strip))
   ok('no recap card in it, and so no hold', /\{!study && \(\s*<DayRecap/.test(strip) && /onOpen=\{study \? undefined/.test(strip) && /enabled: Boolean\(onOpen\)/.test(strip))
   ok('its colours: today in ink, the day picked lilac with an ink ring, the marks in ink', /study\s*\?\s*isToday\s*\?\s*'bg-ink text-white font-semibold'/.test(strip) && /bg-\[#CFC2FF\] text-ink font-semibold ring-\[1\.5px\] ring-inset ring-ink/.test(strip) && /const STUDY_MARK_STYLE = \{[^}]*bg-ink/.test(strip))
   /* It sat beside the day from lg for one release; "arrete de travailler sur

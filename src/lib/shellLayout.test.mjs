@@ -1581,7 +1581,8 @@ ok(
 
 ok(
   'the month is the heading now that the page title has gone up',
-  /<h1[^>]*first-letter:uppercase[\s\S]{0,220}fmt\.format\(anchor\)/.test(cal),
+  /* An h1 in Rich & Friends; an h2 in Hakkilo's copy, whose page has its own. */
+  /<Title[^>]*first-letter:uppercase[\s\S]{0,220}fmt\.format\(anchor\)/.test(cal) && /const Title = study \? 'h2' : 'h1'/.test(cal),
   'Intl returns "septembre 2026" in French and "September 2026" in English',
 )
 
@@ -1612,7 +1613,7 @@ ok('le mois et le pager partagent une ligne, les onglets prennent la suivante',
        .test(code('src/components/ui.jsx')),
    'trois elements dans une rangee qui passe a la ligne font trois lignes a 390px')
 ok('le titre ne se replie pas: c est le pager qui bouge s il le faut',
-   /<h1 className="flex-1 shrink-0 whitespace-nowrap/.test(cal) && !/<h1 className="text-safe[^"]*whitespace-nowrap/.test(cal),
+   /<Title className="flex-1 shrink-0 whitespace-nowrap/.test(cal) && !/<(h1|Title) className="text-safe[^"]*whitespace-nowrap/.test(cal),
    '.text-safe porte min-w-0, donc le titre passait PAR DESSUS le pager a 320px')
 ok('et le mois est ecrit en court sous sm',
    /const fmtCourt = new Intl\.DateTimeFormat/.test(cal)
@@ -2057,7 +2058,7 @@ ok(
   ok('les entrees sont fabriquees pour la plage affichee, pas stockees',
      /birthdayEntries\(gens, range\.from, range\.to/.test(cal))
   ok('et elles passent par le meme filtre de couches que le reste',
-     /visibleEvents\(\[\.\.\.events, \.\.\.asEvents, \.\.\.anniversaires, \.\.\.reserves, \.\.\.externes, \.\.\.etapes\], hidden\)/.test(cal),
+     /visibleEvents\(\[\.\.\.events, \.\.\.asEvents, \.\.\.anniversaires, \.\.\.reserves, \.\.\.externes, \.\.\.etapes, \.\.\.ajoutes\], hidden\)/.test(cal),
      'c est ce qui rend la puce "Anniversaires" capable de les enlever')
   /* Un anniversaire est derive d'un profil comme un objectif est derive de sa
      ligne: ouvrir le formulaire dessus insererait un vrai evenement portant le
@@ -2526,7 +2527,7 @@ ok('and the whole rule', /data-hook="del-all"/.test(cal))
  *   evenement en creation -> pas de bouton du tout
  */
 ok('le formulaire peut supprimer',
-   /data-hook="cal-form-delete"/.test(cal) && /function EventForm\(\{ initial, onClose, onSaved, onDelete \}\)/.test(cal),
+   /data-hook="cal-form-delete"/.test(cal) && /function EventForm\(\{ initial, onClose, onSaved, onDelete, study = false \}\)/.test(cal),
    'il fallait annuler, retrouver la ligne dans la vue Jour, et la supprimer de la')
 ok('et il repose la question du perimetre par le meme chemin',
    /if \(entry\.id\) return askRemove\(entry\)/.test(cal),
@@ -2670,7 +2671,7 @@ ok(
 )
 ok(
   'and the pill dot goes white when selected, so it stays visible on the accent',
-  /on \? 'bg-on-accent'/.test(cal),
+  /on\s*\?\s*'bg-on-accent'/.test(cal),
 )
 
 /* --- the deletion dialog names what it is deleting ---------------------- */
@@ -3011,7 +3012,8 @@ ok(
 /* The calendar, same question, three consequences. */
 ok(
   'the calendar asks it too',
-  /const periodTracking = cycleOn\(profile\)/.test(cal),
+  /* And never in Hakkilo's copy of the page (`study`). */
+  /const periodTracking = !study && cycleOn\(profile\)/.test(cal),
 )
 /* "Mon cycle" a quitte le calendrier: il deroutait a cote de "+ Mes regles",
    deux boutons commencant par le meme mot dont l'un NOTE et l'autre MONTRE. Ce
@@ -3028,7 +3030,7 @@ ok(
 )
 ok(
   'the layer toggle is not offered',
-  /LAYERS\.filter\(\(l\) => l !== 'cycle' \|\| periodTracking\)/.test(cal),
+  /LAYERS\.filter\(\(l\) => \(l !== 'cycle' \|\| periodTracking\) && \(!study \|\| STUDY_LAYERS\.includes\(l\)\)\)/.test(cal),
   'a switch that governs nothing invites a tap and answers with no change',
 )
 ok(
