@@ -11,9 +11,12 @@ import { dictationNote, dictationSupport, heard, speechLang, withSpeech } from '
  * "Au lieu que toutes les icones soient serrees ensemble, regroupe-les dans
  * un bouton en forme de plus": the course and the four ways to answer are in
  * the menu the "+" opens, each with its icon and its name. What was chosen
- * sits beside the "+" as a chip: the course in outline, the way to answer in
- * soft lilac (picked) with a cross to take it off. A chip opens the menu
- * again. Every button carries its name in aria-label and title.
+ * sits just above the box as a chip, outside it, the way Claude Code shows
+ * what was picked ("les icones sont juste en haut du rectangle, c'est pas a
+ * l'interieur"): the course in outline, the way to answer in soft lilac
+ * (picked) with a cross to take it off. A chip opens the menu again. Inside
+ * the box, only the words, the "+", the mic and the arrow. Every button
+ * carries its name in aria-label and title.
  *
  * The mic dictates into the box with the browser's own speech recognition;
  * where it is hidden and why is in src/lib/bb/dictation.js.
@@ -319,79 +322,12 @@ export function Composer({ value, onChange, onSubmit, busy = false, disabled = f
 
   const ModeIcon = mode ? MODE_ICON[mode] : null
   const modeName = mode ? t(`bb.coach.mode.${mode}`) : ''
+  const picked = Boolean(course || (onMode && mode))
 
   return (
-    <form
-      onSubmit={submit}
-      aria-label={t('bb.ask.label')}
-      className="rounded-[1.5rem] border border-ink/15 bg-surface p-2 shadow-[var(--e-float)] transition-colors focus-within:border-ink"
-      data-hook={hook}
-    >
-      <label className="block px-2 pt-1">
-        <span className="sr-only">{ask}</span>
-        <textarea
-          ref={area}
-          rows={1}
-          value={value}
-          placeholder={placeholder}
-          maxLength={6000}
-          onChange={(e) => {
-            voice.cancel()
-            voice.hush()
-            onChange(e.target.value)
-          }}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) submit(e)
-          }}
-          className="block max-h-40 min-h-[2.5rem] w-full resize-none border-0 bg-transparent px-1 py-2 text-body text-ink outline-none placeholder:text-[rgb(var(--quiet-ink))]"
-          data-hook={hook ? `${hook}-input` : undefined}
-        />
-      </label>
-      <div className="flex items-end gap-1 px-0.5 pt-1">
-        {menu && (
-          <div
-            ref={wrap}
-            className="relative shrink-0"
-            onKeyDown={(e) => {
-              if (e.key === 'Escape' && open) {
-                e.preventDefault()
-                close()
-              }
-            }}
-          >
-            <button
-              ref={plus}
-              type="button"
-              aria-haspopup="menu"
-              aria-expanded={open}
-              aria-controls={open ? `${id}-menu` : undefined}
-              aria-label={t('bb.compose.more')}
-              title={t('bb.compose.more')}
-              onClick={() => setOpen((o) => !o)}
-              className={`${ROUND} ${open ? 'bg-[#CFC2FF] text-ink' : 'text-ink hover:bg-ink/[0.06]'}`}
-              data-hook="bb-compose-more"
-            >
-              <Plus className={`h-5 w-5 transition-transform duration-200 ease-settle ${open ? 'rotate-45' : ''}`} />
-            </button>
-            {open && (
-              <Menu
-                id={`${id}-menu`}
-                place={place}
-                courses={list}
-                courseId={courseId}
-                onCourse={onCourse}
-                mode={mode}
-                onMode={onMode}
-                onPick={(change) => {
-                  change()
-                  close()
-                }}
-                onLeave={() => setOpen(false)}
-              />
-            )}
-          </div>
-        )}
-        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1">
+    <div>
+      {picked && (
+        <div className="mb-2 flex flex-wrap items-center gap-1.5 px-1" data-hook="bb-compose-chips">
           {course && (
             <button
               type="button"
@@ -399,7 +335,7 @@ export function Composer({ value, onChange, onSubmit, busy = false, disabled = f
               aria-label={t('bb.compose.course_is', { name: course.code || course.name })}
               title={course.name}
               onClick={() => setOpen(true)}
-              className="press flex h-9 min-w-0 max-w-full items-center gap-1.5 rounded-pill border border-ink/15 pl-2.5 pr-3 text-small text-ink hover:border-ink/30"
+              className="press flex h-9 min-w-0 max-w-full items-center gap-1.5 rounded-pill border border-ink/15 bg-surface pl-2.5 pr-3 text-small text-ink hover:border-ink/30"
               data-hook="bb-compose-course-chip"
             >
               <Book className="h-4 w-4 shrink-0" />
@@ -408,8 +344,7 @@ export function Composer({ value, onChange, onSubmit, busy = false, disabled = f
           )}
           {onMode && mode && (
             /* The short name ("Vérifie" for "Vérifie ma réponse"): the long
-               ones were cut to "Explique simpl..." at 390px. The icon goes
-               below 360px, where even "Socratique" did not fit beside it. */
+               ones were cut to "Explique simpl..." at 390px. */
             <span className="flex h-9 min-w-0 max-w-full items-center rounded-pill border border-ink bg-[#E6DFFF] text-ink" data-hook="bb-compose-mode">
               <button
                 type="button"
@@ -419,7 +354,7 @@ export function Composer({ value, onChange, onSubmit, busy = false, disabled = f
                 onClick={() => setOpen(true)}
                 className="press flex h-full min-w-0 items-center gap-1.5 pl-2.5 pr-0.5 text-small"
               >
-                <ModeIcon className="hidden h-4 w-4 shrink-0 min-[360px]:block" />
+                <ModeIcon className="h-4 w-4 shrink-0" />
                 <span className="truncate">{t(`bb.coach.mode_short.${mode}`)}</span>
               </button>
               <button
@@ -435,37 +370,110 @@ export function Composer({ value, onChange, onSubmit, busy = false, disabled = f
             </span>
           )}
         </div>
-        {voice.ready && (
-          <button
-            type="button"
-            aria-pressed={voice.on}
-            aria-label={t('bb.dictate.start')}
-            title={t(voice.on ? 'bb.dictate.stop' : 'bb.dictate.start')}
-            onClick={voice.toggle}
-            className={`${ROUND} relative ${voice.on ? 'bg-[#CFC2FF] text-ink' : 'text-ink hover:bg-ink/[0.06]'}`}
-            data-hook="bb-compose-mic"
-          >
-            <Mic className="h-5 w-5" />
-            {voice.on && <span aria-hidden="true" className="absolute right-[0.4rem] top-[0.4rem] h-2 w-2 rounded-pill bg-ink motion-safe:animate-pulse" />}
-          </button>
-        )}
-        <button
-          type="submit"
-          disabled={!can}
-          aria-label={t('bb.coach.send')}
-          title={t('bb.coach.send')}
-          className={`${ROUND} bg-ink text-white hover:opacity-90 active:bg-[#CFC2FF] active:text-ink disabled:bg-[#E4E4E7] disabled:text-[#52525B] disabled:opacity-100`}
-          data-hook={hook ? `${hook}-send` : undefined}
-        >
-          {busy ? <span className="h-4 w-4 animate-spin rounded-pill border-2 border-current border-r-transparent" aria-hidden="true" /> : <ArrowUp className="h-[1.1rem] w-[1.1rem]" />}
-        </button>
-      </div>
-      {voice.note && (
-        <p role="status" className="px-2.5 pb-1 pt-2 text-small text-muted" data-hook="bb-compose-note">
-          {t(`bb.dictate.${voice.note}`)}
-        </p>
       )}
-    </form>
+      <form
+        onSubmit={submit}
+        aria-label={t('bb.ask.label')}
+        className="rounded-[1.5rem] border border-ink/15 bg-surface p-2 shadow-[var(--e-float)] transition-colors focus-within:border-ink"
+        data-hook={hook}
+      >
+        <label className="block px-2 pt-1">
+          <span className="sr-only">{ask}</span>
+          <textarea
+            ref={area}
+            rows={1}
+            value={value}
+            placeholder={placeholder}
+            maxLength={6000}
+            onChange={(e) => {
+              voice.cancel()
+              voice.hush()
+              onChange(e.target.value)
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) submit(e)
+            }}
+            className="block max-h-40 min-h-[2.5rem] w-full resize-none border-0 bg-transparent px-1 py-2 text-body text-ink outline-none placeholder:text-[rgb(var(--quiet-ink))]"
+            data-hook={hook ? `${hook}-input` : undefined}
+          />
+        </label>
+        <div className="flex items-end gap-1 px-0.5 pt-1">
+          {menu && (
+            <div
+              ref={wrap}
+              className="relative shrink-0"
+              onKeyDown={(e) => {
+                if (e.key === 'Escape' && open) {
+                  e.preventDefault()
+                  close()
+                }
+              }}
+            >
+              <button
+                ref={plus}
+                type="button"
+                aria-haspopup="menu"
+                aria-expanded={open}
+                aria-controls={open ? `${id}-menu` : undefined}
+                aria-label={t('bb.compose.more')}
+                title={t('bb.compose.more')}
+                onClick={() => setOpen((o) => !o)}
+                className={`${ROUND} ${open ? 'bg-[#CFC2FF] text-ink' : 'text-ink hover:bg-ink/[0.06]'}`}
+                data-hook="bb-compose-more"
+              >
+                <Plus className={`h-5 w-5 transition-transform duration-200 ease-settle ${open ? 'rotate-45' : ''}`} />
+              </button>
+              {open && (
+                <Menu
+                  id={`${id}-menu`}
+                  place={place}
+                  courses={list}
+                  courseId={courseId}
+                  onCourse={onCourse}
+                  mode={mode}
+                  onMode={onMode}
+                  onPick={(change) => {
+                    change()
+                    close()
+                  }}
+                  onLeave={() => setOpen(false)}
+                />
+              )}
+            </div>
+          )}
+          <span className="min-w-0 flex-1" />
+          {voice.ready && (
+            <button
+              type="button"
+              aria-pressed={voice.on}
+              aria-label={t('bb.dictate.start')}
+              title={t(voice.on ? 'bb.dictate.stop' : 'bb.dictate.start')}
+              onClick={voice.toggle}
+              className={`${ROUND} relative ${voice.on ? 'bg-[#CFC2FF] text-ink' : 'text-ink hover:bg-ink/[0.06]'}`}
+              data-hook="bb-compose-mic"
+            >
+              <Mic className="h-5 w-5" />
+              {voice.on && <span aria-hidden="true" className="absolute right-[0.4rem] top-[0.4rem] h-2 w-2 rounded-pill bg-ink motion-safe:animate-pulse" />}
+            </button>
+          )}
+          <button
+            type="submit"
+            disabled={!can}
+            aria-label={t('bb.coach.send')}
+            title={t('bb.coach.send')}
+            className={`${ROUND} bg-ink text-white hover:opacity-90 active:bg-[#CFC2FF] active:text-ink disabled:bg-[#E4E4E7] disabled:text-[#52525B] disabled:opacity-100`}
+            data-hook={hook ? `${hook}-send` : undefined}
+          >
+            {busy ? <span className="h-4 w-4 animate-spin rounded-pill border-2 border-current border-r-transparent" aria-hidden="true" /> : <ArrowUp className="h-[1.1rem] w-[1.1rem]" />}
+          </button>
+        </div>
+        {voice.note && (
+          <p role="status" className="px-2.5 pb-1 pt-2 text-small text-muted" data-hook="bb-compose-note">
+            {t(`bb.dictate.${voice.note}`)}
+          </p>
+        )}
+      </form>
+    </div>
   )
 }
 

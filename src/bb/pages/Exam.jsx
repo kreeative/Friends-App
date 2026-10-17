@@ -9,7 +9,7 @@ import { retentionFor } from '../../lib/bb/fsrs'
 import { comingExams, daysToExamOf, examFormat, scopeOf } from '../../lib/bb/exams'
 import { SegTabs } from '../../components/ui'
 import { endExam, loadCourse, loadExams, loadStudy, saveAnswer, saveExamAnswers, startExam } from '../data'
-import { Anchors, Bar, BigButton, Note, Outside, anchorMaps, examName } from '../kit'
+import { Anchors, Bar, BigButton, Note, Outside, PILL, anchorMaps, examName } from '../kit'
 import { coversText } from '../course/Exams'
 import { Spinner } from '../course/Processing'
 
@@ -509,7 +509,8 @@ export default function Exam() {
             <button
               type="button"
               aria-pressed={flags.has(item.id)}
-              className="press ml-auto rounded-pill px-3 py-2 text-small font-semibold text-ink underline underline-offset-4"
+              /* Flagged is something picked: the soft lilac with an ink edge. */
+              className={`${PILL} ml-auto ${flags.has(item.id) ? '!border-ink !bg-[#E6DFFF]' : ''}`}
               onClick={() =>
                 setFlags((f) => {
                   const next = new Set(f)
@@ -528,10 +529,12 @@ export default function Exam() {
       </div>
       {confirm && (
         <Note className="mt-4">
-          {t('bb.mock.confirm', { n: items.length - answeredCount })}{' '}
-          <button type="button" className="font-bold underline underline-offset-4" onClick={handIn} data-hook="bb-exam-confirm">
-            {t('bb.mock.confirm_yes')}
-          </button>
+          {t('bb.mock.confirm', { n: items.length - answeredCount })}
+          <span className="mt-3 block">
+            <button type="button" className={PILL} onClick={handIn} data-hook="bb-exam-confirm">
+              {t('bb.mock.confirm_yes')}
+            </button>
+          </span>
         </Note>
       )}
       <div className="fixed inset-x-0 bottom-0 z-30 px-4 lg:static lg:mt-6 lg:px-0" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>

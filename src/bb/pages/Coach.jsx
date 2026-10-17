@@ -7,7 +7,7 @@ import { keepAsCard, loadCoachHistory, loadCourse } from '../data'
 import { errorMessage } from '../errors'
 import { useBB } from '../BBApp'
 import { Page, PageHead } from '../BBShell'
-import { Note, Rich, anchorMaps } from '../kit'
+import { Note, PILL, Rich, anchorMaps } from '../kit'
 import { citedIds, hasCites, shortMap, stripCites } from '../../lib/bb/cite'
 import { Spinner } from '../course/Processing'
 import { Composer } from '../Composer'
@@ -185,7 +185,7 @@ export default function Coach() {
                   {m.content ? <Rich text={m.content} byShort={byShort} files={maps.files} /> : <span className="flex items-center gap-2 text-small text-muted"><Spinner /> {t('bb.coach.thinking')}</span>}
                 </div>
                 {m.role === 'assistant' && !m.streaming && hasCites(m.content) && (
-                  <button type="button" className="press mt-3 text-small font-semibold text-ink underline underline-offset-4" onClick={() => keep(i)} disabled={kept.has(i)}>
+                  <button type="button" className={`${PILL} mt-3`} onClick={() => keep(i)} disabled={kept.has(i)}>
                     {kept.has(i) ? `✓ ${t('bb.coach.kept')}` : t('bb.coach.keep')}
                   </button>
                 )}
@@ -193,19 +193,19 @@ export default function Coach() {
             </div>
           ))
         )}
-        {/* The margin is the box and the tab bar below it, so the last line
-            stops above them rather than under them. */}
-        <div ref={end} className="scroll-mb-[16.5rem] md:scroll-mb-[10rem]" />
+        {/* The margin is the box, the chips above it and the tab bar below
+            it, so the last line stops above them rather than under them. */}
+        <div ref={end} className="scroll-mb-[19rem] md:scroll-mb-[12.5rem]" />
       </section>
 
       {error && <Note tone="error" className="mt-4">{error}</Note>}
 
-      {/* The page's ground under the box, down to the tab bar and the
-          screen's edge, with a short fade above it: the answers scrolled
-          through the gap between the box and the bar ("Le transport actif
-          consomme" under "Pose ta question"), the same fault as around the
-          bars (src/bb/BBShell.jsx). */}
-      <div className="sticky bottom-28 z-20 mt-6 before:pointer-events-none before:absolute before:-inset-x-4 before:-bottom-28 before:top-1/2 before:-z-10 before:bg-bg after:pointer-events-none after:absolute after:-inset-x-4 after:bottom-full after:h-6 after:bg-gradient-to-t after:from-bg after:to-bg/0 md:bottom-4">
+      {/* The page's ground under the box and the chips above it, down to
+          the tab bar and the screen's edge, with a short fade above: the
+          answers scrolled through the gap between the box and the bar ("Le
+          transport actif consomme" under "Pose ta question"), the same fault
+          as around the bars (src/bb/BBShell.jsx). */}
+      <div className="sticky bottom-28 z-20 mt-6 before:pointer-events-none before:absolute before:-inset-x-4 before:-bottom-28 before:top-0 before:-z-10 before:bg-bg after:pointer-events-none after:absolute after:-inset-x-4 after:bottom-full after:h-6 after:bg-gradient-to-t after:from-bg after:to-bg/0 md:bottom-4">
         <Composer
           value={draft}
           onChange={setDraft}

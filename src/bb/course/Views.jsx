@@ -5,7 +5,7 @@ import { ACCEPT, kindFor, refuse } from '../../lib/bb/formats'
 import { call } from '../api'
 import { uploadMaterial } from '../data'
 import { errorMessage, materialError } from '../errors'
-import { Anchors, Note, Outside } from '../kit'
+import { Anchors, Note, Outside, PILL, PILL_DANGER, PILL_ROUND } from '../kit'
 import { Spinner } from './Processing'
 
 /* --- the twin table (section 6) -------------------------------------------- */
@@ -53,7 +53,7 @@ function ItemCard({ item, maps, flagged }) {
         {flagged && <span className="rounded-pill bg-ink/[0.06] px-2.5 py-0.5">⚑ {t('bb.bank.sure_wrong')}</span>}
       </div>
       <p className="mt-3 whitespace-pre-line text-body text-ink">{item.stem}</p>
-      <button type="button" className="press mt-3 text-small font-semibold text-ink underline underline-offset-4" onClick={() => setOpen(!open)} aria-expanded={open}>
+      <button type="button" className={`${PILL} mt-3`} onClick={() => setOpen(!open)} aria-expanded={open}>
         {open ? t('bb.bank.hide') : t('bb.bank.show')}
       </button>
       {open && (
@@ -278,7 +278,7 @@ export function Files({ course, materials, proc, onChange, onDeleted }) {
                   {m.status === 'failed' ? `${t('bb.proc.failed')}: ${materialError(t, m.error)}` : m.status === 'ready' ? t('bb.proc.ready') : m.status === 'reading' || proc.current === m.id ? t('bb.proc.reading') : t('bb.proc.uploaded')}
                 </p>
               </div>
-              <button type="button" className="press rounded-pill px-3 py-1.5 text-small font-semibold text-ink underline underline-offset-4" onClick={() => removeOne(m)} disabled={busy !== null} aria-label={t('bb.files.delete', { name: m.file_name })}>
+              <button type="button" className={PILL_ROUND} onClick={() => removeOne(m)} disabled={busy !== null} aria-label={t('bb.files.delete', { name: m.file_name })}>
                 {busy === m.id ? <Spinner /> : '×'}
               </button>
             </li>
@@ -286,7 +286,7 @@ export function Files({ course, materials, proc, onChange, onDeleted }) {
         </ul>
       )}
       <div className="mt-10 border-t border-hairline pt-6">
-        <button type="button" className="press text-small font-semibold text-negative underline underline-offset-4" onClick={removeCourse} disabled={busy !== null} data-hook="bb-delete-course">
+        <button type="button" className={PILL_DANGER} onClick={removeCourse} disabled={busy !== null} data-hook="bb-delete-course">
           {busy === 'course' ? t('bb.course.deleting') : t('bb.course.delete')}
         </button>
       </div>

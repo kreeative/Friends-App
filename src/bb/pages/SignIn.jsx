@@ -36,7 +36,7 @@ export default function SignInPage() {
             <h1 className="mt-8 text-[clamp(2.25rem,10vw,3rem)] font-semibold leading-[1.05] tracking-[-0.03em] text-ink">{t('bb.signin.title')}</h1>
             <p className="lede mt-3 max-w-[34ch]">{t('bb.signin.body')}</p>
             <div className="animate-rise mt-8 space-y-3">
-              <AuthForm beforeGoogle={() => rememberReturn(next)} />
+              <AuthForm beforeGoogle={() => rememberReturn(next)} plainLinks />
             </div>
           </div>
           <div aria-hidden="true" className="pointer-events-none hidden sm:block">

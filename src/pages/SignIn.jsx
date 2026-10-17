@@ -125,9 +125,10 @@ function CodeBoxes({ value, onChange, label, length = OTP_MIN }) {
  * first inside TikTok and Instagram. Exported so Beauty & Brain signs in
  * with exactly the same form on its own page (one account for both):
  * `beforeGoogle` runs just before leaving for Google, to remember where to
- * come back to, since the OAuth return lands on the site root.
+ * come back to, since the OAuth return lands on the site root. `plainLinks`
+ * drops the underline from the legal links, for Hakkilo.
  */
-export function AuthForm({ beforeGoogle } = {}) {
+export function AuthForm({ beforeGoogle, plainLinks = false } = {}) {
   const { signInWithGoogle, signInWithEmail, verifyEmailCode, authError, clearAuthError } = useAuth()
   const { t } = useT()
   const [email, setEmail] = useState('')
@@ -356,7 +357,7 @@ export function AuthForm({ beforeGoogle } = {}) {
       {/* Reachable before signing up, not after. You cannot agree to terms
           you were not allowed to read. */}
       <div className="pt-6">
-        <LegalLinks />
+        <LegalLinks plain={plainLinks} />
       </div>
     </>
   )

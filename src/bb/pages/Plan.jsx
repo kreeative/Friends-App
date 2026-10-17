@@ -12,7 +12,7 @@ import { supabase } from '../../lib/supabase'
 import { saveProfile } from '../data'
 import { useBB } from '../BBApp'
 import { Page, PageHead } from '../BBShell'
-import { Bar, BigButton, ExamChip, Note, examName } from '../kit'
+import { Bar, BigButton, ExamChip, Note, PILL, examName } from '../kit'
 import Squads from '../plan/Squads'
 
 /**
@@ -198,12 +198,10 @@ export default function Plan() {
   return (
     <Page>
       <PageHead title={t('bb.plan.title')} sub={t('bb.plan.lede')} />
-      <p className="mt-2 text-small text-muted">
-        {t('bb.plan.weekly', { n: hours, m: perDay })}{' '}
-        <Link to="/hakkilo/profil" className="font-semibold text-ink underline underline-offset-4">
-          {t('bb.plan.set_hours')}
-        </Link>
-      </p>
+      <p className="mt-2 text-small text-muted">{t('bb.plan.weekly', { n: hours, m: perDay })}</p>
+      <Link to="/hakkilo/profil" className={`${PILL} mt-3`} data-hook="bb-plan-hours">
+        {t('bb.plan.set_hours')}
+      </Link>
 
       {late.length > 0 && (
         <div data-hook="bb-plan-missed">
@@ -220,14 +218,14 @@ export default function Plan() {
           {exams.map(({ course: c, exam: e }) => (
             <li key={`${c.id}:${e.id}`} className="lg p-5" data-hook="bb-plan-exam">
               <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-                <Link to={`/hakkilo/cours/${c.id}`} className="text-body font-bold text-ink underline-offset-4 hover:underline">
+                <Link to={`/hakkilo/cours/${c.id}`} className="text-body font-bold text-ink">
                   {c.name}
                 </Link>
                 <ExamChip exam={e} course={c} link />
               </div>
               <Bar className="mt-4" pct={ready[`${c.id}:${e.id}`] ?? 0} label={t('bb.plan.ready', { n: ready[`${c.id}:${e.id}`] ?? 0 })} />
               {daysUntil(e.at) <= 10 && <p className="mt-3 text-small text-ink">{t('bb.plan.final')}</p>}
-              <Link to={`/hakkilo/examen/${c.id}?e=${e.id}`} className="mt-3 inline-block text-small font-semibold text-ink underline underline-offset-4">
+              <Link to={`/hakkilo/examen/${c.id}?e=${e.id}`} className={`${PILL} mt-4`}>
                 {t('bb.mock.open')}
               </Link>
             </li>
@@ -320,10 +318,12 @@ export default function Plan() {
           </BigButton>
           {written && (
             <Note tone="good" className="mt-4">
-              {t('bb.plan.written', { n: written.placed })}{' '}
-              <Link to="/calendrier" className="font-bold underline underline-offset-4">
-                {t('bb.plan.open_cal')}
-              </Link>
+              {t('bb.plan.written', { n: written.placed })}
+              <span className="mt-3 block">
+                <Link to="/calendrier" className={PILL}>
+                  {t('bb.plan.open_cal')}
+                </Link>
+              </span>
             </Note>
           )}
           {error && <Note tone="error" className="mt-4">{error}</Note>}

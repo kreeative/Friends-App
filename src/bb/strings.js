@@ -274,7 +274,10 @@ const fr = {
   'bb.course.minutes': '{n} min',
   'bb.course.due': 'À revoir',
   'bb.course.mastery': 'Maîtrise',
-  'bb.course.sure_wrong': 'Sûre et faux',
+  /* "Not sure but wrong, just wrong" (Kee): the label over a number is one
+     word, "Sûre et faux" took two lines at 390. The sentences that explain
+     the flag (the week, the session) still say "sûre et fausse". */
+  'bb.course.sure_wrong': 'Faux',
   'bb.course.tab.chapters': 'Chapitres',
   'bb.course.tab.sheet': 'Fiches',
   'bb.course.tab.twins': 'Jumeaux',
@@ -358,7 +361,7 @@ const fr = {
   'bb.bank.type': 'Type',
   'bb.bank.weak': 'Points faibles',
   'bb.bank.signal': 'Signal d’examen',
-  'bb.bank.sure_wrong': 'Sûre et faux',
+  'bb.bank.sure_wrong': 'Faux',
   'bb.bank.empty': 'Aucune question ici pour l’instant.',
   'bb.bank.count_one': '{n} question',
   'bb.bank.count_other': '{n} questions',
@@ -698,9 +701,13 @@ const fr = {
   'bb.plan.preview_other': '{n} séances tiennent dans tes heures.',
   'bb.plan.preview_none_one': '{n} n’a pas de place.',
   'bb.plan.preview_none_other': '{n} n’ont pas de place.',
-  'bb.plan.write': 'Écrire mon plan dans mon calendrier',
-  'bb.plan.rewrite': 'Mettre mon calendrier à jour',
-  'bb.plan.replan': 'Refaire mon plan à partir d’aujourd’hui',
+  /* Under the title "Dans ton calendrier", and short enough for one line in
+     the button at 320: the longer ones took two. */
+  'bb.plan.write': 'Ajouter à mon calendrier',
+  'bb.plan.rewrite': 'Actualiser mon calendrier',
+  /* The note above it already says "on refait le plan à partir d’aujourd’hui";
+     the whole phrase took two lines in the button at 390. */
+  'bb.plan.replan': 'Refaire mon plan',
   'bb.plan.writing': 'J’écris ton plan',
   'bb.plan.written_one': '{n} séance ajoutée à ton calendrier.',
   'bb.plan.written_other': '{n} séances ajoutées à ton calendrier.',
@@ -1009,7 +1016,7 @@ const en = {
   'bb.course.minutes': '{n} min',
   'bb.course.due': 'To review',
   'bb.course.mastery': 'Mastery',
-  'bb.course.sure_wrong': 'Sure but wrong',
+  'bb.course.sure_wrong': 'Wrong',
   'bb.course.tab.chapters': 'Chapters',
   'bb.course.tab.sheet': 'Cheat sheet',
   'bb.course.tab.twins': 'Twins',
@@ -1089,7 +1096,7 @@ const en = {
   'bb.bank.type': 'Type',
   'bb.bank.weak': 'Weak spots',
   'bb.bank.signal': 'Exam signal',
-  'bb.bank.sure_wrong': 'Sure but wrong',
+  'bb.bank.sure_wrong': 'Wrong',
   'bb.bank.empty': 'No questions here yet.',
   'bb.bank.count_one': '{n} question',
   'bb.bank.count_other': '{n} questions',
@@ -1422,7 +1429,7 @@ const en = {
   'bb.plan.preview_other': '{n} sessions fit in your hours.',
   'bb.plan.preview_none_one': '{n} has no room.',
   'bb.plan.preview_none_other': '{n} have no room.',
-  'bb.plan.write': 'Write my plan into my calendar',
+  'bb.plan.write': 'Add to my calendar',
   'bb.plan.rewrite': 'Update my calendar',
   'bb.plan.replan': 'Plan again from today',
   'bb.plan.writing': 'Writing your plan',

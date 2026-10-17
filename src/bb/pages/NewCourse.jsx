@@ -10,7 +10,7 @@ import { examColumns, newExam } from '../../lib/bb/exams'
 import { addPasted, createCourse, uploadMaterial } from '../data'
 import { useBB } from '../BBApp'
 import { Page, PageHead } from '../BBShell'
-import { BigButton, Note } from '../kit'
+import { BigButton, Note, PILL, PILL_ROUND } from '../kit'
 import { Choice } from './Onboarding'
 
 /**
@@ -147,10 +147,12 @@ export default function NewCourse() {
       <Page>
         <PageHead title={t('bb.new.title')} />
         <Note className="mt-4">
-          {t('bb.courses.limit')}{' '}
-          <Link to="/hakkilo/tarifs" className="font-semibold underline underline-offset-4">
-            {t('bb.courses.upgrade')}
-          </Link>
+          {t('bb.courses.limit')}
+          <span className="mt-3 block">
+            <Link to="/hakkilo/tarifs" className={PILL}>
+              {t('bb.courses.upgrade')}
+            </Link>
+          </span>
         </Note>
       </Page>
     )
@@ -236,7 +238,7 @@ export default function NewCourse() {
                     </div>
                   </fieldset>
                 )}
-                <button type="button" className="press mt-4 text-small font-semibold text-ink underline underline-offset-4" onClick={() => setExams((list) => list.filter((x) => x.id !== e.id))} data-hook={`new-drop-${e.kind}`}>
+                <button type="button" className={`${PILL} mt-4`} onClick={() => setExams((list) => list.filter((x) => x.id !== e.id))} data-hook={`new-drop-${e.kind}`}>
                   {e.kind === 'final' ? t('bb.new.no_final') : t('bb.new.no_midterm')}
                 </button>
               </fieldset>
@@ -344,7 +346,7 @@ export default function NewCourse() {
                       </select>
                     </label>
                     {f.state === 'waiting' ? (
-                      <button type="button" className="press rounded-pill px-2 py-1 text-small font-semibold text-ink underline underline-offset-4" onClick={() => setFiles((list) => list.filter((_, j) => j !== i))} aria-label={t('bb.new.remove_file', { name: f.file.name })}>
+                      <button type="button" className={PILL_ROUND} onClick={() => setFiles((list) => list.filter((_, j) => j !== i))} aria-label={t('bb.new.remove_file', { name: f.file.name })}>
                         ×
                       </button>
                     ) : (

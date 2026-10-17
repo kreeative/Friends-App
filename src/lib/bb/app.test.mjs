@@ -15,7 +15,7 @@ import { dictationNote, dictationSupport, heard, speechLang, withSpeech } from '
 import { EXAM_KINDS, SCOPES, comingExams, daysToExamOf, examChip, examColumns, examFormat, examToAsk, examsLine, examsOf, nextExam, scopeOf, stillAhead } from './exams.js'
 import { buildSession } from './sampler.js'
 import { BB_STRINGS } from '../../bb/strings.js'
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 
 let pass = 0
 let fail = 0
@@ -329,6 +329,29 @@ eq('the constant says so', SHORT, 8)
   const plan = read('bb/pages/Plan.jsx')
   ok('on a phone a day of the plan is its date over its line', /data-hook="bb-plan-day"/.test(plan) && /sm:grid-cols-\[7rem_minmax\(0,1fr\)\]/.test(plan) && !/w-28 shrink-0/.test(plan))
   ok('and the plan card lets the chip go under a long name', /flex flex-wrap items-center justify-between gap-x-3 gap-y-2/.test(plan))
+  /* "Les icones sont juste en haut du rectangle ... c'est pas a l'interieur":
+     what was picked is a row of chips above the box, outside the form. */
+  const chips = box.indexOf('data-hook="bb-compose-chips"')
+  const form = box.indexOf('<form')
+  const above = (h) => box.indexOf(`data-hook="${h}"`) > chips && box.indexOf(`data-hook="${h}"`) < form
+  ok('what was picked sits above the box, not in it', chips > 0 && chips < form && above('bb-compose-course-chip') && above('bb-compose-mode'))
+  /* "J'aime pas quand c'est souligne": a small action is a pill (PILL in
+     kit.jsx) and a link in small print is bold. No underline utility left,
+     hover and focus included; on the painted pages a probe found none on 23
+     routes at 390 and 1180 px. */
+  const walk = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((d) => (d.isDirectory() ? walk(new URL(`${d.name}/`, dir)) : /\.jsx?$/.test(d.name) ? [new URL(d.name, dir)] : []))
+  const underlined = walk(new URL('../../bb/', import.meta.url))
+    .filter((f) => /(?<![\w-])(?:[a-z0-9-]+:)*underline(?:-[\w/]+)?(?![\w-])/.test(readFileSync(f, 'utf8')))
+    .map((f) => f.pathname.split('/src/')[1])
+  eq('nothing is underlined in Hakkilo', underlined, [])
+  ok('the sign-in sets its legal links in bold, not underlined', /<AuthForm\b[^\n]*\bplainLinks\b/.test(read('bb/pages/SignIn.jsx')) && /plain \? 'font-bold text-ink'/.test(read('pages/Legal.jsx')))
+  /* "La barre de progression, au lieu d'etre noir, ca peut etre colore". */
+  const kit = read('bb/kit.jsx')
+  const progress = kit.slice(kit.indexOf('export function Bar'), kit.indexOf('export function Bar') + 900)
+  ok('a progress bar fills with the logo yellow, not black', /background: LOGO_YELLOW/.test(progress) && !/background: INK/.test(progress))
+  /* "✓ Au hasard" needs 84px and a third of the row is 77 at 320: a button
+     takes the width its words need, and the row wraps before a word does. */
+  ok('the "how sure" buttons never break a word', /min-w-max flex-1 whitespace-nowrap/.test(read('bb/pages/Session.jsx')))
 }
 
 /* --- the two languages ------------------------------------------------------------------- */
@@ -347,6 +370,12 @@ eq('the constant says so', SHORT, 8)
   const straight = Object.entries(fr).filter(([, v]) => /[A-Za-zÀ-ÿ]'[A-Za-zÀ-ÿ]/.test(v)).map(([k]) => k)
   eq('and curly apostrophes', straight, [])
   ok('every plural has its two forms', Object.keys(fr).filter((k) => k.endsWith('_one')).every((k) => `${k.slice(0, -4)}_other` in fr))
+  /* "Not sure but wrong, just wrong ... it's making the design look bad when
+     it's too long" (Kee): over the course's numbers "Sure but wrong" took two
+     lines at 390 and three at 320. Measured, each label now holds one line at
+     320 in both languages; this keeps them that short. */
+  const stat = ['bb.course.due', 'bb.course.mastery', 'bb.course.sure_wrong', 'bb.bank.sure_wrong']
+  eq('the labels over the course numbers and the bank filter stay short', stat.filter((k) => fr[k].length > 9 || en[k].length > 9), [])
   /* Keys built from a value, which the same-keys check cannot see: a missing one shows as "bb.ex.scope.chapters". */
   eq('a name for every scope of an exam', SCOPES.filter((k) => !(`bb.ex.scope.${k}` in fr) || !(`bb.ex.scope.${k}` in en)), [])
   eq('and for every kind', [...EXAM_KINDS, 'exam'].filter((k) => !(`bb.ex.${k}` in fr) || !(`bb.ex.${k}` in en)), [])

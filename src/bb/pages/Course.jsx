@@ -152,9 +152,10 @@ export default function Course() {
       <Processing proc={proc} materials={data.materials} chapters={data.chapters} statusReady={status?.ready?.model} />
 
       <section className="lg mt-6 p-5" data-hook="bb-course-main">
-        {/* The three numbers sit on one line at the foot of their columns:
-            "Sure but wrong" takes two lines at 390, and its number used to
-            drop a line below the other two. */}
+        {/* Each label is one word ("Not sure but wrong, just wrong", Kee):
+            "Sure but wrong" took two lines at 390 and three at 320, and its
+            number dropped a line below the other two. The numbers still sit
+            at the foot of their columns, should a label ever run long. */}
         <dl className="grid grid-cols-3 gap-3">
           <div className="flex flex-col justify-between">
             <dt className="text-small text-muted">{t('bb.course.due')}</dt>

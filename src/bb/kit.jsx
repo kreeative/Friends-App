@@ -35,6 +35,22 @@ export const LOGO_YELLOW = '#F8CB02'
 export const GREEN = '#1E7B34'
 
 /**
+ * A SMALL ACTION IS A PILL, NEVER AN UNDERLINED WORD.
+ *
+ * "J'aime pas trop quand les trucs sont soulignes. Ca peut etre en gras, ca
+ * peut etre a l'interieur d'un petit rond ou d'un petit bouton" (Kee). Every
+ * action that is not the page's big button: a pill with a hairline edge,
+ * lilac while it is pressed like every press here, solid grey when it
+ * cannot be pressed (#52525B on #E4E4E7). A link that ended a sentence
+ * leaves the sentence and becomes one under it. PILL_ROUND is the same for
+ * a cross alone; PILL_DANGER for what deletes.
+ */
+const PILL_SHAPE = 'press inline-flex min-h-[2.25rem] items-center justify-center gap-1.5 rounded-pill border bg-surface px-3.5 py-1 text-small font-semibold transition-colors active:bg-[#CFC2FF] disabled:border-transparent disabled:bg-[#E4E4E7] disabled:text-[#52525B]'
+export const PILL = `${PILL_SHAPE} border-ink/15 text-ink hover:border-ink`
+export const PILL_DANGER = `${PILL_SHAPE} border-negative/40 text-negative hover:border-negative`
+export const PILL_ROUND = 'press inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-pill border border-ink/15 bg-surface text-body text-ink transition-colors hover:border-ink active:bg-[#CFC2FF] disabled:border-transparent disabled:bg-[#E4E4E7] disabled:text-[#52525B]'
+
+/**
  * The wordmark, as artwork: "Hakkilo" in Crosner outlines, one path per
  * letter, bouncing like the Beauty & Brain and Nerd wordmarks before it.
  * Hakkilo is intelligence, the mind, wisdom, in Fulfulde. Kee chose the look
@@ -151,8 +167,13 @@ export function ExamChip({ course, exam: one = null, onEdit = null, link = false
 
 /**
  * A bar with its number beside it, always (section 3: "on screen, always
- * show the number next to the bar"). Black on a grey track: the number says
- * how much, the fill only shows it.
+ * show the number next to the bar"). The logo yellow on a grey track: "la
+ * barre de progression, au lieu d'etre noir, ca peut etre colore" (Kee).
+ * Painted side by side, lilac at 8% was a smudge and a lilac track made a
+ * resting pastel; yellow is what Hakkilo keeps for switched on and the
+ * highlighter, and progress is what you have lit up. Yellow on the track is
+ * 1.3:1, which is enough here: the number says how much, the fill only
+ * shows it.
  */
 export function Bar({ pct, label, hint, className = '' }) {
   const v = Math.max(0, Math.min(100, Math.round(pct ?? 0)))
@@ -163,7 +184,7 @@ export function Bar({ pct, label, hint, className = '' }) {
         <span className="text-small font-bold tabular-nums text-ink">{v}%</span>
       </div>
       <div className="mt-1.5 h-2.5 overflow-hidden rounded-pill bg-ink/10" role="progressbar" aria-valuenow={v} aria-valuemin={0} aria-valuemax={100} aria-label={label}>
-        <div className="h-full rounded-pill" style={{ width: `${v}%`, background: INK }} />
+        <div className="h-full rounded-pill" style={{ width: `${v}%`, background: LOGO_YELLOW }} />
       </div>
       {hint && <p className="mt-1 text-small text-muted">{hint}</p>}
     </div>
@@ -228,8 +249,12 @@ export function Outside({ children }) {
  * every button in /hakkilo does the same.
  */
 export function BigButton({ className = '', children, ...rest }) {
+  /* px-4: 16px a side for 14px words, not the 24 of .btn. Full width on a
+     phone the words get 32px more, and "Actualiser mon calendrier" holds
+     one line at 320. Set here, on the element: a [data-surface='bb'] rule
+     would outrank every px-* a caller sets. */
   return (
-    <button {...rest} className={`btn press bg-ink font-bold text-white hover:opacity-90 ${className}`}>
+    <button {...rest} className={`btn press bg-ink px-4 font-bold text-white hover:opacity-90 ${className}`}>
       {children}
     </button>
   )

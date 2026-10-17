@@ -4,7 +4,7 @@ import { usePageMeta } from '../../lib/pageMeta'
 import { canAddCourse } from '../../lib/bb/plans'
 import { useBB } from '../BBApp'
 import { Page, PageHead } from '../BBShell'
-import { ExamChip, Note } from '../kit'
+import { ExamChip, Note, PILL } from '../kit'
 
 /**
  * /hakkilo/cours: every course, its exam, and the way to add one. On the free
@@ -33,10 +33,12 @@ export default function Courses() {
       />
       {!room && (
         <Note className="mt-4">
-          {t('bb.courses.limit')}{' '}
-          <Link to="/hakkilo/tarifs" className="font-semibold underline underline-offset-4">
-            {t('bb.courses.upgrade')}
-          </Link>
+          {t('bb.courses.limit')}
+          <span className="mt-3 block">
+            <Link to="/hakkilo/tarifs" className={PILL}>
+              {t('bb.courses.upgrade')}
+            </Link>
+          </span>
         </Note>
       )}
       {!list.length ? (

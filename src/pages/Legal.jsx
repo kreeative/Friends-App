@@ -75,8 +75,12 @@ export default function Legal() {
   )
 }
 
-/** Small print for the bottom of the sign-in screen. */
-export function LegalLinks() {
+/**
+ * Small print for the bottom of the sign-in screen. `plain` sets the links
+ * in bold ink without the underline, for Hakkilo, where nothing is
+ * underlined ("j'aime pas quand c'est souligne", src/bb/kit.jsx).
+ */
+export function LegalLinks({ plain = false } = {}) {
   const { locale } = useT()
   const docs = LEGAL[locale] ?? LEGAL.en
 
@@ -85,7 +89,7 @@ export function LegalLinks() {
       {DOC_ORDER.map((s, i) => (
         <span key={s}>
           {i > 0 && <span className="px-2 text-muted/50">·</span>}
-          <Link to={`/legal/${s}`} className="underline underline-offset-4 hover:text-ink">
+          <Link to={`/legal/${s}`} className={plain ? 'font-bold text-ink' : 'underline underline-offset-4 hover:text-ink'}>
             {docs[s].title}
           </Link>
         </span>

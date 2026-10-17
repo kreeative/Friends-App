@@ -16,7 +16,7 @@ import { call } from '../api'
 import { useBB } from '../BBApp'
 import { endSession, loadCourse, loadStudy, saveAnswer, startSession } from '../data'
 import { errorMessage } from '../errors'
-import { Anchors, BigButton, Note, Outside, anchorMaps } from '../kit'
+import { Anchors, BigButton, Note, Outside, PILL, anchorMaps } from '../kit'
 import { Spinner } from '../course/Processing'
 
 /**
@@ -502,14 +502,18 @@ export default function Session() {
           {phase === 'ask' && (
             <fieldset className="mt-6">
               <legend className="text-small font-semibold text-ink">{t('bb.ses.confidence')}</legend>
-              <div className="mt-2 grid grid-cols-3 gap-2">
+              {/* Equal thirds while the words fit, and never a word on two
+                  lines: a third of the row is 77px at 320 and 100px at 390,
+                  and "✓ Au hasard" needs 84. A button takes the width its
+                  words need, and the row wraps before a word would. */}
+              <div className="mt-2 flex flex-wrap gap-2">
                 {['sure', 'unsure', 'guess'].map((c) => (
                   <button
                     key={c}
                     type="button"
                     aria-pressed={confidence === c}
                     onClick={() => setConfidence(c)}
-                    className={`press rounded-inner border-2 px-2 py-2.5 text-small font-semibold text-ink ${confidence === c ? 'border-ink bg-[#E6DFFF]' : 'border-ink/15 bg-surface'}`}
+                    className={`press min-w-max flex-1 whitespace-nowrap rounded-inner border-2 px-1 py-2.5 text-small font-semibold text-ink ${confidence === c ? 'border-ink bg-[#E6DFFF]' : 'border-ink/15 bg-surface'}`}
                     data-hook={`bb-conf-${c}`}
                   >
                     {confidence === c && '✓ '}
@@ -594,7 +598,7 @@ export default function Session() {
         {item.source === 'ai' && (
           <div className="mt-5 border-t border-hairline pt-3">
             {!report.open && !report.result && (
-              <button type="button" className="press text-small font-semibold text-muted underline underline-offset-4" onClick={() => setReport((r) => ({ ...r, open: true }))} data-hook="bb-report">
+              <button type="button" className={PILL} onClick={() => setReport((r) => ({ ...r, open: true }))} data-hook="bb-report">
                 ⚐ {t('bb.ses.report')}
               </button>
             )}
