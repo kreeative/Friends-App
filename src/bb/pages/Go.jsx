@@ -7,7 +7,7 @@ import { BBLogo } from '../kit'
 import PublicFrame from './PublicFrame'
 
 /**
- * richandfriends.xyz/nerd/go: the page behind the link in a TikTok or
+ * richandfriends.xyz/hakkilo/go: the page behind the link in a TikTok or
  * Instagram bio (section 12, phase 3).
  *
  * Someone arriving from a video gives a page about three seconds, on a
@@ -31,8 +31,8 @@ export default function Go() {
   const { user } = useAuth()
   const [params] = useSearchParams()
   const from = ['tiktok', 'instagram'].includes(params.get('from')) ? params.get('from') : null
-  usePageMeta({ title: `Nerd · ${t('bb.go.title')}`, description: t('bb.go.lede') })
-  const start = user ? '/nerd/app' : '/nerd/connexion?next=/nerd/start'
+  usePageMeta({ title: `Hakkilo · ${t('bb.go.title')}`, description: t('bb.go.lede') })
+  const start = user ? '/hakkilo/app' : '/hakkilo/connexion?next=/hakkilo/start'
   const reasons = [1, 2, 3].map((n) => ({ n, title: t(`bb.go.r${n}_t`), body: t(`bb.go.r${n}_b`) }))
 
   return (
@@ -109,7 +109,7 @@ export default function Go() {
             {user ? t('bb.pub.open') : t('bb.pub.start_free')}
           </Link>
           <p className="mt-4 text-body font-bold text-ink">
-            <Link to="/nerd" className="underline underline-offset-4">
+            <Link to="/hakkilo" className="underline underline-offset-4">
               {t('bb.go.more')}
             </Link>
           </p>

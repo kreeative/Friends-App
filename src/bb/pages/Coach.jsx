@@ -13,7 +13,7 @@ import { Spinner } from '../course/Processing'
 import { Composer } from '../Composer'
 
 /**
- * /nerd/coach/:id, the coach of section 6, grounded in one course.
+ * /hakkilo/coach/:id, the coach of section 6, grounded in one course.
  *
  * The answer streams in as it is written. The model cites an excerpt by its
  * short id in square brackets ([3f9c1d2a], src/lib/bb/cite.js); here each id
@@ -24,9 +24,10 @@ import { Composer } from '../Composer'
  * "Keep as a card" turns an answer into a flashcard, but only an answer
  * that cites the course: a card with no anchor would break the first rule.
  *
- * The box is the Claude-style Composer: the course, the four ways to answer
- * and the send arrow are icons in it. A question typed in Today's ask bar
- * arrives as ?q= and is sent once the course and its history are loaded.
+ * The box is the Claude-style Composer: a "+" holds the course and the four
+ * ways to answer, then the mic and the send arrow. A question typed in
+ * Today's ask bar arrives as ?q= and is sent once the course and its
+ * history are loaded.
  */
 
 export default function Coach() {
@@ -34,7 +35,7 @@ export default function Coach() {
   const { t, locale } = useT()
   const navigate = useNavigate()
   const { courses, reloadStatus } = useBB()
-  usePageMeta({ title: `${t('bb.coach.title')} · Nerd` })
+  usePageMeta({ title: `${t('bb.coach.title')} · Hakkilo` })
   const [course, setCourse] = useState(null)
   const [messages, setMessages] = useState([])
   const [mode, setMode] = useState(null)
@@ -48,7 +49,7 @@ export default function Coach() {
 
   /* No course in the address: the first one, so the coach opens ready. */
   useEffect(() => {
-    if (!id && courses?.length) navigate(`/nerd/coach/${courses[0].id}`, { replace: true })
+    if (!id && courses?.length) navigate(`/hakkilo/coach/${courses[0].id}`, { replace: true })
   }, [id, courses, navigate])
 
   useEffect(() => {
@@ -145,12 +146,17 @@ export default function Coach() {
     }
   }
 
+  /* The course is named in the header and in the empty box ("Pose ta
+     question sur BIO 1101"), not as a chip: the header scrolls away once
+     the thread opens on its last message, the box does not. */
+  const current = courses?.find((c) => c.id === id)
+
   if (courses && !courses.length) {
     return (
       <Page>
         <PageHead title={t('bb.coach.title')} sub={t('bb.coach.lede')} />
         <Note className="mt-4">{t('bb.coach.no_courses')}</Note>
-        <Link to="/nerd/cours/nouveau" className="btn-ghost press mt-6 w-auto px-6">
+        <Link to="/hakkilo/cours/nouveau" className="btn-ghost press mt-6 w-auto px-6">
           {t('bb.today.add_course')}
         </Link>
       </Page>
@@ -158,8 +164,8 @@ export default function Coach() {
   }
 
   return (
-    <Page>
-      <PageHead title={t('bb.coach.title')} sub={t('bb.coach.lede')} />
+    <Page footer={false}>
+      <PageHead eyebrow={current ? [current.code, current.name].filter(Boolean).join(' · ') : null} title={t('bb.coach.title')} sub={t('bb.coach.lede')} />
 
       <section className="mt-6 space-y-5" aria-live="polite" data-hook="bb-coach-thread">
         {!course ? (
@@ -203,9 +209,11 @@ export default function Coach() {
           disabled={!course}
           courses={courses?.length > 1 ? courses : null}
           courseId={id}
-          onCourse={(next) => next !== id && navigate(`/nerd/coach/${next}`)}
+          onCourse={(next) => next !== id && navigate(`/hakkilo/coach/${next}`)}
           mode={mode}
           onMode={setMode}
+          showCourse={false}
+          label={current ? t('bb.coach.ph_course', { course: current.code || current.name }) : undefined}
           hook="bb-coach-form"
         />
       </div>

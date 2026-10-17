@@ -263,7 +263,7 @@ const iso = (d, h = 12) => {
 
 /* --- the Rich & Friends check-in ---------------------------------------------------------------- */
 {
-  const g = studyGoal({ userId: 'u1', title: 'Étudier avec Nerd', today: '2026-10-16' })
+  const g = studyGoal({ userId: 'u1', title: 'Étudier avec Hakkilo', today: '2026-10-16' })
   eq('a personal goal, no group, owned', [g.group_id, g.kind, g.owner_id], [null, 'personal', 'u1'])
   eq('once a day, Monday to Saturday: Sunday is the plan’s rest day', [g.cadence, g.target_per_cycle, g.active_days], ['recurring', 1, STUDY_DAYS])
   eq('no proof to attach: the session is the proof', g.proof_type, 'none')
@@ -434,10 +434,10 @@ const iso = (d, h = 12) => {
   const src = readFileSync(new URL('../../../api/bb/[action].js', import.meta.url), 'utf8')
   for (const r of ['case', 'grade', 'vary', 'visual', 'purge']) ok(`/api/bb/${r} is routed`, new RegExp(`\\b${r}\\b`).test(src.slice(src.indexOf('const ROUTES'))))
   eq('what the new routes spend', [ROUTE_BUCKET.vary, ROUTE_BUCKET.case, ROUTE_BUCKET.visual, ROUTE_BUCKET.grade], ['generate', 'generate', 'generate', 'grade'])
-  ok('the TikTok page has its own link card', bbPreviewHtml({ page: 'go', locale: 'fr' }).includes('<link rel="canonical" href="https://richandfriends.xyz/nerd/go" />'))
+  ok('the TikTok page has its own link card', bbPreviewHtml({ page: 'go', locale: 'fr' }).includes('<link rel="canonical" href="https://richandfriends.xyz/hakkilo/go" />'))
   const rewrites = JSON.parse(readFileSync(new URL('../../../vercel.json', import.meta.url))).rewrites
   const at = (s) => rewrites.findIndex((r) => r.source === s)
-  ok('crawlers of /nerd/go get it, before the catch-all', at('/nerd/go') >= 0 && at('/nerd/go') < at('/((?!api/).*)'))
+  ok('crawlers of /hakkilo/go get it, before the catch-all', at('/hakkilo/go') >= 0 && at('/hakkilo/go') < at('/((?!api/).*)'))
   /* The in-app browsers of TikTok and Instagram put those names in their
      user agent: matching them would serve the card to real people. */
   ok('never the in-app browsers', rewrites.every((r) => !/TikTok|Instagram|musical_ly|Bytedance/i.test(r.has?.[0]?.value ?? '')))

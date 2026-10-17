@@ -284,13 +284,13 @@ function fakeClient(answers) {
 /* --- the link preview ------------------------------------------------------------------ */
 {
   const html = bbPreviewHtml({ locale: 'fr' })
-  ok('a shared /nerd link shows the B&B card, not the R&F one', html.includes('og:site_name" content="Nerd"') && html.includes('/brand/nerd-og.png'))
-  ok('its canonical is /nerd', html.includes('<link rel="canonical" href="https://richandfriends.xyz/nerd" />'))
-  ok('the title is the new name', html.includes('<title>Nerd · Révise comme une nerd.</title>'))
-  ok('the pricing page has its own title', bbPreviewHtml({ page: 'tarifs', locale: 'en' }).includes('Nerd · Pricing'))
+  ok('a shared /hakkilo link shows the B&B card, not the R&F one', html.includes('og:site_name" content="Hakkilo"') && html.includes('/brand/hakkilo-og.png'))
+  ok('its canonical is /hakkilo', html.includes('<link rel="canonical" href="https://richandfriends.xyz/hakkilo" />'))
+  ok('the title is the new name', html.includes('<title>Hakkilo · Révise comme une nerd.</title>'))
+  ok('the pricing page has its own title', bbPreviewHtml({ page: 'tarifs', locale: 'en' }).includes('Hakkilo · Pricing'))
   const rewrites = JSON.parse(readFileSync(new URL('../../../vercel.json', import.meta.url))).rewrites
   const at = (src) => rewrites.findIndex((r) => r.source === src)
-  ok('crawlers of /nerd and /nerd/tarifs are sent to it, before the catch-all', at('/nerd') >= 0 && at('/nerd/tarifs') >= 0 && at('/nerd') < at('/((?!api/).*)') && rewrites[at('/nerd')].has?.[0]?.key === 'user-agent')
+  ok('crawlers of /hakkilo and /hakkilo/tarifs are sent to it, before the catch-all', at('/hakkilo') >= 0 && at('/hakkilo/tarifs') >= 0 && at('/hakkilo') < at('/((?!api/).*)') && rewrites[at('/hakkilo')].has?.[0]?.key === 'user-agent')
 }
 
 console.log(`  ${pass} passed, ${fail} failed`)

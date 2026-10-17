@@ -112,9 +112,9 @@
            literal because a meta tag cannot hold a custom property. */
         var ground = { sun: '#FFF5F7', sea: '#F0F9FF' }
         /* Beauty & Brain is black and white whatever the theme: stamped here
-           too, so /nerd does not flash blush before its own code loads
+           too, so /hakkilo does not flash blush before its own code loads
            (src/bb/BBApp.jsx sets the same attribute once it runs). */
-        var bb = /^\/(nerd|bb)(\/|$)/.test(location.pathname)
+        var bb = /^\/(hakkilo|nerd|bb)(\/|$)/.test(location.pathname)
         if (bb) d.setAttribute('data-surface', 'bb')
         var meta = document.querySelector('meta[name="theme-color"]')
         if (meta) meta.setAttribute('content', bb ? '#FFFFFF' : ground[theme] || ground.sun)

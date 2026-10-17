@@ -5,8 +5,8 @@ import { Mark } from '../../components/Wordmark'
 import { BBLogo } from '../kit'
 
 /**
- * The frame of the public Nerd pages (landing, pricing): its own
- * bar and its own footer, so /nerd never looks like a tab of Rich & Friends,
+ * The frame of the public Hakkilo pages (landing, pricing): its own
+ * bar and its own footer, so /hakkilo never looks like a tab of Rich & Friends,
  * and a line in the footer that says who made it, with the way to the
  * other product.
  *
@@ -20,15 +20,15 @@ export default function PublicFrame({ children }) {
     <div className="ground relative min-h-dvh overflow-x-clip" data-hook="bb-public">
       <header className="sticky top-0 z-30 px-4 pt-4">
         <nav className="glass-strong mx-auto flex w-full max-w-5xl items-center justify-between gap-3 rounded-card px-3 py-2.5 sm:px-4">
-          <Link to="/nerd" className="press flex min-w-0 items-center gap-2.5" aria-label={t('bb.nav.home')}>
+          <Link to="/hakkilo" className="press flex min-w-0 items-center gap-2.5" aria-label={t('bb.nav.home')}>
             <BBLogo layout="line" className="h-10 w-auto shrink-0" pad={0.2} />
           </Link>
           <div className="flex shrink-0 items-center gap-1 sm:gap-3">
-            <Link to="/nerd/tarifs" className="nav-link px-2 text-small font-semibold">
+            <Link to="/hakkilo/tarifs" className="nav-link px-2 text-small font-semibold">
               {t('bb.pub.pricing')}
             </Link>
             <Link
-              to={user ? '/nerd/app' : '/nerd/connexion'}
+              to={user ? '/hakkilo/app' : '/hakkilo/connexion'}
               className="btn-ghost press w-auto min-h-[2.75rem] px-4 py-2 text-small font-semibold"
               data-hook="bb-nav-signin"
             >
@@ -43,8 +43,11 @@ export default function PublicFrame({ children }) {
       <footer className="relative z-10 border-t border-hairline bg-surface/60 px-6 py-10">
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-3">
-            <BBLogo layout="line" className="h-11 w-auto" pad={0.2} />
-            <p className="text-small text-muted">{t('bb.line')}</p>
+            <BBLogo layout="line" className="h-11 w-auto shrink-0" pad={0.2} />
+            <div>
+              <p className="text-small text-ink">{t('bb.line')}</p>
+              <p className="text-small text-muted">{t('bb.meaning')}</p>
+            </div>
           </div>
           <ul className="flex flex-wrap items-center gap-x-5 gap-y-2 text-small font-semibold text-ink">
             <li>

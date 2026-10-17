@@ -1,0 +1,17 @@
+{
+  "name": "Hakkilo",
+  "short_name": "Hakkilo",
+  "id": "/bb/app",
+  "start_url": "/hakkilo/app",
+  "scope": "/hakkilo",
+  "display": "standalone",
+  "background_color": "#FFFFFF",
+  "theme_color": "#FFFFFF",
+  "lang": "fr",
+  "description": "Ton cours, transformé en questions d’examen. Révise comme une nerd.",
+  "icons": [
+    { "src": "/brand/hakkilo-icon-192.png", "type": "image/png", "sizes": "192x192", "purpose": "any" },
+    { "src": "/brand/hakkilo-icon-512.png", "type": "image/png", "sizes": "512x512", "purpose": "any" },
+    { "src": "/brand/hakkilo-icon-maskable-512.png", "type": "image/png", "sizes": "512x512", "purpose": "maskable" }
+  ]
+}

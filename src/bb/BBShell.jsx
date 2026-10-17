@@ -8,17 +8,20 @@ import { Slider, useSlider } from '../components/Segmented'
 import { BBLogo } from './kit'
 
 /**
- * The Nerd app around every signed-in page: its own navigation,
+ * The Hakkilo app around every signed-in page: its own navigation,
  * its own logo, the Rich & Friends ground and glass (section 11).
  *
  * The same two shapes as the Rich & Friends shell, because the same person
  * uses both: a floating tab bar on a phone, a rail on the left from md, so
- * an iPad and a laptop get the width. Five places, not six: Practice lives
- * inside Today and each course, where the session button already is, and a
- * sixth tab truncates its label at 390px (see MINE in AppShell.jsx).
+ * an iPad and a laptop get the width. Four places in the bar: Practice
+ * lives inside Today and each course, where the session button already is,
+ * and the profile is the avatar in the top bar and at the foot of the rail,
+ * not a tab ("pas la peine que ton profil soit dans la barre en bas").
  *
- * The switcher to Rich & Friends is the R&F mark itself, in the top bar and
- * at the foot of the rail: one tap, same account, no second sign-in.
+ * Rich & Friends is named in a footer at the end of the pages, with its
+ * mark and the way back ("enleve le logo RF dans la barre, ca peut etre
+ * mentionne dans le footer plutot"): one tap, same account, no second
+ * sign-in. The bars carry Hakkilo only.
  *
  * The tab bar is icons ("au lieu de gros boutons avec les noms, juste des
  * icones"), each named in aria-label, and the page you are on opens into a
@@ -28,11 +31,11 @@ import { BBLogo } from './kit'
  * data-hook="app-shell" so the width sweep measures these pages too.
  */
 const TABS = [
-  { to: '/nerd/app', key: 'bb.nav.today', icon: 'today' },
-  { to: '/nerd/cours', key: 'bb.nav.courses', icon: 'courses' },
-  { to: '/nerd/coach', key: 'bb.nav.coach', icon: 'coach' },
-  { to: '/nerd/plan', key: 'bb.nav.plan', icon: 'plan' },
-  { to: '/nerd/profil', key: 'bb.nav.profile', icon: 'profile' },
+  { to: '/hakkilo/app', key: 'bb.nav.today', icon: 'today' },
+  { to: '/hakkilo/cours', key: 'bb.nav.courses', icon: 'courses' },
+  { to: '/hakkilo/coach', key: 'bb.nav.coach', icon: 'coach' },
+  { to: '/hakkilo/plan', key: 'bb.nav.plan', icon: 'plan' },
+  { to: '/hakkilo/profil', key: 'bb.nav.profile', icon: 'profile' },
 ]
 
 const S = { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': 'true' }
@@ -74,17 +77,14 @@ function TopBar() {
   const { profile } = useAuth()
   const { t } = useT()
   return (
-    <header className="sticky top-0 z-40 px-4 pt-4 md:hidden">
+    <header className="sticky top-0 z-40 px-4 pt-4 md:hidden" data-hook="bb-topbar">
       <nav className="lg lg-chrome mx-auto w-full max-w-content" aria-label={t('bb.nav.primary')}>
         <div className="flex items-center gap-2.5 px-3 py-2.5">
-          <Link to="/nerd/app" aria-label={t('bb.nav.home')} className="press flex shrink-0 items-center gap-2" data-hook="bb-home">
+          <Link to="/hakkilo/app" aria-label={t('bb.nav.home')} className="press flex shrink-0 items-center gap-2" data-hook="bb-home">
             <BBLogo layout="line" className="h-9 w-auto" pad={0.2} />
           </Link>
           <div className="ml-auto flex shrink-0 items-center gap-1.5">
-            <Link to="/" className="press flex h-10 w-10 items-center justify-center rounded-pill" aria-label={t('bb.nav.switch')} title={t('bb.nav.switch')} data-hook="bb-switch">
-              <Mark size={30} />
-            </Link>
-            <Link to="/nerd/profil" aria-label={t('bb.nav.profile')} className="press block shrink-0 rounded-pill">
+            <Link to="/hakkilo/profil" aria-label={t('bb.nav.profile')} className="press block shrink-0 rounded-pill">
               <Avatar profile={profile} size={32} />
             </Link>
           </div>
@@ -103,7 +103,7 @@ function Rail() {
   const active = activeIndex(pathname)
   return (
     <nav className="lg lg-rail fixed bottom-4 left-4 top-4 z-30 hidden w-[3.5rem] flex-col p-1.5 md:flex" aria-label={t('bb.nav.primary')} data-hook="bb-rail">
-      <Link to="/nerd/app" aria-label={t('bb.nav.home')} className="press block shrink-0 self-center rounded-inner">
+      <Link to="/hakkilo/app" aria-label={t('bb.nav.home')} className="press block shrink-0 self-center rounded-inner">
         <BBLogo layout="mono" className="h-auto w-11" pad={0.2} />
       </Link>
       <span aria-hidden="true" className="mx-1 mb-8 mt-4 h-px shrink-0 bg-hairline/60" />
@@ -125,11 +125,8 @@ function Rail() {
         })}
       </div>
       <div className="mt-6 flex shrink-0 flex-col gap-3 border-t border-hairline/60 pt-6">
-        <Link to="/" className={`${RAIL_ROW} text-ink/70 hover:bg-ink/[0.06]`} aria-label={t('bb.nav.switch')} title={t('bb.nav.switch')} data-hook="bb-switch-rail">
-          <Mark size={26} />
-        </Link>
         <NavLink
-          to="/nerd/profil"
+          to="/hakkilo/profil"
           aria-label={t('bb.nav.profile')}
           title={t('bb.nav.profile')}
           className={({ isActive }) => `${RAIL_ROW} ${isActive ? 'lg-pill text-ink' : 'text-ink/70 hover:bg-ink/[0.06] hover:text-ink'}`}
@@ -147,7 +144,6 @@ function Rail() {
 
 function TabBar() {
   const { t } = useT()
-  const { profile } = useAuth()
   const { pathname } = useLocation()
   const active = activeIndex(pathname)
   const { ref, box } = useSlider(TABS[active]?.to ?? null)
@@ -156,7 +152,7 @@ function TabBar() {
       <div className="lg lg-chrome">
         <div ref={ref} className="relative flex gap-0.5 p-1.5">
           <Slider box={box} className="lg-pill" />
-          {TABS.map((tab, i) => {
+          {TABS.slice(0, 4).map((tab, i) => {
             const Icon = ICONS[tab.icon]
             return (
               <NavLink
@@ -166,7 +162,7 @@ function TabBar() {
                 data-active={i === active}
                 className={() => `press relative z-10 flex min-w-0 items-center justify-center gap-1.5 rounded-pill px-2 py-3 transition-[flex-grow,color] duration-300 ease-settle ${i === active ? 'flex-none px-3.5 text-ink' : 'flex-1 text-ink/70'}`}
               >
-                {Icon ? <Icon className="h-5 w-5 shrink-0" /> : <span className="block h-5 w-5 shrink-0 overflow-hidden rounded-pill [&_div]:text-ink"><Avatar profile={profile} size={20} /></span>}
+                <Icon className="h-5 w-5 shrink-0" />
                 {i === active && <span className="whitespace-nowrap text-[0.8125rem] leading-none">{t(tab.key)}</span>}
               </NavLink>
             )
@@ -195,12 +191,31 @@ export default function BBShell() {
   )
 }
 
-/** A page of the app: one column, bounded and centred, like .column-page. */
-export function Page({ children, wide = false, className = '' }) {
+/**
+ * A page of the app: one column, bounded and centred, like .column-page,
+ * ending on the line that says who made it and goes back to Rich & Friends.
+ * `footer={false}` for the coach, whose box sits at the end of the page.
+ */
+export function Page({ children, wide = false, footer = true, className = '' }) {
   return (
     <div className={`${wide ? '' : 'column-page'} min-h-dvh pb-36 md:pb-16 ${className}`}>
-      <div className={`shell animate-rise ${wide ? 'md:max-w-[72rem]' : ''}`}>{children}</div>
+      <div className={`shell animate-rise ${wide ? 'md:max-w-[72rem]' : ''}`}>
+        {children}
+        {footer && <AppFooter />}
+      </div>
     </div>
+  )
+}
+
+function AppFooter() {
+  const { t } = useT()
+  return (
+    <footer className="mt-16 border-t border-hairline pt-5" data-hook="bb-footer">
+      <Link to="/" className="press inline-flex items-center gap-2 text-small text-muted hover:text-ink" data-hook="bb-to-rf">
+        <Mark size={20} />
+        {t('bb.by')}
+      </Link>
+    </footer>
   )
 }
 

@@ -13,9 +13,9 @@ export const RETURN_KEY = 'bb.return'
 
 export function rememberReturn(path) {
   try {
-    localStorage.setItem(RETURN_KEY, path && path.startsWith('/nerd') ? path : '/nerd/app')
+    localStorage.setItem(RETURN_KEY, path && path.startsWith('/hakkilo') ? path : '/hakkilo/app')
   } catch {
-    /* private mode: the student lands on the R&F home and taps back to /nerd */
+    /* private mode: the student lands on the R&F home and taps back to /hakkilo */
   }
 }
 

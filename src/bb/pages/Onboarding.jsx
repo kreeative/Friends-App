@@ -119,7 +119,7 @@ function OnboardingForm() {
         onboarded_at: bb?.onboarded_at ?? new Date().toISOString(),
       })
       setBB(row)
-      navigate(courses?.length ? '/nerd/app' : '/nerd/cours/nouveau', { replace: true })
+      navigate(courses?.length ? '/hakkilo/app' : '/hakkilo/cours/nouveau', { replace: true })
     } catch {
       setBusy(false)
       setError(t('bb.err.generic'))

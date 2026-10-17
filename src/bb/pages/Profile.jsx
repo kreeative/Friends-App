@@ -15,11 +15,11 @@ import { Page, PageHead } from '../BBShell'
 import { BigButton, Note } from '../kit'
 import { Choice, GOALS, LANGS, LEVELS } from './Onboarding'
 
-/* The study goal's title from before the app was renamed Nerd. */
-const OLD_GOAL_TITLES = ['Étudier avec Beauty & Brain', 'Study with Beauty & Brain']
+/* The study goal's title under the app's earlier names. */
+const OLD_GOAL_TITLES = ['Étudier avec Beauty & Brain', 'Study with Beauty & Brain', 'Étudier avec Nerd', 'Study with Nerd']
 
 /**
- * /nerd/profil: the study profile (editable, section 9), the plan and what is
+ * /hakkilo/profil: the study profile (editable, section 9), the plan and what is
  * left of today's allowances (section 13: "a student who reaches one sees
  * when it resets"), and for the owner the week's cost (section 7).
  *
@@ -38,7 +38,7 @@ export default function Profile() {
   const { user, signOut } = useAuth()
   const { bb, setBB, status, reloadStatus } = useBB()
   const [params, setParams] = useSearchParams()
-  usePageMeta({ title: `${t('bb.prof.title')} · Nerd` })
+  usePageMeta({ title: `${t('bb.prof.title')} · Hakkilo` })
   const [form, setForm] = useState(null)
   const [saved, setSaved] = useState(false)
   const [busy, setBusy] = useState(null)
@@ -118,8 +118,8 @@ export default function Profile() {
           if (data?.status === 'active') goalId = data.id
         }
         if (!goalId) {
-          /* The goal made before the rename is called after Beauty & Brain: found
-             under either name, so switching back on never makes a second one. */
+          /* The goal made before a rename has an earlier name: found under any
+             of them, so switching back on never makes a second one. */
           const { data } = await supabase.from('goals').select('id').eq('owner_id', user.id).in('commitment', [title, ...OLD_GOAL_TITLES]).eq('status', 'active').limit(1)
           goalId = data?.[0]?.id ?? null
         }
@@ -166,7 +166,7 @@ export default function Profile() {
         {tier === 'owner' && <p className="mt-1 text-small text-ink">{t('bb.price.owner')}</p>}
         <div className="mt-4 flex flex-wrap gap-3">
           {tier === 'free' && (
-            <Link to="/nerd/tarifs" className="btn press w-auto bg-ink px-8 font-bold text-white hover:opacity-90" data-hook="bb-upgrade">
+            <Link to="/hakkilo/tarifs" className="btn press w-auto bg-ink px-8 font-bold text-white hover:opacity-90" data-hook="bb-upgrade">
               {t('bb.courses.upgrade')}
             </Link>
           )}

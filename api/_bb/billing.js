@@ -4,8 +4,8 @@ import { start, subscriptionOf } from './common.js'
 import { PAID, PRICES, tierOf } from '../../src/lib/bb/plans.js'
 
 /**
- * Nerd Plus (Beauty & Brain Plus before the rename), through Stripe Billing
- * (section 13).
+ * Hakkilo Plus (Beauty & Brain Plus, then Nerd Plus, before), through Stripe
+ * Billing (section 13).
  *
  *   POST /api/bb/checkout { plan, locale }  a Checkout session, subscription mode
  *   POST /api/bb/sync     { session_id? }   read the truth back from Stripe
@@ -93,9 +93,9 @@ export async function refreshFromStripe(db, userId, subscriptionId, stripe = str
 }
 
 /* The name on the checkout page and on receipts. The product was made as
-   "Beauty & Brain Plus" before the app was renamed Nerd: the first checkout
-   after the rename renames it, and a failure there never blocks a payment. */
-const PRODUCT_NAME = 'Nerd Plus'
+   "Beauty & Brain Plus" before the app was renamed: the first checkout
+   after a rename renames it, and a failure there never blocks a payment. */
+const PRODUCT_NAME = 'Hakkilo Plus'
 
 async function product(stripe) {
   try {
@@ -177,8 +177,8 @@ export async function checkout(req, res) {
       subscription_data: { metadata: meta },
       allow_promotion_codes: true,
       locale: body.locale === 'en' ? 'en' : 'fr-CA',
-      success_url: `${origin}/bb/profil?plus=ok&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/bb/tarifs?plus=annule`,
+      success_url: `${origin}/hakkilo/profil?plus=ok&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/hakkilo/tarifs?plus=annule`,
     })
     return res.status(200).json({ url: session.url })
   } catch (err) {
@@ -233,7 +233,7 @@ export async function portal(req, res) {
   const sub = await subscriptionOf(db, user.id)
   if (!sub?.stripe_customer) return res.status(409).json({ error: 'no_subscription' })
   try {
-    const session = await stripeClient().billingPortal.sessions.create({ customer: sub.stripe_customer, return_url: `${originOf(req)}/bb/profil` })
+    const session = await stripeClient().billingPortal.sessions.create({ customer: sub.stripe_customer, return_url: `${originOf(req)}/hakkilo/profil` })
     return res.status(200).json({ url: session.url })
   } catch (err) {
     /* The portal needs one save in the Stripe dashboard before it exists.

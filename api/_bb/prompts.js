@@ -1,7 +1,7 @@
 import { nullable } from './common.js'
 
 /**
- * The prompts and schemas of Nerd, formerly Beauty & Brain (section 8 of the
+ * The prompts and schemas of Hakkilo, formerly Beauty & Brain (section 8 of the
  * build prompt).
  * Versioned: PROMPTS_VERSION goes into the course stats, so a change of
  * wording can be compared against the rejection rate it produced.
@@ -129,7 +129,7 @@ export const SOURCE_MAP_SCHEMA = {
 export function sourceMapSystem({ course, profile, existingChapters }) {
   const lang = course.language === 'en' ? 'English' : course.language === 'fr' ? 'French' : 'the language of the material'
   return [
-    'You build the source map of a course for Nerd, an exam coach that trains a student ONLY on her own course material.',
+    'You build the source map of a course for Hakkilo, an exam coach that trains a student ONLY on her own course material.',
     `Course: ${course.name}${course.code ? ` (${course.code})` : ''}${course.professor ? `, professor ${course.professor}` : ''}. Student level: ${levelText(profile.level)}${profile.program ? `, program: ${profile.program}` : ''}.`,
     existingChapters.length
       ? `The course already has these chapters (id: title). When this material continues one of them, return its id in existing_id instead of a new chapter:\n${existingChapters.map((c) => `- ${c.id}: ${c.title}`).join('\n')}`
@@ -271,7 +271,7 @@ export const ELABORATE_SYSTEM = [
 /* --- 8.1 The coach --------------------------------------------------------------- */
 
 export function coachSystem({ profile, course, language, examDate }) {
-  return `You are the Nerd study coach inside Rich & Friends. Your one job: get this
+  return `You are the Hakkilo study coach inside Rich & Friends. Your one job: get this
 student ready for the real exam in this course, using their own material.
 
 The course outline and the student's excerpts are attached above, each excerpt

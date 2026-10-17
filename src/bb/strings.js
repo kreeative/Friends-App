@@ -1,6 +1,6 @@
 /**
- * Every Nerd string, in both languages (the app was Beauty & Brain, so the
- * keys still start with bb.).
+ * Every Hakkilo string, in both languages (the app was Beauty & Brain, then
+ * Nerd, so the keys still start with bb.).
  *
  * Merged into the app's dictionary by src/lib/i18n.jsx, so t('bb.today.title')
  * works everywhere and the language follows the account, like the rest of
@@ -14,8 +14,9 @@
 const N = ' '
 
 const fr = {
-  'bb.name': 'Nerd',
+  'bb.name': 'Hakkilo',
   'bb.line': 'Révise comme une nerd.',
+  'bb.meaning': `«${N}Hakkilo${N}», c’est l’intelligence en peul (fulfulde).`,
   'bb.by': 'Par l’équipe Rich & Friends',
   'bb.loading': 'Chargement',
   'bb.switch.body': 'Ton coach d’étude, avec le même compte.',
@@ -26,10 +27,10 @@ const fr = {
   'bb.nav.coach': 'Coach',
   'bb.nav.plan': 'Plan',
   'bb.nav.profile': 'Profil',
-  'bb.nav.primary': 'Navigation Nerd',
+  'bb.nav.primary': 'Navigation Hakkilo',
   'bb.nav.switch': 'Aller sur Rich & Friends',
   'bb.nav.switch_short': 'R&F',
-  'bb.nav.home': 'Accueil Nerd',
+  'bb.nav.home': 'Accueil Hakkilo',
 
   /* Public pages */
   'bb.pub.pricing': 'Tarifs',
@@ -107,7 +108,7 @@ const fr = {
 
   /* Sign in */
   'bb.signin.title': 'Connecte-toi',
-  'bb.signin.body': 'Un seul compte pour Nerd et Rich & Friends.',
+  'bb.signin.body': 'Un seul compte pour Hakkilo et Rich & Friends.',
 
   /* Onboarding */
   'bb.onb.step': 'Étape {n} sur {total}',
@@ -117,7 +118,7 @@ const fr = {
   'bb.onb.skip': 'Passer',
   'bb.onb.saving': 'J’enregistre',
   'bb.onb.terms_title': 'Avant de commencer',
-  'bb.onb.terms_body': 'Nerd utilise ton compte Rich & Friends et ses conditions. Tes fichiers restent privés: personne d’autre ne les lit, même pas nous.',
+  'bb.onb.terms_body': 'Hakkilo utilise ton compte Rich & Friends et ses conditions. Tes fichiers restent privés: personne d’autre ne les lit, même pas nous.',
   'bb.onb.terms_accept': 'J’accepte les conditions',
   'bb.onb.name_title': `Comment tu t’appelles${N}?`,
   'bb.onb.name_label': 'Ton prénom',
@@ -452,8 +453,22 @@ const fr = {
   'bb.coach.no_courses': 'Ajoute un cours pour parler à ton coach.',
   'bb.coach.you': 'Toi',
   'bb.coach.them': 'Coach',
-  'bb.coach.ph_mode': '{mode} · pose ta question',
   'bb.coach.course': 'Cours',
+  'bb.coach.ph_course': 'Pose ta question sur {course}',
+  'bb.compose.more': 'Plus d’options',
+  'bb.compose.course_is': `Cours${N}: {name}`,
+  'bb.compose.clear_mode': `Retirer «${N}{mode}${N}»`,
+  'bb.compose.mode_is': `Façon de répondre${N}: {mode}`,
+  'bb.coach.mode_short.explain': 'Explique',
+  'bb.coach.mode_short.socratic': 'Socratique',
+  'bb.coach.mode_short.check': 'Vérifie',
+  'bb.coach.mode_short.quiz': 'Interroge',
+  'bb.dictate.start': 'Dicter',
+  'bb.dictate.stop': 'Arrêter la dictée',
+  'bb.dictate.listening': 'Je t’écoute…',
+  'bb.dictate.denied': 'Le micro est bloqué pour ce site. Pour dicter, ouvre les réglages du navigateur et autorise le micro.',
+  'bb.dictate.offline': 'La dictée a besoin d’internet.',
+  'bb.dictate.off': 'La dictée ne marche pas dans ce navigateur. Le micro de ton clavier, lui, marche partout.',
   'bb.ask.label': 'Demande à ton coach',
   'bb.ask.ph': 'Pose une question sur tes cours',
   'bb.ask.ph_course': 'Pose une question sur ce cours',
@@ -684,16 +699,16 @@ const fr = {
   'bb.prof.rf': 'Avec Rich & Friends',
   'bb.prof.checkin': 'Mes séances cochent mon objectif Rich & Friends',
   'bb.prof.checkin_sub': `Chaque séance terminée coche «${N}{goal}${N}» pour la journée, du lundi au samedi. Le dimanche, c’est repos.`,
-  'bb.prof.checkin_goal': 'Étudier avec Nerd',
+  'bb.prof.checkin_goal': 'Étudier avec Hakkilo',
   'bb.prof.checkin_failed': 'Le lien avec ton objectif n’a pas marché. Réessaie.',
   'bb.err.no_source': 'Ce cours n’a pas encore assez de matière lue pour ça. Ajoute un fichier ou relis-le.',
 
-  /* The TikTok page, /nerd/go */
+  /* The TikTok page, /hakkilo/go */
   'bb.go.hi': `Tu as vu la vidéo${N}?`,
   'bb.go.hi_tiktok': `Salut TikTok${N}!`,
   'bb.go.hi_instagram': `Salut Instagram${N}!`,
   'bb.go.title': 'Révise avec TES diapos.',
-  'bb.go.lede': `Dépose ton cours. Nerd en fait des questions d’examen vérifiées, 15 minutes par jour au bon moment, et un coach qui cite ta prof. Pas internet${N}: ta prof.`,
+  'bb.go.lede': `Dépose ton cours. Hakkilo en fait des questions d’examen vérifiées, 15 minutes par jour au bon moment, et un coach qui cite ta prof. Pas internet${N}: ta prof.`,
   'bb.go.free': 'Gratuit pour un cours, sans carte.',
   'bb.go.r1_t': 'Tes fichiers deviennent des questions',
   'bb.go.r1_b': `PDF, PowerPoint, notes, photos du tableau${N}: on en tire des questions de niveau examen, vérifiées une par une.`,
@@ -711,12 +726,13 @@ const fr = {
   'bb.go.demo_o4': 'Le sel entre à sa place',
   'bb.go.demo_chip': 'Cours 3 · diapo 12',
   'bb.go.close': 'Ton prochain examen, mais prête.',
-  'bb.go.more': 'Tout savoir sur Nerd',
+  'bb.go.more': 'Tout savoir sur Hakkilo',
 }
 
 const en = {
-  'bb.name': 'Nerd',
+  'bb.name': 'Hakkilo',
   'bb.line': 'Study like a nerd.',
+  'bb.meaning': '“Hakkilo” is intelligence in Fulfulde.',
   'bb.by': 'By the Rich & Friends team',
   'bb.loading': 'Loading',
   'bb.switch.body': 'Your study coach, same account.',
@@ -726,10 +742,10 @@ const en = {
   'bb.nav.coach': 'Coach',
   'bb.nav.plan': 'Plan',
   'bb.nav.profile': 'Profile',
-  'bb.nav.primary': 'Nerd navigation',
+  'bb.nav.primary': 'Hakkilo navigation',
   'bb.nav.switch': 'Go to Rich & Friends',
   'bb.nav.switch_short': 'R&F',
-  'bb.nav.home': 'Nerd home',
+  'bb.nav.home': 'Hakkilo home',
 
   'bb.pub.pricing': 'Pricing',
   'bb.pub.signin': 'Sign in',
@@ -804,7 +820,7 @@ const en = {
   'bb.price.cancelled': 'Payment cancelled. Nothing was charged.',
 
   'bb.signin.title': 'Sign in',
-  'bb.signin.body': 'One account for Nerd and Rich & Friends.',
+  'bb.signin.body': 'One account for Hakkilo and Rich & Friends.',
 
   'bb.onb.step': 'Step {n} of {total}',
   'bb.onb.next': 'Continue',
@@ -813,7 +829,7 @@ const en = {
   'bb.onb.skip': 'Skip',
   'bb.onb.saving': 'Saving',
   'bb.onb.terms_title': 'Before we start',
-  'bb.onb.terms_body': 'Nerd uses your Rich & Friends account and its terms. Your files stay private: nobody else reads them, not even us.',
+  'bb.onb.terms_body': 'Hakkilo uses your Rich & Friends account and its terms. Your files stay private: nobody else reads them, not even us.',
   'bb.onb.terms_accept': 'I accept the terms',
   'bb.onb.name_title': 'What’s your name?',
   'bb.onb.name_label': 'Your first name',
@@ -1135,8 +1151,22 @@ const en = {
   'bb.coach.no_courses': 'Add a course to talk to your coach.',
   'bb.coach.you': 'You',
   'bb.coach.them': 'Coach',
-  'bb.coach.ph_mode': '{mode} · ask your question',
   'bb.coach.course': 'Course',
+  'bb.coach.ph_course': 'Ask about {course}',
+  'bb.compose.more': 'More options',
+  'bb.compose.course_is': 'Course: {name}',
+  'bb.compose.clear_mode': 'Remove “{mode}”',
+  'bb.compose.mode_is': 'How to answer: {mode}',
+  'bb.coach.mode_short.explain': 'Explain',
+  'bb.coach.mode_short.socratic': 'Socratic',
+  'bb.coach.mode_short.check': 'Check',
+  'bb.coach.mode_short.quiz': 'Quiz',
+  'bb.dictate.start': 'Dictate',
+  'bb.dictate.stop': 'Stop dictation',
+  'bb.dictate.listening': 'Listening…',
+  'bb.dictate.denied': 'The microphone is blocked for this site. To dictate, open your browser settings and allow the microphone.',
+  'bb.dictate.offline': 'Dictation needs a connection.',
+  'bb.dictate.off': 'Dictation doesn’t work in this browser. Your keyboard’s mic works everywhere.',
   'bb.ask.label': 'Ask your coach',
   'bb.ask.ph': 'Ask anything about your courses',
   'bb.ask.ph_course': 'Ask anything about this course',
@@ -1364,16 +1394,16 @@ const en = {
   'bb.prof.rf': 'With Rich & Friends',
   'bb.prof.checkin': 'My sessions tick my Rich & Friends goal',
   'bb.prof.checkin_sub': 'Each finished session ticks “{goal}” for the day, Monday to Saturday. Sunday is a rest day.',
-  'bb.prof.checkin_goal': 'Study with Nerd',
+  'bb.prof.checkin_goal': 'Study with Hakkilo',
   'bb.prof.checkin_failed': 'Linking your goal didn’t work. Try again.',
   'bb.err.no_source': 'This course does not have enough material read for that yet. Add a file or read it again.',
 
-  /* The TikTok page, /nerd/go */
+  /* The TikTok page, /hakkilo/go */
   'bb.go.hi': 'Saw the video?',
   'bb.go.hi_tiktok': 'Hi TikTok!',
   'bb.go.hi_instagram': 'Hi Instagram!',
   'bb.go.title': 'Study from YOUR slides.',
-  'bb.go.lede': 'Drop in your course. Nerd turns it into checked, exam-level questions, 15 minutes a day at the right moment, and a coach that quotes your professor. Not the internet: your professor.',
+  'bb.go.lede': 'Drop in your course. Hakkilo turns it into checked, exam-level questions, 15 minutes a day at the right moment, and a coach that quotes your professor. Not the internet: your professor.',
   'bb.go.free': 'Free for one course, no card.',
   'bb.go.r1_t': 'Your files become questions',
   'bb.go.r1_b': 'PDFs, PowerPoints, notes, photos of the board: they become exam-level questions, each one checked.',
@@ -1391,7 +1421,7 @@ const en = {
   'bb.go.demo_o4': 'The salt moves in instead',
   'bb.go.demo_chip': 'Lecture 3 · slide 12',
   'bb.go.close': 'Your next exam, but ready.',
-  'bb.go.more': 'Everything about Nerd',
+  'bb.go.more': 'Everything about Hakkilo',
 }
 
 export const BB_STRINGS = { fr, en }

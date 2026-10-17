@@ -48,10 +48,11 @@ import Challenge from './pages/public/Challenge'
 import Invite from './pages/Invite'
 
 /**
- * Nerd (formerly Beauty & Brain), the study platform at /nerd (src/bb/BBApp.jsx).
+ * Hakkilo (Beauty & Brain, then Nerd, before), the study platform at
+ * /hakkilo (src/bb/BBApp.jsx).
  *
  * Its own chunk: somebody opening Rich & Friends never downloads it, and a
- * student opening /nerd downloads only what B&B needs on top of the shared
+ * student opening /hakkilo downloads only what B&B needs on top of the shared
  * kit. Mounted next to the Rich & Friends gate rather than inside it, so a
  * student meets the B&B onboarding and never the R&F welcome deck.
  */
@@ -83,20 +84,21 @@ function BBReturn() {
     } catch {
       to = null
     }
-    /* A return saved before the move from /bb still lands, at its new address. */
-    if (to && /^\/(nerd|bb)(\/|$)/.test(to)) navigate(to.replace(/^\/bb/, '/nerd'), { replace: true })
+    /* A return saved under an earlier name still lands, at its new address. */
+    if (to && /^\/(hakkilo|nerd|bb)(\/|$)/.test(to)) navigate(to.replace(/^\/(nerd|bb)/, '/hakkilo'), { replace: true })
   }, [user, pathname, navigate])
   return null
 }
 
 /**
- * Nerd lived at /bb when it was called Beauty & Brain. A page load of an
- * old address is redirected by vercel.json (308); this catches the ones
- * that never reach the server: a link inside an open tab, a saved return.
+ * Hakkilo lived at /bb as Beauty & Brain, then at /nerd as Nerd. A page load
+ * of an old address is redirected by vercel.json (308); this catches the
+ * ones that never reach the server: a link inside an open tab, a saved
+ * return.
  */
-function OldNerdPath() {
+function OldStudyPath() {
   const { pathname, search, hash } = useLocation()
-  return <Navigate to={`${pathname.replace(/^\/bb/, '/nerd')}${search}${hash}`} replace />
+  return <Navigate to={`${pathname.replace(/^\/(nerd|bb)/, '/hakkilo')}${search}${hash}`} replace />
 }
 
 /** /lectures/:slug is the same page as /library/:slug, spelled in French. */
@@ -696,14 +698,15 @@ export default function App() {
               <Routes>
                 <Route path="/legal/:slug" element={<Legal />} />
                 <Route
-                  path="/nerd/*"
+                  path="/hakkilo/*"
                   element={
                     <Suspense fallback={<BBLoading />}>
                       <BBApp />
                     </Suspense>
                   }
                 />
-                <Route path="/bb/*" element={<OldNerdPath />} />
+                <Route path="/bb/*" element={<OldStudyPath />} />
+                <Route path="/nerd/*" element={<OldStudyPath />} />
                 <Route path="*" element={<Gate />} />
               </Routes>
             </GroupProvider>

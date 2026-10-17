@@ -10,7 +10,8 @@ import { BBLogo } from '../kit'
 import PublicFrame from './PublicFrame'
 
 /**
- * richandfriends.xyz/nerd: the public page of Nerd (formerly Beauty & Brain).
+ * richandfriends.xyz/hakkilo: the public page of Hakkilo (Beauty & Brain,
+ * then Nerd, before).
  *
  * What it promises, in the order a student asks: what is it (the line and
  * the logo), how it works (three steps), why it works (the six techniques of
@@ -28,11 +29,11 @@ const CLOSE_ART = cast(['koi', 'unicorn'])
 export default function Landing() {
   const { t, locale } = useT()
   const { user } = useAuth()
-  usePageMeta({ title: `Nerd · ${t('bb.line')}`, description: t('bb.land.lede') })
+  usePageMeta({ title: `Hakkilo · ${t('bb.line')}`, description: t('bb.land.lede') })
   const title = useRef(null)
   const heading = t('bb.land.title')
   useLineEnd(title, heading)
-  const start = user ? '/nerd/app' : '/nerd/connexion?next=/nerd/start'
+  const start = user ? '/hakkilo/app' : '/hakkilo/connexion?next=/hakkilo/start'
 
   const steps = [1, 2, 3].map((n) => ({ n, title: t(`bb.land.how_${n}_t`), body: t(`bb.land.how_${n}_b`) }))
   const science = [1, 2, 3, 4, 5, 6].map((n) => ({ n, title: t(`bb.land.sci_${n}_t`), body: t(`bb.land.sci_${n}_b`) }))
@@ -64,7 +65,7 @@ export default function Landing() {
               <Link to={start} className="btn press w-auto bg-ink px-8 font-bold text-white hover:opacity-90" data-hook="bb-cta">
                 {user ? t('bb.pub.open') : t('bb.pub.start_free')}
               </Link>
-              <Link to="/nerd/tarifs" className="btn-outline press w-auto px-8">
+              <Link to="/hakkilo/tarifs" className="btn-outline press w-auto px-8">
                 {t('bb.pub.see_pricing')}
               </Link>
             </div>
@@ -160,7 +161,7 @@ export default function Landing() {
             <p className="mt-2 text-small text-muted">{t('bb.price.pick')}</p>
           </div>
         </div>
-        <Link to="/nerd/tarifs" className="btn-outline press mt-6 w-auto px-8">
+        <Link to="/hakkilo/tarifs" className="btn-outline press mt-6 w-auto px-8">
           {t('bb.pub.see_pricing')}
         </Link>
       </section>
