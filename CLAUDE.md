@@ -67,6 +67,22 @@ and the error points at the wrong thing.
 
 ## Design
 
+- **Beauty & Brain is black and white, with some colours.** "Instead of blue
+  or pink theme can we go for a more straightforward theme like black and
+  white like that with some colors?" (Kee, with a reference: white cards on a
+  light grey ground, heavy black titles, black pill buttons). Inside /bb the
+  tokens are neutral (`[data-surface='bb']` in `index.css`) and the accent is
+  the ink: primary buttons are black with white text. The colours each have
+  one job: violet `#6B4EFF` for the answer actions and the option picked
+  (white on it 5.05:1), green `#1E7B34` only ever for right, the logo yellow
+  `#F8CB02` for the logo and highlights (black on it), the logo pink kept for
+  the art. Pastels carry black text. The logo letters stay yellow, on a black
+  tile. Its floating bars are solid white, never glass: over a flat grey
+  ground a translucent bar is a window onto whatever scrolls under it. A
+  button that cannot be pressed yet is solid grey (`#52525B` on `#E4E4E7`,
+  6.09:1), never the live colour faded. The pink and turquoise rules below
+  still hold for Rich & Friends.
+
 - **The white die-cut outline belongs to real stickers only**, the PNGs in
   `src/assets/stickers`. "C'est pas vraiment des stickers, c'est des choses
   que tu as craftées." Badges, cards, pills and anything else drawn in code

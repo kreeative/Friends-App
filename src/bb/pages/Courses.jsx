@@ -43,7 +43,7 @@ export default function Courses() {
         <section className="lg mt-6 p-6">
           <h2 className="text-h2 text-ink">{t('bb.today.empty_title')}</h2>
           <p className="mt-2 text-body text-muted">{t('bb.today.empty_body')}</p>
-          <Link to="/bb/cours/nouveau" className="btn press mt-6 w-auto bg-[#FF007A] px-8 text-[1.1875rem] font-bold text-white hover:opacity-90">
+          <Link to="/bb/cours/nouveau" className="btn press mt-6 w-auto bg-ink px-8 text-[1.1875rem] font-bold text-white hover:opacity-90">
             {t('bb.today.add_course')}
           </Link>
         </section>

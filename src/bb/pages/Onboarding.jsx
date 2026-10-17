@@ -40,10 +40,10 @@ export function Choice({ on, onClick, children, hook }) {
       onClick={onClick}
       data-hook={hook}
       className={`press flex min-h-[3rem] items-center gap-2 rounded-inner border px-4 py-2.5 text-left text-body font-semibold text-ink transition-colors ${
-        on ? 'border-[#009DB9] bg-[#DDF3F7]' : 'border-ink/15 bg-surface hover:border-ink/30'
+        on ? 'border-ink bg-[#FFF4C2]' : 'border-ink/15 bg-surface hover:border-ink/30'
       }`}
     >
-      <span aria-hidden="true" className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-pill border-2 ${on ? 'border-[#007A90] bg-[#007A90]' : 'border-ink/30'}`}>
+      <span aria-hidden="true" className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-pill border-2 ${on ? 'border-ink bg-ink' : 'border-ink/30'}`}>
         {on && (
           <svg viewBox="0 0 16 16" className="h-3 w-3 text-white" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
             <path d="M3 8.5 6.5 12 13 4.5" />
@@ -132,14 +132,14 @@ function OnboardingForm() {
     <div className="ground relative min-h-dvh overflow-hidden" data-hook="app-shell" data-page="bb-onboarding">
       <main className="relative z-10 mx-auto flex min-h-dvh w-full max-w-[38rem] flex-col px-6 pb-14 pt-8">
         <div className="flex items-center justify-between gap-3">
-          <BBLogo layout="mono" tile="pink" className="h-10 w-auto" pad={0.2} />
+          <BBLogo layout="mono" className="h-10 w-auto" pad={0.2} />
           <p className="text-small font-semibold text-muted" data-hook="onb-step">
             {t('bb.onb.step', { n: at + 1, total: steps.length })}
           </p>
         </div>
         <div className="mt-3 flex gap-1.5" aria-hidden="true">
           {steps.map((s, i) => (
-            <span key={s} className={`h-1.5 flex-1 rounded-pill ${i <= at ? 'bg-[#FF007A]' : 'bg-ink/15'}`} />
+            <span key={s} className={`h-1.5 flex-1 rounded-pill ${i <= at ? 'bg-ink' : 'bg-ink/15'}`} />
           ))}
         </div>
 
@@ -247,7 +247,7 @@ function OnboardingForm() {
                       max={40}
                       value={form.weekly_hours}
                       onChange={(e) => set('weekly_hours')(Number(e.target.value))}
-                      className="w-full max-w-[24rem] accent-[#FF007A]"
+                      className="w-full max-w-[24rem] accent-[#111111]"
                       aria-valuetext={t('bb.onb.hours_value', { n: form.weekly_hours })}
                     />
                     <span className="w-14 shrink-0 text-right text-body font-bold tabular-nums text-ink">{t('bb.onb.hours_value', { n: form.weekly_hours })}</span>

@@ -61,7 +61,7 @@ export default function Landing() {
               {t('bb.land.lede')}
             </p>
             <div style={{ '--i': 2 }} className="mt-9 flex flex-wrap items-center gap-3">
-              <Link to={start} className="btn press w-auto bg-[#FF007A] px-8 text-[1.1875rem] font-bold text-white hover:opacity-90" data-hook="bb-cta">
+              <Link to={start} className="btn press w-auto bg-ink px-8 text-[1.1875rem] font-bold text-white hover:opacity-90" data-hook="bb-cta">
                 {user ? t('bb.pub.open') : t('bb.pub.start_free')}
               </Link>
               <Link to="/bb/tarifs" className="btn-outline press w-auto px-8">
@@ -75,8 +75,8 @@ export default function Landing() {
 
           <div className="relative mx-auto mt-14 w-full max-w-[26rem] lg:mt-0" data-hook="bb-hero-logo">
             <div className="relative rotate-[-2deg]">
-              <BBLogo layout="stacked" tile="pink" className="w-full drop-shadow-[0_18px_30px_rgb(255_0_122/0.25)]" pad={0.12} />
-              <Tape className="-top-3 left-8" tilt={-8} />
+              <BBLogo layout="stacked" className="w-full drop-shadow-[0_18px_30px_rgb(17_17_17/0.18)]" pad={0.12} />
+              <Tape className="-top-3 left-8" tilt={-8} tone="107 78 255" />
               <Tape className="-bottom-3 right-10" tilt={6} tone="255 214 10" />
             </div>
             <Spot name="cat" tilt={-10} delay={700} className="absolute -bottom-10 -left-6 w-24 sm:-left-12 sm:w-28" />
@@ -90,7 +90,7 @@ export default function Landing() {
         <ol className="mt-8 grid gap-5 md:grid-cols-3">
           {steps.map((s, i) => (
             <li key={s.n} className="lg relative p-6 pt-8">
-              <span aria-hidden="true" className="block text-[2.5rem] font-bold leading-none text-[#FF007A]">
+              <span aria-hidden="true" className="block text-[2.5rem] font-bold leading-none text-ink">
                 {s.n}
               </span>
               <h3 className="mt-3 text-[1.25rem] font-semibold leading-snug text-ink">{s.title}</h3>
@@ -108,7 +108,7 @@ export default function Landing() {
           {science.map((s) => (
             <li key={s.n} className="lg p-5">
               <h3 className="text-body font-bold text-ink">
-                <span className="marker" style={{ '--mk': s.n % 2 ? '#BDEBF3' : '#FFD0E6' }}>
+                <span className="marker" style={{ '--mk': ['#FFF4C2', '#EFEBFF', '#E4F5D9'][s.n % 3] }}>
                   {s.title}
                 </span>
               </h3>
@@ -126,13 +126,13 @@ export default function Landing() {
           </div>
           <figure className="lg p-6" aria-label={t('bb.land.grounded_title')}>
             <p className="text-small font-semibold text-muted">{t('bb.bank.from_prof')}</p>
-            <blockquote className="mt-2 border-l-4 border-[#009DB9] pl-3 text-body text-ink">
+            <blockquote className="mt-2 border-l-4 border-[#F8CB02] pl-3 text-body text-ink">
               {locale === 'fr' ? '« L’osmose est le passage de l’eau à travers une membrane semi-perméable, du milieu le moins concentré vers le plus concentré. »' : '“Osmosis is the movement of water across a semi-permeable membrane, from the less concentrated side to the more concentrated one.”'}
             </blockquote>
-            <span className="mt-4 inline-flex items-center gap-1 rounded-pill border border-[#009DB9]/50 bg-[#E6F6F9] px-2.5 py-0.5 text-[0.8125rem] font-semibold text-ink">
+            <span className="mt-4 inline-flex items-center gap-1 rounded-pill border border-ink/30 bg-surface px-2.5 py-0.5 text-[0.8125rem] font-semibold text-ink">
               {t('bb.land.grounded_chip')}
             </span>
-            <div className="mt-5 rounded-inner border-2 border-dashed border-ink/25 bg-[#FFF8D6] px-3 py-2">
+            <div className="mt-5 rounded-inner border-2 border-dashed border-ink/30 bg-[#FFF4C2] px-3 py-2">
               <p className="text-[0.8125rem] font-bold uppercase tracking-[0.02em] text-ink">{t('bb.ses.outside')}</p>
             </div>
           </figure>
@@ -166,10 +166,10 @@ export default function Landing() {
       </section>
 
       <section className="mx-auto w-full max-w-6xl px-6 pb-20 pt-10" data-hook="bb-close">
-        <div className="relative overflow-visible rounded-card bg-[#FF007A] px-6 py-10 md:px-12 md:py-14">
+        <div className="relative overflow-visible rounded-card bg-ink px-6 py-10 md:px-12 md:py-14">
           <h2 className="max-w-[18ch] text-[clamp(1.75rem,4vw,2.75rem)] font-bold leading-[1.1] text-white">{t('bb.land.close_title')}</h2>
           <p className="mt-4 max-w-[40ch] text-[1.1875rem] font-bold leading-[1.45] text-white">{t('bb.land.close_body')}</p>
-          <Link to={start} className="btn press mt-8 w-auto bg-white px-8 text-[1.1875rem] font-bold text-[#FF007A] hover:opacity-90">
+          <Link to={start} className="btn press mt-8 w-auto bg-[#F8CB02] px-8 text-[1.1875rem] font-bold text-ink hover:opacity-90">
             {user ? t('bb.pub.open') : t('bb.pub.start_free')}
           </Link>
           <Spot name={CLOSE_ART[0]} tilt={-8} delay={300} className="absolute -bottom-8 right-6 hidden w-24 sm:block md:w-28" />

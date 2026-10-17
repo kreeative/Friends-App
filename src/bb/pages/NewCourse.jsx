@@ -130,7 +130,7 @@ export default function NewCourse() {
       <PageHead eyebrow={t('bb.onb.step', { n: step + 1, total: steps.length })} title={t('bb.new.title')} />
       <div className="mt-2 flex max-w-[38rem] gap-1.5" aria-hidden="true">
         {steps.map((s, i) => (
-          <span key={s} className={`h-1.5 flex-1 rounded-pill ${i <= step ? 'bg-[#009DB9]' : 'bg-ink/15'}`} />
+          <span key={s} className={`h-1.5 flex-1 rounded-pill ${i <= step ? 'bg-ink' : 'bg-ink/15'}`} />
         ))}
       </div>
 

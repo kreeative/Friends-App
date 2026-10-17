@@ -131,19 +131,31 @@ function Ready({ children }) {
   return children
 }
 
-/** The <link rel=manifest> and theme colour of Beauty & Brain while on /bb. */
+/* The ground of Beauty & Brain, black and white (src/index.css,
+   [data-surface='bb']), and the grounds Rich & Friends goes back to. */
+export const BB_GROUND = '#F4F4F5'
+const RF_GROUND = { sun: '#FFF5F7', sea: '#F0F9FF' }
+
+/**
+ * While on /bb: the manifest, the browser chrome colour and the colour
+ * scope of Beauty & Brain, on <html> so the body, portals and sheets take
+ * it too. Leaving for Rich & Friends gives them all back.
+ */
 function useInstallable() {
   useEffect(() => {
+    const root = document.documentElement
     const link = document.querySelector('link[rel="manifest"]')
     const theme = document.querySelector('meta[name="theme-color"]')
     const apple = document.querySelector('link[rel="apple-touch-icon"]')
-    const before = { manifest: link?.getAttribute('href'), theme: theme?.getAttribute('content'), apple: apple?.getAttribute('href') }
+    const before = { manifest: link?.getAttribute('href'), apple: apple?.getAttribute('href') }
+    root.setAttribute('data-surface', 'bb')
     link?.setAttribute('href', '/bb.webmanifest')
-    theme?.setAttribute('content', '#FF007A')
+    theme?.setAttribute('content', BB_GROUND)
     apple?.setAttribute('href', '/brand/bb-apple-touch-180.png')
     return () => {
+      root.removeAttribute('data-surface')
       if (before.manifest) link?.setAttribute('href', before.manifest)
-      if (before.theme) theme?.setAttribute('content', before.theme)
+      theme?.setAttribute('content', RF_GROUND[root.getAttribute('data-theme')] ?? RF_GROUND.sun)
       if (before.apple) apple?.setAttribute('href', before.apple)
     }
   }, [])

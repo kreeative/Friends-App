@@ -123,7 +123,7 @@ function Drawing({ visual, chip, t }) {
       <ol className="space-y-3" data-hook="bb-steps">
         {nodes.map((n, i) => (
           <li key={i} className="flex gap-3">
-            <span aria-hidden="true" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-pill border-2 border-[#009DB9] bg-[#E6F6F9] text-small font-bold tabular-nums text-ink">
+            <span aria-hidden="true" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-pill border-2 border-ink bg-[#FFF4C2] text-small font-bold tabular-nums text-ink">
               {i + 1}
             </span>
             <div className="min-w-0 flex-1 pt-1">
@@ -139,10 +139,10 @@ function Drawing({ visual, chip, t }) {
 
   if (kind === 'timeline') {
     return (
-      <ol className="relative ml-2 space-y-4 border-l-2 border-[#009DB9] pl-5" data-hook="bb-timeline">
+      <ol className="relative ml-2 space-y-4 border-l-2 border-ink pl-5" data-hook="bb-timeline">
         {nodes.map((n, i) => (
           <li key={i} className="relative">
-            <span aria-hidden="true" className="absolute -left-[1.6rem] top-1.5 h-3 w-3 rounded-pill border-2 border-[#009DB9] bg-surface" />
+            <span aria-hidden="true" className="absolute -left-[1.6rem] top-1.5 h-3 w-3 rounded-pill border-2 border-ink bg-[#F8CB02]" />
             <p className="text-small font-bold tabular-nums text-ink">{n.when}</p>
             <p className="text-body font-semibold text-ink">{n.label}</p>
             {n.detail && <p className="mt-0.5 text-small text-ink">{n.detail}</p>}
@@ -176,7 +176,7 @@ function Drawing({ visual, chip, t }) {
         </ul>
         <div className="hidden overflow-x-auto rounded-inner border border-hairline sm:block">
           <table className="w-full border-collapse text-left text-small text-ink">
-            <thead className="bg-[#E6F6F9]">
+            <thead className="bg-[#F4F4F5]">
               <tr>
                 {columns.map((c, i) => (
                   <th key={i} scope="col" className="px-3 py-2 font-bold">
@@ -227,7 +227,7 @@ function Drawing({ visual, chip, t }) {
     )
     return (
       <div data-hook="bb-matrix">
-        <div className="grid grid-cols-2 gap-2 rounded-card bg-[#E6F6F9] p-2">
+        <div className="grid grid-cols-2 gap-2 rounded-card bg-[#F4F4F5] p-2">
           {quad(0, 1)}
           {quad(1, 1)}
           {quad(0, 0)}
@@ -244,8 +244,8 @@ function Drawing({ visual, chip, t }) {
     const kids = (i) => nodes.map((n, k) => [n, k]).filter(([n]) => n.parent === i)
     const root = nodes.findIndex((n) => n.parent == null)
     const branch = (i, depth) => (
-      <li key={i} className={depth ? 'border-l-2 border-[#009DB9]/60 pl-4' : ''}>
-        <div className={`rounded-inner px-3 py-2 ${depth === 0 ? 'bg-[#FFE3F0]' : 'bg-surface'}`}>
+      <li key={i} className={depth ? 'border-l-2 border-ink/40 pl-4' : ''}>
+        <div className={`rounded-inner px-3 py-2 ${depth === 0 ? 'bg-[#FFF4C2]' : 'bg-[#F4F4F5]'}`}>
           <p className="text-small font-bold text-ink">{nodes[i].label}</p>
           {nodes[i].detail && <p className="text-[0.8125rem] text-ink">{nodes[i].detail}</p>}
           <div className="mt-1">{chip(nodes[i].anchor, depth > 0)}</div>

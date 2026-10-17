@@ -73,7 +73,7 @@ function TopBar() {
       <nav className="lg lg-chrome mx-auto w-full max-w-content" aria-label={t('bb.nav.primary')}>
         <div className="flex items-center gap-2.5 px-3 py-2.5">
           <Link to="/bb/app" aria-label={t('bb.nav.home')} className="press flex shrink-0 items-center gap-2" data-hook="bb-home">
-            <BBLogo layout="mono" tile="pink" className="h-9 w-auto" pad={0.2} />
+            <BBLogo layout="mono" className="h-9 w-auto" pad={0.2} />
             <span className="text-small font-bold tracking-tight text-ink">Beauty &amp; Brain</span>
           </Link>
           <div className="ml-auto flex shrink-0 items-center gap-1.5">
@@ -100,7 +100,7 @@ function Rail() {
   return (
     <nav className="lg lg-rail fixed bottom-4 left-4 top-4 z-30 hidden w-[3.5rem] flex-col p-1.5 md:flex" aria-label={t('bb.nav.primary')} data-hook="bb-rail">
       <Link to="/bb/app" aria-label={t('bb.nav.home')} className="press block shrink-0 self-center rounded-inner">
-        <BBLogo layout="mono" tile="pink" className="h-auto w-11" pad={0.2} />
+        <BBLogo layout="mono" className="h-auto w-11" pad={0.2} />
       </Link>
       <span aria-hidden="true" className="mx-1 mb-8 mt-4 h-px shrink-0 bg-hairline/60" />
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">

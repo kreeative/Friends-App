@@ -45,15 +45,15 @@ export default function Go() {
               {t('bb.go.title')}
             </h1>
             <p className="mt-5 max-w-[42ch] text-[1.0625rem] leading-[1.55] text-ink">{t('bb.go.lede')}</p>
-            <Link to={start} className="btn press mt-7 bg-[#FF007A] text-[1.1875rem] font-bold text-white hover:opacity-90 sm:w-auto sm:px-10" data-hook="bb-go-cta">
+            <Link to={start} className="btn press mt-7 bg-ink text-[1.1875rem] font-bold text-white hover:opacity-90 sm:w-auto sm:px-10" data-hook="bb-go-cta">
               {user ? t('bb.pub.open') : t('bb.pub.start_free')}
             </Link>
             <p className="mt-3 text-small text-ink">{t('bb.go.free')}</p>
           </div>
           <div className="relative mx-auto mt-12 w-full max-w-[18rem] md:mt-0 md:max-w-[22rem]" data-hook="bb-go-logo">
             <div className="relative rotate-[2deg]">
-              <BBLogo layout="stacked" tile="turquoise" className="w-full drop-shadow-[0_18px_30px_rgb(0_157_185/0.25)]" pad={0.12} />
-              <Tape className="-top-3 right-8" tilt={7} />
+              <BBLogo layout="stacked" className="w-full drop-shadow-[0_18px_30px_rgb(17_17_17/0.18)]" pad={0.12} />
+              <Tape className="-top-3 right-8" tilt={7} tone="107 78 255" />
             </div>
             <Spot name="lips" tilt={-12} delay={300} eager className="absolute -bottom-8 -left-8 w-20 sm:w-24" />
           </div>
@@ -86,7 +86,7 @@ export default function Go() {
             <p className="mt-2 text-body text-ink">{t('bb.go.demo_stem')}</p>
             <ul className="mt-3 space-y-1.5">
               {[1, 2, 3, 4].map((n) => (
-                <li key={n} className={`flex items-start gap-2.5 rounded-inner border-2 px-3 py-2 text-small text-ink ${n === 2 ? 'border-[#009DB9] bg-[#E6F6F9]' : 'border-ink/15 bg-surface'}`}>
+                <li key={n} className={`flex items-start gap-2.5 rounded-inner border-2 px-3 py-2 text-small text-ink ${n === 2 ? 'border-[#1E7B34] bg-[#E4F5D9]' : 'border-ink/15 bg-surface'}`}>
                   <span aria-hidden="true" className="flex h-6 w-6 shrink-0 items-center justify-center rounded-pill bg-ink/[0.07] text-[0.75rem] font-bold">
                     {String.fromCharCode(64 + n)}
                   </span>
@@ -97,15 +97,15 @@ export default function Go() {
                 </li>
               ))}
             </ul>
-            <span className="mt-3 inline-flex items-center gap-1 rounded-pill border border-[#009DB9]/50 bg-[#E6F6F9] px-2.5 py-0.5 text-[0.8125rem] font-semibold text-ink">{t('bb.go.demo_chip')}</span>
+            <span className="mt-3 inline-flex items-center gap-1 rounded-pill border border-ink/30 bg-surface px-2.5 py-0.5 text-[0.8125rem] font-semibold text-ink">{t('bb.go.demo_chip')}</span>
           </figure>
         </div>
       </section>
 
       <section className="mx-auto w-full max-w-5xl px-6 pb-20 pt-8" data-hook="bb-go-close">
-        <div className="relative rounded-card bg-[#FF007A] px-6 py-9 md:px-12 md:py-12">
+        <div className="relative rounded-card bg-ink px-6 py-9 md:px-12 md:py-12">
           <h2 className="max-w-[20ch] text-[clamp(1.625rem,4vw,2.5rem)] font-bold leading-[1.12] text-white">{t('bb.go.close')}</h2>
-          <Link to={start} className="btn press mt-7 bg-white text-[1.1875rem] font-bold text-[#FF007A] hover:opacity-90 sm:w-auto sm:px-10" data-hook="bb-go-cta-2">
+          <Link to={start} className="btn press mt-7 bg-[#F8CB02] text-[1.1875rem] font-bold text-ink hover:opacity-90 sm:w-auto sm:px-10" data-hook="bb-go-cta-2">
             {user ? t('bb.pub.open') : t('bb.pub.start_free')}
           </Link>
           <p className="mt-4 text-[1.1875rem] font-bold text-white">
