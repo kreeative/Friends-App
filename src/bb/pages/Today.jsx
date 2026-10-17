@@ -141,9 +141,15 @@ export default function Today() {
         </section>
       ) : (
         <>
-          <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
-            <h2 className="eyebrow">{t('bb.today.title')}</h2>
-            <SegTabs value={minutes} options={PRESETS} onChange={setMinutes} label={t('bb.course.minutes', { n: minutes })} hook="bb-minutes" labelOf={(n) => t('bb.course.minutes', { n })} />
+          <h2 className="eyebrow mt-8">{t('bb.today.title')}</h2>
+          {/* "Le truc de 10, 15 minutes, il est la, faire quoi ?" (Kee): the
+              lengths sat at the far end of the heading's row with no word to
+              say what they were. They answer a question, so the question is
+              written in front of them, and both come before the buttons that
+              start a session of that length. */}
+          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2" data-hook="bb-how-long">
+            <p className="text-small font-semibold text-ink">{t('bb.today.how_long')}</p>
+            <SegTabs value={minutes} options={PRESETS} onChange={setMinutes} label={t('bb.today.how_long')} hook="bb-minutes" labelOf={(n) => t('bb.course.minutes', { n })} />
           </div>
           <ul className="card-grid mt-4" data-hook="bb-today-courses">
             {ordered.map((c, i) => {

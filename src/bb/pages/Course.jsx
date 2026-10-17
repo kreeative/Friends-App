@@ -175,12 +175,20 @@ export default function Course() {
             ⚑ {weekText(t, view.week)}
           </p>
         )}
+        {/* The question, then the lengths, then the button that starts a
+            session of that length: read left to right, as it is done. The
+            lengths stood unnamed to the right of the button, as if chosen
+            after starting ("le truc de 10, 15 minutes, il est la, faire
+            quoi ?", Kee). */}
         {hasItems && (
-          <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
-            <Link to={`/hakkilo/session/${course.id}?m=${minutes}`} className="btn press bg-ink font-bold text-white hover:opacity-90 sm:w-auto sm:px-8" data-hook="bb-course-start">
-              {t('bb.course.start', { n: minutes })}
-            </Link>
-            <SegTabs value={minutes} options={PRESETS} onChange={setMinutes} label={t('bb.course.minutes', { n: minutes })} hook="bb-course-minutes" labelOf={(n) => t('bb.course.minutes', { n })} />
+          <div className="mt-5" data-hook="bb-how-long">
+            <p className="text-small font-semibold text-ink">{t('bb.today.how_long')}</p>
+            <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center">
+              <SegTabs value={minutes} options={PRESETS} onChange={setMinutes} label={t('bb.today.how_long')} hook="bb-course-minutes" labelOf={(n) => t('bb.course.minutes', { n })} />
+              <Link to={`/hakkilo/session/${course.id}?m=${minutes}`} className="btn press bg-ink font-bold text-white hover:opacity-90 sm:w-auto sm:px-8" data-hook="bb-course-start">
+                {t('bb.course.start', { n: minutes })}
+              </Link>
+            </div>
           </div>
         )}
       </section>
