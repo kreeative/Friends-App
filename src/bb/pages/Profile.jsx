@@ -5,6 +5,8 @@ import { useT, localeTag } from '../../lib/i18n'
 import { usePageMeta } from '../../lib/pageMeta'
 import { Field } from '../../components/ui'
 import { Mark } from '../../components/Wordmark'
+import { supabase } from '../../lib/supabase'
+import { studyGoal } from '../../lib/bb/checkin'
 import { call } from '../api'
 import { saveProfile } from '../data'
 import { errorMessage } from '../errors'
@@ -17,6 +19,11 @@ import { Choice, GOALS, LANGS, LEVELS } from './Onboarding'
  * /bb/profil: the study profile (editable, section 9), the plan and what is
  * left of today's allowances (section 13: "a student who reaches one sees
  * when it resets"), and for the owner the week's cost (section 7).
+ *
+ * The Rich & Friends link: a finished session can tick a personal study goal
+ * in Rich & Friends (src/lib/bb/checkin.js). Switching it on finds the goal
+ * this account made before, or makes it; switching it off unlinks it and
+ * leaves the goal where it is, with its history.
  *
  * Coming back from Stripe with ?plus=ok&session_id=..., the page asks the
  * server to read the subscription back from Stripe (/api/bb/sync), so Plus
@@ -90,6 +97,36 @@ export default function Profile() {
       setSaved(true)
     } catch {
       setNote({ tone: 'error', text: t('bb.err.generic') })
+    }
+    setBusy(null)
+  }
+
+  async function linkGoal(on) {
+    setBusy('checkin')
+    setNote(null)
+    try {
+      if (!on) {
+        setBB(await saveProfile(user.id, { rf_goal_id: null }))
+      } else {
+        const title = t('bb.prof.checkin_goal')
+        let goalId = null
+        if (bb?.rf_goal_id) {
+          const { data } = await supabase.from('goals').select('id, status').eq('id', bb.rf_goal_id).maybeSingle()
+          if (data?.status === 'active') goalId = data.id
+        }
+        if (!goalId) {
+          const { data } = await supabase.from('goals').select('id').eq('owner_id', user.id).eq('commitment', title).eq('status', 'active').limit(1)
+          goalId = data?.[0]?.id ?? null
+        }
+        if (!goalId) {
+          const { data, error } = await supabase.from('goals').insert(studyGoal({ userId: user.id, title })).select('id').single()
+          if (error) throw error
+          goalId = data.id
+        }
+        setBB(await saveProfile(user.id, { rf_goal_id: goalId }))
+      }
+    } catch {
+      setNote({ tone: 'error', text: t('bb.prof.checkin_failed') })
     }
     setBusy(null)
   }
@@ -237,6 +274,17 @@ export default function Profile() {
           <p className="text-small text-muted">{t('bb.prof.privacy')}</p>
         </form>
       )}
+
+      <section className="lg mt-6 p-5" data-hook="bb-checkin">
+        <h2 className="eyebrow">{t('bb.prof.rf')}</h2>
+        <label className="press mt-3 flex cursor-pointer items-start gap-3 rounded-inner bg-ink/[0.035] p-4">
+          <input type="checkbox" checked={Boolean(bb?.rf_goal_id)} disabled={busy !== null || !bb} onChange={(e) => linkGoal(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-[#FF007A]" data-hook="bb-checkin-toggle" />
+          <span className="min-w-0">
+            <span className="block text-body text-ink">{t('bb.prof.checkin')}</span>
+            <span className="mt-0.5 block text-small text-muted">{t('bb.prof.checkin_sub', { goal: t('bb.prof.checkin_goal') })}</span>
+          </span>
+        </label>
+      </section>
 
       <section className="lg mt-6 space-y-4 p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">

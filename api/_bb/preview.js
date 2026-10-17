@@ -6,8 +6,9 @@ import { escapeHtml, previewLocale } from '../invite-preview.js'
  * Every path is served the same index.html, whose tags describe Rich &
  * Friends; a crawler runs no JavaScript, so a /bb link pasted in a message
  * showed the R&F card. vercel.json sends the crawlers' user agents here for
- * /bb and /bb/tarifs (like /join/:code to api/invite-preview.js); a person
- * who lands here anyway is sent on to the page.
+ * /bb, /bb/tarifs and /bb/go, the link in a TikTok or Instagram bio (like
+ * /join/:code to api/invite-preview.js); a person who lands here anyway is
+ * sent on to the page.
  */
 const ORIGIN = 'https://richandfriends.xyz'
 const IMAGE = `${ORIGIN}/brand/bb-og.png`
@@ -16,12 +17,14 @@ const COPY = {
   fr: {
     title: 'Beauty & Brain · Pas besoin de choisir.',
     pricing: 'Beauty & Brain · Les tarifs',
+    go: 'Beauty & Brain · Révise avec TES diapos',
     description: 'Ton coach d’étude transforme tes diapos, tes notes et tes anciens examens en questions de niveau examen. Puis 15 minutes par jour jusqu’au jour J. Gratuit pour un cours.',
     open: 'Ouvrir Beauty & Brain',
   },
   en: {
     title: 'Beauty & Brain · You don’t have to pick.',
     pricing: 'Beauty & Brain · Pricing',
+    go: 'Beauty & Brain · Study from YOUR slides',
     description: 'Your study coach turns your slides, notes and past exams into exam-level questions. Then 15 minutes a day until exam day. Free for one course.',
     open: 'Open Beauty & Brain',
   },
@@ -29,9 +32,9 @@ const COPY = {
 
 export function bbPreviewHtml({ page = '', locale = 'fr' }) {
   const c = COPY[locale] ?? COPY.fr
-  const path = page === 'tarifs' ? '/bb/tarifs' : '/bb'
+  const path = page === 'tarifs' ? '/bb/tarifs' : page === 'go' ? '/bb/go' : '/bb'
   const url = `${ORIGIN}${path}`
-  const t = escapeHtml(page === 'tarifs' ? c.pricing : c.title)
+  const t = escapeHtml(page === 'tarifs' ? c.pricing : page === 'go' ? c.go : c.title)
   const d = escapeHtml(c.description)
   return `<!doctype html>
 <html lang="${locale}">
@@ -66,7 +69,7 @@ export function bbPreviewHtml({ page = '', locale = 'fr' }) {
 
 export default function preview(req, res) {
   const locale = previewLocale(req.headers?.['accept-language'])
-  const page = req.query?.p === 'tarifs' ? 'tarifs' : ''
+  const page = ['tarifs', 'go'].includes(req.query?.p) ? req.query.p : ''
   res.statusCode = 200
   res.setHeader('Content-Type', 'text/html; charset=utf-8')
   res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=3600')

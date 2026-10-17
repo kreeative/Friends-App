@@ -66,8 +66,9 @@ export const PRIVATE_PREFIXES = [
      quelqu'un, pas pour un moteur de recherche. */
   '/join/',
   '/rejoindre/',
-  /* Beauty & Brain: the app behind the sign-in. Its landing page and its
-     pricing (/bb, /bb/tarifs) are public and in the sitemap. */
+  /* Beauty & Brain: the app behind the sign-in. Its landing page, its
+     pricing and the TikTok page (/bb, /bb/tarifs, /bb/go) are public and in
+     the sitemap. */
   '/bb/app',
   '/bb/cours',
   '/bb/coach',
@@ -76,6 +77,7 @@ export const PRIVATE_PREFIXES = [
   '/bb/profile',
   '/bb/start',
   '/bb/session/',
+  '/bb/examen/',
   '/bb/connexion',
   '/bb/signin',
 ]
@@ -223,9 +225,10 @@ export function sitemapPaths(slugs = []) {
     /* La page du defi, celle du lien de la video: publique, et faite pour
        etre trouvee par quelqu'un qui cherche le defi apres l'avoir vu. */
     '/defi',
-    /* Beauty & Brain: sa page et ses tarifs, publics. */
+    /* Beauty & Brain: sa page, ses tarifs et la page du lien TikTok, publics. */
     '/bb',
     '/bb/tarifs',
+    '/bb/go',
     '/legal/terms',
     '/legal/privacy',
     '/legal/notice',

@@ -319,6 +319,12 @@ export function AuthProvider({ children }) {
      * avatar is removed from storage, and the auth.users row goes, taking
      * forty-seven cascading tables with it.
      *
+     * The Beauty & Brain files go first, through /api/bb/purge: they are
+     * files in a private bucket, not rows, so no cascade reaches them, and a
+     * SQL delete on storage.objects would forget an object without erasing
+     * it. Best effort and bounded: a purge that fails or hangs never keeps
+     * somebody from closing their account, and it is safe to run again.
+     *
      * The sign-out afterwards is not tidiness. The session's token is still in
      * this tab and still looks valid to the client until it expires; without
      * this the app would sit there holding a session for a user that no longer
@@ -326,6 +332,19 @@ export function AuthProvider({ children }) {
      * bug rather than as "your account is gone".
      */
     deleteAccount: async () => {
+      try {
+        const { data } = await supabase.auth.getSession()
+        const ctl = new AbortController()
+        const timer = setTimeout(() => ctl.abort(), 20000)
+        await fetch('/api/bb/purge', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${data?.session?.access_token ?? ''}` },
+          body: '{}',
+          signal: ctl.signal,
+        }).finally(() => clearTimeout(timer))
+      } catch {
+        /* offline, or not configured: the account still closes */
+      }
       const { error } = await supabase.rpc('delete_account')
       if (error) return { error }
       await supabase.auth.signOut()

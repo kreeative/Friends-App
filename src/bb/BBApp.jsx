@@ -10,6 +10,7 @@ import { Splash } from './boot'
 import BBShell from './BBShell'
 import Landing from './pages/Landing'
 import Pricing from './pages/Pricing'
+import Go from './pages/Go'
 import SignInPage from './pages/SignIn'
 import Onboarding from './pages/Onboarding'
 import Today from './pages/Today'
@@ -17,6 +18,7 @@ import Courses from './pages/Courses'
 import NewCourse from './pages/NewCourse'
 import Course from './pages/Course'
 import Session from './pages/Session'
+import Exam from './pages/Exam'
 import Coach from './pages/Coach'
 import Plan from './pages/Plan'
 import Profile from './pages/Profile'
@@ -160,6 +162,7 @@ export default function BBApp() {
         <Route index element={<Landing />} />
         <Route path="tarifs" element={<Pricing />} />
         <Route path="pricing" element={<Pricing />} />
+        <Route path="go" element={<Go />} />
         <Route path="*" element={<Landing />} />
       </Routes>
     )
@@ -181,6 +184,8 @@ export default function BBApp() {
           }
         />
         <Route path="session/:id" element={app(<Session />)} />
+        <Route path="examen/:id" element={app(<Exam />)} />
+        <Route path="go" element={<Go />} />
         <Route element={app(<BBShell />)}>
           <Route path="app" element={<Today />} />
           <Route path="cours" element={<Courses />} />

@@ -4,10 +4,11 @@ import { useT, localeTag } from '../../lib/i18n'
 import { usePageMeta } from '../../lib/pageMeta'
 import { SegTabs } from '../../components/ui'
 import { daysUntil, sessionsToday, studyStreak } from '../../lib/bb/days'
-import { loadDue } from '../data'
+import { weeklyLine } from '../../lib/bb/calib'
+import { loadDue, loadWeek } from '../data'
 import { useBB } from '../BBApp'
 import { Page, PageHead } from '../BBShell'
-import { ExamChip } from '../kit'
+import { ExamChip, weekText } from '../kit'
 
 /**
  * /bb/app: today. "Due today" is the main button (section 3.2): one per
@@ -16,6 +17,10 @@ import { ExamChip } from '../kit'
  * The Beauty line comes first and is about the person, not the score: the
  * streak counted in study days, a break after a lot of sessions, and sleep
  * the night before an exam.
+ *
+ * Then the week's calibration line (section 3, technique 9): where the
+ * "sure and wrong" answers of the last seven days gather, and the twin pair
+ * they fall on when they do, with a flag and words, never a colour alone.
  */
 export const PRESETS = [10, 15, 25]
 
@@ -24,6 +29,7 @@ export default function Today() {
   const { bb, courses, status } = useBB()
   const [minutes, setMinutes] = useState(15)
   const [due, setDue] = useState(null)
+  const [week, setWeek] = useState(null)
   usePageMeta({ title: `${t('bb.today.title')} · Beauty & Brain` })
 
   useEffect(() => {
@@ -31,6 +37,9 @@ export default function Today() {
     loadDue()
       .then((d) => live && setDue(d))
       .catch(() => live && setDue({ due: new Map(), items: new Map(), sessions: [] }))
+    loadWeek()
+      .then((w) => live && setWeek(weeklyLine(w)))
+      .catch(() => {})
     return () => {
       live = false
     }
@@ -73,6 +82,23 @@ export default function Today() {
         </p>
         {doneToday > 0 && streak > 0 && !eve && <p className="mt-1 text-small text-ink">{t('bb.today.streak', { n: streak })}</p>}
       </section>
+
+      {week && (
+        <section className="mt-3 rounded-card bg-[#E6F6F9] px-5 py-4" data-hook="bb-week-line">
+          <p className="text-small font-bold uppercase tracking-[0.02em] text-ink">⚑ {t('bb.calib.week_title')}</p>
+          <p className="mt-1 text-body text-ink">
+            {weekText(t, week)}
+            {week.course_id && (
+              <>
+                {' '}
+                <Link to={`/bb/cours/${week.course_id}/erreurs`} className="font-semibold underline underline-offset-4">
+                  {t('bb.calib.week_go')}
+                </Link>
+              </>
+            )}
+          </p>
+        </section>
+      )}
 
       {!ordered.length ? (
         <section className="lg mt-6 p-6" data-hook="bb-empty">

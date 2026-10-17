@@ -36,6 +36,48 @@ async function removeFolder(db, prefix) {
   return removed
 }
 
+/**
+ * Every file under a prefix, folders included: the bucket lists one level at
+ * a time and a folder comes back as an entry with no id.
+ */
+export async function removeTree(db, prefix, depth = 0) {
+  if (depth > 3) return 0
+  const bucket = db.storage.from('bb-materials')
+  let removed = 0
+  for (let round = 0; round < 50; round += 1) {
+    const { data, error } = await bucket.list(prefix, { limit: 100 })
+    if (error || !data?.length) break
+    const before = removed
+    const files = data.filter((f) => f.name && f.id !== null).map((f) => `${prefix}/${f.name}`)
+    const folders = data.filter((f) => f.name && f.id === null).map((f) => `${prefix}/${f.name}`)
+    for (const folder of folders) removed += await removeTree(db, folder, depth + 1)
+    if (files.length) {
+      const { error: rmErr } = await bucket.remove(files)
+      if (!rmErr) removed += files.length
+    }
+    /* Nothing went this round: what is left cannot be removed, stop. */
+    if (removed === before) break
+  }
+  return removed
+}
+
+/**
+ * POST /api/bb/purge
+ *
+ * Called by the app just before the account is deleted (AuthContext): every
+ * file the student ever put in Beauty & Brain, under <user>/ in the private
+ * bucket. The rows go with the account (on delete cascade from auth.users);
+ * the files are not rows, and a SQL delete on storage.objects would forget
+ * the object without erasing it, so they go through the Storage API, here.
+ * Safe to call twice.
+ */
+export async function purge(req, res) {
+  const ctx = await start(req, res, { needsModel: false })
+  if (!ctx) return
+  const files = await removeTree(ctx.db, ctx.user.id)
+  return res.status(200).json({ removed: files })
+}
+
 export default async function remove(req, res) {
   const ctx = await start(req, res, { needsModel: false })
   if (!ctx) return

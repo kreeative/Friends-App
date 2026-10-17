@@ -23,7 +23,7 @@ export const OWNER = 'Anne-Kelly Kouyaté'
  */
 export const CONTACT_EMAIL = 'contact@richandfriends.xyz'
 export const APP_NAME = 'Rich & Friends'
-export const LAST_UPDATED = '2026-08-04'
+export const LAST_UPDATED = '2026-10-16'
 
 const PLACEHOLDER = {
   email: '[contact@yourdomain]',
@@ -52,7 +52,7 @@ export const LEGAL = {
         {
           h: 'Hosting',
           p: [
-            'The interface is hosted by Netlify, Inc., 512 2nd Street, Suite 200, San Francisco, CA 94107, United States.',
+            'The interface and its server functions are hosted by Vercel Inc., 440 N Barranca Ave #4133, Covina, CA 91723, United States.',
             'The database, authentication and file storage are operated by Supabase, Inc., 970 Toa Payoh North, Singapore 318992, on infrastructure located in the region selected for the project.',
             'Transactional email is sent through the provider configured for the service.',
           ],
@@ -184,6 +184,18 @@ export const LEGAL = {
           ],
         },
         {
+          h: 'Beauty & Brain, the study coach',
+          p: [
+            'If you use Beauty & Brain (richandfriends.xyz/bb), it also stores: your study profile (first name, school, country, level, program, language, term dates, weekly study hours and goal); the course files and notes you add, and what is drawn from them (chapters, concepts, short quoted excerpts, questions, chapter visuals, case studies); your answers with the confidence you chose, their review schedule and your mistake log; your mock exam results, your written case answers and their marking; your coach conversations; your study plan; your plan and its payment status; and a count of the AI calls made for you, to apply the daily limits.',
+            'Your files are kept in private storage that only your account can read. Nobody else sees your courses, answers, marks or mistakes: not your groups, not other students.',
+            'To read your material, write and check questions, answer you in the coach and mark a case, the files and excerpts concerned are sent to Anthropic (the Claude API), acting as a processor. Under Anthropic’s commercial terms, this content is not used to train its models.',
+            'Plus is paid through Stripe, which processes your card details. This application never sees or stores them; it keeps the plan, its status and its renewal date.',
+            'Study squads: in a Rich & Friends group, you may choose to show your study effort (minutes and sessions over the last seven days, and your streak of study days) to the members who show theirs. Never a course, a score or a mistake. It is off until you switch it on, group by group, and you can switch it off at any time.',
+            'A finished session ticks a personal goal in Rich & Friends, and your plan is written into your calendar, only if you ask for it.',
+            'Deleting a file deletes it and what was learned from it alone. Deleting a course deletes it, its files and your progress in it. Deleting your account deletes all of it, stored files included.',
+          ],
+        },
+        {
           h: 'Why, and on what legal basis',
           p: [
             'To provide the service. Creating your account, running the weekly cycle, storing and showing your check-ins to your group. Basis: performance of the contract between you and the publisher.',
@@ -197,7 +209,7 @@ export const LEGAL = {
           p: [
             'Members of your group see your display name, your check-in status, and the content of your check-ins once the window closes. That visibility is the purpose of the application.',
             'Your email address is never shown to other members.',
-            'Processors acting on the publisher’s instructions: Supabase (database, authentication, storage), Netlify (hosting of the interface), the configured transactional email provider, and your chosen sign-in provider. Each is bound by a data processing agreement.',
+            'Processors acting on the publisher’s instructions: Supabase (database, authentication, storage), Vercel (hosting of the interface and its server functions), Anthropic (the Claude API, which reads a syllabus you upload and runs Beauty & Brain), Stripe (payment of Beauty & Brain Plus), Plaid (only if you connect a bank account to the budget), the configured transactional email provider, and your chosen sign-in provider. Each is bound by a data processing agreement.',
             'Some of these providers operate outside the European Union. Transfers rely on the European Commission’s standard contractual clauses or an adequacy decision.',
             'Your data is never sold, rented, or shared for advertising.',
           ],
@@ -262,7 +274,7 @@ export const LEGAL = {
         {
           h: 'Hébergement',
           p: [
-            'L’interface est hébergée par Netlify, Inc., 512 2nd Street, Suite 200, San Francisco, CA 94107, États-Unis.',
+            'L’interface et ses fonctions serveur sont hébergées par Vercel Inc., 440 N Barranca Ave #4133, Covina, CA 91723, États-Unis.',
             'La base de données, l’authentification et le stockage de fichiers sont opérés par Supabase, Inc., 970 Toa Payoh North, Singapour 318992, sur une infrastructure située dans la région choisie pour le projet.',
             'Les courriels transactionnels sont envoyés via le prestataire configuré pour le service.',
           ],
@@ -394,6 +406,18 @@ export const LEGAL = {
           ],
         },
         {
+          h: 'Beauty & Brain, le coach d’étude',
+          p: [
+            'Si vous utilisez Beauty & Brain (richandfriends.xyz/bb), l’application enregistre aussi : votre profil d’étude (prénom, établissement, pays, niveau, programme, langue, dates de session, heures d’étude par semaine et objectif) ; les fichiers et notes de cours que vous ajoutez, et ce qui en est tiré (chapitres, notions, courts extraits cités, questions, schémas de chapitre, études de cas) ; vos réponses avec le degré de certitude choisi, leur calendrier de révision et votre carnet d’erreurs ; vos résultats d’examens blancs, vos réponses écrites aux cas et leur correction ; vos échanges avec le coach ; votre plan d’étude ; votre forfait et l’état de son paiement ; et le décompte des appels à l’IA faits pour vous, pour appliquer les limites quotidiennes.',
+            'Vos fichiers sont conservés dans un stockage privé que seul votre compte peut lire. Personne d’autre ne voit vos cours, vos réponses, vos notes ou vos erreurs : ni vos groupes, ni les autres étudiantes et étudiants.',
+            'Pour lire votre matériel, rédiger et vérifier les questions, vous répondre dans le coach et corriger un cas, les fichiers et extraits concernés sont transmis à Anthropic (l’API Claude), en qualité de sous-traitant. Selon les conditions commerciales d’Anthropic, ce contenu ne sert pas à entraîner ses modèles.',
+            'Plus est payé par l’intermédiaire de Stripe, qui traite les données de votre carte. Cette application ne les voit ni ne les conserve ; elle garde le forfait, son statut et sa date de renouvellement.',
+            'Groupes d’étude : dans un groupe Rich & Friends, vous pouvez choisir de montrer votre effort d’étude (minutes et séances des sept derniers jours, et votre série de jours d’étude) aux membres qui montrent le leur. Jamais un cours, une note ni une erreur. C’est désactivé tant que vous ne l’activez pas, groupe par groupe, et vous pouvez le désactiver à tout moment.',
+            'Une séance terminée coche un objectif personnel dans Rich & Friends, et votre plan s’inscrit dans votre calendrier, seulement si vous le demandez.',
+            'Supprimer un fichier le supprime, ainsi que ce qui n’avait été appris que de lui. Supprimer un cours le supprime avec ses fichiers et votre progression. Supprimer votre compte supprime l’ensemble, fichiers stockés compris.',
+          ],
+        },
+        {
           h: 'Finalités et bases légales',
           p: [
             'Fournir le service. Créer votre compte, faire tourner le cycle hebdomadaire, enregistrer et afficher vos points à votre groupe. Base légale : exécution du contrat.',
@@ -407,7 +431,7 @@ export const LEGAL = {
           p: [
             'Les membres de votre groupe voient votre nom d’affichage, votre statut, et le contenu de vos points une fois la fenêtre close. Cette visibilité est la raison d’être de l’application.',
             'Votre adresse électronique n’est jamais montrée aux autres membres.',
-            'Sous-traitants agissant sur instruction de l’éditrice : Supabase (base de données, authentification, stockage), Netlify (hébergement de l’interface), le prestataire d’envoi de courriels configuré, et votre fournisseur de connexion. Chacun est lié par un accord de sous-traitance.',
+            'Sous-traitants agissant sur instruction de l’éditrice : Supabase (base de données, authentification, stockage), Vercel (hébergement de l’interface et de ses fonctions serveur), Anthropic (l’API Claude, qui lit un plan de cours que vous déposez et fait fonctionner Beauty & Brain), Stripe (paiement de Beauty & Brain Plus), Plaid (seulement si vous connectez un compte bancaire au budget), le prestataire d’envoi de courriels configuré, et votre fournisseur de connexion. Chacun est lié par un accord de sous-traitance.',
             'Certains de ces prestataires opèrent hors de l’Union européenne. Les transferts reposent sur les clauses contractuelles types de la Commission européenne ou sur une décision d’adéquation.',
             'Vos données ne sont ni vendues, ni louées, ni partagées à des fins publicitaires.',
           ],

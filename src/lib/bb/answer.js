@@ -37,14 +37,19 @@ const localDay = (d) => {
  * correct   for flashcards, derived from the rating when absent
  * mistake   the bb_mistakes row for this item, or null
  */
-export function answerRows({ item, card = null, choice = null, rating = null, correct = null, confidence = null, mistake = null, now = new Date(), ms = null, mode = null, sessionId = null, dayOf = localDay }) {
+export function answerRows({ item, card = null, choice = null, rating = null, correct = null, confidence = null, mistake = null, now = new Date(), ms = null, mode = null, sessionId = null, dayOf = localDay, retention = undefined }) {
+  /* A variation answers for the mistake it was made from: the log row is the
+     original item's, so "right 3 times on 3 days" can be met on variations. */
+  const logItem = item.variant_of ?? item.id
   const marked = item.type !== 'flash' && item.type !== 'cloze'
   let right = correct
   if (marked && right == null) right = choice != null && Number(choice) === Number(item.answer?.index)
   const grade = rating ?? (marked ? ratingFrom(right, confidence) : 3)
   if (right == null) right = grade > 1
 
-  const next = review(card, grade, now)
+  /* Retention raised for what the professor flagged, in the last days
+     before the exam (section 3.2): passed in by the caller, who knows both. */
+  const next = review(card, grade, now, retention ? { retention } : undefined)
   const { interval, ...state } = next
   const schedule = { item_id: item.id, course_id: item.course_id, ...state }
   const answer = {
@@ -67,7 +72,7 @@ export function answerRows({ item, card = null, choice = null, rating = null, co
   if (!pretest && (!right || confidence === 'guess')) {
     const trap = choice != null ? item.options?.[choice]?.why ?? null : null
     log = {
-      item_id: item.id,
+      item_id: logItem,
       course_id: item.course_id,
       concept_id: item.concept_id ?? null,
       misconception: !right ? trap ?? mistake?.misconception ?? null : mistake?.misconception ?? null,
@@ -80,7 +85,7 @@ export function answerRows({ item, card = null, choice = null, rating = null, co
     const counts = mistake.last_right_on !== today
     const streak = (mistake.right_streak ?? 0) + (counts ? 1 : 0)
     log = {
-      item_id: item.id,
+      item_id: logItem,
       course_id: item.course_id,
       concept_id: mistake.concept_id ?? item.concept_id ?? null,
       misconception: mistake.misconception ?? null,

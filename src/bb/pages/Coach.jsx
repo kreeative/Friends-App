@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useT } from '../../lib/i18n'
 import { usePageMeta } from '../../lib/pageMeta'
@@ -7,8 +7,8 @@ import { keepAsCard, loadCoachHistory, loadCourse } from '../data'
 import { errorMessage } from '../errors'
 import { useBB } from '../BBApp'
 import { Page, PageHead } from '../BBShell'
-import { Anchor, Note, anchorMaps } from '../kit'
-import { citeOf, citedIds, hasCites, shortMap, splitRich, stripCites } from '../../lib/bb/cite'
+import { Note, Rich, anchorMaps } from '../kit'
+import { citedIds, hasCites, shortMap, stripCites } from '../../lib/bb/cite'
 import { Spinner } from '../course/Processing'
 
 /**
@@ -24,49 +24,6 @@ import { Spinner } from '../course/Processing'
  * that cites the course: a card with no anchor would break the first rule.
  */
 const MODES = ['explain', 'socratic', 'check', 'quiz']
-
-/** Text with [id] citations turned into chips, **bold** kept, lines kept. */
-function Rich({ text, byShort, files }) {
-  const paras = String(text).split(/\n{2,}/)
-  return paras.map((p, i) => {
-    const lines = p.split('\n')
-    const list = lines.every((l) => /^\s*[-*•]\s+/.test(l))
-    const inline = (line, key) =>
-      splitRich(line).map((part, j) => {
-        const cite = citeOf(part)
-        if (cite && byShort.has(cite)) {
-          const a = byShort.get(cite)
-          return (
-            <span key={`${key}-${j}`} className="mx-0.5 inline-block align-baseline">
-              <Anchor anchor={a} fileName={files.get(a.material_id)} />
-            </span>
-          )
-        }
-        if (/^\*\*[^*]+\*\*$/.test(part)) return <strong key={`${key}-${j}`}>{part.slice(2, -2)}</strong>
-        return <Fragment key={`${key}-${j}`}>{part}</Fragment>
-      })
-    if (list) {
-      return (
-        <ul key={i} className="ml-5 list-disc space-y-1">
-          {lines.map((l, k) => (
-            <li key={k}>{inline(l.replace(/^\s*[-*•]\s+/, ''), `${i}-${k}`)}</li>
-          ))}
-        </ul>
-      )
-    }
-    /* A div, not a p: a chip is a <details>, which a paragraph may not hold. */
-    return (
-      <div key={i}>
-        {lines.map((l, k) => (
-          <Fragment key={k}>
-            {k > 0 && <br />}
-            {inline(l, `${i}-${k}`)}
-          </Fragment>
-        ))}
-      </div>
-    )
-  })
-}
 
 export default function Coach() {
   const { id } = useParams()
