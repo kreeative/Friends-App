@@ -83,7 +83,7 @@ export default function Squads() {
               <li key={g.id} className="lg p-5" data-hook="bb-squad">
                 <p className="text-body font-bold text-ink">{g.name}</p>
                 <label className="press mt-3 flex cursor-pointer items-start gap-3 rounded-inner bg-ink/[0.035] p-3">
-                  <input type="checkbox" checked={on} disabled={busy === g.id} onChange={(e) => toggle(g.id, e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-[#111111]" data-hook="bb-squad-share" />
+                  <input type="checkbox" checked={on} disabled={busy === g.id} onChange={(e) => toggle(g.id, e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-[#F8CB02]" data-hook="bb-squad-share" />
                   <span className="min-w-0">
                     <span className="block text-small font-semibold text-ink">{t('bb.squad.share')}</span>
                     <span className="mt-0.5 block text-small text-muted">{t('bb.squad.share_sub')}</span>
@@ -92,7 +92,7 @@ export default function Squads() {
                 {on && board && !board.error && (
                   <ol className="mt-4 space-y-2" data-hook="bb-squad-board" aria-label={t('bb.squad.board', { name: g.name })}>
                     {board.map((m, i) => (
-                      <li key={m.user_id} className={`flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 rounded-inner px-3 py-2 text-small text-ink ${m.me ? 'bg-[#FFF4C2]' : 'bg-[#F4F4F5]'}`}>
+                      <li key={m.user_id} className={`flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 rounded-inner px-3 py-2 text-small text-ink ${m.me ? 'bg-[#E4E4E7]' : 'bg-[#F4F4F5]'}`}>
                         <span className="font-semibold">
                           {i + 1}. {m.name}
                           {m.me ? ` (${t('bb.squad.you')})` : ''}

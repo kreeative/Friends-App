@@ -20,6 +20,11 @@ import { BBLogo } from './kit'
  * The switcher to Rich & Friends is the R&F mark itself, in the top bar and
  * at the foot of the rail: one tap, same account, no second sign-in.
  *
+ * The tab bar is icons ("au lieu de gros boutons avec les noms, juste des
+ * icones"), each named in aria-label, and the page you are on opens into a
+ * lilac pill with its name beside the icon, as the reference does with
+ * "Home": the one word the bar still shows is the answer to "where am I".
+ *
  * data-hook="app-shell" so the width sweep measures these pages too.
  */
 const TABS = [
@@ -130,7 +135,11 @@ function Rail() {
           title={t('bb.nav.profile')}
           className={({ isActive }) => `${RAIL_ROW} ${isActive ? 'lg-pill text-ink' : 'text-ink/70 hover:bg-ink/[0.06] hover:text-ink'}`}
         >
-          <Avatar profile={profile} size={26} />
+          {/* Initials in ink: the muted grey measured 4.18:1 on the lilac
+              of the page you are on. */}
+          <span className="[&_div]:text-ink">
+            <Avatar profile={profile} size={26} />
+          </span>
         </NavLink>
       </div>
     </nav>
@@ -154,11 +163,12 @@ function TabBar() {
               <NavLink
                 key={tab.to}
                 to={tab.to}
+                aria-label={t(tab.key)}
                 data-active={i === active}
-                className={() => `press relative z-10 min-w-0 flex-1 rounded-pill px-0 py-2 text-center transition-colors duration-200 ease-settle ${i === active ? 'text-ink' : 'text-ink/70'}`}
+                className={() => `press relative z-10 flex min-w-0 items-center justify-center gap-1.5 rounded-pill px-2 py-3 transition-[flex-grow,color] duration-300 ease-settle ${i === active ? 'flex-none px-3.5 text-ink' : 'flex-1 text-ink/70'}`}
               >
-                {Icon ? <Icon className="mx-auto h-5 w-5 shrink-0" /> : <span className="mx-auto block h-5 w-5 overflow-hidden rounded-pill"><Avatar profile={profile} size={20} /></span>}
-                <span className="mt-0.5 block truncate text-[0.6875rem] leading-[1.4]">{t(tab.key)}</span>
+                {Icon ? <Icon className="h-5 w-5 shrink-0" /> : <span className="block h-5 w-5 shrink-0 overflow-hidden rounded-pill [&_div]:text-ink"><Avatar profile={profile} size={20} /></span>}
+                {i === active && <span className="whitespace-nowrap text-[0.8125rem] leading-none">{t(tab.key)}</span>}
               </NavLink>
             )
           })}

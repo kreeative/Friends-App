@@ -50,7 +50,7 @@ function ItemCard({ item, maps, flagged }) {
         <span className="rounded-pill bg-[#F4F4F5] px-2.5 py-0.5">
           {item.source === 'concept' ? t('bb.bank.from_prof') : item.quality === 'revised' ? t('bb.bank.revised') : t('bb.bank.verified')}
         </span>
-        {flagged && <span className="rounded-pill bg-[#FFE3F0] px-2.5 py-0.5">⚑ {t('bb.bank.sure_wrong')}</span>}
+        {flagged && <span className="rounded-pill bg-ink/[0.06] px-2.5 py-0.5">⚑ {t('bb.bank.sure_wrong')}</span>}
       </div>
       <p className="mt-3 whitespace-pre-line text-body text-ink">{item.stem}</p>
       <button type="button" className="press mt-3 text-small font-semibold text-ink underline underline-offset-4" onClick={() => setOpen(!open)} aria-expanded={open}>
@@ -139,7 +139,7 @@ export function Bank({ items, chapters, concepts, signals, mistakes, maps }) {
             type="button"
             aria-pressed={filter === f}
             onClick={() => setFilter(f)}
-            className={`press rounded-pill border px-3 py-1.5 text-small font-semibold text-ink ${filter === f ? 'border-ink bg-[#FFF4C2]' : 'border-ink/15 bg-surface'}`}
+            className={`press rounded-pill border px-3 py-1.5 text-small font-semibold text-ink ${filter === f ? 'border-ink bg-[#E6DFFF]' : 'border-ink/15 bg-surface'}`}
           >
             {filter === f && '✓ '}
             {f === '' ? t('bb.bank.all') : f === 'weak' ? t('bb.bank.weak') : f === 'signal' ? t('bb.bank.signal') : t('bb.bank.sure_wrong')}
@@ -182,7 +182,7 @@ export function Mistakes({ mistakes, items, maps }) {
                   {m.resolved_at ? (
                     <span className="rounded-pill bg-[#E8F5EC] px-2.5 py-0.5">✓ {t('bb.mist.resolved')}</span>
                   ) : m.confident ? (
-                    <span className="rounded-pill bg-[#FFE3F0] px-2.5 py-0.5">⚑ {t('bb.mist.confident')}</span>
+                    <span className="rounded-pill bg-ink/[0.06] px-2.5 py-0.5">⚑ {t('bb.mist.confident')}</span>
                   ) : (
                     <span className="rounded-pill bg-ink/[0.06] px-2.5 py-0.5">? {t('bb.mist.unsure')}</span>
                   )}

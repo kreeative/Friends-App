@@ -161,7 +161,7 @@ export default function Profile() {
         {tier === 'owner' && <p className="mt-1 text-small text-ink">{t('bb.price.owner')}</p>}
         <div className="mt-4 flex flex-wrap gap-3">
           {tier === 'free' && (
-            <Link to="/bb/tarifs" className="btn press w-auto bg-ink px-8 text-[1.1875rem] font-bold text-white hover:opacity-90" data-hook="bb-upgrade">
+            <Link to="/bb/tarifs" className="btn press w-auto bg-ink px-8 font-bold text-white hover:opacity-90" data-hook="bb-upgrade">
               {t('bb.courses.upgrade')}
             </Link>
           )}
@@ -251,7 +251,7 @@ export default function Profile() {
           </div>
           <Field label={t('bb.onb.hours_label')}>
             <div className="flex items-center gap-4">
-              <input type="range" min={1} max={40} value={form.weekly_hours} onChange={(e) => set('weekly_hours')(Number(e.target.value))} className="w-full max-w-[24rem] accent-[#111111]" aria-valuetext={t('bb.onb.hours_value', { n: form.weekly_hours })} />
+              <input type="range" min={1} max={40} value={form.weekly_hours} onChange={(e) => set('weekly_hours')(Number(e.target.value))} className="w-full max-w-[24rem] accent-[#F8CB02]" aria-valuetext={t('bb.onb.hours_value', { n: form.weekly_hours })} />
               <span className="w-14 shrink-0 text-right text-body font-bold tabular-nums text-ink">{t('bb.onb.hours_value', { n: form.weekly_hours })}</span>
             </div>
           </Field>
@@ -278,7 +278,7 @@ export default function Profile() {
       <section className="lg mt-6 p-5" data-hook="bb-checkin">
         <h2 className="eyebrow">{t('bb.prof.rf')}</h2>
         <label className="press mt-3 flex cursor-pointer items-start gap-3 rounded-inner bg-ink/[0.035] p-4">
-          <input type="checkbox" checked={Boolean(bb?.rf_goal_id)} disabled={busy !== null || !bb} onChange={(e) => linkGoal(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-[#111111]" data-hook="bb-checkin-toggle" />
+          <input type="checkbox" checked={Boolean(bb?.rf_goal_id)} disabled={busy !== null || !bb} onChange={(e) => linkGoal(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-[#F8CB02]" data-hook="bb-checkin-toggle" />
           <span className="min-w-0">
             <span className="block text-body text-ink">{t('bb.prof.checkin')}</span>
             <span className="mt-0.5 block text-small text-muted">{t('bb.prof.checkin_sub', { goal: t('bb.prof.checkin_goal') })}</span>
@@ -291,7 +291,7 @@ export default function Profile() {
           <span className="text-small font-semibold text-ink">{t('bb.prof.language')}</span>
           <div className="flex gap-1 rounded-pill bg-ink/[0.06] p-1" role="group">
             {['fr', 'en'].map((l) => (
-              <button key={l} type="button" aria-pressed={locale === l} onClick={() => setLocale(l)} className={`press rounded-pill px-4 py-1.5 text-small font-semibold ${locale === l ? 'bg-surface text-ink shadow-raised' : 'text-muted'}`}>
+              <button key={l} type="button" aria-pressed={locale === l} onClick={() => setLocale(l)} className={`press rounded-pill px-4 py-1.5 text-small font-semibold ${locale === l ? 'bg-[#CFC2FF] text-ink' : 'text-muted'}`}>
                 {l === 'fr' ? 'Français' : 'English'}
               </button>
             ))}

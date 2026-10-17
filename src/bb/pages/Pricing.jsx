@@ -110,7 +110,7 @@ export default function Pricing() {
                   onClick={() => choose(plan)}
                   disabled={busy !== null}
                   data-hook={`choose-${plan}`}
-                  className={`btn press mt-6 text-[1.1875rem] font-bold ${pick ? 'bg-ink text-white hover:opacity-90' : 'btn-outline'}`}
+                  className={`btn press mt-6 font-bold ${pick ? 'bg-ink text-white hover:opacity-90' : 'btn-outline'}`}
                 >
                   {busy === plan ? '…' : t('bb.price.choose', { plan: 'Plus' })}
                 </button>
@@ -132,7 +132,7 @@ export default function Pricing() {
 
 function Check() {
   return (
-    <svg viewBox="0 0 16 16" className="mt-1 h-3.5 w-3.5 shrink-0 text-[#1E7B34]" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+    <svg viewBox="0 0 16 16" className="mt-1 h-3.5 w-3.5 shrink-0 text-ink" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
       <path d="M3 8.5 6.5 12 13 4.5" />
     </svg>
   )

@@ -9,49 +9,58 @@ import { citeOf, splitRich } from '../lib/bb/cite'
  * The few pieces every Beauty & Brain screen shares. Everything else comes
  * from the Rich & Friends kit (ui.jsx, StickerKit, the .lg cards).
  *
- * COLOURS: BLACK AND WHITE, WITH SOME COLOURS (Kee's reference: white cards
- * on a light grey ground, black titles, black pill buttons, a few bright
- * accents). The ground and the ink are tokens ([data-surface='bb'] in
- * src/index.css); the accents are here, each with one job:
+ * COLOURS: BLACK AND WHITE AT REST, COLOUR WHEN SOMETHING HAPPENS. "Let's
+ * keep the color for a specific event like when you select or click or
+ * switch something in, and keep the regular color" (Kee). A screen nobody
+ * has touched is white, grey and ink; a colour appears because the student
+ * did something:
  *
- *   ink     #111111  primary buttons, the active tab, bars. White on it 18.9:1.
- *   violet  #6B4EFF  the answer actions (check, hand in) and the option
- *                    picked. White on it 5.05:1, so any size.
- *   green   #1E7B34  right, and only right. 5.33:1 on white.
- *   yellow  #F8CB02  the logo yellow: the logo, highlights. Black on it.
- *   pink    #FF007A  the logo pink, kept for the art; text on it stays
- *                    white, bold and large (3.80:1).
+ *   ink        #111111  text, primary buttons, bars. White on it 18.9:1.
+ *   lilac      #CFC2FF  "a light purple": pressed, and where you are. Ink
+ *                       on it 11.5:1.
+ *   lilac soft #E6DFFF  what you picked: an option, a chip, a length.
+ *   yellow     #F8CB02  the logo yellow: switched on, and the highlighter.
+ *   green      #1E7B34  right, and only right, once the answer is checked.
  *
- * Their pastels carry black text at 15:1 or more. Colour is never the only
- * signal: a word or an icon always says the same thing.
+ * Black stays on white, the pastels and the yellow, never on a dark or
+ * saturated ground. Colour is never the only signal: a tick, a word or an
+ * icon always says the same thing.
  */
 export const INK = '#111111'
-export const VIOLET = '#6B4EFF'
-export const GREEN = '#1E7B34'
-export const PINK = '#FF007A'
+export const LILAC = '#CFC2FF'
+export const LILAC_SOFT = '#E6DFFF'
 export const LOGO_YELLOW = '#F8CB02'
-export const SOFT = { yellow: '#FFF4C2', violet: '#EFEBFF', green: '#E4F5D9', pink: '#FFE3F0', grey: '#F4F4F5' }
+export const GREEN = '#1E7B34'
 
 /**
  * The wordmark, as artwork: Crosner outlines and Kee's own "&", one path per
- * letter, in the logo yellow on a black tile (the black and white theme;
- * the letters themselves never change). `tile="pink"` and `"turquoise"`
- * still draw the original tiles; `tile="none"` draws the letters in ink.
+ * letter. Kee chose it out of four: the logo yellow, outlined in ink, on a
+ * lilac tile ("le jaune sur le noir j'aime pas, le violet pastel et le jaune
+ * est plus chill"). Yellow on lilac alone measures 1.06:1 and only its
+ * hue tells the two apart; the ink line is what makes the letters readable,
+ * down to the 36px top bar. It is drawn under the fill (paint-order), so
+ * half of it shows and the letters keep their own width. The mono "B&B" is
+ * drawn smaller, so its line is drawn thicker in letter units.
+ * `tile="none"` draws the letters in ink, with no tile and no line.
  * `layout`: stacked ("Beauty" over "& Brain"), line, or mono ("B&B").
  */
-const TILES = { ink: INK, pink: PINK, turquoise: '#009DB9' }
+const OUTLINE = { stacked: 6, line: 6, mono: 8 }
 
-export function BBLogo({ layout = 'stacked', tile = 'ink', className = '', pad = 0.16, title }) {
+export function BBLogo({ layout = 'stacked', tile = 'lilac', className = '', pad = 0.16, title }) {
   const art = BB_LOGO[layout] ?? BB_LOGO.stacked
   const p = Math.round(Math.max(art.w, art.h) * pad)
   const w = art.w + p * 2
   const h = art.h + p * 2
-  const ground = TILES[tile] ?? null
+  const tiled = tile !== 'none'
   const label = title ?? 'Beauty & Brain'
   return (
     <svg viewBox={`0 0 ${w} ${h}`} role="img" aria-label={label} className={className} data-hook="bb-logo">
-      {ground && <rect width={w} height={h} rx={Math.round(Math.min(w, h) * 0.14)} fill={ground} />}
-      <g transform={`translate(${p} ${p})`} fill={ground ? LOGO_YELLOW : INK}>
+      {tiled && <rect width={w} height={h} rx={Math.round(Math.min(w, h) * 0.14)} fill={LILAC} />}
+      <g
+        transform={`translate(${p} ${p})`}
+        fill={tiled ? LOGO_YELLOW : INK}
+        {...(tiled ? { stroke: INK, strokeWidth: OUTLINE[layout] ?? 6, strokeLinejoin: 'round', paintOrder: 'stroke' } : {})}
+      >
         {art.paths.map((path, i) => (
           <path key={i} d={path.d} fillRule={path.evenodd ? 'evenodd' : 'nonzero'} />
         ))}
@@ -60,7 +69,11 @@ export function BBLogo({ layout = 'stacked', tile = 'ink', className = '', pad =
   )
 }
 
-/** "Examen dans 12 jours", with the word, never a colour alone. */
+/**
+ * "Examen dans 12 jours", with the word, never a colour alone. Within a
+ * week the line round it turns from grey to ink: a deadline is not an
+ * event, so it gets weight rather than a colour.
+ */
 export function ExamChip({ examAt, className = '' }) {
   const { t } = useT()
   const { key, n } = examLabel(examAt)
@@ -68,7 +81,7 @@ export function ExamChip({ examAt, className = '' }) {
   return (
     <span
       data-hook="exam-chip"
-      className={`inline-flex items-center gap-1.5 rounded-pill border px-3 py-1 text-small font-semibold text-ink ${soon ? 'border-[#F8CB02] bg-[#FFF4C2]' : 'border-ink/10 bg-surface'} ${className}`}
+      className={`inline-flex items-center gap-1.5 rounded-pill border bg-surface px-3 py-1 text-small font-semibold text-ink ${soon ? 'border-ink' : 'border-ink/15'} ${className}`}
     >
       <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 shrink-0" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
         <rect x="2" y="3" width="12" height="11" rx="2" />
@@ -111,7 +124,7 @@ export function Anchor({ anchor, fileName, compact = false }) {
   const full = anchorChip(anchor, fileName)
   return (
     <details className="group inline-block max-w-full align-top" data-hook="anchor">
-      <summary className="inline-flex max-w-full cursor-pointer list-none items-center gap-1 rounded-pill border border-ink/30 bg-surface px-2.5 py-0.5 text-[0.8125rem] font-semibold text-ink hover:border-ink/60 group-open:border-ink group-open:bg-ink group-open:text-white [&::-webkit-details-marker]:hidden">
+      <summary className="inline-flex max-w-full cursor-pointer list-none items-center gap-1 rounded-pill border border-ink/30 bg-surface px-2.5 py-0.5 text-[0.8125rem] font-semibold text-ink hover:border-ink/60 group-open:border-ink group-open:bg-[#CFC2FF] [&::-webkit-details-marker]:hidden">
         <svg viewBox="0 0 16 16" className="h-3 w-3 shrink-0" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
           <path d="M4 2h6l3 3v9H4z" />
           <path d="M10 2v3h3" />
@@ -144,7 +157,7 @@ export function Anchors({ ids, anchors, files, className = '' }) {
 export function Outside({ children }) {
   const { t } = useT()
   return (
-    <div className="rounded-inner border-2 border-dashed border-ink/30 bg-[#FFF4C2] px-3 py-2" data-hook="outside">
+    <div className="rounded-inner border-2 border-dashed border-ink/30 bg-[#F4F4F5] px-3 py-2" data-hook="outside">
       <p className="text-[0.8125rem] font-bold uppercase tracking-[0.02em] text-ink">{t('bb.ses.outside')}</p>
       {children && <div className="mt-1 text-small text-ink">{children}</div>}
     </div>
@@ -152,19 +165,14 @@ export function Outside({ children }) {
 }
 
 /**
- * The big filled button: black, or violet for the answer actions (check,
- * hand in). White text on both passes at any size; it stays 19px and bold
- * because it is the one thing on the screen to press. The old tone names
- * still work: "pink" is now black, "turquoise" violet. Disabled, it is
- * solid grey: see `[data-surface='bb'] .btn:disabled` in index.css.
+ * The big filled button: black with white words at rest. Pressed it turns
+ * lilac, disabled it is solid grey, and its words are 14px in a button that
+ * kept its size: all three in `[data-surface='bb'] .btn` in index.css, so
+ * every button in /bb does the same.
  */
-export function BigButton({ tone = 'ink', className = '', children, ...rest }) {
-  const bg = tone === 'turquoise' || tone === 'violet' ? 'bg-[#6B4EFF]' : 'bg-ink'
+export function BigButton({ className = '', children, ...rest }) {
   return (
-    <button
-      {...rest}
-      className={`btn press ${bg} text-[1.1875rem] font-bold text-white hover:opacity-90 active:opacity-80 ${className}`}
-    >
+    <button {...rest} className={`btn press bg-ink font-bold text-white hover:opacity-90 ${className}`}>
       {children}
     </button>
   )

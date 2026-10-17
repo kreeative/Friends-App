@@ -430,7 +430,7 @@ export default function Session() {
           )}
           {offline && <Note className="mt-4">{t('bb.ses.offline')}</Note>}
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-            <Link to={`/bb/cours/${id}`} className="btn press bg-ink text-[1.1875rem] font-bold text-white hover:opacity-90 sm:w-auto sm:px-8" data-hook="bb-done-back">
+            <Link to={`/bb/cours/${id}`} className="btn press bg-ink font-bold text-white hover:opacity-90 sm:w-auto sm:px-8" data-hook="bb-done-back">
               {t('bb.ses.back')}
             </Link>
             <button type="button" className="btn-ghost press sm:w-auto sm:px-8" onClick={() => navigate(`/bb/session/${id}?m=10&r=${Date.now()}`, { replace: true })}>
@@ -465,7 +465,7 @@ export default function Session() {
               const picked = choice === i
               const shown = phase === 'shown'
               const isKey = i === key
-              const tone = shown ? (isKey ? 'border-[#1E7B34] bg-[#E4F5D9]' : picked ? 'border-negative/60 bg-[#FDECEE]' : 'border-ink/10 bg-surface') : picked ? 'border-[#6B4EFF] bg-[#EFEBFF]' : 'border-ink/15 bg-surface hover:border-ink/30'
+              const tone = shown ? (isKey ? 'border-[#1E7B34] bg-[#E4F5D9]' : picked ? 'border-negative/60 bg-[#FDECEE]' : 'border-ink/10 bg-surface') : picked ? 'border-ink bg-[#E6DFFF]' : 'border-ink/15 bg-surface hover:border-ink/30'
               return (
                 <button
                   key={i}
@@ -499,7 +499,7 @@ export default function Session() {
                     type="button"
                     aria-pressed={confidence === c}
                     onClick={() => setConfidence(c)}
-                    className={`press rounded-inner border-2 px-2 py-2.5 text-small font-semibold text-ink ${confidence === c ? 'border-ink bg-[#FFF4C2]' : 'border-ink/15 bg-surface'}`}
+                    className={`press rounded-inner border-2 px-2 py-2.5 text-small font-semibold text-ink ${confidence === c ? 'border-ink bg-[#E6DFFF]' : 'border-ink/15 bg-surface'}`}
                     data-hook={`bb-conf-${c}`}
                   >
                     {confidence === c && '✓ '}
@@ -619,7 +619,7 @@ export default function Session() {
             {choice == null ? t('bb.ses.pick_first') : t('bb.ses.pick_conf')}
           </p>
         )}
-        <BigButton onClick={check} disabled={choice == null || !confidence} data-hook="bb-check" tone="violet">
+        <BigButton onClick={check} disabled={choice == null || !confidence} data-hook="bb-check">
           {t('bb.ses.check')}
         </BigButton>
       </div>
@@ -629,7 +629,7 @@ export default function Session() {
       </BigButton>
     )
   ) : phase === 'ask' ? (
-    <BigButton onClick={reveal} data-hook="bb-reveal" tone="violet">
+    <BigButton onClick={reveal} data-hook="bb-reveal">
       {t('bb.ses.reveal')}
     </BigButton>
   ) : (
@@ -637,7 +637,7 @@ export default function Session() {
       <p className="mb-2 text-center text-small font-semibold text-ink">{t('bb.ses.rate')}</p>
       <div className="grid grid-cols-4 gap-2" data-hook="bb-rate">
         {[1, 2, 3, 4].map((g) => (
-          <button key={g} type="button" onClick={() => rate(g)} className={`press flex min-h-[3.25rem] flex-col items-center justify-center rounded-inner border-2 px-1 py-1.5 text-small font-bold text-ink ${g === 1 ? 'border-negative/50 bg-[#FDECEE]' : g === 3 ? 'border-ink bg-[#FFF4C2]' : 'border-ink/15 bg-surface'}`} data-hook={`bb-rate-${g}`}>
+          <button key={g} type="button" onClick={() => rate(g)} className={`press flex min-h-[3.25rem] flex-col items-center justify-center rounded-inner border-2 px-1 py-1.5 text-small font-bold text-ink ${g === 3 ? 'border-ink bg-surface' : 'border-ink/15 bg-surface'}`} data-hook={`bb-rate-${g}`}>
             <span aria-hidden="true" className="text-[0.75rem] font-semibold text-muted">
               {g}
             </span>

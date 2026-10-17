@@ -67,21 +67,36 @@ and the error points at the wrong thing.
 
 ## Design
 
-- **Beauty & Brain is black and white, with some colours.** "Instead of blue
-  or pink theme can we go for a more straightforward theme like black and
-  white like that with some colors?" (Kee, with a reference: white cards on a
-  light grey ground, heavy black titles, black pill buttons). Inside /bb the
-  tokens are neutral (`[data-surface='bb']` in `index.css`) and the accent is
-  the ink: primary buttons are black with white text. The colours each have
-  one job: violet `#6B4EFF` for the answer actions and the option picked
-  (white on it 5.05:1), green `#1E7B34` only ever for right, the logo yellow
-  `#F8CB02` for the logo and highlights (black on it), the logo pink kept for
-  the art. Pastels carry black text. The logo letters stay yellow, on a black
-  tile. Its floating bars are solid white, never glass: over a flat grey
-  ground a translucent bar is a window onto whatever scrolls under it. A
-  button that cannot be pressed yet is solid grey (`#52525B` on `#E4E4E7`,
-  6.09:1), never the live colour faded. The pink and turquoise rules below
-  still hold for Rich & Friends.
+- **Beauty & Brain is black and white, and colour arrives with an event.**
+  "Instead of blue or pink theme can we go for a more straightforward theme
+  like black and white", then "just black and white background" and "keep
+  the color for a specific event like when you select or click or switch
+  something in, and keep the regular color" (Kee). Inside /bb
+  (`[data-surface='bb']` in `index.css`) the page is white, wells are
+  `#F4F4F5`, text is ink, primary buttons are black with white words. A
+  colour appears because the student did something: light purple `#CFC2FF`
+  for pressed and for where you are (active tab), its soft `#E6DFFF` for
+  what you picked, the logo yellow `#F8CB02` for switched on and the
+  highlighter, green `#1E7B34` only for right once checked. No resting
+  pastel cards, no saturated violet ("ca donne deja vu"), no yellow on
+  black. The values and their jobs are in `src/bb/kit.jsx`.
+- **The Beauty & Brain logo is logo B**, chosen out of four: the logo yellow
+  outlined in ink on a lilac tile (`BBLogo` in `src/bb/kit.jsx`). Yellow on
+  lilac alone is 1.06:1; the ink line is what makes it readable.
+- **Beauty & Brain type is two weights lighter than Rich & Friends** ("deux
+  niveaux moins bold, c'est trop epais"): the 'Poppins BB' family in
+  `index.css` maps 500 and 600 to Regular, 700 to Medium, 800 to SemiBold,
+  from the same files. Button words are 14px in a button that keeps its
+  54px: "Valider" at half its size would be 9.5px, too small to read.
+- **Beauty & Brain uses icons where a button would only repeat a name**
+  ("au lieu de gros boutons avec les noms, juste des icones"): the tab bar
+  (the page you are on opens into a lilac pill with its name), and the
+  Claude-style ask box in `src/bb/Composer.jsx` (course, ways to answer,
+  send arrow), each named in aria-label and title. Its floating bars are
+  solid white, never glass: over a flat ground a translucent bar is a
+  window onto whatever scrolls under it. A button that cannot be pressed
+  yet is solid grey (`#52525B` on `#E4E4E7`, 6.09:1), never faded. The pink
+  and turquoise rules below still hold for Rich & Friends.
 
 - **The white die-cut outline belongs to real stickers only**, the PNGs in
   `src/assets/stickers`. "C'est pas vraiment des stickers, c'est des choses

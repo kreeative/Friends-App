@@ -9,6 +9,7 @@ import { loadDue, loadWeek } from '../data'
 import { useBB } from '../BBApp'
 import { Page, PageHead } from '../BBShell'
 import { ExamChip, weekText } from '../kit'
+import { AskBar } from '../Composer'
 
 /**
  * /bb/app: today. "Due today" is the main button (section 3.2): one per
@@ -21,6 +22,10 @@ import { ExamChip, weekText } from '../kit'
  * Then the week's calibration line (section 3, technique 9): where the
  * "sure and wrong" answers of the last seven days gather, and the twin pair
  * they fall on when they do, with a flag and words, never a colour alone.
+ *
+ * Above both, the ask bar: a question about a course, the way you would ask
+ * Claude, sent straight to the coach. The Beauty line is grey until a
+ * session is done today, and turns yellow then: colour is kept for events.
  */
 export const PRESETS = [10, 15, 25]
 
@@ -68,7 +73,9 @@ export default function Today() {
     <Page>
       <PageHead eyebrow={date} title={bb?.first_name ? t('bb.today.hi', { name: bb.first_name }) : t('bb.today.hi_anon')} />
 
-      <section className="mt-4 rounded-card bg-[#FFF4C2] px-5 py-4" data-hook="bb-beauty-line" aria-live="polite">
+      <AskBar courses={ordered} className="mt-5" />
+
+      <section className={`mt-4 rounded-card px-5 py-4 ${doneToday > 0 ? 'bg-[#FFF4C2]' : 'bg-[#F4F4F5]'}`} data-hook="bb-beauty-line" aria-live="polite">
         <p className="text-body font-semibold text-ink">
           {eve
             ? t('bb.today.sleep')
@@ -84,7 +91,7 @@ export default function Today() {
       </section>
 
       {week && (
-        <section className="mt-3 rounded-card bg-[#EFEBFF] px-5 py-4" data-hook="bb-week-line">
+        <section className="mt-3 rounded-card bg-[#F4F4F5] px-5 py-4" data-hook="bb-week-line">
           <p className="text-small font-bold uppercase tracking-[0.02em] text-ink">⚑ {t('bb.calib.week_title')}</p>
           <p className="mt-1 text-body text-ink">
             {weekText(t, week)}
@@ -104,7 +111,7 @@ export default function Today() {
         <section className="lg mt-6 p-6" data-hook="bb-empty">
           <h2 className="text-h2 text-ink">{t('bb.today.empty_title')}</h2>
           <p className="mt-2 text-body text-muted">{t('bb.today.empty_body')}</p>
-          <Link to="/bb/cours/nouveau" className="btn press mt-6 w-auto bg-ink px-8 text-[1.1875rem] font-bold text-white hover:opacity-90" data-hook="bb-add-first">
+          <Link to="/bb/cours/nouveau" className="btn press mt-6 w-auto bg-ink px-8 font-bold text-white hover:opacity-90" data-hook="bb-add-first">
             {t('bb.today.add_course')}
           </Link>
         </section>
@@ -132,7 +139,7 @@ export default function Today() {
                     <Link
                       to={`/bb/session/${c.id}?m=${minutes}`}
                       data-hook="bb-start"
-                      className={`btn press mt-4 text-center text-[1.1875rem] font-bold ${i === 0 ? 'bg-ink text-white hover:opacity-90' : 'btn-ghost'}`}
+                      className={`btn press mt-4 text-center font-bold ${i === 0 ? 'bg-ink text-white hover:opacity-90' : 'btn-ghost'}`}
                     >
                       {t('bb.today.start', { n: minutes })}
                     </Link>

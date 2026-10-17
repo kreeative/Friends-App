@@ -832,6 +832,7 @@ export function SegTabs({ value, options, onChange, label, hook, labelOf }) {
       <span
         aria-hidden="true"
         data-hook={hook ? `${hook}-pill` : undefined}
+        data-seg-pill=""
         className="pointer-events-none absolute inset-y-1 left-0 rounded-pill bg-surface shadow-raised
                    transition-[transform,width,opacity] duration-300 ease-settle
                    motion-reduce:transition-none"

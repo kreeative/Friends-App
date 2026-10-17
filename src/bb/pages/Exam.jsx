@@ -227,7 +227,7 @@ export default function Exam() {
         </Link>
         <p className="min-w-0 flex-1 truncate text-small font-semibold text-ink">{data?.course?.name ?? t('bb.mock.title')}</p>
         {running && (
-          <p className={`shrink-0 rounded-pill px-3 py-1 text-small font-bold tabular-nums text-ink ${left <= 300 ? 'bg-[#FFE3F0]' : 'bg-[#F4F4F5]'}`} data-hook="bb-exam-clock" aria-live={left <= 60 ? 'polite' : 'off'}>
+          <p className={`shrink-0 rounded-pill px-3 py-1 text-small font-bold tabular-nums text-ink ${left <= 300 ? 'bg-[#FFF4C2]' : 'bg-[#F4F4F5]'}`} data-hook="bb-exam-clock" aria-live={left <= 60 ? 'polite' : 'off'}>
             ⏱ {clock(left)}
             {left <= 300 && <span className="sr-only"> {t('bb.mock.hurry')}</span>}
           </p>
@@ -327,7 +327,7 @@ export default function Exam() {
         )}
 
         <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-          <Link to={`/bb/session/${id}?m=15`} className="btn press bg-ink text-[1.1875rem] font-bold text-white hover:opacity-90 sm:w-auto sm:px-8" data-hook="bb-exam-practise">
+          <Link to={`/bb/session/${id}?m=15`} className="btn press bg-ink font-bold text-white hover:opacity-90 sm:w-auto sm:px-8" data-hook="bb-exam-practise">
             {t('bb.mock.practise')}
           </Link>
           <Link to={`/bb/cours/${id}/examen`} className="btn-ghost press sm:w-auto sm:px-8">
@@ -368,7 +368,7 @@ export default function Exam() {
                         type="button"
                         aria-pressed={size === k}
                         onClick={() => setSize(k)}
-                        className={`press rounded-inner border-2 px-4 py-3 text-left ${size === k ? 'border-ink bg-[#FFF4C2]' : 'border-ink/15 bg-surface'}`}
+                        className={`press rounded-inner border-2 px-4 py-3 text-left ${size === k ? 'border-ink bg-[#E6DFFF]' : 'border-ink/15 bg-surface'}`}
                         data-hook={`bb-exam-size-${k}`}
                       >
                         <span className="block text-body font-bold text-ink">
@@ -428,7 +428,7 @@ export default function Exam() {
                 onClick={() => setAt(n)}
                 aria-current={n === at ? 'step' : undefined}
                 aria-label={`${n + 1}${done ? `, ${t('bb.mock.done')}` : ''}${flagged ? `, ${t('bb.mock.flagged')}` : ''}`}
-                className={`press relative flex h-10 w-full items-center justify-center rounded-inner border-2 text-small font-bold tabular-nums text-ink ${n === at ? 'border-ink' : done ? 'border-[#6B4EFF] bg-[#EFEBFF]' : 'border-ink/15 bg-surface'}`}
+                className={`press relative flex h-10 w-full items-center justify-center rounded-inner border-2 text-small font-bold tabular-nums text-ink ${n === at ? 'border-ink' : done ? 'border-ink/40 bg-[#E6DFFF]' : 'border-ink/15 bg-surface'}`}
               >
                 {n + 1}
                 {done && <span aria-hidden="true" className="absolute right-0.5 top-0 text-[0.625rem]">●</span>}
@@ -456,7 +456,7 @@ export default function Exam() {
                 role="radio"
                 aria-checked={picked === i}
                 onClick={() => setAnswers((a) => ({ ...a, [item.id]: i }))}
-                className={`press flex w-full items-start gap-3 rounded-inner border-2 px-3 py-3 text-left transition-colors ${picked === i ? 'border-[#6B4EFF] bg-[#EFEBFF]' : 'border-ink/15 bg-surface hover:border-ink/30'}`}
+                className={`press flex w-full items-start gap-3 rounded-inner border-2 px-3 py-3 text-left transition-colors ${picked === i ? 'border-ink bg-[#E6DFFF]' : 'border-ink/15 bg-surface hover:border-ink/30'}`}
                 data-hook="bb-exam-option"
               >
                 <span aria-hidden="true" className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-pill text-small font-bold ${picked === i ? 'bg-ink text-white' : 'bg-ink/[0.07] text-ink'}`}>
@@ -513,7 +513,7 @@ export default function Exam() {
       <div className="fixed inset-x-0 bottom-0 z-30 px-4 lg:static lg:mt-6 lg:px-0" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
         <div className="mx-auto w-full max-w-[40rem] rounded-card bg-white p-2 shadow-[var(--e-float)] lg:max-w-[72rem] lg:bg-transparent lg:p-0 lg:shadow-none">
           <div className="flex justify-center lg:max-w-[26rem] lg:justify-start [&>*]:w-full">
-            <BigButton tone="violet" onClick={() => (answeredCount < items.length && !confirm ? setConfirm(true) : handIn())} data-hook="bb-exam-handin">
+            <BigButton onClick={() => (answeredCount < items.length && !confirm ? setConfirm(true) : handIn())} data-hook="bb-exam-handin">
               {t('bb.mock.hand_in')}
             </BigButton>
           </div>

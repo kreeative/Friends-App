@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useT } from '../../lib/i18n'
 import { usePageMeta } from '../../lib/pageMeta'
 import { streamCoach } from '../api'
@@ -10,6 +10,7 @@ import { Page, PageHead } from '../BBShell'
 import { Note, Rich, anchorMaps } from '../kit'
 import { citedIds, hasCites, shortMap, stripCites } from '../../lib/bb/cite'
 import { Spinner } from '../course/Processing'
+import { Composer } from '../Composer'
 
 /**
  * /bb/coach/:id, the coach of section 6, grounded in one course.
@@ -22,8 +23,11 @@ import { Spinner } from '../course/Processing'
  *
  * "Keep as a card" turns an answer into a flashcard, but only an answer
  * that cites the course: a card with no anchor would break the first rule.
+ *
+ * The box is the Claude-style Composer: the course, the four ways to answer
+ * and the send arrow are icons in it. A question typed in Today's ask bar
+ * arrives as ?q= and is sent once the course and its history are loaded.
  */
-const MODES = ['explain', 'socratic', 'check', 'quiz']
 
 export default function Coach() {
   const { id } = useParams()
@@ -38,6 +42,8 @@ export default function Coach() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
   const [kept, setKept] = useState(() => new Set())
+  const [params, setParams] = useSearchParams()
+  const asked = useRef(false)
   const end = useRef(null)
 
   /* No course in the address: the first one, so the coach opens ready. */
@@ -62,16 +68,31 @@ export default function Coach() {
     }
   }, [id])
 
+  /* Follow the answer as it is written, not only when a message is added:
+     a long answer used to grow below the box with the page left where it
+     was. Every 160 characters is enough to keep up without a scroll call
+     per streamed word. */
+  const tail = Math.floor((messages.at(-1)?.content?.length ?? 0) / 160)
+  const writing = Boolean(messages.at(-1)?.streaming)
   useEffect(() => {
     end.current?.scrollIntoView({ block: 'end', behavior: 'smooth' })
-  }, [messages.length])
+  }, [messages.length, tail, writing])
 
   const maps = useMemo(() => anchorMaps(course?.anchors, course?.materials), [course])
   const byShort = useMemo(() => shortMap(course?.anchors), [course])
 
-  async function send(e) {
-    e?.preventDefault()
-    const text = draft.trim()
+  /* The question from Today's ask bar, sent once (a ref, so the second run
+     of a development effect does not send it twice). */
+  useEffect(() => {
+    const q = params.get('q')
+    if (!q || course?.course?.id !== id || asked.current) return
+    asked.current = true
+    setParams({}, { replace: true })
+    send(q)
+  }, [params, course, id])
+
+  async function send(question) {
+    const text = (question ?? draft).trim()
     if (!text || busy || !id) return
     setError(null)
     setDraft('')
@@ -139,36 +160,20 @@ export default function Coach() {
   return (
     <Page>
       <PageHead title={t('bb.coach.title')} sub={t('bb.coach.lede')} />
-      {courses?.length > 1 && (
-        <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label={t('bb.coach.pick')}>
-          {courses.map((c) => (
-            <Link key={c.id} to={`/bb/coach/${c.id}`} aria-current={c.id === id ? 'page' : undefined} className={`press rounded-pill border px-3 py-1.5 text-small font-semibold text-ink ${c.id === id ? 'border-ink bg-[#FFF4C2]' : 'border-ink/15 bg-surface'}`}>
-              {c.id === id && '✓ '}
-              {c.name}
-            </Link>
-          ))}
-        </div>
-      )}
-      <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label={t('bb.coach.modes')} data-hook="bb-coach-modes">
-        {MODES.map((m) => (
-          <button key={m} type="button" aria-pressed={mode === m} onClick={() => setMode(mode === m ? null : m)} className={`press rounded-pill border px-3 py-1.5 text-small font-semibold text-ink ${mode === m ? 'border-ink bg-[#FFF4C2]' : 'border-ink/15 bg-surface'}`}>
-            {mode === m && '✓ '}
-            {t(`bb.coach.mode.${m}`)}
-          </button>
-        ))}
-      </div>
 
-      <section className="mt-6 space-y-4" aria-live="polite" data-hook="bb-coach-thread">
+      <section className="mt-6 space-y-5" aria-live="polite" data-hook="bb-coach-thread">
         {!course ? (
           <div className="flex justify-center py-10">
             <Spinner />
           </div>
         ) : !messages.length ? (
-          <p className="lg p-5 text-body text-muted">{t('bb.coach.empty')}</p>
+          <p className="text-body text-muted">{t('bb.coach.empty')}</p>
         ) : (
           messages.map((m, i) => (
             <div key={i} className={m.role === 'user' ? 'flex justify-end' : ''}>
-              <div className={`max-w-[85%] rounded-card px-4 py-3 ${m.role === 'user' ? 'bg-[#EFEBFF]' : 'lg'}`} data-role={m.role}>
+              {/* Claude's way: your words in a grey bubble, the answer as
+                  plain text on the page, no card round it. */}
+              <div className={m.role === 'user' ? 'max-w-[85%] rounded-[1.25rem] bg-[#F4F4F5] px-4 py-2.5' : 'max-w-[44rem]'} data-role={m.role}>
                 <p className="sr-only">{m.role === 'user' ? t('bb.coach.you') : t('bb.coach.them')}</p>
                 <div className="space-y-2 text-body text-ink">
                   {m.content ? <Rich text={m.content} byShort={byShort} files={maps.files} /> : <span className="flex items-center gap-2 text-small text-muted"><Spinner /> {t('bb.coach.thinking')}</span>}
@@ -182,35 +187,28 @@ export default function Coach() {
             </div>
           ))
         )}
-        <div ref={end} />
+        {/* The margin is the box and the tab bar below it, so the last line
+            stops above them rather than under them. */}
+        <div ref={end} className="scroll-mb-[16.5rem] md:scroll-mb-[10rem]" />
       </section>
 
       {error && <Note tone="error" className="mt-4">{error}</Note>}
 
-      <form onSubmit={send} className="sticky bottom-28 z-20 mt-6 md:bottom-4" data-hook="bb-coach-form">
-        <div className="lg lg-chrome flex items-end gap-2 p-2">
-          <label className="min-w-0 flex-1">
-            <span className="sr-only">{t('bb.coach.ph')}</span>
-            <textarea
-              className="field max-h-40 min-h-[3rem] resize-none border-0 bg-transparent"
-              rows={1}
-              value={draft}
-              placeholder={t('bb.coach.ph')}
-              onChange={(e) => setDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault()
-                  send()
-                }
-              }}
-              maxLength={6000}
-            />
-          </label>
-          <button type="submit" disabled={busy || !draft.trim() || !course} className="btn press w-auto shrink-0 bg-ink px-5 text-[1.1875rem] font-bold text-white hover:opacity-90" data-hook="bb-coach-send">
-            {busy ? <Spinner /> : t('bb.coach.send')}
-          </button>
-        </div>
-      </form>
+      <div className="sticky bottom-28 z-20 mt-6 md:bottom-4">
+        <Composer
+          value={draft}
+          onChange={setDraft}
+          onSubmit={() => send()}
+          busy={busy}
+          disabled={!course}
+          courses={courses?.length > 1 ? courses : null}
+          courseId={id}
+          onCourse={(next) => next !== id && navigate(`/bb/coach/${next}`)}
+          mode={mode}
+          onMode={setMode}
+          hook="bb-coach-form"
+        />
+      </div>
     </Page>
   )
 }
