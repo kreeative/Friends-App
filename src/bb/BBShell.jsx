@@ -225,11 +225,16 @@ export default function BBShell() {
  * A page of the app: one column, bounded and centred, like .column-page,
  * ending on the line that says who made it and goes back to Rich & Friends.
  * `footer={false}` for the coach, whose box sits at the end of the page.
+ *
+ * `wide` gives it 72rem from md. `wide="lg"` keeps the column until lg and
+ * gives it 72rem from there, for a page that is one column on an iPad held
+ * upright and two from lg (Today, .today-grid in index.css).
  */
 export function Page({ children, wide = false, footer = true, className = '' }) {
+  const shell = wide === 'lg' ? 'md:max-w-[46rem] lg:max-w-[72rem]' : wide ? 'md:max-w-[72rem]' : ''
   return (
     <div className={`${wide ? '' : 'column-page'} min-h-dvh pb-36 md:pb-16 ${className}`}>
-      <div className={`shell animate-rise ${wide ? 'md:max-w-[72rem]' : ''}`}>
+      <div className={`shell animate-rise ${shell}`}>
         {children}
         {footer && <AppFooter />}
       </div>

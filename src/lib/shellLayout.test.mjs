@@ -2987,10 +2987,12 @@ ok(
  * nothing today and starts drawing again the moment somebody gives it a
  * fallback. See cycleOn in src/lib/setup.js.
  */
+/* And in Hakkilo's copy of the strip (`study`) never, whatever the answer:
+   a study app's home page is not where a period goes. */
 ok(
   'the strip asks whether the tracker is part of this app',
   /import \{ cycleOn \} from '\.\.\/lib\/setup'/.test(strip) &&
-    /const periodTracking = cycleOn\(profile\)/.test(strip),
+    /const periodTracking = !study && cycleOn\(profile\)/.test(strip),
 )
 ok(
   'the heads-up is gated on it',

@@ -16,7 +16,7 @@
  *
  * Pure, for `npm test` and for the server (api/_bb reads it too).
  */
-import { daysUntil } from './days.js'
+import { dayKey, daysUntil } from './days.js'
 
 export const EXAM_KINDS = ['midterm', 'final']
 export const SCOPES = ['all', 'since', 'chapters']
@@ -188,4 +188,68 @@ export function examsLine(course, chapters = [], now = new Date()) {
       return `${name} ${when}, ${what}`
     })
     .join('. ')
+}
+
+/* Lower case, no accents, words only: "Chimie organique (CHM-101)" is
+   "chimie organique chm 101". */
+const words = (s) =>
+  String(s ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+
+/* Does a calendar title name the course, by its code or its name, as whole words? */
+function names(title, course) {
+  const line = ` ${words(title)} `
+  return [course?.code, course?.name].some((n) => {
+    const w = words(n)
+    return w.length >= 3 && line.includes(` ${w} `)
+  })
+}
+
+/**
+ * The exams, as rows in calendar_event's shape, for the calendar on Today
+ * (src/components/WeekStrip.jsx with `study`). "Hakilo should have the home
+ * page with the calendar and the things to do today" (Kee): a student's
+ * calendar without the exams would be missing the dates that matter most.
+ *
+ * Drawn from the course, never written to calendar_event: copied there, an
+ * exam would have two places to be changed and one would go stale. At its
+ * hour, for its length when the student gave one (its own, else the
+ * course's), else the hour alone.
+ *
+ * One the calendar already has is left out, the way the syllabus import
+ * writes it: an 'examen' row on the same day, at the same hour or naming the
+ * course. `title(course, exam)` is the page's words ("Intra · Chimie").
+ * Local days and hours, read in the browser.
+ */
+export function examEvents(courses, { title = (course) => course?.name ?? '', events = [] } = {}) {
+  const out = []
+  for (const course of courses ?? []) {
+    for (const exam of examsOf(course)) {
+      if (!exam.at) continue
+      const at = new Date(exam.at)
+      const day = dayKey(at)
+      const start = at.getHours() * 60 + at.getMinutes()
+      const known = (events ?? []).some(
+        (e) => e?.category === 'examen' && String(e.starts_on ?? '').slice(0, 10) === day && (e.start_min === start || names(e.title, course)),
+      )
+      if (known) continue
+      const { minutes } = examFormat(course, null, exam)
+      out.push({
+        id: `bb-exam:${course.id}:${exam.id}`,
+        title: String(title(course, exam) ?? '').slice(0, 120),
+        category: 'examen',
+        location: null,
+        starts_on: day,
+        until_on: null,
+        start_min: start,
+        end_min: minutes ? Math.min(1440, start + minutes) : null,
+        weekdays: [],
+      })
+    }
+  }
+  return out
 }
