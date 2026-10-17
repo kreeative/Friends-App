@@ -233,6 +233,42 @@ const LAYER_RING = {
   cycle: 'border-mark',
 }
 
+/**
+ * HAKKILO'S COPY OF THIS PAGE: THE SAME GRIDS, ITS OWN COLOURS (`study`).
+ *
+ *   "Le calendrier devrait etre comme sur Rich and Friend avec toutes les
+ *    views" (Kee).
+ *
+ * Hakkilo is black and white and its colour arrives with an event
+ * (CLAUDE.md), so its entries are not the pastels above: a class is the grey
+ * well, a study session the soft lilac of what the plan picked, an exam the
+ * logo yellow of a highlighter, and everything else white with an ink line.
+ * The words are ink on all four. The day list also writes the category, so
+ * colour is never the only thing that says it (1.4.1); its bar keeps an ink
+ * ring, because a pastel bar on white is under the 3:1 a graphic needs.
+ */
+const STUDY_CHIP = {
+  cours: 'bg-[#F4F4F5] text-ink ring-1 ring-inset ring-ink/15',
+  etude: 'bg-[#E6DFFF] text-ink ring-1 ring-inset ring-[#CFC2FF]',
+  examen: 'bg-[#F8CB02] text-ink ring-1 ring-inset ring-ink/30',
+  other: 'bg-white text-ink ring-1 ring-inset ring-ink/25',
+}
+const STUDY_FILL = {
+  cours: 'bg-[#F4F4F5]',
+  etude: 'bg-[#E6DFFF]',
+  examen: 'bg-[#F8CB02]',
+  other: 'bg-white',
+}
+const chipOf = (e, study) => (study ? STUDY_CHIP[e.category] ?? STUDY_CHIP.other : SWATCH[e.colour] ?? SWATCH.accent)
+const barOf = (e, study) =>
+  study ? `w-2.5 ring-1 ring-inset ring-ink ${STUDY_FILL[e.category] ?? STUDY_FILL.other}` : `w-1 ${SWATCH_BAR[e.colour] ?? SWATCH_BAR.accent}`
+
+/* The layers Hakkilo's copy offers: the timetable, the rest of the calendar,
+   the deadlines and the calendars linked from Google or Outlook. Never the
+   cycle, nor the friends' birthdays or the Cal.com bookings, which are Rich &
+   Friends' and are not even read there. */
+const STUDY_LAYERS = ['scolaire', 'perso', 'objectifs', 'externes']
+
 const VIEWS = ['month', 'week', 'day']
 
 /* A character no event title can contain, used to find where the title went in
@@ -256,7 +292,14 @@ const readHidden = () => {
   }
 }
 
-export default function Calendar() {
+/**
+ * `study`: Hakkilo's Calendar tab, the same page in its colours (STUDY_CHIP)
+ * and its one column, reading the calendar's own sources only. `extra(events)`
+ * gives rows in calendar_event's shape that are drawn and never written,
+ * Hakkilo's exams from its courses (examEvents in src/lib/bb/exams.js), and
+ * `onOpenExtra(entry)` is where one of them opens instead of the event form.
+ */
+export default function Calendar({ study = false, extra = null, onOpenExtra = null } = {}) {
   const { user, profile } = useAuth()
   const { t, locale } = useT()
 
@@ -270,7 +313,7 @@ export default function Calendar() {
    * the component that fetches cycle_log, so leaving it out means a man's
    * period history is never queried rather than queried and then hidden.
    */
-  const periodTracking = cycleOn(profile)
+  const periodTracking = !study && cycleOn(profile)
 
   /**
    * Enregistrer ce qui a ete coche sur le mois.
@@ -375,7 +418,9 @@ export default function Calendar() {
     setTouchedDays((s) => new Set(s).add(k))
   }
 
-  const [view, setView] = useState('week')
+  /* Hakkilo's opens on the month, where the midterm is; Rich & Friends' on
+     the week, which is what a timetable is for. */
+  const [view, setView] = useState(study ? 'month' : 'week')
   const [anchor, setAnchor] = useState(() => {
     const n = new Date()
     return new Date(n.getFullYear(), n.getMonth(), n.getDate())
@@ -494,10 +539,13 @@ export default function Calendar() {
      * L'annee de naissance descend avec le reste et n'est jamais affichee:
      * seuls le jour et le mois servent, ici comme dans la banniere.
      */
-    const { data: fr } = await supabase
-      .from('group_members')
-      .select('profiles(id, display_name, birthday)')
-    setFriends((fr ?? []).map((r) => r.profiles).filter(Boolean))
+    /* Not in Hakkilo's copy: the people of your groups are Rich & Friends'. */
+    if (!study) {
+      const { data: fr } = await supabase
+        .from('group_members')
+        .select('profiles(id, display_name, birthday)')
+      setFriends((fr ?? []).map((r) => r.profiles).filter(Boolean))
+    }
 
     /**
      * Goals with a deadline, as calendar entries.
@@ -529,11 +577,13 @@ export default function Calendar() {
      * actifs. Une table absente (migration 74 pas passee) rend une erreur et
      * une liste vide, et le calendrier se dessine comme avant.
      */
-    const { data: st } = await supabase
-      .from('goal_step')
-      .select('id, goal_id, title, due_on, at_min, done_at, goals(status)')
-      .not('due_on', 'is', null)
-    setSteps(st ?? [])
+    if (!study) {
+      const { data: st } = await supabase
+        .from('goal_step')
+        .select('id, goal_id, title, due_on, at_min, done_at, goals(status)')
+        .not('due_on', 'is', null)
+      setSteps(st ?? [])
+    }
 
     /**
      * LES RESERVATIONS PRISES SUR SES PAGES CAL.COM.
@@ -549,11 +599,13 @@ export default function Calendar() {
      * ligne reste en base, ce qui est ce qui permet de repondre a "ou est passe
      * mon rendez-vous de jeudi".
      */
-    const { data: b } = await supabase
-      .from('booking')
-      .select('id, title, guest_name, starts_at, ends_at, web_url, join_url, cancelled_at')
-      .order('starts_at')
-    setBookings(b ?? [])
+    if (!study) {
+      const { data: b } = await supabase
+        .from('booking')
+        .select('id, title, guest_name, starts_at, ends_at, web_url, join_url, cancelled_at')
+        .order('starts_at')
+      setBookings(b ?? [])
+    }
 
     /**
      * LES CALENDRIERS GOOGLE ET OUTLOOK BRANCHES.
@@ -592,11 +644,16 @@ export default function Calendar() {
         if (rep?.ok) lireFlux()
       })
     }
-  }, [user])
+  }, [user, study])
 
   useEffect(() => {
     load()
   }, [load])
+
+  /* How many of the layers this page offers are off. Hakkilo shares the
+     stored list with Rich & Friends, whose birthdays switched off there are
+     not a layer here and must not count. */
+  const hiddenShown = study ? STUDY_LAYERS.filter((l) => hidden.has(l)).length : hidden.size
 
   const toggleLayer = (layer) => {
     setHidden((prev) => {
@@ -663,10 +720,12 @@ export default function Calendar() {
      * ce qui rend la puce "Anniversaires" de la barre capable de les enlever.
      */
     const gens = profile?.birthday ? [...friends, { id: user?.id, display_name: profile.display_name, birthday: profile.birthday }] : friends
-    const anniversaires = birthdayEntries(gens, range.from, range.to, {
-      mine: user?.id,
-      mineLabel: t('cal.bday_mine'),
-    })
+    const anniversaires = study
+      ? []
+      : birthdayEntries(gens, range.from, range.to, {
+          mine: user?.id,
+          mineLabel: t('cal.bday_mine'),
+        })
     /* Les reservations, par la meme porte. Elles arrivent deja bornees par la
        requete, donc la plage n'est pas repassee ici. */
     const reserves = bookingEntries(bookings)
@@ -678,8 +737,11 @@ export default function Calendar() {
     /* Les etapes datees, sur la couche des objectifs, avec le goalId qui
        ferme le formulaire d'evenement. */
     const etapes = stepEntries(steps, new Map(steps.map((s) => [s.goal_id, s.goals ?? { status: 'active' }])))
-    return visibleEvents([...events, ...asEvents, ...anniversaires, ...reserves, ...externes, ...etapes], hidden)
-  }, [events, goals, bookings, feedRows, feeds, steps, hidden, friends, profile, user?.id, range, t])
+    /* Hakkilo's exams, from its courses, by the same door: drawn, never
+       written, and opened where they are edited (`onOpenExtra`). */
+    const ajoutes = extra ? extra(events).map((e) => ({ ...e, extraOf: true })) : []
+    return visibleEvents([...events, ...asEvents, ...anniversaires, ...reserves, ...externes, ...etapes, ...ajoutes], hidden)
+  }, [events, goals, bookings, feedRows, feeds, steps, hidden, friends, profile, user?.id, range, t, study, extra])
 
   const agenda = useMemo(() => agendaFor(drawn, range.from, range.to), [drawn, range])
 
@@ -702,6 +764,10 @@ export default function Calendar() {
      the form would open on one and then insert a brand new calendar_event
      carrying the goal's text, which is a duplicate nobody asked for. */
   const openEditor = (entry) => {
+    if (entry?.extraOf) {
+      onOpenExtra?.(entry)
+      return
+    }
     /* Un anniversaire est derive d'un profil, exactement comme un objectif est
        derive de sa ligne: ouvrir le formulaire dessus insererait un vrai
        evenement portant le meme texte, donc un doublon que personne n'a
@@ -759,6 +825,7 @@ export default function Calendar() {
    * identiques est une question qu'on apprend a cliquer sans lire.
    */
   const askEdit = (entry) => {
+    if (entry?.extraOf) return openEditor(entry)
     if (entry?.goalId || entry?.birthdayOf) return
     const recurring = Array.isArray(entry?.weekdays) && entry.weekdays.length > 0
     if (!recurring) return openEditor(entry)
@@ -820,11 +887,16 @@ export default function Calendar() {
     if (error || count === 0) setNotice(error?.message ?? t('cal.err_gone'))
   }
 
+  /* "Fermer" after a notice: underlined words in Rich & Friends, a pill in
+     Hakkilo, where nothing is underlined (CLAUDE.md). */
+  const DISMISS = study ? 'press ml-2 inline-flex items-center rounded-pill border border-ink/15 px-3 py-1 text-small font-semibold text-ink hover:border-ink' : null
+
   const step = (n) => {
     if (view === 'month') setAnchor(new Date(anchor.getFullYear(), anchor.getMonth() + n, 1))
     else setAnchor(addDays(anchor, n * (view === 'week' ? 7 : 1)))
   }
 
+  const Title = study ? 'h2' : 'h1'
   const fmt = new Intl.DateTimeFormat(localeTag(locale), {
     month: 'long',
     year: 'numeric',
@@ -951,7 +1023,12 @@ export default function Calendar() {
      * rail's 7.5rem is already taken out by the shell, so `none` here means
      * the window minus the rail, not the window.
      */
-    <div className="mx-auto w-full max-w-content space-y-4 px-4 pb-28 pt-4 md:flex md:h-dvh md:max-w-none md:flex-col md:pb-8">
+    /* Hakkilo's copy sits in the one 46rem column of its page, like every
+       Hakkilo page on an iPad and a laptop (CLAUDE.md). */
+    <div
+      className={study ? 'mt-5 space-y-4' : 'mx-auto w-full max-w-content space-y-4 px-4 pb-28 pt-4 md:flex md:h-dvh md:max-w-none md:flex-col md:pb-8'}
+      data-hook={study ? 'bb-full-calendar' : undefined}
+    >
       {/**
        * THREE CONTAINERS, NOT ONE HEADER.
        *
@@ -979,9 +1056,13 @@ export default function Calendar() {
         </button>
         {/* Le meme geste, depuis le PDF du plan de cours: le modele lit, la
             personne coche, et ce qui est deja la arrive decoche. */}
-        <button type="button" onClick={() => setSyllabus(true)} className="goal-action press" data-hook="cal-syl-open">
-          {t('syl.open')}
-        </button>
+        {/* Not in Hakkilo: what a syllabus writes includes Rich & Friends'
+            checklists, and Hakkilo reads its courses another way. */}
+        {!study && (
+          <button type="button" onClick={() => setSyllabus(true)} className="goal-action press" data-hook="cal-syl-open">
+            {t('syl.open')}
+          </button>
+        )}
 
         {/**
          * "MON CYCLE" N'EST PLUS ICI.
@@ -1041,11 +1122,11 @@ export default function Calendar() {
             onClick={() => setLayersOpen((v) => !v)}
             aria-expanded={layersOpen}
             aria-haspopup="true"
-            aria-label={hidden.size ? t('cal.layers_some', { n: hidden.size }) : t('cal.layers')}
+            aria-label={hiddenShown ? t('cal.layers_some', { n: hiddenShown }) : t('cal.layers')}
             data-hook="cal-layers-open"
-            data-off={hidden.size}
+            data-off={hiddenShown}
             className={`press flex items-center gap-1.5 rounded-pill px-3 py-2 text-small font-semibold transition-colors ${
-              layersOpen || hidden.size ? 'bg-ink/[0.06] text-ink' : 'text-muted hover:bg-ink/[0.04]'
+              layersOpen || hiddenShown ? 'bg-ink/[0.06] text-ink' : 'text-muted hover:bg-ink/[0.04]'
             }`}
           >
             <svg viewBox="0 0 20 6" aria-hidden="true" className="h-1.5 w-5">
@@ -1053,9 +1134,9 @@ export default function Calendar() {
               <circle cx="10" cy="3" r="2.2" fill="currentColor" />
               <circle cx="17" cy="3" r="2.2" fill="currentColor" />
             </svg>
-            {hidden.size > 0 && (
+            {hiddenShown > 0 && (
               <span data-hook="cal-layers-off" className="text-small font-semibold text-ink">
-                {hidden.size}
+                {hiddenShown}
               </span>
             )}
           </button>
@@ -1107,7 +1188,7 @@ export default function Calendar() {
               {/* Trois bascules plutot que quatre quand il n'y a pas de cycle a
                   superposer. Une bascule qui ne gouverne rien est pire qu'une
                   bascule manquante: elle invite a toucher et ne repond rien. */}
-              {LAYERS.filter((l) => l !== 'cycle' || periodTracking).map((layer) => {
+              {LAYERS.filter((l) => (l !== 'cycle' || periodTracking) && (!study || STUDY_LAYERS.includes(l))).map((layer) => {
                 const on = !hidden.has(layer)
                 return (
                   <button
@@ -1298,7 +1379,7 @@ export default function Calendar() {
           <button
             type="button"
             onClick={() => setAdded(0)}
-            className="press underline decoration-1 underline-offset-2"
+            className={DISMISS ?? 'press underline decoration-1 underline-offset-2'}
           >
             {t('wiz.close')}
           </button>
@@ -1328,7 +1409,7 @@ export default function Calendar() {
           <button
             type="button"
             onClick={() => setNotice(null)}
-            className="press font-normal underline decoration-1 underline-offset-2"
+            className={DISMISS ?? 'press font-normal underline decoration-1 underline-offset-2'}
           >
             {t('wiz.close')}
           </button>
@@ -1377,10 +1458,11 @@ export default function Calendar() {
               ce texte de se replier, et le titre finissait par dessus le
               pager. Avec shrink-0, si un jour ca ne tient plus, c'est le PAGER
               qui passe a la ligne, ce qui est la bonne chose a deplacer. */}
-          <h1 className="flex-1 shrink-0 whitespace-nowrap text-h2 font-semibold text-ink first-letter:uppercase">
+          {/* An h2 in Hakkilo, whose page already has its h1. */}
+          <Title className="flex-1 shrink-0 whitespace-nowrap text-h2 font-semibold text-ink first-letter:uppercase">
             <span className="sm:hidden">{fmtCourt.format(anchor)}</span>
             <span className="hidden sm:inline">{fmt.format(anchor)}</span>
-          </h1>
+          </Title>
 
           <div className="flex shrink-0 items-center gap-1">
             <button type="button" onClick={() => step(-1)} aria-label={t('cal.prev')} className="press h-9 w-9 rounded-pill hover:bg-ink/[0.06]">
@@ -1456,10 +1538,11 @@ export default function Calendar() {
             picking={picking}
             picked={picked}
             onPick={picking ? togglePeriodDay : (d) => { setAnchor(d); setView('day') }}
+            study={study}
           />
         )}
-        {view === 'week' && <WeekGrid range={range} agenda={agenda} cycle={shownCycle} locale={locale} onEdit={askEdit} />}
-        {view === 'day' && <DayList day={anchor} agenda={agenda} cycle={shownCycle} onEdit={askEdit} onRemove={askRemove} t={t} />}
+        {view === 'week' && <WeekGrid range={range} agenda={agenda} cycle={shownCycle} locale={locale} onEdit={askEdit} study={study} />}
+        {view === 'day' && <DayList day={anchor} agenda={agenda} cycle={shownCycle} onEdit={askEdit} onRemove={askRemove} t={t} study={study} />}
       </div>
 
       {/**
@@ -1549,6 +1632,7 @@ export default function Calendar() {
       {editing && (
         <EventForm
           initial={editing}
+          study={study}
           onClose={() => setEditing(null)}
           /**
            * Le formulaire ne supprime pas lui-meme: il rend la main.
@@ -1621,7 +1705,7 @@ function useWide(query = '(min-width: 768px)') {
   return wide
 }
 
-function MonthGrid({ range, anchor, agenda, cycle, onPick, picking = false, picked }) {
+function MonthGrid({ range, anchor, agenda, cycle, onPick, picking = false, picked, study = false }) {
   const { t, locale } = useT()
   /* Two chips on a phone tile, three once the tile is 6.5rem tall. */
   const shown = useWide() ? 3 : 2
@@ -1788,7 +1872,7 @@ function MonthGrid({ range, anchor, agenda, cycle, onPick, picking = false, pick
                 on || future ? '' : 'hover:bg-ink/[0.04]'
               } ${outside ? 'opacity-40' : ''} ${
                 future ? 'cursor-not-allowed opacity-30' : ''
-              } ${k === today && !picking ? 'ring-1 ring-inset ring-accent/50' : ''}`}
+              } ${k === today && !picking && !study ? 'ring-1 ring-inset ring-accent/50' : ''}`}
             >
               {/**
                * Le rose est sur la TUILE, pas derriere le chiffre.
@@ -1820,12 +1904,16 @@ function MonthGrid({ range, anchor, agenda, cycle, onPick, picking = false, pick
                  * pointage elle partage sa place avec les pastilles
                  * d'evenement, donc le chiffre y reste petit et a l'encre.
                  */}
+                {/* Hakkilo's today is ink with a white number, as on its strip. */}
                 <span
                   className={
                     picking
                       ? `text-[1.1875rem] font-bold leading-none ${on ? 'text-on-pick' : 'text-ink'}`
-                      : 'text-small font-semibold text-ink'
+                      : study && k === today
+                        ? 'inline-flex h-6 min-w-6 items-center justify-center rounded-pill bg-ink px-1 text-small font-semibold text-white'
+                        : 'text-small font-semibold text-ink'
                   }
+                  data-today={k === today ? 'yes' : undefined}
                 >
                   {d.getDate()}
                 </span>
@@ -1855,9 +1943,9 @@ function MonthGrid({ range, anchor, agenda, cycle, onPick, picking = false, pick
               {!picking && list.slice(0, shown).map((e) => (
                 <span
                   key={e.occurrenceId}
-                  className={`mt-0.5 truncate rounded-[0.35rem] px-1 py-px text-[10px] font-semibold md:px-1.5 md:py-0.5 md:text-[11px] ${
-                    SWATCH[e.colour] ?? SWATCH.accent
-                  }`}
+                  data-hook="cal-chip"
+                  data-cat={e.category}
+                  className={`mt-0.5 truncate rounded-[0.35rem] px-1 py-px text-[10px] font-semibold md:px-1.5 md:py-0.5 md:text-[11px] ${chipOf(e, study)}`}
                 >
                   {e.title}
                 </span>
@@ -1877,7 +1965,7 @@ function MonthGrid({ range, anchor, agenda, cycle, onPick, picking = false, pick
 
 /* --- week ---------------------------------------------------------------- */
 
-function WeekGrid({ range, agenda, cycle, locale, onEdit }) {
+function WeekGrid({ range, agenda, cycle, locale, onEdit, study = false }) {
   const { t } = useT()
   const days = Array.from({ length: 7 }, (_, i) => addDays(range.from, i))
   const all = days.flatMap((d) => agenda.get(dayKey(d)) ?? [])
@@ -1909,7 +1997,15 @@ function WeekGrid({ range, agenda, cycle, locale, onEdit }) {
                 <div key={dayKey(d)} className="pb-1 text-center">
                   <div className="truncate text-label font-semibold uppercase text-muted">{dow.format(d)}</div>
                   <div className="flex items-center justify-center gap-1">
-                    <span className={`text-small font-semibold ${dayKey(d) === today ? 'text-accent' : 'text-ink'}`}>
+                    <span
+                      className={`text-small font-semibold ${
+                        dayKey(d) === today
+                          ? study
+                            ? 'inline-flex h-6 min-w-6 items-center justify-center rounded-pill bg-ink px-1 text-white'
+                            : 'text-accent'
+                          : 'text-ink'
+                      }`}
+                    >
                       {d.getDate()}
                     </span>
                     {phase && (
@@ -1963,9 +2059,8 @@ function WeekGrid({ range, agenda, cycle, locale, onEdit }) {
                     onClick={() => onEdit(e)}
                     style={blockStyle(e, bounds.from, bounds.to)}
                     data-hook="cal-block"
-                    className={`press absolute inset-x-0.5 overflow-hidden rounded-[0.4rem] px-1 py-0.5 text-left ring-1 ring-inset ${
-                      SWATCH[e.colour] ?? SWATCH.accent
-                    }`}
+                    data-cat={e.category}
+                    className={`press absolute inset-x-0.5 overflow-hidden rounded-[0.4rem] px-1 py-0.5 text-left ring-1 ring-inset ${chipOf(e, study)}`}
                   >
                     <span className="block truncate text-[10px] font-bold leading-tight">{e.title}</span>
                     {e.start_min != null && (
@@ -2094,7 +2189,7 @@ function ScopeChoice({
   )
 }
 
-function DayList({ day, agenda, cycle, onEdit, onRemove, t }) {
+function DayList({ day, agenda, cycle, onEdit, onRemove, t, study = false }) {
   const list = agenda.get(dayKey(day)) ?? []
   const phase = phaseOn(day, cycle.starts, cycle.prediction)
 
@@ -2113,7 +2208,7 @@ function DayList({ day, agenda, cycle, onEdit, onRemove, t }) {
         <ul className="divide-y divide-hairline">
           {list.map((e) => (
             <li key={e.occurrenceId} className="flex items-start gap-3 py-3">
-              <span className={`mt-0.5 h-8 w-1 shrink-0 rounded-pill ${SWATCH_BAR[e.colour] ?? SWATCH_BAR.accent}`} />
+              <span className={`mt-0.5 h-8 shrink-0 rounded-pill ${barOf(e, study)}`} data-cat={e.category} />
               <span className="min-w-0 flex-1">
                 <span className="text-safe block text-body font-semibold text-ink">{e.title}</span>
                 <span className="block text-small text-muted">
@@ -2123,6 +2218,9 @@ function DayList({ day, agenda, cycle, onEdit, onRemove, t }) {
                       n'est pas une couleur (1.4.1): la teinte citron dit
                       "d'ailleurs" a qui la voit, ceci le dit a tout le monde. */}
                   {e.feedOf ? ` · ${e.sourceLabel || t(`cal.links_provider_${e.source}`)}` : ''}
+                  {/* In Hakkilo the category in words too: its colours are
+                      four, and colour is never the only signal (1.4.1). */}
+                  {study && !e.feedOf && e.category && CATEGORIES.includes(e.category) ? ` · ${t(`cal.cat_${e.category}`)}` : ''}
                 </span>
               </span>
               {/**
@@ -2151,6 +2249,12 @@ function DayList({ day, agenda, cycle, onEdit, onRemove, t }) {
                       {e.joinable ? t('cal.join') : t('cal.open_booking')}
                     </button>
                   )
+                ) : e.extraOf ? (
+                  /* A Hakkilo exam: changed on its course page, where onEdit
+                     sends it (onOpenExtra). */
+                  <button type="button" onClick={() => onEdit(e)} className="goal-action press" data-hook="cal-day-open">
+                    {t('cal.edit')}
+                  </button>
                 ) : e.feedOf ? (
                   /* Ni "Modifier" ni "Supprimer" non plus, pour la raison
                      donnee dans openEditor. "Ouvrir" quand Google a mis un
@@ -2190,7 +2294,7 @@ function DayList({ day, agenda, cycle, onEdit, onRemove, t }) {
 
 /* --- the form ------------------------------------------------------------ */
 
-function EventForm({ initial, onClose, onSaved, onDelete }) {
+function EventForm({ initial, onClose, onSaved, onDelete, study = false }) {
   const { user } = useAuth()
   const { t, locale } = useT()
   const [busy, setBusy] = useState(false)
@@ -2428,7 +2532,11 @@ function EventForm({ initial, onClose, onSaved, onDelete }) {
                   <span
                     aria-hidden="true"
                     className={`h-2 w-2 shrink-0 rounded-pill ${
-                      on ? 'bg-on-accent' : SWATCH_BAR[CATEGORY_COLOUR[c]] ?? SWATCH_BAR.accent
+                      on
+                        ? 'bg-on-accent'
+                        : study
+                          ? `ring-1 ring-ink ${STUDY_FILL[c] ?? STUDY_FILL.other}`
+                          : SWATCH_BAR[CATEGORY_COLOUR[c]] ?? SWATCH_BAR.accent
                     }`}
                   />
                   {t(`cal.cat_${c}`)}

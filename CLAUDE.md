@@ -207,9 +207,17 @@ and the error points at the wrong thing.
   months ahead, where the exams are. No recap card, so no hold. It sits
   under the ask box, in the page's one column, and opens on the week, at
   every width. The Calendar tab (`/hakkilo/calendrier`,
-  `src/bb/pages/Calendar.jsx`) is that same strip with the same exams
-  (`useExamsOnCalendar` in `src/bb/kit.jsx`), opened on the month
-  (`month`), in the same one column; the week is its toggle.
+  `src/bb/pages/Calendar.jsx`) is Rich & Friends' whole calendar page with
+  all its views ("comme sur Rich and Friend avec toutes les views"): month,
+  week, day, the event form, the timetable wizard, the layers, in its
+  Hakkilo copy (`study` in `src/pages/Calendar.jsx`). That copy opens on the
+  month, sits in the one 46rem column, paints a class the grey well, a
+  study session the soft lilac, an exam the logo yellow and the rest white
+  with an ink line (`STUDY_CHIP`, the category also in words in the day
+  list), and reads the calendar's own sources only: never the cycle, the
+  friends' birthdays, the checklists or the bookings, and no syllabus
+  wizard. The same exams as Today (`useExamsOnCalendar` in
+  `src/bb/kit.jsx`) open on their course page with their form.
 - **On the iPad, Hakkilo stays the one column it was.** "Arrete de
   travailler sur la vue d'iPad, keep-le comme avant" (Kee, 17 October,
   after "a lot of void space on the left and on the right"). For one
