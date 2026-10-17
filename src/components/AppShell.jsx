@@ -173,6 +173,7 @@ function TopNav() {
             <Link to="/" aria-label={t('brand.name')} className="press shrink-0">
               <LockupInline size={36} />
             </Link>
+            <HakkiloLink />
 
             {/* Inside a group the bar says which one, and the name is the way
                 back out. Without it every group looks identical from the
@@ -207,7 +208,6 @@ function TopNav() {
                 goes on the way to the avatar rather than on the other side of
                 the bar where the group name lives. */}
             <div className="ml-auto flex shrink-0 items-center gap-1">
-              <HakkiloLink />
               <NotificationBell />
 
               <Link
@@ -305,47 +305,45 @@ const RAIL_ROW =
   'press flex h-11 w-full items-center justify-center rounded-inner transition-colors duration-200 ease-settle'
 
 /**
- * HAKKILO, ONE TAP FROM EVERY SCREEN.
+ * HAKKILO, ONE TAP FROM EVERY SCREEN, BESIDE THE OTHER LOGO.
  *
  * "Est-ce que je peux avoir un raccourci dans Rich and Friends qui me
  * renvoie sur Hakkilo ?" (Kee). The way across was a card on /me, under the
  * identity card: a screen deep, and on a page nobody opens to go and study.
- * The study app's own icon now sits beside the bell, in the top bar on a
- * phone and at the foot of the rail above md, so the way across is in the
- * same place on every screen and on every device.
+ *
+ * The first version put a small H by the bell. "Just the H, it should be
+ * close to the other logo, not the opposite side": so it is the Rich &
+ * Friends logo's twin, the same tile at the same size (36 in the top bar,
+ * 32 in the rail), the same raised shadow and the same corners, right after
+ * it. Two apps, two logos, side by side; the bell and the avatar keep their
+ * end of the bar.
  *
  * A link and nothing else, like the card: nothing of Hakkilo is read here.
  * The PNG rather than BBLogo, which lives in src/bb and would put the study
  * app's code into the bundle every Rich & Friends screen loads.
- *
- * In the rail it is a third row at the foot. Measured in Chromium at 1180
- * wide: the list starts to scroll below 496px of window height, 440 before,
- * which is still shorter than any tablet this layout is for.
  */
 function HakkiloLink({ placement = 'bar' }) {
   const { t } = useT()
   const rail = placement === 'rail'
-  /* Rounded like the Rich & Friends tile at the other end of the bar: a
-     quarter of the side, the app-icon proportion (Tile in Wordmark.jsx). */
-  const size = rail ? 26 : 28
+  const size = rail ? 32 : 36
   return (
     <Link
       to="/hakkilo/app"
       aria-label="Hakkilo"
       title={`Hakkilo · ${t('bb.switch.body')}`}
       data-hook="to-hakkilo"
-      className={
-        rail
-          ? `${RAIL_ROW} hover:bg-ink/[0.06]`
-          : 'press flex h-9 w-9 shrink-0 items-center justify-center rounded-pill transition-colors hover:bg-ink/[0.06]'
-      }
+      className={rail ? 'press block shrink-0 self-center rounded-inner p-1' : 'press shrink-0'}
     >
+      {/* The Tile of Wordmark.jsx, drawn the same way: brand-tile for the
+          shadow, a quarter of the side for the corners. */}
       <img
         src="/brand/hakkilo-icon-192.png"
         alt=""
         width={size}
         height={size}
+        className="brand-tile select-none"
         style={{ width: size, height: size, borderRadius: Math.round(size * 0.26) }}
+        draggable="false"
       />
     </Link>
   )
@@ -430,6 +428,12 @@ function SideRail({ tabs }) {
         >
           <LockupInline size={32} />
         </Link>
+        {/* Hakkilo's logo right under it, the same tile: "close to the other
+            logo" (Kee). The two logos are the block the hairline and the
+            40px of air below set apart, rather than the logo alone. */}
+        <div className="mt-1.5">
+          <HakkiloLink placement="rail" />
+        </div>
         <span aria-hidden="true" className="mx-1 mb-10 mt-4 h-px shrink-0 bg-hairline/60" />
 
         {/**
@@ -550,7 +554,6 @@ function SideRail({ tabs }) {
          * to the profile when the dropdown was deleted, and it still is.
          */}
         <div className="mt-6 flex shrink-0 flex-col gap-3 border-t border-hairline/60 pt-6">
-          <HakkiloLink placement="rail" />
           <NotificationBell placement="rail" />
 
           <NavLink

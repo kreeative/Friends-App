@@ -2626,9 +2626,12 @@ ok(
   /flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto/.test(shell),
   'at gap-0.5 the active pill touched its neighbours and read as a band',
 )
+/* The lockup was alone up there ("laisse le logo seul en haut", asked
+   twice). Hakkilo's logo joined it ("close to the other logo"), so the two
+   logos are the block the hairline and the 40px set apart. */
 ok(
-  'and the lockup is separated from the destinations',
-  /LockupInline[\s\S]{0,220}mb-10 mt-4 h-px shrink-0 bg-hairline/.test(shell),
+  'and the two logos are separated from the destinations',
+  /LockupInline size=\{32\}[\s\S]{0,600}<HakkiloLink placement="rail" \/>\s*<\/div>\s*<span aria-hidden="true" className="mx-1 mb-10 mt-4 h-px shrink-0 bg-hairline/.test(shell),
   'asked for twice: 4px, then 24, now 40, which is about one empty row',
 )
 
@@ -5275,8 +5278,12 @@ ok(
   const shell = code('src/components/AppShell.jsx')
   const top = shell.slice(shell.indexOf('function TopNav'), shell.indexOf('const activeIndex'))
   const rail = shell.slice(shell.indexOf('function SideRail'), shell.indexOf('function TabBar'))
-  ok('the top bar has the Hakkilo shortcut, beside the bell', /<HakkiloLink \/>\s*<NotificationBell \/>/.test(top))
-  ok('and so does the rail, above its bell', /<HakkiloLink placement="rail" \/>\s*<NotificationBell placement="rail" \/>/.test(rail))
+  /* "Just the H, it should be close to the other logo, not the opposite
+     side": right after the Rich & Friends logo, the same tile and size. */
+  ok('the top bar has the Hakkilo logo right after the Rich & Friends one', /<LockupInline size=\{36\} \/>\s*<\/Link>\s*<HakkiloLink \/>/.test(top))
+  ok('and so does the rail, under it', /<LockupInline size=\{32\} \/>\s*<\/Link>\s*\{\s*\}?\s*<div className="mt-1\.5">\s*<HakkiloLink placement="rail" \/>/.test(rail))
+  ok('no longer at the bell, on the opposite side', !/<HakkiloLink[^>]*\/>\s*<NotificationBell/.test(shell))
+  ok('a twin of the Rich & Friends tile: brand-tile, 36 and 32, a quarter of the side for the corners', /className="brand-tile select-none"/.test(shell) && /const size = rail \? 32 : 36/.test(shell) && /borderRadius: Math\.round\(size \* 0\.26\)/.test(shell))
   ok('it goes to Hakkilo and is named for it', /to="\/hakkilo\/app"\s*aria-label="Hakkilo"/.test(shell) && /data-hook="to-hakkilo"/.test(shell))
   ok('a link and nothing else: the shell imports nothing from src/bb', !/from '\.\.\/bb\//.test(shell))
 }
