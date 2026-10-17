@@ -140,8 +140,10 @@ and the error points at the wrong thing.
   `#F4F4F5`, text is ink, primary buttons are black with white words. A
   colour appears because the student did something: light purple `#CFC2FF`
   for pressed and for where you are (active tab), its soft `#E6DFFF` for
-  what you picked, the logo yellow `#F8CB02` for switched on and the
-  highlighter, green `#1E7B34` only for right once checked. No resting
+  what you picked, the logo yellow `#F8CB02` for switched on, the
+  highlighter and the fill of a progress bar ("au lieu d'etre noir ca peut
+  etre colore"; lilac at 8% was a smudge), green `#1E7B34` only for right
+  once checked. No resting
   pastel cards, no saturated violet ("ca donne deja vu"), no yellow on
   black. The values and their jobs are in `src/bb/kit.jsx`.
 - **The Hakkilo logo is logo B**, chosen out of four: the logo yellow
@@ -185,6 +187,15 @@ and the error points at the wrong thing.
   row stretches it to 54px ("Corriger" did). `app.test.mjs` fails on any
   `underline` utility under `src/bb`. Rich & Friends keeps its underlines
   until Kee asks.
+- **A short label holds one line.** "Not sure but wrong, just wrong, it's
+  making the design look bad when it's too long" (Kee). A stat's name, a
+  chip, a tab, a button's words: one line at 320, 360 and 390, in French and
+  in English. Shorten the words first ("Sure but wrong" is "Wrong" over the
+  course's numbers; a button's long phrase goes into the sentence above
+  it), never the type. A full-width button on a phone has 16px sides
+  (`px-4`, built into `BigButton`), not the 24 of `.btn`, and a row of
+  choices lets a button take the width its words need rather than break
+  one ("Au hasard" in the session).
 - **Dictation is the browser's own speech recognition** (the Web Speech
   API, `src/lib/bb/dictation.js`). The mic is not drawn where it cannot
   work: Firefox, the browsers inside TikTok and Instagram, and an app on an
@@ -276,5 +287,10 @@ at the top of this file.
   tick. On the Hakkilo surface a ticked box was a black square with a black
   tick until `[data-surface='bb'] input[type='checkbox']` set the colours:
   yellow when on, ink tick and outline.
+- Tailwind 3 emits no native cascade layers: `@layer components` is only a
+  place in the output. So `[data-surface='bb'] .btn` (an attribute and a
+  class) outranks every `px-*` (one class) whatever comes later. A padding
+  set there turned `sm:px-10` into 16px on every Hakkilo button. Put
+  padding on the element.
 - `backdrop-filter` blurs what is behind an element. Over a flat ground it
   returns that same flat colour, so glass needs a ground to be worth anything.

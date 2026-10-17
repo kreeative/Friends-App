@@ -345,6 +345,13 @@ eq('the constant says so', SHORT, 8)
     .map((f) => f.pathname.split('/src/')[1])
   eq('nothing is underlined in Hakkilo', underlined, [])
   ok('the sign-in sets its legal links in bold, not underlined', /<AuthForm\b[^\n]*\bplainLinks\b/.test(read('bb/pages/SignIn.jsx')) && /plain \? 'font-bold text-ink'/.test(read('pages/Legal.jsx')))
+  /* "La barre de progression, au lieu d'etre noir, ca peut etre colore". */
+  const kit = read('bb/kit.jsx')
+  const progress = kit.slice(kit.indexOf('export function Bar'), kit.indexOf('export function Bar') + 900)
+  ok('a progress bar fills with the logo yellow, not black', /background: LOGO_YELLOW/.test(progress) && !/background: INK/.test(progress))
+  /* "✓ Au hasard" needs 84px and a third of the row is 77 at 320: a button
+     takes the width its words need, and the row wraps before a word does. */
+  ok('the "how sure" buttons never break a word', /min-w-max flex-1 whitespace-nowrap/.test(read('bb/pages/Session.jsx')))
 }
 
 /* --- the two languages ------------------------------------------------------------------- */
@@ -363,6 +370,12 @@ eq('the constant says so', SHORT, 8)
   const straight = Object.entries(fr).filter(([, v]) => /[A-Za-zÀ-ÿ]'[A-Za-zÀ-ÿ]/.test(v)).map(([k]) => k)
   eq('and curly apostrophes', straight, [])
   ok('every plural has its two forms', Object.keys(fr).filter((k) => k.endsWith('_one')).every((k) => `${k.slice(0, -4)}_other` in fr))
+  /* "Not sure but wrong, just wrong ... it's making the design look bad when
+     it's too long" (Kee): over the course's numbers "Sure but wrong" took two
+     lines at 390 and three at 320. Measured, each label now holds one line at
+     320 in both languages; this keeps them that short. */
+  const stat = ['bb.course.due', 'bb.course.mastery', 'bb.course.sure_wrong', 'bb.bank.sure_wrong']
+  eq('the labels over the course numbers and the bank filter stay short', stat.filter((k) => fr[k].length > 9 || en[k].length > 9), [])
   /* Keys built from a value, which the same-keys check cannot see: a missing one shows as "bb.ex.scope.chapters". */
   eq('a name for every scope of an exam', SCOPES.filter((k) => !(`bb.ex.scope.${k}` in fr) || !(`bb.ex.scope.${k}` in en)), [])
   eq('and for every kind', [...EXAM_KINDS, 'exam'].filter((k) => !(`bb.ex.${k}` in fr) || !(`bb.ex.${k}` in en)), [])

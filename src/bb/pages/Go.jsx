@@ -45,7 +45,7 @@ export default function Go() {
               {t('bb.go.title')}
             </h1>
             <p className="mt-5 max-w-[42ch] text-[1.0625rem] leading-[1.55] text-ink">{t('bb.go.lede')}</p>
-            <Link to={start} className="btn press mt-7 bg-ink font-bold text-white hover:opacity-90 sm:w-auto sm:px-10" data-hook="bb-go-cta">
+            <Link to={start} className="btn press mt-7 bg-ink px-4 font-bold text-white hover:opacity-90 sm:w-auto sm:px-10" data-hook="bb-go-cta">
               {user ? t('bb.pub.open') : t('bb.pub.start_free')}
             </Link>
             <p className="mt-3 text-small text-ink">{t('bb.go.free')}</p>
@@ -105,7 +105,7 @@ export default function Go() {
       <section className="mx-auto w-full max-w-5xl px-6 pb-20 pt-8" data-hook="bb-go-close">
         <div className="relative rounded-card bg-[#CFC2FF] px-6 py-9 md:px-12 md:py-12">
           <h2 className="max-w-[20ch] text-[clamp(1.625rem,4vw,2.5rem)] font-bold leading-[1.12] text-ink">{t('bb.go.close')}</h2>
-          <Link to={start} className="btn press mt-7 bg-ink font-bold text-white hover:opacity-90 sm:w-auto sm:px-10" data-hook="bb-go-cta-2">
+          <Link to={start} className="btn press mt-7 bg-ink px-4 font-bold text-white hover:opacity-90 sm:w-auto sm:px-10" data-hook="bb-go-cta-2">
             {user ? t('bb.pub.open') : t('bb.pub.start_free')}
           </Link>
           <Link to="/hakkilo" className={`${PILL} mt-4`} data-hook="bb-go-more">

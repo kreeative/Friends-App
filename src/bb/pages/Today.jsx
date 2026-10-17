@@ -143,7 +143,7 @@ export default function Today() {
                       {t('bb.today.start', { n: minutes })}
                     </Link>
                   ) : (
-                    <Link to={`/hakkilo/cours/${c.id}`} className="btn-ghost press mt-4">
+                    <Link to={`/hakkilo/cours/${c.id}`} className="btn-ghost press mt-4 px-4">
                       {t('bb.proc.title')}
                     </Link>
                   )}

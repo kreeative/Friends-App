@@ -170,7 +170,7 @@ export default function Landing() {
         <div className="relative overflow-visible rounded-card bg-[#CFC2FF] px-6 py-10 md:px-12 md:py-14">
           <h2 className="max-w-[18ch] text-[clamp(1.75rem,4vw,2.75rem)] font-bold leading-[1.1] text-ink">{t('bb.land.close_title')}</h2>
           <p className="mt-4 max-w-[40ch] text-[1.125rem] leading-[1.5] text-ink">{t('bb.land.close_body')}</p>
-          <Link to={start} className="btn press mt-8 w-auto bg-ink px-8 font-bold text-white hover:opacity-90">
+          <Link to={start} className="btn press mt-8 w-auto bg-ink px-4 font-bold text-white hover:opacity-90 sm:px-8">
             {user ? t('bb.pub.open') : t('bb.pub.start_free')}
           </Link>
           <Spot name={CLOSE_ART[0]} tilt={-8} delay={300} className="absolute -bottom-8 right-6 hidden w-24 sm:block md:w-28" />
