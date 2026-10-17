@@ -57,9 +57,9 @@ const OUT = process.env.SWEEP_OUT ?? '.sweep'
 const WIDTHS = (process.env.SWEEP_WIDTHS ?? '320,390,820,1180,1440').split(',').map(Number)
 const ROUTES = (
   process.env.SWEEP_ROUTES ??
-  '/,/goals,/goals/new,/money,/library,/library?shelf=articles,/calendar,/settings,/profile,/notifications,/cours,/cours/investir-101,/cours/carte-de-credit/c2.2' +
+  '/,/goals,/goals/new,/money,/library,/library?shelf=articles,/paiement/story-you-tell,/calendar,/settings,/profile,/notifications,/cours,/cours/investir-101,/cours/carte-de-credit/c2.2' +
     /* Hakkilo: its public page and pricing, then the app. */
-    ',/hakkilo,/hakkilo/tarifs,/hakkilo/app,/hakkilo/cours,/hakkilo/cours/nouveau,/hakkilo/cours/bbc00001-0000-4000-8000-000000000000,/hakkilo/cours/bbc00001-0000-4000-8000-000000000000/fiches,/hakkilo/cours/bbc00001-0000-4000-8000-000000000000/banque,/hakkilo/session/bbc00001-0000-4000-8000-000000000000,/hakkilo/coach/bbc00001-0000-4000-8000-000000000000,/hakkilo/plan,/hakkilo/calendrier,/hakkilo/profil' +
+    ',/hakkilo,/hakkilo/tarifs,/hakkilo/app,/hakkilo/cours,/hakkilo/cours/nouveau,/hakkilo/cours/bbc00001-0000-4000-8000-000000000000,/hakkilo/cours/bbc00001-0000-4000-8000-000000000000/fiches,/hakkilo/cours/bbc00001-0000-4000-8000-000000000000/banque,/hakkilo/session/bbc00001-0000-4000-8000-000000000000,/hakkilo/coach/bbc00001-0000-4000-8000-000000000000,/hakkilo/plan,/hakkilo/calendrier,/hakkilo/profil,/hakkilo/paiement/plus_semester' +
     /* Phase 2: the mock exam, the case lab, the visuals, and the TikTok page. */
     ',/hakkilo/examen/bbc00001-0000-4000-8000-000000000000,/hakkilo/cours/bbc00001-0000-4000-8000-000000000000/examen,/hakkilo/cours/bbc00001-0000-4000-8000-000000000000/cas,/hakkilo/cours/bbc00001-0000-4000-8000-000000000000/schemas,/hakkilo/go'
 ).split(',')
@@ -210,8 +210,9 @@ const UNSIGNED =
   'not signed in, so this would measure the public site. Build against the stub first:\n' +
   '    VITE_SUPABASE_URL=http://localhost:54321 VITE_SUPABASE_ANON_KEY=stub-anon npm run build'
 const READER = /^\/library\/[^/?]+/
-/* The public pages of Hakkilo: measured like the rest, but outside any app shell. */
-const BB_PUBLIC = /^\/hakkilo(\/tarifs|\/pricing|\/go)?$/
+/* The public pages of Hakkilo: measured like the rest, but outside any app shell.
+   Its checkout page is one of them: the frame of the pricing page it comes from. */
+const BB_PUBLIC = /^\/hakkilo(\/tarifs|\/pricing|\/go|\/paiement\/[a-z_]+)?$/
 
 async function open(width) {
   const ctx = await browser.newContext({ viewport: { width, height: 1000 }, deviceScaleFactor: 1 })

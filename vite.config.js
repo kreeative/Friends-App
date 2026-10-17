@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 
 /**
@@ -40,8 +40,30 @@ function buildStamp() {
   }
 }
 
-export default defineConfig({
-  plugins: [react(), buildStamp()],
-  define: { __BUILD_ID__: JSON.stringify(build) },
-  build: { outDir: 'dist' },
+/**
+ * LA CLE PUBLIQUE DE STRIPE, ET RIEN D'AUTRE.
+ *
+ * VITE_STRIPE_PUBLISHABLE_KEY est ecrite dans le paquet que lit chaque
+ * visiteur: c'est voulu pour une cle pk_, publique par construction, qui
+ * ouvre le formulaire de paiement sur notre page (src/lib/stripeEmbed.js).
+ * Une cle secrete collee la par erreur serait publiee de la meme facon, sans
+ * erreur et avec un site qui marche. Donc la construction s'arrete, et le
+ * message ne repete pas la valeur.
+ */
+function publishableOnly(env) {
+  const pk = env.VITE_STRIPE_PUBLISHABLE_KEY
+  if (pk && !/^pk_(test|live)_/.test(pk)) {
+    throw new Error(
+      'VITE_STRIPE_PUBLISHABLE_KEY must be a publishable key (pk_test_ or pk_live_). Anything else there would be published to every visitor, so the build stops.',
+    )
+  }
+}
+
+export default defineConfig(({ mode }) => {
+  publishableOnly(loadEnv(mode, process.cwd(), 'VITE_'))
+  return {
+    plugins: [react(), buildStamp()],
+    define: { __BUILD_ID__: JSON.stringify(build) },
+    build: { outDir: 'dist' },
+  }
 })

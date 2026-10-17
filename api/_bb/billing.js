@@ -1,6 +1,6 @@
 import Stripe from 'stripe'
 import { env } from '../_env.js'
-import { BRANDING_API_VERSION, CHECKOUT_BRANDING } from '../_brand.js'
+import { BRANDING_API_VERSION, CHECKOUT_BRANDING, embeddable } from '../_brand.js'
 import { start, subscriptionOf } from './common.js'
 import { PAID, PRICES, tierOf } from '../../src/lib/bb/plans.js'
 
@@ -8,7 +8,9 @@ import { PAID, PRICES, tierOf } from '../../src/lib/bb/plans.js'
  * Hakkilo Plus (Beauty & Brain Plus, then Nerd Plus, before), through Stripe
  * Billing (section 13).
  *
- *   POST /api/bb/checkout { plan, locale }  a Checkout session, subscription mode
+ *   POST /api/bb/checkout { plan, locale, embedded? }  a Checkout session, subscription mode:
+ *                                           { client_secret } for the form on our page
+ *                                           (/hakkilo/paiement), else { url } of Stripe's
  *   POST /api/bb/sync     { session_id? }   read the truth back from Stripe
  *   POST /api/bb/cancel                     stop at the end of the paid period
  *   POST /api/bb/resume                     undo that, before the period ends
@@ -155,6 +157,12 @@ export async function checkout(req, res) {
   if (tier === 'plus' && sub?.stripe_subscription && !sub.cancel_at_period_end) return res.status(409).json({ error: 'already' })
 
   const origin = originOf(req)
+  /* Our page (src/bb/pages/Checkout.jsx) or Stripe's: see embeddable in
+     api/_brand.js. Embedded, the form has no back button of its own (the
+     page around it has), and Stripe sends the student to return_url once
+     paid, to the same place success_url did. */
+  const embedded = embeddable(body.embedded)
+  const paid = `${origin}/hakkilo/profil?plus=ok&session_id={CHECKOUT_SESSION_ID}`
   try {
     const stripe = stripeClient()
     const productId = await product(stripe)
@@ -178,12 +186,13 @@ export async function checkout(req, res) {
       subscription_data: { metadata: meta },
       allow_promotion_codes: true,
       locale: body.locale === 'en' ? 'en' : 'fr-CA',
-      success_url: `${origin}/hakkilo/profil?plus=ok&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/hakkilo/tarifs?plus=annule`,
+      ...(embedded
+        ? { ui_mode: 'embedded', return_url: paid }
+        : { success_url: paid, cancel_url: `${origin}/hakkilo/tarifs?plus=annule` }),
       /* Hakkilo's own page, not the account's: see api/_brand.js. */
       branding_settings: CHECKOUT_BRANDING.hakkilo,
     }, { apiVersion: BRANDING_API_VERSION })
-    return res.status(200).json({ url: session.url })
+    return res.status(200).json(embedded ? { client_secret: session.client_secret } : { url: session.url })
   } catch (err) {
     return stripeFail(res, err, 'checkout')
   }

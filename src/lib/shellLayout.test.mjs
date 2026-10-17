@@ -346,8 +346,11 @@ ok(
      /params\.get\('purchase'\) === 'success'/.test(pub)
        && /data-hook="guest-purchase"/.test(pub),
      'il payait et tombait sur le catalogue, sans un mot')
+  /* Le formulaire de Stripe sur notre page (return_url) le depose au meme
+     endroit que la page de Stripe (success_url): une seule adresse, `paid`. */
   ok('et c est bien la page ou success_url le depose',
-     /success_url: `\$\{origin\}\/library\?purchase=success/.test(chk)
+     /const paid = `\$\{origin\}\/library\?purchase=success/.test(chk)
+       && /success_url: paid/.test(chk) && /return_url: paid/.test(chk)
        && /path="library" element=\{<Books \/>\}/.test(code('src/App.jsx')),
      'si l un des deux bouge, la confirmation cesse de s afficher en silence')
   ok('la phrase nomme l adresse, qui est la condition',

@@ -27,6 +27,12 @@ const NAMES = {
   supabaseAnon: ['SUPABASE_ANON_KEY', 'VITE_SUPABASE_ANON_KEY', 'supabase_anon_key'],
   stripeSecret: ['STRIPE_SECRET_KEY', 'stripe_secret_key'],
   stripeWebhook: ['STRIPE_WEBHOOK_SECRET', 'stripe_webhook_secret'],
+  /* The publishable key, pk_, public by design: the browser bundle carries
+     it as VITE_STRIPE_PUBLISHABLE_KEY to open Stripe's form on our own
+     checkout page. Read here too, so a session is only made for that form
+     when the browser holds a key of the secret key's own mode (see
+     embeddable in api/_brand.js). */
+  stripePublishable: ['VITE_STRIPE_PUBLISHABLE_KEY', 'STRIPE_PUBLISHABLE_KEY', 'stripe_publishable_key'],
   siteUrl: ['SITE_URL', 'PUBLIC_SITE_URL'],
 
   /* Plaid. Same treatment as the others: the dashboard may have refused a

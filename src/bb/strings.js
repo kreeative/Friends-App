@@ -106,6 +106,13 @@ const fr = {
   'bb.price.no_billing': 'Le paiement n’est pas encore branché. Réessaie bientôt.',
   'bb.price.error': 'Le paiement n’a pas pu démarrer. Réessaie dans un instant.',
   'bb.price.cancelled': 'Paiement annulé. Rien n’a été prélevé.',
+  /* La page de paiement a nous, avec le formulaire de Stripe dedans:
+     "Oui, notre page" (Kee). */
+  'bb.pay.title': 'Ton paiement',
+  'bb.pay.back': 'Retour aux tarifs',
+  'bb.pay.lede': 'Tu peux annuler quand tu veux, depuis ton profil.',
+  'bb.pay.loading': 'Le formulaire de paiement arrive…',
+  'bb.pay.leaving': 'On t’emmène sur la page de Stripe…',
 
   /* Sign in */
   'bb.signin.title': 'Connecte-toi',
@@ -864,6 +871,11 @@ const en = {
   'bb.price.no_billing': 'Payments aren’t switched on yet. Try again soon.',
   'bb.price.error': 'The payment couldn’t start. Try again in a moment.',
   'bb.price.cancelled': 'Payment cancelled. Nothing was charged.',
+  'bb.pay.title': 'Your payment',
+  'bb.pay.back': 'Back to prices',
+  'bb.pay.lede': 'You can cancel anytime, from your profile.',
+  'bb.pay.loading': 'The payment form is on its way…',
+  'bb.pay.leaving': 'Taking you to Stripe’s page…',
 
   'bb.signin.title': 'Sign in',
   'bb.signin.body': 'One account for Hakkilo and Rich & Friends.',

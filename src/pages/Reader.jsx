@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useGroup } from '../context/GroupContext'
@@ -12,7 +12,9 @@ import {
   saveProgress,
   shareToGroup,
   startCheckout,
+  checkoutPath,
 } from '../lib/library'
+import { canEmbed } from '../lib/stripeEmbed'
 import { useT } from '../lib/i18n'
 import { Screen, Sheet } from '../components/ui'
 import Watermark, { WatermarkNote } from '../components/Watermark'
@@ -103,6 +105,7 @@ function render(md) {
 
 export default function Reader() {
   const { slug } = useParams()
+  const navigate = useNavigate()
   const { user, profile } = useAuth()
   const { group } = useGroup()
   const { t } = useT()
@@ -471,6 +474,9 @@ export default function Reader() {
                  */}
                 <button
                   onClick={async () => {
+                    /* Our own checkout page once the build can open
+                       Stripe's form there; Stripe's page until then. */
+                    if (canEmbed() && book.slug) return navigate(checkoutPath(book.slug))
                     setBuying(true)
                     setBuyError(null)
                     const { error: err } = await startCheckout(book.id)

@@ -5,6 +5,7 @@ import { useT } from '../../lib/i18n'
 import { usePageMeta } from '../../lib/pageMeta'
 import { Spot } from '../../components/StickerKit'
 import { PRICES, money, perMonth } from '../../lib/bb/plans'
+import { canEmbed } from '../../lib/stripeEmbed'
 import { call } from '../api'
 import { Note } from '../kit'
 import PublicFrame from './PublicFrame'
@@ -14,8 +15,10 @@ import PublicFrame from './PublicFrame'
  *
  * The amounts come from PRICES (src/lib/bb/plans.js), the same table the
  * server charges from, so the page cannot advertise one price and Stripe
- * take another. A signed-out student is sent to sign in first and comes
- * back here; a signed-in one goes straight to Stripe Checkout.
+ * take another. The checkout is our own page with Stripe's form in it once
+ * the publishable key is set (/hakkilo/paiement/:plan), Stripe's hosted page
+ * until then. A signed-out student signs in first and comes back to our
+ * page, or here when it is Stripe's.
  *
  * The semester plan is the one pointed at, in words ("Notre conseil"), never
  * by a code-drawn badge: it matches a term and its exams.
@@ -33,7 +36,11 @@ export default function Pricing() {
 
   async function choose(plan) {
     setError(null)
-    if (!user) return navigate(`/hakkilo/connexion?next=${encodeURIComponent('/hakkilo/tarifs')}`)
+    /* Our own checkout page when this build can open Stripe's form on it
+       (src/bb/pages/Checkout.jsx); Stripe's hosted page otherwise. */
+    const ours = canEmbed() ? `/hakkilo/paiement/${plan}` : null
+    if (!user) return navigate(`/hakkilo/connexion?next=${encodeURIComponent(ours ?? '/hakkilo/tarifs')}`)
+    if (ours) return navigate(ours)
     setBusy(plan)
     const r = await call('checkout', { plan, locale })
     if (r.ok && r.data.url) {
