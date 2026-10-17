@@ -1,6 +1,7 @@
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
 import { env, missingEnv } from './_env.js'
+import { BRANDING_API_VERSION, CHECKOUT_BRANDING } from './_brand.js'
 
 /**
  * Creates a Stripe Checkout session for one book.
@@ -346,6 +347,8 @@ export default async function handler(req, res) {
       },
       success_url: `${origin}/library?purchase=success&book=${book.slug}`,
       cancel_url: `${origin}/library?purchase=cancelled`,
+      /* Rich & Friends' own page, not the account's: see api/_brand.js. */
+      branding_settings: CHECKOUT_BRANDING.rf,
     }
 
     /* resolveDiscount already returns the shape this array wants, either
@@ -354,7 +357,7 @@ export default async function handler(req, res) {
        id and fail with a type error that names neither. */
     if (appliedDiscount) sessionConfig.discounts = [appliedDiscount]
 
-    const session = await stripe.checkout.sessions.create(sessionConfig)
+    const session = await stripe.checkout.sessions.create(sessionConfig, { apiVersion: BRANDING_API_VERSION })
 
     return res.status(200).json({ url: session.url })
   } catch (err) {

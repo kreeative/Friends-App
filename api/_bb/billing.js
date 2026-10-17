@@ -1,5 +1,6 @@
 import Stripe from 'stripe'
 import { env } from '../_env.js'
+import { BRANDING_API_VERSION, CHECKOUT_BRANDING } from '../_brand.js'
 import { start, subscriptionOf } from './common.js'
 import { PAID, PRICES, tierOf } from '../../src/lib/bb/plans.js'
 
@@ -179,7 +180,9 @@ export async function checkout(req, res) {
       locale: body.locale === 'en' ? 'en' : 'fr-CA',
       success_url: `${origin}/hakkilo/profil?plus=ok&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/hakkilo/tarifs?plus=annule`,
-    })
+      /* Hakkilo's own page, not the account's: see api/_brand.js. */
+      branding_settings: CHECKOUT_BRANDING.hakkilo,
+    }, { apiVersion: BRANDING_API_VERSION })
     return res.status(200).json({ url: session.url })
   } catch (err) {
     return stripeFail(res, err, 'checkout')
