@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useGroup } from '../context/GroupContext'
-import { listBooks, recoverPurchases, shareToGroup, startCheckout } from '../lib/library'
+import { checkoutPath, listBooks, recoverPurchases, shareToGroup, startCheckout } from '../lib/library'
+import { canEmbed } from '../lib/stripeEmbed'
 import { useT } from '../lib/i18n'
 import { money } from '../lib/money'
 import { Empty, Screen, Section, Sheet, TopBar } from '../components/ui'
@@ -38,6 +39,7 @@ export default function Library() {
   const { group } = useGroup()
   const { t, locale } = useT()
   const [params, setParams] = useSearchParams()
+  const navigate = useNavigate()
 
   const [books, setBooks] = useState([])
   const [loading, setLoading] = useState(true)
@@ -227,6 +229,9 @@ export default function Library() {
   }, [params])
 
   async function buy(book) {
+    /* Our own checkout page, with Stripe's form in it, once the build can
+       open it there (src/pages/Checkout.jsx); Stripe's page until then. */
+    if (canEmbed() && book.slug) return navigate(checkoutPath(book.slug))
     setBusy(book.id)
     const { error: err } = await startCheckout(book.id)
     if (err) {

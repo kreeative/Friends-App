@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Link, Navigate, useParams } from 'react-router-dom'
+import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { LANDING } from '../../content/landing'
 import { PREVIEW_BOOKS, localChapterBody } from '../../content/previews'
-import { livePrice, startCheckout } from '../../lib/library'
+import { checkoutPath, livePrice, startCheckout } from '../../lib/library'
+import { canEmbed } from '../../lib/stripeEmbed'
 import { useT } from '../../lib/i18n'
 import { money } from '../../lib/money'
 import { usePageMeta } from '../../lib/pageMeta'
@@ -91,6 +92,7 @@ function render(md) {
 export default function Preview() {
   const { slug } = useParams()
   const { t, locale } = useT()
+  const navigate = useNavigate()
   const nav = (LANDING[locale] ?? LANDING.en).footer
 
   const book = PREVIEW_BOOKS.find((b) => b.slug === slug)
@@ -121,6 +123,9 @@ export default function Preview() {
 
   async function buy() {
     if (busy) return
+    /* Our own checkout page once the build can open Stripe's form there
+       (src/pages/Checkout.jsx); Stripe's page until then. */
+    if (canEmbed()) return navigate(checkoutPath(slug))
     setBusy(true)
     setErr(null)
     const { error } = await startCheckout(slug)

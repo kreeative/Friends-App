@@ -10,6 +10,7 @@ import { Splash } from './boot'
 import BBShell from './BBShell'
 import Landing from './pages/Landing'
 import Pricing from './pages/Pricing'
+import Checkout from './pages/Checkout'
 import Go from './pages/Go'
 import SignInPage from './pages/SignIn'
 import Onboarding from './pages/Onboarding'
@@ -198,6 +199,16 @@ export default function BBApp() {
           element={
             <RequireUser>
               <Onboarding />
+            </RequireUser>
+          }
+        />
+        {/* Paying for Plus on our own page (pages/Checkout.jsx): signed in,
+            onboarded or not, like the pricing page that leads there. */}
+        <Route
+          path="paiement/:plan"
+          element={
+            <RequireUser>
+              <Checkout />
             </RequireUser>
           }
         />

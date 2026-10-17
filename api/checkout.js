@@ -1,7 +1,7 @@
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
 import { env, missingEnv } from './_env.js'
-import { BRANDING_API_VERSION, CHECKOUT_BRANDING } from './_brand.js'
+import { BRANDING_API_VERSION, CHECKOUT_BRANDING, embeddable } from './_brand.js'
 
 /**
  * Creates a Stripe Checkout session for one book.
@@ -266,6 +266,13 @@ export default async function handler(req, res) {
       req.headers.origin ||
       (req.headers.host ? `https://${req.headers.host}` : 'https://richandfriends.xyz')
 
+    /* Our page (src/pages/Checkout.jsx, /paiement/:slug) or Stripe's: see
+       embeddable in api/_brand.js. Embedded, the page around the form is
+       the way back, and Stripe sends the buyer to return_url once paid, the
+       address success_url always was. */
+    const embedded = embeddable(body?.embedded)
+    const paid = `${origin}/library?purchase=success&book=${book.slug}`
+
     /**
      * A code sent with the request, if there is one.
      *
@@ -345,8 +352,9 @@ export default async function handler(req, res) {
            than as a silly code having been typed. */
         ...(appliedDiscount ? { coupon_code: String(couponCode).slice(0, 200) } : {}),
       },
-      success_url: `${origin}/library?purchase=success&book=${book.slug}`,
-      cancel_url: `${origin}/library?purchase=cancelled`,
+      ...(embedded
+        ? { ui_mode: 'embedded', return_url: paid }
+        : { success_url: paid, cancel_url: `${origin}/library?purchase=cancelled` }),
       /* Rich & Friends' own page, not the account's: see api/_brand.js. */
       branding_settings: CHECKOUT_BRANDING.rf,
     }
@@ -359,7 +367,7 @@ export default async function handler(req, res) {
 
     const session = await stripe.checkout.sessions.create(sessionConfig, { apiVersion: BRANDING_API_VERSION })
 
-    return res.status(200).json({ url: session.url })
+    return res.status(200).json(embedded ? { client_secret: session.client_secret } : { url: session.url })
   } catch (err) {
     console.error('checkout failed', err)
 

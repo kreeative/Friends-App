@@ -277,16 +277,31 @@ const code = (rel) => src(rel).replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\
      the rule cannot be "no VITE_ name mentioning a key". It is a list of the
      words that mean server-side, with PUBLIC deliberately absent. */
   const DANGEROUS = /^VITE_.*(SECRET|SERVICE_ROLE|STRIPE|PLAID|WEBHOOK|RESEND|PRIVATE|SERVICE_KEY|ANTHROPIC)/
+  /* One Stripe name is public by design and belongs in the browser: the
+     publishable key, which Stripe.js needs to open the checkout form on our
+     own page (src/lib/stripeEmbed.js). Named exactly, so VITE_STRIPE_SECRET_KEY
+     or a bare VITE_STRIPE_KEY still fail here; and vite.config.js stops the
+     build when that name holds anything but a pk_ (checked below). */
+  const PUBLIC_BY_DESIGN = new Set(['VITE_STRIPE_PUBLISHABLE_KEY'])
   const offenders = []
   for (const file of sources) {
     for (const m of readFileSync(file, 'utf8').matchAll(/\bVITE_[A-Z0-9_]+/g)) {
-      if (DANGEROUS.test(m[0])) offenders.push(`${file.slice(SRC.length + 1)}: ${m[0]}`)
+      if (DANGEROUS.test(m[0]) && !PUBLIC_BY_DESIGN.has(m[0])) offenders.push(`${file.slice(SRC.length + 1)}: ${m[0]}`)
     }
   }
   ok(
     'no VITE_ name in src/ reads a server-side credential',
     offenders.length === 0,
     offenders.join('; '),
+  )
+  const viteConfig = readFileSync(join(root, 'vite.config.js'), 'utf8')
+  ok(
+    'the one Stripe name in the bundle can only ever hold a publishable key',
+    /const pk = env\.VITE_STRIPE_PUBLISHABLE_KEY/.test(viteConfig) &&
+      /if \(pk && !\/\^pk_\(test\|live\)_\/\.test\(pk\)\) \{\s*throw new Error\(/.test(viteConfig) &&
+      /publishableOnly\(loadEnv\(mode, process\.cwd\(\), 'VITE_'\)\)/.test(viteConfig) &&
+      !/\$\{pk/.test(viteConfig),
+    'vite.config.js must stop the build on anything but pk_, without printing it',
   )
 
   /**

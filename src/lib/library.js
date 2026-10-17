@@ -274,11 +274,35 @@ export async function shareToGroup({ userId, groupId, bookId, kind, highlightId,
  * id beats one that has to be matched afterwards.
  */
 export async function startCheckout(ref) {
+  const answer = await requestCheckout(ref)
+  if (answer.error) return answer
+  if (!answer.url) return { error: 'Checkout returned no URL' }
+  window.location.href = answer.url
+  return {}
+}
+
+/**
+ * Where a book is paid for on our own page, with Stripe's form in it
+ * (src/pages/Checkout.jsx). Only once the build holds the publishable key:
+ * canEmbed in src/lib/stripeEmbed.js. Until then the buttons call
+ * startCheckout and go to Stripe's hosted page, as before.
+ */
+export const checkoutPath = (slug) => `/paiement/${encodeURIComponent(slug)}`
+
+/**
+ * Ask the server for a checkout session, and go nowhere.
+ *
+ * `embedded` asks for one made for Stripe's form on our page; the server
+ * grants it only when its keys agree (embeddable in api/_brand.js), so the
+ * answer is { clientSecret } for that form, { url } of Stripe's own page, or
+ * { error } (with `owned` when the book is already theirs).
+ */
+export async function requestCheckout(ref, { embedded = false } = {}) {
   const { data: sess } = await supabase.auth.getSession()
   const token = sess?.session?.access_token
 
   const isId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(ref ?? '')
-  const request = isId ? { book_id: ref } : { slug: ref }
+  const request = { ...(isId ? { book_id: ref } : { slug: ref }), ...(embedded ? { embedded: true } : {}) }
 
   let res
   try {
@@ -306,11 +330,9 @@ export async function startCheckout(ref) {
   }
 
   const payload = await res.json().catch(() => ({}))
-  if (!res.ok) return { error: payload.error || `Checkout failed (${res.status})` }
-  if (!payload.url) return { error: 'Checkout returned no URL' }
-
-  window.location.href = payload.url
-  return {}
+  if (!res.ok) return { error: payload.error || `Checkout failed (${res.status})`, owned: Boolean(payload.owned) }
+  if (payload.client_secret) return { clientSecret: payload.client_secret }
+  return { url: payload.url ?? null }
 }
 
 /**

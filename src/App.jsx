@@ -41,6 +41,7 @@ import Study from './pages/public/Study'
 import Preview from './pages/public/Preview'
 import Library from './pages/Library'
 import Reader from './pages/Reader'
+import Checkout from './pages/Checkout'
 import VapidSetup from './pages/VapidSetup'
 import Notifications from './pages/Notifications'
 import Courses from './pages/Courses'
@@ -292,6 +293,9 @@ const PUBLIC_ROUTES = (
     <Route path="lectures/:slug" element={<Preview />} />
     <Route path="lectures" element={<Books />} />
     <Route path="library" element={<Books />} />
+    {/* Paying for a book on our own page, with Stripe's form in it
+        (pages/Checkout.jsx). No account needed, as with buying before. */}
+    <Route path="paiement/:slug" element={<Checkout />} />
     {/**
      * Les etudes, lisibles sans compte.
      *
@@ -593,6 +597,8 @@ function Gate() {
 
         <Route path="library" element={<Library />} />
         <Route path="library/:slug" element={<Reader />} />
+        {/* The same checkout page, signed in: see the public routes. */}
+        <Route path="paiement/:slug" element={<Checkout />} />
 
         {/**
          * The free chapter, signed in as well as signed out.

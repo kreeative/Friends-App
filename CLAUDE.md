@@ -264,6 +264,21 @@ and the error points at the wrong thing.
   of a letter's ink and 12% of a word's, measured on the painted page at
   every width in both languages. Everywhere else the cover probe must find
   nothing.
+- **The checkout is our page, with Stripe's form inside it.** "What about
+  the sticker on the checkout page, our colors etc??", then "Oui, notre
+  page" (Kee). Hakkilo Plus at `/hakkilo/paiement/:plan`, the books at
+  `/paiement/:slug`, signed in or not. The form sits in a card of the colour
+  Stripe paints behind it (`CHECKOUT_LOOK` in `src/lib/checkoutLook.js`, the
+  same values as the `branding_settings` of `api/_brand.js`), with real
+  stickers on the card's top and bottom bands (`CheckoutCard`), never over
+  the form (an iframe nothing here can measure) and never over our words.
+  The form opens only when the build has `VITE_STRIPE_PUBLISHABLE_KEY` and
+  the server's two keys are of one mode (`embeddable`); otherwise, and
+  whenever Stripe.js cannot load, the buyer goes to Stripe's hosted page as
+  before. `ui_mode: 'embedded'`, Stripe.js from `js.stripe.com/clover/` and
+  `initEmbeddedCheckout` belong to `BRANDING_API_VERSION`: dahlia renamed
+  them (`embedded_page`, `createEmbeddedCheckoutPage`), so they move
+  together or not at all. "Sandbox" on the form is the test key.
 - Look at sticker art on a dark or coloured ground before trusting it. A
   white page hides a grey ghost outline and a stair-stepped cut; the pink
   footer shows both. `python3 scripts/diecut.py --write` re-cuts every file.
