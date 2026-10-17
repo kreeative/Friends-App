@@ -61,7 +61,7 @@ export default function Landing() {
               {t('bb.land.lede')}
             </p>
             <div style={{ '--i': 2 }} className="mt-9 flex flex-wrap items-center gap-3">
-              <Link to={start} className="btn press w-auto bg-ink px-8 text-[1.1875rem] font-bold text-white hover:opacity-90" data-hook="bb-cta">
+              <Link to={start} className="btn press w-auto bg-ink px-8 font-bold text-white hover:opacity-90" data-hook="bb-cta">
                 {user ? t('bb.pub.open') : t('bb.pub.start_free')}
               </Link>
               <Link to="/bb/tarifs" className="btn-outline press w-auto px-8">
@@ -76,7 +76,7 @@ export default function Landing() {
           <div className="relative mx-auto mt-14 w-full max-w-[26rem] lg:mt-0" data-hook="bb-hero-logo">
             <div className="relative rotate-[-2deg]">
               <BBLogo layout="stacked" className="w-full drop-shadow-[0_18px_30px_rgb(17_17_17/0.18)]" pad={0.12} />
-              <Tape className="-top-3 left-8" tilt={-8} tone="107 78 255" />
+              <Tape className="-top-3 left-8" tilt={-8} tone="255 214 10" />
               <Tape className="-bottom-3 right-10" tilt={6} tone="255 214 10" />
             </div>
             <Spot name="cat" tilt={-10} delay={700} className="absolute -bottom-10 -left-6 w-24 sm:-left-12 sm:w-28" />
@@ -108,7 +108,7 @@ export default function Landing() {
           {science.map((s) => (
             <li key={s.n} className="lg p-5">
               <h3 className="text-body font-bold text-ink">
-                <span className="marker" style={{ '--mk': ['#FFF4C2', '#EFEBFF', '#E4F5D9'][s.n % 3] }}>
+                <span className="marker" style={{ '--mk': '#FFF4C2' }}>
                   {s.title}
                 </span>
               </h3>
@@ -132,7 +132,7 @@ export default function Landing() {
             <span className="mt-4 inline-flex items-center gap-1 rounded-pill border border-ink/30 bg-surface px-2.5 py-0.5 text-[0.8125rem] font-semibold text-ink">
               {t('bb.land.grounded_chip')}
             </span>
-            <div className="mt-5 rounded-inner border-2 border-dashed border-ink/30 bg-[#FFF4C2] px-3 py-2">
+            <div className="mt-5 rounded-inner border-2 border-dashed border-ink/30 bg-[#F4F4F5] px-3 py-2">
               <p className="text-[0.8125rem] font-bold uppercase tracking-[0.02em] text-ink">{t('bb.ses.outside')}</p>
             </div>
           </figure>
@@ -140,7 +140,7 @@ export default function Landing() {
       </section>
 
       <section className="mx-auto w-full max-w-6xl px-6 py-10 md:py-14" data-hook="bb-beauty">
-        <div className="relative rounded-card bg-[#FFE3F0] px-6 py-8 md:px-10 md:py-10">
+        <div className="relative rounded-card bg-[#E6DFFF] px-6 py-8 md:px-10 md:py-10">
           <h2 className="text-[clamp(1.75rem,3.2vw,2.5rem)] font-semibold leading-[1.12] tracking-[-0.02em] text-ink">{t('bb.land.beauty_title')}</h2>
           <p className="mt-3 max-w-[52ch] text-body text-ink">{t('bb.land.beauty_body')}</p>
           <Spot name="daisy" tilt={10} delay={300} className="absolute -right-3 -top-8 hidden w-20 sm:block md:-right-6 md:w-24" />
@@ -166,10 +166,10 @@ export default function Landing() {
       </section>
 
       <section className="mx-auto w-full max-w-6xl px-6 pb-20 pt-10" data-hook="bb-close">
-        <div className="relative overflow-visible rounded-card bg-ink px-6 py-10 md:px-12 md:py-14">
-          <h2 className="max-w-[18ch] text-[clamp(1.75rem,4vw,2.75rem)] font-bold leading-[1.1] text-white">{t('bb.land.close_title')}</h2>
-          <p className="mt-4 max-w-[40ch] text-[1.1875rem] font-bold leading-[1.45] text-white">{t('bb.land.close_body')}</p>
-          <Link to={start} className="btn press mt-8 w-auto bg-[#F8CB02] px-8 text-[1.1875rem] font-bold text-ink hover:opacity-90">
+        <div className="relative overflow-visible rounded-card bg-[#CFC2FF] px-6 py-10 md:px-12 md:py-14">
+          <h2 className="max-w-[18ch] text-[clamp(1.75rem,4vw,2.75rem)] font-bold leading-[1.1] text-ink">{t('bb.land.close_title')}</h2>
+          <p className="mt-4 max-w-[40ch] text-[1.125rem] leading-[1.5] text-ink">{t('bb.land.close_body')}</p>
+          <Link to={start} className="btn press mt-8 w-auto bg-ink px-8 font-bold text-white hover:opacity-90">
             {user ? t('bb.pub.open') : t('bb.pub.start_free')}
           </Link>
           <Spot name={CLOSE_ART[0]} tilt={-8} delay={300} className="absolute -bottom-8 right-6 hidden w-24 sm:block md:w-28" />

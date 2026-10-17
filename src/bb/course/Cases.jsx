@@ -176,7 +176,7 @@ export default function Cases({ course, chapters, anchors, maps }) {
             <textarea className="field mt-3 min-h-[14rem]" value={draft} onChange={(e) => setDraft(e.target.value)} maxLength={20000} disabled={busy === 'grade'} data-hook="bb-case-answer" />
           </label>
           <p className="mt-1 text-right text-[0.8125rem] tabular-nums text-muted">{t('bb.case.chars', { n: draft.trim().length })}</p>
-          <BigButton tone="violet" className="mt-3 sm:w-auto sm:px-8" onClick={grade} disabled={busy !== null || draft.trim().length < 20} data-hook="bb-case-grade">
+          <BigButton className="mt-3 sm:w-auto sm:px-8" onClick={grade} disabled={busy !== null || draft.trim().length < 20} data-hook="bb-case-grade">
             {busy === 'grade' ? t('bb.case.grading') : t('bb.case.grade')}
           </BigButton>
           {busy === 'grade' && (
@@ -212,7 +212,7 @@ export default function Cases({ course, chapters, anchors, maps }) {
                   {marked.improvements.map((m, i) => {
                     const a = m.anchor_id ? maps.anchors.get(m.anchor_id) : null
                     return (
-                      <li key={i} className="rounded-inner bg-[#FFF4C2] px-4 py-3 text-small text-ink">
+                      <li key={i} className="rounded-inner bg-[#F4F4F5] px-4 py-3 text-small text-ink">
                         {m.rubric_index != null && marked.criteria[m.rubric_index] && <p className="font-bold">{marked.criteria[m.rubric_index].criterion}</p>}
                         <p className="mt-0.5">{m.text}</p>
                         {a && (
@@ -257,7 +257,7 @@ export default function Cases({ course, chapters, anchors, maps }) {
                   type="button"
                   aria-pressed={picked.has(ch.id)}
                   onClick={() => toggle(ch.id)}
-                  className={`press max-w-full rounded-pill border-2 px-3 py-1.5 text-left text-small font-semibold text-ink ${picked.has(ch.id) ? 'border-ink bg-[#FFF4C2]' : 'border-ink/15 bg-surface'}`}
+                  className={`press max-w-full rounded-pill border-2 px-3 py-1.5 text-left text-small font-semibold text-ink ${picked.has(ch.id) ? 'border-ink bg-[#E6DFFF]' : 'border-ink/15 bg-surface'}`}
                 >
                   {picked.has(ch.id) && '✓ '}
                   {ch.title}

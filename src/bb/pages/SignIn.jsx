@@ -40,7 +40,7 @@ export default function SignInPage() {
             </div>
           </div>
           <div aria-hidden="true" className="pointer-events-none hidden sm:block">
-            <Tape className="-top-3 left-10" tilt={-7} tone="107 78 255" />
+            <Tape className="-top-3 left-10" tilt={-7} tone="255 214 10" />
             <Spot name="lips" tilt={-12} delay={500} className="absolute -bottom-12 -left-12 w-24" />
             <Spot name="cloudguy" tilt={10} delay={620} className="absolute -right-12 top-[30%] w-20" />
           </div>

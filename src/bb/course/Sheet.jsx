@@ -40,7 +40,7 @@ export default function Sheet({ chapters, concepts, signals, twins, maps }) {
               type="button"
               aria-pressed={cover === on}
               onClick={() => setCover(on)}
-              className={`press rounded-pill px-4 py-1.5 text-small font-semibold ${cover === on ? 'bg-surface text-ink shadow-raised' : 'text-muted'}`}
+              className={`press rounded-pill px-4 py-1.5 text-small font-semibold ${cover === on ? 'bg-[#CFC2FF] text-ink' : 'text-muted'}`}
             >
               {on ? t('bb.sheet.cover') : t('bb.sheet.read')}
             </button>

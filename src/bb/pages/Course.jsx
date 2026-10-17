@@ -19,6 +19,7 @@ import { Bank, Files, Mistakes, Twins } from '../course/Views'
 import Cases from '../course/Cases'
 import Visuals from '../course/Visuals'
 import { PRESETS } from './Today'
+import { AskBar } from '../Composer'
 
 /**
  * /bb/cours/:id, the course home (section 6): the exam countdown, what is
@@ -200,13 +201,15 @@ export default function Course() {
         )}
         {hasItems && (
           <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
-            <Link to={`/bb/session/${course.id}?m=${minutes}`} className="btn press bg-ink text-[1.1875rem] font-bold text-white hover:opacity-90 sm:w-auto sm:px-8" data-hook="bb-course-start">
+            <Link to={`/bb/session/${course.id}?m=${minutes}`} className="btn press bg-ink font-bold text-white hover:opacity-90 sm:w-auto sm:px-8" data-hook="bb-course-start">
               {t('bb.course.start', { n: minutes })}
             </Link>
             <SegTabs value={minutes} options={PRESETS} onChange={setMinutes} label={t('bb.course.minutes', { n: minutes })} hook="bb-course-minutes" labelOf={(n) => t('bb.course.minutes', { n })} />
           </div>
         )}
       </section>
+
+      <AskBar courses={[course]} label={t('bb.ask.ph_course')} className="mt-4" />
 
       <Blueprint course={course} blueprint={data.blueprint} onSaved={reload} />
 
@@ -219,7 +222,7 @@ export default function Course() {
             key={slug}
             to={slug === 'chapitres' ? `/bb/cours/${course.id}` : `/bb/cours/${course.id}/${slug}`}
             aria-current={tab === slug ? 'page' : undefined}
-            className={`press shrink-0 rounded-pill px-4 py-2 text-small font-semibold ${tab === slug ? 'bg-ink text-white' : 'bg-ink/[0.06] text-ink'}`}
+            className={`press shrink-0 rounded-pill px-4 py-2 text-small font-semibold ${tab === slug ? 'bg-[#CFC2FF] text-ink' : 'bg-ink/[0.06] text-ink'}`}
           >
             {t(`bb.course.tab.${k}`)}
           </Link>
@@ -318,7 +321,7 @@ function MockTab({ courseId, available }) {
         <h2 className="text-h2 text-ink">{t('bb.mock.title')}</h2>
         <p className="mt-2 text-body text-ink">{t('bb.mock.lede')}</p>
         {available ? (
-          <Link to={`/bb/examen/${courseId}`} className="btn press mt-5 bg-ink text-[1.1875rem] font-bold text-white hover:opacity-90 sm:w-auto sm:px-8" data-hook="bb-mock-open">
+          <Link to={`/bb/examen/${courseId}`} className="btn press mt-5 bg-ink font-bold text-white hover:opacity-90 sm:w-auto sm:px-8" data-hook="bb-mock-open">
             {t('bb.mock.open')}
           </Link>
         ) : (

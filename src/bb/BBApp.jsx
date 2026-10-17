@@ -133,7 +133,7 @@ function Ready({ children }) {
 
 /* The ground of Beauty & Brain, black and white (src/index.css,
    [data-surface='bb']), and the grounds Rich & Friends goes back to. */
-export const BB_GROUND = '#F4F4F5'
+export const BB_GROUND = '#FFFFFF'
 const RF_GROUND = { sun: '#FFF5F7', sea: '#F0F9FF' }
 
 /**

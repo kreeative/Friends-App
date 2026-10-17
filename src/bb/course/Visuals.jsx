@@ -123,7 +123,7 @@ function Drawing({ visual, chip, t }) {
       <ol className="space-y-3" data-hook="bb-steps">
         {nodes.map((n, i) => (
           <li key={i} className="flex gap-3">
-            <span aria-hidden="true" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-pill border-2 border-ink bg-[#FFF4C2] text-small font-bold tabular-nums text-ink">
+            <span aria-hidden="true" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-pill border-2 border-ink bg-surface text-small font-bold tabular-nums text-ink">
               {i + 1}
             </span>
             <div className="min-w-0 flex-1 pt-1">
@@ -142,7 +142,7 @@ function Drawing({ visual, chip, t }) {
       <ol className="relative ml-2 space-y-4 border-l-2 border-ink pl-5" data-hook="bb-timeline">
         {nodes.map((n, i) => (
           <li key={i} className="relative">
-            <span aria-hidden="true" className="absolute -left-[1.6rem] top-1.5 h-3 w-3 rounded-pill border-2 border-ink bg-[#F8CB02]" />
+            <span aria-hidden="true" className="absolute -left-[1.6rem] top-1.5 h-3 w-3 rounded-pill border-2 border-ink bg-ink" />
             <p className="text-small font-bold tabular-nums text-ink">{n.when}</p>
             <p className="text-body font-semibold text-ink">{n.label}</p>
             {n.detail && <p className="mt-0.5 text-small text-ink">{n.detail}</p>}
@@ -245,7 +245,7 @@ function Drawing({ visual, chip, t }) {
     const root = nodes.findIndex((n) => n.parent == null)
     const branch = (i, depth) => (
       <li key={i} className={depth ? 'border-l-2 border-ink/40 pl-4' : ''}>
-        <div className={`rounded-inner px-3 py-2 ${depth === 0 ? 'bg-[#FFF4C2]' : 'bg-[#F4F4F5]'}`}>
+        <div className={`rounded-inner px-3 py-2 ${depth === 0 ? 'bg-[#E4E4E7]' : 'bg-[#F4F4F5]'}`}>
           <p className="text-small font-bold text-ink">{nodes[i].label}</p>
           {nodes[i].detail && <p className="text-[0.8125rem] text-ink">{nodes[i].detail}</p>}
           <div className="mt-1">{chip(nodes[i].anchor, depth > 0)}</div>

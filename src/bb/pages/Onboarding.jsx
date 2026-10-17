@@ -40,7 +40,7 @@ export function Choice({ on, onClick, children, hook }) {
       onClick={onClick}
       data-hook={hook}
       className={`press flex min-h-[3rem] items-center gap-2 rounded-inner border px-4 py-2.5 text-left text-body font-semibold text-ink transition-colors ${
-        on ? 'border-ink bg-[#FFF4C2]' : 'border-ink/15 bg-surface hover:border-ink/30'
+        on ? 'border-ink bg-[#E6DFFF]' : 'border-ink/15 bg-surface hover:border-ink/30'
       }`}
     >
       <span aria-hidden="true" className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-pill border-2 ${on ? 'border-ink bg-ink' : 'border-ink/30'}`}>

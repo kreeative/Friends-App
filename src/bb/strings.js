@@ -451,6 +451,11 @@ const fr = {
   'bb.coach.no_courses': 'Ajoute un cours pour parler à ton coach.',
   'bb.coach.you': 'Toi',
   'bb.coach.them': 'Coach',
+  'bb.coach.ph_mode': '{mode} · pose ta question',
+  'bb.coach.course': 'Cours',
+  'bb.ask.label': 'Demande à ton coach',
+  'bb.ask.ph': 'Pose une question sur tes cours',
+  'bb.ask.ph_course': 'Pose une question sur ce cours',
 
   /* Limits */
   'bb.limit.reached': 'Tu as atteint la limite du jour pour ça. Elle revient {when}.',
@@ -1129,6 +1134,11 @@ const en = {
   'bb.coach.no_courses': 'Add a course to talk to your coach.',
   'bb.coach.you': 'You',
   'bb.coach.them': 'Coach',
+  'bb.coach.ph_mode': '{mode} · ask your question',
+  'bb.coach.course': 'Course',
+  'bb.ask.label': 'Ask your coach',
+  'bb.ask.ph': 'Ask anything about your courses',
+  'bb.ask.ph_course': 'Ask anything about this course',
 
   'bb.limit.reached': 'You’ve reached today’s limit for this. It comes back {when}.',
   'bb.limit.upgrade': 'Plus gives you much more room.',
