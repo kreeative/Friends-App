@@ -5,8 +5,11 @@
 -- its own length. Read by src/lib/bb/exams.js.
 --
 --   exams = [{ "id", "kind": "midterm" | "final", "at": ISO date or null,
---              "chapters": [chapter id] or null, "since": true or false,
---              "format": { "count", "minutes" } }]
+--              "scope": "all" | "since" | "chapters" | null,
+--              "chapters": [chapter id], "format": { "count", "minutes" } }]
+--
+-- scope null is "not said yet": the course page then asks which chapters
+-- the midterm covers. "since" is a final on what came after the midterm.
 --
 -- exam_at stays: it holds the next exam, for an app opened before this
 -- version. The policies of bb_courses (migration 80) already keep every row
