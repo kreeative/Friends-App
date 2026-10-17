@@ -150,7 +150,10 @@ and the error points at the wrong thing.
   outlined in ink on a lilac tile (`BBLogo` in `src/bb/kit.jsx`). The word
   is in Crosner outlines (the font stays out of the repo), the "H" alone
   where the word would be too small to read. Yellow on lilac alone is
-  1.06:1; the ink line is what makes it readable.
+  1.06:1; the ink line is what makes it readable. In the rail the H is a
+  44px square tile with the rows' 13px corners (`BBLogo square`), one more
+  row of the column: "le logo a gauche est pas bien dispose dans la
+  grille", when it was a 44 by 51 tile taller than every row under it.
 - **Hakkilo type is two weights lighter than Rich & Friends** ("deux
   niveaux moins bold, c'est trop epais"): the 'Poppins BB' family in
   `index.css` maps 500 and 600 to Regular, 700 to Medium, 800 to SemiBold,
@@ -197,13 +200,19 @@ and the error points at the wrong thing.
   (`examEvents` in `src/lib/bb/exams.js`), never written to the calendar,
   and left out when the calendar already has that exam (an 'examen' row
   that day at the same hour or naming the course). It looks 8 weeks and 4
-  months ahead, where the exams are. No recap card, so no hold. On a phone
-  it sits under the ask box and opens on the week; from lg it has its own
-  column, 22rem or more, beside a day of at most 42rem (`.today-grid` in
-  `index.css`; wider, the ask box was a 670px input), sticky, and opens on
-  the month: that is the answer to "a lot of void space on the left and on
-  the right" on the iPad. The Rich & Friends dashboard stays one
-  column: the bento was refused there three times.
+  months ahead, where the exams are. No recap card, so no hold. It sits
+  under the ask box, in the page's one column, and opens on the week, at
+  every width.
+- **On the iPad, Hakkilo stays the one column it was.** "Arrete de
+  travailler sur la vue d'iPad, keep-le comme avant" (Kee, 17 October,
+  after "a lot of void space on the left and on the right"). For one
+  release Today put the calendar in a second column from lg, and the course
+  page, the plan and the list were being widened the same way; all of it
+  was taken back or never shipped. Every Hakkilo page keeps its 46rem
+  column on an iPad and a laptop. "First-class" above means nothing breaks
+  there (the sweep), not a wider layout: do not rework it unless she asks.
+  The Rich & Friends dashboard stays one column too: the bento was refused
+  there three times.
 - **Nothing is underlined in Hakkilo.** "J'aime pas quand c'est souligne.
   Ca peut etre en gras, ca peut etre a l'interieur d'un petit rond ou d'un
   petit bouton." A small action is a pill (`PILL` in `src/bb/kit.jsx`,

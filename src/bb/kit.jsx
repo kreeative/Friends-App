@@ -68,21 +68,29 @@ export const PILL_ROUND = 'press inline-flex h-9 w-9 shrink-0 items-center justi
  * The margin follows the word's height more than its width: a seven-letter
  * word padded by its width floated in a tall lilac block, letters filling
  * under half of it.
+ *
+ * `square`: the tile is a square, the letters centred in it, with the
+ * corners of the rail's rows (13px on 44). "Le logo a gauche est pas bien
+ * dispose dans la grille" (Kee): the rail's H was a 44 by 51 tile, taller
+ * than every row under it, with corners of its own; square, it is one more
+ * 44px row of the same column.
  */
 const OUTLINE = { stacked: 6, line: 8, mono: 8 }
 
-export function BBLogo({ layout = 'stacked', tile = 'lilac', className = '', pad = 0.16, title }) {
+export function BBLogo({ layout = 'stacked', tile = 'lilac', className = '', pad = 0.16, square = false, title }) {
   const art = BB_LOGO[layout] ?? BB_LOGO.stacked
   const p = Math.round(Math.max(art.w * 0.6, art.h) * pad)
-  const w = art.w + p * 2
-  const h = art.h + p * 2
+  const side = Math.max(art.w, art.h) + p * 2
+  const w = square ? side : art.w + p * 2
+  const h = square ? side : art.h + p * 2
+  const rx = Math.round(square ? (side * 13) / 44 : Math.min(w, h) * 0.14)
   const tiled = tile !== 'none'
   const label = title ?? 'Hakkilo'
   return (
     <svg viewBox={`0 0 ${w} ${h}`} role="img" aria-label={label} className={className} data-hook="bb-logo">
-      {tiled && <rect width={w} height={h} rx={Math.round(Math.min(w, h) * 0.14)} fill={LILAC} />}
+      {tiled && <rect width={w} height={h} rx={rx} fill={LILAC} />}
       <g
-        transform={`translate(${p} ${p})`}
+        transform={`translate(${(w - art.w) / 2} ${(h - art.h) / 2})`}
         fill={tiled ? LOGO_YELLOW : INK}
         {...(tiled ? { stroke: INK, strokeWidth: OUTLINE[layout] ?? 6, strokeLinejoin: 'round', paintOrder: 'stroke' } : {})}
       >

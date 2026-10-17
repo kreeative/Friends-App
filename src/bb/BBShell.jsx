@@ -124,7 +124,7 @@ function Rail() {
   return (
     <nav className="lg lg-rail fixed bottom-4 left-4 top-4 z-30 hidden w-[3.5rem] flex-col p-1.5 md:flex" aria-label={t('bb.nav.primary')} data-hook="bb-rail">
       <Link to="/hakkilo/app" aria-label={t('bb.nav.home')} className="press block shrink-0 self-center rounded-inner">
-        <BBLogo layout="mono" className="h-auto w-11" pad={0.2} />
+        <BBLogo layout="mono" square className="h-11 w-11" pad={0.2} />
       </Link>
       <span aria-hidden="true" className="mx-1 mb-8 mt-4 h-px shrink-0 bg-hairline/60" />
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
@@ -225,16 +225,11 @@ export default function BBShell() {
  * A page of the app: one column, bounded and centred, like .column-page,
  * ending on the line that says who made it and goes back to Rich & Friends.
  * `footer={false}` for the coach, whose box sits at the end of the page.
- *
- * `wide` gives it 72rem from md. `wide="lg"` keeps the column until lg and
- * gives it 72rem from there, for a page that is one column on an iPad held
- * upright and two from lg (Today, .today-grid in index.css).
  */
 export function Page({ children, wide = false, footer = true, className = '' }) {
-  const shell = wide === 'lg' ? 'md:max-w-[46rem] lg:max-w-[72rem]' : wide ? 'md:max-w-[72rem]' : ''
   return (
     <div className={`${wide ? '' : 'column-page'} min-h-dvh pb-36 md:pb-16 ${className}`}>
-      <div className={`shell animate-rise ${shell}`}>
+      <div className={`shell animate-rise ${wide ? 'md:max-w-[72rem]' : ''}`}>
         {children}
         {footer && <AppFooter />}
       </div>
