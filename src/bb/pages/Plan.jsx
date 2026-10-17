@@ -230,7 +230,7 @@ export default function Plan() {
               const at = slots.get(d.date) ?? []
               const none = missing.get(d.date) ?? []
               return (
-                <li key={d.date} className={`flex flex-wrap items-baseline gap-x-4 gap-y-1 rounded-inner px-4 py-3 ${i === 0 ? 'bg-[#FFE3F0]' : 'bg-surface'}`} data-hook="bb-plan-day">
+                <li key={d.date} className={`flex flex-wrap items-baseline gap-x-4 gap-y-1 rounded-inner px-4 py-3 ${i === 0 ? 'bg-[#FFF4C2]' : 'bg-surface'}`} data-hook="bb-plan-day">
                   <span className="w-28 shrink-0 text-small font-bold capitalize text-ink">{i === 0 ? t('bb.plan.today') : date.toLocaleDateString(localeTag(locale), { weekday: 'short', day: 'numeric', month: 'short' })}</span>
                   <span className="min-w-0 flex-1 space-y-0.5 text-small text-ink">
                     {(d.exams ?? []).map((cid) => (

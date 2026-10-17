@@ -9,32 +9,49 @@ import { citeOf, splitRich } from '../lib/bb/cite'
  * The few pieces every Beauty & Brain screen shares. Everything else comes
  * from the Rich & Friends kit (ui.jsx, StickerKit, the .lg cards).
  *
- * COLOURS. The logo pink #FF007A leans to the Beauty side (care, streaks,
- * breaks), the logo turquoise #009DB9 to the Brain side (questions,
- * mastery). Words on either are white, bold and at least 19px (the 3:1 bar
- * of large text: white measures 3.80:1 on the pink and 3.22:1 on the
- * turquoise). Anything smaller sits on white or a pastel, in ink.
+ * COLOURS: BLACK AND WHITE, WITH SOME COLOURS (Kee's reference: white cards
+ * on a light grey ground, black titles, black pill buttons, a few bright
+ * accents). The ground and the ink are tokens ([data-surface='bb'] in
+ * src/index.css); the accents are here, each with one job:
+ *
+ *   ink     #111111  primary buttons, the active tab, bars. White on it 18.9:1.
+ *   violet  #6B4EFF  the answer actions (check, hand in) and the option
+ *                    picked. White on it 5.05:1, so any size.
+ *   green   #1E7B34  right, and only right. 5.33:1 on white.
+ *   yellow  #F8CB02  the logo yellow: the logo, highlights. Black on it.
+ *   pink    #FF007A  the logo pink, kept for the art; text on it stays
+ *                    white, bold and large (3.80:1).
+ *
+ * Their pastels carry black text at 15:1 or more. Colour is never the only
+ * signal: a word or an icon always says the same thing.
  */
+export const INK = '#111111'
+export const VIOLET = '#6B4EFF'
+export const GREEN = '#1E7B34'
 export const PINK = '#FF007A'
-export const TURQ = '#009DB9'
 export const LOGO_YELLOW = '#F8CB02'
+export const SOFT = { yellow: '#FFF4C2', violet: '#EFEBFF', green: '#E4F5D9', pink: '#FFE3F0', grey: '#F4F4F5' }
 
 /**
  * The wordmark, as artwork: Crosner outlines and Kee's own "&", one path per
- * letter, yellow on a pink or turquoise tile, like the Rich & Friends tile.
+ * letter, in the logo yellow on a black tile (the black and white theme;
+ * the letters themselves never change). `tile="pink"` and `"turquoise"`
+ * still draw the original tiles; `tile="none"` draws the letters in ink.
  * `layout`: stacked ("Beauty" over "& Brain"), line, or mono ("B&B").
  */
-export function BBLogo({ layout = 'stacked', tile = 'pink', className = '', pad = 0.16, title }) {
+const TILES = { ink: INK, pink: PINK, turquoise: '#009DB9' }
+
+export function BBLogo({ layout = 'stacked', tile = 'ink', className = '', pad = 0.16, title }) {
   const art = BB_LOGO[layout] ?? BB_LOGO.stacked
   const p = Math.round(Math.max(art.w, art.h) * pad)
   const w = art.w + p * 2
   const h = art.h + p * 2
-  const ground = tile === 'turquoise' ? TURQ : tile === 'pink' ? PINK : null
+  const ground = TILES[tile] ?? null
   const label = title ?? 'Beauty & Brain'
   return (
     <svg viewBox={`0 0 ${w} ${h}`} role="img" aria-label={label} className={className} data-hook="bb-logo">
       {ground && <rect width={w} height={h} rx={Math.round(Math.min(w, h) * 0.14)} fill={ground} />}
-      <g transform={`translate(${p} ${p})`} fill={ground ? LOGO_YELLOW : PINK}>
+      <g transform={`translate(${p} ${p})`} fill={ground ? LOGO_YELLOW : INK}>
         {art.paths.map((path, i) => (
           <path key={i} d={path.d} fillRule={path.evenodd ? 'evenodd' : 'nonzero'} />
         ))}
@@ -51,7 +68,7 @@ export function ExamChip({ examAt, className = '' }) {
   return (
     <span
       data-hook="exam-chip"
-      className={`inline-flex items-center gap-1.5 rounded-pill px-3 py-1 text-small font-semibold ${soon ? 'bg-[#FFE3F0] text-ink' : 'bg-surface text-ink'} ${className}`}
+      className={`inline-flex items-center gap-1.5 rounded-pill border px-3 py-1 text-small font-semibold text-ink ${soon ? 'border-[#F8CB02] bg-[#FFF4C2]' : 'border-ink/10 bg-surface'} ${className}`}
     >
       <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 shrink-0" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
         <rect x="2" y="3" width="12" height="11" rx="2" />
@@ -64,7 +81,8 @@ export function ExamChip({ examAt, className = '' }) {
 
 /**
  * A bar with its number beside it, always (section 3: "on screen, always
- * show the number next to the bar"). Turquoise: mastery is the Brain side.
+ * show the number next to the bar"). Black on a grey track: the number says
+ * how much, the fill only shows it.
  */
 export function Bar({ pct, label, hint, className = '' }) {
   const v = Math.max(0, Math.min(100, Math.round(pct ?? 0)))
@@ -75,7 +93,7 @@ export function Bar({ pct, label, hint, className = '' }) {
         <span className="text-small font-bold tabular-nums text-ink">{v}%</span>
       </div>
       <div className="mt-1.5 h-2.5 overflow-hidden rounded-pill bg-ink/10" role="progressbar" aria-valuenow={v} aria-valuemin={0} aria-valuemax={100} aria-label={label}>
-        <div className="h-full rounded-pill" style={{ width: `${v}%`, background: TURQ }} />
+        <div className="h-full rounded-pill" style={{ width: `${v}%`, background: INK }} />
       </div>
       {hint && <p className="mt-1 text-small text-muted">{hint}</p>}
     </div>
@@ -93,7 +111,7 @@ export function Anchor({ anchor, fileName, compact = false }) {
   const full = anchorChip(anchor, fileName)
   return (
     <details className="group inline-block max-w-full align-top" data-hook="anchor">
-      <summary className="inline-flex max-w-full cursor-pointer list-none items-center gap-1 rounded-pill border border-[#009DB9]/50 bg-[#E6F6F9] px-2.5 py-0.5 text-[0.8125rem] font-semibold text-ink [&::-webkit-details-marker]:hidden">
+      <summary className="inline-flex max-w-full cursor-pointer list-none items-center gap-1 rounded-pill border border-ink/30 bg-surface px-2.5 py-0.5 text-[0.8125rem] font-semibold text-ink hover:border-ink/60 group-open:border-ink group-open:bg-ink group-open:text-white [&::-webkit-details-marker]:hidden">
         <svg viewBox="0 0 16 16" className="h-3 w-3 shrink-0" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
           <path d="M4 2h6l3 3v9H4z" />
           <path d="M10 2v3h3" />
@@ -102,7 +120,7 @@ export function Anchor({ anchor, fileName, compact = false }) {
           {compact ? anchor.label || full : full}
         </span>
       </summary>
-      <blockquote className="mt-2 max-w-[60ch] rounded-inner border-l-4 border-[#009DB9] bg-surface px-3 py-2 text-small text-ink">
+      <blockquote className="mt-2 max-w-[60ch] rounded-inner border-l-4 border-[#F8CB02] bg-surface px-3 py-2 text-small text-ink shadow-[0_1px_0_rgb(17_17_17/0.06)]">
         {compact && fileName && <span className="mb-1 block text-[0.8125rem] font-semibold">{full}</span>}
         «&#8239;{anchor.excerpt}&#8239;»
       </blockquote>
@@ -126,16 +144,22 @@ export function Anchors({ ids, anchors, files, className = '' }) {
 export function Outside({ children }) {
   const { t } = useT()
   return (
-    <div className="rounded-inner border-2 border-dashed border-ink/25 bg-[#FFF8D6] px-3 py-2" data-hook="outside">
+    <div className="rounded-inner border-2 border-dashed border-ink/30 bg-[#FFF4C2] px-3 py-2" data-hook="outside">
       <p className="text-[0.8125rem] font-bold uppercase tracking-[0.02em] text-ink">{t('bb.ses.outside')}</p>
       {children && <div className="mt-1 text-small text-ink">{children}</div>}
     </div>
   )
 }
 
-/** A big filled button on the brand colour: 19px bold white, the 3:1 bar. */
-export function BigButton({ tone = 'pink', className = '', children, ...rest }) {
-  const bg = tone === 'turquoise' ? 'bg-[#009DB9]' : 'bg-[#FF007A]'
+/**
+ * The big filled button: black, or violet for the answer actions (check,
+ * hand in). White text on both passes at any size; it stays 19px and bold
+ * because it is the one thing on the screen to press. The old tone names
+ * still work: "pink" is now black, "turquoise" violet. Disabled, it is
+ * solid grey: see `[data-surface='bb'] .btn:disabled` in index.css.
+ */
+export function BigButton({ tone = 'ink', className = '', children, ...rest }) {
+  const bg = tone === 'turquoise' || tone === 'violet' ? 'bg-[#6B4EFF]' : 'bg-ink'
   return (
     <button
       {...rest}
@@ -148,7 +172,7 @@ export function BigButton({ tone = 'pink', className = '', children, ...rest }) 
 
 /** A sentence that something went wrong, and what to do. */
 export function Note({ tone = 'info', children, className = '' }) {
-  const cls = tone === 'error' ? 'border-negative/40 bg-[#FDECEE]' : tone === 'good' ? 'border-green/40 bg-[#E8F5EC]' : 'border-[#009DB9]/40 bg-[#E6F6F9]'
+  const cls = tone === 'error' ? 'border-negative/40 bg-[#FDECEE]' : tone === 'good' ? 'border-[#1E7B34]/40 bg-[#E4F5D9]' : 'border-ink/10 bg-[#F4F4F5]'
   return (
     <p role={tone === 'error' ? 'alert' : 'status'} className={`rounded-inner border px-4 py-3 text-small text-ink ${cls} ${className}`}>
       {children}

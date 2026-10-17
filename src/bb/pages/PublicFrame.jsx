@@ -21,7 +21,7 @@ export default function PublicFrame({ children }) {
       <header className="sticky top-0 z-30 px-4 pt-4">
         <nav className="glass-strong mx-auto flex w-full max-w-5xl items-center justify-between gap-3 rounded-card px-3 py-2.5 sm:px-4">
           <Link to="/bb" className="press flex min-w-0 items-center gap-2.5" aria-label={t('bb.nav.home')}>
-            <BBLogo layout="mono" tile="pink" className="h-10 w-auto shrink-0" pad={0.2} />
+            <BBLogo layout="mono" className="h-10 w-auto shrink-0" pad={0.2} />
             <span className="hidden truncate text-body font-bold tracking-tight text-ink min-[400px]:inline">Beauty &amp; Brain</span>
           </Link>
           <div className="flex shrink-0 items-center gap-1 sm:gap-3">
@@ -44,7 +44,7 @@ export default function PublicFrame({ children }) {
       <footer className="relative z-10 border-t border-hairline bg-surface/60 px-6 py-10">
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-3">
-            <BBLogo layout="mono" tile="turquoise" className="h-11 w-auto" pad={0.2} />
+            <BBLogo layout="mono" className="h-11 w-auto" pad={0.2} />
             <div>
               <p className="text-body font-bold text-ink">Beauty &amp; Brain</p>
               <p className="text-small text-muted">{t('bb.line')}</p>

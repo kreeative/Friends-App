@@ -142,7 +142,7 @@ export default function Coach() {
       {courses?.length > 1 && (
         <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label={t('bb.coach.pick')}>
           {courses.map((c) => (
-            <Link key={c.id} to={`/bb/coach/${c.id}`} aria-current={c.id === id ? 'page' : undefined} className={`press rounded-pill border px-3 py-1.5 text-small font-semibold text-ink ${c.id === id ? 'border-[#009DB9] bg-[#DDF3F7]' : 'border-ink/15 bg-surface'}`}>
+            <Link key={c.id} to={`/bb/coach/${c.id}`} aria-current={c.id === id ? 'page' : undefined} className={`press rounded-pill border px-3 py-1.5 text-small font-semibold text-ink ${c.id === id ? 'border-ink bg-[#FFF4C2]' : 'border-ink/15 bg-surface'}`}>
               {c.id === id && '✓ '}
               {c.name}
             </Link>
@@ -151,7 +151,7 @@ export default function Coach() {
       )}
       <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label={t('bb.coach.modes')} data-hook="bb-coach-modes">
         {MODES.map((m) => (
-          <button key={m} type="button" aria-pressed={mode === m} onClick={() => setMode(mode === m ? null : m)} className={`press rounded-pill border px-3 py-1.5 text-small font-semibold text-ink ${mode === m ? 'border-[#FF007A] bg-[#FFE3F0]' : 'border-ink/15 bg-surface'}`}>
+          <button key={m} type="button" aria-pressed={mode === m} onClick={() => setMode(mode === m ? null : m)} className={`press rounded-pill border px-3 py-1.5 text-small font-semibold text-ink ${mode === m ? 'border-ink bg-[#FFF4C2]' : 'border-ink/15 bg-surface'}`}>
             {mode === m && '✓ '}
             {t(`bb.coach.mode.${m}`)}
           </button>
@@ -168,7 +168,7 @@ export default function Coach() {
         ) : (
           messages.map((m, i) => (
             <div key={i} className={m.role === 'user' ? 'flex justify-end' : ''}>
-              <div className={`max-w-[85%] rounded-card px-4 py-3 ${m.role === 'user' ? 'bg-[#FFE3F0]' : 'lg'}`} data-role={m.role}>
+              <div className={`max-w-[85%] rounded-card px-4 py-3 ${m.role === 'user' ? 'bg-[#EFEBFF]' : 'lg'}`} data-role={m.role}>
                 <p className="sr-only">{m.role === 'user' ? t('bb.coach.you') : t('bb.coach.them')}</p>
                 <div className="space-y-2 text-body text-ink">
                   {m.content ? <Rich text={m.content} byShort={byShort} files={maps.files} /> : <span className="flex items-center gap-2 text-small text-muted"><Spinner /> {t('bb.coach.thinking')}</span>}
@@ -206,7 +206,7 @@ export default function Coach() {
               maxLength={6000}
             />
           </label>
-          <button type="submit" disabled={busy || !draft.trim() || !course} className="btn press w-auto shrink-0 bg-[#FF007A] px-5 text-[1.1875rem] font-bold text-white hover:opacity-90" data-hook="bb-coach-send">
+          <button type="submit" disabled={busy || !draft.trim() || !course} className="btn press w-auto shrink-0 bg-ink px-5 text-[1.1875rem] font-bold text-white hover:opacity-90" data-hook="bb-coach-send">
             {busy ? <Spinner /> : t('bb.coach.send')}
           </button>
         </div>

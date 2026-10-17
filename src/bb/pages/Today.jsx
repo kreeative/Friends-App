@@ -68,7 +68,7 @@ export default function Today() {
     <Page>
       <PageHead eyebrow={date} title={bb?.first_name ? t('bb.today.hi', { name: bb.first_name }) : t('bb.today.hi_anon')} />
 
-      <section className="mt-4 rounded-card bg-[#FFE3F0] px-5 py-4" data-hook="bb-beauty-line" aria-live="polite">
+      <section className="mt-4 rounded-card bg-[#FFF4C2] px-5 py-4" data-hook="bb-beauty-line" aria-live="polite">
         <p className="text-body font-semibold text-ink">
           {eve
             ? t('bb.today.sleep')
@@ -84,7 +84,7 @@ export default function Today() {
       </section>
 
       {week && (
-        <section className="mt-3 rounded-card bg-[#E6F6F9] px-5 py-4" data-hook="bb-week-line">
+        <section className="mt-3 rounded-card bg-[#EFEBFF] px-5 py-4" data-hook="bb-week-line">
           <p className="text-small font-bold uppercase tracking-[0.02em] text-ink">⚑ {t('bb.calib.week_title')}</p>
           <p className="mt-1 text-body text-ink">
             {weekText(t, week)}
@@ -104,7 +104,7 @@ export default function Today() {
         <section className="lg mt-6 p-6" data-hook="bb-empty">
           <h2 className="text-h2 text-ink">{t('bb.today.empty_title')}</h2>
           <p className="mt-2 text-body text-muted">{t('bb.today.empty_body')}</p>
-          <Link to="/bb/cours/nouveau" className="btn press mt-6 w-auto bg-[#FF007A] px-8 text-[1.1875rem] font-bold text-white hover:opacity-90" data-hook="bb-add-first">
+          <Link to="/bb/cours/nouveau" className="btn press mt-6 w-auto bg-ink px-8 text-[1.1875rem] font-bold text-white hover:opacity-90" data-hook="bb-add-first">
             {t('bb.today.add_course')}
           </Link>
         </section>
@@ -132,7 +132,7 @@ export default function Today() {
                     <Link
                       to={`/bb/session/${c.id}?m=${minutes}`}
                       data-hook="bb-start"
-                      className={`btn press mt-4 text-center text-[1.1875rem] font-bold ${i === 0 ? 'bg-[#FF007A] text-white hover:opacity-90' : 'btn-ghost'}`}
+                      className={`btn press mt-4 text-center text-[1.1875rem] font-bold ${i === 0 ? 'bg-ink text-white hover:opacity-90' : 'btn-ghost'}`}
                     >
                       {t('bb.today.start', { n: minutes })}
                     </Link>

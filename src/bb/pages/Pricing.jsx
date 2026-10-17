@@ -87,7 +87,7 @@ export default function Pricing() {
             const p = PRICES[plan]
             const pick = plan === 'plus_semester'
             return (
-              <article key={plan} className={`lg flex flex-col p-6 ${pick ? 'ring-2 ring-[#FF007A]' : ''}`} data-hook={`plan-${plan}`}>
+              <article key={plan} className={`lg flex flex-col p-6 ${pick ? 'ring-2 ring-ink' : ''}`} data-hook={`plan-${plan}`}>
                 <h2 className="text-body font-bold text-ink">{t(`bb.price.${plan}`)}</h2>
                 <p className="mt-3 text-[2.25rem] font-bold leading-none tracking-[-0.02em] text-ink">{money(p.cents, locale)}</p>
                 <p className="mt-2 text-small text-muted">
@@ -110,7 +110,7 @@ export default function Pricing() {
                   onClick={() => choose(plan)}
                   disabled={busy !== null}
                   data-hook={`choose-${plan}`}
-                  className={`btn press mt-6 text-[1.1875rem] font-bold ${pick ? 'bg-[#FF007A] text-white hover:opacity-90' : 'btn-outline'}`}
+                  className={`btn press mt-6 text-[1.1875rem] font-bold ${pick ? 'bg-ink text-white hover:opacity-90' : 'btn-outline'}`}
                 >
                   {busy === plan ? '…' : t('bb.price.choose', { plan: 'Plus' })}
                 </button>
@@ -132,7 +132,7 @@ export default function Pricing() {
 
 function Check() {
   return (
-    <svg viewBox="0 0 16 16" className="mt-1 h-3.5 w-3.5 shrink-0 text-[#009DB9]" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+    <svg viewBox="0 0 16 16" className="mt-1 h-3.5 w-3.5 shrink-0 text-[#1E7B34]" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
       <path d="M3 8.5 6.5 12 13 4.5" />
     </svg>
   )

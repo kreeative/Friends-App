@@ -47,7 +47,7 @@ function ItemCard({ item, maps, flagged }) {
       <div className="flex flex-wrap items-center gap-2 text-[0.8125rem] font-semibold text-ink">
         <span className="rounded-pill bg-ink/[0.06] px-2.5 py-0.5">{t(`bb.type.${item.type}`)}</span>
         <span className="rounded-pill bg-ink/[0.06] px-2.5 py-0.5">{t('bb.bank.bloom', { n: item.bloom })}</span>
-        <span className="rounded-pill bg-[#E6F6F9] px-2.5 py-0.5">
+        <span className="rounded-pill bg-[#F4F4F5] px-2.5 py-0.5">
           {item.source === 'concept' ? t('bb.bank.from_prof') : item.quality === 'revised' ? t('bb.bank.revised') : t('bb.bank.verified')}
         </span>
         {flagged && <span className="rounded-pill bg-[#FFE3F0] px-2.5 py-0.5">⚑ {t('bb.bank.sure_wrong')}</span>}
@@ -63,7 +63,7 @@ function ItemCard({ item, maps, flagged }) {
           ) : (
             <ol className="space-y-2">
               {(item.options ?? []).map((o, i) => (
-                <li key={i} className={`rounded-inner border px-3 py-2 ${i === key ? 'border-[#009DB9] bg-[#E6F6F9]' : 'border-ink/10 bg-surface'}`}>
+                <li key={i} className={`rounded-inner border px-3 py-2 ${i === key ? 'border-[#1E7B34] bg-[#E4F5D9]' : 'border-ink/10 bg-surface'}`}>
                   <p className="text-small font-semibold text-ink">
                     {String.fromCharCode(65 + i)}. {o.text} {i === key && <span>✓ {t('bb.ses.right')}</span>}
                   </p>
@@ -139,7 +139,7 @@ export function Bank({ items, chapters, concepts, signals, mistakes, maps }) {
             type="button"
             aria-pressed={filter === f}
             onClick={() => setFilter(f)}
-            className={`press rounded-pill border px-3 py-1.5 text-small font-semibold text-ink ${filter === f ? 'border-[#009DB9] bg-[#DDF3F7]' : 'border-ink/15 bg-surface'}`}
+            className={`press rounded-pill border px-3 py-1.5 text-small font-semibold text-ink ${filter === f ? 'border-ink bg-[#FFF4C2]' : 'border-ink/15 bg-surface'}`}
           >
             {filter === f && '✓ '}
             {f === '' ? t('bb.bank.all') : f === 'weak' ? t('bb.bank.weak') : f === 'signal' ? t('bb.bank.signal') : t('bb.bank.sure_wrong')}

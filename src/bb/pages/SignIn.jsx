@@ -32,7 +32,7 @@ export default function SignInPage() {
       <main className="relative z-10 mx-auto flex min-h-dvh w-full max-w-content flex-col justify-center px-6 pb-16 pt-14 sm:max-w-[28rem]">
         <div className="relative">
           <div className="sm:lg sm:lg-frost sm:p-8">
-            <BBLogo layout="stacked" tile="pink" className="w-44" pad={0.1} />
+            <BBLogo layout="stacked" className="w-44" pad={0.1} />
             <h1 className="mt-8 text-[clamp(2.25rem,10vw,3rem)] font-semibold leading-[1.05] tracking-[-0.03em] text-ink">{t('bb.signin.title')}</h1>
             <p className="lede mt-3 max-w-[34ch]">{t('bb.signin.body')}</p>
             <div className="animate-rise mt-8 space-y-3">
@@ -40,7 +40,7 @@ export default function SignInPage() {
             </div>
           </div>
           <div aria-hidden="true" className="pointer-events-none hidden sm:block">
-            <Tape className="-top-3 left-10" tilt={-7} tone="255 0 122" />
+            <Tape className="-top-3 left-10" tilt={-7} tone="107 78 255" />
             <Spot name="lips" tilt={-12} delay={500} className="absolute -bottom-12 -left-12 w-24" />
             <Spot name="cloudguy" tilt={10} delay={620} className="absolute -right-12 top-[30%] w-20" />
           </div>

@@ -121,7 +121,7 @@ export default function Cases({ course, chapters, anchors, maps }) {
               <figcaption className="text-small font-bold text-ink">{x.title}</figcaption>
               <div className="mt-2 overflow-x-auto rounded-inner border border-hairline">
                 <table className="w-full border-collapse text-left text-small text-ink">
-                  <thead className="bg-[#E6F6F9]">
+                  <thead className="bg-[#F4F4F5]">
                     <tr>
                       {x.columns.map((c, k) => (
                         <th key={k} scope="col" className="px-3 py-2 font-bold">
@@ -176,7 +176,7 @@ export default function Cases({ course, chapters, anchors, maps }) {
             <textarea className="field mt-3 min-h-[14rem]" value={draft} onChange={(e) => setDraft(e.target.value)} maxLength={20000} disabled={busy === 'grade'} data-hook="bb-case-answer" />
           </label>
           <p className="mt-1 text-right text-[0.8125rem] tabular-nums text-muted">{t('bb.case.chars', { n: draft.trim().length })}</p>
-          <BigButton tone="turquoise" className="mt-3 sm:w-auto sm:px-8" onClick={grade} disabled={busy !== null || draft.trim().length < 20} data-hook="bb-case-grade">
+          <BigButton tone="violet" className="mt-3 sm:w-auto sm:px-8" onClick={grade} disabled={busy !== null || draft.trim().length < 20} data-hook="bb-case-grade">
             {busy === 'grade' ? t('bb.case.grading') : t('bb.case.grade')}
           </BigButton>
           {busy === 'grade' && (
@@ -200,7 +200,7 @@ export default function Cases({ course, chapters, anchors, maps }) {
               {marked.criteria.map((c) => (
                 <li key={c.index} className="border-t border-hairline pt-4 first:border-0 first:pt-0">
                   <Bar pct={c.out_of ? (c.points / c.out_of) * 100 : 0} label={`${c.criterion} · ${num(c.points)} / ${num(c.out_of)}`} />
-                  {c.quote && <blockquote className="mt-2 rounded-inner border-l-4 border-[#FF007A] bg-surface px-3 py-2 text-small italic text-ink">«&#8239;{c.quote}&#8239;»</blockquote>}
+                  {c.quote && <blockquote className="mt-2 rounded-inner border-l-4 border-ink bg-[#F4F4F5] px-3 py-2 text-small italic text-ink">«&#8239;{c.quote}&#8239;»</blockquote>}
                   {c.why && <p className="mt-2 text-small text-ink">{c.why}</p>}
                 </li>
               ))}
@@ -212,7 +212,7 @@ export default function Cases({ course, chapters, anchors, maps }) {
                   {marked.improvements.map((m, i) => {
                     const a = m.anchor_id ? maps.anchors.get(m.anchor_id) : null
                     return (
-                      <li key={i} className="rounded-inner bg-[#FFF8D6] px-4 py-3 text-small text-ink">
+                      <li key={i} className="rounded-inner bg-[#FFF4C2] px-4 py-3 text-small text-ink">
                         {m.rubric_index != null && marked.criteria[m.rubric_index] && <p className="font-bold">{marked.criteria[m.rubric_index].criterion}</p>}
                         <p className="mt-0.5">{m.text}</p>
                         {a && (
@@ -257,7 +257,7 @@ export default function Cases({ course, chapters, anchors, maps }) {
                   type="button"
                   aria-pressed={picked.has(ch.id)}
                   onClick={() => toggle(ch.id)}
-                  className={`press max-w-full rounded-pill border-2 px-3 py-1.5 text-left text-small font-semibold text-ink ${picked.has(ch.id) ? 'border-[#FF007A] bg-[#FFE3F0]' : 'border-ink/15 bg-surface'}`}
+                  className={`press max-w-full rounded-pill border-2 px-3 py-1.5 text-left text-small font-semibold text-ink ${picked.has(ch.id) ? 'border-ink bg-[#FFF4C2]' : 'border-ink/15 bg-surface'}`}
                 >
                   {picked.has(ch.id) && '✓ '}
                   {ch.title}

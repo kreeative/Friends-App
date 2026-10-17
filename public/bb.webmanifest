@@ -5,8 +5,8 @@
   "start_url": "/bb/app",
   "scope": "/bb",
   "display": "standalone",
-  "background_color": "#FF007A",
-  "theme_color": "#FF007A",
+  "background_color": "#F4F4F5",
+  "theme_color": "#F4F4F5",
   "lang": "fr",
   "description": "Ton cours, transformé en questions d’examen. Pas besoin de choisir.",
   "icons": [

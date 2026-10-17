@@ -19,12 +19,12 @@ export function rememberReturn(path) {
   }
 }
 
-/** The waiting screen: the logo on its own pink, like the R&F splash. */
+/** The waiting screen: the logo on its black tile, on the light ground. */
 export function Splash() {
   const { t } = useT()
   return (
-    <main className="flex min-h-dvh items-center justify-center bg-[#FF007A]" data-hook="bb-splash">
-      <BBLogo layout="stacked" tile="pink" className="w-[min(52vw,260px)]" pad={0.04} />
+    <main className="flex min-h-dvh items-center justify-center bg-bg" data-hook="bb-splash">
+      <BBLogo layout="stacked" className="w-[min(52vw,260px)]" pad={0.1} />
       <p className="sr-only" role="status">
         {t('bb.loading')}
       </p>

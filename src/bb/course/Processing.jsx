@@ -62,7 +62,7 @@ export default function Processing({ proc, materials, chapters, statusReady }) {
 
 export function Spinner() {
   return (
-    <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 animate-spin text-[#009DB9] motion-reduce:animate-none" aria-hidden="true" fill="none">
+    <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 animate-spin text-ink motion-reduce:animate-none" aria-hidden="true" fill="none">
       <circle cx="12" cy="12" r="9" stroke="currentColor" strokeOpacity="0.25" strokeWidth="3" />
       <path d="M21 12a9 9 0 00-9-9" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
     </svg>

@@ -200,7 +200,7 @@ export default function Course() {
         )}
         {hasItems && (
           <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
-            <Link to={`/bb/session/${course.id}?m=${minutes}`} className="btn press bg-[#FF007A] text-[1.1875rem] font-bold text-white hover:opacity-90 sm:w-auto sm:px-8" data-hook="bb-course-start">
+            <Link to={`/bb/session/${course.id}?m=${minutes}`} className="btn press bg-ink text-[1.1875rem] font-bold text-white hover:opacity-90 sm:w-auto sm:px-8" data-hook="bb-course-start">
               {t('bb.course.start', { n: minutes })}
             </Link>
             <SegTabs value={minutes} options={PRESETS} onChange={setMinutes} label={t('bb.course.minutes', { n: minutes })} hook="bb-course-minutes" labelOf={(n) => t('bb.course.minutes', { n })} />
@@ -318,7 +318,7 @@ function MockTab({ courseId, available }) {
         <h2 className="text-h2 text-ink">{t('bb.mock.title')}</h2>
         <p className="mt-2 text-body text-ink">{t('bb.mock.lede')}</p>
         {available ? (
-          <Link to={`/bb/examen/${courseId}`} className="btn press mt-5 bg-[#FF007A] text-[1.1875rem] font-bold text-white hover:opacity-90 sm:w-auto sm:px-8" data-hook="bb-mock-open">
+          <Link to={`/bb/examen/${courseId}`} className="btn press mt-5 bg-ink text-[1.1875rem] font-bold text-white hover:opacity-90 sm:w-auto sm:px-8" data-hook="bb-mock-open">
             {t('bb.mock.open')}
           </Link>
         ) : (
