@@ -1019,7 +1019,7 @@ const en = {
   'bb.pomo.back_now': 'Back to work now',
   'bb.pomo.hide': 'Minimise',
   'bb.pomo.over_eyebrow': 'Break over',
-  'bb.pomo.over_title': 'Ready to go again?',
+  'bb.pomo.over_title': 'Back to it?',
   'bb.pomo.again': 'Go again · {n} min',
   'bb.pomo.mute': 'Mute',
   'bb.pomo.unmute': 'Turn the sound on',

@@ -454,6 +454,16 @@ eq('the constant says so', SHORT, 8)
   ok('a mock exam is its own block, ended when it is handed in', /pomodoro\.exam\(\{ minutes: exam\.minutes, endsAt: examEnd \}\)/.test(exam) && /handedIn\.current = true[\s\S]{0,120}pomodoro\.examDone\(\)/.test(exam))
   ok('the sounds can be switched off, and the bells ask for it', /if \(prefs\.sound && now - \(before\.endsAt \?\? now\) < RING_LATE_MS\) play\(/.test(timer) && /pomodoro\.setPrefs\(\{ sound: !on \}\)/.test(pomo))
   ok('nothing underlined in it', !/\bunderline\b/.test(pomo))
+  /* "Le texte est trop pres des bords" and "pourquoi il n'y a pas de stickers
+     pour que ce soit fun ?" (Kee): the page's own 24px, and two real stickers
+     on each screen, in a row of their own above the words. */
+  ok('the screens keep the page\'s margins', /max-w-\[28rem\] flex-col px-6 /.test(pomo) && !/max-w-\[28rem\] flex-col px-4 /.test(pomo))
+  ok('and carry real stickers, out of the way of the words', /data-hook="bb-pomo-stickers"/.test(pomo) && /<Spot name=\{a\}/.test(pomo) && /stickers=\{\['thumb', 'popsicle'\]\}/.test(pomo) && /stickers=\{\['cloudguy', 'turntable'\]\}/.test(pomo) && /stickers=\{\['fire', 'baller'\]\}/.test(pomo))
+  /* "Ca ne fait pas equilibre sur l'iPad", the lengths "cote a cote" with
+     the Start (Kee): wherever a length is picked before a Start, the names sit
+     over the lengths, and the lengths take the button's width. */
+  const coursePage = read('bb/pages/Course.jsx')
+  ok('a length is picked in one column with its Start, at the button\'s width', [pomo, today, coursePage].every((src) => /<SegTabs wide /.test(src) && /md:max-w-\[26rem\]/.test(src)) && !/sm:flex-row sm:items-center/.test(coursePage.slice(coursePage.indexOf('data-hook="bb-how-long"'), coursePage.indexOf('data-hook="bb-course-start"'))) && !/flex flex-wrap items-center gap-x-3 gap-y-2" data-hook="bb-how-long"/.test(today))
   ok('the study time is the student\'s own, keyed by its start', /primary key \(user_id, started_at\)/.test(sql) && /create policy bb_focus_own on public\.bb_focus for all to authenticated\s+using \(user_id = auth\.uid\(\)\) with check \(user_id = auth\.uid\(\)\)/.test(sql) && /revoke all on public\.bb_focus from anon/.test(sql) && /security invoker/.test(sql))
   ok('and the migration travels through a clipboard', !/[^\x00-\x7F]/.test(sql))
   ok('the privacy page says it is kept', /your study time \(when each block of focus began/.test(read('legal/content.js')) && /votre temps d’étude \(le début et la durée/.test(read('legal/content.js')))

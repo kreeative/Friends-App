@@ -176,16 +176,18 @@ export default function Course() {
           </p>
         )}
         {/* The question, then the lengths, then the button that starts a
-            session of that length: read left to right, as it is done. The
-            lengths stood unnamed to the right of the button, as if chosen
-            after starting ("le truc de 10, 15 minutes, il est la, faire
-            quoi ?", Kee). */}
+            session of that length, in that order, as it is done. The lengths
+            stood unnamed to the right of the button, as if chosen after
+            starting ("le truc de 10, 15 minutes, il est la, faire quoi ?",
+            Kee). One column of one width at every size, the lengths over the
+            button: side by side on the iPad they looked wrong ("c'est
+            bizarre cote a cote"). */}
         {hasItems && (
           <div className="mt-5" data-hook="bb-how-long">
             <p className="text-small font-semibold text-ink">{t('bb.today.how_long')}</p>
-            <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <SegTabs value={minutes} options={PRESETS} onChange={setMinutes} label={t('bb.today.how_long')} hook="bb-course-minutes" labelOf={(n) => t('bb.course.minutes', { n })} />
-              <Link to={`/hakkilo/session/${course.id}?m=${minutes}`} className="btn press bg-ink font-bold text-white hover:opacity-90 sm:w-auto sm:px-8" data-hook="bb-course-start">
+            <div className="mt-2 flex w-full flex-col gap-3 md:max-w-[26rem]">
+              <SegTabs wide value={minutes} options={PRESETS} onChange={setMinutes} label={t('bb.today.how_long')} hook="bb-course-minutes" labelOf={(n) => t('bb.course.minutes', { n })} />
+              <Link to={`/hakkilo/session/${course.id}?m=${minutes}`} className="btn press bg-ink px-4 font-bold text-white hover:opacity-90" data-hook="bb-course-start">
                 {t('bb.course.start', { n: minutes })}
               </Link>
             </div>

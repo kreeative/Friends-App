@@ -793,8 +793,13 @@ export function Cross({ className = 'h-3.5 w-3.5', strokeWidth = 3 }) {
  * useLayoutEffect et pas useEffect: la mesure doit etre faite avant que le
  * navigateur peigne, sinon la pastille est dessinee a sa position precedente
  * pendant une image et on voit un saut au premier rendu.
+ *
+ * `wide`: toute la largeur de son bloc a toutes les tailles, les onglets
+ * partageant la place, au lieu de se resserrer a partir de sm. Pour une
+ * duree choisie juste avant le bouton qui la lance: les deux ont alors la
+ * meme largeur ("ca ne fait pas equilibre sur l'iPad", Kee).
  */
-export function SegTabs({ value, options, onChange, label, hook, labelOf }) {
+export function SegTabs({ value, options, onChange, label, hook, labelOf, wide = false }) {
   const wrap = useRef(null)
   const [box, setBox] = useState(null)
 
@@ -821,7 +826,7 @@ export function SegTabs({ value, options, onChange, label, hook, labelOf }) {
   return (
     <div
       ref={wrap}
-      className="relative flex w-full gap-1 rounded-pill bg-ink/[0.06] p-1 sm:w-auto"
+      className={wide ? 'relative flex w-full gap-1 rounded-pill bg-ink/[0.06] p-1' : 'relative flex w-full gap-1 rounded-pill bg-ink/[0.06] p-1 sm:w-auto'}
       role="tablist"
       aria-label={label}
       data-hook={hook}
@@ -854,7 +859,7 @@ export function SegTabs({ value, options, onChange, label, hook, labelOf }) {
           /* `relative` pour passer AU-DESSUS de la pastille, qui est en
              absolute derriere. Sans lui le texte passe dessous et disparait. */
           className={`press relative flex-1 rounded-pill px-3 py-1.5 text-small font-semibold
-                      transition-colors sm:flex-none ${
+                      transition-colors ${wide ? '' : 'sm:flex-none'} ${
                         value === v ? 'text-ink' : 'text-muted hover:text-ink'
                       }`}
         >

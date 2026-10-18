@@ -8,6 +8,7 @@ import { BREAK_CHOICES, FOCUS_CHOICES, clock, doneShare, leftOf, spent } from '.
 import { pomodoro, usePomodoro } from './timer'
 import { useFocusTotals } from './focus'
 import { BigButton, LILAC, LOGO_YELLOW, PILL, PILL_ROUND } from './kit'
+import { Spot, cast } from '../components/StickerKit'
 
 /**
  * THE POMODORO, WHAT YOU SEE OF IT.
@@ -214,19 +215,28 @@ export function PomodoroCard({ className = '' }) {
       {idle ? (
         <>
           <p className="mt-1 text-small text-muted">{t('bb.pomo.lede', { focus: prefs.focusMin, pause: prefs.breakMin })}</p>
-          {/* 8px a side in these tabs on a phone, not 12: at 320 three
-              "50 min" got 230px and the last one broke onto two lines. */}
-          <div className="mt-4 space-y-3 [&_[role=tab]]:px-2 sm:[&_[role=tab]]:px-3">
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-              <p className="w-14 shrink-0 text-small font-semibold text-ink">{t('bb.pomo.focus')}</p>
-              <SegTabs value={prefs.focusMin} options={FOCUS_CHOICES} onChange={(n) => pomodoro.setPrefs({ focusMin: n })} label={t('bb.pomo.focus')} hook="bb-pomo-focus" labelOf={nbsp} />
+          {/* One column of one width: the two lengths, then the button that
+              starts them, the width of the button (26rem from md, as every
+              .btn). Side by side on the iPad, a label beside short tabs over a
+              wider button "ne fait pas equilibre" (Kee); each name now sits
+              over its lengths, at every width.
+              8px a side in the tabs on a phone, not 12: at 320 three "50 min"
+              got 230px and the last one broke onto two lines. */}
+          <div className="mt-4 w-full space-y-3 md:max-w-[26rem] [&_[role=tab]]:px-2 sm:[&_[role=tab]]:px-3" data-hook="bb-pomo-lengths">
+            <div>
+              <p className="text-small font-semibold text-ink">{t('bb.pomo.focus')}</p>
+              <div className="mt-1.5">
+                <SegTabs wide value={prefs.focusMin} options={FOCUS_CHOICES} onChange={(n) => pomodoro.setPrefs({ focusMin: n })} label={t('bb.pomo.focus')} hook="bb-pomo-focus" labelOf={nbsp} />
+              </div>
             </div>
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-              <p className="w-14 shrink-0 text-small font-semibold text-ink">{t('bb.pomo.break')}</p>
-              <SegTabs value={prefs.breakMin} options={BREAK_CHOICES} onChange={(n) => pomodoro.setPrefs({ breakMin: n })} label={t('bb.pomo.break')} hook="bb-pomo-break" labelOf={nbsp} />
+            <div>
+              <p className="text-small font-semibold text-ink">{t('bb.pomo.break')}</p>
+              <div className="mt-1.5">
+                <SegTabs wide value={prefs.breakMin} options={BREAK_CHOICES} onChange={(n) => pomodoro.setPrefs({ breakMin: n })} label={t('bb.pomo.break')} hook="bb-pomo-break" labelOf={nbsp} />
+              </div>
             </div>
           </div>
-          <BigButton className="mt-5 w-full" onClick={pomodoro.start} data-hook="bb-pomo-start">
+          <BigButton className="mt-5" onClick={pomodoro.start} data-hook="bb-pomo-start">
             {t('bb.pomo.start', { n: prefs.focusMin })}
           </BigButton>
         </>
@@ -288,8 +298,9 @@ function MuteRound() {
 const SECOND = 'btn press bg-white px-4 font-bold text-ink ring-1 ring-inset ring-ink/15 hover:ring-ink/40'
 
 /** The whole screen, in one colour, its words in the middle and its buttons within reach. */
-function Screen({ ground, phase, eyebrow, title, body, big, onEscape, corner, children }) {
+function Screen({ ground, phase, eyebrow, title, body, big, onEscape, corner, stickers, children }) {
   const box = useRef(null)
+  const [a, b] = cast(stickers ?? [])
   useOwnKeys(box, onEscape)
   useEffect(() => lockScroll(), [])
   /* The screen itself takes the focus, so a screen reader starts on it and
@@ -306,24 +317,37 @@ function Screen({ ground, phase, eyebrow, title, body, big, onEscape, corner, ch
       aria-modal="true"
       aria-labelledby="bb-pomo-screen-title"
       tabIndex={-1}
-      className="fixed inset-0 z-[60] overflow-y-auto outline-none"
+      className="fixed inset-0 z-[60] overflow-y-auto overflow-x-hidden outline-none"
       style={{ background: ground }}
       data-hook="bb-pomo-screen"
       data-phase={phase}
     >
-      <div className="mx-auto flex min-h-full w-full max-w-[28rem] flex-col px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(1.25rem,env(safe-area-inset-top))]">
+      {/* 24px a side on a phone, the page's own margin, and 32 from sm: at
+          16 the words sat "too close to the edges" (Kee). */}
+      <div className="mx-auto flex min-h-full w-full max-w-[28rem] flex-col px-6 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))] sm:px-8">
         <div className="flex items-center justify-between">
           <MuteRound />
           {corner}
         </div>
-        <div className="flex flex-1 flex-col justify-center py-10 text-ink">
+        <div className="flex flex-1 flex-col justify-center py-8 text-ink">
+          {/* "Pourquoi il n'y a pas de stickers pour que ce soit fun ?" (Kee):
+              two real ones, stuck on above the words, never over them or the
+              buttons. Left out on a screen too short to hold them. */}
+          {/* Sized by their height, so a tall one and a wide one take the
+              same room, and the row is tall enough for them once tilted: the
+              cover probe found a 120px thumb in a 112px row, over the line
+              under it. */}
+          <div aria-hidden="true" className="relative mb-4 h-40 shrink-0 md:h-48 [@media(max-height:620px)]:hidden" data-hook="bb-pomo-stickers">
+            {a && <Spot name={a} tilt={-9} eager className="absolute left-0 top-1 h-28 w-auto md:h-36" />}
+            {b && <Spot name={b} tilt={11} delay={120} eager className="absolute right-2 top-4 h-24 w-auto md:h-32" />}
+          </div>
           <p className="text-small font-bold uppercase tracking-[0.04em]">{eyebrow}</p>
           {big != null && (
             <p className="mt-2 text-[clamp(4.5rem,24vw,8rem)] font-bold leading-none tabular-nums" data-hook="bb-pomo-countdown" aria-live="off">
               {big}
             </p>
           )}
-          <h2 id="bb-pomo-screen-title" className={`${big != null ? 'mt-4 text-h2' : 'mt-2 text-[clamp(2rem,9vw,2.75rem)] leading-tight'} font-bold`}>
+          <h2 id="bb-pomo-screen-title" className={`${big != null ? 'mt-4 text-h2' : 'mt-2 text-[clamp(1.75rem,8.5vw,2.5rem)] leading-tight'} font-bold`}>
             {title}
           </h2>
           {body && <p className="mt-3 max-w-[36ch] text-body">{body}</p>}
@@ -345,7 +369,7 @@ export function PomodoroScreens() {
 
   if (state.phase === 'focusDone') {
     return (
-      <Screen ground={LILAC} phase="focusDone" eyebrow={t('bb.pomo.done_eyebrow', { n: state.focusMin })} title={t('bb.pomo.done_title')} body={t('bb.pomo.done_body')}>
+      <Screen ground={LILAC} phase="focusDone" stickers={['thumb', 'popsicle']} eyebrow={t('bb.pomo.done_eyebrow', { n: state.focusMin })} title={t('bb.pomo.done_title')} body={t('bb.pomo.done_body')}>
         <BigButton data-primary onClick={pomodoro.startBreak} data-hook="bb-pomo-take-break">
           {t('bb.pomo.take_break', { n: prefs.breakMin })}
         </BigButton>
@@ -364,6 +388,7 @@ export function PomodoroScreens() {
       <Screen
         ground={LOGO_YELLOW}
         phase="break"
+        stickers={['cloudguy', 'turntable']}
         eyebrow={t('bb.pomo.break_eyebrow')}
         big={clock(leftOf(state, now))}
         title={prefs.sound ? t('bb.pomo.break_body') : t('bb.pomo.break_body_quiet')}
@@ -385,7 +410,7 @@ export function PomodoroScreens() {
   }
   if (state.phase === 'breakDone') {
     return (
-      <Screen ground={LOGO_YELLOW} phase="breakDone" eyebrow={t('bb.pomo.over_eyebrow')} title={t('bb.pomo.over_title')}>
+      <Screen ground={LOGO_YELLOW} phase="breakDone" stickers={['fire', 'baller']} eyebrow={t('bb.pomo.over_eyebrow')} title={t('bb.pomo.over_title')}>
         <BigButton data-primary onClick={pomodoro.start} data-hook="bb-pomo-again">
           {t('bb.pomo.again', { n: prefs.focusMin })}
         </BigButton>
@@ -415,7 +440,7 @@ function Sheet({ onClose }) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="bb-pomo-sheet-title"
-        className="w-full rounded-t-[1.75rem] bg-surface px-4 pb-[max(2rem,env(safe-area-inset-bottom))] pt-6 outline-none md:max-w-[26rem] md:rounded-card md:px-6 md:pb-6"
+        className="w-full rounded-t-[1.75rem] bg-surface px-6 pb-[max(2rem,env(safe-area-inset-bottom))] pt-6 outline-none md:max-w-[26rem] md:rounded-card md:pb-6"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between gap-3">

@@ -227,7 +227,11 @@ and the error points at the wrong thing.
   and tapping it opens the controls. The end of a block is the whole screen
   lilac `#CFC2FF` with "Prends une pause" and its three buttons; the break
   is the whole screen the logo yellow, counting down, and can be tucked
-  away into a yellow badge. The bells are Web Audio, with a sound switch.
+  away into a yellow badge. The screens keep the page's 24px sides ("trop
+  pres des bords" at 16) and carry two real stickers each ("pourquoi il n'y
+  a pas de stickers ?"), in a row of their own above the words, sized by
+  their height, left out below 620px of height; the cover probe finds
+  nothing under them. The bells are Web Audio, with a sound switch.
   The screen takes the focus itself, never its first button (Space moves on
   in a session and would start the break unread), and keeps the keys from
   the page under it. "Quand tu commences une session, ca compte aussi comme
@@ -239,6 +243,12 @@ and the error points at the wrong thing.
   `bb_focus_totals(tz)`. Times are instants, never counted ticks
   (`src/lib/bb/pomodoro.js`, `src/bb/timer.js`, `src/bb/focus.js`,
   `src/bb/Pomodoro.jsx`).
+- **A length picked before a Start is one column with its button.** "Ca ne
+  fait pas equilibre sur l'iPad", the lengths "cote a cote" with the Start
+  (Kee): the question or the name sits over its lengths, never beside them,
+  and the lengths (`SegTabs wide`) take the width of the button they lead
+  to, full width on a phone and the `.btn` 26rem from md. The Pomodoro
+  card, Today's "Tu as combien de temps ?" and the course page's.
 - **On the iPad, Hakkilo stays the one column it was.** "Arrete de
   travailler sur la vue d'iPad, keep-le comme avant" (Kee, 17 October,
   after "a lot of void space on the left and on the right"). For one

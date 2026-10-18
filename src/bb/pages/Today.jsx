@@ -151,10 +151,15 @@ export default function Today() {
               lengths sat at the far end of the heading's row with no word to
               say what they were. They answer a question, so the question is
               written in front of them, and both come before the buttons that
-              start a session of that length. */}
-          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2" data-hook="bb-how-long">
+              start a session of that length. Above them, at every width:
+              beside them on the iPad, the question and the lengths "c'est
+              bizarre cote a cote" (Kee); the lengths take the width of the
+              buttons they lead to. */}
+          <div className="mt-3" data-hook="bb-how-long">
             <p className="text-small font-semibold text-ink">{t('bb.today.how_long')}</p>
-            <SegTabs value={minutes} options={PRESETS} onChange={setMinutes} label={t('bb.today.how_long')} hook="bb-minutes" labelOf={(n) => t('bb.course.minutes', { n })} />
+            <div className="mt-2 w-full md:max-w-[26rem]">
+              <SegTabs wide value={minutes} options={PRESETS} onChange={setMinutes} label={t('bb.today.how_long')} hook="bb-minutes" labelOf={(n) => t('bb.course.minutes', { n })} />
+            </div>
           </div>
           <ul className="card-grid mt-4" data-hook="bb-today-courses">
             {ordered.map((c, i) => {
