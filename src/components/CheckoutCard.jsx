@@ -16,6 +16,14 @@ import { Spot } from './StickerKit'
  * may reach it. A band is 3.5rem and a sticker hangs at most 2.5rem into it
  * (STICKERS below; measured by the probe at every width).
  *
+ * On a phone the card is a band from one edge of the screen to the other:
+ * "le design du checkout n'est pas bien ajuste sur le telephone" (Kee).
+ * Inside the page's 24px and the card's 8px, Stripe's form had 326px of a
+ * 390 screen and laid its own margins inside that. Edge to edge it has the
+ * screen, and its margins line up with our words. Both pages that use it
+ * have 24px sides (px-6), which -mx-6 undoes; from sm it is the rounded
+ * card again.
+ *
  * `onFail` runs when the form cannot open (Stripe.js blocked, the network
  * gone): the page then sends the buyer to Stripe's own page instead.
  */
@@ -38,8 +46,8 @@ export default function CheckoutCard({ clientSecret, ground, stickers = [], load
   }, [clientSecret])
 
   return (
-    <div className="relative mt-12" data-hook="checkout-card">
-      <div className="rounded-card px-2 py-14 sm:px-4" style={{ background: ground }} data-hook="checkout-ground">
+    <div className="relative -mx-6 mt-12 sm:mx-0" data-hook="checkout-card">
+      <div className="px-0 py-14 sm:rounded-card sm:px-4" style={{ background: ground }} data-hook="checkout-ground">
         {!ready && (
           <p role="status" className="py-20 text-center text-small font-semibold text-ink" data-hook="checkout-loading">
             {loading}
@@ -60,7 +68,7 @@ export default function CheckoutCard({ clientSecret, ground, stickers = [], load
  * rem, so each hangs 2rem off the card and at most 2.5rem into the band.
  */
 export const CORNERS = {
-  topLeft: '-top-8 left-1 w-[4.5rem] sm:left-3 sm:w-20',
-  topRight: '-top-8 right-1 w-24 sm:right-4 sm:w-28',
-  bottomRight: '-bottom-8 right-3 w-[4.5rem] sm:right-8 sm:w-20',
+  topLeft: '-top-8 left-5 w-[4.5rem] sm:left-3 sm:w-20',
+  topRight: '-top-8 right-5 w-24 sm:right-4 sm:w-28',
+  bottomRight: '-bottom-8 right-6 w-[4.5rem] sm:right-8 sm:w-20',
 }
