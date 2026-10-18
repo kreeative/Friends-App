@@ -249,6 +249,17 @@ and the error points at the wrong thing.
   and the lengths (`SegTabs wide`) take the width of the button they lead
   to, full width on a phone and the `.btn` 26rem from md. The Pomodoro
   card, Today's "Tu as combien de temps ?" and the course page's.
+- **Hakkilo runs on two Claude models** ("okay pour Sonnet", 18 October,
+  once the token costs were laid out). Sonnet 5.5, half the price, writes
+  for the student: the coach, a chapter's questions, the corrections, the
+  cases. Opus 5.5 reads the files into the course map and checks every
+  question before it is kept (`MODEL` and `HEAVY_MODEL` in
+  `api/_bb/common.js`; `BB_MODEL` and `BB_MODEL_HEAVY` in Vercel override
+  them). Sonnet 5.5 answers a 400 to `thinking: { type: 'disabled' }` and to
+  a forced `tool_choice`; `server.test.mjs` fails if either appears. The
+  tokens are paid by the Anthropic API account behind `ANTHROPIC_API_KEY`,
+  never by Kee's Claude subscription; prices per call in `RATES`
+  (`src/lib/bb/plans.js`), real spend in `bb_usage`.
 - **On the iPad, Hakkilo stays the one column it was.** "Arrete de
   travailler sur la vue d'iPad, keep-le comme avant" (Kee, 17 October,
   after "a lot of void space on the left and on the right"). For one

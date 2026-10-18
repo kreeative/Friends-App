@@ -293,5 +293,21 @@ function fakeClient(answers) {
   ok('crawlers of /hakkilo and /hakkilo/tarifs are sent to it, before the catch-all', at('/hakkilo') >= 0 && at('/hakkilo/tarifs') >= 0 && at('/hakkilo') < at('/((?!api/).*)') && rewrites[at('/hakkilo')].has?.[0]?.key === 'user-agent')
 }
 
+/* --- which model does what ------------------------------------------------------------------- */
+{
+  /* "Okay pour Sonnet" (Kee): Sonnet 5.5 writes for the student, Opus 5.5
+     reads the files and checks the questions. */
+  const src = (p) => readFileSync(new URL(`../../../api/_bb/${p}`, import.meta.url), 'utf8')
+  const common = src('common.js')
+  ok('Sonnet 5.5 by default, Opus 5.5 for the heavy jobs', /export const MODEL = 'claude-sonnet-5-5'/.test(common) && /export const HEAVY_MODEL = 'claude-opus-5-5'/.test(common) && /heavyModel = \(\) => process\.env\.BB_MODEL_HEAVY \|\| HEAVY_MODEL/.test(common))
+  ok('reading a file and checking a question stay on the heavy model', /model: heavyModel\(\)/.test(src('ingest.js')) && /model: heavyModel\(\)/.test(src('check.js')) && /model = heavyModel\(\)/.test(src('pipeline.js')))
+  /* Sonnet 5.5 answers a 400 to both (shared/model-migration.md). */
+  /* The code only: the comment in common.js names both to say they are not sent. */
+  const all = ['common.js', 'coach.js', 'check.js', 'ingest.js', 'generate.js', 'cases.js', 'pipeline.js'].map(src).join('\n').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
+  ok('no request turns thinking off or forces a tool', !/type:\s*['"]disabled['"]/.test(all) && !/tool_choice/.test(all) && !/budget_tokens/.test(all))
+  const rates = readFileSync(new URL('./plans.js', import.meta.url), 'utf8')
+  ok('and its calls are priced at its own rate', /'claude-sonnet-5-5': \{ input: 2, output: 10, cacheRead: 0\.2, cacheWrite: 2\.5 \}/.test(rates))
+}
+
 console.log(`  ${pass} passed, ${fail} failed`)
 if (fail) process.exit(1)
