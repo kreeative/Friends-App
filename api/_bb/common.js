@@ -22,12 +22,27 @@ import { ROUTE_BUCKET, allow, costOf, tierOf } from '../../src/lib/bb/plans.js'
  * returned: errors go through failureOf()/apiMessage(), which redact.
  */
 
-/* Claude Opus 5.5, the default; BB_MODEL changes it without a redeploy.
-   BB_MODEL_HEAVY for reading files and checking questions, if Kee ever
-   wants Fable 5.1 there. */
-export const MODEL = 'claude-opus-5-5'
+/* Two models since 18 October: "okay pour Sonnet" (Kee), once what the
+   tokens cost had been laid out.
+
+   Claude Sonnet 5.5, half the price of Opus 5.5 ($2 in and $10 out per
+   million tokens, against $4 and $20; cache reads $0.20 on both), for what
+   is written for the student: the coach, a chapter's questions, the
+   corrections, the cases.
+
+   Claude Opus 5.5 keeps the two jobs where a mistake spreads to everything
+   after it: reading a file into the course's map (ingest.js), and checking
+   every question against the excerpts before it is kept (check.js,
+   pipeline.js). A question Sonnet writes is still vetted by Opus.
+
+   Sonnet 5.5 refuses `thinking: { type: 'disabled' }` and a forced
+   tool_choice with a 400; neither is sent anywhere here (server.test.mjs
+   keeps it so). BB_MODEL and BB_MODEL_HEAVY change either in Vercel, then a
+   redeploy, without touching the code. */
+export const MODEL = 'claude-sonnet-5-5'
+export const HEAVY_MODEL = 'claude-opus-5-5'
 export const model = () => process.env.BB_MODEL || MODEL
-export const heavyModel = () => process.env.BB_MODEL_HEAVY || model()
+export const heavyModel = () => process.env.BB_MODEL_HEAVY || HEAVY_MODEL
 
 export function admin() {
   return createClient(env('supabaseUrl'), env('serviceRole'), { auth: { persistSession: false } })
