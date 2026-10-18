@@ -322,6 +322,10 @@ and the error points at the wrong thing.
   same values as the `branding_settings` of `api/_brand.js`), with real
   stickers on the card's top and bottom bands (`CheckoutCard`), never over
   the form (an iframe nothing here can measure) and never over our words.
+  On a phone that card is a band from one edge of the screen to the other
+  ("pas bien ajuste sur le telephone": inside the page's 24px and the
+  card's 8px, Stripe's form had 326px of 390 and its own margins inside
+  that); from sm it is the rounded card.
   The form opens only when the build has `VITE_STRIPE_PUBLISHABLE_KEY` and
   the server's two keys are of one mode (`embeddable`); otherwise, and
   whenever Stripe.js cannot load, the buyer goes to Stripe's hosted page as

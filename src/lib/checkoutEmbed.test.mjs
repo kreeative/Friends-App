@@ -145,6 +145,12 @@ for (const [name, code] of [['Hakkilo', hak], ['the books', rf]]) {
   ok(`${name}: Stripe's page when the server sends its address`, /window\.location\.(assign\(r\.data\.url\)|href = r\.url)/.test(code))
   ok(`${name}: and when the form cannot open here`, /onFail=\{hosted\}/.test(code) && /async function hosted\(\)/.test(code))
 }
+/* "Le design du checkout n'est pas bien ajuste sur le telephone" (Kee): inside the
+   page's 24px and the card's 8px, Stripe's form had 326px of a 390 screen. On a
+   phone the card is a band from edge to edge, undoing the pages' px-6; from sm
+   the rounded card again. */
+ok('on a phone the card runs edge to edge', /className="relative -mx-6 mt-12 sm:mx-0" data-hook="checkout-card"/.test(card) && /className="px-0 py-14 sm:rounded-card sm:px-4"/.test(card))
+ok('and both pages have the 24px sides it undoes', /<section className="mx-auto w-full max-w-3xl px-6 /.test(hak) && /<div className="px-6 pb-24 pt-14">\{body\}<\/div>/.test(rf))
 ok('no badge drawn in code on the card', !/rounded-pill[^"]*uppercase/.test(card) && /<Spot /.test(card))
 
 /* --- the way there -------------------------------------------------------------------------- */
