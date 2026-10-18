@@ -18,7 +18,14 @@ export default function PublicFrame({ children }) {
   const { user } = useAuth()
   return (
     <div className="ground relative min-h-dvh overflow-x-clip" data-hook="bb-public">
-      <header className="sticky top-0 z-30 px-4 pt-4">
+      {/* A solid bar on its own ground, out to the screen's edge, as in the
+          app (BBShell): glass over this flat page was a window, and on an
+          iPhone "Retour aux tarifs" showed half under the bar once the
+          checkout had scrolled a little. */}
+      <header
+        className="sticky top-0 z-30 bg-bg px-4 pb-2 pt-[max(1rem,env(safe-area-inset-top))] before:pointer-events-none before:absolute before:inset-x-0 before:bottom-full before:h-[50vh] before:bg-bg"
+        data-hook="bb-public-bar"
+      >
         <nav className="glass-strong mx-auto flex w-full max-w-5xl items-center justify-between gap-3 rounded-card px-3 py-2.5 sm:px-4">
           <Link to="/hakkilo" className="press flex min-w-0 items-center gap-2.5" aria-label={t('bb.nav.home')}>
             <BBLogo layout="line" className="h-10 w-auto shrink-0" pad={0.2} />

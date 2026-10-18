@@ -1,6 +1,6 @@
 import Stripe from 'stripe'
 import { env } from '../_env.js'
-import { BRANDING_API_VERSION, CHECKOUT_BRANDING, embeddable } from '../_brand.js'
+import { brandingFor, createCheckoutSession, embeddable } from '../_brand.js'
 import { start, subscriptionOf } from './common.js'
 import { PAID, PRICES, tierOf } from '../../src/lib/bb/plans.js'
 
@@ -167,7 +167,7 @@ export async function checkout(req, res) {
     const stripe = stripeClient()
     const productId = await product(stripe)
     const meta = { product: 'bb', user_id: user.id, plan }
-    const session = await stripe.checkout.sessions.create({
+    const session = await createCheckoutSession(stripe, {
       mode: 'subscription',
       line_items: [
         {
@@ -190,8 +190,8 @@ export async function checkout(req, res) {
         ? { ui_mode: 'embedded', return_url: paid }
         : { success_url: paid, cancel_url: `${origin}/hakkilo/tarifs?plus=annule` }),
       /* Hakkilo's own page, not the account's: see api/_brand.js. */
-      branding_settings: CHECKOUT_BRANDING.hakkilo,
-    }, { apiVersion: BRANDING_API_VERSION })
+      branding_settings: brandingFor('hakkilo', embedded),
+    })
     return res.status(200).json(embedded ? { client_secret: session.client_secret } : { url: session.url })
   } catch (err) {
     return stripeFail(res, err, 'checkout')

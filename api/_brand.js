@@ -84,3 +84,41 @@ export const CHECKOUT_BRANDING = {
     border_style: 'rounded',
   },
 }
+
+/**
+ * What a session may carry, by where it opens.
+ *
+ * Stripe's form inside our page refuses the icon: "You cannot set `icon`
+ * when `ui_mode` is `embedded`" was the answer to every Hakkilo Plus
+ * checkout once the keys went live on 18 October, and the page said "Le
+ * paiement n'a pas pu demarrer". The icon is the header of Stripe's own
+ * page; ours shows the logo itself. Stripe's page keeps all of it.
+ */
+export function brandingFor(app, embedded) {
+  const { icon, ...rest } = CHECKOUT_BRANDING[app]
+  return embedded ? rest : CHECKOUT_BRANDING[app]
+}
+
+/** A refusal that names a branding field, and nothing else. */
+export function brandingRefused(err) {
+  if (err?.type !== 'StripeInvalidRequestError') return false
+  if (String(err.param ?? '').startsWith('branding_settings')) return true
+  return /`(branding_settings|icon|logo|display_name|background_color|button_color|font_family|border_style)`/.test(String(err.message ?? ''))
+}
+
+/**
+ * The session, at the branding version. A sale never fails over how it
+ * looks: if Stripe refuses a branding field (the docs do not list what each
+ * mode accepts, and only the live keys showed the icon), the same session
+ * goes again without branding, and the log says which field it was.
+ */
+export async function createCheckoutSession(stripe, config) {
+  try {
+    return await stripe.checkout.sessions.create(config, { apiVersion: BRANDING_API_VERSION })
+  } catch (err) {
+    if (!config.branding_settings || !brandingRefused(err)) throw err
+    console.error(`checkout branding refused, sent without it: ${err.param ?? '-'} ${err.message}`)
+    const { branding_settings: _, ...plain } = config
+    return stripe.checkout.sessions.create(plain, { apiVersion: BRANDING_API_VERSION })
+  }
+}
