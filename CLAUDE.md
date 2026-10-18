@@ -328,7 +328,13 @@ and the error points at the wrong thing.
   before. `ui_mode: 'embedded'`, Stripe.js from `js.stripe.com/clover/` and
   `initEmbeddedCheckout` belong to `BRANDING_API_VERSION`: dahlia renamed
   them (`embedded_page`, `createEmbeddedCheckoutPage`), so they move
-  together or not at all. "Sandbox" on the form is the test key.
+  together or not at all. "Sandbox" on the form is the test key. The form
+  carries no icon: "You cannot set `icon` when `ui_mode` is `embedded`"
+  failed every live Hakkilo Plus checkout on 18 October ("Le paiement n'a
+  pas pu demarrer"), so `brandingFor(app, embedded)` leaves it out, and
+  `createCheckoutSession` (`api/_brand.js`) sends a session again without
+  branding when Stripe refuses a branding field: a sale never fails over
+  how it looks. Both checkouts create their session through it.
 - Look at sticker art on a dark or coloured ground before trusting it. A
   white page hides a grey ghost outline and a stair-stepped cut; the pink
   footer shows both. `python3 scripts/diecut.py --write` re-cuts every file.

@@ -69,12 +69,67 @@ for (const [app, b] of Object.entries(CHECKOUT_BRANDING)) {
 }
 
 const bb = read('api/_bb/billing.js')
-ok('the Hakkilo Plus session carries Hakkilo branding', /branding_settings: CHECKOUT_BRANDING\.hakkilo/.test(bb))
-ok('and is created at that version', /\}, \{ apiVersion: BRANDING_API_VERSION \}\)/.test(bb))
+ok('the Hakkilo Plus session carries Hakkilo branding, for where it opens', /branding_settings: brandingFor\('hakkilo', embedded\)/.test(bb))
+ok('and is made by createCheckoutSession, at that version', /await createCheckoutSession\(stripe, \{/.test(bb) && !/checkout\.sessions\.create\(/.test(bb))
 ok('every other Stripe call keeps the pinned version', /new Stripe\(env\('stripeSecret'\), \{ apiVersion: '2024-06-20' \}\)/.test(bb))
 const rf = read('api/checkout.js')
-ok('the book session carries Rich & Friends branding', /branding_settings: CHECKOUT_BRANDING\.rf/.test(rf))
-ok('and is created at that version', /checkout\.sessions\.create\(sessionConfig, \{ apiVersion: BRANDING_API_VERSION \}\)/.test(rf))
+ok('the book session carries Rich & Friends branding, for where it opens', /branding_settings: brandingFor\('rf', embedded\)/.test(rf))
+ok('and is made by createCheckoutSession', /await createCheckoutSession\(stripe, sessionConfig\)/.test(rf) && !/checkout\.sessions\.create\(/.test(rf))
+
+/* "You cannot set `icon` when `ui_mode` is `embedded`": Stripe's answer to every
+   Hakkilo Plus checkout once the keys went live (18 October). */
+const { brandingFor, brandingRefused, createCheckoutSession } = await import('../../api/_brand.js')
+for (const app of Object.keys(CHECKOUT_BRANDING)) {
+  ok(`${app}: the form inside our page carries no icon`, !('icon' in brandingFor(app, true)) && !('logo' in brandingFor(app, true)))
+  ok(`${app}: and keeps the colours, the font and the corners`, ['background_color', 'button_color', 'font_family', 'border_style'].every((k) => brandingFor(app, true)[k] === CHECKOUT_BRANDING[app][k]))
+  ok(`${app}: Stripe's own page keeps its icon`, brandingFor(app, false).icon?.type === 'url')
+}
+
+const refusal = (message, param) => Object.assign(new Error(message), { type: 'StripeInvalidRequestError', param })
+ok('the live refusal reads as a branding refusal', brandingRefused(refusal('You cannot set `icon` when `ui_mode` is `embedded`.')))
+ok('so does one that names its param', brandingRefused(refusal('Invalid value', 'branding_settings[font_family]')))
+ok('a refused promo code is not one', !brandingRefused(refusal('This promotion code cannot be redeemed', 'discounts')))
+ok('nor a card or a network error', !brandingRefused(Object.assign(new Error('`icon`'), { type: 'StripeConnectionError' })))
+
+const fakeStripe = (refuse) => {
+  const calls = []
+  return {
+    calls,
+    checkout: {
+      sessions: {
+        async create(config, opts) {
+          calls.push({ config, opts })
+          if (refuse && config.branding_settings) throw refuse
+          return { id: 'cs_fake', client_secret: 'secret_fake' }
+        },
+      },
+    },
+  }
+}
+{
+  const s = fakeStripe(null)
+  const out = await createCheckoutSession(s, { mode: 'subscription', branding_settings: brandingFor('hakkilo', true) })
+  ok('accepted: one call, at the branding version', out.id === 'cs_fake' && s.calls.length === 1 && s.calls[0].opts.apiVersion === BRANDING_API_VERSION)
+}
+{
+  const s = fakeStripe(refusal('You cannot set `display_name` when `ui_mode` is `embedded`.'))
+  const err = console.error
+  console.error = () => {}
+  const out = await createCheckoutSession(s, { mode: 'subscription', allow_promotion_codes: true, branding_settings: brandingFor('hakkilo', true) })
+  console.error = err
+  ok('a branding field refused: the same session again, without branding', out.id === 'cs_fake' && s.calls.length === 2 && !('branding_settings' in s.calls[1].config))
+  ok('and nothing else of it lost', s.calls[1].config.allow_promotion_codes === true && s.calls[1].config.mode === 'subscription' && s.calls[1].opts.apiVersion === BRANDING_API_VERSION)
+}
+{
+  const s = fakeStripe(refusal('No such price', 'line_items[0]'))
+  let threw = false
+  try {
+    await createCheckoutSession(s, { mode: 'payment', branding_settings: brandingFor('rf', false) })
+  } catch {
+    threw = true
+  }
+  ok('any other refusal is still a failure, tried once', threw && s.calls.length === 1)
+}
 
 console.log(`  ${pass} passed, ${fail} failed`)
 if (fail) process.exit(1)

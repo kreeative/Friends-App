@@ -62,7 +62,7 @@ for (const [name, code] of [['Hakkilo Plus', bb], ['the books', books]]) {
   ok(`${name}: the form's session is ui_mode embedded, back to the same address`, /\? \{ ui_mode: 'embedded', return_url: paid \}/.test(code))
   ok(`${name}: Stripe's page keeps its success and cancel`, /: \{ success_url: paid, cancel_url: `\$\{origin\}/.test(code))
   ok(`${name}: the form gets its client secret, Stripe's page its url`, /json\(embedded \? \{ client_secret: session\.client_secret \} : \{ url: session\.url \}\)/.test(code))
-  ok(`${name}: made at the branding version`, /\{ apiVersion: BRANDING_API_VERSION \}\)/.test(code))
+  ok(`${name}: made at the branding version`, /await createCheckoutSession\(stripe, /.test(code))
 }
 ok('Hakkilo comes back with the session, for /sync', /const paid = `\$\{origin\}\/hakkilo\/profil\?plus=ok&session_id=\{CHECKOUT_SESSION_ID\}`/.test(bb))
 

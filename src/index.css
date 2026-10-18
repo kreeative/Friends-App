@@ -1911,7 +1911,7 @@
    * would be grey smudges behind the placeholder instead, which is no
    * better.
    */
-  [data-surface='bb'] :is(.lg-chrome, .lg-rail) {
+  [data-surface='bb'] :is(.lg-chrome, .lg-rail, .glass-strong) {
     background: rgb(255 255 255);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;

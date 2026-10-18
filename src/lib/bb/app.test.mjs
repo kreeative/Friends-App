@@ -496,5 +496,15 @@ eq('the constant says so', SHORT, 8)
   eq('and for every kind', [...EXAM_KINDS, 'exam'].filter((k) => !(`bb.ex.${k}` in fr) || !(`bb.ex.${k}` in en)), [])
 }
 
+{
+  /* "Retour aux tarifs" half under the public bar on an iPhone (18 October):
+     its nav was glass at 96% over a flat page. Solid, on its own ground out to
+     the screen's edge, as in the app. */
+  const read = (path) => readFileSync(new URL(`../../${path}`, import.meta.url), 'utf8')
+  const frame = read('bb/pages/PublicFrame.jsx')
+  ok('the public bar sits on the page\'s ground, past the safe area', /<header\s+className="sticky top-0 z-30 bg-bg [^"]*pt-\[max\(1rem,env\(safe-area-inset-top\)\)\][^"]*before:bg-bg"/.test(frame))
+  ok('and its nav is solid white on Hakkilo', /\[data-surface='bb'\] :is\(\.lg-chrome, \.lg-rail, \.glass-strong\) \{\s*background: rgb\(255 255 255\);/.test(read('index.css')))
+}
+
 console.log(`  ${pass} passed, ${fail} failed`)
 if (fail) process.exit(1)
