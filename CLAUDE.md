@@ -260,6 +260,17 @@ and the error points at the wrong thing.
   tokens are paid by the Anthropic API account behind `ANTHROPIC_API_KEY`,
   never by Kee's Claude subscription; prices per call in `RATES`
   (`src/lib/bb/plans.js`), real spend in `bb_usage`.
+- **Hakkilo's AI is on hold since 19 October.** "I have 100 dollars of
+  free API credit but I don't wanna use it, so put a hold on the API
+  utilisation for Hakkilo" (Kee). `AI_PAUSED` in `api/_bb/common.js` is
+  true: `start()` answers 503 `paused` to every route that would call a
+  model, before the key or any client, so nothing is spent; status says
+  `paused`, and the student reads "Les fonctions IA de Hakkilo sont en
+  pause" (`bb.err.paused`, `bb.proc.paused`) while sessions, cards, the
+  plan, the calendar and the Pomodoro keep working. `BB_AI_PAUSED=0` in
+  Vercel (then a redeploy) resumes without a code change; resuming in the
+  code is setting `AI_PAUSED` back to false, only when Kee asks. Rich &
+  Friends' syllabus reader (`api/syllabus.js`) is not held.
 - **On the iPad, Hakkilo stays the one column it was.** "Arrete de
   travailler sur la vue d'iPad, keep-le comme avant" (Kee, 17 October,
   after "a lot of void space on the left and on the right"). For one

@@ -506,5 +506,16 @@ eq('the constant says so', SHORT, 8)
   ok('and its nav is solid white on Hakkilo', /\[data-surface='bb'\] :is\(\.lg-chrome, \.lg-rail, \.glass-strong\) \{\s*background: rgb\(255 255 255\);/.test(read('index.css')))
 }
 
+{
+  /* The AI on hold (19 October): the student reads a sentence, not an error,
+     and the course page stops asking. */
+  const read = (path) => readFileSync(new URL(`../../${path}`, import.meta.url), 'utf8')
+  const strings = read('bb/strings.js')
+  ok('the pause is said in both languages', (strings.match(/'bb\.err\.paused':/g) ?? []).length === 2 && (strings.match(/'bb\.proc\.paused':/g) ?? []).length === 2)
+  ok('every failed model call says it', /if \(error === 'paused'\) return t\('bb\.err\.paused'\)/.test(read('bb/errors.js')))
+  ok('the reading loop stops on it', /const STOP = new Set\(\['limit', 'paused',/.test(read('bb/course/useProcessing.js')))
+  ok('the course page says why its files wait', /t\(paused \? 'bb\.proc\.paused' : 'bb\.proc\.no_key'\)/.test(read('bb/course/Processing.jsx')) && /paused=\{Boolean\(status\?\.paused\)\}/.test(read('bb/pages/Course.jsx')))
+}
+
 console.log(`  ${pass} passed, ${fail} failed`)
 if (fail) process.exit(1)

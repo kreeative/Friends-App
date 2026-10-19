@@ -391,6 +391,7 @@ const fr = {
   'bb.proc.first_ready': 'Le chapitre 1 est prêt. Ta première séance commence par un petit prétest.',
   'bb.proc.keep_open': 'Garde cette page ouverte pendant la lecture. Ça prend une à trois minutes par fichier.',
   'bb.proc.no_key': 'Le coach n’est pas encore branché sur ce site. Tes fichiers sont gardés et seront lus dès qu’il le sera.',
+  'bb.proc.paused': 'Les fonctions IA sont en pause. Tes fichiers sont gardés et seront lus dès qu’elles reviennent.',
   'bb.proc.err.download': 'Le fichier n’a pas pu être relu.',
   'bb.proc.err.too_big': 'Fichier trop lourd.',
   'bb.proc.err.not_pdf': 'Ce PDF est abîmé.',
@@ -576,6 +577,7 @@ const fr = {
   'bb.limit.upgrade': 'Plus te donne bien plus de marge.',
   'bb.limit.tomorrow': 'demain à {time}',
   'bb.err.no_key': 'Le coach n’est pas encore branché sur ce site.',
+  'bb.err.paused': 'Les fonctions IA de Hakkilo sont en pause pour le moment. Tes séances, tes fiches, ton plan et ton calendrier marchent comme d’habitude.',
   'bb.err.offline': 'Pas de réseau. Réessaie quand tu es connectée.',
   'bb.err.generic': 'Ça n’a pas marché. Réessaie.',
 
@@ -1181,6 +1183,7 @@ const en = {
   'bb.proc.first_ready': 'Chapter 1 is ready. Your first session starts with a short pretest.',
   'bb.proc.keep_open': 'Keep this page open while it reads. It takes one to three minutes per file.',
   'bb.proc.no_key': 'The coach isn’t connected on this site yet. Your files are kept and will be read as soon as it is.',
+  'bb.proc.paused': 'The AI features are on pause. Your files are kept and will be read as soon as they’re back.',
   'bb.proc.err.download': 'The file couldn’t be read back.',
   'bb.proc.err.too_big': 'File too large.',
   'bb.proc.err.not_pdf': 'This PDF is damaged.',
@@ -1358,6 +1361,7 @@ const en = {
   'bb.limit.upgrade': 'Plus gives you much more room.',
   'bb.limit.tomorrow': 'tomorrow at {time}',
   'bb.err.no_key': 'The coach isn’t connected on this site yet.',
+  'bb.err.paused': 'Hakkilo’s AI features are on pause for now. Your sessions, cards, plan and calendar work as usual.',
   'bb.err.offline': 'No network. Try again once you’re connected.',
   'bb.err.generic': 'That didn’t work. Try again.',
 

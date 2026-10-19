@@ -1,5 +1,5 @@
 import { env } from '../_env.js'
-import { start, subscriptionOf } from './common.js'
+import { aiPaused, start, subscriptionOf } from './common.js'
 import { refreshFromStripe } from './billing.js'
 import { LIMITS, ROUTE_BUCKET, resetsAt, tierOf } from '../../src/lib/bb/plans.js'
 
@@ -75,7 +75,8 @@ export default async function status(req, res) {
     resetsAt: resetsAt(),
     courses: courses ?? 0,
     prepared: prepared ?? 0,
-    ready: { model: Boolean(env('anthropicKey')), billing: Boolean(env('stripeSecret')) },
+    ready: { model: Boolean(env('anthropicKey')) && !aiPaused(), billing: Boolean(env('stripeSecret')) },
+    paused: aiPaused(),
     cost,
   })
 }
