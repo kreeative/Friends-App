@@ -12,6 +12,7 @@ export function errorMessage(t, locale, data) {
     const when = t('bb.limit.tomorrow', { time })
     return `${t('bb.limit.reached', { when })}${data?.tier === 'free' ? ` ${t('bb.limit.upgrade')}` : ''}`
   }
+  if (error === 'paused') return t('bb.err.paused')
   if (error === 'plan_chapters') return t('bb.course.plan_chapters')
   if (error === 'no_key' || error === 'key_format' || error === 'no_workspace' || error === 'setup') return t('bb.err.no_key')
   if (error === 'offline') return t('bb.err.offline')

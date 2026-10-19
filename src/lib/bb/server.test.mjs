@@ -20,7 +20,7 @@ import { blockFor, captionText, docxText, pptxText } from '../../../api/_bb/file
 import { writeMap } from '../../../api/_bb/ingest.js'
 import { shape } from '../../../api/_bb/generate.js'
 import { originOf, planOf, subscriptionRow } from '../../../api/_bb/billing.js'
-import { keyMap, looseJson, structured } from '../../../api/_bb/common.js'
+import { AI_PAUSED, aiPaused, keyMap, looseJson, start, structured } from '../../../api/_bb/common.js'
 import { courseContext } from '../../../api/_bb/coach.js'
 import { bbPreviewHtml } from '../../../api/_bb/preview.js'
 import { formatLine, generatorSystem } from '../../../api/_bb/prompts.js'
@@ -307,6 +307,56 @@ function fakeClient(answers) {
   ok('no request turns thinking off or forces a tool', !/type:\s*['"]disabled['"]/.test(all) && !/tool_choice/.test(all) && !/budget_tokens/.test(all))
   const rates = readFileSync(new URL('./plans.js', import.meta.url), 'utf8')
   ok('and its calls are priced at its own rate', /'claude-sonnet-5-5': \{ input: 2, output: 10, cacheRead: 0\.2, cacheWrite: 2\.5 \}/.test(rates))
+}
+
+/* --- the AI on hold -------------------------------------------------------------------------- */
+{
+  /* "I have 100 dollars of free API credit but I don't wanna use it, so put a
+     hold on the API utilisation for Hakkilo" (Kee, 19 October). */
+  const saved = { ...process.env }
+  const set = (v) => (v === undefined ? delete process.env.BB_AI_PAUSED : (process.env.BB_AI_PAUSED = v))
+  ok('on hold in the code', AI_PAUSED === true)
+  set(undefined)
+  ok('paused when Vercel says nothing', aiPaused() === true)
+  for (const v of ['0', 'false', 'off', 'NO', ' 0 ']) {
+    set(v)
+    ok(`BB_AI_PAUSED=${JSON.stringify(v)} resumes`, aiPaused() === false)
+  }
+  for (const v of ['1', 'true', 'on']) {
+    set(v)
+    ok(`BB_AI_PAUSED=${JSON.stringify(v)} pauses`, aiPaused() === true)
+  }
+
+  /* Fake values, never keys: start() answers before it would use any. */
+  process.env.SUPABASE_URL = 'http://localhost:54321'
+  process.env.SUPABASE_SERVICE_ROLE_KEY = 'fake-service-role'
+  process.env.ANTHROPIC_API_KEY = 'fake-not-a-key'
+  const answer = async (opts) => {
+    const out = { status: null, body: null }
+    const res = { setHeader() {}, status(c) { out.status = c; return this }, json(b) { out.body = b; return this } }
+    const ctx = await start({ method: 'POST', headers: {}, body: {} }, res, opts)
+    return { ctx, ...out }
+  }
+  set(undefined)
+  const paused = await answer()
+  ok('a route that calls a model answers 503 paused, key or not', paused.ctx === null && paused.status === 503 && paused.body?.error === 'paused')
+  const free = await answer({ needsModel: false })
+  ok('a route that needs no model (status, billing, delete) is not held', free.body?.error !== 'paused')
+  set('0')
+  const resumed = await answer()
+  ok('resumed: the call goes on to sign-in', resumed.body?.error !== 'paused')
+
+  const src = (p) => readFileSync(new URL(`../../../api/_bb/${p}`, import.meta.url), 'utf8')
+  const common = src('common.js')
+  ok('the hold comes before the key and before any client', common.indexOf('needsModel && aiPaused()') < common.indexOf("needsModel && !env('anthropicKey')") && common.indexOf('needsModel && aiPaused()') < common.indexOf('const db = admin()'))
+  /* Every handler that reaches a model goes through start() with the default. */
+  for (const f of ['coach.js', 'ingest.js', 'generate.js', 'vary.js', 'visual.js', 'check.js', 'cases.js']) {
+    const code = src(f)
+    ok(`${f}: through start(), which holds it`, /await start\(req, res\)/.test(code) && !/start\(req, res, \{ needsModel: false \}\)/.test(code))
+  }
+  ok('status says it, so the course page can', /paused: aiPaused\(\)/.test(src('status.js')) && /model: Boolean\(env\('anthropicKey'\)\) && !aiPaused\(\)/.test(src('status.js')))
+  for (const k of Object.keys(process.env)) if (!(k in saved)) delete process.env[k]
+  Object.assign(process.env, saved)
 }
 
 console.log(`  ${pass} passed, ${fail} failed`)

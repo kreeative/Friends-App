@@ -10,7 +10,7 @@ import { isWaiting } from './useProcessing'
  * the quality check turned away, because that number is real and the
  * student can see questions are checked.
  */
-export default function Processing({ proc, materials, chapters, statusReady }) {
+export default function Processing({ proc, materials, chapters, statusReady, paused }) {
   const { t, locale } = useT()
   const busy = proc.running || materials.some((m) => m.status === 'reading' && !isWaiting(m))
   const open = materials.filter((m) => m.status !== 'ready' || proc.current === m.id)
@@ -20,7 +20,7 @@ export default function Processing({ proc, materials, chapters, statusReady }) {
   return (
     <section className="lg mt-6 p-5" data-hook="bb-processing" aria-live="polite">
       <h2 className="text-body font-bold text-ink">{t('bb.proc.title')}</h2>
-      {statusReady === false && <Note className="mt-3">{t('bb.proc.no_key')}</Note>}
+      {statusReady === false && <Note className="mt-3">{t(paused ? 'bb.proc.paused' : 'bb.proc.no_key')}</Note>}
       {open.length > 0 && (
         <ul className="mt-3 space-y-2">
           {open.map((m) => {
@@ -55,7 +55,7 @@ export default function Processing({ proc, materials, chapters, statusReady }) {
       )}
       {busy && <p className="mt-3 text-small text-muted">{t('bb.proc.keep_open')}</p>}
       {proc.firstReady && !busy && <Note tone="good" className="mt-3">{t('bb.proc.first_ready')}</Note>}
-      {proc.stopped && <Note tone={proc.stopped.error === 'limit' || proc.stopped.error === 'plan_chapters' ? 'info' : 'error'} className="mt-3">{errorMessage(t, locale, proc.stopped)}</Note>}
+      {proc.stopped && <Note tone={['limit', 'plan_chapters', 'paused'].includes(proc.stopped.error) ? 'info' : 'error'} className="mt-3">{errorMessage(t, locale, proc.stopped)}</Note>}
     </section>
   )
 }

@@ -149,7 +149,7 @@ export default function Course() {
         }}
       />
 
-      <Processing proc={proc} materials={data.materials} chapters={data.chapters} statusReady={status?.ready?.model} />
+      <Processing proc={proc} materials={data.materials} chapters={data.chapters} statusReady={status?.ready?.model} paused={Boolean(status?.paused)} />
 
       <section className="lg mt-6 p-5" data-hook="bb-course-main">
         {/* Each label is one word ("Not sure but wrong, just wrong", Kee):

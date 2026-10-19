@@ -44,6 +44,21 @@ export const HEAVY_MODEL = 'claude-opus-5-5'
 export const model = () => process.env.BB_MODEL || MODEL
 export const heavyModel = () => process.env.BB_MODEL_HEAVY || HEAVY_MODEL
 
+/* On hold since 19 October: "I have 100 dollars of free API credit but I
+   don't wanna use it, so put a hold on the API utilisation for Hakkilo"
+   (Kee). While paused, every route that would call a model answers 503
+   'paused' before it does: no call leaves, nothing is spent, and the app
+   says the AI is on pause instead of an error. The study itself (sessions,
+   cards, the plan, the calendar, the Pomodoro) needs no model and keeps
+   working. BB_AI_PAUSED in Vercel overrides this without touching the code:
+   '0' resumes, '1' pauses; then a redeploy. */
+export const AI_PAUSED = true
+export function aiPaused() {
+  const v = String(process.env.BB_AI_PAUSED ?? '').trim().toLowerCase()
+  if (v === '') return AI_PAUSED
+  return !['0', 'false', 'off', 'no'].includes(v)
+}
+
 export function admin() {
   return createClient(env('supabaseUrl'), env('serviceRole'), { auth: { persistSession: false } })
 }
@@ -71,6 +86,10 @@ export async function start(req, res, { needsModel = true } = {}) {
   const missing = missingEnv(['supabaseUrl', 'serviceRole'])
   if (missing.length) {
     res.status(503).json({ error: 'setup', missing })
+    return null
+  }
+  if (needsModel && aiPaused()) {
+    res.status(503).json({ error: 'paused' })
     return null
   }
   if (needsModel && !env('anthropicKey')) {

@@ -25,7 +25,7 @@ export const STALE_MS = 6 * 60000
 export const isWaiting = (m, now = Date.now()) =>
   m.status === 'uploaded' || (m.status === 'reading' && (!m.reading_at || now - Date.parse(m.reading_at) > STALE_MS))
 
-const STOP = new Set(['limit', 'no_key', 'key_format', 'no_workspace', 'setup', 'plan_chapters', 'unauthorized', 'offline'])
+const STOP = new Set(['limit', 'paused', 'no_key', 'key_format', 'no_workspace', 'setup', 'plan_chapters', 'unauthorized', 'offline'])
 
 export function useProcessing({ courseId, materials, chapters, onChange, auto = true }) {
   const [state, setState] = useState({ running: false, current: null, generating: null, added: 0, rejected: 0, stopped: null, errors: {}, firstReady: false })
